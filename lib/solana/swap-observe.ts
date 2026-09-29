@@ -20,6 +20,7 @@
  * a delta of zero means the fee was not taken rather than that it was small.
  */
 
+import { describeChainError } from "./chain-error.ts";
 import { withRpcDiscipline, type SolanaRpcHandle } from "./rpc.ts";
 import { WRAPPED_SOL_MINT } from "./send-kinds.ts";
 
@@ -194,7 +195,7 @@ export async function observeSwap(
       return {
         ok: false,
         code: "LANDED_FAILED",
-        chainError: JSON.stringify(value.meta.err).slice(0, 512),
+        chainError: describeChainError(value.meta.err).slice(0, 512),
         reason: "The transaction landed and failed; the chain moved no swap value.",
       };
     }

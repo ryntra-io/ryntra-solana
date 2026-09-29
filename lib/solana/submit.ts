@@ -12,6 +12,7 @@
  * Outside the public evidence kit, like everything else that writes.
  */
 
+import { describeChainError } from "./chain-error.ts";
 import {
   withRpcDiscipline,
   type SolanaRpcHandle,
@@ -94,7 +95,7 @@ async function confirm(
              The error travels with it rather than being turned into a throw,
              because "it landed and failed" is the outcome the receipt has to
              carry honestly. */
-          err: status.err === null ? null : JSON.stringify(status.err),
+          err: status.err === null || status.err === undefined ? null : describeChainError(status.err),
         };
       }
     } catch {

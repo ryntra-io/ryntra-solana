@@ -395,6 +395,56 @@ export async function expireUnclaimedSwapOwnerReview(args: {
   });
 }
 
+/**
+ * Settle the slot on a signature the chain shows landed and failed.
+ *
+ * Call it only on a failure the cluster has confirmed (a `confirmed` or
+ * `finalized` status, or a transaction read at `confirmed` or stricter): one
+ * validator's processed view can still be dropped with its fork. Past that,
+ * those bytes are spent: the signature is on the ledger, so they can never
+ * land again, and only the network fee moved. Holding the wallet after that
+ * protects nothing — and nothing else ever released it, so one failed swap
+ * locked its wallet out of trading until someone edited the store by hand.
+ *
+ * SIGNED is accepted beside SUBMITTED_UNKNOWN: a landing proves the bytes left
+ * even when the record never heard that they did. Settling the same failure
+ * twice is a no-op. Anything else — another signature, a Review, a Receipt —
+ * is a mismatch the caller may treat as "nothing left to open".
+ */
+export async function failSwapOwnerLock(args: {
+  store: GuardStore;
+  owner: string;
+  signature: string;
+  at: string;
+}): Promise<Success | Failure> {
+  return update({
+    store: args.store,
+    owner: args.owner,
+    decide: (record) => {
+      if (record.signature === args.signature && record.state === "FAILED") return record;
+      if (
+        record.signature !== args.signature ||
+        (record.state !== "SIGNED" && record.state !== "SUBMITTED_UNKNOWN")
+      ) {
+        return {
+          ok: false,
+          code: "OWNER_SWAP_LOCK_MISMATCH",
+          reason: "Only the matching unresolved signed attempt can settle as failed.",
+          record,
+        };
+      }
+      return {
+        ...record,
+        version: record.version + 1,
+        state: "FAILED" as const,
+        receiptHash: null,
+        receipt: null,
+        updatedAt: args.at,
+      };
+    },
+  });
+}
+
 export async function completeSwapOwnerLock(args: {
   store: GuardStore;
   owner: string;

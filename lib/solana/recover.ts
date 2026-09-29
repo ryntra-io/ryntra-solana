@@ -4,6 +4,7 @@
  * An undetermined submit is not retried from here. This module classifies.
  */
 
+import { describeChainError } from "./chain-error.ts";
 import { classifySendOutcome, type RecoveryFacts, type SendState, type SignatureStatusRead } from "./send-lifecycle.ts";
 import { withRpcDiscipline, type SolanaRpcHandle } from "./rpc.ts";
 
@@ -48,11 +49,14 @@ export async function readSignatureStatus(
       status.confirmationStatus === "finalized"
         ? status.confirmationStatus
         : null;
+    /* The error carries the chain's integers as BigInt. A plain stringify threw
+       inside this try, and a status that had been read — landed, failed —
+       came back as an unavailable operator, forever. */
     return {
       state: "READ",
       status: {
         confirmationStatus: confirmation,
-        err: status.err === null || status.err === undefined ? null : JSON.stringify(status.err),
+        err: status.err === null || status.err === undefined ? null : describeChainError(status.err),
         seen: true,
         slot: status.slot === undefined || status.slot === null ? null : String(status.slot),
       },

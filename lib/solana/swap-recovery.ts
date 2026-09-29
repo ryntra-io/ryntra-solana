@@ -30,6 +30,7 @@ import {
   completeSwapOwnerLock,
   expireUnclaimedSwapOwnerReview,
   expireSwapOwnerSignature,
+  failSwapOwnerLock,
   markSwapOwnerSubmitted,
   readSwapOwnerRecovery,
   readSwapOwnerLock,
@@ -147,6 +148,32 @@ async function readLandingWindow(args: {
   }
 }
 
+/**
+ * Release the wallet behind a landed failure.
+ *
+ * The send-attempt ledger keeps the signature `RECOVERY_REQUIRED` for its
+ * fee-only evidence; the owner slot is a different thing — it says whether this
+ * wallet may ask for another Review — and a failure on the ledger answers that.
+ * A mismatch means the slot already moved on (archived, or a later Review),
+ * and an absent slot has nothing in it; either way there is nothing left to
+ * open. Any other failure is a real one.
+ */
+async function releaseLandedFailure(args: {
+  store: GuardStore;
+  bundle: SwapExecutionBundle;
+  signature: string;
+  now?: Date;
+}): Promise<Readonly<{ code: string; reason: string }> | null> {
+  const released = await failSwapOwnerLock({
+    store: args.store,
+    owner: args.bundle.taker,
+    signature: args.signature,
+    at: (args.now ?? new Date()).toISOString(),
+  });
+  if (released.ok || released.code === "OWNER_SWAP_LOCK_MISMATCH" || released.code === "OWNER_SWAP_LOCK_ABSENT") return null;
+  return { code: released.code, reason: released.reason };
+}
+
 export type SwapRecoveryResult =
   | Readonly<{
       state: "PENDING";
@@ -259,6 +286,17 @@ export async function recoverSwapOutcome(args: {
       /* A receipt minted before the service fee was read carries no fee figure: nothing was looked for, which is what null says. */
       observation: sealed ? { ...sealed.independentObservation, serviceFeeCollectedRaw: sealed.independentObservation.serviceFeeCollectedRaw ?? null } : null,
       facts: sealed,
+    };
+  }
+  /* Settled as failed once, on a confirmed read, and terminal. Answered from
+     the record, so a later read on an operator with a short history cannot
+     turn a spent network fee into "nothing happened". */
+  if (ownerRecovery.record.state === "FAILED") {
+    return {
+      state: "FAILED",
+      signature: args.signature,
+      reason: "The transaction landed and failed on chain; only the network fee was spent.",
+      chainError: null,
     };
   }
 
@@ -452,7 +490,16 @@ export async function recoverSwapOutcome(args: {
       lastValidBlockHeight: args.bundle.lastValidBlockHeight,
     };
   }
-  if (statusRead.status.err !== null) {
+  /* One validator's view is not the cluster's: a processed failure can still be
+     dropped with its fork, and the same bytes could then land. An error is
+     settled here only once the cluster has confirmed it. Anything less —
+     processed, or a status that names no level — is asked of the transaction
+     itself at confirmed below: not there yet stays PENDING, there and failed
+     is LANDED_FAILED and settles the same way. */
+  const confirmedFailure =
+    statusRead.status.err !== null &&
+    (statusRead.status.confirmationStatus === "confirmed" || statusRead.status.confirmationStatus === "finalized");
+  if (confirmedFailure) {
     const held = await transitionSendAttempt({
       store: args.store,
       network: "mainnet",
@@ -460,6 +507,8 @@ export async function recoverSwapOutcome(args: {
       to: "RECOVERY_REQUIRED",
       at: (args.now ?? new Date()).toISOString(),
     });
+    const released = await releaseLandedFailure(args);
+    if (released) return { state: "REFUSED", signature: args.signature, ...released };
     return {
       state: "FAILED",
       signature: args.signature,
@@ -491,6 +540,10 @@ export async function recoverSwapOutcome(args: {
       to: "RECOVERY_REQUIRED",
       at: (args.now ?? new Date()).toISOString(),
     });
+    if (landedFailed) {
+      const released = await releaseLandedFailure(args);
+      if (released) return { state: "REFUSED", signature: args.signature, ...released };
+    }
     return landedFailed
       ? {
           state: "FAILED",

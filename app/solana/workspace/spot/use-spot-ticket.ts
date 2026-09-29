@@ -545,6 +545,18 @@ export function useSpotTicket(input: SpotTicketInput) {
         setPhase("REVIEW");
         return;
       }
+      /* Landed and failed is an outcome, not an unknown: only the fee moved
+         and the server has released the wallet (the swap card reads it the
+         same way). */
+      if (executed.failure.code === "LANDED_FAILED") {
+        forgetAttempt();
+        setPrepared(null);
+        recordSettlement({ state: "FAILED", signature, observation: null, facts: null, receipt: null }, connection.address, signedContext);
+        onRefresh?.();
+        setPhase("SETTLED");
+        onSettled?.();
+        return;
+      }
       const unknown = transitionSwapClientAttempt(pending, { kind: "FAILURE" });
       rememberAttempt(unknown);
       setActionFailure(executed.failure);

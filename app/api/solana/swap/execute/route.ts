@@ -33,6 +33,7 @@ import { observeSwap, serviceFeeReadFor } from "@/lib/solana/swap-observe";
 import {
   claimSwapOwnerSignature,
   completeSwapOwnerLock,
+  failSwapOwnerLock,
   markSwapOwnerSubmitted,
 } from "@/lib/solana/swap-owner-lock";
 import { mintSwapOutcomeReceipt } from "@/lib/solana/swap-outcome";
@@ -54,6 +55,17 @@ export const maxDuration = 60;
  */
 const ADOPTED_CONFIRM_DEADLINE_MS = 30_000;
 const ADOPTED_CONFIRM_INTERVAL_MS = 1_500;
+
+/**
+ * How long a venue "Failed" waits for the independent operator.
+ *
+ * The venue answers after it has watched the transaction, and its "Failed"
+ * reads the same whether the bytes landed and failed or never landed. The
+ * independent operator is often a slot behind it. A few seconds let it say
+ * which, so a landed failure settles here and frees the wallet at once rather
+ * than waiting for someone to press «Check transaction».
+ */
+const VENUE_FAILED_SEEN_DEADLINE_MS = 6_000;
 
 /**
  * The one-shot swap execute route.
@@ -514,8 +526,9 @@ export async function POST(request: Request) {
    * button for an ordinary success. This is the same wait, done here, against
    * the independent operator rather than the one that took the bytes.
    */
-  if (!seen && adoptedLane && delivered) {
-    const deadline = Date.now() + ADOPTED_CONFIRM_DEADLINE_MS;
+  const venueFailed = report?.ok === true && report.report.status === "Failed";
+  if (!seen && ((adoptedLane && delivered) || venueFailed)) {
+    const deadline = Date.now() + (adoptedLane ? ADOPTED_CONFIRM_DEADLINE_MS : VENUE_FAILED_SEEN_DEADLINE_MS);
     while (!seen && Date.now() < deadline) {
       await new Promise((resolve) => setTimeout(resolve, ADOPTED_CONFIRM_INTERVAL_MS));
       statusRead = await readSignatureStatus(independent, signature);
@@ -583,6 +596,10 @@ export async function POST(request: Request) {
         to: "RECOVERY_REQUIRED",
         at: new Date().toISOString(),
       });
+      /* The bytes are spent and only the fee moved: the wallet may trade
+         again. If the slot will not settle now, the recovery read settles it
+         the same way on the next check. */
+      await failSwapOwnerLock({ store, owner: bundle.taker, signature, at: new Date().toISOString() });
       return failure(409, "LANDED_FAILED", observed.reason, rate, {
         signature,
         chainError: observed.chainError,

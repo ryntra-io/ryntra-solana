@@ -9,10 +9,10 @@ moved counts as new. Generated at every update from the development history.
 
 | Since the tag | Files |
 |---|---|
-| New | 986 |
-| Changed | 473 |
-| Unchanged | 1,266 |
-| Lines added / removed | +240,897 / −15,646 |
+| New | 987 |
+| Changed | 478 |
+| Unchanged | 1,261 |
+| Lines added / removed | +241,329 / −15,671 |
 
 ## New since the tag
 
@@ -840,6 +840,7 @@ moved counts as new. Generated at every update from the development history.
 - `lib/site/structured-data.ts`
 - `lib/site/use-page-path.ts`
 - `lib/solana/action-reconcile.server.ts`
+- `lib/solana/chain-error.ts`
 - `lib/solana/fill-outcome.test.mjs`
 - `lib/solana/fill-outcome.ts`
 - `lib/solana/holdings.client.test.mjs`
@@ -1403,6 +1404,7 @@ moved counts as new. Generated at every update from the development history.
 - `lib/solana/history-view.ts`
 - `lib/solana/lifecycle.test.mjs`
 - `lib/solana/m2-receipt-correction.ts`
+- `lib/solana/observe.ts`
 - `lib/solana/outcome.test.mjs`
 - `lib/solana/payment-request.test.mjs`
 - `lib/solana/quotes.ts`
@@ -1410,6 +1412,7 @@ moved counts as new. Generated at every update from the development history.
 - `lib/solana/receipt.test.mjs`
 - `lib/solana/receipt.ts`
 - `lib/solana/recorded-m1b.ts`
+- `lib/solana/recover.ts`
 - `lib/solana/rpc.ts`
 - `lib/solana/send-asset-preference.test.mjs`
 - `lib/solana/send-inventory.test.mjs`
@@ -1420,6 +1423,7 @@ moved counts as new. Generated at every update from the development history.
 - `lib/solana/send-recipient.ts`
 - `lib/solana/send-support.test.mjs`
 - `lib/solana/settlement.test.mjs`
+- `lib/solana/submit.ts`
 - `lib/solana/swap-client-safety.test.mjs`
 - `lib/solana/swap-client-safety.ts`
 - `lib/solana/swap-disclosure.test.mjs`
@@ -1429,7 +1433,9 @@ moved counts as new. Generated at every update from the development history.
 - `lib/solana/swap-execution.test.mjs`
 - `lib/solana/swap-failure-copy.test.mjs`
 - `lib/solana/swap-failure-copy.ts`
+- `lib/solana/swap-observe.ts`
 - `lib/solana/swap-owner-lock.test.mjs`
+- `lib/solana/swap-owner-lock.ts`
 - `lib/solana/swap-recovery.ts`
 - `lib/solana/swap-settlement.test.mjs`
 - `lib/solana/swap-transaction-check.ts`

@@ -1194,6 +1194,26 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
         setPhase("REVIEW");
         return;
       }
+      /* The chain answered: the bytes landed and failed, only the network fee
+         moved, and the server has released the wallet. That is an outcome,
+         not an unknown — reading it as one told the person never to trade
+         again. Should the server's release not have stuck, the next order
+         hands this signature back and the recovery read settles it. */
+      if (executed.failure.code === "LANDED_FAILED") {
+        forgetAttempt();
+        setPrepared(null);
+        recordSettlement({
+          state: "FAILED",
+          signature,
+          observation: null,
+          facts: null,
+          factsRefusal: null,
+          receipt: null,
+        }, connection.address);
+        refreshHoldings();
+        setPhase("SETTLED");
+        return;
+      }
       const unknown = transitionSwapClientAttempt(pending, { kind: "FAILURE" });
       rememberAttempt(unknown);
       setActionFailure(executed.failure);

@@ -22,6 +22,7 @@ import {
   SplTransferObservationSchema,
   type SplTransferObservation,
 } from "../agent-control/adapters/solana-token-2022.ts";
+import { describeChainError } from "./chain-error.ts";
 import { withRpcDiscipline, type SolanaNetwork, type SolanaRpcHandle } from "./rpc.ts";
 
 export type ObservationFailure = Readonly<{
@@ -166,23 +167,6 @@ function lamportDeltasFrom(
 
 function chainRefFor(network: SolanaNetwork): string {
   return network === "mainnet" ? SOLANA_CAIP2.mainnet : SOLANA_CAIP2.devnet;
-}
-
-/**
- * A transaction error, as a string.
- *
- * `JSON.stringify` alone throws on this: the RPC layer decodes chain integers
- * as `BigInt`, and a plain-looking `{ InstructionError: [1, { Custom: 1 }] }`
- * carries them. Losing the whole observation to a serialization error while
- * reporting *why a transaction failed* would be the worst possible place for
- * it, so bigints render as their digits.
- */
-function describeError(value: unknown): string {
-  try {
-    return JSON.stringify(value, (_key, entry) => (typeof entry === "bigint" ? entry.toString() : entry)) ?? "unknown";
-  } catch {
-    return String(value);
-  }
 }
 
 /**
@@ -344,7 +328,7 @@ export async function observeTransfer(
       {
         description: succeeded
           ? `The transaction succeeded on ${handle.network}.`
-          : `The transaction failed on ${handle.network}: ${describeError(value.meta.err)}.`,
+          : `The transaction failed on ${handle.network}: ${describeChainError(value.meta.err)}.`,
         sourceRef,
         observedAt,
       },
@@ -355,7 +339,7 @@ export async function observeTransfer(
       ok: true,
       observation,
       transactionSucceeded: succeeded,
-      transactionError: succeeded ? null : describeError(value.meta.err),
+      transactionError: succeeded ? null : describeChainError(value.meta.err),
       invokedPrograms,
       postTokenAccounts,
       observedEffects,
