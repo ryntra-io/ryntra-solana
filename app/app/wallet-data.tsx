@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
-import { verifyArtifact } from "@/app/agents/agent-control-client";
+import { verifyReceiptCandidates } from "./receipt-verification.client";
 import { readSolanaReceipts } from "@/lib/solana/send-receipt-vault.client";
 import { findReceiptForAction, projectVerifiedReceiptOutcome, type StoredReceiptView } from "@/lib/solana/receipt-view";
 import { enrichActivityMetadata } from "@/lib/solana/activity-projection";
@@ -89,9 +89,9 @@ export function WalletDataProvider({children}:{children:ReactNode}) {
     try { rows=readSolanaReceipts(window.localStorage,owner); } catch { /* Blocked browser storage has no cached receipt to project. */ }
     setReceipts({owner,rows,verified:new Set()});
     const candidates=state.owner===owner&&state.activity.status==="ready"?rows.filter(row=>state.activity.data.some(action=>(action.outcome==="IN_FLIGHT"||action.outcome==="NEEDS_YOU")&&findReceiptForAction([row],action)!==null)):[];
-    void Promise.all(candidates.map(async row=>{
-      try { const result=await verifyArtifact(row.receipt);return result.integrity.valid&&result.issuer.verdict==="SIGNATURE_VALID"?String(row.receipt.contentHash):null; } catch { return null; }
-    })).then(hashes=>{if(live)setReceipts({owner,rows,verified:new Set(hashes.filter((hash):hash is string=>hash!==null))});});
+    void verifyReceiptCandidates(candidates,()=>live).then(verified=>{
+      if(live)setReceipts({owner,rows,verified});
+    });
     return ()=>{live=false;};
   },[owner,pathname,version,state.owner,state.activity]);
   // Never paint the previous wallet while the effect for a new one is pending.

@@ -64,7 +64,9 @@ test("returning from a money action refreshes the shared data rather than reconn
 test("Portfolio and Activity consume the same verified operation projection", () => {
   const provider = code("app/app/wallet-data.tsx");
   assert.match(provider, /readSolanaReceipts\(window\.localStorage,owner\)/);
-  assert.match(provider, /result\.integrity\.valid&&result\.issuer\.verdict==="SIGNATURE_VALID"/);
+  assert.match(provider, /verifyReceiptCandidates\(candidates,\(\)=>live\)/);
+  const verifier = code("app/app/receipt-verification.client.ts");
+  assert.match(verifier, /result\.integrity\.valid\s*&&\s*result\.issuer\.verdict === "SIGNATURE_VALID"/);
   assert.match(provider, /findReceiptForAction\(receiptRows,action\)/);
   assert.match(provider, /projectVerifiedReceiptOutcome\(/);
   assert.match(provider, /receipts\.owner===owner/);

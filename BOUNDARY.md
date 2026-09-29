@@ -9,10 +9,10 @@ moved counts as new. Generated at every update from the development history.
 
 | Since the tag | Files |
 |---|---|
-| New | 987 |
-| Changed | 478 |
-| Unchanged | 1,261 |
-| Lines added / removed | +241,329 / −15,671 |
+| New | 991 |
+| Changed | 480 |
+| Unchanged | 1,259 |
+| Lines added / removed | +241,436 / −15,681 |
 
 ## New since the tag
 
@@ -221,6 +221,8 @@ moved counts as new. Generated at every update from the development history.
 - `app/app/predictions/predictions.module.css`
 - `app/app/predictions/use-paper-account.ts`
 - `app/app/predictions/words.ts`
+- `app/app/receipt-verification.client.ts`
+- `app/app/receipt-verification.test.mjs`
 - `app/app/results/result-row.tsx`
 - `app/app/results/results-panel.tsx`
 - `app/app/results/results-words.ts`
@@ -841,6 +843,7 @@ moved counts as new. Generated at every update from the development history.
 - `lib/site/use-page-path.ts`
 - `lib/solana/action-reconcile.server.ts`
 - `lib/solana/chain-error.ts`
+- `lib/solana/chain-ids.ts`
 - `lib/solana/fill-outcome.test.mjs`
 - `lib/solana/fill-outcome.ts`
 - `lib/solana/holdings.client.test.mjs`
@@ -853,6 +856,7 @@ moved counts as new. Generated at every update from the development history.
 - `lib/solana/mint-batch.ts`
 - `lib/solana/open-in-wallet.ts`
 - `lib/solana/receipt-corrections.ts`
+- `lib/solana/receipt-view-boundary.test.mjs`
 - `lib/solana/recipient-check.server.ts`
 - `lib/solana/recipient-check.test.mjs`
 - `lib/solana/rent.test.mjs`
@@ -1287,6 +1291,7 @@ moved counts as new. Generated at every update from the development history.
 - `lib/agent-control/adapter-projection.test.mjs`
 - `lib/agent-control/adapter-projection.ts`
 - `lib/agent-control/adapters/jupiter-swap.ts`
+- `lib/agent-control/adapters/solana-token-2022.ts`
 - `lib/agent-control/attention.test.mjs`
 - `lib/agent-control/attention.ts`
 - `lib/agent-control/core.test.mjs`
@@ -1409,6 +1414,7 @@ moved counts as new. Generated at every update from the development history.
 - `lib/solana/payment-request.test.mjs`
 - `lib/solana/quotes.ts`
 - `lib/solana/receipt-view.test.mjs`
+- `lib/solana/receipt-view.ts`
 - `lib/solana/receipt.test.mjs`
 - `lib/solana/receipt.ts`
 - `lib/solana/recorded-m1b.ts`

@@ -22,6 +22,7 @@ import { z } from "zod";
 
 import { BASE58_PUBKEY } from "../../solana/address.ts";
 import { SOLANA_NETWORKS } from "../../solana/rpc.ts";
+import { SOLANA_CAIP2 } from "../../solana/chain-ids.ts";
 
 export const SOLANA_TOKEN_2022_ADAPTER_REF = "adapter:solana-token-2022@1";
 export const SPL_TRANSFER_ACTION_REF = "action:solana-token-2022/spl-transfer@1";
@@ -33,10 +34,7 @@ export const NATIVE_SOL_TRANSFER_ACTION_REF = "action:solana-token-2022/native-s
  * first 32 characters of its genesis blockhash — a fact about the chain, not
  * a name someone can squat.
  */
-export const SOLANA_CAIP2 = {
-  mainnet: "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
-  devnet: "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1",
-} as const;
+export { SOLANA_CAIP2 };
 
 /**
  * Registry definitions, as data. Plain literals on purpose: the registry's

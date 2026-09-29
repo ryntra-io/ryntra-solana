@@ -1,6 +1,6 @@
 import type { SolanaWalletAction } from "./action-ledger.ts";
 import { explorerTxUrl } from "./explorer.ts";
-import { SOLANA_CAIP2 } from "../agent-control/adapters/solana-token-2022.ts";
+import { SOLANA_CAIP2 } from "./chain-ids.ts";
 import { EVM_EXPLORER_TX, SWAP_NETWORK_META } from "../swap/catalog.ts";
 
 type ReceiptRecord = Readonly<Record<string, unknown>>;

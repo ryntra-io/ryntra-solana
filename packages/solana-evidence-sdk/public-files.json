@@ -270,6 +270,10 @@
       "role": "source"
     },
     {
+      "path": "lib/solana/chain-ids.ts",
+      "role": "source"
+    },
+    {
       "path": "lib/solana/contracts.ts",
       "role": "source"
     },
