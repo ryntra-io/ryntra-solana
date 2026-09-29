@@ -1,0 +1,1053 @@
+/*
+ * One Swap surface — Unified Swap V1.
+ *
+ * Two tickets and a seam. The person reads one line of fact per ticket, the
+ * flip sits where the money turns, and the kind of action is a quiet caption
+ * under both. Nothing technical rests on the surface; depth opens it.
+ */
+
+.card {
+  display: grid;
+  gap: var(--rt-space-md, 16px);
+  font-family: var(--rt-font, var(--ry-font-sans, system-ui, sans-serif));
+  color: var(--rt-ink-high, var(--ry-text, inherit));
+}
+
+/* ── Tickets ──────────────────────────────────────────────────────────── */
+
+.legs {
+  position: relative;
+  display: grid;
+  gap: var(--rt-space-xs, 8px);
+}
+
+.leg {
+  position: relative;
+  display: grid;
+  gap: var(--rt-space-sm, 12px);
+  padding: var(--rt-space-md, 16px) 18px 18px;
+  border-radius: var(--rt-radius-lg, 20px);
+  background: var(--rt-raised, var(--ry-card, transparent));
+  box-shadow: inset 0 0 0 1px var(--rt-hairline, var(--ry-border, transparent));
+  transition: box-shadow var(--rt-duration-fast, 120ms) var(--rt-ease, ease);
+}
+
+.leg[data-side="to"] {
+  background: var(--rt-panel, var(--ry-deep, transparent));
+}
+
+.leg:focus-within {
+  box-shadow: inset 0 0 0 1px var(--rt-action-blue, var(--ry-iris-deep, currentColor));
+}
+
+.legHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rt-space-sm, 12px);
+  min-height: 28px;
+  flex-wrap: wrap;
+}
+
+.legLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--rt-ink-low, var(--ry-muted, inherit));
+}
+
+/* The label and the wallet it belongs to travel together, so the balance and
+   its share buttons stay the one thing on the other end of the row. */
+.legHeadMain {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+/* ── Which wallet this leg is attached to ──────────────────────────────────
+   A Solana wallet has always had a chip in the shell header and an
+   Ethereum-style one had nothing anywhere, on pairs whose sending side is the
+   EVM one. This is that chip, on the leg, for either kind. */
+.wallet {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 24px;
+  padding: 0 4px 0 8px;
+  border: 1px solid var(--rt-hairline, var(--ry-border, transparent));
+  border-radius: var(--rt-radius-pill, 999px);
+  min-width: 0;
+}
+
+.walletDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--rt-reconciled-green, currentColor);
+  flex: none;
+}
+
+.walletAddress {
+  font-family: var(--rt-mono, var(--ry-font-mono, monospace));
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--rt-ink-mid, var(--ry-muted, inherit));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.walletAction {
+  min-height: 22px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: var(--rt-radius-pill, 999px);
+  background: transparent;
+  color: var(--rt-ink-low, var(--ry-muted, inherit));
+  font: inherit;
+  font-size: 0.6875rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  flex: none;
+}
+
+.walletAction:hover,
+.walletAction:focus-visible {
+  color: var(--rt-ink-high, inherit);
+  background: var(--rt-action-blue-soft, transparent);
+  outline: none;
+}
+
+/* The same weight as the share pills it sits beside, and deliberately not the
+   action colour: the card already has one call to connect — the full-width
+   button under it — and a second one in the same loud red made the leg head
+   compete with the thing a person is meant to press. This is the quiet way in
+   for somebody who has already read the form. */
+.walletConnect {
+  min-height: 24px;
+  padding: 0 10px;
+  border: 1px solid var(--rt-hairline, var(--ry-border, transparent));
+  border-radius: var(--rt-radius-pill, 999px);
+  background: transparent;
+  color: var(--rt-ink-mid, var(--ry-muted, inherit));
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  flex: none;
+  transition:
+    border-color var(--rt-duration-fast, 120ms) var(--rt-ease, ease),
+    color var(--rt-duration-fast, 120ms) var(--rt-ease, ease),
+    background var(--rt-duration-fast, 120ms) var(--rt-ease, ease);
+}
+
+.walletConnect:hover,
+.walletConnect:focus-visible {
+  border-color: var(--rt-hairline-strong, var(--ry-border-strong, currentColor));
+  color: var(--rt-ink-high, inherit);
+  background: var(--rt-action-blue-soft, transparent);
+  outline: none;
+}
+
+.balanceRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.balanceText {
+  font-size: 0.8125rem;
+  color: var(--rt-ink-mid, var(--ry-muted, inherit));
+}
+
+.balanceText b {
+  font-family: var(--rt-mono, var(--ry-font-mono, monospace));
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--rt-ink-high, inherit);
+}
+
+.shares {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.share {
+  min-height: 28px;
+  padding: 0 9px;
+  border: 1px solid var(--rt-hairline, var(--ry-border, transparent));
+  border-radius: var(--rt-radius-pill, 999px);
+  background: transparent;
+  color: var(--rt-ink-mid, var(--ry-muted, inherit));
+  font-family: var(--rt-mono, var(--ry-font-mono, monospace));
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition:
+    border-color var(--rt-duration-fast, 120ms) var(--rt-ease, ease),
+    color var(--rt-duration-fast, 120ms) var(--rt-ease, ease),
+    background var(--rt-duration-fast, 120ms) var(--rt-ease, ease);
+}
+
+.share:hover,
+.share:focus-visible {
+  border-color: var(--rt-hairline-strong, var(--ry-border-strong, currentColor));
+  color: var(--rt-ink-high, inherit);
+  background: var(--rt-action-blue-soft, transparent);
+  outline: none;
+}
+
+.legRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--rt-space-sm, 12px);
+}
+
+/* The amount, and underneath it what the amount is worth. Stacked in one grid
+   cell so the selector beside it stays vertically centred on the pair rather
+   than on the number alone. */
+.amountCell {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+/* A dollar figure is an indication, never the deal — the signed minimum comes
+   from the quote — so it is set quietly and always carries its `≈`. When there
+   is no price this element is not rendered at all: an empty line reserving
+   space reads as a figure that failed to load, and `$0.00` would be a lie. */
+.usdLine {
+  font-family: var(--rt-mono, var(--ry-font-mono, monospace));
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--rt-ink-low, var(--ry-muted, inherit));
+  min-height: 18px;
+}
+
+.amountInput,
+.amountOut {
+  min-width: 0;
+  min-height: 52px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--rt-ink-high, inherit);
+  font-family: var(--rt-mono, var(--ry-font-mono, monospace));
+  font-size: 2rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.amountInput::placeholder {
+  color: var(--rt-ink-low, var(--ry-muted, inherit));
+  opacity: 0.6;
+}
+
+.amountInput:focus-visible {
+  outline: none;
+}
+
+.amountOut {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.amountOut[data-state="waiting"] {
+  color: var(--rt-ink-low, var(--ry-muted, inherit));
+  opacity: 0.6;
+}
+
+/* ── Network · asset selector ─────────────────────────────────────────── */
+
+.selector {
+  position: relative;
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid var(--rt-hairline, var(--ry-border, transparent));
+  border-radius: var(--rt-radius-pill, 999px);
+  background: var(--rt-page, var(--ry-bg, transparent));
+}
+
+.selector > * + * {
+  border-left: 1px solid var(--rt-hairline, var(--ry-border, transparent));
+}
+
+.menuAnchor {
+  position: relative;
+  display: inline-flex;
+}
+
+.segment {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 12px 0 10px;
+  border: 0;
+  background: transparent;
+  color: var(--rt-ink-high, inherit);
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--rt-duration-fast, 120ms) var(--rt-ease, ease);
+}
+
+.segment:first-child,
+.menuAnchor:first-child .segment {
+  border-radius: var(--rt-radius-pill, 999px) 0 0 var(--rt-radius-pill, 999px);
+}
+
+.segment:last-child {
+  border-radius: 0 var(--rt-radius-pill, 999px) var(--rt-radius-pill, 999px) 0;
+}
+
+.segment:hover,
+.segment[aria-expanded="true"] {
+  background: var(--rt-raised, var(--ry-card, transparent));
+}
+
+.segment:focus-visible {
+  outline: 2px solid var(--rt-action-blue, var(--ry-iris-deep, currentColor));
+  outline-offset: -2px;
+}
+
+/* ── Two marks, two shapes, and only one accent ────────────────────────────
+   Every network and every asset on this card wore the same thing: a 22px disc
+   of the **action** colour at 14%. Measured on production — Solana, Robinhood
+   Chain, USDG and SOL all rendered rgba(255,90,31,.14) behind #FF8552. Four
+   identical orange discs, nothing telling a chain from a token, and the colour
+   of the button a person is meant to press spent four times as decoration.
+
+   Four network colours would be the obvious fix and this palette does not have
+   them: Brandbook v1.2 froze the ramp, and the only two accents that are not
+   already semantic are iris (action) and aurora. Verified green, caution amber
+   and risk red mean things, and spending them on identity is how they stop
+   meaning them.
+
+   So the two are told apart by **shape**, which costs no colour at all: a
+   network is a neutral rounded square, an asset is an aurora circle, and the
+   action colour appears once on this card — on the action. */
+.glyph {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  flex: none;
+}
+
+/* The chain: structural, quiet, and never the loudest thing in the row. Its
+   own name is spelled out beside it, so the mark anchors rather than labels. */
+.glyphNetwork {
+  border-radius: var(--rt-radius-xs, 8px);
+  border: 1px solid var(--rt-hairline-strong, var(--ry-border-strong, transparent));
+  background: var(--rt-elevated, transparent);
+  color: var(--rt-ink-mid, var(--ry-muted, inherit));
+}
+
+/* The asset: the thing a person actually owns, in the one accent this card can
+   afford to spend. 5.9:1 on the dark ground, 6.9:1 on the light one. */
+.glyphAsset {
+  border-radius: 50%;
+  /* A ring as well as the wash. The wash alone is 12% aurora, which reads on
+     the dark ground and all but vanishes on the light one — so on light the
+     circle stopped being a circle and the shape that tells an asset from a
+     network went with it. The letter passed contrast either way; the *shape*
+     did not, and the shape is what is doing the work here. */
+  border: 1px solid color-mix(in srgb, var(--rt-evidence-cyan) 38%, transparent);
+  background: var(--rt-evidence-cyan-soft, transparent);
+  color: var(--rt-evidence-cyan-fg, inherit);
+}
+
+.caret {
+  color: var(--rt-ink-low, var(--ry-muted, inherit));
+  font-size: 0.6875rem;
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 30;
+  min-width: 208px;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  display: grid;
+  gap: 2px;
+  border: 1px solid var(--rt-hairline-strong, var(--ry-border-strong, transparent));
+  border-radius: var(--rt-radius-md, 16px);
+  background: var(--rt-overlay, var(--ry-elevated, transparent));
+  box-shadow: var(--rt-shadow-overlay, none);
+}
+
+.menuItem {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--rt-radius-sm, 12px);
+  background: transparent;
+  color: var(--rt-ink-high, inherit);
+  font: inherit;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+
+.menuItem:hover,
+.menuItem:focus-visible {
+  background: var(--rt-raised, var(--ry-card, transparent));
+  outline: none;
+}
+
+.menuItem[aria-selected="true"] {
+  background: var(--rt-action-blue-soft, transparent);
+}
+
+/* ── The seam between the tickets ─────────────────────────────────────── */
+
+.seam {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  height: 0;
+  margin: -6px 0;
+}
+
+.flip {
+  width: 44px;
+  height: 44px;
+  margin-top: -22px;
+  border: 1px solid var(--rt-hairline-strong, var(--ry-border-strong, transparent));
+  border-radius: 50%;
+  background: var(--rt-overlay, var(--ry-elevated, transparent));
+  color: var(--rt-ink-high, inherit);
+  font-size: 1.0625rem;
+  cursor: pointer;
+  box-shadow: 0 6px 18px -10px var(--rt-shadow-ink, transparent);
+  transition:
+    transform var(--rt-duration-fast, 120ms) var(--rt-ease, ease),
+    border-color var(--rt-duration-fast, 120ms) var(--rt-ease, ease);
+}
+
+.flip:hover {
+  transform: rotate(180deg);
+  border-color: var(--rt-action-blue, var(--ry-iris-deep, currentColor));
+}
+
+.flip:focus-visible {
+  outline: 2px solid var(--rt-action-blue, var(--ry-iris-deep, currentColor));
+  outline-offset: 2px;
+}
+
+/* ── What kind of action this is ──────────────────────────────────────── */
+
+.kind {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 24px;
+  padding: 0 4px;
+  font-size: 0.875rem;
+  color: var(--rt-ink-mid, var(--ry-muted, inherit));
+}
+
+.kindDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--rt-reconciled-green, currentColor);
+  flex: none;
+}
+
+.kind[data-tone="off"] .kindDot {
+  background: var(--rt-review-amber, currentColor);
+}
+
+.kindWord {
+  font-weight: 600;
+  color: var(--rt-ink-high, inherit);
+}
+
+.kindMeta {
+  margin-left: auto;
+  font-family: var(--rt-mono, var(--ry-font-mono, monospace));
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ── Facts a person reads before Review ────────────────────────────────── */
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--rt-space-sm, 12px) var(--rt-space-md, 16px);
+  margin: 0;
+  padding: var(--rt-space-sm, 12px) 18px;
+  border-radius: var(--rt-radius-md, 16px);
+  background: var(--rt-panel, var(--ry-deep, transparent));
+  box-shadow: inset 0 0 0 1px var(--rt-hairline, var(--ry-border, transparent));
+}
+
+.facts > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.facts dt {
+  font-size: 0.75rem;
+  color: var(--rt-ink-low, var(--ry-muted, inherit));
+}
+
+.facts dd {
+  margin: 0;
+  font-family: var(--rt-mono, var(--ry-font-mono, monospace));
+  font-size: 0.9375rem;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.note {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--rt-ink-mid, var(--ry-muted, inherit));
+}
+
+/*
+ * The one refusal that is a signpost.
+ *
+ * Two Solana assets is a real pair that this page will not carry, so the note
+ * ends in the way to the page that will. It is a link and reads as one — the
+ * action colour still belongs to the card's own button, and a second filled
+ * control here would compete with it for a press that has not been decided yet.
+ */
+.noteLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  color: var(--rt-ink-high);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  text-decoration-thickness: 1px;
+  border-radius: var(--rt-radius-sm);
+  transition: opacity var(--rt-duration-fast) var(--rt-ease);
+}
+
+.noteLink:hover,
+.noteLink:focus-visible {
+  opacity: 0.78;
+}
+
+/* `--rt-blocked-red-ink` is the dark ink for text sitting ON a solid red
+   fill. Here the fill is a 13% wash over the card, so that ink was very
+   nearly the background colour and the one sentence explaining a refusal
+   was unreadable. `--rt-blocked-red-fg` is what the rest of the product
+   pairs with this wash. */
+/* Measured after that fix and still 4.46:1 against the ground it actually sits
+   on, where 14px needs 4.5 — near enough to look fine and not near enough to
+   be. Mixing toward the ink that already has maximum contrast raises the ratio
+   in **both** themes by construction, and keeps the sentence unmistakably red. */
+.error {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--rt-blocked-red) 34%, transparent);
+  border-radius: var(--rt-radius-sm, 12px);
+  background: var(--rt-blocked-red-soft, transparent);
+  color: color-mix(in srgb, var(--rt-blocked-red-fg) 84%, var(--rt-ink-high));
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+/* The code behind a sentence, for the one depth that can act on it. Quiet
+   enough that the sentence stays the thing a person reads. */
+.failureCode {
+  font-family: var(--rt-mono, var(--ry-font-mono, monospace));
+  font-size: 0.75rem;
+  opacity: 0.72;
+}
+
+.review {
+  display: grid;
+  gap: var(--rt-space-sm, 12px);
+  padding: var(--rt-space-md, 16px) 18px;
+  border-radius: var(--rt-radius-lg, 20px);
+  background: var(--rt-panel, var(--ry-deep, transparent));
+  box-shadow: inset 0 0 0 1px var(--rt-review-amber, currentColor);
+}
+
+.reviewHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--rt-space-sm, 12px);
+}
+
+.reviewGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--rt-space-sm, 12px) var(--rt-space-md, 16px);
+}
+
+.reviewGrid span {
+  display: grid;
+  gap: 4px;
+  font-size: 0.8125rem;
+  color: var(--rt-ink-low, var(--ry-muted, inherit));
+}
+
+.reviewGrid b {
+  font-family: var(--rt-mono, var(--ry-font-mono, monospace));
+  font-size: 0.9375rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--rt-ink-high, inherit);
+  overflow-wrap: anywhere;
+}
+
+.limits {
+  margin: 0;
+  padding-left: 1.1em;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--rt-ink-mid, var(--ry-muted, inherit));
+}
+
+.progress {
+  display: flex;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  flex-wrap: wrap;
+  font-size: 0.8125rem;
+}
+
+.progress li {
+  padding: 5px 12px;
+  border-radius: var(--rt-radius-pill, 999px);
+  border: 1px solid var(--rt-hairline, var(--ry-border, transparent));
+  color: var(--rt-ink-low, var(--ry-muted, inherit));
+}
+
+.progress li[data-state="now"] {
+  border-color: var(--rt-action-blue, currentColor);
+  color: var(--rt-ink-high, inherit);
+}
+
+/*
+ * `--rt-reconciled-green-ink` is the ink that sits *on* the verified green fill
+ * (`--ry-on-verified`, #0B3D2A) and the receipts surface uses it on paper for
+ * exactly that reason. Here the pill has no fill, so that ink was dark green on
+ * a dark panel: the founder's screenshot showed three outlined capsules with no
+ * words in them, once every step had finished. A step that has happened is the
+ * green itself, over a wash of it.
+ */
+.progress li[data-state="done"] {
+  border-color: var(--rt-reconciled-green, currentColor);
+  background: var(--rt-reconciled-green-soft, transparent);
+  color: var(--rt-reconciled-green, inherit);
+}
+
+.cta {
+  width: 100%;
+  min-height: 52px;
+  border: 0;
+  border-radius: var(--rt-radius-md, 16px);
+  background: var(--rt-action-blue, var(--ry-iris-deep, currentColor));
+  color: var(--rt-action-blue-ink, var(--ry-on-iris, inherit));
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: filter var(--rt-duration-fast, 120ms) var(--rt-ease, ease);
+}
+
+.cta:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+
+.cta:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.secondary {
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid var(--rt-hairline, var(--ry-border, transparent));
+  border-radius: var(--rt-radius-md, 16px);
+  background: transparent;
+  color: var(--rt-ink-high, inherit);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+.secondary:hover {
+  border-color: var(--rt-hairline-strong, var(--ry-border-strong, currentColor));
+}
+
+.actions {
+  display: flex;
+  gap: var(--rt-space-xs, 8px);
+  flex-wrap: wrap;
+}
+
+.address {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--rt-hairline, var(--ry-border, transparent));
+  border-radius: var(--rt-radius-sm, 12px);
+  background: var(--rt-page, var(--ry-bg, transparent));
+  color: var(--rt-ink-high, inherit);
+  font-family: var(--rt-mono, var(--ry-font-mono, monospace));
+  font-size: 0.875rem;
+}
+
+.address:focus-visible {
+  outline: 2px solid var(--rt-action-blue, var(--ry-iris-deep, currentColor));
+  outline-offset: -1px;
+}
+
+/* The number a person just typed, at the moment they most need to read it.
+   This said `--rt-blocked-red-ink` — the dark ink meant to sit **on** a solid
+   red fill — over the unfilled leg ground. Measured on production: **1.22 : 1**.
+   It is the same mistake the rule for `.error` below already carries a comment
+   about having fixed once, one selector away; a rule that lives only in prose
+   does not hold. `-fg` is the member of this family meant for text on an
+   unfilled ground: 4.1:1 here, and this text is 32px, which needs 3. */
+.amountInput[data-state="over"] {
+  /* Mixed toward the ink that already has maximum contrast, for the same reason
+     `.error` is: the amount is 32px on a desktop and needs 3:1, but the ramp
+     drops it to 22px on a phone, where it needs 4.5 and `-fg` alone measured
+     4.10. Mixing raises the ratio in both themes and it is still plainly red. */
+  color: color-mix(in srgb, var(--rt-blocked-red-fg) 84%, var(--rt-ink-high));
+}
+
+/* The `≈` on an estimated amount is a qualifier, not a digit. Set inside the
+   32px mono number it read as part of the figure — a wide, heavy glyph the eye
+   tries to parse before the first `0`. Same character, said quietly. */
+.approx {
+  font-size: 0.56em;
+  color: var(--rt-ink-low, var(--ry-muted, inherit));
+  margin-right: 0.5em;
+  vertical-align: 0.26em;
+}
+
+/* A quiet offer beside the address field, not a second primary action. */
+.inlineAction {
+  justify-self: start;
+  min-height: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--rt-action-blue, var(--ry-iris-deep, currentColor));
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.inlineAction:hover,
+.inlineAction:focus-visible {
+  text-decoration: underline;
+  outline: none;
+}
+
+/* ── Asset picker ─────────────────────────────────────────────────────── */
+
+.pickerBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: var(--rt-space-md, 16px);
+  background: var(--rt-shadow-ink, transparent);
+}
+
+.picker {
+  width: min(440px, 100%);
+  max-height: min(70vh, 560px);
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: var(--rt-space-sm, 12px);
+  padding: var(--rt-space-md, 16px);
+  border-radius: var(--rt-radius-lg, 20px);
+  background: var(--rt-overlay, var(--ry-elevated, transparent));
+  border: 1px solid var(--rt-hairline-strong, var(--ry-border-strong, transparent));
+  box-shadow: var(--rt-shadow-overlay, none);
+}
+
+.pickerHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+}
+
+.pickerList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow: auto;
+  display: grid;
+  gap: 2px;
+}
+
+.pickerItem {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  min-height: 48px;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: var(--rt-radius-sm, 12px);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pickerItem:hover,
+.pickerItem:focus-visible {
+  background: var(--rt-raised, var(--ry-card, transparent));
+  outline: none;
+}
+
+.pickerItem[data-selected="true"] {
+  background: var(--rt-action-blue-soft, transparent);
+}
+
+.pickerMeta {
+  display: grid;
+  min-width: 0;
+}
+
+.pickerNote {
+  font-size: 0.75rem;
+  color: var(--rt-ink-low, var(--ry-muted, inherit));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Marks a token nobody has vouched for. Only that one state is labelled: a
+   bare "Verified" beside an asset would read as a Ryntra verdict, which this
+   product does not issue. The rest is kept from reading as vetted-by-omission
+   by the caution above the list. Deliberately not a red alarm — most
+   unverified tokens are simply new, and a warning that shouts is one people
+   learn to dismiss. */
+.pickerFlag {
+  margin-left: auto;
+  flex: none;
+  align-self: center;
+  font-size: 0.6875rem;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  padding: 4px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--rt-hairline, currentColor);
+  color: var(--rt-ink-low, var(--ry-muted, inherit));
+  white-space: nowrap;
+}
+
+
+/* Read before the list, because it changes how the list should be read. */
+.pickerCaution {
+  margin: 0 0 8px;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--rt-ink-low, var(--ry-muted, inherit));
+}
+
+@media (max-width: 640px) {
+  .leg {
+    padding: 14px 14px 16px;
+  }
+
+  .legRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .selector {
+    justify-self: start;
+  }
+
+  .amountInput,
+  .amountOut {
+    font-size: 1.375rem;
+    min-height: 44px;
+  }
+
+  .kindMeta {
+    margin-left: 0;
+    flex-basis: 100%;
+  }
+
+  .kind {
+    flex-wrap: wrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card * {
+    transition: none !important;
+  }
+
+  .flip:hover {
+    transform: none;
+  }
+}
+
+/*
+ * An expired quote, still on screen and no longer an offer.
+ *
+ * Owner rule of 2026-09-10: the last figures may stay for context, but they must
+ * stop looking like something a person can act on. Dimming alone would be a
+ * rendering bug to anyone who has not been told, so the state always ships with
+ * the word beside it — colour is never the only carrier of meaning.
+ *
+ * `--rt-ink-low` rather than an opacity: opacity would fade the figure against
+ * whatever sits behind it and lose its contrast floor on one of the two grounds.
+ */
+.amountOut[data-state="expired"],
+.usdLine[data-state="expired"] {
+  color: var(--rt-ink-low);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+  text-decoration-color: var(--rt-hairline-strong);
+}
+
+.expiredMark {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  margin-top: var(--rt-space-xs);
+  padding: 0.1rem 0.4rem;
+  border: 1px solid var(--rt-hairline-strong);
+  border-radius: var(--rt-radius-pill);
+  font-family: var(--rt-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--rt-ink-mid);
+}
+
+/*
+ * The network a person has no choice about.
+ *
+ * One side of a bridge is always Solana, so it is stated rather than offered:
+ * a menu whose only entry is the one already chosen teaches somebody to expect
+ * a choice they do not have. Same box as `.segment` so the two legs line up,
+ * and no caret, because nothing opens.
+ */
+.segmentFixed {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--rt-hairline);
+  border-radius: var(--rt-radius-pill);
+  background: transparent;
+  color: var(--rt-ink-mid);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* The reverse journey. A link, deliberately — the card already has one action
+   and the direction is a change of question rather than a second thing to do. */
+.direction {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--rt-ink-low);
+}
+
+.directionLink {
+  min-height: 24px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--rt-ink-mid);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  text-decoration-thickness: 1px;
+  cursor: pointer;
+  border-radius: var(--rt-radius-sm);
+  transition: color var(--rt-duration-fast) var(--rt-ease);
+}
+
+.directionLink:hover,
+.directionLink:focus-visible {
+  color: var(--rt-ink-high);
+}
+
+/*
+ * What MAX kept back, and why.
+ *
+ * Owner instruction 2026-09-10: MAX must go through on the first press and leave
+ * as little as possible — and a button that silently returns less than the
+ * balance is one a person cannot tell from a bug. So the reserve is named. Quiet
+ * type, under the balance, because it explains a number rather than asking for a
+ * decision.
+ */
+.heldBack {
+  margin-top: 6px;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--rt-ink-low);
+}
+
+.heldBack span {
+  font-family: var(--rt-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--rt-ink-mid);
+}
+
+/* Why a network in the menu cannot be chosen. Quiet, beside the name, and only
+   present when Relay says the chain is not carrying — a disabled row with no
+   reason is a bug to whoever meets it. */
+.menuNote {
+  margin-left: auto;
+  padding-left: var(--rt-space-sm);
+  font-size: 0.6875rem;
+  color: var(--rt-ink-low);
+  white-space: nowrap;
+}
+
+.menuItem:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}

@@ -1,0 +1,39 @@
+{
+  "note": "One real Circle CCTP V2 transfer from Solana (domain 5) to Base (domain 6), captured from the destination transaction's own receiveMessage calldata. Circle publishes no test vectors, and its contract-interfaces page still documents V1 event shapes for the V2 contracts, so a fixture taken from the documentation would pin a decoder to the wrong layout. This one was read off the chain.",
+  "network": "base-mainnet",
+  "chainId": 8453,
+  "transactionHash": "0x8c031cf27ded22a8835cd0c2f12d8f52bf790847bb177a3359cab990b74bdeb6",
+  "block": "50749476",
+  "messageTransmitterV2": "0x81D40F21F12A8F0E3252Bccb954D722d4c464B64",
+  "tokenMessengerV2": "0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d",
+  "messageHex": "0x0000000100000005000000060aff484ad1c09c079a1cc4a9f50463bcaca33e9308301e8bc69bf258085e3e41a65fc81d0fefa8860cb3b83f089b0224be8a6687b7ae49f594c0b9b4d7e9389300000000000000000000000028b5a0e9c621a5badaa536219b3a228c8168cf5d000000000000000000000000c1062b7c5dc8e4b1df9f200fe360cdc0ed6e774100000001000003e800000001c6fa7af3bedbad3a3d65f36aabc97431b1bbe4c2d2f6e0e47ca60203452f5d61000000000000000000000000c1062b7c5dc8e4b1df9f200fe360cdc0ed6e7741000000000000000000000000000000000000000000000000000000000007d9ebdf4ac26ebf25a4fc6182f93aafc2a3835be2a7e6ad65516582ee14cb3b80b0ed00000000000000000000000000000000000000000000000000000000000000390000000000000000000000000000000000000000000000000000000000000033000000000000000000000000000000000000000000000000000000000307067b03000000000000000000000000ec0a35914bce23460c19666d2b334f6e1a4152e500000000000000000000000000000000000000000000000000000000000000000000000000004d4c000000000000000000000000000037b20000000000001002000000006a971cf90000000000000000000000001f3c3f0243d06a0353abcb066be9140747aeb8c900",
+  "messageBytes": 514,
+  "attestationBytes": 130,
+  "attestationSignatures": 2,
+  "expected": {
+    "version": 1,
+    "sourceDomain": 5,
+    "destinationDomain": 6,
+    "nonce": "0x0aff484ad1c09c079a1cc4a9f50463bcaca33e9308301e8bc69bf258085e3e41",
+    "sender": "0xa65fc81d0fefa8860cb3b83f089b0224be8a6687b7ae49f594c0b9b4d7e93893",
+    "recipient": "0x00000000000000000000000028b5a0e9c621a5badaa536219b3a228c8168cf5d",
+    "destinationCaller": "0x000000000000000000000000c1062b7c5dc8e4b1df9f200fe360cdc0ed6e7741",
+    "minFinalityThreshold": 1,
+    "finalityThresholdExecuted": 1000,
+    "burnToken": "0xc6fa7af3bedbad3a3d65f36aabc97431b1bbe4c2d2f6e0e47ca60203452f5d61",
+    "burnTokenIsSolanaUsdcMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "mintRecipient": "0x000000000000000000000000c1062b7c5dc8e4b1df9f200fe360cdc0ed6e7741",
+    "amountRaw": "514539",
+    "maxFeeRaw": "57",
+    "feeExecutedRaw": "51",
+    "expirationBlock": "50792059"
+  },
+  "topics": {
+    "MessageReceived(address,uint32,bytes32,bytes32,uint32,bytes)": "0xff48c13eda96b1cceacc6b9edeedc9e9db9d6226afbc30146b720c19d3addb1c",
+    "MintAndWithdraw(address,uint256,address,uint256)": "0x50c55e915134d457debfa58eb6f4342956f8b0616d51a89a3659360178e1ab63",
+    "Mint(address,address,uint256)": "0xab8530f87dc9b59234c4623bf917212bb2536d647574c8e7e5da92c2ede0c9f8",
+    "Transfer(address,address,uint256)": "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+  },
+  "observedAt": "2026-09-01",
+  "endpointHost": "mainnet.base.org"
+}

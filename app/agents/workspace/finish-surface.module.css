@@ -1,0 +1,292 @@
+/*
+ * One stylesheet for the three wave-6 surfaces — Operations, Attention and
+ * Team.
+ *
+ * They share a shape because they answer the same *kind* of question: a short
+ * list of rows, each one a fact plus who it belongs to. Three near-identical
+ * stylesheets is how a workspace ends up with three slightly different row
+ * heights, and this repository has already paid for that once — the audit
+ * counted 63 chip families across surfaces that all thought they were doing the
+ * same thing.
+ *
+ * Every colour is a workspace token. Two of them carry meaning and carry it
+ * consistently: a refusal is `--warning-strong` wherever it appears, and a
+ * thing nobody can act on is `--text-faint` wherever it appears.
+ */
+
+.stack {
+  min-width: 0;
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.lede {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: var(--fs-13);
+  line-height: 1.5;
+}
+
+/* ── rows ─────────────────────────────────────────────────────────────────── */
+
+.rows {
+  display: grid;
+  gap: 8px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.row > svg { margin-top: 2px; color: var(--text-dim); }
+.rowAttention > svg { color: var(--warning-strong); }
+.rowInert > svg { color: var(--text-faint); }
+
+.name {
+  color: var(--text);
+  font-size: var(--fs-14);
+  line-height: 1.35;
+}
+
+.what {
+  margin-top: 3px;
+  color: var(--text-dim);
+  font-size: var(--fs-13);
+  line-height: 1.45;
+}
+
+.meta {
+  margin-top: 5px;
+  color: var(--text-faint);
+  font-size: var(--fs-12);
+  line-height: 1.45;
+}
+
+/*
+ * Every actor tag has to read as the same kind of object.
+ *
+ * The first version left the base background at `--panel-3` mixed 60% with
+ * transparent, which on the panel's own surface is very nearly the panel. The
+ * `founder` rows overrode it with an accent tint and were visible; the
+ * `nobody yet` row kept the base and rendered as a stray caption floating
+ * beside the text rather than a label in the same family. Looking at it is what
+ * caught that — the tint difference is invisible to a contrast probe, which
+ * reads text against background and passes either way.
+ */
+.tag {
+  align-self: center;
+  padding: 2px 8px;
+  color: var(--text-dim);
+  background: var(--panel-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-12);
+  white-space: nowrap;
+}
+
+.tagOwner {
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent) 16%, var(--panel-2));
+  border-color: var(--accent-line);
+}
+
+.tagRyntra {
+  color: var(--text);
+  background: color-mix(in srgb, var(--mint) 18%, var(--panel-2));
+}
+
+.tagNobody { color: var(--text-faint); }
+
+/* ── figures ──────────────────────────────────────────────────────────────── */
+
+.figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+}
+
+.figure {
+  padding: 10px 12px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.value {
+  color: var(--text);
+  font-size: var(--fs-24);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.valueQuiet { color: var(--text-faint); }
+
+.caption {
+  margin-top: 3px;
+  color: var(--text-dim);
+  font-size: var(--fs-12);
+  line-height: 1.4;
+}
+
+.kind {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 1px 6px;
+  color: var(--text-faint);
+  background: color-mix(in srgb, var(--panel-3) 60%, transparent);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-12);
+  letter-spacing: 0.04em;
+}
+
+/* ── calm ─────────────────────────────────────────────────────────────────── */
+
+.calm {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  padding: 14px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.calm > svg { color: var(--mint); }
+
+.calmText {
+  color: var(--text-dim);
+  font-size: var(--fs-13);
+  line-height: 1.5;
+}
+
+/* ── field lists ──────────────────────────────────────────────────────────── */
+
+.fieldGroup {
+  display: grid;
+  gap: 6px;
+}
+
+.fieldHeading {
+  color: var(--text-faint);
+  font-size: var(--fs-12);
+  letter-spacing: 0.04em;
+}
+
+.fieldList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.field {
+  padding: 3px 9px;
+  color: var(--text);
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: var(--mono);
+  font-size: var(--fs-12);
+}
+
+.fieldSecret {
+  color: var(--text-faint);
+  border-style: dashed;
+}
+
+/* ── tables ───────────────────────────────────────────────────────────────── */
+
+.table {
+  overflow-x: auto;
+}
+
+.table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-13);
+}
+
+.table th,
+.table td {
+  padding: 7px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.table th {
+  color: var(--text-faint);
+  font-weight: 500;
+  font-size: var(--fs-12);
+  letter-spacing: 0.04em;
+}
+
+.table td { color: var(--text-dim); }
+.table td:first-child { color: var(--text); }
+.table tr:last-child td { border-bottom: 0; }
+
+.num { font-variant-numeric: tabular-nums; }
+.refused { color: var(--warning-strong); }
+.blocked { color: var(--text-faint); }
+
+/* ── the explanation, behind an icon ──────────────────────────────────────── */
+
+.explain {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--panel-2);
+}
+
+.explain > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 12px;
+  color: var(--text-dim);
+  font-size: var(--fs-13);
+  cursor: pointer;
+  list-style: none;
+}
+
+.explain > summary::-webkit-details-marker { display: none; }
+.explain > summary:hover { color: var(--text); }
+.explain > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.explain > div {
+  padding: 0 12px 12px;
+  color: var(--text-dim);
+  font-size: var(--fs-13);
+  line-height: 1.55;
+}
+
+.explain code {
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: var(--fs-12);
+}
+
+/* ── the narrow layout ────────────────────────────────────────────────────── */
+
+@media (max-width: 767px) {
+  .row {
+    grid-template-columns: 18px minmax(0, 1fr);
+  }
+
+  .tag {
+    grid-column: 2;
+    justify-self: start;
+    margin-top: 6px;
+  }
+
+  .figures {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

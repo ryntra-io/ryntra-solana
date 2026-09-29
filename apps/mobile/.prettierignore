@@ -1,0 +1,15 @@
+# Add files here to ignore them from prettier formatting
+/.expo
+/android
+/coverage
+/dist
+/ios
+/tmp
+pnpm-lock.yaml
+.agents
+agent
+src/uniwind-types.d.ts
+
+# The API client pinned by content from the web line (src/lib/api/v1/PIN.json) — never edited here
+/src/lib/api/v1/types.ts
+/src/lib/api/v1/client.ts

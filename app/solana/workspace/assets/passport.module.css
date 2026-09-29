@@ -1,0 +1,151 @@
+/*
+ * The Solana Passport surface.
+ *
+ * Only what the shared workspace system does not already carry: the sticky
+ * identity header, the unknowns rail and the small text roles around them.
+ * Panels, rows, badges, buttons and the type scale all come from `app/shell/`,
+ * because a second visual system for one page is exactly the drift
+ * `docs/design/workspace-system.md` exists to stop.
+ *
+ * Token discipline: every custom property here is a defined token —
+ * `--border`, `--text`, `--text-dim`, `--text-faint`, `--accent`, `--panel`,
+ * `--mono`, `--radius-sm`. The sweep gate fails the suite on any other name.
+ */
+
+/*
+ * Identity, pinned.
+ *
+ * The one element the Passport template fixes in place: the subject stays on
+ * screen for the whole page. It carries its own opaque surface rather than
+ * borrowing the canvas background, so content scrolling under it cannot show
+ * through.
+ */
+.identity {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+}
+
+/* The documented workspace page-title step. When a mint is on the starting
+   list its ticker is the largest thing on the plate; otherwise the address
+   itself carries the identity and nothing pretends to a name. */
+.identityCode {
+  font-family: var(--mono);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+.identityModel {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+/* Full-width lines, so identity never wraps into the metadata. */
+.identityMeta {
+  flex-basis: 100%;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-faint);
+  overflow-wrap: anywhere;
+}
+
+.identityLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+.identityLink:hover {
+  color: var(--accent);
+}
+
+.mono {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+/*
+ * A section whose source did not answer states why, in the section's own
+ * body. Quiet type: there is nothing to press — the section is honest, not
+ * broken.
+ */
+.absent {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--text-dim);
+}
+
+/*
+ * The unknowns rail: permanent, never collapsed.
+ *
+ * It is the visual proof that the page does not fill gaps. This release
+ * always has standing entries — metadata, price, concentration — so the rail
+ * cannot be empty, which is itself the honest state.
+ */
+.unknowns {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.unknown {
+  display: grid;
+  gap: 4px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.unknown:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.unknownField {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.unknownReason {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-dim);
+}
+
+/* Decoded extension fields: data, not prose — mono, wrapped, quiet. */
+.extensionFields {
+  display: block;
+  margin-top: 2px;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-faint);
+  overflow-wrap: anywhere;
+}
+
+.linksBlock {
+  margin: 14px 0 0;
+}

@@ -1,0 +1,310 @@
+/*
+ * The lab's own chrome: a thin Ryntra frame around whatever the aggregator
+ * renders. Every colour, radius and size is a token from app/design/tokens.css
+ * so the frame follows the site's theme; the aggregator's surfaces inside the
+ * stage keep their own tokens (`--agg-*`) and are deliberately not restyled
+ * on the first two tabs — the Owner asked to see the original AGG UX first.
+ */
+
+.frame {
+  min-height: 100dvh;
+  background: var(--ry-bg);
+  color: var(--ry-text);
+  font-family: var(--ry-font-sans);
+  display: flex;
+  flex-direction: column;
+}
+
+.boot {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  background: var(--ry-bg);
+  color: var(--ry-muted);
+  font-family: var(--ry-font-sans);
+}
+
+.bootLine {
+  margin: 0;
+  font-size: var(--ry-fs-body);
+}
+
+/* ---- top bar ---------------------------------------------------------- */
+
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ry-s3) var(--ry-s4);
+  padding: var(--ry-s3) var(--ry-s4);
+  background: var(--ry-deep);
+  border-bottom: 1px solid var(--ry-border);
+}
+
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ry-s2);
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--ry-fs-title);
+  font-weight: 600;
+  letter-spacing: var(--ry-ls-head);
+  white-space: nowrap;
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+  white-space: nowrap;
+}
+
+.paperBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-caution-soft);
+  color: var(--ry-caution);
+  border: 1px solid color-mix(in srgb, var(--ry-caution) 45%, transparent);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.paperBadge::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.tabs {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-card);
+  border: 1px solid var(--ry-border);
+  gap: 2px;
+}
+
+.tab {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--ry-muted);
+  font: inherit;
+  font-size: var(--ry-fs-data);
+  font-weight: 500;
+  padding: 7px 12px;
+  border-radius: var(--ry-r-btn-sm);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.tab:hover {
+  color: var(--ry-text);
+  background: var(--ry-hover);
+}
+
+.tabOn,
+.tabOn:hover {
+  color: var(--ry-text);
+  background: var(--ry-elevated);
+  box-shadow: inset 0 0 0 1px var(--ry-border-strong);
+}
+
+.tabIndex {
+  color: var(--ry-accent);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label-sm);
+  margin-right: 6px;
+}
+
+.barRight {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s3);
+}
+
+.ghost {
+  appearance: none;
+  border: 1px solid var(--ry-border);
+  background: var(--ry-card);
+  color: var(--ry-text);
+  font: inherit;
+  font-size: var(--ry-fs-data);
+  padding: 7px 12px;
+  border-radius: var(--ry-r-btn);
+  cursor: pointer;
+}
+
+.ghost:hover {
+  background: var(--ry-hover);
+}
+
+.ghost:focus-visible,
+.tab:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+}
+
+/* The aggregator's connect button lives in its own root so its menu, avatar
+   and sign-in chooser keep AGG's tokens. */
+.connect {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s2);
+}
+
+.connectLabel {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+  white-space: nowrap;
+}
+
+/* ---- stage ------------------------------------------------------------ */
+
+.stage {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ry-s2) var(--ry-s4);
+  padding: var(--ry-s2) var(--ry-s4);
+  border-bottom: 1px solid var(--ry-border);
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-data);
+}
+
+.note strong {
+  color: var(--ry-text);
+  font-weight: 600;
+}
+
+.subnav {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.subnavItem {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--ry-muted);
+  font: inherit;
+  font-size: var(--ry-fs-data);
+  padding: 4px 10px;
+  border-radius: var(--ry-r-pill);
+  cursor: pointer;
+}
+
+.subnavItem:hover {
+  color: var(--ry-text);
+  background: var(--ry-hover);
+}
+
+.subnavOn,
+.subnavOn:hover {
+  color: var(--ry-accent-fg);
+  background: var(--ry-accent);
+}
+
+.subnavItem:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* The aggregator's surface: painted from AGG's own tokens, resolved on the
+   `.agg-root` element their provider renders, so the light and the dark
+   theme are theirs and not ours. */
+.aggStage {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--agg-color-secondary-hover);
+  color: var(--agg-color-foreground);
+  font-family: var(--agg-font-family-sans, ui-sans-serif, system-ui, sans-serif);
+}
+
+.aggInner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 var(--ry-s4) var(--ry-s8, 32px);
+}
+
+.aggInnerFull {
+  padding: 0;
+}
+
+.empty {
+  padding: var(--ry-s6, 24px) var(--ry-s4);
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-body);
+}
+
+.empty a,
+.note a {
+  color: var(--ry-accent);
+  text-decoration: none;
+}
+
+.empty a:hover,
+.note a:hover {
+  text-decoration: underline;
+}
+
+.kicker {
+  margin: 0 0 var(--ry-s1);
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+@media (max-width: 720px) {
+  .bar {
+    gap: var(--ry-s2) var(--ry-s3);
+    padding: var(--ry-s2) var(--ry-s3);
+  }
+
+  .subtitle {
+    display: none;
+  }
+
+  .tab {
+    padding: 6px 9px;
+  }
+
+  /* Three tabs do not fit a phone beside the badge: the strip takes the row
+     and scrolls sideways instead of clipping the third label. */
+  .tabs {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .barRight {
+    width: 100%;
+    margin-left: 0;
+    justify-content: space-between;
+  }
+}

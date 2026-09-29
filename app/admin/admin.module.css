@@ -1,0 +1,684 @@
+/* ============================================================
+   Ryntra Admin — спільний каркас і панель керування.
+
+   Токени беруться з app/globals.css, тому область живе і в
+   темній, і в світлій темі й не створює другої дизайн-системи.
+   Публічні класи (.cb-*, .dm-*) звідси не перевизначаються:
+   усе локальне для CSS-модуля.
+   ============================================================ */
+
+.root {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--text);
+
+  /* `--danger` поверх `--danger-soft` дає ≈3.9:1 — нижче за AA 4.5:1 для
+     дрібного тексту. Освітлена версія дає ≈5.8:1. У світлій темі базовий
+     колір уже контрастний на майже білому тлі, тому там освітлювати не можна. */
+  --admin-danger-text: color-mix(in srgb, var(--danger) 68%, #ffffff);
+}
+
+[data-theme="light"] .root {
+  --admin-danger-text: var(--danger);
+}
+
+.root :where(a, button, input, select, textarea, summary):focus-visible {
+  outline: 3px solid var(--accent-2);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+.logout {
+  font-size: 12px;
+  color: var(--text-faint);
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+  padding: 6px 4px;
+}
+
+.logout:hover {
+  color: var(--danger);
+}
+
+/* ── Сітка панелі ────────────────────────────────────────── */
+
+.body {
+  flex: 1;
+  width: 100%;
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 26px 22px 80px;
+  display: grid;
+  gap: 16px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.card {
+  grid-column: span 12;
+  display: grid;
+  gap: 13px;
+  align-content: start;
+  padding: 17px 19px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  min-width: 0;
+}
+
+.cardHalf {
+  grid-column: span 6;
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.cardTitle {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+  margin: 0;
+}
+
+.cardNote {
+  font-size: 11px;
+  color: var(--text-faint);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px 9px;
+  white-space: nowrap;
+}
+
+.cardSpacer {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── Показники ───────────────────────────────────────────── */
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  gap: 9px;
+}
+
+.stat {
+  display: grid;
+  gap: 3px;
+  padding: 11px 13px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--panel-2);
+}
+
+.statValue {
+  font-family: var(--mono);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--text);
+  font-style: normal;
+}
+
+/* Невідоме ніколи не фарбується як значення: нуль і «немає даних» —
+   різні факти, і панель не має права їх зливати. */
+.statUnknown {
+  color: var(--text-faint);
+  font-size: 18px;
+}
+
+.statLabel {
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  line-height: 1.35;
+}
+
+/* ── Спарклайн ───────────────────────────────────────────── */
+
+.spark {
+  display: flex;
+  gap: 4px;
+  align-items: flex-end;
+  height: 104px;
+}
+
+.sparkBar {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+  gap: 4px;
+  min-width: 0;
+}
+
+.sparkFill {
+  display: block;
+  width: 100%;
+  min-height: 2px;
+  border-radius: 4px 4px 0 0;
+  background: linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent) 45%, transparent));
+}
+
+.sparkDay {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+/* ── Таблиці ─────────────────────────────────────────────── */
+
+.tableWrap {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.tableWrap:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.tableWide {
+  min-width: 660px;
+}
+
+.table caption {
+  text-align: start;
+  padding: 9px 12px;
+  font-size: 11px;
+  color: var(--text-faint);
+  border-bottom: 1px solid var(--border);
+  background: var(--panel-2);
+}
+
+.table th,
+.table td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+  text-align: start;
+  vertical-align: middle;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.table th {
+  color: var(--text);
+  background: var(--panel-2);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.table tbody tr:hover td {
+  background: var(--panel-2);
+}
+
+.cellMono {
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.cellMuted {
+  color: var(--text-faint);
+}
+
+.cellNum {
+  font-family: var(--mono);
+  text-align: end;
+}
+
+/* ── Стани ───────────────────────────────────────────────── */
+
+.state {
+  display: grid;
+  gap: 9px;
+  justify-items: start;
+  padding: 22px 20px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--panel-2);
+}
+
+.stateTitle {
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--text);
+  margin: 0;
+}
+
+.stateText {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-dim);
+  margin: 0;
+  max-width: 62ch;
+}
+
+.banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-dim);
+}
+
+.bannerError {
+  border-color: color-mix(in srgb, var(--danger) 42%, transparent);
+  background: var(--danger-soft);
+}
+
+.bannerOk {
+  border-color: color-mix(in srgb, var(--success) 40%, transparent);
+  background: var(--success-soft);
+}
+
+.bannerSpacer {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Скелет замість «Loading…»: висота не стрибає, коли дані приходять. */
+.skeleton {
+  display: grid;
+  gap: 9px;
+}
+
+.skeletonRow {
+  height: 54px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg, var(--panel-2) 0%, var(--panel-3) 50%, var(--panel-2) 100%);
+  background-size: 200% 100%;
+  animation: adminShimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes adminShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Елементи керування ──────────────────────────────────── */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 9px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  background: var(--panel-3);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+
+.btn:hover:not(:disabled) {
+  border-color: var(--accent-line);
+  color: var(--accent);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btnPrimary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.btnPrimary:hover:not(:disabled) {
+  filter: brightness(1.07);
+  color: var(--accent-ink);
+}
+
+.btnDanger {
+  background: var(--danger-soft);
+  border-color: color-mix(in srgb, var(--danger) 45%, transparent);
+  color: var(--admin-danger-text);
+}
+
+.btnDanger:hover:not(:disabled) {
+  filter: brightness(1.08);
+  color: var(--admin-danger-text);
+}
+
+.btnGhost {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--text-faint);
+}
+
+.btnSm {
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.btnIcon {
+  padding: 7px;
+  min-width: 32px;
+}
+
+.btnRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.fieldLabel {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.input,
+.select,
+.textarea {
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  background: var(--panel-2);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 96px;
+}
+
+.input::placeholder,
+.textarea::placeholder {
+  color: var(--text-faint);
+}
+
+.hint {
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text-faint);
+  margin: 0;
+}
+
+.hintWarn {
+  color: var(--warning);
+}
+
+.counter {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.searchRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  flex: 1;
+  min-width: 220px;
+}
+
+.searchRow .input {
+  flex: 1;
+  min-width: 180px;
+}
+
+/* ── Рядок прямого повідомлення ──────────────────────────── */
+
+.dmRow {
+  display: grid;
+  gap: 9px;
+  padding: 13px 15px;
+  border: 1px solid var(--accent-line);
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+}
+
+.dmTarget {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.dmTarget b {
+  color: var(--text);
+}
+
+.dmControls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.dmControls .input {
+  flex: 1;
+  min-width: 200px;
+}
+
+/* ── Позначки ────────────────────────────────────────────── */
+
+.mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 3px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.markOk {
+  color: var(--success);
+  background: var(--success-soft);
+  border: 1px solid color-mix(in srgb, var(--success) 34%, transparent);
+}
+
+.markOff {
+  color: var(--text-faint);
+  background: var(--panel-3);
+  border: 1px solid var(--border);
+}
+
+/* ── Адаптив ─────────────────────────────────────────────── */
+
+@media (max-width: 1000px) {
+  .cardHalf {
+    grid-column: span 12;
+  }
+}
+
+@media (max-width: 760px) {
+  .chrome {
+    padding: 10px 15px;
+  }
+  .body {
+    padding: 18px 15px 72px;
+  }
+  .brandTag {
+    display: none;
+  }
+  /* Бренд теж клікабельний — зона дотику має бути не меншою за інші. */
+  .brand,
+  .navLink,
+  .btn,
+  .logout {
+    min-height: 44px;
+    align-items: center;
+  }
+  .stats {
+    grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeletonRow {
+    animation: none;
+  }
+  .navLink,
+  .btn,
+  .table tbody tr {
+    transition: none;
+  }
+}
+
+/* ── Друк ────────────────────────────────────────────────── */
+/* Шапка спільна, тому й ховається тут — інакше кожна поверхня, яка її
+   використовує, мусила б памʼятати про це у власному модулі. */
+.pageTitle {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0 0 4px;
+}
+
+.pageLead {
+  margin: 0 0 22px;
+  color: var(--text-faint);
+}
+
+.laterCopy {
+  margin: 0;
+  color: var(--text-faint);
+  max-width: 42rem;
+}
+
+.attentionList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.attentionItem {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+}
+
+.funnel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.funnelStep {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 88px;
+}
+
+.funnelName {
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+.drawer {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin: 12px 0 16px;
+  background: var(--panel);
+}
+
+.drawerFacts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px 16px;
+  margin: 12px 0;
+}
+
+.drawerFacts dt {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.drawerFacts dd {
+  margin: 2px 0 0;
+  font-size: 14px;
+}
+
+.reasonField {
+  margin-top: 10px;
+}
+
+@media print {
+  .chrome {
+    display: none !important;
+  }
+  .root {
+    background: #fff;
+    color: #000;
+  }
+}
+
+/* /admin/login — one card, centred, outside the admin shell */
+.loginWrap { min-height: 100dvh; display: grid; place-items: start center; padding: var(--ry-s6) var(--ry-s4); }
+.loginWrap .card { width: min(100%, 520px); display: grid; gap: var(--ry-s3); }
+.eyebrow { margin: 0; font-family: var(--ry-font-mono); font-size: var(--ry-fs-label-sm); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ry-muted); }
+.actions { display: grid; gap: var(--ry-s3); justify-items: start; }
+.mono { font-family: var(--ry-font-mono); font-size: var(--ry-fs-dense); word-break: break-all; user-select: all; }
+
+/* fresh second factor for a sensitive action */
+.reverifyBackdrop { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: var(--ry-s4); background: rgba(0, 0, 0, 0.5); }
+.reverify { width: min(100%, 420px); display: grid; gap: var(--ry-s3); }

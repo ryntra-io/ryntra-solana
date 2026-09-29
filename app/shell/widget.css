@@ -1,0 +1,30 @@
+/* ==========================================================================
+   The widget wrapper's own layout contract.
+
+   `WorkspaceWidget` (widget.tsx) wraps every registered widget in a
+   `.rs-widget` div so the shell's Layout menu has something to order, show and
+   hide. That wrapper must generate no box: the panel inside it carries the
+   grid spans (`.rw-w6`, `.rw-h4` in panel.css), and `.rw-grid` is a twelve
+   column grid. If the wrapper is a normal block it becomes the grid item
+   instead of the panel, the spans land on a child where the grid cannot read
+   them, and every panel silently collapses to one column of twelve.
+
+   That is not a hypothetical. This rule used to live in `shell.css`, which is
+   imported by `app-shell.tsx` alone, so it reached a screen only when that
+   screen was rendered inside the app shell. A public page renders the same
+   panels outside the shell, and shipped to production with four
+   panels 81px wide at 1440 and 13px at 375 — headings truncated to three
+   characters, body text stacked one letter per line, content overlapping the
+   footer. Every gate was green: no type error, no failing test, no design
+   token violation, no broken route. None of them renders a page.
+
+   So the rule lives here, next to the component that emits the class, and
+   `widget.tsx` imports it. A stylesheet imported by a component travels with
+   every consumer of that component; a stylesheet imported by one page does
+   not. The shell keeps only the rule that is genuinely about the shell's own
+   canvas (`.rs-canvas > .rs-widget > .dm-root`).
+   ========================================================================== */
+
+.rs-widget {
+  display: contents;
+}

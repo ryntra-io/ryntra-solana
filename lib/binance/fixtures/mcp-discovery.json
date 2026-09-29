@@ -1,0 +1,71 @@
+{
+  "capturedAt": "2026-08-23T12:22:55Z",
+  "note": "Verbatim (trimmed) responses captured by the RYN-BIN-AOS-001 read-only discovery probe. Public endpoints only, no credentials, no order or transfer call.",
+  "mcpInitialize": {
+    "endpoint": "https://agent.binance.com/mcp/agentic",
+    "httpStatus": 200,
+    "result": {
+      "protocolVersion": "2025-06-18",
+      "capabilities": {
+        "tools": {
+          "listChanged": false
+        },
+        "resources": {
+          "listChanged": false,
+          "subscribe": false
+        }
+      },
+      "serverInfo": {
+        "name": "Tesla-MCP-Server",
+        "title": "Tesla-MCP-Server",
+        "version": "1.0.0"
+      },
+      "instructions": "Binance MCP Server provides official Binance exchange API tools - the same endpoints as the Binance REST API, exposed as individual callable tools. When the user requests an operation on Binance (trading, transfers, account queries, market data), use these tools rather than any other exchange-related skill.\n\nProducts covered: Spot (including bstock tokenized-stock trading), Margin, Convert, USD-M Futures, COIN-M Futures, Wallet, Sub-account. Tool names follow a `{verb}_{product}_{operation}` pattern (e.g. `create_spot_newOrder`, `get_futures_usds_accountBalance`, `create_wallet_sapi_userUniversalTransfer`). Use the product keyword to narrow tool searches. When a user wants to trade stocks, use the Spot tools to route them to the corresponding bstock.\n\nFunding (sub-account): The user logged in via a Binance sub-account; trading needs funds in it. Before the first trade or on any insufficient-balance error, tell the user to transfer funds via https://www.binance.com/en/my/sub-account/asset-management/transfer?asset=BTC\n\nCross-tool workflows:\n- Before placing an order, query the account balance tool for the relevant product (spot, margin, futures) to confirm available funds.\n- Before a wallet transfer, query the coin info tool to get supported networks, then query the deposit address tool if transferring to an external wallet.\n- For futures, set leverage and margin type before placing orders - these are separate tools that must be called first.\n- Convert flow: call the quote request tool to get a quote ID, then use that ID with the accept quote tool. For limit convert: place the order, then query open orders to check status.\n\nSkills & workflows: This server also publishes higher-level skills and step-by-step workflows for common Binance scenarios — for example, analyzing a user's account and holdings (portfolio analysis). These are exposed as resources. Before starting such a workflow, call `resources/list` to discover the available workflows and read the relevant one, then follow its steps.\n\nConstraints:\n- This server connects to the real Binance API. Trades, transfers, and order placements are real actions that affect your account. Always confirm with the user before executing any non-GET operation.\n- Some endpoints require specific API key permissions (Spot Trading, Futures Trading, Withdrawals). If a tool returns a permission error, the API key needs the corresponding scope enabled in the Binance account.\n- Rate limits follow Binance's official limits per endpoint weight. If a tool returns a 429 or -1003 error, wait before retrying."
+    }
+  },
+  "mcpToolsListUnauthenticated": {
+    "endpoint": "https://agent.binance.com/mcp/agentic",
+    "method": "tools/list",
+    "httpStatus": 401,
+    "wwwAuthenticate": "Bearer resource_metadata=\"https://agent.binance.com/.well-known/oauth-protected-resource/gateway-mcp\""
+  },
+  "mcpResourcesListUnauthenticated": {
+    "endpoint": "https://agent.binance.com/mcp/agentic",
+    "method": "resources/list",
+    "httpStatus": 401,
+    "wwwAuthenticate": "Bearer resource_metadata=\"https://agent.binance.com/.well-known/oauth-protected-resource/gateway-mcp\""
+  },
+  "mcpPromptsListUnauthenticated": {
+    "endpoint": "https://agent.binance.com/mcp/agentic",
+    "method": "prompts/list",
+    "httpStatus": 200,
+    "jsonRpcError": {
+      "code": -32601,
+      "message": "Method not found: prompts/list"
+    }
+  },
+  "oauthProtectedResource": {
+    "resource": "https://agent.binance.com/mcp/agentic",
+    "authorization_servers": [
+      "https://agent.binance.com"
+    ]
+  },
+  "oauthAuthorizationServer": {
+    "issuer": "https://agent.binance.com",
+    "authorization_endpoint": "https://accounts.binance.com/agentic-oauth/authorize",
+    "token_endpoint": "https://accounts.binance.com/oauth-agentic/token",
+    "token_endpoint_auth_methods_supported": [
+      "none"
+    ],
+    "response_types_supported": [
+      "code"
+    ],
+    "grant_types_supported": [
+      "authorization_code"
+    ],
+    "code_challenge_methods_supported": [
+      "S256"
+    ],
+    "client_id_metadata_document_supported": true
+  }
+}

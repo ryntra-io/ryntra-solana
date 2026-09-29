@@ -1,0 +1,153 @@
+/* The hero — the Owner's render as the hero itself (hero.tsx).
+
+   The section is the render's own dark ground in both themes, the way a
+   product shot stays what it is on a light page; every colour is a token and
+   every size a ramp step. From 1024 px up the picture is the whole hero, as
+   large as the first screen allows without leaving it; below that the words
+   stand above the picture, because the render's type would be too small. */
+
+.hero {
+  /* The render's own edge tone — a shade under the canon's midnight. The
+     landing paints it on `main` as one continuous ground, so the section
+     itself is transparent and no seam can show between it and the next. */
+  --hero-ground: var(--landing-ground, color-mix(in srgb, var(--ry-midnight) 40%, black));
+  position: relative;
+  isolation: isolate;
+  /* `clip`, not `hidden`: a hidden overflow makes the section a scroll
+     container, and the scroll-driven recession below would then measure
+     the picture against the section instead of the page. */
+  overflow: clip;
+  /* The landing's global `section` rule pads every section 78px; the picture
+     sits flush under the header instead. */
+  padding: 0;
+  background: transparent;
+  color: var(--ry-mist);
+}
+
+/* ── the picture ─────────────────────────────────────────────────────────── */
+.art {
+  position: relative;
+  /* Never wider than the screen, never taller than the first screen under the
+     72px header, and at most a quarter over the render's own 1672 px, where
+     the upscale still reads clean. */
+  width: min(100%, 2080px, calc((100vh - 72px) * 1672 / 941));
+  aspect-ratio: 1672 / 941;
+  margin: 0 auto;
+  transform-origin: 50% 100%;
+}
+/* Every edge of the picture dissolves into the ground — by a mask on the
+   picture, not by a gradient painted over it. The render's own last rows
+   are the ground's tone on average but not everywhere, so at 2560px the
+   picture's rectangle showed as a faint line; and a gradient painted in the
+   ground's colour did not remove it, because Skia rounds a gradient's
+   near-black stop a level or two under the same colour laid down as a fill
+   (measured 2026-09-14: the overlay's last row 1/2/4, the ground 2/4/6). A
+   mask lets the ground itself show through the picture's edges, so the last
+   row is the ground by construction. Sides 7%, head 7%, foot 12%. */
+.artMotion {
+  position: relative;
+  mask-image:
+    linear-gradient(90deg, transparent 0%, black 7%, black 93%, transparent 100%),
+    linear-gradient(180deg, transparent 0%, black 7%, black 88%, transparent 100%);
+  mask-composite: intersect;
+  -webkit-mask-image:
+    linear-gradient(90deg, transparent 0%, black 7%, black 93%, transparent 100%),
+    linear-gradient(180deg, transparent 0%, black 7%, black 88%, transparent 100%);
+  -webkit-mask-composite: source-in;
+}
+.image { display: block; width: 100%; height: auto; }
+
+/* The one live thing on the picture: a link laid over the button's place. */
+.openArea {
+  position: absolute;
+  z-index: 2;
+  display: block;
+  border-radius: var(--ry-r-card);
+  transition: box-shadow 160ms cubic-bezier(.16, 1, .3, 1), background-color 160ms ease;
+}
+.openArea:hover {
+  background: color-mix(in srgb, var(--ry-mist) 8%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ry-mist) 40%, transparent), var(--ry-brand-glow-strong);
+}
+.openArea:active { background: color-mix(in srgb, var(--ry-midnight) 14%, transparent); }
+.openArea:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--ry-mist), var(--ry-focus), var(--ry-brand-glow-strong);
+}
+
+/* ── the words: in the document always, on screen only below 1024px ─────── */
+.copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--ry-s4);
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: var(--ry-s7) var(--ry-s4) var(--ry-s5);
+  container-type: inline-size;
+}
+.h1 {
+  margin: 0;
+  font-family: var(--ry-font-sans);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -.035em;
+  text-transform: uppercase;
+  font-size: min(var(--ry-fs-display), 10.5cqw);
+}
+.h1 span { display: block; }
+.h1Accent { color: var(--ry-iris); }
+.sub { margin: 0; font-size: var(--ry-fs-lead); font-weight: 500; line-height: 1.3; letter-spacing: -.01em; }
+.lead { margin: 0; max-width: 34em; font-size: var(--ry-fs-body); line-height: 1.55; color: var(--ry-unknown); text-wrap: pretty; }
+.actions { display: flex; flex-wrap: wrap; gap: var(--ry-s4); margin-top: var(--ry-s2); }
+.primary {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--ry-s2); height: 52px; padding: 0 28px;
+  border-radius: var(--ry-r-btn); background: var(--ry-gradient); border: 1px solid var(--ry-brand-edge);
+  color: var(--ry-on-iris); font-size: var(--ry-fs-app); font-weight: 600; line-height: 1; text-decoration: none;
+  box-shadow: var(--ry-brand-glow);
+  transition: transform 160ms cubic-bezier(.16, 1, .3, 1), box-shadow 160ms cubic-bezier(.16, 1, .3, 1), background-color 160ms ease;
+}
+.primary:hover { background: var(--ry-gradient-hover); transform: translateY(-1px); box-shadow: var(--ry-brand-glow-strong); }
+.primary:active { transform: translateY(0); }
+.primary:focus-visible { outline: none; box-shadow: var(--ry-focus); }
+
+@media (min-width: 1024px) {
+  /* The picture says all of this; the words stay for the reader who cannot
+     see it and for the search engine. */
+  .copy { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+}
+@media (max-width: 1023px) {
+  /* The visible button above is the way in; a hair-sized second target on
+     the small picture would only be noise. */
+  .openArea { display: none; }
+  /* The words stand above the picture here, so the picture shows the
+     product and not the words again: it is cropped to its right side — the
+     workspace and the Rewards card — square, the render's own text column
+     left out of the frame. */
+  .art { width: 100%; aspect-ratio: 1 / 1; }
+  .artMotion { height: 100%; mask-image: linear-gradient(180deg, transparent 0%, black 7%, black 88%, transparent 100%); -webkit-mask-image: linear-gradient(180deg, transparent 0%, black 7%, black 88%, transparent 100%); }
+  .image { height: 100%; object-fit: cover; object-position: 100% 50%; }
+}
+
+/* ── motion: one entrance, then the recession under the scroll ───────────── */
+@keyframes heroArt { from { opacity: 0; transform: translateY(18px) scale(.99); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes heroRise { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+.artMotion { animation: heroArt 700ms cubic-bezier(.2, .7, .3, 1) both; }
+/* As the reader scrolls on, the picture settles toward its foot and dims while
+   the next section rises over it. Driven by the scroll itself, on the
+   compositor; from the position it holds at the top of the page (about half
+   its cover range) to the moment it has left. */
+@keyframes heroRecede { from { scale: 1; opacity: 1; } to { scale: .97; opacity: .45; } }
+@supports (animation-timeline: view()) {
+  @media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+    .art { animation: heroRecede linear both; animation-timeline: view(); animation-range: cover 47% cover 100%; }
+  }
+}
+.copy > * { animation: heroRise 450ms cubic-bezier(.2, .7, .3, 1) both; }
+.copy > :nth-child(2) { animation-delay: 70ms; }
+.copy > :nth-child(3) { animation-delay: 140ms; }
+.copy > :nth-child(4) { animation-delay: 210ms; }
+@media (prefers-reduced-motion: reduce) {
+  .hero *, .hero *::before, .hero *::after { animation: none !important; transition: none !important; }
+}

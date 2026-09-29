@@ -1,0 +1,477 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "RYNTRA_PUBLIC_FILE_LIST",
+  "repository": "ryntra-solana-evidence",
+  "license": "Apache-2.0",
+  "note": "The files this package is made of. Generated from the publication allowlist; the boundary test reads this list and scans exactly these files, so a file added without being listed never reaches the public repository.",
+  "files": [
+    {
+      "path": "BUILDLOG.md",
+      "role": "generated_build_log"
+    },
+    {
+      "path": "docs/product/README.md",
+      "role": "documentation"
+    },
+    {
+      "path": "docs/product/analytics.md",
+      "role": "documentation"
+    },
+    {
+      "path": "docs/product/risk-review.md",
+      "role": "documentation"
+    },
+    {
+      "path": "docs/product/status.json",
+      "role": "generated_status"
+    },
+    {
+      "path": "docs/product/tokenized-stocks.md",
+      "role": "documentation"
+    },
+    {
+      "path": "docs/product/trading-plans.md",
+      "role": "documentation"
+    },
+    {
+      "path": "docs/product/trading.md",
+      "role": "documentation"
+    },
+    {
+      "path": "docs/screenshots/predictions-hub.png",
+      "role": "screenshot"
+    },
+    {
+      "path": "docs/screenshots/predictions-market.png",
+      "role": "screenshot"
+    },
+    {
+      "path": "docs/screenshots/send-recipient-check.png",
+      "role": "screenshot"
+    },
+    {
+      "path": "docs/screenshots/spot-stock-quote.png",
+      "role": "screenshot"
+    },
+    {
+      "path": "docs/screenshots/stats-overview.png",
+      "role": "screenshot"
+    },
+    {
+      "path": "docs/screenshots/stock-flows-board.png",
+      "role": "screenshot"
+    },
+    {
+      "path": "docs/screenshots/stock-listed-asset.png",
+      "role": "screenshot"
+    },
+    {
+      "path": "docs/screenshots/stock-onchain-activity.png",
+      "role": "screenshot"
+    },
+    {
+      "path": "docs/screenshots/stock-pre-ipo-asset.png",
+      "role": "screenshot"
+    },
+    {
+      "path": "docs/screenshots/stock-private-buy-warning.png",
+      "role": "screenshot"
+    },
+    {
+      "path": "docs/screenshots/stock-private-company.png",
+      "role": "screenshot"
+    },
+    {
+      "path": "docs/screenshots/stock-private-conversion.png",
+      "role": "screenshot"
+    },
+    {
+      "path": "docs/screenshots/stock-risk-due-diligence.png",
+      "role": "screenshot"
+    },
+    {
+      "path": "docs/screenshots/stocks-pre-ipo-screener.png",
+      "role": "screenshot"
+    },
+    {
+      "path": "docs/screenshots/stocks-private-screener.png",
+      "role": "screenshot"
+    },
+    {
+      "path": "docs/screenshots/trading-plan-builder.png",
+      "role": "screenshot"
+    },
+    {
+      "path": "docs/screenshots/trading-plan-condition.png",
+      "role": "screenshot"
+    },
+    {
+      "path": "docs/screenshots/trading-plan-token-builder.png",
+      "role": "screenshot"
+    },
+    {
+      "path": "docs/screenshots/trading-plan-token-picker.png",
+      "role": "screenshot"
+    },
+    {
+      "path": "docs/screenshots/try-it-nvdax.png",
+      "role": "screenshot"
+    },
+    {
+      "path": "docs/solana/schemas/solana-asset-passport.schema.json",
+      "role": "published_schema"
+    },
+    {
+      "path": "docs/solana/schemas/solana-owner-policy.schema.json",
+      "role": "published_schema"
+    },
+    {
+      "path": "docs/solana/schemas/solana-policy-verdict.schema.json",
+      "role": "published_schema"
+    },
+    {
+      "path": "docs/solana/schemas/spl-transfer-preflight.schema.json",
+      "role": "published_schema"
+    },
+    {
+      "path": "examples/solana-evidence-cli/README.md",
+      "role": "documentation"
+    },
+    {
+      "path": "examples/solana-evidence-cli/cli.test.mjs",
+      "role": "network_free_test"
+    },
+    {
+      "path": "examples/solana-evidence-cli/cli.ts",
+      "role": "source"
+    },
+    {
+      "path": "examples/solana-evidence-cli/package.json",
+      "role": "package_metadata"
+    },
+    {
+      "path": "examples/stock-flows/README.md",
+      "role": "documentation"
+    },
+    {
+      "path": "examples/stock-flows/flows.test.mjs",
+      "role": "network_free_test"
+    },
+    {
+      "path": "examples/stock-flows/flows.ts",
+      "role": "source"
+    },
+    {
+      "path": "examples/stock-flows/radar.ts",
+      "role": "source"
+    },
+    {
+      "path": "examples/stock-flows/report.ts",
+      "role": "source"
+    },
+    {
+      "path": "examples/stock-flows/universe.snapshot.json",
+      "role": "public_fixture"
+    },
+    {
+      "path": "lib/agent-control/adapters/jupiter-swap.ts",
+      "role": "source"
+    },
+    {
+      "path": "lib/agent-control/adapters/solana-token-2022.ts",
+      "role": "source"
+    },
+    {
+      "path": "lib/agent-control/canonical.ts",
+      "role": "source"
+    },
+    {
+      "path": "lib/evidence/address.ts",
+      "role": "source"
+    },
+    {
+      "path": "lib/evidence/conditions.ts",
+      "role": "source"
+    },
+    {
+      "path": "lib/evidence/envelope.ts",
+      "role": "source"
+    },
+    {
+      "path": "lib/evidence/flags.ts",
+      "role": "source"
+    },
+    {
+      "path": "lib/evidence/governor.ts",
+      "role": "source"
+    },
+    {
+      "path": "lib/evidence/metrics.ts",
+      "role": "source"
+    },
+    {
+      "path": "lib/evidence/providers/ddxyz/adapter.server.ts",
+      "role": "source"
+    },
+    {
+      "path": "lib/evidence/providers/ddxyz/client.server.ts",
+      "role": "source"
+    },
+    {
+      "path": "lib/evidence/providers/ddxyz/mapper.ts",
+      "role": "source"
+    },
+    {
+      "path": "lib/evidence/providers/nansen/adapter.server.ts",
+      "role": "source"
+    },
+    {
+      "path": "lib/evidence/providers/nansen/client.server.ts",
+      "role": "source"
+    },
+    {
+      "path": "lib/evidence/providers/nansen/mapper.ts",
+      "role": "source"
+    },
+    {
+      "path": "lib/evidence/rights.ts",
+      "role": "source"
+    },
+    {
+      "path": "lib/evidence/snapshot.ts",
+      "role": "source"
+    },
+    {
+      "path": "lib/guard/canonical-json.ts",
+      "role": "source"
+    },
+    {
+      "path": "lib/plans/decimal-input.ts",
+      "role": "source"
+    },
+    {
+      "path": "lib/plans/sizing.ts",
+      "role": "source"
+    },
+    {
+      "path": "lib/predictions/failure.ts",
+      "role": "source"
+    },
+    {
+      "path": "lib/predictions/plan-model.ts",
+      "role": "source"
+    },
+    {
+      "path": "lib/solana/address.ts",
+      "role": "source"
+    },
+    {
+      "path": "lib/solana/amounts.ts",
+      "role": "source"
+    },
+    {
+      "path": "lib/solana/contracts.ts",
+      "role": "source"
+    },
+    {
+      "path": "lib/solana/evidence.ts",
+      "role": "source"
+    },
+    {
+      "path": "lib/solana/fixtures/bern-t22.json",
+      "role": "public_fixture"
+    },
+    {
+      "path": "lib/solana/fixtures/bonk-spl.json",
+      "role": "public_fixture"
+    },
+    {
+      "path": "lib/solana/fixtures/not-a-mint.json",
+      "role": "public_fixture"
+    },
+    {
+      "path": "lib/solana/fixtures/pyusd-t22.json",
+      "role": "public_fixture"
+    },
+    {
+      "path": "lib/solana/fixtures/receipt-other-chain-signed.json",
+      "role": "public_fixture"
+    },
+    {
+      "path": "lib/solana/fixtures/receipt-solana-deviation-unsigned.json",
+      "role": "public_fixture"
+    },
+    {
+      "path": "lib/solana/fixtures/receipt-solana-matched-signed.json",
+      "role": "public_fixture"
+    },
+    {
+      "path": "lib/solana/fixtures/receipt-solana-tampered.json",
+      "role": "public_fixture"
+    },
+    {
+      "path": "lib/solana/fixtures/usdc-spl.json",
+      "role": "public_fixture"
+    },
+    {
+      "path": "lib/solana/fixtures/usdt-spl.json",
+      "role": "public_fixture"
+    },
+    {
+      "path": "lib/solana/fixtures/wsol-spl.json",
+      "role": "public_fixture"
+    },
+    {
+      "path": "lib/solana/mint.ts",
+      "role": "source"
+    },
+    {
+      "path": "lib/solana/passport.ts",
+      "role": "source"
+    },
+    {
+      "path": "lib/solana/policy.ts",
+      "role": "source"
+    },
+    {
+      "path": "lib/solana/preflight.ts",
+      "role": "source"
+    },
+    {
+      "path": "lib/solana/receipt-corrections.ts",
+      "role": "source"
+    },
+    {
+      "path": "lib/solana/receipt.ts",
+      "role": "source"
+    },
+    {
+      "path": "lib/solana/rpc.ts",
+      "role": "source"
+    },
+    {
+      "path": "lib/solana/semantics.ts",
+      "role": "source"
+    },
+    {
+      "path": "lib/solana/types.ts",
+      "role": "source"
+    },
+    {
+      "path": "lib/stocks/instrument.ts",
+      "role": "source"
+    },
+    {
+      "path": "lib/stocks/lifecycle-events.ts",
+      "role": "source"
+    },
+    {
+      "path": "lib/stocks/session.ts",
+      "role": "source"
+    },
+    {
+      "path": "lib/stocks/units.ts",
+      "role": "source"
+    },
+    {
+      "path": "packages/evidence/README.md",
+      "role": "documentation"
+    },
+    {
+      "path": "packages/evidence/package.json",
+      "role": "package_metadata"
+    },
+    {
+      "path": "packages/evidence/src/index.test.mjs",
+      "role": "network_free_test"
+    },
+    {
+      "path": "packages/evidence/src/index.ts",
+      "role": "source"
+    },
+    {
+      "path": "packages/evidence/src/live-read.mjs",
+      "role": "source"
+    },
+    {
+      "path": "packages/solana-evidence-mcp/README.md",
+      "role": "documentation"
+    },
+    {
+      "path": "packages/solana-evidence-mcp/package.json",
+      "role": "package_metadata"
+    },
+    {
+      "path": "packages/solana-evidence-mcp/server.test.mjs",
+      "role": "network_free_test"
+    },
+    {
+      "path": "packages/solana-evidence-mcp/src/serve.ts",
+      "role": "source"
+    },
+    {
+      "path": "packages/solana-evidence-mcp/src/server.ts",
+      "role": "source"
+    },
+    {
+      "path": "packages/solana-evidence-mcp/src/stdio.ts",
+      "role": "source"
+    },
+    {
+      "path": "packages/solana-evidence-sdk/README.md",
+      "role": "documentation"
+    },
+    {
+      "path": "packages/solana-evidence-sdk/boundaries.test.mjs",
+      "role": "network_free_test"
+    },
+    {
+      "path": "packages/solana-evidence-sdk/package.json",
+      "role": "package_metadata"
+    },
+    {
+      "path": "packages/solana-evidence-sdk/public-files.json",
+      "role": "generated_file_list"
+    },
+    {
+      "path": "packages/solana-evidence-sdk/src/index.test.mjs",
+      "role": "network_free_test"
+    },
+    {
+      "path": "packages/solana-evidence-sdk/src/index.ts",
+      "role": "source"
+    },
+    {
+      "path": "packages/tokenized-stocks/README.md",
+      "role": "documentation"
+    },
+    {
+      "path": "packages/tokenized-stocks/package.json",
+      "role": "package_metadata"
+    },
+    {
+      "path": "packages/tokenized-stocks/src/index.test.mjs",
+      "role": "network_free_test"
+    },
+    {
+      "path": "packages/tokenized-stocks/src/index.ts",
+      "role": "source"
+    },
+    {
+      "path": "packages/trading-plans/README.md",
+      "role": "documentation"
+    },
+    {
+      "path": "packages/trading-plans/package.json",
+      "role": "package_metadata"
+    },
+    {
+      "path": "packages/trading-plans/src/index.test.mjs",
+      "role": "network_free_test"
+    },
+    {
+      "path": "packages/trading-plans/src/index.ts",
+      "role": "source"
+    }
+  ]
+}

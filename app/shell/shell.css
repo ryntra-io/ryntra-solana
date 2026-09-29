@@ -1,0 +1,2286 @@
+/* ============================================================================
+   RyntraAppShell — one application shell
+   ============================================================================
+
+   There is one Ryntra. A workspace changes the canvas and the inspector; it
+   never changes the brand, the navigation structure, the account or the way
+   back. That is the whole difference between "the same product in another
+   context" and the two separate applications this shell replaces.
+
+   Four zones, three of them optional:
+
+     top      always
+     nav      collapsible to an icon rail, a drawer below 1024px
+     canvas   the workspace, using every pixel it is given
+     inspector optional, contextual, remembered, a sheet on mobile
+
+   The palette is the site's, so a visitor who arrives from the homepage does
+   not experience a change of company on sign-in.
+   ========================================================================== */
+
+.rs {
+  /* One token authority: app/globals.css `:root`. Every shell name below is an
+     alias into it — the parallel literal palette this block used to carry is
+     the two-simultaneous-cyans defect the workspace spec §4 closes. Light theme
+     resolves through the same aliases via the root `[data-theme="light"]`
+     overrides, so the chrome and the canvas can no longer disagree. */
+  --ink: var(--bg);
+  --deep: var(--panel-2);
+  --raised: var(--panel-3);
+  --hairline: var(--border);
+  --hairline-strong: var(--border-strong);
+  --fg: var(--text);
+  --fg-dim: var(--text-dim);
+  --fg-muted: var(--text-faint);
+  --cyan: var(--accent);
+  --mint: var(--success);
+  --amber: var(--warning);
+  --red: var(--danger);
+
+  /* Two families (DESIGN.md): every role resolves through the projection.
+     The rt-bridge already re-resolved these inside .rs; the base now agrees. */
+  --display: var(--rt-font);
+  --tech: var(--rt-mono);
+  --body: var(--rt-font);
+  --mono: var(--rt-mono);
+
+  --rs-top: 64px;
+  --rs-nav: 268px;
+  --rs-insp: 380px;
+
+  display: grid;
+  grid-template-columns: var(--rs-nav) minmax(0, 1fr) var(--rs-insp);
+  grid-template-rows: var(--rs-top) minmax(0, 1fr);
+  grid-template-areas:
+    "top top top"
+    "nav canvas inspector";
+  min-height: 100dvh;
+  /* The ground is not flat black: graphite in the centre, a navy undertone
+     at the edges, no orange anywhere on the page (Brand Canon v1.0 §2). */
+  background: var(--ry-ground, var(--ink));
+  color: var(--fg);
+  font-family: var(--body);
+  /* A figure never changes width when it changes value: every number in the
+     terminal is tabular, in the interface face and in the mono face alike. */
+  font-variant-numeric: tabular-nums;
+  overflow-x: clip;
+}
+
+/* Collapsed navigation keeps the icons and the tooltips; it does not disappear,
+   because a rail you can still aim at is not the same as no navigation. */
+.rs[data-nav="collapsed"] { --rs-nav: 72px; }
+.rs[data-inspector="closed"] { --rs-insp: 0px; }
+
+/* Focus mode: the terminal gets the screen, and Escape gives it back. */
+/* Focus mode's rules lived here. The mode is gone — it hid the navigation and
+   the inspector, which the collapse arrow beside the logo already does. */
+
+.rs *, .rs *::before, .rs *::after { box-sizing: border-box; }
+:where(.rs) :where(a) { color: inherit; text-decoration: none; }
+.rs :where(a, button, select, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.rs-skip {
+  position: absolute;
+  inset-inline-start: -9999px;
+  top: 6px;
+  z-index: 90;
+  padding: 9px 14px;
+  background: var(--fg);
+  color: var(--ink);
+  font-size: 0.88rem;
+}
+.rs-skip:focus { inset-inline-start: 10px; }
+/* The skip link is the first control a keyboard reaches on a phone. */
+@media (max-width: 640px) { .rs-skip { min-height: 44px; display: inline-flex; align-items: center; } }
+
+/* ==================================================================== top == */
+/*
+ * Shell v2 chrome.
+ *
+ * Everything below is the frozen system directly — `--ry-*` tokens, no legacy
+ * aliases — because this is the surface the standard names defect by defect:
+ * the 56px bar that felt compressed, the backdrop blur, the chamfered switcher
+ * trigger, the 12px uppercase eyebrow, and the cyan that made an application
+ * built in 2026 read as a crypto admin panel from 2019.
+ *
+ * The one rule that governs the rest: nothing here is below 14px, and mono is
+ * reserved for addresses, numbers and status metadata rather than applied to
+ * every label that wanted to look technical.
+ */
+
+.rs-top {
+  grid-area: top;
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  padding-inline: var(--ry-s4);
+  border-bottom: 1px solid var(--ry-border);
+  /* Solid, and the rail's own tone, so the chrome reads as one frame around
+     the canvas. The blur it once had cost a compositor layer on every scroll
+     and bought a bar that changed colour with whatever was under it. */
+  background: var(--ry-sidebar);
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+.rs-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  padding-inline: var(--ry-s1);
+}
+/* The wordmark where there is horizontal room; the standalone R on the phone
+   (Brand Canon v1.0 §Placements). Both are in the DOM so the swap is CSS. */
+.rs-brand-mark { display: none; }
+@media (max-width: 520px) {
+  .rs-brand .ryntra-brand { display: none; }
+  .rs-brand-mark { display: block; }
+}
+
+/*
+ * The top bar's controls are drawn as controls.
+ *
+ * `background: none` on a transparent border put the context toggle between two
+ * bordered buttons and a bordered wallet button as the only thing on the row
+ * with no edge at all — it read as a caption, not as something to press. The
+ * rail's own quiet variant keeps the borderless treatment below, where a row of
+ * bordered boxes would be the wrong answer.
+ */
+.rs-navtoggle,
+.rs-tool {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ry-s2);
+  height: 36px;
+  min-width: 36px;
+  padding-inline: var(--ry-s3);
+  background: var(--ry-card);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  color: var(--ry-muted);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  cursor: pointer;
+  transition: color 0.18s ease, background-color 0.18s ease, border-color 0.18s ease;
+}
+/* The word beside the hamburger, phone only. It is the entrance to every
+   surface in the workspace and it had no name on it. */
+.rs-navtoggle-label {
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.rs-navtoggle:hover,
+.rs-tool:hover { color: var(--ry-text); background: var(--ry-hover); }
+.rs-tool[data-on="true"] {
+  color: var(--ry-text);
+  border-color: color-mix(in srgb, var(--ry-iris) 45%, transparent);
+  background: color-mix(in srgb, var(--ry-iris) 16%, transparent);
+}
+
+/* The right cluster. `margin-inline-start: auto` is what puts the connection
+   control at the far right on every workspace without any of them arranging
+   it. */
+.rs-tools {
+  margin-inline-start: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s1);
+}
+
+/* The disclosure a stated limitation is allowed to have (DESIGN.md §Panel Rule:
+   one line plus a control, never a paragraph). Inline so the summary continues
+   the sentence it qualifies instead of opening a second block under it. */
+.rs-disclose { display: inline; }
+.rs-disclose > summary {
+  display: inline;
+  cursor: pointer;
+  color: var(--ry-text);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  list-style: none;
+}
+.rs-disclose > summary::-webkit-details-marker { display: none; }
+.rs-disclose > summary:focus-visible { outline: 2px solid var(--ry-iris); outline-offset: 3px; }
+.rs-disclose > p {
+  margin: var(--ry-s2) 0 0;
+  max-width: 88ch;
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+}
+
+/* ============================================================ shell menu == */
+/*
+ * One popover for the whole chrome: the switcher and the connection control
+ * are the same box with different contents. They used to be two, plus one hub's
+ * third, and the three disagreed about width, radius, shadow and Escape.
+ */
+
+.rs-menu { position: relative; }
+
+.rs-menu-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  height: 36px;
+  padding: 0 var(--ry-s3);
+  background: var(--ry-card);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  color: var(--ry-text);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color 0.18s ease, background-color 0.18s ease;
+}
+.rs-menu-trigger:hover { border-color: var(--ry-border-strong); background: var(--ry-hover); }
+.rs-menu-trigger[aria-expanded="true"] { border-color: var(--ry-iris); }
+.rs-menu-ic { display: inline-flex; align-items: center; }
+.rs-menu-label { display: inline-flex; align-items: center; gap: var(--ry-s2); min-width: 0; }
+
+.rs-menu-panel {
+  position: absolute;
+  top: calc(100% + var(--ry-s2));
+  z-index: 60;
+  width: min(360px, calc(100vw - var(--ry-s6)));
+  padding: var(--ry-s2);
+  background: var(--ry-elevated);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  box-shadow: var(--ry-shadow-elevated);
+  display: grid;
+  gap: var(--ry-s1);
+}
+.rs-menu[data-align="start"] > .rs-menu-panel {
+  inset-inline-start: 0;
+  width: min(380px, calc(100vw - var(--ry-s6)));
+}
+.rs-menu[data-align="end"] > .rs-menu-panel { inset-inline-end: 0; }
+
+.rs-menu-section {
+  display: grid;
+  gap: var(--ry-s2);
+  padding: var(--ry-s3);
+}
+.rs-menu-section + .rs-menu-section { border-top: 1px solid var(--ry-border); }
+/* A slot with nothing to say — a guest's identity — draws no band and no rule above the next. */
+.rs-menu-section:empty { display: none; }
+.rs-menu-section:empty + .rs-menu-section { border-top: 0; }
+
+.rs-menu-title {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+.rs-menu-body { margin: 0; font-size: var(--ry-fs-app); color: var(--ry-text); }
+.rs-menu-hint {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+}
+
+.rs-menu-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ry-s3);
+}
+.rs-menu-row-label { margin: 0; font-size: var(--ry-fs-dense); color: var(--ry-muted); }
+.rs-menu-row-value {
+  margin: 0;
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+  text-align: end;
+}
+/* Network names and states are prose, not data. Mono on a phrase like
+   a public testnet's name is the legacy terminal habit this system removes. */
+.rs-menu-row-value[data-prose="true"] { font-family: var(--ry-font-sans); }
+
+.rs-menu-action {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  width: 100%;
+  min-height: 36px;
+  padding: var(--ry-s2) var(--ry-s3);
+  background: var(--ry-card);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  color: var(--ry-text);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  text-align: start;
+  cursor: pointer;
+}
+.rs-menu-action:hover { background: var(--ry-hover); border-color: var(--ry-border-strong); }
+.rs-menu-action[data-variant="primary"] {
+  background: var(--ry-iris-deep);
+  border-color: var(--ry-iris-deep);
+  color: var(--ry-on-iris);
+  justify-content: center;
+}
+.rs-menu-action[data-variant="primary"]:hover { background: var(--ry-iris-pressed); }
+.rs-menu-action:disabled { opacity: 0.55; cursor: default; }
+
+/* The wallet list. Stacked rather than gridded: the names are the wallets'
+   own and range from "OKX Wallet" to one word, so a two-column grid would
+   wrap half of them and align none. */
+.rs-menu-choices {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ry-s2);
+}
+/* No radius: a wallet's mark is its own artwork and already carries the shape
+   its brand intends. The scale's smallest corner is 8px, which on an 18px box
+   is a circle — rounding Phantom's square into one is not a system applying
+   itself, it is a system overwriting a logo. */
+.rs-menu-choice-icon {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+
+/* ------------------------------------------------------ workspace switcher */
+
+.rs-switch { max-width: 15rem; }
+.rs-switch .rs-menu-label { overflow: hidden; }
+.rs-switch-name-full { overflow: hidden; text-overflow: ellipsis; }
+.rs-switch-name-mobile { display: none; }
+
+/* `padding: 0` is load-bearing, not tidiness.
+   These are `<section>` elements, and a bare section inherits the landing
+   rhythm from the global sheet: 78px top and bottom. Measured on the live
+   switcher — every group 156px taller than its own content, the whole panel
+   1291px instead of 400. The repository has hit this exact trap twice before,
+   both times inside a menu, which is why `panel-system.test.mjs` now scans this
+   file's markup as well. */
+.rs-switch-group { display: grid; gap: 2px; padding: 0; margin: 0; }
+.rs-switch-group + .rs-switch-group { margin-top: var(--ry-s2); }
+
+/* One heading style for every panel in the chrome — the switcher's four
+   groupings and the View menu's Mode/Density/Panels alike.
+
+   These were `.rs-switch-group` in both places, which worked only while that
+   class was a heading. Shell v2 needed it as the switcher's group *container*,
+   and the two meanings collided: the View menu's headings became grid boxes
+   with no type on them. Naming the heading for what it is, rather than for the
+   control that happened to use it first, is what stops the next collision. */
+.rs-menu-heading {
+  margin: 0;
+  padding: var(--ry-s2) var(--ry-s3) var(--ry-s1);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ry-muted);
+}
+
+.rs-switch-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 2px var(--ry-s3);
+  width: 100%;
+  padding: var(--ry-s2) var(--ry-s3);
+  border-radius: var(--ry-r-btn-sm);
+  color: var(--ry-text);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-app);
+}
+.rs-switch-item:hover { background: var(--ry-hover); }
+.rs-switch-item[aria-current="true"] {
+  background: color-mix(in srgb, var(--ry-iris) 14%, transparent);
+  box-shadow: inset 2px 0 0 var(--ry-iris);
+}
+.rs-switch-item-ic { display: inline-flex; align-items: center; color: var(--ry-muted); }
+.rs-switch-item[aria-current="true"] .rs-switch-item-ic { color: var(--ry-iris); }
+.rs-switch-item-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rs-switch-check { color: var(--ry-iris); }
+/* One muted line, and only one. What used to also sit in this row — the
+   environment, the maturity, the account state — are three different kinds of
+   fact and none of them helps a person choose where to go. */
+.rs-switch-item small {
+  grid-column: 2 / -1;
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+  line-height: 1.45;
+}
+
+.rs-switch-more {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ry-s3);
+  margin-top: var(--ry-s2);
+  padding: var(--ry-s3);
+  border-top: 1px solid var(--ry-border);
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-dense);
+}
+.rs-switch-more:hover { color: var(--ry-text); background: var(--ry-hover); }
+
+/* The environment. A separate chip because it is a separate fact: the workspace
+   is the product, the environment is the network or mode it runs in. */
+.rs-env {
+  flex: none;
+  /* The reading face, not the machine one.
+     A network's name is a place, not a payload. Set in mono beside a
+     wordmark and a workspace name it read as a console prompt, which is the
+     single complaint the founder opened this pass with — and it survived the
+     sweep that took monospace off the status chips because it lives in the
+     shell rather than in any workspace. Hashes, addresses and amounts keep
+     the mono face; the name of an environment never was one. */
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  padding: var(--ry-s1) var(--ry-s2);
+  border-radius: var(--ry-r-chip);
+  background: var(--ry-env-bg);
+  border: 1px solid var(--ry-border);
+  color: var(--ry-env-tx);
+  white-space: nowrap;
+}
+
+/* The release stage beside the brand. Quiet by design — orange is the brand,
+   the action and the active state, never a label — set in the same voice as
+   the environment chip so the two read as one row of facts. */
+.rs-beta {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding-inline: var(--ry-s2);
+  border: 1px solid var(--ry-border-strong);
+  border-radius: var(--ry-r-pill);
+  color: var(--ry-muted);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* ====================================================== connection control */
+/*
+ * The far-right control, in seven states. `data-state` carries every one of
+ * them, so a state can be styled without a second class appearing in the JSX —
+ * and so a state with no rule here still renders as the neutral trigger rather
+ * than as nothing.
+ */
+
+.rs-conn { border-color: var(--ry-border-strong); }
+.rs-conn-short { display: none; }
+.rs-conn-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+/* Mono only once there is an address to show. `Connect` in mono was the legacy
+   terminal voice applied to an ordinary verb. */
+.rs-conn-label[data-mono="true"] {
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.rs-conn-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--ry-verified);
+}
+.rs-conn[data-state="CONNECTED"] { border-color: color-mix(in srgb, var(--ry-verified) 40%, transparent); }
+.rs-conn[data-state="ACTION_PENDING"] { border-color: color-mix(in srgb, var(--ry-caution) 55%, transparent); }
+.rs-conn[data-state="ACTION_PENDING"] .rs-conn-dot { background: var(--ry-caution); }
+.rs-conn[data-state="WRONG_NETWORK"],
+.rs-conn[data-state="ERROR"] {
+  border-color: color-mix(in srgb, var(--ry-risk) 55%, transparent);
+  color: var(--ry-risk);
+}
+
+/* -------------------------------------------------------------- state tag */
+
+.rs-tag {
+  align-self: start;
+  justify-self: start;
+  grid-column: 2;
+  font-family: var(--tech);
+  font-size: var(--fs-12);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border: 1px solid var(--hairline-strong);
+  color: var(--fg-muted);
+  white-space: nowrap;
+}
+.rs-tag[data-tone="verified"] { color: var(--mint); border-color: color-mix(in srgb, var(--success) 42%, transparent); }
+.rs-tag[data-tone="evidence"] { color: var(--cyan); border-color: var(--accent-line); }
+.rs-tag[data-tone="caution"] { color: var(--amber); border-color: color-mix(in srgb, var(--warning) 42%, transparent); }
+
+/* ======================================================== action console == */
+/*
+ * The drawer an action happens in. Desktop: a fixed right-hand column, inside
+ * the frozen 380–440px band. Mobile: a bottom sheet that stops short of the top
+ * so the surface behind it stays visible — the action is *beside* the reason
+ * for it, never instead of it.
+ */
+
+.rs-action {
+  position: fixed;
+  inset-block: var(--rs-top) 0;
+  inset-inline-end: 0;
+  z-index: 65;
+  width: min(420px, 92vw);
+  display: flex;
+  flex-direction: column;
+  background: var(--ry-elevated);
+  border-inline-start: 1px solid var(--ry-border);
+  box-shadow: var(--ry-shadow-elevated);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.rs-action-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ry-s3);
+  padding: var(--ry-s4);
+  background: var(--ry-elevated);
+  border-bottom: 1px solid var(--ry-border);
+}
+
+.rs-action-heading { display: grid; gap: var(--ry-s2); min-width: 0; }
+
+.rs-action-title {
+  margin: 0;
+  font-family: var(--ry-font-display);
+  font-size: var(--ry-fs-h3);
+  line-height: var(--ry-lh-head);
+  letter-spacing: var(--ry-ls-head);
+  color: var(--ry-text);
+}
+
+/* The environment, stated where the signature happens rather than inferred from
+   a chip three controls away in the top bar. The frozen system requires it to
+   be explicit at the moment of authorization, and this is that moment. */
+.rs-action-env {
+  justify-self: start;
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+  letter-spacing: 0.04em;
+  padding: var(--ry-s1) var(--ry-s2);
+  border-radius: var(--ry-r-chip);
+  background: var(--ry-env-bg);
+  border: 1px solid var(--ry-border);
+  color: var(--ry-env-tx);
+}
+
+.rs-action-close {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--ry-r-btn-sm);
+  color: var(--ry-muted);
+  cursor: pointer;
+}
+.rs-action-close:hover { background: var(--ry-hover); color: var(--ry-text); }
+
+.rs-action-lead {
+  margin: 0;
+  padding: var(--ry-s4) var(--ry-s4) 0;
+  font-size: var(--ry-fs-dense);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+}
+
+.rs-action-body {
+  padding: var(--ry-s4);
+  display: grid;
+  gap: var(--ry-s4);
+  /* A size container, so a console authored for a full canvas can answer the
+     width it actually has rather than the width of the window.
+
+     This is the difference the drawer exposes: one hub's send console collapses its
+     three columns at 900px of *viewport*, and inside a 420px drawer on a 1440px
+     screen not one of those breakpoints fires — measured, the three columns
+     came out ~90px each with single words per line and the third clipped. A
+     container query is the only thing that can see the real constraint.
+
+     Safe here because nothing inside the drawer positions itself `fixed`; a
+     size container would otherwise become their containing block. */
+  container-type: inline-size;
+}
+
+.rs-action-foot {
+  margin-top: auto;
+  padding: var(--ry-s3) var(--ry-s4);
+  border-top: 1px solid var(--ry-border);
+  font-size: var(--ry-fs-dense);
+}
+.rs-action-foot a { color: var(--ry-muted); }
+.rs-action-foot a:hover { color: var(--ry-text); }
+
+@media (max-width: 900px) {
+  /* A bottom sheet, stopping short of the top: the surface that gave the reason
+     for the action stays on screen above it. 44px targets are inherited from
+     the controls inside; the sheet only has to not swallow the page. */
+  .rs-action {
+    inset: auto 0 0 0;
+    width: 100%;
+    max-height: 88dvh;
+    border-inline-start: 0;
+    border-top: 1px solid var(--ry-border);
+    border-radius: var(--ry-r-card) var(--ry-r-card) 0 0;
+  }
+  .rs-action-close { width: 44px; height: 44px; }
+}
+
+/* ================================================================ context == */
+
+.rs-context { display: flex; align-items: center; gap: 7px; min-width: 0; overflow: hidden; }
+
+.rs-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--hairline);
+  background: rgba(255, 255, 255, 0.02);
+  white-space: nowrap;
+}
+.rs-chip-k {
+  font-family: var(--tech);
+  font-size: var(--fs-12);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+.rs-chip-v { font-size: 0.82rem; color: var(--fg-dim); }
+.rs-chip-v.mono { font-family: var(--mono); font-size: 0.76rem; }
+.rs-chip[data-alert="true"] { border-color: color-mix(in srgb, var(--danger) 50%, transparent); background: var(--danger-soft); }
+.rs-chip[data-alert="true"] .rs-chip-k { color: var(--red); }
+
+button.rs-chip { cursor: pointer; font-family: var(--body); color: var(--fg); }
+button.rs-chip:hover { border-color: var(--cyan); }
+
+/* ==================================================================== nav == */
+/*
+ * The rail is two boxes, not one list.
+ *
+ * `rs-nav-scroll` holds the four modules and whatever footer a workspace adds;
+ * `rs-nav-pinned` holds View and Settings and never scrolls away. That split is
+ * the structural half of "Settings always bottom-left" — before it, Settings was
+ * simply the last entry of whichever group a workspace filed it under, so it sat
+ * under `System` in one hub, under `System` in Home, and nowhere at all in Agent
+ * Control. A position that each workspace decides is not a fixed position.
+ */
+
+.rs-nav {
+  grid-area: nav;
+  border-inline-end: 1px solid var(--ry-border);
+  background: var(--ry-sidebar);
+  padding: var(--ry-s3) 0 var(--ry-s3);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: var(--rs-top);
+  height: calc(100dvh - var(--rs-top));
+}
+
+/*
+ * The rail scrolls, and now it looks like it does.
+ *
+ * At 1440x900 — an ordinary laptop — the list ended exactly on `Агенти` and the
+ * fourth module, Journal with `Активність`, `Квитанції` and `Верифікатор`, was
+ * below the fold with no scrollbar, no fade and nothing else to suggest there
+ * was more. On a hub's receipts page that also meant the rail highlighted
+ * nothing at all, because the current page was one of the rows nobody could
+ * see. A stable gutter plus a fade at the bottom edge is the whole fix; the
+ * three tightenings below hand back about ninety pixels so the four modules fit
+ * a 900px window in the first place. Nothing is removed from the rail.
+ */
+.rs-nav-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ry-border) transparent;
+  -webkit-mask-image: linear-gradient(to bottom, rgb(0 0 0) calc(100% - 24px), transparent);
+  mask-image: linear-gradient(to bottom, rgb(0 0 0) calc(100% - 24px), transparent);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ry-s1);
+}
+
+/* ------------------------------------------------------------ rail actions */
+/*
+ * The money verbs, pinned above the places.
+ *
+ * They used to be filled cards in a two-column grid so they would not read as
+ * navigation. That difference made them look like a second product sitting on
+ * the rail. They are the same quiet row as the destinations now: an icon and
+ * a word. The title still names the group so the verbs are not mistaken for
+ * more places.
+ */
+.rs-nav-actions {
+  display: grid;
+  gap: 2px;
+  padding-block: 4px;
+}
+
+.rs-nav-actions-title {
+  margin: 0;
+  padding: var(--ry-s2) var(--ry-s4) var(--ry-s1);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ry-muted);
+}
+
+.rs-nav-actions-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2px;
+}
+
+.rs-nav-action {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--ry-s3);
+  min-height: 38px;
+  margin-inline: var(--ry-s2);
+  padding: var(--ry-s2) var(--ry-s3);
+  border: 0;
+  border-inline-start: 2px solid transparent;
+  border-radius: var(--ry-r-btn-sm);
+  background: transparent;
+  color: var(--ry-text);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-app);
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.16s ease, color 0.16s ease;
+}
+
+.rs-nav-action:hover {
+  background: var(--ry-hover);
+  color: var(--ry-text);
+}
+
+.rs-nav-action:focus-visible {
+  outline: 2px solid var(--ry-iris);
+  outline-offset: -2px;
+}
+
+.rs-nav-action-ic {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: color-mix(in srgb, var(--ry-text) 62%, var(--ry-muted));
+}
+
+.rs-nav-action:hover .rs-nav-action-ic { color: var(--ry-text); }
+
+.rs-nav-action-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rs-nav-action[data-state="gate"] { color: var(--ry-text); }
+.rs-nav-action[data-state="gate"] .rs-nav-action-ic { color: var(--ry-muted); }
+
+.rs[data-nav="collapsed"] .rs-nav-actions-title { visibility: hidden; height: var(--ry-s3); padding: 0; }
+
+.rs[data-nav="collapsed"] .rs-nav-action {
+  grid-template-columns: 24px;
+  justify-content: center;
+  padding-inline: var(--ry-s3);
+}
+
+.rs[data-nav="collapsed"] .rs-nav-action-label { display: none; }
+
+/* One block per module, with a hairline where the next one starts.
+ *
+ * In Pro the rail carries fourteen rows, and until this rule they were one
+ * uninterrupted column. `navigationFromManifest` now returns a group per
+ * module and this is the half that shows it: space above, a hairline, and the
+ * module's own row set in ink-high above its surfaces. */
+.rs-group { display: grid; gap: 2px; padding-block: 4px; }
+.rs-group + .rs-group {
+  margin-top: var(--ry-s1);
+  padding-top: var(--ry-s3);
+  border-top: 1px solid color-mix(in srgb, var(--ry-border) 70%, transparent);
+}
+.rs-group-title {
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ry-muted);
+  padding: var(--ry-s2) var(--ry-s4) var(--ry-s1);
+}
+.rs[data-nav="collapsed"] .rs-group-title { visibility: hidden; height: var(--ry-s3); padding: 0; }
+
+/*
+ * The product's four headings, in the canon's own typographic register.
+ *
+ * Canon 3.1 writes them as TRADE, STRATEGIES, MONEY and MANAGE - a heading
+ * over a set of pages, not a row you can press. Small caps say that at a
+ * glance and stop a group name from reading as a twelfth destination. Scoped
+ * to the product, because every other workspace's rail groups keep the
+ * sentence case they were written in.
+ */
+.rs[data-product="true"] .rs-group-title {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/*
+ * A heading that is also a control.
+ *
+ * The founder's instruction of 2026-09-08, with Jupiter's rail on screen
+ * beside ours: the groups get an arrow and close. It is still a heading — same
+ * size, same muted ink, same tracking — so the rail does not grow a fifth row
+ * that looks pressable; what changes is that the whole width is the target and
+ * a caret says which way it is facing.
+ */
+button.rs-group-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ry-s2);
+  width: calc(100% - var(--ry-s4));
+  margin-inline: var(--ry-s2);
+  /* A heading is 24px of text; a target is 36. The padding buys the second
+     without moving the first, because the row above it is already spaced. */
+  min-height: 32px;
+  padding: var(--ry-s1) var(--ry-s3);
+  border: 0;
+  border-radius: var(--ry-r-btn-sm);
+  background: none;
+  text-align: start;
+  cursor: pointer;
+}
+
+button.rs-group-title:hover {
+  background: var(--ry-hover);
+  color: var(--ry-text);
+}
+
+button.rs-group-title:focus-visible {
+  outline: 2px solid var(--ry-iris);
+  outline-offset: -2px;
+}
+
+.rs-group-caret {
+  flex: none;
+  opacity: 0.7;
+  transition: transform 0.16s ease;
+}
+
+/* Pointing at what it will reveal, not at where it has been. */
+button.rs-group-title[data-shut="true"] .rs-group-caret {
+  transform: rotate(-90deg);
+}
+
+/* A closed group still separates itself from the next one. */
+.rs-group[data-collapsible="true"] + .rs-group[data-collapsible="true"] {
+  margin-top: var(--ry-s1);
+}
+
+/*
+ * A heading is not a thumb target on a desktop rail.
+ *
+ * `product.css` puts a 44px floor under every button in the product, which
+ * is the right rule for a control somebody presses to do something. Applied
+ * to four headings it costs 48px of a rail the founder asked to make more
+ * compact, and buys nothing a pointer needs. The floor stays below 901px,
+ * where the rail is a drawer and a thumb is what works it.
+ */
+@media (min-width: 901px) {
+  .rs[data-product="true"] .rs-nav button.rs-group-title {
+    min-height: 32px;
+  }
+}
+
+/*
+ * A rail row, at a size somebody can read.
+ *
+ * It ran at `--ry-fs-dense` in `--ry-muted` — 14px of mid-grey for the module
+ * names as well as for the surfaces inside them, so the two levels differed by
+ * indent alone and the whole column read as one grey list. A module is now
+ * ink-high at the app size and a surface is dense underneath it: the rail says
+ * *five things with contents* before anybody reads a word of it.
+ */
+/* The name of a thing outranks the badge describing it.
+ *
+ * The rail put label and tag in one row, so the tag took its max-content width
+ * and the label took what was left. In English that is fine — PLANNED is
+ * short. In Ukrainian the same word is ЗАПЛАНОВАНО, wider than the rail has to
+ * spare, so it overflowed its column and sat across a label wrapped into four
+ * lines. Which language a person reads should not decide whether the
+ * navigation is legible. The tag now takes the row beneath, where it fits at
+ * any length. */
+.rs-link {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--ry-s3);
+  min-height: 38px;
+  margin-inline: var(--ry-s2);
+  padding: var(--ry-s2) var(--ry-s3);
+  border-radius: var(--ry-r-btn-sm);
+  /* Muted at rest, ink on hover, orange when it is the page you are on: the
+     rail says where you are without framing every row (Brand Canon v1.0 §7). */
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-app);
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  border-inline-start: 2px solid transparent;
+  transition: background-color var(--rt-duration-fast) var(--rt-ease), color var(--rt-duration-fast) var(--rt-ease), border-color var(--rt-duration-fast) var(--rt-ease), box-shadow var(--rt-duration-fast) var(--rt-ease);
+}
+/* A module row is a section header that happens to be a link.
+ *
+ * It was the same shape as the surfaces beneath it, one size larger, and the
+ * founder's reading of the result was that the rail does not say what belongs
+ * to what. Caps and tracking are the standard product-UI way to mark a group,
+ * and they cost nothing here: the label is one or two words, the children stay
+ * in sentence case underneath, and the difference is legible before a word is
+ * read. */
+.rs-link[data-heads="true"] .rs-link-label {
+  font-size: var(--ry-fs-data);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.rs-link:hover { background: var(--ry-hover); color: var(--ry-text); }
+.rs-link:focus-visible {
+  outline: 2px solid var(--ry-iris);
+  outline-offset: -2px;
+}
+/* The active row: a soft orange tint one step up from the rail, the 2px
+   orange edge, orange icon and label, and the faintest ring — the only glow
+   the rail carries. */
+.rs-link[aria-current="page"] {
+  background: var(--ry-brand-soft);
+  border-inline-start-color: var(--ry-iris);
+  color: var(--ry-accent-fg);
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ry-iris) 16%, transparent);
+}
+.rs-link[aria-current="page"] .rs-link-ic { color: var(--ry-iris); }
+/* The module that *contains* the open page, when the page has no row of its
+   own. A quiet edge and nothing else: it points, it does not claim. Before
+   this, half of one hub's surfaces lit `РАДАР` as though it were the page. */
+.rs-link[data-within="true"] {
+  border-inline-start-color: color-mix(in srgb, var(--ry-iris) 45%, transparent);
+  color: var(--ry-text);
+}
+/* A surface inside a module. Indented, lighter, and with a hairline running
+   up the group it belongs to — the rail has to read as five things with
+   contents, not as fourteen equal destinations. Measured on a hub in Pro before
+   this rule existed: every entry at the same weight and indent. */
+.rs-link[data-sub="true"] {
+  margin-inline-start: var(--ry-s5);
+  min-height: 34px;
+  padding-block: 6px;
+  font-size: var(--ry-fs-dense);
+  font-weight: 500;
+  letter-spacing: 0;
+  /* Subordinate, not switched off. Full `--ry-muted` here is what made the
+     surfaces inside a module disappear into the background of their own
+     rail; this reads as one step down from the module above it. */
+  color: color-mix(in srgb, var(--ry-text) 68%, var(--ry-muted));
+  border-inline-start: 1px solid var(--ry-border);
+  border-radius: 0 var(--ry-r-btn-sm) var(--ry-r-btn-sm) 0;
+}
+.rs-link[data-sub="true"]:hover { color: var(--ry-text); }
+.rs-link[data-sub="true"] .rs-link-ic { transform: scale(0.82); }
+.rs-link[data-sub="true"][aria-current="page"] {
+  border-inline-start-color: var(--ry-iris);
+  color: var(--ry-accent-fg);
+}
+.rs[data-nav="collapsed"] .rs-link[data-sub="true"] {
+  margin-inline-start: var(--ry-s2);
+  border-inline-start-color: transparent;
+}
+
+.rs-link[data-disabled="true"] { color: var(--ry-muted); cursor: not-allowed; opacity: 0.7; }
+.rs-link[data-disabled="true"]:hover { background: none; color: var(--ry-muted); }
+
+/* A short roadmap tag belongs on the same line as its destination. The older
+   PLANNED/ЗАПЛАНОВАНО badge needed a row of its own; Soon/Скоро does not, and
+   stacking thirteen of them made the complete product map three screens tall. */
+/* The compact layout for an inline rail tag went with the attribute that
+   selected it: canon §0.7 ended the placeholder rows it was written for, and
+   no rail emits a `Soon` tag any more. */
+
+.rs-link-ic {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: color-mix(in srgb, var(--ry-text) 62%, var(--ry-muted));
+}
+.rs-link:hover .rs-link-ic { color: var(--ry-text); }
+.rs-link[aria-current="page"] .rs-link-ic { color: var(--ry-iris); }
+
+/*
+ * In the product, the tag rides the row it describes.
+ *
+ * The two-line shape below is right where a tag can be long — it stops a badge
+ * from taking the label's width. The product's tags are one short word in
+ * either language, and four of eleven rows carrying one turned the rail into
+ * fifteen rows of two heights. Measured at the 250px rail: `Безстрокові` plus
+ * `У ПЛАНІ` leaves room, and below 250 the rail is collapsed and the tag is
+ * hidden anyway.
+ */
+.rs[data-product="true"] .rs-link {
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+}
+.rs[data-product="true"] .rs-tag {
+  grid-column: 3;
+  align-self: center;
+  justify-self: end;
+}
+
+.rs[data-nav="collapsed"] .rs-link {
+  grid-template-columns: 24px;
+  justify-content: center;
+  padding-inline: var(--ry-s3);
+}
+.rs[data-nav="collapsed"] .rs-link-label,
+.rs[data-nav="collapsed"] .rs-tag { display: none; }
+
+.rs-nav-foot {
+  margin-top: auto;
+  padding: var(--ry-s3) var(--ry-s4) 0;
+  border-top: 1px solid var(--ry-border);
+  display: grid;
+  gap: var(--ry-s2);
+}
+.rs[data-nav="collapsed"] .rs-nav-foot { padding-inline: var(--ry-s3); }
+
+/* ------------------------------------------------------------ pinned foot */
+
+.rs-nav-pinned {
+  flex: none;
+  padding-top: var(--ry-s2);
+  margin-top: var(--ry-s2);
+  border-top: 1px solid var(--ry-border);
+  display: grid;
+  gap: 2px;
+}
+
+/*
+ * A short screen reads the menu first (RYN-SURFACE-CLEAN-001, 2026-09-23).
+ * The product's pinned foot — depth, language, theme, feedback, Settings — is
+ * about 235px tall, and on a 1440 × 900 laptop it covered the lower third of
+ * the menu: Bridge, Rewards, Portfolio and History sat under it until the list
+ * was scrolled. Below the height at which the whole menu and the foot fit
+ * together, the rail scrolls as one — every page first, the switches after
+ * them, nothing drawn over a page's row.
+ */
+@media (max-height: 1080px) {
+  .rs[data-product="true"] .rs-nav {
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--ry-border) transparent;
+  }
+  .rs[data-product="true"] .rs-nav-scroll {
+    flex: none;
+    overflow: visible;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+}
+
+.rs-view {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  padding-inline: var(--ry-s2);
+}
+.rs[data-nav="collapsed"] .rs-view { flex-direction: column; padding-inline: var(--ry-s2); }
+
+/*
+ * The foot of the product rail: depth, then language and theme, then Settings.
+ *
+ * It was three things at three widths — a bordered segmented control stretched
+ * across the rail, a bare icon-and-two-letters underneath it, and a full rail
+ * row — reading as leftovers rather than as a block. Canon §3.2 names these
+ * four in this order, so they are laid out as one thing: two full-width rows of
+ * equal halves above the Settings row, on the same inline margin every rail row
+ * already uses.
+ */
+.rs[data-product="true"] .rs-view {
+  display: grid;
+  gap: var(--ry-s2);
+  padding: 0 var(--ry-s2) var(--ry-s2);
+}
+
+.rs[data-product="true"] .rs-view .sh-mode,
+.rs-view-pair {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 2px;
+  width: 100%;
+  padding: 2px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  background: var(--ry-card);
+}
+
+/* Both halves centre their own contents, so the two rows read as one shape
+   rather than as a segmented control above two loose buttons. */
+.rs-view-pair .rs-view-theme {
+  justify-content: center;
+  min-height: 30px;
+  padding-inline: var(--ry-s2);
+}
+
+/* A collapsed rail has no room for a pair; the two stack, iconic. */
+.rs[data-nav="collapsed"] .rs-view-pair {
+  grid-auto-flow: row;
+}
+
+.rs-view-theme {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: var(--ry-s2);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--ry-r-btn-sm);
+  color: var(--ry-muted);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  cursor: pointer;
+}
+.rs-view-theme:hover {
+  background: var(--ry-hover);
+  color: var(--ry-text);
+  border-color: var(--ry-border-strong);
+}
+.rs-view-theme:focus-visible {
+  outline: 2px solid var(--ry-iris);
+  outline-offset: -2px;
+}
+.rs[data-nav="collapsed"] .rs-view-theme-label,
+.rs[data-nav="collapsed"] .rs-view-caret { display: none; }
+
+/* ================================================================= canvas == */
+
+/*
+ * No max-width. This is an application, and an operator with a 2560px screen
+ * bought that width on purpose; a centred 900px column in the middle of it is
+ * the exact dead-zone composition the shell exists to remove.
+ */
+.rs-canvas {
+  grid-area: canvas;
+  min-width: 0;
+  padding: clamp(16px, 1.6vw, 28px);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* ============================================================== inspector == */
+
+.rs-inspector {
+  grid-area: inspector;
+  border-inline-start: 1px solid var(--hairline);
+  background: var(--deep);
+  overflow-y: auto;
+  position: sticky;
+  top: var(--rs-top);
+  height: calc(100dvh - var(--rs-top));
+}
+.rs[data-inspector="closed"] .rs-inspector { display: none; }
+
+/* ============================================================== responsive == */
+
+@media (max-width: 1400px) {
+  .rs { --rs-insp: 300px; }
+}
+
+@media (max-width: 1180px) {
+  /* The inspector stops taking width from the work area and becomes something
+     the operator opens deliberately. */
+  .rs { grid-template-columns: var(--rs-nav) minmax(0, 1fr); grid-template-areas: "top top" "nav canvas"; }
+  .rs-inspector {
+    position: fixed;
+    inset: var(--rs-top) 0 0 auto;
+    width: min(360px, 92vw);
+    height: auto;
+    z-index: 50;
+    box-shadow: -18px 0 44px var(--rt-shadow-ink, rgba(0, 0, 0, 0.5));
+  }
+}
+
+@media (max-width: 900px) {
+  .rs {
+    --rs-nav: 0px;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "top" "canvas";
+  }
+  /* The navigation becomes a drawer, not a squeezed rail. */
+  .rs-nav {
+    position: fixed;
+    inset: var(--rs-top) auto 0 0;
+    width: min(280px, 86vw);
+    z-index: 55;
+    transform: translateX(-102%);
+    transition: transform 0.26s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 18px 0 44px var(--rt-shadow-ink, rgba(0, 0, 0, 0.5));
+  }
+  .rs[data-drawer="open"] .rs-nav { transform: none; }
+  .rs[data-nav="collapsed"] .rs-link { grid-template-columns: 24px minmax(0, 1fr) auto; justify-content: start; padding-inline: var(--ry-s3); }
+  .rs-link { min-height: 44px; }
+  /* The rail's own controls are targets too. Focus sat at 36px next to 44px
+     links — measured, not noticed. */
+  .rs-view-focus,
+  .rs-view-theme,
+  .rs-view .rs-tool { min-height: 44px; }
+  .rs[data-nav="collapsed"] .rs-link-label { display: block; }
+  .rs[data-nav="collapsed"] .rs-group-title { visibility: visible; height: auto; padding: var(--ry-s2) var(--ry-s4) var(--ry-s1); }
+  .rs[data-nav="collapsed"] .rs-view { flex-direction: row; }
+  .rs[data-nav="collapsed"] .rs-view-focus-label { display: inline; }
+
+  .rs-scrim {
+    position: fixed;
+    inset: var(--rs-top) 0 0 0;
+    z-index: 45;
+    background: rgba(7, 11, 22, 0.6);
+    border: 0;
+  }
+  .rs-inspector { inset: auto 0 0 0; width: 100%; max-height: 72vh; box-shadow: 0 -18px 44px var(--rt-shadow-ink, rgba(0, 0, 0, 0.5)); }
+  .rs-context { display: none; }
+}
+
+/* Below 520px the top bar must fit without clipping. The row used to run
+   navtoggle + brand + switcher + tools to ~455px and the canvas clipped it at
+   the viewport, which cut the Context and Layout controls off entirely — the
+   recorded audit failure. The tool buttons drop their labels but keep their
+   icons and hit size, the switcher truncates the workspace name to its short
+   form, and nothing critical leaves the screen. */
+@media (max-width: 520px) {
+  /* At 375px Search, Attention and the connection control keep 44px targets.
+     Moving View and Focus out of the bar and into the rail is what bought back
+     the width the workspace name needs. */
+  .rs-top { gap: 2px; padding-inline: 4px; }
+  .rs-navtoggle,
+  .rs-tool {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    padding-inline: 0;
+  }
+  .rs-brand {
+    flex: 0 0 44px;
+    width: 44px;
+    height: 44px;
+    justify-content: center;
+    padding-inline: 0;
+  }
+  /* Collapsed rail: the lockup is one raster, so the mark is reached by
+     cropping to its square rather than by hiding a type span. */
+  .rs-brand .ryntra-brand-lockup {
+    width: 1em;
+    object-fit: cover;
+    object-position: left center;
+  }
+  .rs-tool-label { display: none; }
+  .rs-switchbox { flex: 0 0 62px; min-width: 62px; }
+  .rs-menu-trigger.rs-switch {
+    width: 100%;
+    min-width: 62px;
+    height: 44px;
+    justify-content: center;
+    padding: 0 9px;
+  }
+  /* At phone width the bordered trigger and its accessible label already
+     state that this is the workspace control. The caret consumed the exact
+     width needed to turn `Sola…` and `Stell…` back into the registered names;
+     hiding that redundant glyph preserves the 62px budget and the 44px target
+     without abbreviating either ecosystem. */
+  .rs-menu-trigger.rs-switch > svg:last-child { display: none; }
+  .rs-menu-trigger.rs-conn { height: 44px; }
+  /*
+   * Measured at 375px: the bar needed 432px. The left half is fixed at
+   * 158px — a 44px toggle, a 44px mark and a 62px workspace name — so every
+   * pixel had to come out of the right.
+   *
+   * One change was enough. `Connect wallet` collapses to its icon while there
+   * is nothing to name; the moment an address exists it comes back, because
+   * the address is the one fact that decides whether the next tap can spend
+   * anything. That alone brought the row to 371px, so Search, Attention and
+   * the inspector toggle all keep their place and their 44px — measured after,
+   * not assumed.
+   */
+  /*
+   * **The label stays.** Collapsing `Під'єднати гаманець` to a bare icon was
+   * how the phone lost the one thing the whole workspace is for: six unnamed
+   * glyphs in a row, on twenty-seven of twenty-eight tabs, and no visible word
+   * saying what can be done here. The room comes from the tool labels beside
+   * it, which already disappear at 1240px, and from the short form the button
+   * carries for exactly this width.
+   */
+  .rs-conn-long { display: none; }
+  .rs-conn-short { display: inline; }
+  .rs-tool-label { display: none; }
+  /* The hamburger carries itself at this width; the word beside it is what
+     the 521-900px drawer gets, where there is room for it. */
+  .rs-navtoggle-label { display: none; }
+  /* Two of the 30px the wallet's word needs. The workspace is named again in
+     the page header's environment chip directly below. */
+  /*
+   * Where the room comes from, measured at 375 rather than guessed.
+   *
+   * The row needed 405px with the word restored. Nothing is removed to get it
+   * back to 375: the bar's own padding and the gaps between its four groups go
+   * to zero, the workspace trigger keeps its name in a box ten pixels tighter,
+   * and the wallet trades a step of inline padding. Every one of the six
+   * targets is still 44px, which is the rule that must not bend.
+   */
+  .rs-top { padding-inline: 2px; gap: 0; }
+  /* The ten pixels came off the wrong box. A hard 52px fits `Home` and one other short name
+     and clips every other workspace: `Solana` and `Agents` need 44px of label
+     inside a box that offers 42, `Stellar` 46, `RH Chain` 60 — four of six
+     names cut, and cut without even an ellipsis, because the clipping happens
+     on the box rather than on the label. Measured at 375 on the bridge: the
+     four groups use 44 + 44 + 52 + 74 = 214px of a 375px bar, so the pin was
+     spending room the row already had. The box now sizes to its name, keeps
+     52px as a floor so the touch target never shrinks, and stops at 40vw,
+     which leaves the row at 312px in the widest case. Past that the label
+     ellipsises — the rule seventeen lines below, which never got a chance to
+     run while the box clipped first. */
+  .rs-switchbox { flex: 0 1 auto; min-width: 52px; max-width: 40vw; }
+  .rs-menu-trigger.rs-switch { min-width: 52px; max-width: 40vw; padding: 0 4px; }
+  .rs-menu-trigger.rs-conn { padding-inline: var(--ry-s1); min-width: 0; }
+  /* Last resort rather than a hard cut, for a locale whose word is longer
+     than the Ukrainian one. */
+  .rs-conn-short { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rs-menu-trigger.rs-conn:has(.rs-conn-label[data-mono="true"]) {
+    width: auto;
+    padding-inline: var(--ry-s3);
+  }
+  /* The mobile tool triggers already provide their own 44px targets. Any gap
+     inside this cluster needlessly spends the remaining name width. */
+  .rs-tools { flex: none; gap: 0; }
+  /* The environment chip leaves the bar rather than shrinking it: at 375px the
+     bar is already three 44px targets and a 62px name. The environment is
+     stated at the top of the page and again at the moment of signature, which
+     is where it actually has to be read. */
+  .rs-env { display: none; }
+  .rs-switch .rs-menu-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .rs-switch-name-full { display: none; }
+  .rs-switch-name-mobile { display: inline; }
+  /* Trigger-anchored dropdowns cannot fit a 360px panel beside a 375px
+     viewport: the switcher panel ran 150px past the right edge and the Layout
+     panel 253px — the audit's clipped-menu failure. Below 520px every top-bar
+     panel becomes a full-width sheet under the bar.
+
+     These are `position: fixed` against the viewport. They used to resolve
+     against `.rs-top` instead, because its `backdrop-filter` made the bar a
+     containing block for fixed descendants — an accident the old comment here
+     described as the intended geometry. The blur is gone with the rest of the
+     glass, and the insets are written to be correct without it: the bar is
+     sticky at viewport top, so `--rs-top` is the bar's height either way. */
+  .rs-top .rs-menu-panel {
+    position: fixed;
+    inset-inline: 10px;
+    top: calc(var(--rs-top) + 6px);
+    width: auto;
+    max-height: min(72vh, 560px);
+    overflow-y: auto;
+  }
+  .rs-switch-item,
+  .rs-switch-more,
+  .rs-menu-action,
+  .rs-mode,
+  .rs-reset,
+  .rs-panel-row {
+    min-height: 44px;
+  }
+  .rs-panel-move button {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rs-nav { transition: none; }
+}
+
+/* ================================================= workspace body defaults ==
+   Content written for the old chrome assumed it sat inside a centred column
+   with its own outer padding. Inside the canvas the shell already owns the
+   padding, and a 1320px cap in the middle of a 2560px operator screen is the
+   dead-zone composition this shell exists to remove. */
+
+.rs-canvas .cb-grid {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+}
+.rs-canvas .cb-span2 { grid-column: 1 / -1; }
+.rs-canvas .kpi-grid { grid-column: 1 / -1; }
+
+/* One hub desk's own work wrapper: same reasoning, same result. */
+.rs-canvas > .cb-body { width: 100%; }
+.rs-canvas .dm-foot { margin-top: auto; padding-top: 22px; }
+
+/* The landing's section rhythm stops at the canvas edge.
+
+   `globals.css` gives every bare `<section>` `padding: 78px 0`. Three separate
+   surfaces have now paid for that one line: every `<Panel>` at once (patched by
+   `.rw { padding: 0 }`), the swap statement (patched locally), and the Stellar
+   Hub, where two `<section>` groups on the Overview measured 312px of dead
+   space on the live page while every source-level gate stayed green. STATE.md
+   predicted the third one in writing — "will trap the next `<section>` written
+   inside any panel" — and it did.
+
+   Patching each new surface as it is bitten is how a trap keeps its victims.
+   This closes it at the boundary instead: inside the canvas a `<section>` is a
+   titled group of rows, never a landing band. Panels are excluded by
+   `[data-panel]`, so their anatomy is untouched and the exclusion is
+   structural — a panel cannot lose it without ceasing to be a panel. */
+:where(.rs-canvas) section:not(:where([data-panel])) { padding-block: 0; }
+
+@media (max-width: 720px) {
+  .rs-canvas .cb-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* The account chip and tool labels shrink before the context does. */
+.rs-tool-label { display: inline; }
+@media (max-width: 1240px) { .rs-tool-label { display: none; } }
+
+/* ================================================================ widgets ==
+   Widgets are ordered with CSS rather than by rearranging the DOM, so the
+   reading order for a screen reader stays the registered one and reordering
+   cannot desynchronise from what is on screen.
+
+   The `.rs-widget` wrapper's own `display: contents` used to live here, which
+   silently made it a privilege of screens rendered inside this shell — a
+   public page that renders the same panels outside the shell shipped
+   with all four collapsed to one grid column. It now ships with the component
+   that emits it, in `widget.css`, and reaches every consumer. */
+
+.rs-canvas { display: flex; flex-direction: column; }
+
+/* ============================================================== customize == */
+
+.rs-customize { width: min(420px, calc(100vw - 28px)); }
+
+/* The Layout trigger sits at the *bottom* of the rail, so a panel anchored
+   below it opens off the screen — 780px of menu starting 1,301px down a
+   784px-tall window. It opens upward from there, and it is capped and
+   scrollable so a tall menu is a tall menu rather than a menu with its foot
+   cut off. Neither is visible to any check: a popover typechecks, has no
+   failing test, and can only be found by opening it. */
+.rs-view .rs-menu-panel {
+  top: auto;
+  bottom: calc(100% + var(--ry-s2));
+  max-height: min(70vh, 560px);
+  overflow-y: auto;
+}
+/* Panels that open from the right-hand tools cluster anchor to their
+   trigger's right edge. Left-anchored, the 420px Layout panel ran 248px past
+   a 1280px viewport — the desktop half of the audit's clipped-menu failure. */
+.rs-tools .rs-menu-panel { inset-inline: auto 0; }
+
+.rs-modes { display: grid; gap: 2px; }
+
+.rs-mode {
+  display: grid;
+  gap: 2px;
+  padding: 9px 11px;
+  background: none;
+  border: 0;
+  border-inline-start: 2px solid transparent;
+  text-align: start;
+  color: var(--fg-dim);
+  font-family: var(--body);
+  cursor: pointer;
+}
+.rs-mode:hover { background: rgba(255, 255, 255, 0.05); }
+.rs-mode[aria-checked="true"] {
+  background: var(--accent-soft);
+  border-inline-start-color: var(--cyan);
+  color: var(--fg);
+}
+.rs-mode b { font-size: 0.88rem; font-weight: 500; }
+.rs-mode small { font-size: 0.76rem; color: var(--fg-muted); line-height: 1.45; }
+
+.rs-panels { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; }
+
+.rs-panel-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 11px;
+}
+.rs-panel-row:hover { background: rgba(255, 255, 255, 0.04); }
+
+.rs-panel-toggle {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: 1;
+  min-width: 0;
+  font-size: 0.86rem;
+  color: var(--fg);
+  cursor: pointer;
+}
+.rs-panel-toggle input { accent-color: var(--cyan); width: 15px; height: 15px; cursor: pointer; }
+.rs-panel-toggle input:disabled { cursor: not-allowed; }
+.rs-panel-toggle input:disabled + span { color: var(--fg-muted); }
+
+.rs-panel-move { display: inline-flex; gap: 2px; }
+.rs-panel-move button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: none;
+  border: 1px solid var(--hairline);
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+.rs-panel-move button:hover:not(:disabled) { color: var(--fg); border-color: var(--cyan); }
+.rs-panel-move button:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.rs-customize-empty { padding: 8px 11px 12px; font-size: 0.82rem; color: var(--fg-muted); margin: 0; }
+
+.rs-customize-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+  padding: 10px 11px 4px;
+  border-top: 1px solid var(--hairline);
+  font-size: 0.78rem;
+  color: var(--fg-muted);
+}
+.rs-customize-foot span { flex: 1; min-width: 140px; }
+
+.rs-reset {
+  padding: 5px 11px;
+  background: none;
+  border: 1px solid var(--hairline-strong);
+  color: var(--fg-dim);
+  font-family: var(--body);
+  font-size: 0.79rem;
+  cursor: pointer;
+}
+.rs-reset:hover { color: var(--fg); border-color: var(--fg-muted); }
+.rs-reset--go { color: var(--red); border-color: color-mix(in srgb, var(--danger) 50%, transparent); }
+.rs-reset--go:hover { color: var(--red); border-color: var(--red); background: var(--danger-soft); }
+
+/* ============================================== embedded terminal surfaces ==
+   `.dm-root.dm-embedded` sets `min-height: auto` and relies on its parent to
+   stretch it — that used to be `.cb-body > .dm-root { flex: 1 }`, which the
+   shell migration removed along with the wrapper. Without this the paper
+   terminal and the spot terminal collapse to content height and leave the rest
+   of the canvas empty. */
+
+.rs-canvas > .dm-root,
+.rs-canvas > .rs-widget > .dm-root { flex: 1; min-height: 0; }
+
+/* Cabinet pages own their content grid; the shell owns the padding and the
+   `main` landmark around it. */
+.rs-canvas > .cb-grid,
+.rs-canvas > .attn,
+.rs-canvas > .cbh { width: 100%; }
+
+/* ================================================================== light ==
+   The cabinet still offers a three-state theme control, and the shell was
+   hardcoded dark — pick Light and the chrome stayed navy while the content
+   under it went white. A control the product exposes has to be one the shell
+   answers, so the palette flips with `<html data-theme>`.
+
+   Semantic colour keeps its meaning and changes only its darkness: cyan, mint,
+   violet and amber all need more weight to stay legible on a light surface. */
+
+/* The light palette resolves through the same aliases via the root
+   `[data-theme="light"]` overrides in globals.css. Small accent/status TEXT
+   switches to the darker `-strong` variants there, which exist precisely to
+   clear WCAG AA on light surfaces. */
+[data-theme="light"] .rs {
+  --cyan: var(--accent-strong);
+  --mint: var(--success-strong);
+  --amber: var(--warning-strong);
+}
+
+[data-theme="light"] .rs-mode:hover,
+[data-theme="light"] .rs-panel-row:hover { background: rgba(15, 23, 42, 0.05); }
+[data-theme="light"] .rs-mode[aria-checked="true"] { background: var(--accent-soft); }
+[data-theme="light"] .rs-chip { background: rgba(15, 23, 42, 0.03); }
+[data-theme="light"] .rs-scrim { background: rgba(15, 23, 42, 0.35); }
+[data-theme="light"] .rs-nav { box-shadow: none; }
+
+/* ================================================ cabinet content density ==
+   `.cb-grid` was written for a centred two-column page. In a canvas that can be
+   1600px wide, `minmax(320px, …)` produced five columns, and the settings
+   form — four cards, none of them spanning — was squeezed into a 300px strip
+   with a thousand pixels of nothing beside it. A wider minimum keeps a form
+   readable and still fills the canvas. */
+
+.rs-canvas .cb-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr));
+}
+
+/*
+ * Explicit text colours for the light palette.
+ *
+ * The block above flips the custom properties, which is enough for anything
+ * that declares its own `color`. Text that inherits from the shell is a
+ * different matter: an inherited value depends on the whole chain resolving,
+ * and a chrome that half-flips — white labels on a white sidebar — is worse
+ * than one that never offered light at all. These declarations remove the
+ * dependency, so every text-bearing surface states its own colour and cannot
+ * be left behind by the cascade.
+ *
+ * Shell v2 removed most of this block rather than translating it: the top
+ * bar, the rail, the switcher and the connection control draw from `--ry-*`,
+ * which the frozen tokens flip under `[data-theme="light"]` themselves. What
+ * remains covers the surfaces still on legacy aliases — the canvas, the
+ * inspector, the customize panel and the cabinet chips.
+ */
+[data-theme="light"] .rs,
+[data-theme="light"] .rs-nav,
+[data-theme="light"] .rs-inspector,
+[data-theme="light"] .rs-canvas { color: var(--text); }
+
+
+[data-theme="light"] .rs-chip-k,
+[data-theme="light"] .rs-mode small,
+[data-theme="light"] .rs-customize-empty,
+[data-theme="light"] .rs-customize-foot,
+[data-theme="light"] .rs-tag { color: var(--text-faint); }
+
+[data-theme="light"] .rs-chip-v,
+[data-theme="light"] .rs-mode { color: var(--text-dim); }
+[data-theme="light"] .rs-panel-toggle,
+[data-theme="light"] .rs-mode b { color: var(--text); }
+[data-theme="light"] .rs-mode[aria-checked="true"] { color: var(--text); }
+[data-theme="light"] .rs-mod-n { color: var(--cyan); }
+[data-theme="light"] .rs-switch-more:hover { color: var(--cyan); background: rgba(15, 23, 42, 0.05); }
+[data-theme="light"] .rs-reset { color: var(--text-dim); }
+[data-theme="light"] .rs-panel-move button { color: var(--text-faint); }
+[data-theme="light"] .rs-skip { background: var(--text); color: var(--panel); }
+
+/* ------------------------------------------------ shared navigation footer */
+
+/*
+ * One footer, two workspaces.
+ *
+ * These rules were written for another hub and lived in its own stylesheet,
+ * which is why the Stellar Hub's footer was a bare text link while the other's was a
+ * 44px button with a border, a radius and an arrow. Two implementations of the
+ * same chrome is exactly the duplication that costs a week: the second one is
+ * never quite the first, and nobody notices until the two are on screen
+ * together.
+ *
+ * They keep the `hub-` prefix rather than being renamed to `rs-`, because
+ * renaming them means touching every consumer for no behavioural gain and the
+ * markup is asserted by the stylesheet-coverage gate. Renaming belongs to
+ * `RYN-WS-KERNEL-001`, which owns this chrome becoming the kernel's.
+ */
+
+.hub-nav-footer {
+  display: grid;
+  gap: var(--rt-space-xs);
+  min-width: 0;
+}
+
+.hub-nav-map {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--rt-space-xs);
+  min-height: 44px;
+  padding-inline: var(--rt-space-sm);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  background: var(--ry-card);
+  color: var(--ry-text);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  text-decoration: none;
+  transition: border-color var(--rt-duration-fast) var(--rt-ease),
+    color var(--rt-duration-fast) var(--rt-ease);
+}
+
+.hub-nav-map:hover {
+  border-color: var(--ry-border-strong);
+  color: var(--ry-text);
+  background: var(--ry-hover);
+}
+
+.hub-nav-map:focus-visible {
+  outline: 2px solid var(--ry-iris);
+  outline-offset: 2px;
+}
+
+.rs-page {
+  display: grid;
+  gap: var(--rt-space-xs);
+  margin-block-end: var(--rt-space-lg);
+  padding-block-end: var(--rt-space-md);
+  border-block-end: 1px solid var(--rt-hairline, var(--ry-border));
+}
+
+.rs-page-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rt-space-md);
+}
+
+.rs-page-title {
+  display: flex;
+  align-items: center;
+  gap: var(--rt-space-xs, 6px);
+  min-width: 0;
+}
+
+.rs-page h1 {
+  margin: 0;
+  color: var(--rt-ink-high, var(--ry-text));
+  font-family: var(--rt-font, var(--ry-font-display));
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  min-width: 0;
+}
+
+.rs-page-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--rt-space-sm);
+}
+
+/* `.hub-nav-mode-mobile` was here.
+
+   It held the depth switch on a phone, because the desktop control lived in
+   the top bar and a phone top bar has no room for it. Founder decision,
+   2026-08-24: the depth control left every top bar for the layout menu at the
+   foot of the rail — which is in the drawer on a phone, reachable at exactly
+   the width this rule existed for. A slot with nothing to put in it is not a
+   fallback; it is a hole two stylesheets keep sized. */
+
+/* ─────────────────────────────────────────────────────────────────────────
+   The phone's primary navigation.
+
+   Owner decision of 2026-09-04: one product, five destinations on a phone.
+   Before this the shell hid the identical desktop rail behind a drawer, so
+   every destination cost four interactions and covered the thing you came to
+   see. This bar is the only navigation surface built for a thumb.
+
+   Sized from the touch target outwards rather than from the icon inwards:
+   the link is 56px tall before its padding, which clears the 44px floor with
+   room for a label a person can read at arm's length. The label stays on the
+   14px ramp — a bottom bar is not a Pro table, and a word nobody can read is
+   an icon with decoration under it.
+   ───────────────────────────────────────────────────────────────────────── */
+
+.rs-mobilenav {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .rs-mobilenav {
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 40;
+    display: block;
+    background: var(--ry-sidebar, var(--ry-card));
+    border-top: 1px solid var(--ry-border);
+    /* The bar sits above the home indicator, not under it. */
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    box-shadow: 0 -8px 24px -16px var(--ry-shadow-ink, rgba(0, 0, 0, 0.5));
+  }
+
+  .rs-mobilenav-list {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .rs-mobilenav-item {
+    min-width: 0;
+  }
+
+  .rs-mobilenav-link {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-height: 56px;
+    /* 2px, not 4. At 375px each column is 75px and the longest Ukrainian label
+       — Контроль — needs every one of them; at 4px it ellipsised to "Контро…",
+       which is a nav item a person has to guess at. */
+    padding: 8px 2px;
+    color: var(--ry-muted);
+    text-decoration: none;
+    font-family: var(--ry-font-sans);
+    transition: color 120ms ease;
+    /* The fifth column is a button - it opens the rail rather than
+       navigating to a sixth route - so it is reset to the shape of the
+       four links beside it. Without this the bar renders four labels and
+       one grey pill. */
+    width: 100%;
+    background: none;
+    border: 0;
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .rs-mobilenav-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 0;
+  }
+
+  .rs-mobilenav-label {
+    /* One line, always. A wrapped label makes the row jump by 18px and turns a
+       fixed bar into a shifting one. */
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: var(--ry-fs-app, 0.875rem);
+    line-height: 1.1;
+    /* Tightened rather than shrunk: the type ramp's floor is 14px and a nav
+       label below it is an icon with decoration under it. */
+    letter-spacing: -0.03em;
+  }
+
+  /* The active destination is stated twice — colour and a bar — because colour
+     alone is not a state a person with low vision can read. */
+  .rs-mobilenav-link[data-active="true"] {
+    color: var(--ry-iris);
+  }
+
+  .rs-mobilenav-link[data-active="true"]::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    inset-inline: 22%;
+    height: 2px;
+    border-radius: 0 0 2px 2px;
+    background: var(--ry-iris);
+  }
+
+  .rs-mobilenav-link:active {
+    color: var(--ry-iris-pressed);
+  }
+
+  /* The canvas ends above the bar rather than behind it, so the last row of a
+     table and the primary action of a card are both reachable. */
+  .rs[data-product="true"] .rs-canvas {
+    padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rs-mobilenav-link {
+    transition: none;
+  }
+}
+
+/* A domain you are standing inside reads as current, not as a quiet ancestor.
+   `data-within` was written for a page whose child is open, and a thin left
+   edge is exactly right there. A domain is a place: being in Activity while
+   reading a receipt is being in Activity, so it looks like it. */
+.rs-link[data-domain="true"] {
+  background: var(--ry-hover);
+  color: var(--ry-text);
+}
+
+.rs-link[data-domain="true"]::before {
+  background: var(--ry-iris);
+}
+
+/* The wallet, shown beside the account and never merged with it. Quieter than
+   the account control on purpose: one is a state you read, the other is an
+   action you can take. */
+.rs-walletchip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm, 8px);
+  background: var(--ry-card);
+  color: var(--ry-muted);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense, 0.8125rem);
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .rs-walletchip {
+    display: none;
+  }
+}
+
+/* ======================================================= the menu you can see ==
+   Canon v5.4 (2026-09-24, В30–В31): on a desk every section of the product's
+   menu with its caption and nothing behind «Ще»; on top the search, the bell
+   and the wallet's menu; on a phone the five places below and «Ще» opening
+   the same sections above them. Scoped to the product, so every other
+   workspace keeps its rail as it was. */
+
+/* A caption is a label, in the case a person writes it (canon §2, rule 7:
+   no capitals, from 13px). */
+.rs[data-product="true"] .rs-group-title {
+  margin: 0;
+  padding: var(--ry-s2) var(--ry-s4) 2px;
+  font-size: var(--ry-fs-data);
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ry-text-muted, var(--ry-muted));
+}
+
+/* Sections breathe instead of being ruled off one by one; a hairline only
+   where the kind changes — after Home, and before the assistant. */
+.rs[data-product="true"] .rs-group + .rs-group {
+  margin-top: var(--ry-s1);
+  padding-top: 0;
+  border-top: 0;
+}
+
+.rs[data-product="true"] .rs-group[data-group="domains-invest"],
+.rs[data-product="true"] .rs-group[data-group="domains-agent"] {
+  margin-top: var(--ry-s2);
+  padding-top: var(--ry-s2);
+  border-top: 1px solid color-mix(in srgb, var(--ry-border) 70%, transparent);
+}
+
+/* The assistant says what it is: «Ryntra» and, quietly beside it, «ШІ-помічник». */
+.rs-link-named {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ry-s2);
+  min-width: 0;
+}
+
+.rs-link-name {
+  flex: none;
+}
+
+.rs-link-caption {
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--ry-fs-data);
+  font-weight: 500;
+  color: var(--ry-text-muted, var(--ry-muted));
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rs-link[aria-current="page"] .rs-link-caption {
+  color: color-mix(in srgb, var(--ry-accent-fg) 70%, var(--ry-muted));
+}
+
+.rs[data-nav="collapsed"] .rs-link-named { display: none; }
+
+/* On a desk the whole menu stands in one screen: rows a pointer aims at,
+   not a thumb, so 34px instead of the 44px floor a phone's drawer keeps. */
+@media (min-width: 901px) {
+  .ry-product .rs[data-product="true"] .rs-nav .rs-link {
+    min-height: 32px;
+    padding-block: 4px;
+    font-size: var(--ry-fs-copy);
+    line-height: 1.3;
+  }
+
+  .rs[data-product="true"] .rs-nav .rs-group-title {
+    padding: 6px var(--ry-s4) 2px;
+    line-height: 1.3;
+  }
+
+  .rs[data-product="true"] .rs-nav {
+    padding-block: var(--ry-s2);
+  }
+
+  .rs[data-product="true"] .rs-group {
+    gap: 1px;
+    padding-block: 2px;
+  }
+
+  .rs[data-product="true"] .rs-nav-pinned {
+    padding-top: var(--ry-s1);
+    margin-top: var(--ry-s1);
+  }
+
+  .rs[data-product="true"] .rs-view {
+    padding-bottom: 0;
+  }
+}
+
+/* A laptop's short window (1440 × 800 with the browser's own bars): the rows
+   tighten once more, so the menu and its foot still stand in one screen. */
+@media (min-width: 901px) and (max-height: 860px) {
+  .ry-product .rs[data-product="true"] .rs-nav .rs-link {
+    min-height: 30px;
+    padding-block: 3px;
+  }
+
+  .rs[data-product="true"] .rs-nav .rs-group-title {
+    padding-top: 4px;
+  }
+}
+
+/* The foot of the product's menu is Відгук above Settings, one row each. */
+.rs[data-product="true"] .rs-view {
+  display: grid;
+  gap: 1px;
+  padding: 0;
+}
+
+/* ------------------------------------------------------------- the search */
+
+.rs-search {
+  display: flex;
+  flex: 1 1 auto;
+  justify-content: center;
+  min-width: 0;
+  padding-inline: var(--ry-s4);
+}
+
+.rs-searchbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  width: min(460px, 100%);
+  height: 40px;
+  padding: 0 var(--ry-s2) 0 var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-card);
+  color: var(--ry-muted);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  text-align: start;
+  cursor: pointer;
+  transition: border-color var(--rt-duration-fast) var(--rt-ease), color var(--rt-duration-fast) var(--rt-ease);
+}
+
+.rs-searchbtn:hover {
+  border-color: var(--ry-border-strong);
+  color: var(--ry-text);
+}
+
+.rs-searchbtn-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rs-searchbtn-key {
+  flex: none;
+  padding: 2px var(--ry-s2);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-chip);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+}
+
+/* ---------------------------------------------------------------- the bell */
+
+.rs-menu-trigger.rs-bell {
+  position: relative;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  gap: 0;
+}
+
+.rs-bell .rs-menu-label:empty { display: none; }
+
+.rs-bell-count {
+  position: absolute;
+  top: 2px;
+  inset-inline-end: 1px;
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border: 2px solid var(--ry-sidebar);
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-iris);
+  color: var(--ry-on-iris);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.rs-bellbox .rs-menu-panel {
+  width: min(380px, calc(100vw - var(--ry-s6)));
+  padding: 0;
+}
+
+/* ------------------------------------------------------- the wallet's menu */
+
+.rs-menu-prefs {
+  display: grid;
+  gap: 1px;
+}
+
+.rs-menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s3);
+  width: 100%;
+  min-height: 40px;
+  padding: var(--ry-s2) var(--ry-s3);
+  border: 0;
+  border-radius: var(--ry-r-btn-sm);
+  background: transparent;
+  color: var(--ry-text);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  text-align: start;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.rs-menu-item:hover {
+  background: var(--ry-hover);
+}
+
+.rs-menu-item > svg {
+  flex: none;
+  color: var(--ry-muted);
+}
+
+.rs-menu-item-label {
+  flex: 1;
+  min-width: 0;
+}
+
+.rs-menu-item-value {
+  flex: none;
+  color: var(--ry-muted);
+}
+
+.rs-menu-section[data-section="preferences"] {
+  padding-block: var(--ry-s2);
+}
+
+/* ------------------------------------------------------------ the top bar */
+
+@media (max-width: 1100px) {
+  .rs-searchbtn-key { display: none; }
+}
+
+/* A phone: the mark, then the glass, the bell and the wallet; «Ще» in the
+   bar below opens the menu, so the product carries no hamburger above. */
+@media (max-width: 900px) {
+  .rs[data-product="true"] .rs-navtoggle { display: none; }
+
+  .rs[data-product="true"] .rs-search {
+    flex: 0 0 auto;
+    justify-content: flex-end;
+    margin-inline-start: auto;
+    padding-inline: 0;
+  }
+
+  .rs[data-product="true"] .rs-tools { margin-inline-start: 0; }
+
+  .rs-searchbtn {
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border-color: transparent;
+    background: transparent;
+    color: var(--ry-text);
+  }
+
+  .rs-searchbtn-text,
+  .rs-searchbtn-key { display: none; }
+
+  .rs-menu-trigger.rs-bell {
+    width: 44px;
+    height: 44px;
+    border-color: transparent;
+    background: transparent;
+  }
+
+  /* «Ще» opens the whole menu above the bar, the width of the screen: the
+     same sections as the desk, with their captions, one thumb away. */
+  .rs[data-product="true"] .rs-nav {
+    inset: var(--rs-top) 0 calc(56px + env(safe-area-inset-bottom, 0px)) 0;
+    width: 100%;
+    z-index: 38;
+    box-shadow: none;
+    border-inline-end: 0;
+  }
+
+  .rs[data-product="true"] .rs-scrim { display: none; }
+}

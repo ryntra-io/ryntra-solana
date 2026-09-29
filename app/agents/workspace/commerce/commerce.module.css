@@ -1,0 +1,467 @@
+/*
+ * The commerce surface's own layout.
+ *
+ * Every colour here is a token from the workspace projection. The three tones
+ * carry meaning and are never decoration: `allowed` is a route that resolves,
+ * `provider` is a capability that does not exist, `policy` is a capability the
+ * owner declined. Two refusals that look the same would erase the distinction
+ * the engine exists to make.
+ */
+
+.matrix {
+  min-width: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px 14px;
+}
+
+.control {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+
+.control > span {
+  color: var(--text-faint);
+  font-size: var(--fs-12);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.control select {
+  min-height: 44px;
+  min-width: 15ch;
+  padding: 0 30px 0 11px;
+  color: var(--text);
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: var(--fs-14);
+}
+
+.control select:hover:not(:disabled) { border-color: var(--accent-line); }
+.control select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.control select:disabled { color: var(--text-faint); }
+
+.controlFacts {
+  display: grid;
+  gap: 2px;
+  padding-bottom: 4px;
+}
+
+.controlFacts b {
+  color: var(--text);
+  font-size: var(--fs-14);
+  font-weight: 600;
+}
+
+.controlFacts span {
+  color: var(--text-dim);
+  font-size: var(--fs-13);
+}
+
+.tally {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--panel-3) 45%, transparent);
+}
+
+.tally b {
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: var(--fs-15);
+  font-weight: 600;
+}
+
+.tally[data-tone="some"] b { color: var(--mint); }
+.tally[data-tone="none"] b { color: var(--text-faint); }
+
+.tally span { color: var(--text-dim); font-size: var(--fs-14); }
+
+.tally code {
+  margin-left: auto;
+  color: var(--text-faint);
+  font-family: var(--mono);
+  font-size: var(--fs-12);
+}
+
+/* `max-width: 100%` is what actually makes `overflow-x: auto` engage here. A
+   scroll container inside a grid item sizes to its content unless it is capped,
+   and an uncapped one pushes the whole page sideways instead of scrolling —
+   which is exactly what the pairing table did before this line existed. */
+.gridScroll { min-width: 0; max-width: 100%; overflow-x: auto; }
+
+/* Capped rather than full-width. A four-column grid stretched across a wide
+   panel puts a 17px icon in the middle of a 400px cell, which is unreadable as
+   a pattern — and the pattern is the whole point of drawing a grid. */
+.grid {
+  width: 100%;
+  min-width: 30rem;
+  max-width: 46rem;
+  border-collapse: collapse;
+}
+
+.grid th,
+.grid td {
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--border);
+  text-align: center;
+}
+
+.grid thead th {
+  color: var(--text-faint);
+  font-size: var(--fs-12);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* The row-header column takes its content and no more, so the four facilitator
+   columns divide the rest evenly. `width: 1%` is the shrink-to-fit idiom for a
+   table cell; without it the first column absorbed a third of the panel. */
+.grid thead th:first-child,
+.grid tbody th {
+  width: 1%;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.grid tbody th {
+  color: var(--text);
+  font-size: var(--fs-14);
+  font-weight: 500;
+}
+
+.grid tbody tr:last-child th,
+.grid tbody tr:last-child td { border-bottom: 0; }
+
+.grid td[data-tone] { cursor: help; }
+.grid td[data-tone="allowed"] {
+  color: var(--mint);
+  background: color-mix(in srgb, var(--success-soft) 55%, transparent);
+}
+.grid td[data-tone="policy"] { color: var(--amber); }
+.grid td[data-tone="provider"] { color: var(--text-faint); }
+
+.legend {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 0;
+  padding: 0;
+}
+
+.legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-dim);
+  font-size: var(--fs-13);
+}
+
+.legend li[data-tone="allowed"] { color: var(--mint); }
+.legend li[data-tone="policy"] { color: var(--amber); }
+.legend li[data-tone="provider"] { color: var(--text-faint); }
+
+/* Explanation lives behind an icon, never printed on the page. */
+.explain { min-width: 0; }
+
+.explain summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  color: var(--text-dim);
+  font-size: var(--fs-13);
+  cursor: pointer;
+  list-style: none;
+}
+
+.explain summary::-webkit-details-marker { display: none; }
+.explain summary:hover { color: var(--text); }
+.explain summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.explain > div {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--panel-3) 40%, transparent);
+}
+
+.explain p {
+  margin: 0;
+  max-width: 72ch;
+  color: var(--text-dim);
+  font-size: var(--fs-13);
+  line-height: 1.5;
+}
+
+.explain ul {
+  list-style: none;
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+}
+
+.explain li {
+  position: relative;
+  padding-left: 14px;
+  max-width: 72ch;
+  color: var(--text-dim);
+  font-size: var(--fs-13);
+  line-height: 1.45;
+}
+
+.explain li::before {
+  content: "";
+  position: absolute;
+  top: 0.6em;
+  left: 2px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--text-faint);
+}
+
+.source {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 6px;
+  color: var(--text-faint);
+  font-size: var(--fs-12);
+}
+
+/* The one link on this surface is a real target, not four words in a sentence.
+   Measured at 17px before this rule and caught by the 44px check. */
+.source a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 2px;
+  color: var(--accent);
+}
+
+.source a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.noSlice {
+  display: flex;
+  gap: 10px;
+  padding: 12px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-faint);
+}
+
+.noSlice div { display: grid; gap: 3px; }
+.noSlice b { color: var(--text); font-size: var(--fs-14); }
+.noSlice span { max-width: 60ch; color: var(--text-dim); font-size: var(--fs-13); line-height: 1.45; }
+
+/* ---- the collision, the pairing grid, custody and standards ------------ */
+
+.collision {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 10px;
+}
+
+.receipt {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+  padding: 11px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--panel-3) 40%, transparent);
+}
+
+.receipt header { display: grid; gap: 2px; }
+.receipt header b { color: var(--text); font-size: var(--fs-14); }
+.receipt header span { color: var(--text-dim); font-size: var(--fs-12); }
+
+.receiptRows { display: grid; gap: 4px; }
+
+.receiptRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: var(--fs-13);
+}
+
+.receiptRow > span { color: var(--text-faint); }
+.receiptRow > b { color: var(--text); font-family: var(--mono); font-size: var(--fs-12); font-weight: 500; text-align: right; word-break: break-all; }
+.receiptRow[data-differs="true"] > b { color: var(--amber); }
+
+.trust {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-badge);
+  font-family: var(--mono);
+  font-size: var(--fs-12);
+  letter-spacing: 0.06em;
+}
+
+.trust[data-rung="0"] { color: var(--text-faint); }
+.trust[data-rung="1"] { color: var(--amber); border-color: var(--warning-strong); }
+.trust[data-rung="2"] { color: var(--mint); }
+.trust[data-rung="3"] { color: var(--mint); border-color: var(--success-strong); }
+
+.pairScroll { min-width: 0; max-width: 100%; overflow-x: auto; }
+
+.pair {
+  width: 100%;
+  min-width: 30rem;
+  border-collapse: collapse;
+}
+
+.pair th,
+.pair td {
+  padding: 6px 4px;
+  border-bottom: 1px solid var(--border);
+  font-size: var(--fs-12);
+  text-align: center;
+}
+
+/* The column labels wrap rather than forcing the table wider than its panel.
+   Seven `nowrap` headers added up to more than a half-width panel can hold, and
+   the result was a grid that had to be scrolled sideways to be read at all. */
+.pair thead th {
+  color: var(--text-faint);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  vertical-align: bottom;
+}
+
+.pair thead th:first-child { white-space: nowrap; }
+
+.pair tbody th {
+  color: var(--text-dim);
+  font-weight: 500;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.pair td { color: var(--text-faint); font-family: var(--mono); }
+.pair td[data-consistency="CONSISTENT"] { color: var(--mint); }
+.pair td[data-consistency="INCONSISTENT"] {
+  color: var(--amber);
+  background: color-mix(in srgb, var(--warning-soft) 50%, transparent);
+  cursor: help;
+}
+
+.axes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 10px;
+}
+
+.axisCard {
+  display: grid;
+  gap: 6px;
+  padding: 11px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.axisCard > b { color: var(--text); font-size: var(--fs-14); }
+
+.axisRows { display: grid; gap: 4px; }
+
+.axisRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: var(--fs-13);
+}
+
+.axisRow > span { color: var(--text-faint); }
+.axisRow > b { color: var(--text); font-family: var(--mono); font-size: var(--fs-12); font-weight: 500; }
+
+.standards { display: grid; gap: 8px; }
+
+.standard {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.standardHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 10px;
+}
+
+.standardHead b { color: var(--text); font-size: var(--fs-14); }
+
+.draftChip {
+  padding: 2px 7px;
+  border: 1px solid var(--warning-strong);
+  border-radius: var(--r-badge);
+  color: var(--amber);
+  font-family: var(--mono);
+  font-size: var(--fs-12);
+  letter-spacing: 0.08em;
+}
+
+.standard code {
+  color: var(--text-faint);
+  font-family: var(--mono);
+  font-size: var(--fs-12);
+  word-break: break-all;
+}
+
+.standard p { margin: 0; max-width: 72ch; color: var(--text-dim); font-size: var(--fs-13); line-height: 1.45; }
+
+/* Two columns where there is room. Four blockers stacked in a full-width panel
+   left two thirds of it empty and stretched nothing — the measure is capped on
+   the text anyway, so the column was doing no work. */
+.blockers {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(26rem, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+}
+
+.blocker {
+  display: grid;
+  gap: 3px;
+  padding: 10px 12px;
+  border-left: 2px solid var(--border-strong);
+  background: color-mix(in srgb, var(--panel-3) 35%, transparent);
+}
+
+.blocker b { color: var(--text); font-size: var(--fs-14); }
+.blocker span { max-width: 76ch; color: var(--text-dim); font-size: var(--fs-13); line-height: 1.5; }
+
+@media (max-width: 640px) {
+  .controls { flex-direction: column; align-items: stretch; }
+  .control select { width: 100%; }
+  .tally code { margin-left: 0; }
+}

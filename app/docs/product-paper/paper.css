@@ -1,0 +1,54 @@
+/*
+ * The Product & Architecture Paper.
+ *
+ * A paper, not a manual: one measure, numbered chapters, and exactly one piece
+ * of furniture — the notice that separates this document from the register.
+ */
+
+/* The notice is the first thing on the page and the only bordered block on it.
+   It is deliberately not styled as a warning: it states a boundary, and a
+   coloured alert would read as something being wrong. */
+.rx-pp-notice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--ry-s4);
+  margin-bottom: var(--ry-s7);
+  padding: var(--ry-s5);
+  border: 1px solid var(--ry-border-strong);
+  border-radius: var(--ry-r-card);
+}
+
+.rx-pp-notice p {
+  margin: 0;
+  max-width: 68ch;
+  font-size: var(--ry-fs-app);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-text);
+}
+
+.rx-pp-ch + .rx-pp-ch {
+  margin-top: var(--ry-s6);
+  padding-top: var(--ry-s5);
+  border-top: 1px solid var(--ry-border);
+}
+
+.rx-pp-h {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ry-s3);
+  margin: 0 0 var(--ry-s3);
+}
+
+/* The chapter number is a locator, not decoration, so it is mono and quiet — a
+   reader cites "chapter 14" and should be able to find it by scanning. */
+.rx-pp-n {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+}
+
+.rx-pp-ch p {
+  max-width: 74ch;
+  margin: 0;
+}

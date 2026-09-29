@@ -1,0 +1,370 @@
+/* The market universe — Solana at the centre, the assets that trade on Spot
+   in orbit around it (universe.tsx).
+
+   Three rings are circles in one tilted plane; perspective draws them as
+   ellipses. Every asset rides its ring on one slow rotation, counter-rotates
+   to keep facing the reader, and takes a depth pass on the far side. The
+   three animations share one clock — `--period` and the same negative delay
+   from `--phase` — so they never drift apart. Static fallbacks place every
+   asset at its phase when animations are off, so the still picture under
+   `prefers-reduced-motion` is the same composition.
+
+   Tokens only: the ground is the hero's own edge tone, the orange is light
+   and trajectories, the Solana gradient is the network's light on and around
+   the core, and the hue that lights each logo is the logo's own (`--glow`,
+   set from the manifest). Sizes are ramp steps or container units.
+
+   Nothing inside the 3D scene carries a `filter`, a `mix-blend-mode` or an
+   outer `box-shadow`: the compositor rasterises such a layer as a rectangle,
+   clips whatever falls outside the box to that rectangle and sorts the
+   whole rectangle against the rings — a square of light around a token and
+   around the core, with the ring line cut at its edge, seen at 2560px on
+   2026-09-14 and traced to the outer shadows by switching them off one at a
+   time. So depth is size and opacity, every glow is a radial gradient
+   painted inside a box of its own (`.token::before`, `.cool` behind the
+   scene), shadows inside a disc are inset ones, and the rim light is a
+   normal-blended gradient. Nor does any disc fill its box with a flat
+   colour: a 3D-sorted layer's own background is drawn as its whole
+   rectangle, the rounded clip applying to its children only — a lighter
+   square around every token, the ring behind it cut at the square's edge.
+   Every disc is a radial gradient that ends in transparent at its rim. And
+   the glow around a disc is painted on the token's own plane
+   (`.token::before`), never inside `.tokenEnter`: that child carries the
+   reveal's opacity and so a render surface of its own, and anything larger
+   than the disc inside that surface came back as the same lighter square.
+   Found by switching the parts off one at a time at 2560px, 2026-09-14. */
+
+.universe {
+  --u-ground: var(--landing-ground, color-mix(in srgb, var(--ry-midnight) 30%, black));
+  --tilt: 66deg;
+  --px: 0;
+  --py: 0;
+  position: relative;
+  isolation: isolate;
+  /* `clip`, not `hidden`, so the section is no scroll container and the
+     scroll-driven reveal of the words measures against the page. */
+  overflow: clip;
+  padding: 0 0 clamp(64px, 8vw, 140px);
+  /* The landing's one ground is painted on `main`; the section only adds its
+     light, so nothing marks where the hero ends and this begins — nor where
+     this ends and the workflow begins: the foot is the ground itself, and the
+     hand-over to the footer's tone belongs to the last section. */
+  background: transparent;
+  color: var(--landing-ink);
+}
+
+/* ── backdrop: the network's light behind the scene, nothing at the head ── */
+.backdrop { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+/* Every light here reaches zero well before the section's top edge: the head
+   of this section is the same dark as the render's foot above it, and a
+   light that met that edge at any strength would draw the seam. The ember
+   sits low, behind the near arcs, where the render's own horizon was. */
+.warm {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 46% 20% at 50% 66%, color-mix(in srgb, var(--ry-iris) 9%, transparent) 0%, transparent 70%);
+}
+/* The network's light around the core is painted here, behind the scene,
+   where a 2D layer may blur and glow freely; the core itself carries only
+   inset shadows. */
+.cool {
+  position: absolute; left: 50%; top: 58%; width: 120vw; height: 90vh; transform: translate(-50%, -50%);
+  background:
+    radial-gradient(ellipse 22% 26% at 50% 50%, color-mix(in srgb, var(--ry-sol-violet) 30%, transparent) 0%, transparent 70%),
+    radial-gradient(ellipse 34% 40% at 50% 50%, color-mix(in srgb, var(--ry-sol-violet) 18%, transparent) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 55% at 50% 48%, color-mix(in srgb, var(--ry-sol-green) 8%, transparent) 0%, transparent 72%);
+  filter: blur(30px);
+}
+.sky { position: absolute; inset: -4%; translate: calc(var(--px) * -10px) calc(var(--py) * -6px); transition: translate 900ms cubic-bezier(.2, .7, .3, 1); }
+.particle {
+  position: absolute; border-radius: 50%; background: var(--landing-mote); opacity: .55;
+  animation: twinkle 7s ease-in-out infinite alternate;
+}
+.particle[data-dim] { opacity: .22; animation-duration: 11s; }
+@keyframes twinkle { from { opacity: .12; transform: scale(.8); } to { opacity: .7; transform: scale(1.15); } }
+
+/* ── the words, centred above the scene ─────────────────────────────────── */
+.head {
+  position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--ry-s4);
+  width: 100%; max-width: 1040px; margin: 0 auto; padding: clamp(56px, 7vw, 96px) var(--ry-s5) 0;
+}
+.eyebrow {
+  display: inline-flex; align-items: center; gap: var(--ry-s3); margin: 0;
+  font-family: var(--ry-font-mono); font-size: var(--ry-fs-label); font-weight: 500; letter-spacing: .22em; text-transform: uppercase; color: var(--ry-unknown);
+}
+.eyebrow img { display: block; width: 20px; height: 16px; }
+.title {
+  margin: 0; font-family: var(--ry-font-sans); font-weight: 700; line-height: .98; letter-spacing: -.035em; text-wrap: balance;
+  font-size: clamp(var(--ry-fs-display), 4.4vw, calc(var(--ry-fs-display) * 1.4));
+}
+.title span { display: block; }
+/* The Ukrainian first line is a third longer; a step smaller keeps it to two lines. */
+.title:lang(uk) { font-size: clamp(var(--ry-fs-display), 3.9vw, calc(var(--ry-fs-display) * 1.25)); }
+.lead { margin: 0; max-width: 40em; font-size: var(--ry-fs-lead); line-height: 1.45; color: var(--ry-unknown); text-wrap: pretty; }
+.explore {
+  display: inline-flex; align-items: center; gap: var(--ry-s2); margin-top: var(--ry-s1); min-height: 44px;
+  font-size: var(--ry-fs-app); font-weight: 500; color: var(--landing-ink); text-decoration: underline; text-underline-offset: 7px;
+  text-decoration-color: color-mix(in srgb, var(--landing-ink) 30%, transparent); transition: text-decoration-color 160ms ease;
+}
+.explore:hover { text-decoration-color: var(--ry-iris); }
+.explore svg { transition: transform 160ms cubic-bezier(.16, 1, .3, 1); }
+.explore:hover svg { transform: translateX(4px); }
+.explore:focus-visible { outline: none; border-radius: var(--ry-r-focus-sm); box-shadow: var(--ry-focus); }
+
+/* ── the scene ───────────────────────────────────────────────────────────── */
+.scene {
+  position: relative; z-index: 1; width: 100%; max-width: 1640px; margin: clamp(-24px, -1.25vw, -8px) auto 0;
+  height: clamp(320px, 47vw, 790px);
+  container-type: inline-size;
+  /* The camera: far enough that the near arc of the outer ring, magnified by
+     the perspective, still lands inside the section with its token — at
+     1640 × 790 the arc projects to 823px from the top against 878 of room —
+     and close enough that a near token reads a third larger than a far one
+     before the depth pass adds its own. */
+  perspective: 2400px; perspective-origin: 50% 25%;
+}
+.world {
+  position: absolute; left: 50%; top: 42%; width: 0; height: 0;
+  transform-style: preserve-3d;
+  /* A small turn toward the pointer — small, so a token never slides out from
+     under the cursor that is about to reach it. */
+  transform: rotateY(calc(var(--px) * 2deg)) rotateX(calc(var(--tilt) - var(--py) * 1.2deg));
+  transition: transform 900ms cubic-bezier(.2, .7, .3, 1);
+}
+
+/* Geometry, in container widths: the core and the three radii. */
+.world {
+  --core: clamp(150px, 21cqw, 350px);
+  --r1: 23cqw; --r2: 33cqw; --r3: 42.5cqw;
+  --s1: clamp(48px, 6.4cqw, 104px); --s2: clamp(44px, 5.6cqw, 92px); --s3: clamp(40px, 4.8cqw, 80px);
+}
+
+/* The far grid: on the ring plane, so it recedes; masked to the distance. */
+.floor {
+  position: absolute; left: -60cqw; top: -60cqw; width: 120cqw; height: 120cqw; pointer-events: none;
+  background-image: linear-gradient(var(--rt-site-grid) 1px, transparent 1px), linear-gradient(90deg, var(--rt-site-grid) 1px, transparent 1px);
+  background-size: 7cqw 7cqw; background-position: 50% 50%;
+  mask-image: radial-gradient(ellipse 48% 44% at 50% 30%, black 0%, transparent 100%);
+  transform: translateZ(-1px);
+}
+
+/* Rings: one hairline each, tinted with the trajectory's orange, and a
+   streak of light that runs along it now and then. */
+.ringLine { pointer-events: none; }
+.core { pointer-events: none; }
+.ringLine, .ring { position: absolute; left: calc(-1 * var(--r)); top: calc(-1 * var(--r)); width: calc(2 * var(--r)); height: calc(2 * var(--r)); border-radius: 50%; }
+.ringLine[data-ring="1"], .ring[data-ring="1"] { --r: var(--r1); --size: var(--s1); --near: 1.08; --far: .84; }
+.ringLine[data-ring="2"], .ring[data-ring="2"] { --r: var(--r2); --size: var(--s2); --near: 1.06; --far: .82; }
+.ringLine[data-ring="3"], .ring[data-ring="3"] { --r: var(--r3); --size: var(--s3); --near: 1.04; --far: .8; }
+/* The line is 2.5px wide in its own plane with a soft edge on both sides:
+   the far arc of a ring tilted 66deg is foreshortened to well under a
+   pixel, and a hard 2px line came through it as dashes (the Owner's
+   screenshot, 2026-09-14); a wider, soft line minifies to a faint
+   continuous one instead — far and fainter, which is what distance looks
+   like. */
+.ringLine {
+  background: conic-gradient(from 0deg, color-mix(in srgb, var(--ry-iris) 68%, transparent) 0%, color-mix(in srgb, var(--landing-ink) 26%, transparent) 25%, color-mix(in srgb, var(--ry-iris) 38%, transparent) 50%, color-mix(in srgb, var(--landing-ink) 20%, transparent) 75%, color-mix(in srgb, var(--ry-iris) 68%, transparent) 100%);
+  mask-image: radial-gradient(farthest-side, transparent calc(100% - 4.5px), black calc(100% - 3px), black calc(100% - 1.5px), transparent 100%);
+  transform: translateZ(0);
+}
+.ringStreak {
+  position: absolute; inset: -1px; border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent 0%, transparent 80%, color-mix(in srgb, var(--ry-iris) 90%, var(--landing-ink)) 92%, transparent 100%);
+  mask-image: radial-gradient(farthest-side, transparent calc(100% - 5px), black calc(100% - 3.5px), black calc(100% - 1.5px), transparent 100%);
+  opacity: 0;
+  animation: streak 26s linear infinite;
+}
+.ringLine[data-ring="2"] .ringStreak { animation-duration: 38s; animation-delay: -12s; }
+.ringLine[data-ring="3"] .ringStreak { animation-duration: 52s; animation-delay: -30s; }
+.ringStreak[data-reverse] { animation-direction: reverse; }
+@keyframes streak {
+  0% { transform: rotateZ(0deg); opacity: 0; }
+  8% { opacity: .9; }
+  38% { opacity: .9; }
+  46% { opacity: 0; }
+  100% { transform: rotateZ(360deg); opacity: 0; }
+}
+
+/* ── the core ────────────────────────────────────────────────────────────── */
+.core {
+  position: absolute; left: calc(-1 * var(--core) / 2); top: calc(-1 * var(--core) / 2); width: var(--core); height: var(--core);
+  border-radius: 50%; overflow: hidden;
+  transform: rotateX(calc(-1 * var(--tilt)));
+  background:
+    radial-gradient(circle at 34% 28%, color-mix(in srgb, var(--ry-mist) 13%, transparent) 0%, transparent 44%),
+    radial-gradient(circle closest-side at 50% 50%, var(--ry-elevated) 0%, var(--ry-midnight) 58%, black 99%, transparent 100%);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--ry-mist) 10%, transparent),
+    inset -28px -40px 70px -20px black,
+    inset 30px 36px 60px -34px color-mix(in srgb, var(--ry-sol-purple) 45%, transparent),
+    inset -24px 24px 50px -40px color-mix(in srgb, var(--ry-iris) 60%, transparent);
+}
+.coreBand {
+  position: absolute; inset: 0; border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent 0%, color-mix(in srgb, var(--ry-mist) 6%, transparent) 20%, transparent 40%, color-mix(in srgb, var(--ry-sol-green) 14%, transparent) 62%, transparent 80%, transparent 100%);
+  mask-image: radial-gradient(circle, transparent 54%, black 62%, black 96%, transparent 100%);
+  animation: coreTurn 64s linear infinite;
+}
+.coreSheen {
+  position: absolute; inset: -20%; border-radius: 50%;
+  background: radial-gradient(ellipse 34% 26% at 38% 26%, color-mix(in srgb, var(--ry-mist) 16%, transparent) 0%, transparent 100%);
+  animation: sheen 16s ease-in-out infinite alternate;
+}
+.coreMark {
+  position: absolute; left: 50%; top: 50%; width: 46%; height: auto; transform: translate(-50%, -50%);
+  animation: markFloat 7s ease-in-out infinite alternate;
+}
+.coreRim {
+  position: absolute; inset: 0; border-radius: 50%;
+  background: radial-gradient(circle at 78% 82%, color-mix(in srgb, var(--ry-iris) 42%, transparent) 0%, transparent 46%);
+  mask-image: radial-gradient(circle, transparent 78%, black 100%);
+}
+@keyframes coreTurn { from { transform: rotateZ(0deg); } to { transform: rotateZ(360deg); } }
+@keyframes sheen { from { transform: translate(-5%, -3%); } to { transform: translate(5%, 4%); } }
+@keyframes markFloat { from { transform: translate(-50%, -52%); } to { transform: translate(-50%, -48%); } }
+
+/* ── the rings and their riders ──────────────────────────────────────────── */
+.ring { list-style: none; margin: 0; padding: 0; transform-style: preserve-3d; }
+.orbiter {
+  position: absolute; left: 50%; top: 50%; width: 0; height: 0; transform-style: preserve-3d;
+  /* Where the asset stands when nothing moves; the animation takes over from the same place. */
+  transform: rotateZ(calc(90deg + var(--phase) * 360deg)) translateX(var(--r));
+  animation: orbit var(--period) linear infinite;
+  animation-delay: calc(-1 * var(--phase) * var(--period));
+}
+.ring[data-reverse] .orbiter, .ring[data-reverse] .token, .ring[data-reverse] .tokenBody { animation-direction: reverse; }
+.token {
+  position: absolute; left: calc(-1 * var(--size) / 2); top: calc(-1 * var(--size) / 2); width: var(--size); height: var(--size);
+  display: block; border-radius: 50%; color: inherit; text-decoration: none; transform-style: preserve-3d;
+  transform: rotateZ(calc(-90deg - var(--phase) * 360deg)) rotateX(calc(-1 * var(--tilt)));
+  animation: counter var(--period) linear infinite;
+  animation-delay: calc(-1 * var(--phase) * var(--period));
+}
+/* The logo's own light and the disc's shadow, as gradients in a box twice
+   the disc, painted on the token's plane behind the disc. Only `scale`
+   changes on hover — an opacity change here would give the box a surface of
+   its own, and the surface would show as a square. */
+.token::before {
+  content: ""; position: absolute; inset: -48%; border-radius: 50%; pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--glow) 28%, transparent) 0%, color-mix(in srgb, var(--glow) 8%, transparent) 36%, transparent 60%),
+    radial-gradient(ellipse 34% 26% at 50% 74%, color-mix(in srgb, var(--landing-shade) 60%, transparent) 0%, transparent 100%);
+  transition: scale 320ms cubic-bezier(.2, .7, .3, 1);
+}
+.tokenEnter { position: absolute; inset: 0; display: block; transition: transform 320ms cubic-bezier(.2, .7, .3, 1); }
+.tokenBody {
+  position: absolute; inset: 0; display: block; border-radius: 50%; overflow: hidden;
+  background: radial-gradient(circle closest-side, var(--ry-midnight) 0%, var(--ry-midnight) 99%, transparent 100%);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--ry-mist) 22%, transparent),
+    inset 0 -16px 26px -10px black,
+    inset 0 10px 18px -12px color-mix(in srgb, var(--ry-mist) 40%, transparent);
+  animation: depth var(--period) linear infinite;
+  animation-delay: calc(-1 * var(--phase) * var(--period));
+  transition: box-shadow 220ms ease;
+}
+.tokenBody img { display: block; width: 100%; height: 100%; object-fit: cover; }
+/* The glass: a highlight above, a shade below. */
+.tokenBody::before, .tokenBody::after { content: ""; position: absolute; inset: 0; border-radius: 50%; pointer-events: none; }
+.tokenBody::before { background: radial-gradient(ellipse 62% 44% at 32% 16%, color-mix(in srgb, var(--ry-mist) 42%, transparent) 0%, transparent 62%); }
+.tokenBody::after { background: linear-gradient(180deg, transparent 55%, color-mix(in srgb, black 34%, transparent) 100%); }
+/* The tooltip, outside the scene and above it, placed by the script under the
+   hovered token and kept there while the token moves. */
+.tip {
+  position: absolute; left: 0; top: 0; z-index: 3; transform: translate(-50%, 4px);
+  display: inline-flex; align-items: center; white-space: nowrap; padding: 6px 10px;
+  border: 1px solid var(--ry-border-strong); border-radius: var(--ry-r-pill); background: color-mix(in srgb, var(--ry-elevated) 92%, transparent);
+  font-family: var(--ry-font-mono); font-size: var(--ry-fs-label-sm); letter-spacing: .06em; color: var(--landing-ink);
+  box-shadow: 0 12px 30px -12px var(--landing-shade); opacity: 0; pointer-events: none;
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+.tip[data-show] { opacity: 1; transform: translate(-50%, 0); }
+.token:hover .tokenEnter, .token:focus-visible .tokenEnter { transform: translateZ(90px) scale(1.05); }
+.token:hover::before, .token:focus-visible::before { scale: 1.35; }
+.token:hover .tokenBody, .token:focus-visible .tokenBody {
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--ry-mist) 40%, transparent),
+    inset 0 -16px 26px -10px black,
+    inset 0 10px 18px -12px color-mix(in srgb, var(--ry-mist) 50%, transparent);
+}
+.token:focus-visible { outline: none; }
+.token:focus-visible .tokenBody { outline: 3px solid var(--landing-ink); outline-offset: 2px; }
+
+@keyframes orbit { from { transform: rotateZ(90deg) translateX(var(--r)); } to { transform: rotateZ(450deg) translateX(var(--r)); } }
+@keyframes counter { from { transform: rotateZ(-90deg) rotateX(calc(-1 * var(--tilt))); } to { transform: rotateZ(-450deg) rotateX(calc(-1 * var(--tilt))); } }
+/* Near at 0 and 100, far at 50 — the same clock as the orbit. */
+@keyframes depth {
+  0% { transform: scale(var(--near)); opacity: 1; }
+  50% { transform: scale(var(--far)); opacity: .58; }
+  100% { transform: scale(var(--near)); opacity: 1; }
+}
+
+/* ── the reveal, once, as it scrolls into view ───────────────────────────── */
+/* Only once the script has taken the section (`data-js`): without it the
+   page is the plain composition, never a blank band. */
+.universe[data-js]:not([data-seen]) .head > * { opacity: 0; transform: translateY(24px); }
+.head > * { transition: opacity 500ms cubic-bezier(.2, .7, .3, 1), transform 500ms cubic-bezier(.2, .7, .3, 1); }
+.head > :nth-child(2) { transition-delay: 70ms; }
+.head > :nth-child(3) { transition-delay: 140ms; }
+.head > :nth-child(4) { transition-delay: 210ms; }
+.universe[data-js]:not([data-seen]) .core { opacity: 0; scale: .72; }
+.core { transition: opacity 900ms cubic-bezier(.2, .7, .3, 1) 120ms, scale 1100ms cubic-bezier(.2, .7, .3, 1) 120ms; }
+.universe[data-js]:not([data-seen]) .ringLine { opacity: 0; scale: .8; }
+.ringLine { transition: opacity 900ms cubic-bezier(.2, .7, .3, 1), scale 1100ms cubic-bezier(.2, .7, .3, 1); }
+.ringLine[data-ring="1"] { transition-delay: 260ms; }
+.ringLine[data-ring="2"] { transition-delay: 380ms; }
+.ringLine[data-ring="3"] { transition-delay: 500ms; }
+.universe[data-js]:not([data-seen]) .tokenEnter { opacity: 0; translate: 0 0 -140px; }
+.universe[data-js]:not([data-seen]) .token::before { scale: 0; }
+.tokenEnter { transition: opacity 700ms cubic-bezier(.2, .7, .3, 1), translate 800ms cubic-bezier(.2, .7, .3, 1), transform 320ms cubic-bezier(.2, .7, .3, 1); }
+.ring[data-ring="1"] .tokenEnter { transition-delay: 520ms; }
+.ring[data-ring="2"] .tokenEnter { transition-delay: 680ms; }
+.ring[data-ring="3"] .tokenEnter { transition-delay: 840ms; }
+.universe[data-js]:not([data-seen]) .floor { opacity: 0; }
+.floor { transition: opacity 1400ms ease 400ms; }
+
+/* Where the browser drives animations from the scroll, the words rise under
+   the reader's own hand — the way the reference site reveals its lines —
+   instead of on the one-shot below. */
+@keyframes headRise { from { opacity: 0; transform: translateY(36px); } to { opacity: 1; transform: translateY(0); } }
+@supports (animation-timeline: view()) {
+  @media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+    .universe[data-js] .head > * { animation: headRise linear both; animation-timeline: view(); animation-range: entry 0% cover 28%; transition: none; }
+    .universe[data-js] .head > :nth-child(2) { animation-range: entry 0% cover 32%; }
+    .universe[data-js] .head > :nth-child(3) { animation-range: entry 0% cover 36%; }
+    .universe[data-js] .head > :nth-child(4) { animation-range: entry 0% cover 40%; }
+    /* As the reader scrolls on, the scene settles and dims while the
+       workflow's words rise over it — the hero's own recession, once more. */
+    .universe[data-js] .scene { animation: sceneRecede linear both; animation-timeline: view(); animation-range: exit 0% exit 100%; }
+  }
+}
+@keyframes sceneRecede { from { scale: 1; opacity: 1; } to { scale: .965; opacity: .5; } }
+
+/* Off screen, the clocks stop. */
+.universe[data-js]:not([data-active]) .orbiter, .universe[data-js]:not([data-active]) .token, .universe[data-js]:not([data-active]) .tokenBody,
+.universe[data-js]:not([data-active]) .ringStreak, .universe[data-js]:not([data-active]) .coreBand, .universe[data-js]:not([data-active]) .coreSheen,
+.universe[data-js]:not([data-active]) .coreMark, .universe[data-js]:not([data-active]) .particle { animation-play-state: paused; }
+
+/* ── narrower screens ────────────────────────────────────────────────────── */
+@media (max-width: 1023px) {
+  .world { --tilt: 60deg; --r1: 27cqw; --r2: 37cqw; --r3: 45cqw; }
+  .scene { height: clamp(320px, 54vw, 760px); margin-top: 0; }
+}
+@media (max-width: 767px) {
+  .world { --tilt: 58deg; --core: clamp(140px, 34cqw, 220px); --r1: 31cqw; --r2: 41cqw; --s1: clamp(46px, 12cqw, 64px); --s2: clamp(40px, 10cqw, 56px); }
+  .title { font-size: min(var(--ry-fs-display), 11.5vw); }
+  /* Ukrainian words are longer — «закривається», «половини»: the phone keeps each on its line. */
+  .title:lang(uk) { font-size: min(var(--ry-fs-display), 9.6vw); }
+  .scene { height: clamp(300px, 72vw, 520px); perspective: 1100px; }
+  /* Two rings on the phone: the outer one would leave the screen. */
+  .ringLine[data-ring="3"], .ring[data-ring="3"] { display: none; }
+  .head { padding-top: var(--ry-s7); }
+  .lead { font-size: var(--ry-fs-body); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .universe *, .universe *::before, .universe *::after { animation: none !important; transition: none !important; }
+  .universe .head > *, .universe .ringLine, .universe .floor { opacity: 1 !important; transform: none !important; scale: 1 !important; }
+  .universe .core { opacity: 1 !important; scale: 1 !important; }
+  .universe .tokenEnter { opacity: 1 !important; translate: 0 0 0 !important; }
+  .universe .ringStreak { opacity: 0 !important; }
+}

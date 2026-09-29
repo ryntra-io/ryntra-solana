@@ -1,0 +1,516 @@
+/*
+ * The public reading primitives, on the frozen Quiet Intelligence system.
+ *
+ * These are the class names the migrated public pages already speak — the same
+ * `rx-*` vocabulary the legacy `site.css` defines — re-expressed entirely in
+ * `--ry-*` tokens. Keeping the names is what lets a page migrate by changing
+ * which stylesheet it loads instead of rewriting nine hundred lines of markup,
+ * and it is why nothing on a migrated page can silently lose a fact.
+ *
+ * A migrated surface must not also load `site.css`: the two files define the
+ * same names, and whichever lands second wins. In practice a page stops loading
+ * it the moment it stops mounting the legacy chrome.
+ *
+ * Mode is Read. Structure serves comprehension first — one measure, one scale,
+ * a steady ground — and the brand lives in the precision of the details rather
+ * than in decoration competing with the prose.
+ */
+
+.rx {
+  background: var(--ry-bg);
+  color: var(--ry-text);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-body);
+  line-height: var(--ry-lh-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── shell and sections ───────────────────────────────────────────────────── */
+
+.rx-shell {
+  max-width: 1140px;
+  margin: 0 auto;
+  padding-inline: var(--ry-s6);
+}
+
+.rx-section {
+  padding-block: var(--ry-s9);
+}
+
+.rx-section--tight {
+  padding-block: var(--ry-s7) var(--ry-s9);
+}
+
+/* A full-bleed band on the landing rhythm — DARK ↔ LIGHT over one container
+   grid. A section that re-resolves the theme has to paint the ground it just
+   resolved: without this it inherits the page's ground and only its text
+   flips, which is a light-on-light band and reads as a rendering failure. */
+.rx-section[data-ry-theme] {
+  background: var(--ry-bg);
+  color: var(--ry-text);
+}
+
+/* ── type ─────────────────────────────────────────────────────────────────── */
+
+.rx-h1 {
+  font-family: var(--ry-font-display);
+  font-weight: 700;
+  font-size: var(--ry-fs-h1);
+  line-height: var(--ry-lh-head);
+  letter-spacing: var(--ry-ls-display);
+  color: var(--ry-text);
+  text-wrap: balance;
+  margin: 0;
+}
+
+.rx-h2 {
+  font-family: var(--ry-font-display);
+  font-weight: 600;
+  font-size: var(--ry-fs-h2);
+  line-height: var(--ry-lh-head);
+  letter-spacing: var(--ry-ls-head);
+  color: var(--ry-text);
+  margin: 0;
+}
+
+.rx-h3 {
+  font-family: var(--ry-font-display);
+  font-weight: 600;
+  font-size: var(--ry-fs-h3);
+  line-height: var(--ry-lh-head);
+  color: var(--ry-text);
+  margin: 0;
+}
+
+.rx-eyebrow {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ry-accent);
+  margin: 0 0 var(--ry-s3);
+}
+
+.rx-lead {
+  font-size: var(--ry-fs-lead);
+  line-height: 1.5;
+  color: var(--ry-muted);
+  /* The craft floor's measure: long enough to carry an argument, short enough
+     that the eye finds the next line without hunting for it. */
+  max-width: 68ch;
+  margin: 0;
+}
+
+.rx-body,
+.rx-prose {
+  font-size: var(--ry-fs-body);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+  max-width: 72ch;
+}
+
+.rx-prose > * + * {
+  margin-top: var(--ry-s4);
+}
+
+.rx-prose strong,
+.rx-body strong {
+  color: var(--ry-text);
+  font-weight: 600;
+}
+
+.rx-fine {
+  font-size: var(--ry-fs-dense);
+  line-height: 1.5;
+  color: var(--ry-muted);
+}
+
+.rx-mono {
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+}
+
+.rx-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ── links and buttons ────────────────────────────────────────────────────── */
+
+/* The accent, not the dark-ground chip text: `--ry-accent` is theme-switched,
+   and the lavender this used to carry measured 1.66:1 on Mist — invisible. The
+   alternating chapters are what surfaced it. */
+.rx-link {
+  color: var(--ry-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+
+.rx-link:hover {
+  color: var(--ry-text);
+}
+
+.rx-link:focus-visible {
+  outline: none;
+  border-radius: var(--ry-r-chip);
+  box-shadow: var(--ry-focus);
+}
+
+.rx-linkrow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ry-s5);
+  margin-top: var(--ry-s5);
+}
+
+.rx-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ry-s2);
+  min-height: 46px;
+  padding-inline: var(--ry-s5);
+  border-radius: var(--ry-r-btn);
+  border: 1px solid transparent;
+  background: var(--ry-iris-deep);
+  color: var(--ry-on-iris);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-app);
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 140ms ease, border-color 140ms ease, transform 140ms ease;
+}
+
+.rx-btn:hover {
+  background: var(--ry-iris-pressed);
+}
+
+.rx-btn:active {
+  transform: scale(0.98);
+}
+
+.rx-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+}
+
+/* The default .rx-btn is already the primary fill; the modifier exists so a
+   page can say which button is the primary one out loud. */
+.rx-btn--primary {
+  background: var(--ry-iris-deep);
+  border-color: transparent;
+  color: var(--ry-on-iris);
+}
+
+.rx-btn--ghost {
+  background: transparent;
+  border-color: var(--ry-border);
+  color: var(--ry-text);
+}
+
+.rx-btn--ghost:hover {
+  background: var(--ry-hover);
+  border-color: var(--ry-border-strong);
+}
+
+.rx-btn--sm {
+  min-height: 44px;
+  padding-inline: var(--ry-s4);
+  font-size: var(--ry-fs-dense);
+}
+
+/* ── page hero ────────────────────────────────────────────────────────────── */
+
+.rx-pagehero {
+  padding-block: var(--ry-s9) var(--ry-s8);
+  border-bottom: 1px solid var(--ry-border);
+}
+
+.rx-pagehero .rx-h1 {
+  max-width: 22ch;
+}
+
+.rx-pagehero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s3);
+  margin-top: var(--ry-s6);
+}
+
+/* The status rail under a page hero: short factual statements, never claims. */
+.rx-trust {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s3) var(--ry-s7);
+  margin: var(--ry-s6) 0 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+  letter-spacing: 0.04em;
+  color: var(--ry-muted);
+}
+
+.rx-trust li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s2);
+}
+
+/* No separator dots. A pseudo-element before each item leads the line whenever
+   the row wraps, so the dot reads as a stray bullet starting a new line.
+   Spacing separates them instead, and spacing never wraps to the wrong place. */
+
+/* ── status and gaps ──────────────────────────────────────────────────────── */
+
+/*
+ * The status pill. Tone is semantic and never decorative: `verified` is the
+ * checks-passed green, `caution` amber, `evidence` the steel of an environment
+ * label, `neutral` a bordered chip. A risk level is never green and nothing
+ * here is ever a safety claim.
+ */
+.rx-state {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--ry-s1) var(--ry-s3);
+  border-radius: var(--ry-r-chip);
+  border: 1px solid transparent;
+  font-size: var(--ry-fs-dense);
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+/* Maturity, not risk. Brandbook v1.2 is explicit that a maturity chip never
+   takes a risk colour, and this tone carries LIVE and TESTNET — both were
+   rendering in the checks-passed green, which reads as a safety claim on a page
+   listing what is and is not built. LIVE is the Iris tint. */
+.rx-state[data-tone="verified"] {
+  background: var(--ry-st-live-bg);
+  border-color: var(--ry-st-live-bd);
+  color: var(--ry-st-live-tx);
+}
+
+.rx-state[data-tone="caution"] {
+  background: var(--ry-caution);
+  color: var(--ry-on-caution);
+}
+
+.rx-state[data-tone="evidence"] {
+  background: var(--ry-env-bg);
+  border-color: var(--ry-st-live-bd);
+  color: var(--ry-env-tx);
+}
+
+.rx-state[data-tone="neutral"] {
+  background: transparent;
+  border-color: var(--ry-border);
+  color: var(--ry-muted);
+}
+
+/* An artifact that does not exist gets prose, never a control to press. */
+/*
+ * A stated gap: an unknown marker, then the sentence saying what is missing.
+ *
+ * `align-items` was `center`, which is invisible on the one-line gaps most
+ * surfaces carry and wrong on the longer ones — on `/company` the marker sat
+ * in the vertical middle of a three-line note, reading as a stray dot rather
+ * than as the start of the line. It aligns to the first line now, and the
+ * offset centres the 9px dot within that line at whatever line-height the
+ * surface is using rather than at a pixel value that only suits one.
+ */
+.rx-gap {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: var(--ry-s2);
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-dense);
+}
+
+.rx-gap::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  margin-top: calc((1lh - 9px) / 2);
+  border-radius: 50%;
+  background: var(--ry-unknown);
+  flex: none;
+}
+
+/* ── tables ───────────────────────────────────────────────────────────────── */
+
+/* A wide table scrolls inside its own box; the page never scrolls sideways. */
+.rx-scroll {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+.rx-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--ry-fs-dense);
+  text-align: start;
+}
+
+/* 640, not 720. A chapter panel leaves about 722px of content, so a 720px
+   minimum put every capability table one pixel over its own box: each group
+   grew a scrollbar and clipped its last column for no reason. Measurement
+   never reported it because the table scrolls inside its own scroller, which
+   is correct behaviour — it just looked broken. */
+.rx-table--wide {
+  min-width: 640px;
+}
+
+.rx-table th {
+  padding: var(--ry-s3) var(--ry-s4);
+  border-bottom: 1px solid var(--ry-border-strong);
+  font-weight: 600;
+  font-size: var(--ry-fs-dense);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ry-muted);
+  text-align: start;
+}
+
+/* Column headers sit on the rule: a one-word and a three-word heading line up
+   along their last line rather than their first. */
+.rx-table thead th {
+  vertical-align: bottom;
+}
+
+/* A row header is not a column header. `vertical-align: bottom` on every `th`
+   dropped each row's label to the foot of its own row — on /developers thirteen
+   of them, the worst reading 293px below the sentence it names, so the eye
+   paired "Advisory" with the row beneath it. Row headers align with their row,
+   like the cells they label. */
+.rx-table tbody th {
+  vertical-align: top;
+  border-bottom: 1px solid var(--ry-border);
+}
+
+.rx-table tbody tr:last-child th {
+  border-bottom: none;
+}
+
+.rx-table td {
+  padding: var(--ry-s3) var(--ry-s4);
+  border-bottom: 1px solid var(--ry-border);
+  color: var(--ry-text);
+  vertical-align: top;
+}
+
+.rx-table tr:last-child td {
+  border-bottom: none;
+}
+
+.rx-table td:first-child,
+.rx-table th:first-child {
+  padding-inline-start: 0;
+}
+
+/* ── axes ─────────────────────────────────────────────────────────────────── */
+
+.rx-axes {
+  display: grid;
+  gap: var(--ry-s4);
+  margin-top: var(--ry-s5);
+}
+
+.rx-axis {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) minmax(0, 3fr);
+  gap: var(--ry-s3) var(--ry-s5);
+  align-items: baseline;
+  padding-block: var(--ry-s3);
+  border-top: 1px solid var(--ry-border);
+}
+
+.rx-axis-name {
+  font-size: var(--ry-fs-dense);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ry-muted);
+}
+
+.rx-axis-values {
+  font-size: var(--ry-fs-body);
+  color: var(--ry-text);
+}
+
+/* ── responsive ───────────────────────────────────────────────────────────── */
+
+@media (max-width: 900px) {
+  .rx-section {
+    padding-block: var(--ry-s8);
+  }
+
+  .rx-pagehero {
+    padding-block: var(--ry-s8) var(--ry-s7);
+  }
+
+  .rx-axis {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--ry-s2);
+  }
+}
+
+@media (max-width: 560px) {
+  .rx-shell {
+    padding-inline: var(--ry-s5);
+  }
+}
+
+/* A two-sentence page heading. The hero cap is 22ch, which is right for the
+   Handbook's three-word titles and wrong for a heading that states a fact and
+   its limit — at 22ch it broke after "6 workspaces" and read as four fragments
+   rather than two lines. */
+.rx-pagehero .rx-h1--wide {
+  max-width: 36ch;
+}
+
+/* ── stacked rhythm ───────────────────────────────────────────────────────── */
+
+/*
+ * Heading, then its sentence, then its fine print. The frozen type primitives
+ * all carry `margin: 0`, because the pages that first used them placed every
+ * one inside a grid with its own gap. Stacked directly — which is what a
+ * section built out of these primitives actually does — they touch, and three
+ * touching blocks of text is precisely the wall this page was reported for.
+ */
+.rx-h1 + .rx-lead,
+.rx-h2 + .rx-lead,
+.rx-h3 + .rx-lead,
+.rx-head + .rx-lead {
+  margin-top: var(--ry-s4);
+}
+
+.rx-lead + .rx-fine,
+.rx-lead + .rx-prose {
+  margin-top: var(--ry-s3);
+}
+
+/*
+ * The ramp is Brandbook v1.2 §06 verbatim and stays that way — 2.75rem is the
+ * H1. That is the desktop value: at 375px it renders a two-sentence heading as
+ * five lines, so the token is stepped down for small viewports rather than
+ * softened into a clamp, which would change the frozen value everywhere and
+ * break its projection gate.
+ */
+@media (max-width: 560px) {
+  .rx {
+    --ry-fs-h1: 2rem;
+    --ry-fs-h2: 1.625rem;
+    --ry-fs-lead: 1.125rem;
+  }
+}

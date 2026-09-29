@@ -1,0 +1,510 @@
+/* From opportunity to outcome — the third block of the landing (workflow.tsx).
+
+   Six nodes on one line across the page and one product frame under them.
+   From 1024px up the rail and the frame pin under the header while the
+   section's runway scrolls past: the reader's scroll fills the line from the
+   first node to the sixth and crossfades the frame's content. Below that,
+   and under `prefers-reduced-motion`, the steps stand in a column.
+
+   Tokens only. The ground is the landing's one ground, painted on `main`;
+   this section adds a faint grid and, pinned with the stage, the two lights
+   the hero stands in — an orange trajectory and a warm horizon — so the top
+   of the site and this block are one fabric (Owner, 2026-09-15: *«зверху є
+   підсвітки, знизу вже їх немає… зробити як одне ціле»*); no light meets the
+   section's edges, so nothing marks the joins. The
+   frame is a picture of the dark terminal in both themes, so its palette is
+   the canon's own dark environment, named once as `--wf-*`, the way the
+   parked hero's stage does it. Sizes inside the frame are multiples of `--u`
+   — one canvas pixel of a 1120 × 560 frame on the desktop, `1px` where the
+   cards stand full-width — capped by the ramp. */
+
+.workflow {
+  --steps: 6;
+  --step-scroll: 64vh;
+  --stage-top: 104px;
+  --frame-h: min(680px, calc(100vh - var(--stage-top) - 128px));
+  /* The rail and its gap above the frame, for centring the stage on a tall screen. */
+  --stage-h: calc(var(--frame-h) + 90px);
+  --fill: 0;
+  /* The dark environment of the canon, fixed for the frame. */
+  --wf-bg: #0B121A;
+  --wf-surface: #0E1620;
+  --wf-elevated: #131E2A;
+  --wf-border: #22303E;
+  --wf-border-strong: #2F4052;
+  --wf-text: #F5F7FA;
+  --wf-muted: #91A0B2;
+  --wf-dim: #7A8899;
+  --wf-up: #19C77A;
+  --wf-down: #FF4D55;
+  --wf-caution: #F5A524;
+  --wf-brand: #FF681C;
+  --wf-brand-fg: #FF7A2F;
+  --wf-brand-soft: rgba(255, 104, 28, 0.12);
+  --wf-brand-line: rgba(255, 104, 28, 0.32);
+  position: relative;
+  isolation: isolate;
+  /* `clip`, not `hidden`: the stage's light reaches past the section's sides
+     and must be cut there without making the block a scroll container, or the
+     stage could not pin. */
+  overflow: clip;
+  padding: 0;
+  /* The landing's one ground is painted on `main`; the section only adds a
+     grid that reaches zero before its top edge, so nothing marks where the
+     universe ends and this begins. */
+  background: transparent;
+  color: var(--landing-ink);
+}
+
+/* ── backdrop: a thin grid that fades in below the join and out before the next ── */
+.backdrop { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.grid {
+  position: absolute; inset: 0;
+  background-image: linear-gradient(var(--rt-site-grid) 1px, transparent 1px), linear-gradient(90deg, var(--rt-site-grid) 1px, transparent 1px);
+  background-size: 96px 96px; background-position: 50% 0;
+  mask-image: linear-gradient(180deg, transparent 0%, black 16%, black 82%, transparent 100%), radial-gradient(ellipse 58% 70% at 50% 50%, black 30%, transparent 100%);
+  mask-composite: intersect;
+}
+
+/* ── the words, centred above the rail ───────────────────────────────────── */
+.head {
+  position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--ry-s4);
+  width: 100%; max-width: 1040px; margin: 0 auto; padding: clamp(24px, 3vw, 48px) var(--ry-s5) 0;
+}
+.eyebrow {
+  margin: 0; font-family: var(--ry-font-mono); font-size: var(--ry-fs-label); font-weight: 500; letter-spacing: .22em; text-transform: uppercase; color: var(--ry-unknown);
+}
+.title {
+  margin: 0; font-family: var(--ry-font-sans); font-weight: 700; line-height: .98; letter-spacing: -.035em; text-wrap: balance;
+  font-size: clamp(var(--ry-fs-display), 4.4vw, calc(var(--ry-fs-display) * 1.4));
+}
+.title span { display: block; }
+.title:lang(uk) { font-size: clamp(var(--ry-fs-display), 3.9vw, calc(var(--ry-fs-display) * 1.25)); }
+.lead { margin: 0; max-width: 40em; font-size: var(--ry-fs-lead); line-height: 1.45; color: var(--ry-unknown); text-wrap: pretty; }
+
+/* ── the track: a sticky stage and the runway it rides ───────────────────── */
+.track { position: relative; z-index: 1; margin-top: clamp(32px, 4vw, 56px); }
+.stage {
+  --frame-w: min(100%, calc(var(--frame-h) * 2.15));
+  /* Pinned under the header; on a tall screen, centred in the room below it. */
+  position: sticky; top: max(var(--stage-top), calc(72px + (100vh - 72px - var(--stage-h)) / 2));
+  display: flex; flex-direction: column; align-items: center; gap: var(--ry-s5);
+  width: 100%; max-width: 1440px; margin: 0 auto; padding: 0 var(--ry-s6); box-sizing: border-box;
+  isolation: isolate;
+}
+
+/* ── the stage's light: the page's own, pinned with the frame ────────────── */
+/* The same two lights the hero stands in — one great orange arc and a warm
+   horizon — so the top of the site and this block are one fabric. The arc is
+   the edge of a circle wider than the stage, masked to the frame's upper right
+   the way the hero's is masked to its upper left; the horizon is the frame's
+   light on the floor, in a box of its own beneath it. Both sit behind the
+   frame in the stage's own stacking context and move with it. */
+.stageLight { position: absolute; inset: -70% -34% -40%; z-index: -1; pointer-events: none; overflow: hidden; }
+.arcField { position: absolute; inset: 0; mask-image: radial-gradient(ellipse 50% 56% at 74% 36%, black 0%, color-mix(in srgb, black 55%, transparent) 55%, transparent 100%); }
+.trajectory {
+  position: absolute; right: -22%; top: -6%; width: 132%; aspect-ratio: 1; border-radius: 50%;
+  box-shadow:
+    inset 0 0 0 2px color-mix(in srgb, var(--ry-iris) 62%, transparent),
+    inset 0 0 70px 0 color-mix(in srgb, var(--ry-iris) 20%, transparent),
+    0 0 80px 4px color-mix(in srgb, var(--ry-iris) 16%, transparent);
+  animation: trajectoryBreath 16s ease-in-out infinite alternate;
+}
+@keyframes trajectoryBreath { from { opacity: .7; } to { opacity: 1; } }
+.floor {
+  position: absolute; left: 10%; right: 10%; top: 64%; bottom: 0;
+  background: radial-gradient(ellipse 52% 46% at 50% 40%, color-mix(in srgb, var(--ry-iris) 30%, transparent) 0%, color-mix(in srgb, var(--ry-iris) 9%, transparent) 42%, transparent 70%);
+  filter: blur(36px);
+  animation: floorBreath 12s ease-in-out infinite alternate;
+}
+@keyframes floorBreath { from { opacity: .8; } to { opacity: 1; } }
+/* Off screen, the light stands still. */
+.workflow[data-js]:not([data-active]) .trajectory, .workflow[data-js]:not([data-active]) .floor { animation-play-state: paused; }
+.runway { height: calc(var(--steps) * var(--step-scroll)); }
+
+/* ── the rail: six nodes on one line, the line filling with the scroll ───── */
+.rail { position: relative; display: grid; grid-template-columns: repeat(6, 1fr); width: var(--frame-w); margin: 0; padding: 0; list-style: none; }
+/* The line is a container so its fill and spark can move on transforms —
+   the fill scaled from its left end, the spark carried along by the line's
+   own width in `cqw` — and never on a layout property. */
+.line { position: absolute; left: calc(100% / 12); right: calc(100% / 12); top: 4px; height: 1px; background: var(--ry-border-strong); container-type: inline-size; }
+.fill {
+  position: absolute; inset: 0; transform: scaleX(var(--fill)); transform-origin: 0 50%;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--ry-iris) 55%, transparent) 0%, var(--ry-iris) 100%);
+  transition: transform 140ms linear;
+}
+.spark {
+  position: absolute; top: 50%; left: 0; width: 6px; height: 6px; border-radius: 50%;
+  translate: calc(var(--fill) * 100cqw - 50%) -50%;
+  background: var(--ry-iris); box-shadow: 0 0 12px 3px color-mix(in srgb, var(--ry-iris) 55%, transparent);
+  transition: translate 140ms linear;
+}
+.stop { position: relative; }
+.node {
+  display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; margin: 0; padding: 0 0 4px;
+  border: 0; background: transparent; color: inherit; font: inherit; cursor: pointer; text-decoration: none;
+}
+.dot {
+  width: 10px; height: 10px; border-radius: 50%; box-sizing: border-box;
+  border: 1px solid var(--ry-border-strong); background: var(--landing-ground, var(--ry-midnight));
+  transition: background-color 260ms ease, border-color 260ms ease, box-shadow 320ms ease;
+}
+.index { font-family: var(--ry-font-mono); font-size: var(--ry-fs-label-sm); letter-spacing: .12em; color: var(--ry-unknown); transition: color 260ms ease; }
+.name { font-family: var(--ry-font-mono); font-size: var(--ry-fs-label); font-weight: 500; letter-spacing: .18em; text-transform: uppercase; color: var(--ry-unknown); transition: color 260ms ease; }
+.node .index { margin-top: 2px; }
+.node .name { margin-top: -6px; }
+.node:hover .name { color: var(--landing-ink); }
+.node[data-done] .dot { background: var(--ry-iris); border-color: var(--ry-iris); }
+.node[data-done] .index { color: color-mix(in srgb, var(--ry-iris) 70%, transparent); }
+.node[data-done] .name { color: color-mix(in srgb, var(--landing-ink) 62%, transparent); }
+.node[aria-current] .dot {
+  background: var(--ry-iris); border-color: var(--ry-iris);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--ry-iris) 20%, transparent), 0 0 18px color-mix(in srgb, var(--ry-iris) 55%, transparent);
+}
+.node[aria-current] .index { color: var(--ry-iris); }
+.node[aria-current] .name { color: var(--landing-ink); }
+.node:focus-visible { outline: none; border-radius: var(--ry-r-focus-md); box-shadow: var(--ry-focus); }
+
+/* ── the frame: one graphite window, its content the step's ──────────────── */
+.frame {
+  position: relative; width: var(--frame-w); aspect-ratio: 2.15 / 1; box-sizing: border-box;
+  border: 1px solid var(--wf-border-strong); border-radius: 20px;
+  background: linear-gradient(168deg, var(--wf-surface) 0%, var(--wf-bg) 46%, var(--wf-bg) 100%);
+  box-shadow: 0 50px 120px -40px black, 0 0 0 1px color-mix(in srgb, var(--wf-text) 3%, transparent), inset 0 1px 0 color-mix(in srgb, var(--wf-text) 7%, transparent), inset 0 -1px 0 black;
+  overflow: clip;
+  container-type: inline-size;
+}
+.rim {
+  position: absolute; inset: 0; z-index: 3; border-radius: 20px; padding: 1.5px; pointer-events: none;
+  background: conic-gradient(from 200deg at 62% 40%, transparent 0%, transparent 38%, color-mix(in srgb, var(--ry-iris) 85%, transparent) 52%, var(--ry-brand-edge) 60%, transparent 76%, transparent 100%);
+  -webkit-mask: linear-gradient(black 0 0) content-box, linear-gradient(black 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(black 0 0) content-box, linear-gradient(black 0 0);
+  mask-composite: exclude;
+}
+.glass { position: absolute; inset: 0; z-index: 2; pointer-events: none; background: linear-gradient(112deg, color-mix(in srgb, var(--wf-text) 5%, transparent) 0%, transparent 26%, transparent 72%, color-mix(in srgb, var(--wf-brand) 6%, transparent) 100%); }
+.frameNote { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+.steps { --u: calc(100cqw / 1120); position: relative; display: grid; width: 100%; height: 100%; }
+/* The window's title bar: tinted and ruled once, whatever the step. */
+.steps::before {
+  content: ""; position: absolute; inset: 0 0 auto; height: calc(44 * var(--u)); pointer-events: none;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--wf-text) 3%, transparent) 0%, transparent 100%);
+}
+.step { grid-area: 1 / 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.step[data-state="before"], .step[data-state="after"] { opacity: 0; pointer-events: none; }
+.step[data-state="before"] .words, .step[data-state="before"] .chrome { translate: 0 -6px; }
+.step[data-state="before"] .visual { translate: 0 -14px; }
+.step[data-state="after"] .words, .step[data-state="after"] .chrome { translate: 0 6px; }
+.step[data-state="after"] .visual { translate: 0 14px; }
+.step { transition: opacity 380ms cubic-bezier(.2, .7, .3, 1); }
+.words, .chrome { transition: translate 460ms cubic-bezier(.2, .7, .3, 1); }
+.visual { transition: translate 520ms cubic-bezier(.2, .7, .3, 1) 40ms; }
+.stepMark { display: none; }
+
+.chrome {
+  position: relative; display: flex; align-items: center; justify-content: space-between; gap: calc(16 * var(--u));
+  height: calc(44 * var(--u)); padding: 0 calc(20 * var(--u)); box-sizing: border-box; border-bottom: 1px solid var(--wf-border);
+  font-family: var(--ry-font-mono); font-size: min(var(--ry-fs-label), calc(12 * var(--u))); letter-spacing: .06em; color: var(--wf-muted);
+}
+.crumbs { display: inline-flex; align-items: center; gap: 0; min-width: 0; white-space: nowrap; overflow: hidden; }
+.crumbs span + span::before { content: "›"; margin: 0 .7em; color: var(--wf-dim); }
+.crumbs span:last-child { color: var(--wf-text); }
+.crumbDot { width: 6px; height: 6px; margin-right: .9em; border-radius: 50%; background: var(--wf-brand); box-shadow: 0 0 8px var(--wf-brand); }
+.crumbs .crumbDot + span::before { content: none; margin: 0; }
+.chip {
+  display: inline-flex; align-items: center; gap: 6px; flex: none; padding: 3px 9px;
+  border: 1px solid var(--wf-border); border-radius: var(--ry-r-pill);
+  font-size: min(var(--ry-fs-label-sm), calc(11 * var(--u))); letter-spacing: .12em; text-transform: uppercase; color: var(--wf-muted);
+}
+.chipDot { width: 6px; height: 6px; border-radius: 50%; background: var(--wf-dim); }
+.chip[data-live] { color: var(--wf-up); border-color: color-mix(in srgb, var(--wf-up) 40%, transparent); }
+.chip[data-live] .chipDot { background: var(--wf-up); box-shadow: 0 0 8px color-mix(in srgb, var(--wf-up) 70%, transparent); }
+
+.body { display: flex; flex: 1; min-height: 0; }
+.words {
+  flex: 0 0 calc(380 * var(--u)); display: flex; flex-direction: column; justify-content: center; gap: calc(14 * var(--u)); box-sizing: border-box;
+  padding: calc(36 * var(--u)) calc(24 * var(--u)) calc(36 * var(--u)) calc(40 * var(--u));
+}
+.number { font-family: var(--ry-font-mono); font-size: min(var(--ry-fs-data-xl), calc(44 * var(--u))); line-height: 1; letter-spacing: -.02em; color: var(--wf-brand); }
+.stepTitle { margin: 0; font-family: var(--ry-font-sans); font-weight: 700; font-size: min(var(--ry-fs-h2), calc(32 * var(--u))); line-height: 1.06; letter-spacing: -.03em; color: var(--wf-text); text-wrap: balance; }
+.stepBody { margin: 0; font-size: min(var(--ry-fs-body), calc(17 * var(--u))); line-height: 1.5; color: var(--wf-muted); text-wrap: pretty; }
+.visual {
+  position: relative; flex: 1; min-width: 0; display: grid; place-items: center; box-sizing: border-box;
+  padding: calc(28 * var(--u)) calc(32 * var(--u)) calc(28 * var(--u)) calc(12 * var(--u));
+  background: radial-gradient(ellipse 66% 62% at 58% 50%, color-mix(in srgb, var(--wf-brand) 10%, transparent) 0%, color-mix(in srgb, var(--wf-brand) 3%, transparent) 46%, transparent 72%);
+}
+/* The terminal's own grid under the card, fading toward the words. */
+.visual::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .5;
+  background-image: linear-gradient(var(--wf-border) 1px, transparent 1px), linear-gradient(90deg, var(--wf-border) 1px, transparent 1px);
+  background-size: calc(40 * var(--u)) calc(40 * var(--u)); background-position: 50% 50%;
+  mask-image: radial-gradient(ellipse 62% 64% at 58% 50%, black 0%, transparent 76%);
+}
+.visual > * { position: relative; }
+
+/* ── the cards ───────────────────────────────────────────────────────────── */
+.card {
+  position: relative; width: min(100%, calc(560 * var(--u))); display: flex; flex-direction: column; gap: calc(14 * var(--u)); box-sizing: border-box;
+  padding: calc(20 * var(--u)) calc(22 * var(--u)); border: 1px solid var(--wf-border-strong); border-radius: var(--ry-r-card);
+  background: linear-gradient(170deg, var(--wf-elevated) 0%, var(--wf-surface) 58%, var(--wf-surface) 100%);
+  box-shadow: 0 30px 60px -30px black, 0 0 0 1px color-mix(in srgb, var(--wf-text) 3%, transparent), inset 0 1px 0 color-mix(in srgb, var(--wf-text) 7%, transparent);
+  font-family: var(--ry-font-mono); font-size: min(var(--ry-fs-dense), calc(14 * var(--u))); line-height: 1.35; color: var(--wf-text);
+}
+/* Plan and Review are the two that make Ryntra more than a terminal: more
+   room, and one small line of the brand at the head. */
+/* The purchase's six cards (canon v5.5): the Review and the rule carry the brand's edge. */
+.card[data-card="company"] { width: min(100%, calc(620 * var(--u))); }
+.card[data-card="sum"] { width: min(100%, calc(480 * var(--u))); }
+.card[data-card="review"] { width: min(100%, calc(560 * var(--u))); }
+.card[data-card="sign"] { width: min(100%, calc(460 * var(--u))); }
+.card[data-card="receipt"] { width: min(100%, calc(520 * var(--u))); }
+.card[data-card="autoinvest"] { width: min(100%, calc(540 * var(--u))); }
+.card[data-card="review"], .card[data-card="autoinvest"] { border-color: color-mix(in srgb, var(--wf-brand) 30%, var(--wf-border)); }
+.card[data-card="review"]::before, .card[data-card="autoinvest"]::before {
+  content: ""; position: absolute; top: -1px; left: calc(20 * var(--u)); width: calc(56 * var(--u)); height: 2px; border-radius: 2px;
+  background: var(--wf-brand); box-shadow: 0 0 10px var(--wf-brand);
+}
+.cardHead { display: flex; justify-content: space-between; align-items: baseline; gap: calc(12 * var(--u)); padding-bottom: calc(10 * var(--u)); border-bottom: 1px solid var(--wf-border); }
+.cardTitle { font-family: var(--ry-font-sans); font-weight: 600; font-size: min(var(--ry-fs-app), calc(15 * var(--u))); letter-spacing: -.01em; }
+.cardMeta { font-size: min(var(--ry-fs-label-sm), calc(11 * var(--u))); letter-spacing: .1em; text-transform: uppercase; color: var(--wf-muted); white-space: nowrap; }
+
+.rows, .fields { display: flex; flex-direction: column; }
+.row { display: flex; justify-content: space-between; align-items: baseline; gap: calc(12 * var(--u)); padding: calc(5 * var(--u)) 0; }
+.rowLabel { color: var(--wf-muted); }
+.rowValue { display: inline-flex; align-items: center; gap: calc(6 * var(--u)); font-variant-numeric: tabular-nums; color: var(--wf-text); white-space: nowrap; }
+.row[data-tone="ok"] .rowValue, .row[data-tone="up"] .rowValue { color: var(--wf-up); }
+.row[data-tone="attention"] .rowValue { color: var(--wf-caution); }
+.row[data-tone="brand"] .rowValue { color: var(--wf-brand-fg); }
+.rowNote { font-size: min(var(--ry-fs-label-sm), calc(11 * var(--u))); color: var(--wf-dim); }
+.rowCheck { color: var(--wf-up); }
+
+/* 01 — the list and the market's two sessions. */
+.list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.listRow { display: flex; align-items: center; gap: calc(12 * var(--u)); padding: calc(9 * var(--u)) calc(12 * var(--u)); border-radius: var(--ry-r-btn-sm); color: var(--wf-muted); }
+.listRow[data-selected] { padding: calc(12 * var(--u)); background: var(--wf-elevated); color: var(--wf-text); box-shadow: inset 0 0 0 1px var(--wf-border-strong), inset 3px 0 0 var(--wf-brand); }
+.listSymbol { font-weight: 600; min-width: calc(58 * var(--u)); }
+.listName { flex: 1; min-width: 0; font-family: var(--ry-font-sans); color: var(--wf-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.listRow[data-selected] .listName { color: var(--wf-muted); }
+.listChange { color: var(--wf-down); font-variant-numeric: tabular-nums; }
+.listChange[data-up] { color: var(--wf-up); }
+.listToken { flex: none; display: block; width: calc(32 * var(--u)); height: calc(32 * var(--u)); border-radius: 50%; overflow: hidden; background: var(--wf-bg); box-shadow: inset 0 0 0 1px var(--wf-border-strong); }
+.listToken[data-small] { width: calc(26 * var(--u)); height: calc(26 * var(--u)); opacity: .82; }
+.listToken img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.listBody { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+/* The chosen company's label is the issuer's whole label (canon §7) — on a narrow card it wraps, never an ellipsis. */
+.listBody .listName { white-space: normal; overflow: visible; }
+.listPrice { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; font-variant-numeric: tabular-nums; }
+.listPrice b { font-weight: 500; font-size: min(var(--ry-fs-title), calc(18 * var(--u))); }
+.stats { display: flex; flex-wrap: wrap; gap: calc(8 * var(--u)); }
+.stats > span {
+  display: inline-flex; align-items: center; gap: calc(5 * var(--u)); padding: calc(5 * var(--u)) calc(8 * var(--u));
+  border: 1px solid var(--wf-border); border-radius: var(--ry-r-chip); font-size: min(var(--ry-fs-label-sm), calc(11.5 * var(--u))); color: var(--wf-muted); white-space: nowrap;
+}
+.stats small { font-size: inherit; color: var(--wf-dim); }
+.stats b { font-weight: 500; color: var(--wf-text); }
+.sessionDot { width: 6px; height: 6px; border-radius: 50%; background: var(--wf-dim); }
+.session[data-open] .sessionDot { background: var(--wf-up); box-shadow: 0 0 8px color-mix(in srgb, var(--wf-up) 70%, transparent); }
+.session[data-open] b { color: var(--wf-up); }
+
+/* 02 and 05 — two figures side by side. */
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: calc(10 * var(--u)); }
+.pairCell { display: flex; flex-direction: column; gap: 4px; padding: calc(12 * var(--u)) calc(14 * var(--u)); border: 1px solid var(--wf-border); border-radius: var(--ry-r-btn-sm); background: var(--wf-bg); }
+.pairCell small { font-size: min(var(--ry-fs-label-sm), calc(11 * var(--u))); letter-spacing: .08em; text-transform: uppercase; color: var(--wf-dim); white-space: nowrap; }
+.pairCell b { font-weight: 500; font-size: min(var(--ry-fs-data-lg), calc(22 * var(--u))); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pairCell[data-tone="brand"] { border-color: color-mix(in srgb, var(--wf-brand) 40%, var(--wf-border)); }
+.pairCell[data-tone="brand"] b { color: var(--wf-brand-fg); }
+
+/* 03 — the plan's fields, the price ladder and what the rule makes of them. */
+.fields { display: grid; grid-template-columns: 1fr 1fr; column-gap: calc(28 * var(--u)); }
+.ladder { position: relative; height: calc(50 * var(--u)); margin: calc(6 * var(--u)) calc(8 * var(--u)) 0; }
+.ladder::before { content: ""; position: absolute; left: 0; right: 0; top: calc(16 * var(--u)); height: 2px; border-radius: 2px; background: var(--wf-border-strong); }
+.ladderRisk, .ladderGain { position: absolute; top: calc(16 * var(--u)); height: 2px; border-radius: 2px; }
+.ladderRisk { background: var(--wf-down); }
+.ladderGain { background: var(--wf-up); }
+.ladderMark { position: absolute; top: calc(10 * var(--u)); translate: -50% 0; display: flex; flex-direction: column; align-items: center; gap: calc(6 * var(--u)); }
+.ladderMark i { display: block; width: calc(9 * var(--u)); height: calc(14 * var(--u)); border-radius: 2px; background: var(--wf-text); }
+.ladderMark[data-mark="invalidation"] i { background: var(--wf-down); }
+.ladderMark[data-mark="target"] i { background: var(--wf-up); }
+.ladderMark small { font-size: min(var(--ry-fs-label-sm), calc(10.5 * var(--u))); letter-spacing: .04em; white-space: nowrap; color: var(--wf-muted); }
+.ladderNow { position: absolute; top: calc(-8 * var(--u)); translate: -50% 0; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.ladderNow::after { content: ""; order: 1; width: 8px; height: 8px; border-radius: 50%; background: var(--wf-brand); box-shadow: 0 0 10px var(--wf-brand); }
+.ladderNow small { font-size: min(var(--ry-fs-label-sm), calc(10.5 * var(--u))); letter-spacing: .04em; white-space: nowrap; color: var(--wf-brand-fg); }
+.outcome {
+  display: grid; grid-template-columns: 1.3fr 1fr; gap: calc(12 * var(--u)); padding: calc(14 * var(--u)) calc(16 * var(--u));
+  border: 1px solid color-mix(in srgb, var(--wf-brand) 35%, var(--wf-border)); border-radius: var(--ry-r-btn-sm); background: var(--wf-bg);
+}
+.outcomeMain { display: flex; flex-direction: column; gap: 3px; }
+.outcomeMain small, .outcomeSide small { font-size: min(var(--ry-fs-label-sm), calc(11 * var(--u))); letter-spacing: .08em; text-transform: uppercase; color: var(--wf-dim); }
+.outcomeMain b { font-weight: 500; font-size: min(var(--ry-fs-data-xl), calc(34 * var(--u))); line-height: 1.05; font-variant-numeric: tabular-nums; }
+.outcomeMain span { color: var(--wf-muted); }
+.outcomeSide { display: grid; grid-template-columns: auto auto; align-content: center; justify-content: space-between; gap: 4px calc(12 * var(--u)); }
+.outcomeSide b { font-weight: 500; text-align: right; font-variant-numeric: tabular-nums; }
+.outcomeSide b[data-tone="attention"] { color: var(--wf-caution); }
+
+/* 02 — the sum: the dollar large, the share of a share and the costs under it, the loss limit's three chips. */
+.amountBig {
+  display: flex; align-items: baseline; justify-content: center; gap: calc(4 * var(--u)); padding: calc(6 * var(--u)) 0 0;
+  font-family: var(--ry-font-mono); font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; color: var(--wf-text);
+  font-size: min(var(--ry-fs-data-xl), calc(56 * var(--u)));
+}
+.amountSign { color: var(--wf-muted); font-weight: 500; font-size: min(var(--ry-fs-data-lg), calc(34 * var(--u))); }
+.amountNote { margin: 0; text-align: center; font-size: min(var(--ry-fs-label), calc(12.5 * var(--u))); color: var(--wf-muted); }
+.chips { display: inline-flex; gap: calc(4 * var(--u)); padding: calc(3 * var(--u)); border-radius: var(--ry-r-pill); background: var(--wf-bg); box-shadow: inset 0 0 0 1px var(--wf-border); }
+.chips span { padding: calc(5 * var(--u)) calc(11 * var(--u)); border-radius: var(--ry-r-pill); color: var(--wf-muted); font-size: min(var(--ry-fs-label), calc(12 * var(--u))); }
+.chips span[data-on] { background: var(--wf-elevated); color: var(--wf-text); box-shadow: inset 0 0 0 1px var(--wf-border-strong); }
+/* 05 — the receipt's first line. */
+.receiptLine {
+  display: flex; align-items: center; gap: calc(10 * var(--u)); margin: 0;
+  font-family: var(--ry-font-sans); font-size: min(var(--ry-fs-app), calc(15 * var(--u))); color: var(--wf-muted);
+}
+.receiptLine b { color: var(--wf-text); font-weight: 600; }
+/* 06 — the reminder's pulse: one soft beat, on a long clock, only while the step is lit. */
+.reminderDot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--wf-brand); box-shadow: 0 0 8px var(--wf-brand); }
+@keyframes reminderBeat { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+.step[data-state="active"] .reminderDot { animation: reminderBeat 2.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .step[data-state="active"] .reminderDot { animation: none; } }
+
+/* 04 — three columns of checks and a verdict. */
+.columns { display: grid; grid-template-columns: 1.15fr 1fr 1.15fr; gap: calc(12 * var(--u)); }
+.column { display: flex; flex-direction: column; padding: calc(10 * var(--u)) calc(12 * var(--u)); border: 1px solid var(--wf-border); border-radius: var(--ry-r-btn-sm); background: var(--wf-bg); }
+.columnTitle { padding-bottom: calc(6 * var(--u)); margin-bottom: calc(4 * var(--u)); border-bottom: 1px solid var(--wf-border); font-size: min(var(--ry-fs-label-sm), calc(11 * var(--u))); letter-spacing: .14em; text-transform: uppercase; color: var(--wf-dim); }
+.column .row { flex-direction: column; align-items: flex-start; gap: 2px; padding: calc(4 * var(--u)) 0; }
+.column .rowLabel { font-size: min(var(--ry-fs-label-sm), calc(11 * var(--u))); }
+.verdict { display: flex; align-items: center; justify-content: space-between; gap: calc(12 * var(--u)); }
+.verdictText { display: inline-flex; align-items: center; gap: calc(8 * var(--u)); font-size: min(var(--ry-fs-label), calc(12 * var(--u))); color: var(--wf-muted); text-wrap: pretty; }
+.verdictIcon { flex: none; color: var(--wf-caution); }
+.ghostButton {
+  display: inline-flex; align-items: center; flex: none; padding: calc(8 * var(--u)) calc(14 * var(--u));
+  border: 1px solid var(--wf-brand-line); border-radius: var(--ry-r-btn-sm); background: var(--wf-brand-soft); color: var(--wf-brand-fg);
+  font-family: var(--ry-font-sans); font-weight: 600; font-size: min(var(--ry-fs-dense), calc(13 * var(--u))); white-space: nowrap;
+}
+
+/* 05 — the ticket's button and its status, lit once when the step is reached. */
+.primaryButton {
+  display: flex; justify-content: center; align-items: center; height: calc(40 * var(--u)); border-radius: var(--ry-r-btn);
+  background: var(--ry-gradient); border: 1px solid var(--ry-brand-edge); color: var(--ry-on-iris); box-shadow: var(--ry-brand-glow);
+  font-family: var(--ry-font-sans); font-weight: 600; font-size: min(var(--ry-fs-dense), calc(14 * var(--u)));
+}
+.status { list-style: none; margin: 0; padding: 0; display: flex; justify-content: space-between; align-items: center; gap: calc(8 * var(--u)); }
+.statusRow { display: inline-flex; align-items: center; gap: calc(6 * var(--u)); font-size: min(var(--ry-fs-label), calc(12 * var(--u))); white-space: nowrap; color: var(--wf-up); }
+.statusRow + .statusRow::before { content: ""; width: calc(14 * var(--u)); height: 1px; background: var(--wf-border-strong); }
+.statusDot { width: 7px; height: 7px; border-radius: 50%; background: var(--wf-up); box-shadow: 0 0 8px color-mix(in srgb, var(--wf-up) 60%, transparent); }
+@keyframes statusLit { from { color: var(--wf-dim); } to { color: var(--wf-up); } }
+@keyframes dotLit { from { background: var(--wf-dim); box-shadow: none; } to { background: var(--wf-up); box-shadow: 0 0 8px color-mix(in srgb, var(--wf-up) 60%, transparent); } }
+.step[data-state="active"] .statusRow { animation: statusLit 420ms ease both; animation-delay: calc(700ms + var(--k) * 800ms); }
+.step[data-state="active"] .statusDot { animation: dotLit 420ms ease both; animation-delay: calc(700ms + var(--k) * 800ms); }
+
+/* 06 — the plan against what happened. */
+.compare { display: flex; flex-direction: column; }
+.compareRow { display: grid; grid-template-columns: 1fr 1.1fr 1.1fr calc(18 * var(--u)); align-items: center; gap: calc(10 * var(--u)); padding: calc(6 * var(--u)) 0; border-bottom: 1px solid var(--wf-border); }
+.compareRow[data-head] { padding-top: 0; font-size: min(var(--ry-fs-label-sm), calc(11 * var(--u))); letter-spacing: .12em; text-transform: uppercase; color: var(--wf-dim); }
+.compareLabel { color: var(--wf-muted); }
+.comparePlanned { text-align: right; color: var(--wf-muted); font-variant-numeric: tabular-nums; }
+.compareActual { text-align: right; color: var(--wf-text); font-variant-numeric: tabular-nums; }
+.compareCheck { display: inline-flex; justify-content: flex-end; color: var(--wf-up); }
+.memory {
+  display: flex; align-items: center; gap: calc(8 * var(--u)); padding: calc(10 * var(--u)) calc(12 * var(--u));
+  border: 1px solid var(--wf-brand-line); border-radius: var(--ry-r-btn-sm); background: var(--wf-brand-soft); color: var(--wf-brand-fg);
+  font-family: var(--ry-font-sans); font-weight: 500; font-size: min(var(--ry-fs-dense), calc(13 * var(--u)));
+}
+.memoryNote { margin-left: auto; font-family: var(--ry-font-mono); font-weight: 400; font-size: min(var(--ry-fs-label-sm), calc(11 * var(--u))); color: var(--wf-muted); white-space: nowrap; }
+
+/* ── the close ───────────────────────────────────────────────────────────── */
+.close {
+  position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--ry-s5);
+  padding: clamp(72px, 9vw, 140px) var(--ry-s5) clamp(56px, 7vw, 112px);
+}
+.closing { margin: 0; font-family: var(--ry-font-sans); font-weight: 700; line-height: 1.08; letter-spacing: -.03em; text-wrap: balance; font-size: clamp(var(--ry-fs-h2), 3.2vw, var(--ry-fs-h1)); }
+.closing span { display: block; }
+.closing span:last-child { color: var(--ry-unknown); }
+.open {
+  display: inline-flex; align-items: center; gap: var(--ry-s2); min-height: 44px;
+  font-size: var(--ry-fs-app); font-weight: 500; color: var(--landing-ink); text-decoration: underline; text-underline-offset: 7px;
+  text-decoration-color: color-mix(in srgb, var(--landing-ink) 30%, transparent); transition: text-decoration-color 160ms ease;
+}
+.open:hover { text-decoration-color: var(--ry-iris); }
+.open svg { transition: transform 160ms cubic-bezier(.16, 1, .3, 1); }
+.open:hover svg { transform: translateX(4px); }
+.open:focus-visible { outline: none; border-radius: var(--ry-r-focus-sm); box-shadow: var(--ry-focus); }
+
+/* ── the reveal, once, as it scrolls into view ───────────────────────────── */
+/* Only once the script has the section (`data-js`): without it the page is
+   the plain composition, never a blank band. */
+.workflow[data-js]:not([data-seen]) .head > * { opacity: 0; transform: translateY(24px); }
+.head > * { transition: opacity 500ms cubic-bezier(.2, .7, .3, 1), transform 500ms cubic-bezier(.2, .7, .3, 1); }
+.head > :nth-child(2) { transition-delay: 70ms; }
+.head > :nth-child(3) { transition-delay: 140ms; }
+.workflow[data-js]:not([data-seen]) .stage { opacity: 0; transform: translateY(28px); }
+.stage { transition: opacity 700ms cubic-bezier(.2, .7, .3, 1) 160ms, transform 800ms cubic-bezier(.2, .7, .3, 1) 160ms; }
+
+/* Where the browser drives animations from the scroll, the words rise under
+   the reader's own hand, the way the universe's do. */
+@keyframes headRise { from { opacity: 0; transform: translateY(36px); } to { opacity: 1; transform: translateY(0); } }
+@supports (animation-timeline: view()) {
+  @media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+    .workflow[data-js] .head > * { animation: headRise linear both; animation-timeline: view(); animation-range: entry 0% cover 28%; transition: none; }
+    .workflow[data-js] .head > :nth-child(2) { animation-range: entry 0% cover 32%; }
+    .workflow[data-js] .head > :nth-child(3) { animation-range: entry 0% cover 36%; }
+  }
+}
+
+/* ── the column: narrow screens, and every screen under reduced motion ──── */
+@media (max-width: 1023px), (prefers-reduced-motion: reduce) {
+  .rail, .runway { display: none; }
+  .track { margin-top: clamp(24px, 4vw, 48px); }
+  .stage { position: static; display: block; padding: 0 var(--ry-s5); }
+  .stageLight { inset: -10% 0 auto; height: 70vh; }
+  .rim, .glass { display: none; }
+  .frame { width: 100%; aspect-ratio: auto; border: 0; border-radius: 0; background: transparent; box-shadow: none; overflow: visible; container-type: normal; }
+  .steps { --u: 1px; display: flex; flex-direction: column; gap: var(--ry-s5); }
+  .steps::before { display: none; }
+  .step {
+    position: relative; opacity: 1; box-sizing: border-box;
+    border: 1px solid var(--wf-border); border-radius: 16px; background: var(--wf-bg); overflow: clip;
+    transition: border-color 320ms ease, box-shadow 320ms ease;
+  }
+  .step[data-state="before"], .step[data-state="after"] { opacity: 1; pointer-events: auto; }
+  .step[data-state="before"] .words, .step[data-state="after"] .words, .step[data-state="before"] .chrome, .step[data-state="after"] .chrome, .step[data-state="before"] .visual, .step[data-state="after"] .visual { translate: 0 0; }
+  .step[data-state="active"] { border-color: color-mix(in srgb, var(--wf-brand) 45%, var(--wf-border)); box-shadow: 0 0 0 1px color-mix(in srgb, var(--wf-brand) 18%, transparent), 0 24px 60px -36px black; }
+  /* The line between the steps, lit up to the one the reader is on. */
+  .step + .step::before { content: ""; position: absolute; left: var(--ry-s5); top: calc(-1 * var(--ry-s5) - 1px); width: 1px; height: var(--ry-s5); background: var(--ry-border-strong); }
+  .step[data-state="active"] + .step::before { background: var(--ry-border-strong); }
+  .step[data-state="before"] + .step::before, .step[data-state="active"]::before { background: var(--ry-iris); }
+  .stepMark { display: flex; align-items: center; gap: var(--ry-s3); padding: var(--ry-s4) var(--ry-s4) 0; }
+  .stepMark .index { color: var(--ry-iris); }
+  .stepMark .name { color: var(--wf-text); }
+  .stepMark .chip { margin-left: auto; }
+  .chrome { height: auto; padding: var(--ry-s3) var(--ry-s4) var(--ry-s3); border-bottom: 0; }
+  .chrome .chip { display: none; }
+  .words { padding: 0 var(--ry-s4) var(--ry-s4); }
+  .visual { padding: 0 var(--ry-s4) var(--ry-s4); }
+}
+@media (max-width: 1023px) {
+  .body { flex-direction: column; }
+  .words { flex: none; gap: var(--ry-s2); }
+  .number { display: none; }
+  .stepTitle { font-size: var(--ry-fs-h3); }
+  .visual { display: block; background: none; }
+  .card, .card[data-card] { width: 100%; }
+  .stage { padding: 0 var(--ry-s4); }
+}
+@media (max-width: 767px) {
+  .title { font-size: min(var(--ry-fs-display), 11.5vw); }
+  .lead { font-size: var(--ry-fs-body); }
+  .head { padding-top: var(--ry-s7); }
+  .columns, .fields { grid-template-columns: 1fr; }
+  .outcome { grid-template-columns: 1fr; }
+  .outcomeSide { justify-content: space-between; }
+  .verdict { flex-direction: column; align-items: flex-start; }
+  .status { flex-wrap: wrap; justify-content: flex-start; }
+  .closing { font-size: var(--ry-fs-h2); }
+  /* On a phone a card's row keeps its label on one line and lets a long value wrap under it, flush right. */
+  .row { flex-wrap: wrap; column-gap: var(--ry-s3); }
+  .rowLabel { white-space: nowrap; }
+  .rowValue { flex-wrap: wrap; justify-content: flex-end; margin-left: auto; white-space: normal; text-align: right; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workflow *, .workflow *::before, .workflow *::after { animation: none !important; transition: none !important; }
+  .workflow .head > *, .workflow .stage { opacity: 1 !important; transform: none !important; }
+}

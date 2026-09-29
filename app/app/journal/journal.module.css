@@ -1,0 +1,298 @@
+/* Ryntra Home — the Journal, as the cycle it records.
+ *
+ * Authored directly on the frozen `--rt-*` projection, so this surface joins
+ * `MIGRATED_SURFACES` on the commit that migrates it.
+ *
+ * The page it replaces was a KPI strip over two wide tables with a hint
+ * paragraph under each — correct in every fact it stated and unreadable as a
+ * whole, because the four things a journal is *for* (what you planned, what you
+ * decided, what happened, what you learned) were spread across nine columns and
+ * never named.
+ *
+ * So the shape here is the cycle: four stages with their own counts, then the
+ * cycles themselves. Every explanation lives behind the shell's `InfoControl`,
+ * which is why there is no `.hint` class in this file. */
+
+.surface {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--rt-space-lg);
+  width: min(100%, var(--rt-maxw));
+  margin-inline: auto;
+  color: var(--rt-ink-high);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--rt-space-sm);
+}
+
+.head h1 {
+  margin: 0;
+  font-family: var(--ry-font-display);
+  font-size: var(--ry-fs-h2);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.eyebrow {
+  margin: 0 0 var(--rt-space-2xs);
+  color: var(--rt-ink-mid);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.headMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rt-space-xs);
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  padding-inline: var(--rt-space-sm);
+  border: 1px solid var(--rt-hairline-strong);
+  border-radius: var(--rt-radius-sm);
+  color: var(--rt-ink-high);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.link:hover { border-color: var(--rt-action-blue); color: var(--rt-action-blue-fg); }
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rt-space-xs);
+}
+
+/* ── the four stages ────────────────────────────────────────────────────── */
+
+/* Read as one row of four, because the claim is that they are a sequence. The
+   count under each is `recorded / total`, so a stage that is never written
+   shows as the gap it is rather than as an absent column. */
+.stages {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 168px), 1fr));
+  gap: var(--rt-space-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stage {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: var(--rt-space-sm);
+  border: 1px solid var(--rt-hairline);
+  border-radius: var(--rt-radius-sm);
+  background: var(--rt-raised);
+}
+
+.stage[data-state="PARTIAL"] { border-color: var(--rt-review-amber); }
+
+.stageName {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rt-space-2xs);
+  color: var(--rt-ink-mid);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.stageValue {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-data-lg);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.stageWhy {
+  color: var(--rt-ink-mid);
+  font-size: var(--ry-fs-dense);
+  line-height: 1.45;
+}
+
+/* ── metrics ────────────────────────────────────────────────────────────── */
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 152px), 1fr));
+  gap: var(--rt-space-xs);
+  margin: 0;
+}
+
+.metric {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--rt-space-xs);
+  border: 1px solid var(--rt-hairline);
+  border-radius: var(--rt-radius-sm);
+  background: var(--rt-raised);
+}
+
+.metricKey {
+  color: var(--rt-ink-mid);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.metricValue {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-data);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A missing measurement is neutral and stated. Never zero, never a dash on its
+   own: `0%` adherence and "no closed trade yet" are different facts. */
+.metricUnknown {
+  color: var(--rt-ink-mid);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-data);
+}
+
+/* ── cohorts ────────────────────────────────────────────────────────────── */
+
+/* Two cohorts side by side, and the count under each is what licenses reading
+   the difference at all. Below the floor the page says so instead of drawing a
+   comparison a handful of trades cannot support. */
+.cohorts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+  gap: var(--rt-space-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cohort {
+  display: grid;
+  gap: 4px;
+  padding: var(--rt-space-sm);
+  border: 1px solid var(--rt-hairline);
+  border-radius: var(--rt-radius-sm);
+  background: var(--rt-panel);
+}
+
+/* ── cycles ─────────────────────────────────────────────────────────────── */
+
+.cycles {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--rt-space-2xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cycle {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--rt-space-xs);
+  padding: var(--rt-space-xs) var(--rt-space-sm);
+  border: 1px solid var(--rt-hairline);
+  border-radius: var(--rt-radius-sm);
+  background: var(--rt-panel);
+}
+
+.cycleBody {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.cycleTitle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rt-space-2xs);
+  font-size: var(--ry-fs-app);
+  font-weight: 600;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.cycleLinks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rt-space-2xs);
+}
+
+.cycleLine {
+  color: var(--rt-ink-mid);
+  font-size: var(--ry-fs-dense);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.cycleLine b {
+  color: var(--rt-ink-high);
+  font-family: var(--ry-font-mono);
+  font-weight: 500;
+}
+
+/* ── shared text ────────────────────────────────────────────────────────── */
+
+.note {
+  display: grid;
+  gap: var(--rt-space-2xs);
+  margin: 0;
+  color: var(--rt-ink-mid);
+  font-size: var(--ry-fs-dense);
+  line-height: 1.5;
+}
+
+.note li { margin-inline-start: var(--rt-space-md); }
+
+.empty {
+  display: flex;
+  align-items: center;
+  gap: var(--rt-space-xs);
+  color: var(--rt-ink-mid);
+  font-size: var(--ry-fs-dense);
+  line-height: 1.5;
+}
+
+.empty svg { flex: none; color: var(--rt-ink-mid); }
+
+.empty[data-tone="CALM"] svg { color: var(--rt-reconciled-green-fg); }
+
+/* ── loading ────────────────────────────────────────────────────────────── */
+
+.skeleton {
+  border-radius: var(--rt-radius-sm);
+  background: var(--rt-hairline);
+}
+
+.skeletonRow { height: 52px; }
+.skeletonLine { height: 14px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton { animation: pulse 1.6s var(--rt-ease) infinite; }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 0.85; }
+}

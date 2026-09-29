@@ -1,0 +1,40 @@
+{
+  "name": "@ryntra/action-evidence-sdk",
+  "version": "0.2.0",
+  "type": "module",
+  "description": "Dependency-free client for the bounded Ryntra action-evidence read and preview API.",
+  "keywords": [
+    "ryntra",
+    "action-evidence",
+    "evidence",
+    "agentverse",
+    "sdk",
+    "read-only"
+  ],
+  "license": "Apache-2.0",
+  "author": "Dmytro Plavutskyi",
+  "homepage": "https://ryntra.io/developers/agent-control",
+  "bugs": {
+    "url": "https://github.com/ryntra-io/ryntra-agent-control/issues"
+  },
+  "engines": {
+    "node": ">=22.18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ryntra-io/ryntra-agent-control.git",
+    "directory": "packages/agent-control-sdk"
+  },
+  "files": [
+    "src/index.ts",
+    "README.md"
+  ],
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "types": "./src/index.ts",
+  "sideEffects": false
+}

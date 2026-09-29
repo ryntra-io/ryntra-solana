@@ -1,0 +1,275 @@
+{
+  "total": 3,
+  "pages": 1,
+  "current_page": 1,
+  "page_size": 5,
+  "data": [
+    {
+      "address": "2ZWxT3niYjyudmDMDVar9ajNE42RkwYdzZBh6TiMuKQY",
+      "name": "tOpenAI-USDC",
+      "token_x": {
+        "address": "oPAiAikWTaFj9RYoRFD35ccfwhnMcB3ThgBZRHSkjTZ",
+        "name": "T-OpenAI",
+        "symbol": "tOpenAI",
+        "decimals": 9,
+        "is_verified": true,
+        "holders": 8455,
+        "freeze_authority_disabled": false,
+        "total_supply": 684.771903977,
+        "price": 968.5075581811788,
+        "market_cap": 663206.7646318409
+      },
+      "token_y": {
+        "address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "decimals": 6,
+        "is_verified": true,
+        "holders": 5248202,
+        "freeze_authority_disabled": false,
+        "total_supply": 7927233551.771811,
+        "price": 0.9997737022359922,
+        "market_cap": 7925439636.544276
+      },
+      "reserve_x": "DUWECDt8osW6K79wEFVPPPDW4ZUrtQZxzFXUCq8mnGk8",
+      "reserve_y": "Ff1ZPrgVnD82SskVsyKEhMnwNCLaEuszZmCtizyzzrCh",
+      "token_x_amount": 261.667495478,
+      "token_y_amount": 332084.542056,
+      "created_at": 1782391951000,
+      "reward_mint_x": "11111111111111111111111111111111",
+      "reward_mint_y": "11111111111111111111111111111111",
+      "pool_config": {
+        "bin_step": 80,
+        "base_fee_pct": 0.01,
+        "max_fee_pct": 0,
+        "protocol_fee_pct": 20,
+        "collect_fee_mode": 0
+      },
+      "dynamic_fee_pct": 0,
+      "tvl": 585402.4014203063,
+      "current_price": 968.6299015467632,
+      "apr": 0.006173720370492879,
+      "apy": 2.278917816889292,
+      "has_farm": false,
+      "farm_apr": 0,
+      "farm_apy": 0,
+      "volume": {
+        "30m": 2771.2440772661657,
+        "1h": 4930.452577760008,
+        "2h": 8897.126132653886,
+        "4h": 21667.95116671972,
+        "12h": 165058.8470456304,
+        "24h": 323865.8476141055
+      },
+      "fees": {
+        "30m": 0.22161466901736104,
+        "1h": 0.3942335712945739,
+        "2h": 0.7114766658882175,
+        "4h": 1.7938645751313522,
+        "12h": 17.45769645346356,
+        "24h": 36.141107305839945
+      },
+      "protocol_fees": {
+        "30m": 0.05536969168492066,
+        "1h": 0.09848103241956736,
+        "2h": 0.17769950085717395,
+        "4h": 0.4475120265733885,
+        "12h": 4.18687941528149,
+        "24h": 8.754988549534147
+      },
+      "fee_tvl_ratio": {
+        "30m": 0.00003785680900516951,
+        "1h": 0.0000673440304204565,
+        "2h": 0.00012153634220871476,
+        "4h": 0.00030643273255782157,
+        "12h": 0.0029821702833995227,
+        "24h": 0.006173720370492879
+      },
+      "cumulative_metrics": {
+        "volume": 48246364.274958186,
+        "fees": 7383.60764868452
+      },
+      "is_blacklisted": false,
+      "launchpad": "",
+      "tags": []
+    },
+    {
+      "address": "FVL2D6qF96CqM5krAJVxfNcEuLNMZTwfAwx6wtYhj1uq",
+      "name": "tOpenAI-USDC",
+      "token_x": {
+        "address": "oPAiAikWTaFj9RYoRFD35ccfwhnMcB3ThgBZRHSkjTZ",
+        "name": "T-OpenAI",
+        "symbol": "tOpenAI",
+        "decimals": 9,
+        "is_verified": true,
+        "holders": 8456,
+        "freeze_authority_disabled": false,
+        "total_supply": 684.771903977,
+        "price": 968.5056208086892,
+        "market_cap": 663205.4379735923
+      },
+      "token_y": {
+        "address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "decimals": 6,
+        "is_verified": true,
+        "holders": 5248202,
+        "freeze_authority_disabled": false,
+        "total_supply": 7928732988.460351,
+        "price": 0.9997716408084892,
+        "market_cap": 7926922389.4054
+      },
+      "reserve_x": "72YN2xVX3atduLaey4iKnhvUQFDzifrJ6h6zvaKMgTah",
+      "reserve_y": "AAvaSR4S7bxGJagP8GTvWgH1C3GBYNy4vKEmQKDfNZXQ",
+      "token_x_amount": 3.4e-8,
+      "token_y_amount": 0.000029,
+      "created_at": 1789061666000,
+      "reward_mint_x": "11111111111111111111111111111111",
+      "reward_mint_y": "11111111111111111111111111111111",
+      "pool_config": {
+        "bin_step": 20,
+        "base_fee_pct": 0.2,
+        "max_fee_pct": 0,
+        "protocol_fee_pct": 10,
+        "collect_fee_mode": 0
+      },
+      "dynamic_fee_pct": 0,
+      "tvl": 0.000062512631802406,
+      "current_price": 930.597807244097,
+      "apr": 0,
+      "apy": 0,
+      "has_farm": false,
+      "farm_apr": 0,
+      "farm_apy": 0,
+      "volume": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 0,
+        "24h": 0
+      },
+      "fees": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 0,
+        "24h": 0
+      },
+      "protocol_fees": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 0,
+        "24h": 0
+      },
+      "fee_tvl_ratio": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 0,
+        "24h": 0
+      },
+      "cumulative_metrics": {
+        "volume": 12764.517380060606,
+        "fees": 23.097233426410035
+      },
+      "is_blacklisted": false,
+      "launchpad": "",
+      "tags": []
+    },
+    {
+      "address": "4pSQ2zbzn6xUVdvphgZwHwHgR2eiNMf4gzKXJ3jn4BkF",
+      "name": "tOpenAI-USDC",
+      "token_x": {
+        "address": "oPAiAikWTaFj9RYoRFD35ccfwhnMcB3ThgBZRHSkjTZ",
+        "name": "T-OpenAI",
+        "symbol": "tOpenAI",
+        "decimals": 9,
+        "is_verified": true,
+        "holders": 8456,
+        "freeze_authority_disabled": false,
+        "total_supply": 684.771903977,
+        "price": 966.3474966264184,
+        "market_cap": 661727.6151682801
+      },
+      "token_y": {
+        "address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "decimals": 6,
+        "is_verified": true,
+        "holders": 5248202,
+        "freeze_authority_disabled": false,
+        "total_supply": 7928853321.125581,
+        "price": 0.9997665354729244,
+        "market_cap": 7927002215.134712
+      },
+      "reserve_x": "A44MhKGYhHCdvvvZsuSwjiyhMkVy3kYeCBSyVjHCyWHE",
+      "reserve_y": "CDT77XkR3sMNbRRexRWxq3aerFanBaBNDttSPF6STJBA",
+      "token_x_amount": 0,
+      "token_y_amount": 0.000017,
+      "created_at": 1782406787000,
+      "reward_mint_x": "11111111111111111111111111111111",
+      "reward_mint_y": "11111111111111111111111111111111",
+      "pool_config": {
+        "bin_step": 200,
+        "base_fee_pct": 2,
+        "max_fee_pct": 0,
+        "protocol_fee_pct": 10,
+        "collect_fee_mode": 1
+      },
+      "dynamic_fee_pct": 0,
+      "tvl": 0.000016995748853814,
+      "current_price": 836.7552658726586,
+      "apr": 0,
+      "apy": 0,
+      "has_farm": false,
+      "farm_apr": 0,
+      "farm_apy": 0,
+      "volume": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 0,
+        "24h": 0
+      },
+      "fees": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 0,
+        "24h": 0
+      },
+      "protocol_fees": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 0,
+        "24h": 0
+      },
+      "fee_tvl_ratio": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 0,
+        "24h": 0
+      },
+      "cumulative_metrics": {
+        "volume": 4657.867453670271,
+        "fees": 85.41338930678758
+      },
+      "is_blacklisted": false,
+      "launchpad": "",
+      "tags": []
+    }
+  ]
+}

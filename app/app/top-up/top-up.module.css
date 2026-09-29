@@ -1,0 +1,421 @@
+/*
+ * «Поповнити» (canon v5.1 §4 «Почати з картки»; RYN-INVEST-SIMPLE-001,
+ * session 5). Drawn for 390 px first (В20): a title and one line, what the
+ * wallet holds against what a purchase needs, and three ways as three rows.
+ * One column even on a wide screen — it is a list of steps, not a dashboard.
+ * Tokens only (DESIGN.md → app/design/tokens.css).
+ */
+
+.page {
+  max-width: 640px;
+}
+
+.head {
+  display: grid;
+  gap: var(--ry-s2);
+}
+
+/* ── A guest ─────────────────────────────────────────────────────────── */
+
+.emptyTitle {
+  margin: 0;
+  font-size: var(--ry-fs-section);
+  font-weight: 600;
+  line-height: var(--ry-lh-head);
+  color: var(--ry-text);
+  text-wrap: balance;
+}
+
+/* ── What the wallet holds ───────────────────────────────────────────── */
+
+.status {
+  gap: var(--ry-s3);
+  /* Brought back into view when money arrives, clear of the sticky top bar. */
+  scroll-margin-top: 80px;
+}
+
+.statusTitle {
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  font-weight: 500;
+  color: var(--ry-muted);
+}
+
+.line {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--ry-s3);
+  min-height: 44px;
+}
+
+.lineIcon {
+  display: block;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--ry-r-pill);
+}
+
+.lineText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.lineName {
+  font-size: var(--ry-fs-copy);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.lineRole {
+  font-size: var(--ry-fs-data);
+  color: var(--ry-muted);
+}
+
+.lineFigures {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+  text-align: right;
+}
+
+.line[data-ok="true"] .lineFigures {
+  grid-auto-flow: column;
+  align-items: center;
+  gap: var(--ry-s2);
+}
+
+.lineValue {
+  font-size: var(--ry-fs-copy);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+}
+
+.lineCheck {
+  color: var(--ry-verified);
+}
+
+.lineMissing {
+  font-size: var(--ry-fs-data);
+  font-weight: 500;
+  color: var(--ry-caution);
+  white-space: nowrap;
+}
+
+.valueBone,
+.lineBone,
+.qrBone {
+  display: block;
+  border-radius: var(--ry-r-chip);
+  background: var(--ry-hover);
+  animation: bone 1.4s ease-in-out infinite;
+}
+
+.valueBone {
+  width: 72px;
+  height: 18px;
+}
+
+.lineBone {
+  width: 60%;
+  height: 16px;
+}
+
+@keyframes bone {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.ready {
+  display: grid;
+  gap: var(--ry-s3);
+  padding-top: var(--ry-s3);
+  border-top: 1px solid var(--ry-border);
+}
+
+.ready > :global(.rw-btn) {
+  min-height: 52px;
+}
+
+.readyLine {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.readyLine svg {
+  color: var(--ry-verified);
+}
+
+.needLine {
+  margin: 0;
+  padding: var(--ry-s3) var(--ry-s4);
+  border: 1px solid color-mix(in srgb, var(--ry-caution) 45%, transparent);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-caution-soft);
+  font-size: var(--ry-fs-dense);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-text);
+}
+
+.needLine b {
+  display: block;
+  margin-bottom: 2px;
+  font-weight: 600;
+}
+
+.waiting {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  margin: 0;
+  padding-top: var(--ry-s3);
+  border-top: 1px solid var(--ry-border);
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+}
+
+.waiting::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-muted);
+  animation: bone 1.4s ease-in-out infinite;
+}
+
+/* ── Three ways ──────────────────────────────────────────────────────── */
+
+.ways {
+  display: grid;
+  gap: var(--ry-s3);
+}
+
+.way {
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+  overflow: hidden;
+  /* An opened row scrolls to the top of the screen, clear of the sticky top bar. */
+  scroll-margin-top: 80px;
+}
+
+.way[data-open="true"] {
+  border-color: var(--ry-border-strong);
+}
+
+.wayHead {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--ry-s3);
+  width: 100%;
+  min-height: 64px;
+  padding: var(--ry-s3) var(--ry-s4);
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: var(--ry-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.wayHead:hover {
+  background: var(--ry-hover);
+}
+
+.wayHead:focus-visible {
+  outline: 2px solid var(--ry-focus);
+  outline-offset: -2px;
+}
+
+.wayIcon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-hover);
+  color: var(--ry-text);
+}
+
+.wayText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.wayTitle {
+  font-size: var(--ry-fs-copy);
+  font-weight: 600;
+  line-height: var(--ry-lh-head);
+}
+
+.waySub {
+  font-size: var(--ry-fs-data);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+}
+
+.caret {
+  color: var(--ry-muted);
+  transition: transform 160ms ease;
+}
+
+.way[data-open="true"] .caret {
+  transform: rotate(180deg);
+}
+
+.wayBody {
+  display: grid;
+  gap: var(--ry-s3);
+  padding: 0 var(--ry-s4) var(--ry-s4);
+}
+
+.steps {
+  display: grid;
+  gap: var(--ry-s2);
+  margin: 0;
+  padding-left: var(--ry-s5);
+  font-size: var(--ry-fs-copy);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-text);
+}
+
+.steps li::marker {
+  font-weight: 600;
+  color: var(--ry-muted);
+}
+
+.stepLine {
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-text);
+}
+
+.fine {
+  margin: 0;
+  font-size: var(--ry-fs-data);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+}
+
+/* ── The address ─────────────────────────────────────────────────────── */
+
+.address {
+  display: grid;
+  gap: var(--ry-s3);
+}
+
+.address > :global(.rw-btn) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ry-s2);
+  min-height: 48px;
+}
+
+.qrWrap {
+  justify-self: center;
+  padding: var(--ry-s3);
+  border-radius: var(--ry-r-card);
+  /* A code reads best dark on light in both themes, like a printed one. */
+  background: var(--ry-on-iris);
+}
+
+.qr,
+.qrBone {
+  display: block;
+  width: 200px;
+  height: 200px;
+}
+
+.qr {
+  image-rendering: pixelated;
+}
+
+.addressFacts {
+  display: grid;
+  gap: var(--ry-s2);
+}
+
+.addressLabel {
+  font-size: var(--ry-fs-data);
+  color: var(--ry-muted);
+}
+
+.addressValue {
+  margin: 0;
+  padding: var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-chip);
+  background: var(--ry-bg);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-text);
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+.chip {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s1);
+  min-height: 28px;
+  padding: 0 var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-pill);
+  font-size: var(--ry-fs-data);
+  color: var(--ry-muted);
+}
+
+.chip b {
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+@media (min-width: 720px) {
+  .address[data-qr="true"] {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    column-gap: var(--ry-s5);
+  }
+
+  .address[data-qr="true"] .qrWrap {
+    grid-row: span 3;
+    justify-self: start;
+  }
+
+  .address > :global(.rw-btn) {
+    justify-self: start;
+    min-width: 200px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .valueBone,
+  .lineBone,
+  .qrBone,
+  .waiting::before {
+    animation: none;
+  }
+
+  .caret {
+    transition: none;
+  }
+}

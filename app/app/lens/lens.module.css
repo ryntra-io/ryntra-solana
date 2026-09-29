@@ -1,0 +1,315 @@
+/*
+ * The Brief and the Critic on a surface (RYN-BRIEF-CRITIC-001).
+ *
+ * One block, the product's own scale and tokens. The two questions a person
+ * reads first are open; the data, the gaps and the checks are folded, and
+ * the sources are folded under them — a wall of text is a defect. The
+ * Critic's findings are a list whose kind is a quiet label, never a colour
+ * that reads as a verdict. Both themes through the tokens; 390px wide with
+ * no horizontal scroll.
+ */
+
+.panel {
+  display: grid;
+  gap: var(--ry-s3);
+  min-width: 0;
+  padding: var(--ry-s4);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-elevated);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--ry-s1) var(--ry-s3);
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  letter-spacing: var(--ry-ls-head);
+  color: var(--ry-text);
+  overflow-wrap: anywhere;
+}
+
+.meta {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-text-muted);
+}
+
+.muted {
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  line-height: 1.5;
+  color: var(--ry-muted);
+  max-width: 64ch;
+}
+
+.sections {
+  display: grid;
+  gap: var(--ry-s3);
+  min-width: 0;
+}
+
+.section {
+  display: grid;
+  gap: var(--ry-s1);
+  min-width: 0;
+}
+
+.section h3 {
+  margin: 0;
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label-sm);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ry-text-muted);
+}
+
+.sentences {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.sentences li {
+  font-size: var(--ry-fs-copy);
+  line-height: 1.5;
+  color: var(--ry-text);
+  overflow-wrap: anywhere;
+}
+
+/* ── The findings ───────────────────────────────────────────────────── */
+
+.findings {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--ry-s3);
+  min-width: 0;
+}
+
+.finding {
+  display: grid;
+  gap: var(--ry-s2);
+  min-width: 0;
+  padding: var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-left: 2px solid var(--ry-border-strong);
+  border-radius: var(--ry-r-chip);
+  background: var(--ry-card);
+}
+
+.finding[data-state="stale"],
+.finding[data-state="unavailable"],
+.finding[data-state="unknown"] {
+  border-left-color: var(--ry-caution);
+}
+
+.kind {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label-sm);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ry-text-muted);
+}
+
+.findingText {
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  line-height: 1.5;
+  color: var(--ry-text);
+  overflow-wrap: anywhere;
+}
+
+.figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 140px), 1fr));
+  gap: var(--ry-s2) var(--ry-s3);
+  margin: 0;
+  min-width: 0;
+}
+
+.figure {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.figure dt {
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.figure dd {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.value {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-value);
+  color: var(--ry-text);
+  overflow-wrap: anywhere;
+}
+
+.figure[data-state="unavailable"] .value,
+.figure[data-state="unknown"] .value {
+  color: var(--ry-muted);
+}
+
+.stateTag {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-caution);
+}
+
+/* ── Closed: the block waits behind Ask Ryn (RYN-FIRST-SCREEN-001) ───── */
+
+.closed {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ry-s2);
+  min-width: 0;
+}
+
+.headEnd {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ry-s1) var(--ry-s3);
+  margin-left: auto;
+  min-width: 0;
+}
+
+.close {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--ry-s2);
+  border: 0;
+  border-radius: var(--ry-r-btn);
+  background: transparent;
+  font: inherit;
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-text-muted);
+  cursor: pointer;
+}
+
+.close:hover {
+  color: var(--ry-text);
+}
+
+.close:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+}
+
+/* The page's Ask Ryn while the block it opened is open. */
+.ask[aria-expanded="true"] {
+  color: var(--ry-accent-fg);
+  border-color: var(--ry-brand-line);
+  background: var(--ry-brand-soft);
+}
+
+/* ── The folds, the actions, the foot ───────────────────────────────── */
+
+.fold {
+  border-top: 1px solid var(--ry-border);
+  padding-top: var(--ry-s2);
+  min-width: 0;
+}
+
+.fold summary {
+  cursor: pointer;
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label-sm);
+  letter-spacing: 0.04em;
+  color: var(--ry-text-muted);
+}
+
+.fold summary:hover {
+  color: var(--ry-text);
+}
+
+.fold[open] summary {
+  margin-bottom: var(--ry-s2);
+}
+
+.foldBody {
+  display: grid;
+  gap: var(--ry-s3);
+  min-width: 0;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ry-s2);
+  min-width: 0;
+}
+
+.sourceList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.sourceList li {
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ry-s1) var(--ry-s3);
+  border-top: 1px solid var(--ry-border);
+  padding-top: var(--ry-s2);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-text-muted);
+}
+
+.error {
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  color: var(--ry-caution);
+}
+
+@media (max-width: 560px) {
+  .panel {
+    padding: var(--ry-s3);
+  }
+
+  .actions > * {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+}

@@ -1,0 +1,676 @@
+/*
+ * Home's own two states beside the shared shelf (../invest/invest.module.css).
+ *
+ * A browser that remembers a wallet (`data-wallet-hint`, set before paint by
+ * the cabinet's boot script) is reconnecting it silently: the guest's promise
+ * waits under the shape of a balance until the wallet answers or the wait
+ * ends (`data-settled`), so a returning person is never invited to connect a
+ * wallet that is already on its way.
+ */
+
+/* `div.` because the shared `.hero` it also wears draws a grid; the pending
+   head is absent unless the browser remembers a wallet. */
+div.pending {
+  display: none;
+}
+
+:global(html[data-wallet-hint="1"]) .guest:not([data-settled]) {
+  display: none;
+}
+
+:global(html[data-wallet-hint="1"]) .pending:not([data-settled]) {
+  display: grid;
+}
+
+.pending[data-settled] {
+  display: none;
+}
+
+.pendingLabel,
+.pendingValue,
+.pendingActions {
+  display: block;
+  border-radius: var(--ry-r-chip);
+  background: var(--ry-elevated);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.pendingLabel {
+  width: 40%;
+  height: 14px;
+}
+
+.pendingValue {
+  width: 56%;
+  height: 40px;
+}
+
+.pendingActions {
+  width: 100%;
+  height: 44px;
+  margin-top: var(--ry-s2);
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pendingLabel,
+  .pendingValue,
+  .pendingActions {
+    animation: none;
+  }
+}
+
+/* ── The network's SOL (session 5): what is missing, said once, above the one action that brings it ── */
+
+.notice {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: var(--ry-s3) var(--ry-s4);
+  border: 1px solid color-mix(in srgb, var(--ry-caution) 45%, transparent);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-caution-soft);
+  font-size: var(--ry-fs-dense);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-text);
+}
+
+.notice b {
+  font-size: var(--ry-fs-copy);
+  font-weight: 600;
+}
+
+/* ── «Ризик портфеля» (RYN-PROTECT-SIGNAL-001, subtask 2): drawn as «Розподіл» is — its name a quiet label
+   with «?», then the state: an icon, the word in its colour and the reason as one sentence, wrapping past the
+   icon; the one action a small capsule under it, as a position's state speaks in Portfolio
+   (../invest/watch.module.css). On a wide head it closes «Розподіл», beside the shares it speaks of; on a
+   narrow one — where «Розподіл» is not drawn — it follows the day's change. ── */
+
+.risk {
+  display: grid;
+  gap: var(--ry-s1);
+  min-width: 0;
+}
+
+.riskName {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s1);
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  color: var(--ry-muted);
+}
+
+.riskBody {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr);
+  column-gap: var(--ry-s2);
+  align-items: start;
+  font-size: var(--ry-fs-dense);
+  line-height: 1.5;
+}
+
+/* On the first line of the sentence, whatever it wraps to. */
+.riskIcon {
+  margin-top: calc((1.5em - 16px) / 2);
+  color: var(--ry-muted);
+}
+
+.riskCopy {
+  display: grid;
+  gap: var(--ry-s1);
+  min-width: 0;
+}
+
+.riskSaid {
+  margin: 0;
+  color: var(--ry-text);
+  overflow-wrap: anywhere;
+}
+
+.riskState {
+  font-weight: 650;
+  color: var(--ry-text);
+}
+
+.risk[data-tone="calm"] .riskIcon,
+.risk[data-tone="calm"] .riskState {
+  color: var(--rt-reconciled-green-fg, var(--ry-verified));
+}
+
+.risk[data-tone="caution"] .riskIcon,
+.risk[data-tone="caution"] .riskState {
+  color: var(--rt-review-amber-fg, var(--ry-caution));
+}
+
+.riskText {
+  font-variant-numeric: tabular-nums;
+}
+
+.riskPending {
+  color: var(--ry-muted);
+}
+
+/* Capsules that wrap to a second line keep their 44 px reaches from overlapping. */
+.riskActions,
+.riskRest {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ry-s4) var(--ry-s2);
+  margin: 0;
+  font-size: var(--ry-fs-label);
+}
+
+/* A sentence and its retry: close, the way a reason stands over its action. */
+.riskRest {
+  row-gap: var(--ry-s1);
+  color: var(--ry-muted);
+}
+
+/* `riskAction` rides beside watch.module.css's own class on every capsule control of the block, so the rules below
+   reach it from this module. One focus ring, on the capsule that shows — not a second one round the 44 px reach. */
+:global(.ry-product) .risk .riskAction:focus-visible {
+  box-shadow: none;
+}
+
+/* «ще N» and «Спробувати ще раз» are ways, not actions: quiet whatever the state's colour, a hover or a tap included —
+   one amber capsule on the line, the first reason's. */
+.risk[data-tone] .quietCapsule,
+.risk[data-tone] .riskAction:hover > .quietCapsule {
+  border-color: var(--ry-border-strong);
+  background: transparent;
+  color: var(--ry-text);
+}
+
+@media (hover: hover) {
+  .risk[data-tone] .riskAction:hover > .quietCapsule {
+    border-color: var(--ry-muted);
+    background: var(--ry-hover);
+  }
+}
+
+/* The reasons after the first: quiet rows the width of the column, each a way to where it is acted on, its arrow at the end. */
+.riskMore {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.riskMoreLink {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--ry-s2);
+  width: 100%;
+  min-height: 44px;
+  color: var(--ry-text);
+  text-decoration: underline;
+  text-decoration-color: var(--ry-border-strong);
+  text-underline-offset: 3px;
+  font-variant-numeric: tabular-nums;
+}
+
+.riskMoreLink:hover {
+  text-decoration-color: var(--ry-text);
+}
+
+.riskMoreCaret {
+  flex: none;
+  color: var(--ry-muted);
+}
+
+/* Beside «Розподіл»: the shares' verdict under the shares, a hairline apart. */
+.riskSide {
+  margin-top: var(--ry-s2);
+  padding-top: var(--ry-s3);
+  border-top: 1px solid var(--ry-border);
+}
+
+/* ── Width (RYN-WIDTH-PREMIUM-001): a main column and a right one from 1280 px ── */
+
+.layout {
+  display: grid;
+  gap: var(--ry-s6);
+  width: 100%;
+  min-width: 0;
+  align-items: start;
+}
+
+.main,
+.aside {
+  display: grid;
+  gap: var(--ry-s6);
+  align-content: start;
+  min-width: 0;
+}
+
+/* The main column is the head's container: its two sides open by the
+   column's own width, not the screen's. */
+.main {
+  container-type: inline-size;
+}
+
+@media (min-width: 1280px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr) clamp(340px, 26vw, 420px);
+    max-width: 1760px;
+  }
+
+  /* The assistant has its own block beside the column; the head's quiet way is a phone's. */
+  .headMain .headAsk {
+    display: none;
+  }
+}
+
+/* ── The head's two sides ─────────────────────────────────────────────── */
+
+.headMain {
+  display: grid;
+  gap: var(--ry-s3);
+  align-content: start;
+  min-width: 0;
+}
+
+/* What the money is in and a guest's steps belong to a wide head; a narrow
+   one keeps the balance or the promise alone. */
+.steps,
+.allocation {
+  display: none;
+}
+
+@container (min-width: 640px) {
+  .head {
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 0.8fr);
+    column-gap: var(--ry-s7);
+    align-items: center;
+  }
+
+  /* A wallet's head stands from the top: «Розподіл» and its risk grow downward, and «Купити» stays where it was. */
+  .head[data-need] {
+    align-items: start;
+  }
+
+  .steps,
+  .allocation {
+    display: grid;
+  }
+
+  /* A wide head draws the risk under «Розподіл»; the main column's copy is a narrow head's. */
+  .riskMain {
+    display: none;
+  }
+}
+
+.steps {
+  gap: var(--ry-s3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s3);
+  font-size: var(--ry-fs-copy);
+  font-weight: 500;
+  color: var(--ry-text);
+}
+
+.stepNumber {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-elevated);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-muted);
+}
+
+.allocation {
+  gap: var(--ry-s3);
+  min-width: 0;
+}
+
+.sideLabel {
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  color: var(--ry-muted);
+}
+
+.bar {
+  display: flex;
+  gap: 2px;
+  height: 10px;
+  overflow: hidden;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-elevated);
+}
+
+.slice {
+  flex-basis: 0;
+  min-width: 3px;
+  background: var(--ry-c1);
+}
+
+.legend {
+  display: grid;
+  gap: var(--ry-s2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.legendRow {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--ry-s2);
+  font-size: var(--ry-fs-dense);
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-c1);
+}
+
+.slice[data-slice="1"], .dot[data-slice="1"] { background: var(--ry-c2); }
+.slice[data-slice="2"], .dot[data-slice="2"] { background: var(--ry-c3); }
+.slice[data-slice="3"], .dot[data-slice="3"] { background: var(--ry-c5); }
+.slice[data-slice="4"], .dot[data-slice="4"] { background: var(--ry-muted); }
+
+.legendName {
+  overflow: hidden;
+  font-weight: 500;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--ry-text);
+}
+
+.legendShare {
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-muted);
+}
+
+/* ── The right column's blocks ────────────────────────────────────────── */
+
+.card {
+  display: grid;
+  gap: var(--ry-s3);
+  margin: 0;
+  padding: var(--ry-s4);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+  list-style: none;
+}
+
+.cardLine {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+}
+
+.textButton {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: var(--ry-s1);
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: var(--ry-fs-dense);
+  font-weight: 500;
+  color: var(--ry-text);
+  text-decoration: underline;
+  text-decoration-color: var(--ry-border-strong);
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.textButton:hover:not(:disabled) {
+  text-decoration-color: var(--ry-text);
+}
+
+.textButton:disabled {
+  color: var(--ry-muted);
+  cursor: default;
+}
+
+.count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  margin-left: var(--ry-s2);
+  padding: 0 6px;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-elevated);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  vertical-align: middle;
+  color: var(--ry-text);
+}
+
+.withIcon {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s2);
+}
+
+.ask {
+  display: flex;
+  gap: var(--ry-s2);
+}
+
+.askInput {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  background: var(--ry-bg);
+  font: inherit;
+  font-size: var(--ry-fs-copy);
+  color: var(--ry-text);
+}
+
+.askInput::placeholder {
+  color: var(--ry-muted);
+}
+
+.askInput:focus-visible {
+  outline: none;
+  border-color: var(--ry-border-strong);
+  box-shadow: var(--ry-focus);
+}
+
+.askSend {
+  flex: 0 0 auto;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s2);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-pill);
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-text);
+  text-decoration: none;
+  transition: border-color var(--rt-duration-fast) var(--rt-ease), background-color var(--rt-duration-fast) var(--rt-ease);
+}
+
+.chip:hover {
+  border-color: var(--ry-border-strong);
+  background: var(--ry-elevated);
+}
+
+.movers {
+  gap: 0;
+  padding: var(--ry-s1) var(--ry-s2);
+}
+
+.mover {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--ry-s3);
+  min-height: 56px;
+  padding: var(--ry-s2);
+  border-radius: var(--ry-r-btn-sm);
+  color: var(--ry-text);
+  text-decoration: none;
+  transition: background-color var(--rt-duration-fast) var(--rt-ease);
+}
+
+.mover:hover {
+  background: var(--ry-elevated);
+}
+
+.movers li + li .mover {
+  border-top: 1px solid var(--ry-border);
+  border-radius: 0;
+}
+
+.moverLogo {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  overflow: hidden;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-elevated);
+  object-fit: cover;
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  color: var(--ry-muted);
+}
+
+.moverName {
+  overflow: hidden;
+  font-size: var(--ry-fs-copy);
+  font-weight: 500;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.moverFigures {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+}
+
+.moverPrice {
+  font-size: var(--ry-fs-value);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.moverChange {
+  font-size: var(--ry-fs-data);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.moverChange[data-tone="up"] {
+  color: var(--ry-verified);
+}
+
+.moverChange[data-tone="down"] {
+  color: var(--ry-risk);
+}
+
+.moverChange[data-tone="flat"] {
+  color: var(--ry-muted);
+}
+
+/* Popular companies: eight — two rows of four, four rows of two on a phone;
+   beside the right column on a wide desk, twelve — three rows of four. */
+@media (max-width: 1279px) {
+  .popularTiles > :nth-child(n + 9) {
+    display: none;
+  }
+}
+
+/* The movers' shape while the market lists are read. */
+.ghost {
+  border-radius: var(--ry-r-chip);
+  background: var(--ry-elevated);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.ghostLine {
+  width: 60%;
+  height: 14px;
+}
+
+.ghostShort {
+  width: 56px;
+  height: 14px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ghost {
+    animation: none;
+  }
+}
+
+/* On a phone the two columns become one list (the Owner's word, RYN-WIDTH-
+   PREMIUM-001): the main blocks first, a wallet's «Автоінвест» right after
+   what it owns, then the right column's other blocks in their order. */
+@media (max-width: 900px) {
+  .layout {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .main,
+  .aside {
+    display: contents;
+  }
+
+  .layout [data-block="head"] { order: 1; }
+  .layout [data-block="owned"] { order: 2; }
+  .layout [data-block="autoinvest"] { order: 3; }
+  .layout [data-block="popular"] { order: 4; }
+  .layout [data-block="notes"] { order: 5; }
+  .layout [data-block="autoinvest"][data-guest] { order: 6; }
+  .layout [data-block="ask"] { order: 7; }
+  .layout [data-block="movers"] { order: 8; }
+}

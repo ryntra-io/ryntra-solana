@@ -1,0 +1,399 @@
+/**
+ * Ryntra design tokens — the runtime projection of DESIGN.md.
+ *
+ * DESIGN.md at the repo root is the sole authored visual authority; this file
+ * is a mechanical projection of it and is edited only to track that file
+ * (Enforcement §PROJECTION RULE).
+ *
+ * Brand Canon v1.0 (Owner, 2026-09-11): one brand orange `#FF681C` on a
+ * graphite ground with a navy undertone; a cool neutral light theme; green
+ * and red for the market, amber for caution, orange only for the brand, the
+ * primary action, the selected and the active. Dark is the presentation
+ * theme and lives on :root; light activates via [data-theme="light"] on the
+ * application shell, [data-ry-theme="light"] on a public band, or locally via
+ * .rt-light so a control surface can show both worlds on one page.
+ *
+ * Three layers of names resolve onto the same values:
+ *   --ry-*   the runtime tokens (brand, surfaces, semantics, type, shape);
+ *   --rt-*   the compatibility names 5,000+ declarations still read
+ *            (action-blue is the brand, reconciled-green is success, …);
+ *   the semantic layer at the end (--surface, --brand, --text-primary, …)
+ *   the Owner asked for, for new components.
+ * A legacy NAME in a stylesheet is not a legacy COLOUR; the chain is what is
+ * trusted, and the gate checks the chain.
+ */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COMPATIBILITY LAYER — every legacy colour resolves to the brand.
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root {
+  /* Surfaces — the graphite ladder */
+  --rt-page: var(--ry-bg);
+  --rt-panel: var(--ry-deep);
+  --rt-raised: var(--ry-card);
+  --rt-overlay: var(--ry-elevated);
+  --rt-hairline: var(--ry-border);
+  --rt-hairline-strong: var(--ry-border-strong);
+  --rt-bg: var(--ry-bg);
+  --rt-elevated: var(--ry-elevated);
+
+  /* Ink — three tiers: primary, secondary, muted */
+  --rt-ink-high: var(--ry-text);
+  --rt-ink-mid: var(--ry-muted);
+  --rt-ink-low: var(--ry-text-muted);
+
+  /* Semantic — locked meanings, brand values.
+     The filled action is the brand gradient's base with white on it; the
+     readable orange for TEXT is one step lifted on dark and one step sunk on
+     light, because #FF681C itself is 2.9:1 on white. */
+  --rt-action-blue: var(--ry-iris);
+  --rt-action-blue-hover: var(--ry-iris-hover);
+  --rt-action-blue-soft: var(--ry-brand-soft);
+  --rt-action-blue-line: var(--ry-brand-line);
+  --rt-action-blue-ink: var(--ry-on-iris);
+  --rt-action-blue-fg: var(--ry-iris-lift);
+
+  /* Evidence — a cool steel, never the brand orange and never a market colour:
+     the one place a quiet Solana-side hue is allowed. */
+  --rt-evidence-cyan: var(--ry-aurora);
+  --rt-evidence-cyan-soft: var(--ry-aurora-soft);
+  --rt-evidence-cyan-line: var(--ry-aurora-line);
+  --rt-evidence-cyan-ink: var(--ry-midnight);
+  --rt-evidence-cyan-fg: var(--ry-aurora);
+
+  --rt-authorization-violet: var(--ry-iris);
+  --rt-authorization-violet-soft: var(--ry-brand-soft);
+  --rt-authorization-violet-ink: var(--ry-on-iris);
+  --rt-authorization-violet-fg: var(--ry-iris-lift);
+
+  --rt-reconciled-green: var(--ry-verified);
+  --rt-reconciled-green-soft: var(--ry-verified-soft);
+  --rt-reconciled-green-ink: var(--ry-on-verified);
+  --rt-reconciled-green-fg: var(--ry-verified);
+
+  --rt-review-amber: var(--ry-caution);
+  --rt-review-amber-soft: var(--ry-caution-soft);
+  --rt-review-amber-ink: var(--ry-on-caution);
+  --rt-review-amber-fg: var(--ry-caution);
+
+  --rt-blocked-red: var(--ry-risk);
+  --rt-blocked-red-soft: var(--ry-risk-soft);
+  --rt-blocked-red-ink: var(--ry-on-risk);
+  --rt-blocked-red-fg: var(--ry-risk);
+
+  /* Chart. The grid is the border at low alpha, so it can never drift from
+     the surface it is drawn over; bullish and bearish are the market's own. */
+  --rt-chart-grid: color-mix(in srgb, var(--ry-border) 60%, transparent);
+  --rt-site-grid: rgba(135, 146, 168, 0.055);
+  /* The network's own light — Solana's brand gradient, for the light on and
+     around the Solana object in the public market universe (Owner,
+     2026-09-13). Never a surface, a text or an action colour; the same on
+     both grounds, because it is the network's, not the theme's. */
+  --ry-sol-green: #00FFA3;
+  --ry-sol-purple: #DC1FFF;
+  --ry-sol-violet: #9945FF;
+  --rt-chart-series: var(--ry-c1);
+  --rt-chart-up: var(--ry-verified);
+  --rt-chart-down: var(--ry-risk);
+
+  /* The one gradient — the primary action and the mark. */
+  --rt-brand-gradient: var(--ry-gradient);
+
+  /* Type */
+  --rt-font: var(--ry-font-sans);
+  --rt-mono: var(--ry-font-mono);
+
+  /* Shape */
+  --rt-focus-radius-tight: 2px;
+  --rt-focus-radius-sm: 4px;
+  --rt-focus-radius-md: 6px;
+  --rt-radius-xs: 8px;
+  --rt-radius-sm: 12px;
+  --rt-radius-md: 16px;
+  --rt-radius-lg: 20px;
+  --rt-radius-pill: 999px;
+
+  /* Rhythm — 4px base */
+  --rt-space-2xs: 4px;
+  --rt-space-xs: 8px;
+  --rt-space-sm: 12px;
+  --rt-space-md: 16px;
+  --rt-space-lg: 24px;
+  --rt-space-xl: 32px;
+  --rt-space-2xl: 48px;
+  --rt-space-3xl: 72px;
+  --rt-maxw: 1320px;
+
+  /* The paper world as standalone constants: an evidence surface (a receipt,
+     a record) renders on the light ground even while the page around it is
+     dark. Literals, not `var(--ry-bg)`: they paint a light band INSIDE a dark
+     page, so the theme-resolved role would hand them the graphite they are
+     standing against. */
+  --rt-paper-page: #F5F7FA;
+  --rt-paper-panel: #FFFFFF;
+  --rt-paper-raised: #FAFBFC;
+  --rt-paper-hairline: #DDE3EA;
+  --rt-paper-hairline-strong: #C5CED9;
+  --rt-paper-ink-high: #111820;
+  --rt-paper-ink-mid: #667085;
+  --rt-paper-ink-low: #667085;
+  --rt-paper-evidence-cyan-fg: #4E6480;
+  --rt-paper-reconciled-green-fg: #0F7A4D;
+  --rt-paper-review-amber-fg: #A8650A;
+
+  /* Depth — floating layers only */
+  --rt-shadow-overlay: var(--ry-shadow-elevated);
+  --rt-shadow-ink: rgba(0, 0, 0, 0.50);
+
+  /* Motion — short and expensive: hover 150–180ms, layers 180–220ms */
+  --rt-duration-fast: 150ms;
+  --rt-duration-base: 180ms;
+  --rt-duration-slow: 220ms;
+  --rt-ease: cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* The short list of roles whose dark value is not legible as TEXT on a light
+   ground — every one measured against #FFFFFF and #F5F7FA, not assumed. A fill
+   or a line may keep the brand hue; a word may not. */
+[data-theme="light"],
+.rt-light {
+  --rt-action-blue-fg: var(--ry-iris-sink);
+  --rt-authorization-violet-fg: var(--ry-iris-sink);
+  --rt-evidence-cyan-fg: var(--ry-aurora-ink-light);
+  --rt-reconciled-green-fg: var(--ry-pnl-pos-light);
+  --rt-blocked-red-fg: var(--ry-pnl-neg-light);
+  --rt-review-amber-fg: #A8650A;
+  --rt-shadow-ink: rgba(17, 24, 32, 0.18);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --rt-duration-fast: 0ms;
+    --rt-duration-base: 0ms;
+    --rt-duration-slow: 0ms;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Brand Canon v1.0 — the runtime tokens. Projection of the frontmatter keys
+   in DESIGN.md; design-check enforces that every canon value appears here.
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root {
+  /* Brand */
+  --ry-midnight: #080D13;   --ry-mist: #F5F7FA;   --ry-stone: #EEF2F6;
+  --ry-iris: #FF681C;       --ry-iris-deep: #F24C0C;
+  --ry-iris-hover: #FF7A2F; --ry-iris-pressed: #E0430A;
+  /* Pure white, and only on the filled action: the reference the Owner
+     approved carries white on the orange gradient at 600 weight. */
+  --ry-on-iris: #FFFFFF;
+  /* Two reading values for the one brand hue: a lift for text on dark
+     (7.8:1 on the surface), a sink for text on light (5.1:1 on white). */
+  --ry-iris-lift: #FF8A4A;  --ry-iris-sink: #C24509;
+  --ry-honey: #F5A524;
+  /* Evidence — cool steel: 8.5:1 on the dark surface. */
+  --ry-aurora: #9DB3D1;
+  --ry-aurora-soft: rgba(157, 179, 209, 0.12);
+  --ry-aurora-line: rgba(157, 179, 209, 0.30);
+  /* The primary action: top-lit orange to the deep orange, and its hover. */
+  --ry-gradient: linear-gradient(180deg, #FF681C 0%, #F24C0C 100%);
+  --ry-gradient-hover: linear-gradient(180deg, #FF7A2F 0%, #FF5B12 100%);
+  --ry-brand-soft: rgba(255, 104, 28, 0.12);
+  --ry-brand-line: rgba(255, 104, 28, 0.32);
+  --ry-brand-edge: rgba(255, 190, 120, 0.35);
+  /* The only glow: 8–16px, on the primary action and on the active state. */
+  --ry-brand-glow: 0 4px 14px rgba(255, 104, 28, 0.22);
+  --ry-brand-glow-strong: 0 6px 18px rgba(255, 104, 28, 0.28);
+
+  /* Market and risk semantics — never decorative; the word "Safe" does not exist */
+  --ry-verified: #19C77A; --ry-on-verified: #05331F;
+  --ry-verified-soft: rgba(25, 199, 122, 0.13);
+  --ry-caution: #F5A524;  --ry-on-caution: #3D2A05;
+  --ry-caution-soft: rgba(245, 165, 36, 0.14);
+  --ry-risk: #FF4D55;     --ry-on-risk: #3D0A0D;
+  --ry-risk-soft: rgba(255, 77, 85, 0.13);
+  --ry-high-risk: var(--ry-risk);
+  --ry-unknown: #91A0B2;  --ry-on-unknown: #111820;
+  --ry-info: #5B9CF5;     --ry-on-info: #0A2C5C;
+
+  /* Charts (categorical; green/red/amber forbidden in series) */
+  --ry-c1: #FF681C; --ry-c2: #8FA6C8; --ry-c3: #F5A524;
+  --ry-c4: #F24C0C; --ry-c5: #6E8CA0; --ry-c6: #64748B;
+
+  /* Type — Geist for the interface, Geist Mono for every figure and hash,
+     Unbounded only as the public display accent. next/font supplies the
+     loaded face; the literal name is the fallback and lives INSIDE the var()
+     so an undefined property never drops the whole declaration. */
+  --ry-font-display: var(--font-sora, Unbounded), sans-serif;
+  --ry-font-sans: var(--font-geist, Geist), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --ry-font-mono: var(--font-geist-mono, "Geist Mono"), ui-monospace, "SFMono-Regular", Menlo, monospace;
+  /* The names three legacy sheets still read; the same two faces. */
+  --font-inter: var(--font-geist, Geist);
+  --font-jbmono: var(--font-geist-mono, "Geist Mono");
+
+  /* Radius — cards 12, controls 10, chips 8 */
+  --ry-r-landing: 24px; --ry-r-card: 12px;
+  --ry-r-btn: 10px;     --ry-r-btn-sm: 8px;  --ry-r-chip: 8px;
+  --ry-r-focus-sm: 4px; --ry-r-focus-md: 6px;
+  --ry-r-pill: 999px;
+
+  /* Spacing: 4 8 12 16 24 32 48 64 96 */
+  --ry-s1: 4px;  --ry-s2: 8px;  --ry-s3: 12px; --ry-s4: 16px;
+  --ry-s5: 24px; --ry-s6: 32px; --ry-s7: 48px; --ry-s8: 64px; --ry-s9: 96px;
+
+  /* Effects — the glow and the focus ring */
+  --ry-glow-cta: var(--ry-brand-glow);
+  --ry-focus: 0 0 0 3px rgba(255, 104, 28, 0.35);
+
+  /* Component tokens */
+  --ry-border-strong-light: #C5CED9;
+  --ry-track-dark: #1B2632;
+  --ry-track-light: #E6EBF1;
+  --ry-pnl-pos-dark: #19C77A;  --ry-pnl-pos-light: #0F7A4D;
+  --ry-pnl-neg: #FF4D55;       --ry-pnl-neg-light: #D0343B;
+  --ry-aurora-ink-light: #4E6480;
+  --ry-rec-matched: var(--ry-verified);
+  --ry-rec-deviation: var(--ry-caution);
+  --ry-rec-pending: transparent; /* neutral chip: border + muted */
+  --ry-rec-unknown: var(--ry-unknown);
+}
+
+/*
+ * Dark is the default, not merely one of two options: a surface that never
+ * declares a theme still resolves every role. A theme attribute wins inside
+ * its own subtree; the root simply always has an answer.
+ */
+:root,
+[data-ry-theme="dark"] {
+  --ry-pnl-pos: var(--ry-pnl-pos-dark);
+  --ry-bg: #080D13;      --ry-sidebar: #0B121A;
+  --ry-deep: #0B121A;
+  --ry-card: #0E1620;    --ry-elevated: #131E2A;
+  --ry-border: #22303E;  --ry-border-strong: #2F4052;
+  --ry-hover: #172230;
+  --ry-text: #F5F7FA;    --ry-muted: #91A0B2;  --ry-text-muted: #7A8899;
+  --ry-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --ry-shadow-md: 0 8px 24px -8px rgba(0, 0, 0, 0.45);
+  --ry-shadow-elevated: 0 16px 40px -12px rgba(0, 0, 0, 0.60);
+  --ry-shadow-ink: rgba(0, 0, 0, 0.50);
+  --ry-accent: #FF681C;
+  --ry-accent-fg: var(--ry-iris-lift);
+  --ry-st-live-bg: rgba(255, 104, 28, 0.14); --ry-st-live-tx: #FF8A4A; --ry-st-live-bd: rgba(255, 104, 28, 0.45);
+  --ry-st-paper-bg: #131E2A;  --ry-st-paper-tx: #91A0B2;
+  --ry-st-preview-bd: #2F4052; --ry-st-building-bd: #2F4052; /* dashed */
+  --ry-env-bg: rgba(145, 160, 178, 0.14); --ry-env-tx: #91A0B2; /* TESTNET · DEVNET */
+  --ry-ctx-bd: #22303E;   --ry-desc-bg: #131E2A;
+  /* A very delicate ground: graphite in the centre, a navy undertone at the
+     edges, and one faint warm light behind the focal zone where the working
+     card sits — 7% orange at its centre, gone by 72% of its radius — the
+     Owner's pick (B) on 2026-09-12. Never a halo across the page. */
+  --ry-ground: radial-gradient(52% 38% at 50% 22%, rgba(255, 104, 28, 0.07) 0%, rgba(255, 104, 28, 0.025) 45%, transparent 72%), radial-gradient(120% 80% at 50% 0%, #0C141D 0%, #080D13 55%, #070B10 100%);
+}
+
+/* The cool neutral light theme — never cream, never a warm tint. */
+[data-ry-theme="light"],
+[data-theme="light"],
+.rt-light,
+.rx-paper,
+.rx [class*="boundaries"] {
+  --ry-pnl-pos: var(--ry-pnl-pos-light);
+  --ry-st-live-tx: #C24509;
+  --ry-st-paper-bg: #EEF2F6; --ry-st-paper-tx: #667085;
+  --ry-env-bg: rgba(102, 112, 133, 0.12); --ry-env-tx: #667085;
+  --ry-bg: #F5F7FA;      --ry-sidebar: #FFFFFF;
+  --ry-deep: #FAFBFC;
+  --ry-card: #FFFFFF;    --ry-elevated: #FAFBFC;
+  --ry-border: #DDE3EA;  --ry-border-strong: var(--ry-border-strong-light);
+  --ry-hover: #EEF2F6;
+  --ry-text: #111820;    --ry-muted: #667085;  --ry-text-muted: #7C8798;
+  --ry-unknown: var(--ry-muted);
+  --ry-shadow-sm: 0 1px 2px rgba(17, 24, 32, 0.05);
+  --ry-shadow-md: 0 8px 24px -10px rgba(17, 24, 32, 0.12);
+  --ry-shadow-elevated: 0 16px 40px -12px rgba(17, 24, 32, 0.18);
+  --ry-shadow-ink: rgba(17, 24, 32, 0.18);
+  --ry-accent: #F4580B;
+  --ry-accent-fg: var(--ry-iris-sink);
+  --ry-verified: #169B62; --ry-verified-soft: rgba(22, 155, 98, 0.12);
+  --ry-caution: #E99618;  --ry-caution-soft: rgba(233, 150, 24, 0.14);
+  --ry-risk: #E53E45;     --ry-risk-soft: rgba(229, 62, 69, 0.12);
+  --ry-aurora: #4E6480;
+  --ry-aurora-soft: rgba(78, 100, 128, 0.10);
+  --ry-aurora-line: rgba(78, 100, 128, 0.28);
+  --ry-info: #2F6FD6;
+  --ry-track-dark: #E6EBF1;
+  --ry-ctx-bd: #DDE3EA;   --ry-desc-bg: #FAFBFC;
+  --ry-ground: radial-gradient(120% 80% at 50% 0%, #FFFFFF 0%, #F5F7FA 60%, #F1F4F8 100%);
+}
+
+/* Inside the cabinet every heading is Geist, one weight up — Brand Canon
+   v1.0 (Шрифти): a display face on a working screen tires the reader in
+   twenty minutes, so Unbounded stays on the public landing. Set on <html>
+   by the cabinet layout so the sheets and dialogs that mount outside the
+   shell take the same face. */
+html[data-ry-app="cabinet"] {
+  --ry-font-display: var(--ry-font-sans);
+}
+
+/* Type scale — the ramp as tokens, so surfaces never carry a literal size.
+   Floor 14px (0.875rem); 13px exists only for dense Pro tables. */
+:root {
+  --ry-fs-display: clamp(3.5rem, 7vw, 3.75rem);
+  --ry-fs-h1: 2.75rem;
+  --ry-fs-h2: 2rem;
+  --ry-fs-h3: 1.375rem;
+  --ry-fs-lead: 1.25rem;
+  --ry-fs-body: 1.0625rem;
+  --ry-fs-app: 1rem;
+  --ry-fs-dense: 0.875rem;
+  --ry-fs-data-xl: clamp(2.75rem, 5vw, 3rem);
+  --ry-fs-data-m: 1.25rem;
+  --ry-fs-title: 1.125rem;
+  --ry-fs-data-lg: 1.5rem;
+  --ry-fs-data: 0.8125rem;
+  --ry-fs-label: 0.75rem;
+  --ry-fs-label-sm: 0.6875rem;
+  --ry-lh-tight: 1.05;
+  --ry-lh-head: 1.15;
+  --ry-lh-body: 1.6;
+  --ry-ls-display: -0.02em;
+  --ry-ls-head: -0.01em;
+  /* The product scale — the Owner's decision of 2026-09-15 (Premium Product
+     UI Pass): a customer screen is read from a chair, not a loupe. Page title
+     28, the key figure 28, a section 17, a value 16, running copy 15; the
+     labels stay compact. Fixed rem steps, because a product screen is viewed
+     at one DPI and a fluid title that shrinks beside a rail looks worse. */
+  --ry-fs-page: 1.75rem;
+  --ry-fs-key: 1.75rem;
+  --ry-fs-section: 1.0625rem;
+  --ry-fs-value: 1rem;
+  --ry-fs-copy: 0.9375rem;
+}
+
+@media (max-width: 640px) {
+  :root {
+    --ry-fs-page: 1.5rem;
+    --ry-fs-key: 1.5rem;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SEMANTIC LAYER — the names the Owner asked for. New components read these;
+   they resolve onto the runtime tokens above and flip with them. `--bg`,
+   `--border`, `--border-strong`, `--success`, `--danger`, `--warning` and the
+   `-soft` pair are the same names app/globals.css already forwards.
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root {
+  --surface: var(--ry-card);
+  --surface-elevated: var(--ry-elevated);
+  --surface-hover: var(--ry-hover);
+  --text-primary: var(--ry-text);
+  --text-secondary: var(--ry-muted);
+  --text-muted: var(--ry-text-muted);
+  --brand: var(--ry-iris);
+  --brand-hover: var(--ry-iris-hover);
+  --brand-soft: var(--ry-brand-soft);
+  --brand-glow: var(--ry-brand-glow);
+  --brand-fg: var(--ry-accent-fg);
+  --shadow-sm: var(--ry-shadow-sm);
+  --shadow-md: var(--ry-shadow-md);
+  --focus-ring: var(--ry-focus);
+}

@@ -1,0 +1,56 @@
+{
+  "schemaVersion": "2.0.0",
+  "id": "outcome_solana_devnet_matched",
+  "createdAt": "2026-08-17T09:00:00.000Z",
+  "registry": {
+    "registryDigest": "0x36f10a82139a6d182feae5939127b5c1de8968068454cca2a052282d02b354a2",
+    "refs": [
+      {
+        "ref": "action:solana-token-2022/spl-transfer@1",
+        "contentHash": "0xde007b7d0231fd40e20ad522186651689042113fa152cdee074d6f1c968fc147"
+      },
+      {
+        "ref": "adapter:solana-token-2022@1",
+        "contentHash": "0xc57796f3f2ef6304ad7a82375fa20cae7c311fbaa43b9e9265ee2263b9383221"
+      }
+    ]
+  },
+  "contentHash": "0xe8a6a26dc032a090f1e879401cf29b044b229a200e722d823077b2b5835340a3",
+  "issuer": {
+    "status": "SIGNED",
+    "algorithm": "Ed25519",
+    "keyId": "ryntra-issuer-21082e64945d2ba6",
+    "publicKey": "MCowBQYDK2VwAyEAvJVbaFq/zHWKz9lC3hGbm6lXd5UMyss4IpVGTL5Rpzc=",
+    "signature": "MrZ+DV1YNv2wMzRLcR9e2SMpfy1q0DxCxhCOFQhZo3WeIct2Oi88jCICWdvd4eH4Y1bZHqZSZrQ0+nZulbQpBA==",
+    "signedAt": "2026-08-17T09:00:00.000Z"
+  },
+  "integrity": {
+    "algorithm": "SHA-256",
+    "hash": "0xd2e6b7d16021750668077d326308a22fb554577aae5b21d389060d696a06f284"
+  },
+  "kind": "OUTCOME_RECEIPT",
+  "maturity": "OBSERVED",
+  "actionPassportHash": "0x1111111111111111111111111111111111111111111111111111111111111111",
+  "outcome": {
+    "status": "MATCHED",
+    "chainRef": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1",
+    "transactionHash": "5555555555555555555555555555555555555555555555555555555555555555555555555555555555555555",
+    "observedEffects": [
+      {
+        "description": "The sender's token account fell by 1000000 base units.",
+        "sourceRef": "solana:devnet:rpc:getTransaction",
+        "observedAt": "2026-08-17T09:00:00.000Z"
+      },
+      {
+        "description": "The recipient's token account rose by 1000000 base units.",
+        "sourceRef": "solana:devnet:rpc:getTokenAccountBalance",
+        "observedAt": "2026-08-17T09:00:00.000Z"
+      }
+    ],
+    "reconciledAt": "2026-08-17T09:00:00.000Z"
+  },
+  "limitations": [
+    "OUTCOME RECEIPT — AN OBSERVATION, NOT AN INSTRUCTION",
+    "Ryntra observed and reconciled this outcome; it did not sign, submit, fund or execute it."
+  ]
+}

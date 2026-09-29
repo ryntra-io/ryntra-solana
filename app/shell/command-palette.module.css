@@ -1,0 +1,176 @@
+/**
+ * The command palette.
+ *
+ * Written natively on the `--rt-*` projection, so it joins the design check's
+ * enforced surface list on the commit that creates it — the ladder's own rule
+ * for a surface with no legacy phase.
+ *
+ * The scrim uses `color-mix` against a token rather than a literal: a hard
+ * `rgba(0,0,0,.5)` reads as a heavy curtain in the light theme and as nothing
+ * in the dark one, and the palette has to sit correctly in both.
+ */
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  justify-items: center;
+  align-items: start;
+  padding: max(10vh, var(--rt-space-xl)) var(--rt-space-md) var(--rt-space-md);
+  background: color-mix(in srgb, var(--rt-ink-high) 34%, transparent);
+  backdrop-filter: blur(2px);
+}
+
+.dialog {
+  width: min(560px, 100%);
+  max-height: min(60vh, 520px);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  border: 1px solid var(--rt-hairline-strong);
+  border-radius: var(--rt-radius-md);
+  background: var(--rt-overlay);
+  box-shadow: var(--rt-shadow-overlay);
+  overflow: hidden;
+}
+
+.field {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--rt-space-xs);
+  padding: var(--rt-space-sm) var(--rt-space-md);
+  border-bottom: 1px solid var(--rt-hairline);
+  color: var(--rt-ink-mid);
+}
+
+.input {
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--rt-ink-high);
+  font-family: inherit;
+  font-size: var(--ry-fs-app);
+  line-height: 1.4;
+}
+
+.input:focus { outline: none; }
+.input::placeholder { color: var(--rt-ink-mid); }
+
+.list {
+  margin: 0;
+  padding: var(--rt-space-2xs);
+  list-style: none;
+  overflow-y: auto;
+}
+
+.group {
+  padding: var(--rt-space-xs) var(--rt-space-sm) var(--rt-space-2xs);
+  color: var(--rt-ink-mid);
+  font-size: var(--ry-fs-dense);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--rt-space-xs);
+  width: 100%;
+  /* 40px tall at this padding and line height — comfortably past the 24px
+     minimum, and the same height a finger expects on the 375 layout. */
+  padding: var(--rt-space-xs) var(--rt-space-sm);
+  border: 1px solid transparent;
+  border-radius: var(--rt-radius-xs);
+  background: transparent;
+  color: var(--rt-ink-high);
+  font-family: inherit;
+  font-size: var(--ry-fs-app);
+  line-height: 1.4;
+  text-align: left;
+  cursor: pointer;
+}
+
+.item[data-active="true"] {
+  border-color: var(--rt-action-blue-line);
+  background: var(--rt-action-blue-soft);
+  color: var(--rt-action-blue-fg);
+}
+
+.item:hover { background: var(--rt-action-blue-soft); }
+
+.item:focus-visible {
+  outline: 2px solid var(--rt-action-blue);
+  outline-offset: -2px;
+}
+
+.itemPath {
+  color: var(--rt-ink-mid);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+  white-space: nowrap;
+}
+
+.empty {
+  padding: var(--rt-space-lg) var(--rt-space-md);
+  color: var(--rt-ink-mid);
+  font-size: var(--ry-fs-app);
+  line-height: 1.5;
+  text-align: center;
+}
+
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rt-space-sm);
+  padding: var(--rt-space-xs) var(--rt-space-md);
+  border-top: 1px solid var(--rt-hairline);
+  color: var(--rt-ink-mid);
+  font-size: var(--ry-fs-dense);
+}
+
+.foot kbd {
+  padding: 1px 5px;
+  border: 1px solid var(--rt-hairline-strong);
+  border-radius: var(--rt-focus-radius-sm);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+}
+
+/* The trigger in the top bar. On the narrow layout the label goes and the
+   shortcut hint goes with it: a keyboard shortcut printed on a phone is a
+   sentence that cannot be acted on. */
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rt-space-2xs);
+  min-height: 32px;
+  padding: 0 var(--rt-space-xs);
+  border: 1px solid var(--rt-hairline);
+  border-radius: var(--rt-radius-xs);
+  background: transparent;
+  color: var(--rt-ink-mid);
+  font-family: inherit;
+  font-size: var(--ry-fs-dense);
+  cursor: pointer;
+}
+
+.trigger:hover { border-color: var(--rt-action-blue); color: var(--rt-action-blue-fg); }
+
+.trigger:focus-visible {
+  outline: 2px solid var(--rt-action-blue);
+  outline-offset: 2px;
+}
+
+.triggerHint {
+  font-family: var(--ry-font-mono);
+}
+
+@media (max-width: 767px) {
+  .triggerLabel, .triggerHint { display: none; }
+  .trigger { min-width: 32px; justify-content: center; padding: 0; }
+  .scrim { padding: var(--rt-space-md) var(--rt-space-xs) var(--rt-space-xs); }
+  .dialog { max-height: 80vh; }
+}

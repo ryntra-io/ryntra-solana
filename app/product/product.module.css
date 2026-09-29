@@ -1,0 +1,383 @@
+/*
+ * The two public product surfaces.
+ *
+ * Written on the projection rather than migrated onto it, so it joins the
+ * design gate on the commit that creates it — the ladder's own rule.
+ *
+ * The composition rule for both pages: one idea per band, a real screenshot
+ * wherever a screenshot tells the truth better than a sentence, and never a
+ * catalogue of future features on a page about the present.
+ */
+
+.page {
+  background: var(--ry-bg);
+  color: var(--ry-text);
+}
+
+.band {
+  padding-block: clamp(56px, 7vw, 104px);
+  border-block-end: 1px solid var(--ry-border);
+}
+
+.band:last-of-type {
+  border-block-end: 0;
+}
+
+.bandAlt {
+  background: var(--ry-deep);
+}
+
+.wrap {
+  width: min(100% - 40px, 1200px);
+  margin-inline: auto;
+}
+
+.eyebrow {
+  margin: 0 0 12px;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ry-iris);
+}
+
+.title {
+  margin: 0;
+  max-width: 22ch;
+  font-family: var(--ry-font-display, var(--ry-font-sans));
+  /* The landing display step, from the ramp rather than invented beside it. */
+  font-size: var(--ry-fs-display);
+  font-weight: 700;
+  line-height: 1.04;
+  letter-spacing: -0.03em;
+}
+
+.accent {
+  color: var(--ry-iris);
+}
+
+.lead {
+  margin: 20px 0 0;
+  max-width: 62ch;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-lead);
+  line-height: 1.6;
+  color: var(--ry-muted);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.primary,
+.ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 24px;
+  border-radius: var(--ry-r-btn, 12px);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-app);
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+
+.primary {
+  border: 1px solid transparent;
+  background: var(--ry-iris);
+  color: var(--ry-on-iris);
+}
+
+.primary:hover {
+  background: var(--ry-iris-deep);
+}
+
+.ghost {
+  /* `background` is not optional here even though an anchor needs no rule for
+     it: the Share control is a real `<button>`, and a button with no background
+     declared paints the user agent's `buttonface` grey. It shipped that way for
+     one revision, sitting beside an identical-by-class anchor that was
+     transparent, which is what makes a shared class worth auditing whenever a
+     second element type starts using it. */
+  border: 1px solid var(--ry-border-strong);
+  background: transparent;
+  color: var(--ry-text);
+  cursor: pointer;
+}
+
+.ghost:hover {
+  border-color: var(--ry-iris);
+}
+
+/* ── A band heading, smaller than the page title ─────────────────────────── */
+
+.bandTitle {
+  margin: 0;
+  font-family: var(--ry-font-display, var(--ry-font-sans));
+  font-size: var(--ry-fs-h2);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.bandLead {
+  margin: 14px 0 0;
+  max-width: 62ch;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-app);
+  line-height: 1.6;
+  color: var(--ry-muted);
+}
+
+/* ── A screenshot, framed as the product window it is ────────────────────── */
+
+.shot {
+  margin-top: 32px;
+  overflow: hidden;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card, 16px);
+  background: var(--ry-deep);
+  line-height: 0;
+}
+
+.shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.shotCaption {
+  margin: 12px 0 0;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+}
+
+/* ── Feature rows ────────────────────────────────────────────────────────── */
+
+.features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  margin-top: 36px;
+}
+
+.feature {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  padding: 24px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card, 16px);
+  background: var(--ry-card);
+}
+
+.featureName {
+  margin: 0;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-body);
+  font-weight: 700;
+  color: var(--ry-text);
+}
+
+.featureBody {
+  margin: 0;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-app);
+  line-height: 1.6;
+  color: var(--ry-muted);
+}
+
+/* ── Three quiet facts in a row ──────────────────────────────────────────── */
+
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 28px;
+}
+
+.fact {
+  padding: 10px 16px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn, 12px);
+  background: var(--ry-card);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-text);
+}
+
+/* ── The phone pair ──────────────────────────────────────────────────────── */
+
+.phones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin-top: 32px;
+}
+
+.phone {
+  flex: 0 1 300px;
+  overflow: hidden;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card, 16px);
+  background: var(--ry-deep);
+  line-height: 0;
+}
+
+.phone img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* ── The map ─────────────────────────────────────────────────────────────── */
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 28px;
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 8px 14px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn, 12px);
+  background: var(--ry-card);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+}
+
+.legendCount {
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+}
+
+.group {
+  margin-top: 44px;
+}
+
+.groupHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.groupTitle {
+  margin: 0;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-title);
+  font-weight: 700;
+  color: var(--ry-text);
+}
+
+.groupNote {
+  margin: 0;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.card {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  padding: 20px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card, 16px);
+  background: var(--ry-card);
+}
+
+.cardHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cardName {
+  margin: 0;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-app);
+  font-weight: 700;
+  color: var(--ry-text);
+}
+
+.cardBody {
+  margin: 0;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  line-height: 1.55;
+  color: var(--ry-muted);
+}
+
+/* The one word a card carries. Colour is never the only signal: each chip
+   keeps its border and its text, so the state survives a greyscale screen. */
+.chip {
+  padding: 3px 10px;
+  border: 1px solid var(--ry-border-strong);
+  border-radius: 999px;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--ry-muted);
+}
+
+.chip[data-label="AVAILABLE"] {
+  border-color: var(--ry-verified);
+  color: var(--ry-verified);
+}
+
+.chip[data-label="LIMITED"],
+.chip[data-label="BUILDING"] {
+  border-color: var(--ry-iris);
+  color: var(--ry-iris);
+}
+
+.cardLink {
+  justify-self: start;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-iris);
+  text-decoration: none;
+}
+
+.cardLink:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 640px) {
+  .phone {
+    flex: 1 1 100%;
+  }
+
+  /* The display step has a 3.5rem floor, which is right on a laptop and wider
+     than a phone: measured at 375px, `Everything` ran off the right edge and was
+     clipped rather than wrapped, because the word is one unbreakable token. The
+     next step down the same ramp fits the longest word on the narrowest screen
+     the product supports. */
+  .title {
+    font-size: var(--ry-fs-h1);
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "swapType": "aggregator",
+  "inAmount": "1000000",
+  "outAmount": "104497",
+  "otherAmountThreshold": "104497",
+  "swapMode": "ExactIn",
+  "slippageBps": 0,
+  "priceImpactPct": "0.0021449051237476626",
+  "routePlan": [
+    {
+      "percent": 100,
+      "bps": 10000,
+      "usdValue": 0.10449394902967943,
+      "swapInfo": {
+        "ammKey": "EXHyQxMSttcvLPwjENnXCPZ8GmLjJYHtNBnAkcFeFKMn",
+        "label": "Raydium CLMM",
+        "inputMint": "So11111111111111111111111111111111111111112",
+        "outputMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "inAmount": "999800",
+        "outAmount": "104497"
+      }
+    }
+  ],
+  "feeMint": "So11111111111111111111111111111111111111112",
+  "feeBps": 2,
+  "platformFee": {
+    "feeBps": 2,
+    "feeMint": "So11111111111111111111111111111111111111112"
+  },
+  "signatureFeeLamports": 0,
+  "signatureFeePayer": null,
+  "prioritizationFeeLamports": 0,
+  "prioritizationFeePayer": null,
+  "rentFeeLamports": 0,
+  "rentFeePayer": null,
+  "transaction": null,
+  "gasless": false,
+  "jitOptimized": false,
+  "taker": null,
+  "inputMint": "So11111111111111111111111111111111111111112",
+  "outputMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+  "router": "dflow",
+  "guaranteedPrice": false,
+  "requestId": "11111111-2222-4333-8444-555555555555",
+  "inUsdValue": 0.10451485,
+  "outUsdValue": 0.10449395,
+  "swapUsdValue": 0.10449395,
+  "priceImpact": 0.0021449051237476626,
+  "mode": "ultra",
+  "totalTime": 118
+}

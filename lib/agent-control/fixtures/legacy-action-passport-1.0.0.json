@@ -1,0 +1,214 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "ACTION_PASSPORT_PREVIEW",
+  "id": "action-passport_3073af665d9eafdc",
+  "createdAt": "2026-08-17T12:00:00.000Z",
+  "maturity": "SOURCE_PREVIEW",
+  "intent": {
+    "schemaVersion": "1.0.0",
+    "id": "agent-intent_source-preview-001",
+    "source": {
+      "kind": "DEMO",
+      "agentId": "sample-agent",
+      "agentName": "Evidence review sample",
+      "requestId": "demo-request-001"
+    },
+    "subjectRef": "sample-reviewer",
+    "requestText": "Prepare a bounded BNB testnet job draft and show every decision boundary before any wallet action.",
+    "action": {
+      "kind": "CREATE_JOB_DRAFT",
+      "provider": "BNB_APEX",
+      "chainRef": "eip155:97",
+      "jobType": "EVIDENCE_REVIEW",
+      "deliverable": "A deterministic evidence and policy assessment for a sample agent job draft.",
+      "budget": null,
+      "providerRef": null,
+      "evaluatorRef": null,
+      "deadline": "2026-08-17T12:15:00.000Z",
+      "expectedEffects": [
+        "Create an integrity-checkable Action Passport Preview.",
+        "Submit no provider action, wallet signature or blockchain transaction."
+      ]
+    },
+    "policyRef": {
+      "id": "agent-control-source-preview",
+      "version": 1
+    },
+    "evidenceRequirements": [
+      "strict_intent_schema",
+      "execution_boundary",
+      "source_preview_limitations"
+    ],
+    "humanAuthorizationRequired": true,
+    "createdAt": "2026-08-17T12:00:00.000Z",
+    "expiresAt": "2026-08-17T12:20:00.000Z",
+    "revision": 1,
+    "idempotencyKey": "agent-control-demo-create-job-draft-v1"
+  },
+  "intentHash": "0x3073af665d9eafdc9ce0c25de39915ca2095285c6982c6d31c1c370655d8f1e9",
+  "evidence": {
+    "items": [
+      {
+        "schemaVersion": "1.0.0",
+        "id": "ev_agent-intent-contract_v1",
+        "provider": "Ryntra source contract",
+        "sourceRef": "repo:lib/agent-control/contracts.ts",
+        "adapter": "agent-control-demo-evidence",
+        "adapterVersion": "1.0.0",
+        "sourceType": "DETERMINISTIC_SOURCE_CONTRACT",
+        "observedAt": "2026-08-17T12:00:00.000Z",
+        "receivedAt": "2026-08-17T12:00:00.000Z",
+        "validUntil": "2026-08-17T13:00:00.000Z",
+        "confidence": "DETERMINISTIC_INTERNAL_BOUNDARY",
+        "coverage": {
+          "subjectRefs": [
+            "sample-reviewer"
+          ],
+          "fields": [
+            "strict_intent_schema",
+            "execution_boundary"
+          ],
+          "limitations": [
+            "This evidence proves only the bundled source contract, not external provider state."
+          ]
+        },
+        "availability": "AVAILABLE",
+        "verificationStatus": "DETERMINISTICALLY_DERIVED",
+        "chainRef": null,
+        "blockRef": null,
+        "transactionRef": null,
+        "status": "VALID",
+        "requestHash": "0x5c70dbfb02fd6b6a5720b5995456b507deb29862bc8051bf36f7b60d4e494710",
+        "responseHash": "0xee6d88ed043de618541eb518364cfd0c317f16700499fc3b877b254e675e0e38",
+        "responseDigest": "0xee6d88ed043de618541eb518364cfd0c317f16700499fc3b877b254e675e0e38",
+        "reason": null,
+        "transformationVersion": "agent-control-demo-evidence/1.0.0",
+        "fallbackUsed": false,
+        "facts": {
+          "schemaVersion": "1.0.0",
+          "strictParsing": true,
+          "executionEnabled": false,
+          "humanAuthorizationRequired": true
+        }
+      },
+      {
+        "schemaVersion": "1.0.0",
+        "id": "ev_agent-passport-boundary_v1",
+        "provider": "Ryntra source contract",
+        "sourceRef": "repo:lib/agent-control/core.ts",
+        "adapter": "agent-control-demo-evidence",
+        "adapterVersion": "1.0.0",
+        "sourceType": "DETERMINISTIC_SOURCE_CONTRACT",
+        "observedAt": "2026-08-17T12:00:00.000Z",
+        "receivedAt": "2026-08-17T12:00:00.000Z",
+        "validUntil": "2026-08-17T13:00:00.000Z",
+        "confidence": "DETERMINISTIC_INTERNAL_BOUNDARY",
+        "coverage": {
+          "subjectRefs": [
+            "sample-reviewer"
+          ],
+          "fields": [
+            "source_preview_limitations"
+          ],
+          "limitations": [
+            "This evidence proves only the bundled source contract, not external provider state."
+          ]
+        },
+        "availability": "AVAILABLE",
+        "verificationStatus": "DETERMINISTICALLY_DERIVED",
+        "chainRef": null,
+        "blockRef": null,
+        "transactionRef": null,
+        "status": "VALID",
+        "requestHash": "0x1c090a2183e13d56af0150e08b3dc723c883cfd8f67d77be81eda0ebbdc957dc",
+        "responseHash": "0x71b776eec211fc02baa61b421e34490d8c72d14930842ec893639fd9b768259c",
+        "responseDigest": "0x71b776eec211fc02baa61b421e34490d8c72d14930842ec893639fd9b768259c",
+        "reason": null,
+        "transformationVersion": "agent-control-demo-evidence/1.0.0",
+        "fallbackUsed": false,
+        "facts": {
+          "previewKind": "ACTION_PASSPORT_PREVIEW",
+          "finalizedReceipt": false,
+          "externalOutcomeObserved": false,
+          "walletSignaturePresent": false
+        }
+      }
+    ],
+    "root": "0x8441c9fdc5563b5b5da3a9e7a8efda31913c37cc05ce3fac69fdcfb9739f751d"
+  },
+  "policy": {
+    "definition": {
+      "schemaVersion": "1.0.0",
+      "id": "agent-control-source-preview",
+      "version": 1,
+      "publishedAt": "2026-08-14T00:00:00.000Z",
+      "immutable": true,
+      "allowedChains": [
+        "eip155:97"
+      ],
+      "allowedActions": [
+        "CREATE_JOB_DRAFT"
+      ],
+      "maxBudget": null,
+      "evidenceMaxAgeSeconds": 3600,
+      "requireHumanAuthorization": true,
+      "executionEnabled": false
+    },
+    "result": {
+      "schemaVersion": "1.0.0",
+      "id": "policy-result_2574938581ab0a16",
+      "intentId": "agent-intent_source-preview-001",
+      "intentRevision": 1,
+      "policyRef": {
+        "id": "agent-control-source-preview",
+        "version": 1
+      },
+      "policyVersion": 1,
+      "policyDigest": "0xdba1366fd3f315b0350229a474a0543efbf7548bb6fbf525e969efafd5d16cb4",
+      "evidenceRoot": "0x8441c9fdc5563b5b5da3a9e7a8efda31913c37cc05ce3fac69fdcfb9739f751d",
+      "evidenceRefs": [
+        "ev_agent-intent-contract_v1",
+        "ev_agent-passport-boundary_v1"
+      ],
+      "decision": "ALLOWED_BY_POLICY",
+      "status": "PASS",
+      "blockers": [],
+      "warnings": [
+        "EXECUTION_DISABLED_FOR_SOURCE_PREVIEW"
+      ],
+      "evaluatedAt": "2026-08-17T12:00:00.000Z"
+    }
+  },
+  "authorization": {
+    "status": "RECORDED_DEMO_ONLY",
+    "demoOnly": true,
+    "subjectRef": "reviewer_demo",
+    "method": "LOCAL_DEMO_ACK",
+    "intentHash": "0x3073af665d9eafdc9ce0c25de39915ca2095285c6982c6d31c1c370655d8f1e9",
+    "evidenceRoot": "0x8441c9fdc5563b5b5da3a9e7a8efda31913c37cc05ce3fac69fdcfb9739f751d",
+    "policyDigest": "0xdba1366fd3f315b0350229a474a0543efbf7548bb6fbf525e969efafd5d16cb4",
+    "recordedAt": "2026-08-17T12:00:00.000Z"
+  },
+  "execution": {
+    "status": "UNAVAILABLE",
+    "reasonCode": "NO_PROVIDER_SIGNER",
+    "jobId": null,
+    "transactionHash": null
+  },
+  "outcome": {
+    "status": "OUTCOME_NOT_OBSERVED",
+    "observedEffects": [],
+    "sourceRefs": []
+  },
+  "limitations": [
+    "ACTION PASSPORT PREVIEW — NOT AN OUTCOME RECEIPT",
+    "No provider action, wallet signature or transaction was submitted.",
+    "No independently observed outcome exists.",
+    "External Agentverse, Agent Launch, ERC-8183 and BNB capabilities are not Ryntra maturity."
+  ],
+  "passportHash": "0x8a1832a3a22f49263d4dc9e808f2e26ec7bfeea32399a98c269dc94371a3a5ad",
+  "integrity": {
+    "algorithm": "SHA-256",
+    "hash": "0xf7b77f0d3cfb3546bc3371497c07af6d7a6ec0d8e8f86b90c16ad40d96903a8a"
+  }
+}

@@ -1,0 +1,264 @@
+/*
+ * The product's search (canon v5.4 В31): a palette on a desk, the whole
+ * screen on a phone. Tokens only; the active row is the rail's own soft
+ * highlight, never orange — nothing here is an action that spends.
+ */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  justify-items: center;
+  align-items: start;
+  padding: 12vh var(--ry-s4) var(--ry-s4);
+  background: color-mix(in srgb, var(--ry-bg) 62%, transparent);
+  backdrop-filter: blur(2px);
+}
+
+.dialog {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  width: min(640px, 100%);
+  max-height: min(72vh, 640px);
+  overflow: hidden;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-elevated);
+  box-shadow: var(--ry-shadow-elevated);
+  color: var(--ry-text);
+  font-family: var(--ry-font-sans);
+}
+
+.field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  padding: var(--ry-s3) var(--ry-s3) var(--ry-s3) var(--ry-s4);
+  border-bottom: 1px solid var(--ry-border);
+}
+
+.fieldIcon {
+  flex: none;
+  color: var(--ry-muted);
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 var(--ry-s2);
+  border: 0;
+  background: transparent;
+  color: var(--ry-text);
+  font: inherit;
+  /* Sixteen pixels: a phone zooms into a smaller field and never back. */
+  font-size: var(--ry-fs-app);
+  outline: none;
+}
+
+.input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.close {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: var(--ry-r-btn-sm);
+  background: transparent;
+  color: var(--ry-muted);
+  cursor: pointer;
+}
+
+.close:hover {
+  background: var(--ry-hover);
+  color: var(--ry-text);
+}
+
+.results {
+  overflow-y: auto;
+  padding: var(--ry-s2);
+  overscroll-behavior: contain;
+}
+
+/* Not a landing band: the site's bare-section rhythm does not reach a portal, so the group says its own. */
+.group {
+  margin: 0;
+  padding: 0;
+}
+
+.group + .group {
+  margin-top: var(--ry-s2);
+  padding-top: var(--ry-s2);
+  border-top: 1px solid color-mix(in srgb, var(--ry-border) 70%, transparent);
+}
+
+.groupTitle {
+  margin: 0;
+  padding: var(--ry-s2) var(--ry-s3) var(--ry-s1);
+  font-size: var(--ry-fs-data);
+  font-weight: 600;
+  color: var(--ry-muted);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--ry-s3);
+  min-height: 52px;
+  padding: var(--ry-s2) var(--ry-s3);
+  border-radius: var(--ry-r-btn-sm);
+  color: var(--ry-text);
+  text-decoration: none;
+}
+
+.row[data-active="true"] {
+  background: var(--ry-hover);
+}
+
+.glyph {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-card);
+  color: var(--ry-text);
+}
+
+.logo {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  overflow: hidden;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-card);
+  object-fit: cover;
+  font-size: var(--ry-fs-data);
+  font-weight: 600;
+  color: var(--ry-muted);
+}
+
+.name {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.title {
+  overflow: hidden;
+  font-size: var(--ry-fs-copy);
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hint {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  overflow: hidden;
+  font-size: var(--ry-fs-data);
+  color: var(--ry-muted);
+  white-space: nowrap;
+}
+
+.note,
+.tag {
+  width: fit-content;
+  padding: 0 var(--ry-s2);
+  border: 1px solid color-mix(in srgb, var(--ry-caution) 45%, transparent);
+  border-radius: var(--ry-r-pill);
+  font-size: var(--ry-fs-data);
+  line-height: 1.6;
+  color: var(--ry-caution);
+}
+
+.figures {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+}
+
+.price {
+  font-size: var(--ry-fs-copy);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.change {
+  font-size: var(--ry-fs-data);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.change[data-tone="up"] {
+  color: var(--ry-verified);
+}
+
+.change[data-tone="down"] {
+  color: var(--ry-risk);
+}
+
+.change[data-tone="flat"] {
+  color: var(--ry-muted);
+}
+
+.status {
+  margin: 0;
+  padding: var(--ry-s4) var(--ry-s3);
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* A phone: the whole screen, the field on top, the keyboard below it. */
+@media (max-width: 640px) {
+  .backdrop {
+    padding: 0;
+    align-items: stretch;
+  }
+
+  .dialog {
+    width: 100%;
+    max-height: none;
+    height: 100dvh;
+    border: 0;
+    border-radius: 0;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .dialog {
+    animation: rise 160ms var(--rt-ease, ease-out);
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

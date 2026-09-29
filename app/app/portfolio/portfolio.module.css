@@ -1,0 +1,512 @@
+/* Ryntra Home — Portfolio and Today.
+ *
+ * Authored directly on the frozen `--rt-*` projection, so this surface joins
+ * `MIGRATED_SURFACES` on the commit that creates it: a page written on the
+ * system has no legacy phase to be excused for.
+ *
+ * The layout answers three questions in two seconds — what needs me, what do I
+ * hold, where is the risk — and it answers them with a state, a number and a
+ * chip. Every sentence that explains one of those lives behind the shell's
+ * `InfoControl`, never printed on the page. */
+
+.surface {
+  display: grid;
+  /* `minmax(0, 1fr)`, not the implicit `auto`. A grid column sized `auto`
+     refuses to go below its widest child's min-content, so at 375px the
+     sections rendered 381px wide inside a 343px surface and the last column of
+     every tile row sat under the shell's clip. Measured on a phone viewport;
+     the same line is on `.section` for the same reason. */
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--rt-space-lg);
+  width: min(100%, var(--rt-maxw));
+  margin-inline: auto;
+  color: var(--rt-ink-high);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--rt-space-sm);
+}
+
+.head h1 {
+  margin: 0;
+  font-family: var(--ry-font-display);
+  font-size: var(--ry-fs-h2);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.eyebrow {
+  margin: 0 0 var(--rt-space-2xs);
+  color: var(--rt-ink-mid);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.headMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rt-space-xs);
+}
+
+.section {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--rt-space-sm);
+  padding: var(--rt-space-md);
+  border: 1px solid var(--rt-hairline);
+  border-radius: var(--rt-radius-md);
+  background: var(--rt-raised);
+}
+
+.sectionHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rt-space-xs);
+}
+
+.sectionHead h2 {
+  display: flex;
+  align-items: center;
+  gap: var(--rt-space-2xs);
+  margin: 0;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-title);
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.sectionHead h2 svg {
+  color: var(--rt-ink-mid);
+  flex: none;
+}
+
+/* ── state chip ─────────────────────────────────────────────────────────── */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 24px;
+  padding: 2px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--rt-radius-pill);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.chip svg { flex: none; }
+
+.chipGood {
+  border-color: var(--rt-reconciled-green);
+  background: var(--rt-reconciled-green-soft);
+  color: var(--rt-reconciled-green-fg);
+}
+
+.chipCaution {
+  border-color: var(--rt-review-amber);
+  background: var(--rt-review-amber-soft);
+  color: var(--rt-review-amber-fg);
+}
+
+.chipRisk {
+  border-color: var(--rt-blocked-red);
+  background: var(--rt-blocked-red-soft);
+  color: var(--rt-blocked-red-fg);
+}
+
+/* Unknown is neutral on purpose. It is the one state that must never read as
+   safe, and an uncoloured chip is what stops "we could not measure it" from
+   being drawn like "we measured it and it is fine".
+
+   It carries no fill. A 14% tint of the neutral ink behind the same neutral
+   ink measured 2.06:1 on Mist and 3.79:1 after the token gained its light
+   stand-in — the tint was darkening the ground it had to be read against. The
+   question mark, not a colour, is what marks this chip. */
+.chipUnknown {
+  border-color: var(--rt-hairline-strong);
+  background: transparent;
+  color: var(--rt-ink-mid);
+}
+
+.chipQuiet {
+  border-color: var(--rt-hairline-strong);
+  color: var(--rt-ink-mid);
+}
+
+/* ── observed value ─────────────────────────────────────────────────────── */
+
+.value {
+  display: grid;
+  gap: var(--rt-space-2xs);
+}
+
+.valueAmount {
+  margin: 0;
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-data-xl);
+  font-weight: 500;
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+}
+
+.valueUnavailable {
+  color: var(--rt-ink-mid);
+}
+
+.valueMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rt-space-xs);
+  font-size: var(--ry-fs-dense);
+  color: var(--rt-ink-mid);
+}
+
+.valueMeta time {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-data);
+}
+
+/* ── generic tile grid ──────────────────────────────────────────────────── */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--rt-space-xs);
+}
+
+.gridWide {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.tile {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+  align-content: start;
+  min-width: 0;
+  min-height: 92px;
+  padding: var(--rt-space-sm);
+  border: 1px solid var(--rt-hairline);
+  border-radius: var(--rt-radius-sm);
+  background: var(--rt-panel);
+}
+
+.tileHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rt-space-2xs);
+  color: var(--rt-ink-mid);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.tileValue {
+  margin: 0;
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-data-m);
+  font-weight: 500;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.tileUnknown {
+  color: var(--ry-unknown);
+}
+
+.tileNote {
+  margin: 0;
+  color: var(--rt-ink-mid);
+  font-size: var(--ry-fs-dense);
+  line-height: 1.45;
+}
+
+/* ── attention ──────────────────────────────────────────────────────────── */
+
+.attention {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--rt-space-2xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--rt-space-xs);
+  padding: var(--rt-space-xs) var(--rt-space-sm);
+  border: 1px solid var(--rt-hairline);
+  border-radius: var(--rt-radius-sm);
+  background: var(--rt-panel);
+}
+
+.itemIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--rt-radius-pill);
+}
+
+.itemCritical { background: var(--rt-blocked-red-soft); color: var(--rt-blocked-red-fg); }
+.itemHigh { background: var(--rt-review-amber-soft); color: var(--rt-review-amber-fg); }
+.itemLow { background: var(--rt-action-blue-soft); color: var(--rt-action-blue-fg); }
+
+.itemBody { display: grid; gap: 2px; min-width: 0; }
+
+.itemBody b {
+  font-size: var(--ry-fs-app);
+  font-weight: 600;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.itemBody span {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rt-space-2xs);
+  color: var(--rt-ink-mid);
+  font-size: var(--ry-fs-dense);
+  line-height: 1.4;
+}
+
+.itemAction {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  padding-inline: var(--rt-space-xs);
+  border-radius: var(--rt-radius-sm);
+  color: var(--rt-action-blue-fg);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.itemAction:hover { text-decoration: underline; }
+
+.itemBlocked {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--ry-unknown);
+  font-size: var(--ry-fs-dense);
+  white-space: nowrap;
+}
+
+/* ── distribution ───────────────────────────────────────────────────────── */
+
+.spread {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.spreadRow {
+  display: grid;
+  grid-template-columns: minmax(80px, 1fr) minmax(0, 3fr) auto;
+  align-items: center;
+  gap: var(--rt-space-xs);
+  font-size: var(--ry-fs-dense);
+}
+
+.spreadKey { overflow-wrap: anywhere; }
+
+.spreadTrack {
+  height: 8px;
+  border-radius: var(--rt-radius-pill);
+  background: var(--rt-chart-grid);
+  overflow: hidden;
+}
+
+.spreadFill {
+  height: 100%;
+  border-radius: var(--rt-radius-pill);
+  background: var(--rt-chart-series);
+}
+
+.spreadShare {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-data);
+  color: var(--rt-ink-mid);
+}
+
+/* ── plain rows ─────────────────────────────────────────────────────────── */
+
+.rows {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rt-space-xs);
+  padding: var(--rt-space-xs) var(--rt-space-sm);
+  border: 1px solid var(--rt-hairline);
+  border-radius: var(--rt-radius-sm);
+  background: var(--rt-panel);
+  font-size: var(--ry-fs-dense);
+}
+
+.rowName {
+  display: flex;
+  align-items: center;
+  gap: var(--rt-space-2xs);
+  min-width: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.rowValue {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rt-space-xs);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-data);
+}
+
+.books {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--rt-space-sm);
+}
+
+.book {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--rt-space-xs);
+  align-content: start;
+  padding: var(--rt-space-sm);
+  border: 1px solid var(--rt-hairline);
+  border-radius: var(--rt-radius-sm);
+  background: var(--rt-panel);
+}
+
+.bookHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rt-space-2xs);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--rt-ink-mid);
+}
+
+/* ── notes and empty states ─────────────────────────────────────────────── */
+
+.note {
+  display: grid;
+  gap: var(--rt-space-2xs);
+  margin: 0;
+  color: var(--rt-ink-mid);
+  font-size: var(--ry-fs-dense);
+  line-height: 1.5;
+}
+
+.note li { margin-inline-start: var(--rt-space-md); }
+
+.calm {
+  display: flex;
+  align-items: center;
+  gap: var(--rt-space-xs);
+  color: var(--rt-ink-mid);
+  font-size: var(--ry-fs-dense);
+}
+
+.calm svg { color: var(--rt-reconciled-green-fg); flex: none; }
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rt-space-xs);
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  padding-inline: var(--rt-space-sm);
+  border: 1px solid var(--rt-hairline-strong);
+  border-radius: var(--rt-radius-sm);
+  color: var(--rt-ink-high);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.link:hover { border-color: var(--rt-action-blue); color: var(--rt-action-blue-fg); }
+
+/* ── loading ────────────────────────────────────────────────────────────── */
+
+/* Reserved geometry, not a spinner: the tiles that will hold numbers keep
+   their exact height so nothing on the page moves when the read returns, and
+   no previous figure is left on screen pretending to be current. */
+.skeleton {
+  border-radius: var(--rt-radius-sm);
+  background: var(--rt-chart-grid);
+}
+
+.skeletonValue { height: 56px; }
+.skeletonLine { height: 14px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton { animation: pulse 1.6s var(--rt-ease) infinite; }
+}
+
+@keyframes pulse {
+  50% { opacity: 0.55; }
+}
+
+/* No focus rule here on purpose.
+ *
+ * There was one, and it removed the ring instead of drawing it:
+ * `outline: 2px solid var(--ry-focus)` looks like a colour and is a
+ * box-shadow value (`0 0 0 3px rgba(...)`), so the whole shorthand was invalid
+ * at computed-value time and every focused control on this surface computed
+ * `outline-style: none`. Measured, not reasoned about — the computed style read
+ * `3px none` while the stylesheet said `2px solid`.
+ *
+ * The shell already owns one focus ring for every workspace
+ * (`.rs :where(a, button, select, summary, [tabindex]):focus-visible`), and one
+ * system is the point. This surface inherits it. */
+
+@media (max-width: 600px) {
+  .section { padding: var(--rt-space-sm); }
+  .item { grid-template-columns: auto minmax(0, 1fr); }
+  .itemAction, .itemBlocked { grid-column: 2; }
+}

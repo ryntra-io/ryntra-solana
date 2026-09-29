@@ -1,0 +1,174 @@
+/*
+ * The Passport surface.
+ *
+ * Only what the shared workspace system does not already carry: the sticky
+ * identity header, the unknowns rail, and the declaration caveat. Panels, rows,
+ * metrics, badges, buttons and the type scale all come from `app/shell/`,
+ * because a second visual system for one page is exactly the drift
+ * `docs/design/workspace-system.md` exists to stop.
+ *
+ * **Every token here was checked against the rendered page.** The previous
+ * version styled with `--line`, `--fg` and `--fg-faint`, none of which exist —
+ * and CSS drops a declaration whose custom property is undefined rather than
+ * falling back, so all twenty row separators on this page computed to
+ * `border-width: 0px` and the faint text rendered at full strength. The real
+ * names are `--border`, `--text`, `--text-dim`, `--text-faint`, `--warning`,
+ * `--accent` and `--panel`.
+ */
+
+/*
+ * Identity, pinned.
+ *
+ * The one element `docs/stellar/DESIGN.md` §4 fixes in place. It used to be two
+ * cards at the top of a 3,207px document: four hundred pixels down, nothing on
+ * screen said which asset you were reading, on the page whose entire job is to
+ * be about one exact asset.
+ *
+ * It carries its own opaque surface rather than borrowing the canvas
+ * background, so content scrolling under it cannot show through — and it is a
+ * panel-like plate for the same reason the panels are, not because it is one.
+ */
+.identity {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+}
+
+/* The documented workspace page-title step, because on this page the asset code
+   is the title — there is no other heading competing with it. */
+.identityCode {
+  font-family: var(--mono);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+.identityModel {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+/* The whole second line, so identity never wraps into the metadata. */
+.identityMeta {
+  flex-basis: 100%;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-faint);
+  overflow-wrap: anywhere;
+}
+
+.identityLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  overflow-wrap: anywhere;
+}
+
+/* Numbers and identifiers. Mono, and never machine-translated. */
+.mono {
+  font-family: var(--mono);
+  overflow-wrap: anywhere;
+}
+
+/*
+ * A section that could not resolve.
+ *
+ * It states its reason and offers no control, because there is nothing to press
+ * — the section is honest, not broken.
+ */
+.absent {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--text-dim);
+}
+
+/*
+ * The unknowns rail: permanent, never collapsed.
+ *
+ * It is the visual proof that the page does not fill gaps. A Passport whose
+ * unknowns list is empty is either perfect or lying, so the empty case renders
+ * a sentence rather than disappearing.
+ */
+.unknowns {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.unknown {
+  display: grid;
+  gap: 4px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.unknown:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.unknownField {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.unknownReason {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-dim);
+}
+
+/*
+ * The declaration caveat.
+ *
+ * Sourced from the issuer's own domain, so it is the issuer talking about
+ * itself. Amber rather than red: it is a caveat about provenance, not a fault.
+ * The panel it sits in carries the same amber badge, so the distinction between
+ * a ledger fact and a company describing itself is visible before the sentence
+ * is read.
+ */
+.declared {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--warning) 34%, transparent);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--warning) 6%, transparent);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-dim);
+}
+
+.linksBlock {
+  margin: 14px 0 0;
+}
+
+.back {
+  margin: 4px 0 0;
+}
+
+/* The shared arrow points forward; leaving is the same glyph turned round,
+   rather than a second icon that has to be kept in step with the first. */
+.backArrow {
+  transform: rotate(180deg);
+}

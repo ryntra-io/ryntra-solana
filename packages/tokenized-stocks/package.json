@@ -1,0 +1,38 @@
+{
+  "name": "@ryntra/tokenized-stocks",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "The model of a tokenized stock on Solana: instrument class, unit basis and holder rights, the Token-2022 transfer fee from the mint's own config, the issuer lifecycle of a token, scaled-unit arithmetic, and the state of a reference price against an exchange session. Pure functions, no network.",
+  "keywords": [
+    "ryntra",
+    "solana",
+    "token-2022",
+    "tokenized-stocks",
+    "xstocks",
+    "scaled-ui-amount",
+    "pure"
+  ],
+  "license": "Apache-2.0",
+  "author": "Dmytro Plavutskyi",
+  "homepage": "https://ryntra.io/app/stocks",
+  "bugs": {
+    "url": "https://github.com/ryntra-io/ryntra-solana-evidence/issues"
+  },
+  "engines": {
+    "node": ">=22.18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ryntra-io/ryntra-solana-evidence.git",
+    "directory": "packages/tokenized-stocks"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "types": "./src/index.ts",
+  "sideEffects": false
+}

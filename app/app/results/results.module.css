@@ -1,0 +1,402 @@
+/*
+ * Results — RYN-RESULTS-MEMORY-001.
+ *
+ * The page a plan returns to. Its shape follows what a person actually asks,
+ * in order: how did this end, what is still open, what did not trade, and
+ * what does the product remember. Every figure that was not established is
+ * drawn as an em dash in the muted colour, never as a zero, so an unknown
+ * looks like an unknown at a glance.
+ *
+ * Progressive disclosure is the rule here (the Premium Product UI Pass of
+ * 2026-09-15 §1): the surface carries the sentence and the two or three
+ * figures a decision needs; the ledger's own fields live behind a
+ * disclosure that says what it holds before it is opened.
+ */
+
+.stack {
+  display: grid;
+  gap: var(--ry-s4);
+}
+
+/* ── the summary strip ───────────────────────────────────────────────── */
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--ry-s3);
+}
+
+.tile {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--ry-s3) var(--ry-s4);
+  background: var(--ry-card);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+}
+
+.tileValue {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-data-m);
+  line-height: var(--ry-lh-tight);
+  color: var(--ry-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.tileLabel {
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+  letter-spacing: var(--ry-ls-head);
+  text-transform: uppercase;
+}
+
+/* ── a section ───────────────────────────────────────────────────────── */
+
+.section {
+  display: grid;
+  gap: var(--ry-s3);
+  min-width: 0;
+}
+
+.sectionHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ry-s3);
+  flex-wrap: wrap;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: var(--ry-fs-section);
+  line-height: var(--ry-lh-tight);
+  letter-spacing: var(--ry-ls-head);
+  color: var(--ry-text);
+}
+
+.sectionNote {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+  max-width: 68ch;
+  line-height: 1.5;
+}
+
+.rows {
+  display: grid;
+  gap: var(--ry-s3);
+  min-width: 0;
+}
+
+/* ── one row: a result, a position, an outcome ───────────────────────── */
+
+.row {
+  display: grid;
+  gap: var(--ry-s3);
+  min-width: 0;
+  padding: var(--ry-s4);
+  background: var(--ry-card);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  box-shadow: var(--ry-shadow-sm);
+}
+
+.rowHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ry-s3);
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.rowTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  min-width: 0;
+  font-size: var(--ry-fs-title);
+  line-height: var(--ry-lh-tight);
+  color: var(--ry-text);
+}
+
+.symbol {
+  font-weight: 600;
+}
+
+.when {
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.sentence {
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-text);
+  max-width: 72ch;
+}
+
+.note {
+  margin: 0;
+  font-size: var(--ry-fs-label-sm);
+  line-height: 1.5;
+  color: var(--ry-muted);
+  max-width: 72ch;
+}
+
+/* ── chips ───────────────────────────────────────────────────────────── */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px;
+  border-radius: var(--ry-r-pill);
+  border: 1px solid var(--ry-border);
+  background: var(--ry-elevated);
+  font-size: var(--ry-fs-label-sm);
+  line-height: 1.6;
+  color: var(--ry-muted);
+  white-space: nowrap;
+}
+
+.chip[data-tone="entry"] {
+  border-color: var(--ry-brand-line);
+  background: var(--ry-brand-soft);
+  color: var(--ry-text);
+}
+
+.chip[data-tone="exit"] {
+  border-color: var(--ry-border-strong);
+  color: var(--ry-text);
+}
+
+.chip[data-tone="deviated"] {
+  border-color: var(--ry-caution);
+  background: var(--ry-caution-soft);
+  color: var(--ry-text);
+}
+
+.chip[data-tone="followed"] {
+  border-color: var(--ry-border-strong);
+  background: var(--ry-verified-soft);
+  color: var(--ry-text);
+}
+
+/* ── the figure grid ─────────────────────────────────────────────────── */
+
+.figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--ry-s3);
+  min-width: 0;
+}
+
+.figure {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.figureLabel {
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+}
+
+.figureValue {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-value);
+  line-height: var(--ry-lh-tight);
+  color: var(--ry-text);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.figureValue[data-state="unknown"] {
+  color: var(--ry-muted);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+}
+
+.figureValue[data-tone="pos"] {
+  color: var(--ry-pnl-pos);
+}
+
+.figureValue[data-tone="neg"] {
+  color: var(--ry-pnl-neg);
+}
+
+.figureNote {
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+  line-height: 1.45;
+}
+
+/* ── the disclosure ──────────────────────────────────────────────────── */
+
+.disclosure {
+  border-top: 1px solid var(--ry-border);
+  padding-top: var(--ry-s3);
+}
+
+.disclosureSummary {
+  cursor: pointer;
+  list-style: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+  border-radius: var(--ry-r-btn-sm);
+}
+
+.disclosureSummary::-webkit-details-marker {
+  display: none;
+}
+
+.disclosureSummary:hover {
+  color: var(--ry-text);
+}
+
+.disclosureSummary:focus-visible {
+  outline: 2px solid var(--ry-focus);
+  outline-offset: 2px;
+}
+
+.disclosureBody {
+  display: grid;
+  gap: var(--ry-s3);
+  padding-top: var(--ry-s3);
+  min-width: 0;
+}
+
+/* ── the checks of an exit ───────────────────────────────────────────── */
+
+.checks {
+  display: grid;
+  gap: var(--ry-s2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.check {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--ry-s2) var(--ry-s3);
+  align-items: baseline;
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-text);
+}
+
+.checkName {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.checkFigures {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.check[data-outcome="fail"] .checkName {
+  color: var(--ry-caution);
+}
+
+/* ── memory ──────────────────────────────────────────────────────────── */
+
+.memory {
+  display: grid;
+  gap: var(--ry-s2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.memoryItem {
+  display: grid;
+  gap: 4px;
+  padding: var(--ry-s3) var(--ry-s4);
+  background: var(--ry-card);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  min-width: 0;
+}
+
+.memoryText {
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-text);
+}
+
+.cites {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cite {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-chip);
+  padding: 1px 8px;
+  text-decoration: none;
+}
+
+a.cite:hover {
+  color: var(--ry-text);
+  border-color: var(--ry-border-strong);
+}
+
+/* ── the links out ───────────────────────────────────────────────────── */
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s2);
+}
+
+.link {
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+  text-decoration: none;
+  border-bottom: 1px solid var(--ry-border);
+}
+
+.link:hover {
+  color: var(--ry-text);
+  border-bottom-color: var(--ry-border-strong);
+}
+
+/* ── narrow ──────────────────────────────────────────────────────────── */
+
+@media (max-width: 720px) {
+  .tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .figures {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .check {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .checkFigures {
+    text-align: left;
+  }
+}

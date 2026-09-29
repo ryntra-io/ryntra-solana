@@ -1,0 +1,314 @@
+/*
+ * Home.
+ *
+ * Three bands, in the order the questions arrive: what I have, what I can do,
+ * what happened. Each is a distinct visual weight — a display number, a row of
+ * equal targets, a quiet list — so the page is read in seconds rather than
+ * scanned for the important part.
+ */
+
+.home {
+  display: grid;
+  gap: 28px;
+  max-width: 920px;
+}
+
+/* ── What I have ─────────────────────────────────────────────────────────── */
+
+.value {
+  display: grid;
+  gap: 6px;
+}
+
+.valueLabel {
+  margin: 0;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense, 0.8125rem);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ry-muted);
+}
+
+.valueAmount {
+  margin: 0;
+  font-family: var(--ry-font-mono);
+  /* v2-data-xl, the documented mono display step. */
+  font-size: clamp(2.75rem, 5vw, 3rem);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+}
+
+/* The currency mark is not the number. It sits back so the eye lands on the
+   figure, which is the only thing a person came to this line for. */
+.valueCurrency {
+  margin-inline-end: 2px;
+  font-size: 0.5em;
+  vertical-align: 0.42em;
+  color: var(--ry-muted);
+}
+
+.valueFacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0 0;
+}
+
+.fact {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 5px 10px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm, 8px);
+  background: var(--ry-card);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense, 0.8125rem);
+}
+
+.fact dt {
+  margin: 0;
+  color: var(--ry-muted);
+}
+
+.fact dd {
+  margin: 0;
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+}
+
+/* Two facts carry a state, and both say it in colour AND in a border so the
+   distinction survives a greyscale screen. */
+.fact[data-tone="unknown"] {
+  border-color: var(--ry-unknown, #8996a8);
+}
+
+.fact[data-tone="unknown"] dd {
+  color: var(--ry-unknown, #8996a8);
+}
+
+.fact[data-tone="motion"] {
+  border-color: var(--ry-iris);
+  background: color-mix(in srgb, var(--ry-iris) 10%, var(--ry-card));
+}
+
+.fact[data-tone="motion"] dd {
+  color: var(--ry-iris);
+}
+
+/* ── What I can do ───────────────────────────────────────────────────────── */
+
+.actions {
+  display: grid;
+  /* Capped rather than stretched. At full canvas width four 1fr tiles became
+     215px banners, and a banner does not read as a control — the coral one
+     least of all. */
+  grid-template-columns: repeat(4, minmax(0, 168px));
+  gap: 10px;
+}
+
+.action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 84px;
+  padding: 14px 10px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn, 12px);
+  background: var(--ry-card);
+  color: var(--ry-text);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-app, 0.9375rem);
+  font-weight: 500;
+  text-decoration: none;
+  transition:
+    border-color 120ms ease,
+    background 120ms ease,
+    transform 120ms ease;
+}
+
+.action:hover {
+  border-color: var(--ry-border-strong);
+  background: var(--ry-hover);
+}
+
+.action:active {
+  transform: translateY(1px);
+}
+
+/* Exactly one primary. Four equal coral tiles would be four shouts and no
+   hierarchy; Swap is the action this product is used for most. */
+.action[data-primary="true"] {
+  border-color: transparent;
+  background: var(--ry-iris);
+  color: var(--ry-on-iris);
+}
+
+.action[data-primary="true"]:hover {
+  background: var(--ry-iris-deep);
+}
+
+.action[data-primary="true"]:active {
+  background: var(--ry-iris-pressed);
+}
+
+/* ── What happened ───────────────────────────────────────────────────────── */
+
+.recent {
+  display: grid;
+  gap: 10px;
+}
+
+.recentHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.recentLabel {
+  margin: 0;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense, 0.8125rem);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ry-muted);
+}
+
+.seeAll {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  color: var(--ry-iris);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-app, 0.9375rem);
+  text-decoration: none;
+}
+
+.seeAll:hover {
+  text-decoration: underline;
+}
+
+.rows {
+  display: grid;
+  gap: 1px;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  list-style: none;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn, 12px);
+  background: var(--ry-border);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--ry-card);
+}
+
+.rowWhat {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-app, 0.9375rem);
+  color: var(--ry-text);
+}
+
+.rowWhen {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense, 0.8125rem);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-muted);
+}
+
+.rowState {
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense, 0.8125rem);
+  white-space: nowrap;
+}
+
+.rowState[data-outcome="DONE"] {
+  background: var(--ry-verified-soft, rgba(63, 203, 145, 0.13));
+  color: var(--ry-verified, #3fcb91);
+}
+
+.rowState[data-outcome="IN_FLIGHT"],
+.rowState[data-outcome="NEEDS_YOU"] {
+  background: color-mix(in srgb, var(--ry-iris) 14%, transparent);
+  color: var(--ry-iris);
+}
+
+.rowState[data-outcome="FAILED"] {
+  background: color-mix(in srgb, var(--ry-high-risk, #ec6a72) 14%, transparent);
+  color: var(--ry-high-risk, #ec6a72);
+}
+
+/* An empty surface is composed, not abandoned: one line that says the state
+   and one that says what ends it. */
+.empty {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 22px 16px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn, 12px);
+  background: var(--ry-card);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-app, 0.9375rem);
+  color: var(--ry-muted);
+}
+
+.emptyLead {
+  color: var(--ry-text);
+  font-weight: 600;
+}
+
+.gate {
+  display: grid;
+  max-width: 920px;
+}
+
+/* ── Phone ───────────────────────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .home {
+    gap: 22px;
+  }
+
+  /* Four tiles at 375px leave 78px each, which is a target but not a word.
+     Two rows of two keeps both. */
+  .actions {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .row {
+    grid-template-columns: 1fr auto;
+    row-gap: 6px;
+  }
+
+  .rowWhen {
+    grid-column: 1;
+  }
+
+  .rowState {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: end;
+  }
+}

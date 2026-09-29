@@ -1,0 +1,222 @@
+/*
+ * The public-site token bridge: v1 names, Quiet Intelligence values.
+ *
+ * The reviewer pages and `/agents` are not built out of the shared reading
+ * primitives — each carries its own page system, together about three thousand
+ * lines of rules. Rewriting those by hand is how a migration loses a fact, and
+ * it is unnecessary: they are written almost entirely in variables. Across all
+ * of them there are **nine** hard-coded hex literals and seventy-odd variable
+ * names.
+ *
+ * So the names stay and the authority moves, exactly as `app/shell/rt-bridge.css`
+ * did for the workspace on its own rung. Inside `.rx` every legacy name
+ * re-resolves to `app/design/tokens.css`, which is the projection of the frozen
+ * Brandbook v1.2. No page file changes, no rule is rewritten, and nothing that
+ * was stated on those pages can move.
+ *
+ * Two consequences are deliberate, not accidental:
+ *
+ *   **Cyan is gone.** It was the v1 evidence accent and Quiet Intelligence has
+ *   no cyan at all. Everything that asked for cyan now asks for Iris, which is
+ *   the accent this system actually has. That is why the reviewer page's CTA stops being
+ *   turquoise.
+ *
+ *   **The paper names need no second block.** `--rt-paper-*` maps to the same
+ *   `--ry-*` roles as its dark twin, and those already re-resolve inside a
+ *   `[data-ry-theme="light"]` or `.rx-paper` subtree. One mapping covers both
+ *   grounds because the ground is what switches, not the name.
+ */
+
+/*
+ * The selector list matters as much as the values.
+ *
+ * A custom property is substituted at computed-value time on the element that
+ * declares it, so `--rt-paper-ink-high: var(--ry-text)` written once on `.rx`
+ * freezes the root theme and inherits that literal into every light band below
+ * it. On /agents that put dark ink (#F1F4F8) on a Mist card and measured
+ * 1.04:1 across forty-two elements while --ry-text itself resolved correctly
+ * two lines away. The aliases are therefore re-declared in every scope where
+ * the theme can change, so they recompute there.
+ */
+.rx,
+.rx [data-ry-theme],
+.rx .rx-paper {
+  /* ── type ── */
+  --rt-font: var(--ry-font-sans);
+  --rt-mono: var(--ry-font-mono);
+  --mono: var(--ry-font-mono);
+
+  /* ── surfaces ── */
+  --rt-page: var(--ry-bg);
+  --rt-panel: var(--ry-card);
+  --rt-raised: var(--ry-elevated);
+  --rt-paper-page: var(--ry-bg);
+  --rt-paper-panel: var(--ry-card);
+  --bg: var(--ry-bg);
+  --panel: var(--ry-card);
+  --panel-2: var(--ry-elevated);
+  --panel-3: var(--ry-elevated);
+  --panel-hover: var(--ry-hover);
+
+  /* ── rules ── */
+  --rt-hairline: var(--ry-border);
+  --rt-hairline-strong: var(--ry-border-strong);
+  --rt-paper-hairline: var(--ry-border);
+  --rt-paper-hairline-strong: var(--ry-border-strong);
+  --border: var(--ry-border);
+  --border-strong: var(--ry-border-strong);
+
+  /* ── ink ── */
+  --rt-ink-high: var(--ry-text);
+  --rt-ink-mid: var(--ry-muted);
+  --rt-ink-low: var(--ry-muted);
+  --rt-paper-ink-high: var(--ry-text);
+  --rt-paper-ink-mid: var(--ry-muted);
+  --rt-paper-ink-low: var(--ry-muted);
+  --text: var(--ry-text);
+  --text-dim: var(--ry-muted);
+  --text-faint: var(--ry-muted);
+
+  /*
+   * ── the accents ──
+   *
+   * v1 carried four semantic hues — action blue, evidence cyan, authorization
+   * violet and a mint. Brandbook v1.2 keeps risk semantics (verified, caution,
+   * high risk) and gives everything else one brand accent. So identity,
+   * evidence and authorization all resolve to Iris here: the distinction they
+   * drew belongs to the state chips and the reconciliation vocabulary, which
+   * carry it in words, and a page that says the same thing in four colours is
+   * the noise this brandbook was frozen to remove.
+   */
+  /* The unsuffixed name is a FILL and the `-fg` name is TEXT, and the brandbook
+     separates them by name: white lives only on Iris Deep, because light Iris
+     under white measures 3.33:1 — which is exactly what the reviewer page's CTA measured
+     the moment cyan stopped hiding it. Fills take Deep; text takes the accent. */
+  --rt-evidence-cyan: var(--ry-iris-deep);
+  /* Accent AS TEXT on a dark card needs the lighter chip ink: #7483F5 measures
+     4.01:1 there, which is the same near-miss the status chips had. */
+  --rt-evidence-cyan-fg: var(--ry-st-live-tx);
+  --rt-evidence-cyan-line: var(--ry-border-strong);
+  --rt-evidence-cyan-soft: var(--ry-st-live-bg);
+  --rt-paper-evidence-cyan-fg: var(--ry-accent);
+  --accent-text: var(--ry-st-live-tx);
+  --rt-action-blue: var(--ry-iris-deep);
+  --rt-action-blue-hover: var(--ry-iris-pressed);
+  --rt-action-blue-ink: var(--ry-on-iris);
+  --rt-authorization-violet: var(--ry-iris-deep);
+  --rt-authorization-violet-ink: var(--ry-on-iris);
+  --accent: var(--ry-accent);
+  --accent-ink: var(--ry-on-iris);
+  --accent-line: var(--ry-border-strong);
+  --accent-soft: var(--ry-st-live-bg);
+  --violet: var(--ry-iris-deep);
+  --violet-soft: var(--ry-st-live-bg);
+
+  /* ── risk semantics, which this brandbook does keep ── */
+  --rt-review-amber: var(--ry-caution);
+  --rt-review-amber-fg: var(--ry-caution);
+  --rt-review-amber-soft: var(--ry-st-live-bg);
+  /* `--ry-high-risk` never existed. The frozen palette calls this role
+     `--ry-risk`, so both declarations were invalid at computed-value time and
+     dropped — every legacy surface painting a blocked state through these
+     aliases rendered with no colour at all, which is the exact failure the
+     unresolved-property gate was written to catch. */
+  --rt-blocked-red: var(--ry-risk);
+  --rt-blocked-red-fg: var(--ry-risk);
+  --rt-blocked-red-soft: var(--ry-st-live-bg);
+  --warning: var(--ry-caution);
+  --warning-soft: var(--ry-st-live-bg);
+  --success: var(--ry-verified);
+  --success-soft: var(--ry-st-live-bg);
+
+  /* ── shape ── */
+  --rt-radius-xs: var(--ry-r-chip);
+  --rt-radius-sm: var(--ry-r-btn-sm);
+  --rt-radius-md: var(--ry-r-btn);
+  --rt-radius-pill: var(--ry-r-chip);
+  --radius: var(--ry-r-btn);
+  --radius-sm: var(--ry-r-btn-sm);
+
+  /* ── space ── */
+  --rt-space-2xs: var(--ry-s1);
+  --rt-space-xs: var(--ry-s2);
+  --rt-space-sm: var(--ry-s3);
+  --rt-space-md: var(--ry-s4);
+  --rt-space-lg: var(--ry-s5);
+  --rt-space-xl: var(--ry-s6);
+  --rt-space-2xl: var(--ry-s7);
+  --rt-space-3xl: var(--ry-s8);
+
+  /*
+   * ── the type floor ──
+   *
+   * Brandbook v1.2 sets the minimum at 14px and allows 13 only inside dense Pro
+   * tables; a public page has none. These three names were the v1 small sizes
+   * and one reviewer page alone rendered thirty-five elements below the floor through
+   * them, down to 9.5px. They all land on the dense role.
+   */
+  --fs-13: var(--ry-fs-dense);
+  --fs-14: var(--ry-fs-dense);
+  --fs-15: var(--ry-fs-app);
+
+  /* ── motion ── */
+  --rt-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --rt-duration-fast: 140ms;
+  --rt-duration-base: 220ms;
+}
+
+/*
+ * Corrections the aliases cannot express, scoped to migrated surfaces only.
+ *
+ * A variable can carry a value; it cannot split one name that a legacy sheet
+ * uses for two different jobs. `--accent` is a fill on `.btn-primary` and text
+ * on `.btn-ghost:hover`, so the alias has to stay a text colour and the fill is
+ * corrected here — the brandbook's own rule, that white lives on Iris Deep and
+ * never on light Iris, where it measures 3.33:1.
+ *
+ * The sizes are the same shape of problem: literal `0.75rem` and `0.8125rem` in
+ * the shared sheet, below the 14px floor, with no variable to redirect.
+ */
+.rx .btn-primary {
+  background: var(--ry-iris-deep);
+  color: var(--ry-on-iris);
+}
+
+.rx .btn-primary:hover {
+  background: var(--ry-iris-pressed);
+}
+
+.rx .btn-sm,
+.rx .bg-eyebrow,
+.rx .bg-cta-note,
+.rx .bg-h2,
+.rx .legal-updated,
+.rx .legal th,
+.rx .legal-foot,
+.rx .legal-nav,
+.rx .bg-legal-links {
+  font-size: var(--ry-fs-dense);
+}
+
+/*
+ * Foreground roles that need a light-ground twin.
+ *
+ * Amber and the accent are readable as text on Midnight and not on Mist —
+ * `--rt-review-amber-fg` measured 1.81:1 on a light band, which is a status
+ * colour a reader cannot read. Brandbook v1.2 names the light stand-ins; these
+ * are them, and they apply only where the theme has actually switched.
+ */
+.rx [data-ry-theme="light"],
+.rx .rx-paper {
+  --rt-evidence-cyan-fg: var(--ry-accent);
+  --accent-text: var(--ry-accent);
+  --rt-review-amber-fg: #A8650A;
+  --rt-blocked-red-fg: var(--ry-pnl-neg-light);
+}
+
+/* The legal pages set a link size inline in their own sheet; it is the last
+   sub-floor size on any public surface. */
+.rx .legal a,
+.rx .legal-foot a {
+  font-size: inherit;
+}

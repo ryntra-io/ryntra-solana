@@ -1,0 +1,37 @@
+{
+  "name": "@ryntra/trading-plans",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Deterministic helpers of a Trading Plan: the size of a spot-long position from an entry, an invalidation, a budget and a planned risk, with the assumptions the figure stands on; and a reader of decimal input that understands the number the way the person typed it. Pure functions, no network.",
+  "keywords": [
+    "ryntra",
+    "trading-plan",
+    "position-sizing",
+    "risk",
+    "decimal-input",
+    "pure"
+  ],
+  "license": "Apache-2.0",
+  "author": "Dmytro Plavutskyi",
+  "homepage": "https://ryntra.io/app/strategies",
+  "bugs": {
+    "url": "https://github.com/ryntra-io/ryntra-solana-evidence/issues"
+  },
+  "engines": {
+    "node": ">=22.18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ryntra-io/ryntra-solana-evidence.git",
+    "directory": "packages/trading-plans"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "types": "./src/index.ts",
+  "sideEffects": false
+}

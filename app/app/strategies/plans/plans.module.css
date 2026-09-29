@@ -1,0 +1,2312 @@
+/*
+ * Trading plans — the list under My strategies, the builder, the detail.
+ *
+ * The terminal's own cards and facts (the same tokens the stock desk uses):
+ * a plan is rows of figures with their units, never a wall of text. The
+ * Owner's Premium Product UI Pass (2026-09-15) set the scale and the
+ * composition: the page uses the whole canvas after the rail, the title is
+ * 28px, the key figures 28px, a value 16px, a label 14px; every term carries
+ * a `?` and its explanation lives there, not under the number. The builder
+ * keeps its one column of small groups with the size and the check beside it.
+ */
+
+.page {
+  display: grid;
+  gap: var(--ry-s4);
+  width: 100%;
+  min-width: 0;
+}
+
+.crumbs {
+  display: flex;
+  gap: var(--ry-s2);
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+}
+
+.crumbs a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.crumbs a:hover {
+  color: var(--ry-text);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ry-s3);
+}
+
+.head h1 {
+  margin: 0;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-page);
+  line-height: var(--ry-lh-tight);
+  letter-spacing: var(--ry-ls-head);
+  color: var(--ry-text);
+}
+
+.headSpacer {
+  flex: 1 1 auto;
+}
+
+.lead {
+  margin: 0;
+  max-width: 64ch;
+  font-size: var(--ry-fs-copy);
+  line-height: 1.55;
+  color: var(--ry-muted);
+}
+
+.card {
+  min-width: 0;
+  background: var(--ry-card);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  box-shadow: var(--ry-shadow-sm);
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s3);
+  min-height: 48px;
+  padding: 0 var(--ry-s4);
+  border-bottom: 1px solid var(--ry-border);
+  background: color-mix(in srgb, var(--ry-elevated) 55%, transparent);
+  border-start-start-radius: var(--ry-r-card);
+  border-start-end-radius: var(--ry-r-card);
+}
+
+.cardHead h2 {
+  margin: 0;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-section);
+  font-weight: 600;
+  letter-spacing: var(--ry-ls-head);
+  color: var(--ry-text);
+}
+
+.cardHeadSpacer {
+  flex: 1 1 auto;
+}
+
+.cardBody {
+  display: grid;
+  gap: var(--ry-s3);
+  padding: var(--ry-s4);
+}
+
+.muted {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+  line-height: 1.5;
+}
+
+.error {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-caution);
+}
+
+.gate {
+  display: grid;
+  gap: var(--ry-s3);
+  justify-items: start;
+  padding: var(--ry-s5) var(--ry-s4);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s2);
+}
+
+/* ── The status chip: one look on the list, the head and the panel ────── */
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px var(--ry-s2);
+  border-radius: var(--ry-r-pill);
+  border: 1px solid var(--ry-border-strong);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ry-muted);
+  white-space: nowrap;
+}
+
+.status::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: var(--ry-r-pill);
+  background: currentColor;
+}
+
+.status[data-size="lg"] {
+  padding: 4px var(--ry-s3);
+  font-size: var(--ry-fs-dense);
+}
+
+.status[data-status="active"] {
+  color: var(--ry-pnl-pos);
+  border-color: color-mix(in srgb, var(--ry-pnl-pos) 45%, transparent);
+  background: var(--ry-verified-soft);
+}
+
+.status[data-status="executed"] {
+  color: var(--ry-accent-fg);
+  border-color: var(--ry-brand-line);
+  background: var(--ry-brand-soft);
+}
+
+.status[data-status="draft"] {
+  color: var(--ry-text);
+  background: var(--ry-elevated);
+}
+
+.status[data-status="expired"] {
+  color: var(--ry-caution);
+  border-color: color-mix(in srgb, var(--ry-caution) 45%, transparent);
+  background: var(--ry-caution-soft);
+}
+
+.status[data-status="cancelled"] {
+  color: var(--ry-text-muted);
+}
+
+/* ── My strategies: the summary, the plan cards ───────────────────────── */
+
+/* The counts: one compact line of the states that exist, read without reading. */
+.counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s2);
+}
+
+.count {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  min-height: 36px;
+  padding: 0 var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-card);
+  font-size: var(--ry-fs-dense);
+  font-weight: 500;
+  color: var(--ry-muted);
+  text-decoration: none;
+}
+
+.count[data-tone="attention"] {
+  border-color: color-mix(in srgb, var(--ry-caution) 45%, var(--ry-border));
+}
+
+.countValue {
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--ry-fs-value);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.count[data-tone="attention"] .countValue {
+  color: var(--ry-caution);
+}
+
+.count[data-tone="active"] .countValue {
+  color: var(--ry-pnl-pos);
+}
+
+a.count:hover {
+  border-color: var(--ry-border-strong);
+  color: var(--ry-text);
+}
+
+.sectionHead {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s3);
+  min-height: 44px;
+}
+
+.sectionHead h2 {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  margin: 0;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-section);
+  font-weight: 600;
+  letter-spacing: var(--ry-ls-head);
+  color: var(--ry-text);
+}
+
+.sectionHead[data-tone="attention"] h2 {
+  color: var(--ry-caution);
+}
+
+.sectionCount {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+  font-weight: 500;
+  color: var(--ry-muted);
+}
+
+.sectionSpacer {
+  flex: 1 1 auto;
+}
+
+.planGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 460px), 1fr));
+  gap: var(--ry-s4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.planCard {
+  display: grid;
+  gap: var(--ry-s4);
+  min-width: 0;
+  padding: var(--ry-s4) var(--ry-s5);
+  color: inherit;
+  text-decoration: none;
+  transition:
+    border-color var(--rt-duration-fast) var(--rt-ease),
+    box-shadow var(--rt-duration-fast) var(--rt-ease),
+    transform var(--rt-duration-fast) var(--rt-ease);
+}
+
+.planCard:hover {
+  border-color: var(--ry-border-strong);
+  box-shadow: var(--ry-shadow-md);
+  transform: translateY(-1px);
+}
+
+.planCard:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+}
+
+.planCard[data-status="active"] {
+  border-color: color-mix(in srgb, var(--ry-pnl-pos) 30%, var(--ry-border));
+}
+
+.planCardHead {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s3);
+  min-width: 0;
+}
+
+.planCardIcon {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-elevated);
+  object-fit: cover;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.planCardTitle {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.planCardSymbol {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ry-s2);
+  font-size: var(--ry-fs-title);
+  font-weight: 600;
+  letter-spacing: var(--ry-ls-head);
+  color: var(--ry-text);
+}
+
+.planCardVersion {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label);
+  font-weight: 500;
+  color: var(--ry-muted);
+}
+
+.planCardSub {
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.planCardOpen {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-inline-start: auto;
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  color: var(--ry-accent-fg);
+  white-space: nowrap;
+}
+
+.planCardFigures {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--ry-s3);
+  margin: 0;
+}
+
+.planFigure {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.planFigure dt {
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.planFigure dd {
+  display: grid;
+  gap: 1px;
+  margin: 0;
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--ry-fs-value);
+  font-weight: 600;
+  color: var(--ry-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.planFigureSub {
+  font-family: var(--ry-font-sans);
+  font-variant-numeric: normal;
+  font-size: var(--ry-fs-label);
+  font-weight: 500;
+  color: var(--ry-muted);
+}
+
+.planCardFoot {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  padding-top: var(--ry-s3);
+  border-top: 1px solid var(--ry-border);
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+}
+
+.planCardFoot[data-tone="caution"] {
+  color: var(--ry-caution);
+}
+
+.planCardFoot svg {
+  flex: 0 0 auto;
+}
+
+.emptyPlans {
+  display: grid;
+  gap: var(--ry-s3);
+  justify-items: start;
+  padding: var(--ry-s5);
+}
+
+.emptyPlans b {
+  font-size: var(--ry-fs-section);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.closed summary {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  min-height: 44px;
+  padding: 0 var(--ry-s4);
+  cursor: pointer;
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  color: var(--ry-muted);
+  list-style: none;
+}
+
+.closed summary::-webkit-details-marker {
+  display: none;
+}
+
+.closed .planGrid {
+  padding: 0 var(--ry-s4) var(--ry-s4);
+}
+
+@media (max-width: 900px) {
+  .planCardFigures {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ── The builder ──────────────────────────────────────────────────────── */
+
+.builder {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: var(--ry-s4);
+  align-items: start;
+}
+
+.aside {
+  display: grid;
+  gap: var(--ry-s4);
+  position: sticky;
+  top: var(--ry-s4);
+}
+
+@media (max-width: 960px) {
+  .builder {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* Stacked, what you will buy comes first: the figure the form exists to make. */
+  .aside {
+    position: static;
+    order: -1;
+  }
+
+  .fields.fieldsThree {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .step,
+  .assetStrip,
+  .moreRules {
+    padding-inline: var(--ry-s4);
+  }
+}
+
+/* The builder's three steps: a numbered head, a few fields, nothing else. */
+.step {
+  display: grid;
+  gap: var(--ry-s3);
+  padding: var(--ry-s5) var(--ry-s5);
+  border-bottom: 1px solid var(--ry-border);
+}
+
+.step:last-child {
+  border-bottom: 0;
+}
+
+.stepHead {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s3);
+}
+
+.stepHead h2 {
+  margin: 0;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-section);
+  font-weight: 600;
+  letter-spacing: var(--ry-ls-head);
+  color: var(--ry-text);
+}
+
+.stepNumber {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-brand-soft);
+  border: 1px solid var(--ry-brand-line);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+  font-weight: 700;
+  color: var(--ry-accent-fg);
+}
+
+.stepUnit {
+  margin-inline-start: auto;
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+}
+
+/* The asset as the desk lists it, across the top of the form. */
+.assetStrip {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s3);
+  padding: var(--ry-s4) var(--ry-s5);
+  border-bottom: 1px solid var(--ry-border);
+  background: color-mix(in srgb, var(--ry-elevated) 55%, transparent);
+  border-start-start-radius: var(--ry-r-card);
+  border-start-end-radius: var(--ry-r-card);
+}
+
+.assetIcon {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-elevated);
+  object-fit: cover;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.assetText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.assetText b {
+  font-size: var(--ry-fs-title);
+  font-weight: 600;
+  letter-spacing: var(--ry-ls-head);
+  color: var(--ry-text);
+}
+
+.assetPrices {
+  display: grid;
+  gap: 2px;
+  margin-inline-start: auto;
+  text-align: right;
+  min-width: 0;
+}
+
+.assetPrice {
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--ry-fs-data-m);
+  font-weight: 600;
+  color: var(--ry-text);
+  white-space: nowrap;
+}
+
+.assetPriceUnit {
+  margin-inline-start: 6px;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-label);
+  font-weight: 500;
+  color: var(--ry-muted);
+}
+
+.assetRef {
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+  white-space: nowrap;
+}
+
+.moreRules {
+  padding: var(--ry-s3) var(--ry-s5);
+  border-bottom: 1px solid var(--ry-border);
+}
+
+.moreRules > summary {
+  min-height: 40px;
+}
+
+.moreRules .fields {
+  padding-top: var(--ry-s3);
+}
+
+.moreSub {
+  margin-inline-start: var(--ry-s2);
+  font-weight: 400;
+  color: var(--ry-text-muted);
+}
+
+.fields.fieldsThree {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+/* What you will buy — the one card beside the form. */
+.buyCard {
+  border-color: var(--ry-border-strong);
+}
+
+.buyBig {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--ry-s2) var(--ry-s3);
+}
+
+.buyBig b {
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--ry-fs-key);
+  font-weight: 600;
+  line-height: var(--ry-lh-tight);
+  color: var(--ry-text);
+}
+
+.buyBig span {
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--ry-fs-title);
+  font-weight: 500;
+  color: var(--ry-muted);
+}
+
+.buyChip {
+  justify-self: start;
+  padding: 2px var(--ry-s2);
+  border-radius: var(--ry-r-pill);
+  border: 1px solid var(--ry-border-strong);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  color: var(--ry-muted);
+}
+
+.buyFacts {
+  display: grid;
+  gap: var(--ry-s2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.buyFacts li {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  min-height: 36px;
+  padding: var(--ry-s2) var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-chip);
+  background: var(--ry-deep);
+  font-size: var(--ry-fs-dense);
+  line-height: 1.4;
+  color: var(--ry-text);
+}
+
+.buyFacts b {
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ry-s3);
+}
+
+.fields .wide {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 560px) {
+  .fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.field {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  min-width: 0;
+}
+
+.field > span {
+  font-size: var(--ry-fs-dense);
+  font-weight: 500;
+  color: var(--ry-muted);
+}
+
+.field input,
+.field textarea,
+.field select {
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--ry-border-strong);
+  border-radius: var(--ry-r-btn-sm);
+  background: var(--ry-bg);
+  color: var(--ry-text);
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--ry-fs-value);
+}
+
+.field textarea,
+.field select,
+.field input[type="datetime-local"] {
+  font-family: var(--ry-font-sans);
+  font-variant-numeric: normal;
+}
+
+.field textarea {
+  min-height: 84px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.field input:focus-visible,
+.field textarea:focus-visible,
+.field select:focus-visible {
+  outline: 2px solid var(--ry-focus);
+  outline-offset: 2px;
+}
+
+.field[data-issue="true"] input,
+.field[data-issue="true"] textarea {
+  border-color: var(--ry-caution);
+}
+
+.hint {
+  font-size: var(--ry-fs-label);
+  color: var(--ry-text-muted);
+  line-height: 1.4;
+}
+
+.issue {
+  font-size: var(--ry-fs-label);
+  color: var(--ry-caution);
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  min-height: 44px;
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-text);
+}
+
+.checkbox input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--ry-accent);
+}
+
+.assetLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ry-s3);
+}
+
+.assetLine b {
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-text);
+}
+
+.facts {
+  display: grid;
+  gap: var(--ry-s3);
+  margin: 0;
+}
+
+.facts > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ry-s3);
+  min-width: 0;
+}
+
+.facts dt {
+  flex: 0 0 auto;
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+}
+
+.facts dd {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+  margin: 0;
+  min-width: 0;
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  color: var(--ry-text);
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.facts dd[data-prose="true"] {
+  font-family: var(--ry-font-sans);
+  font-weight: 500;
+}
+
+.factSub {
+  font-family: var(--ry-font-sans);
+  font-variant-numeric: normal;
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 500;
+  color: var(--ry-muted);
+  line-height: var(--ry-lh-tight);
+}
+
+.big {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ry-s3);
+}
+
+.big b {
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--ry-fs-data-m);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.big span {
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+}
+
+.list {
+  display: grid;
+  gap: var(--ry-s2);
+  margin: 0;
+  padding: 0 0 0 1.1em;
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+  line-height: 1.45;
+}
+
+.list a {
+  color: var(--ry-text);
+  overflow-wrap: anywhere;
+}
+
+.check {
+  display: grid;
+  gap: var(--ry-s2);
+}
+
+.check[data-ok="true"] .checkLead {
+  color: var(--ry-pnl-pos);
+}
+
+.check[data-ok="false"] .checkLead {
+  color: var(--ry-caution);
+}
+
+.check[data-ok="waiting"] .checkLead {
+  color: var(--ry-muted);
+}
+
+.checkLead {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+}
+
+/* ── The detail: the head ─────────────────────────────────────────────── */
+
+.hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--ry-s4) var(--ry-s5);
+}
+
+.heroIdentity {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ry-s4);
+  min-width: 0;
+  flex: 1 1 520px;
+}
+
+.heroIcon {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-elevated);
+  border: 1px solid var(--ry-border);
+  object-fit: cover;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-dense);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.heroText {
+  display: grid;
+  gap: var(--ry-s2);
+  min-width: 0;
+}
+
+.heroTitleRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ry-s2) var(--ry-s3);
+}
+
+.heroTitleRow h1 {
+  margin: 0;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-page);
+  line-height: var(--ry-lh-tight);
+  letter-spacing: var(--ry-ls-head);
+  color: var(--ry-text);
+}
+
+.heroKind {
+  font-size: var(--ry-fs-value);
+  font-weight: 500;
+  color: var(--ry-muted);
+}
+
+.heroSub {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+}
+
+.heroThesis {
+  margin: 0;
+  max-width: 72ch;
+  font-size: var(--ry-fs-copy);
+  line-height: 1.5;
+  color: var(--ry-text);
+}
+
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s2);
+  flex: 0 0 auto;
+}
+
+.versionBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--ry-s3);
+  padding: var(--ry-s3) var(--ry-s4);
+  border: 1px solid color-mix(in srgb, var(--ry-caution) 45%, var(--ry-border));
+  border-radius: var(--ry-r-card);
+  background: var(--ry-caution-soft);
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-text);
+}
+
+/* ── The four key figures ─────────────────────────────────────────────── */
+
+.keys {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.key {
+  display: grid;
+  align-content: start;
+  gap: var(--ry-s1);
+  min-width: 0;
+  padding: var(--ry-s4) var(--ry-s5);
+  border-inline-start: 1px solid var(--ry-border);
+}
+
+.key:first-child {
+  border-inline-start: 0;
+}
+
+.keyLabel {
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ry-muted);
+  white-space: nowrap;
+}
+
+.keyValue {
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--ry-fs-key);
+  font-weight: 600;
+  line-height: var(--ry-lh-tight);
+  color: var(--ry-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.keySub {
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── The two columns ──────────────────────────────────────────────────── */
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 8fr) minmax(320px, 4fr);
+  gap: var(--ry-s4);
+  align-items: start;
+}
+
+.main {
+  display: grid;
+  gap: var(--ry-s4);
+  min-width: 0;
+}
+
+.side {
+  position: sticky;
+  top: var(--ry-s4);
+  display: grid;
+  gap: var(--ry-s4);
+  min-width: 0;
+}
+
+.ruleGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ry-s4);
+  align-items: start;
+}
+
+/* Two stacks, each of two cards, so no card is stretched around empty space. */
+.ruleColumn {
+  display: grid;
+  gap: var(--ry-s4);
+  min-width: 0;
+}
+
+.pairGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ry-s4);
+  align-items: start;
+}
+
+.ruleList {
+  display: grid;
+  margin: 0;
+  padding: var(--ry-s1) 0;
+}
+
+.rule {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ry-s3);
+  min-height: 48px;
+  padding: var(--ry-s2) var(--ry-s4);
+  border-bottom: 1px solid var(--ry-border);
+}
+
+.rule:last-child {
+  border-bottom: 0;
+}
+
+.rule dt {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: var(--ry-fs-dense);
+  font-weight: 500;
+  color: var(--ry-muted);
+}
+
+.rule dd {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+  margin: 0;
+  flex: 0 0 auto;
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--ry-fs-value);
+  font-weight: 600;
+  color: var(--ry-text);
+  text-align: right;
+}
+
+.rule[data-tone="caution"] dd {
+  color: var(--ry-caution);
+}
+
+.ruleSub {
+  font-family: var(--ry-font-sans);
+  font-variant-numeric: normal;
+  font-size: var(--ry-fs-label);
+  font-weight: 500;
+  color: var(--ry-muted);
+  line-height: var(--ry-lh-tight);
+}
+
+.ruleFoot {
+  margin: 0;
+  padding: var(--ry-s3) var(--ry-s4);
+  border-top: 1px solid var(--ry-border);
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+}
+
+.factGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--ry-s3) var(--ry-s5);
+  margin: 0;
+}
+
+.factGrid > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.factGrid dt {
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+}
+
+.factGrid dd {
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  font-weight: 500;
+  color: var(--ry-text);
+}
+
+.more summary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  min-height: 32px;
+  cursor: pointer;
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  color: var(--ry-muted);
+  list-style: none;
+}
+
+.more summary::-webkit-details-marker {
+  display: none;
+}
+
+.more summary::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform var(--rt-duration-fast) var(--rt-ease);
+}
+
+.more[open] summary::before {
+  transform: rotate(45deg);
+}
+
+.more summary:hover {
+  color: var(--ry-text);
+}
+
+.moreBody {
+  display: grid;
+  gap: var(--ry-s3);
+  padding-top: var(--ry-s2);
+}
+
+/* ── Versions ─────────────────────────────────────────────────────────── */
+
+.versionList {
+  display: grid;
+  gap: var(--ry-s3);
+  margin: 0;
+  padding: var(--ry-s4);
+  list-style: none;
+}
+
+.versionCard {
+  display: grid;
+  gap: var(--ry-s1);
+  width: 100%;
+  padding: var(--ry-s3) var(--ry-s4);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-chip);
+  background: var(--ry-deep);
+  color: var(--ry-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color var(--rt-duration-fast) var(--rt-ease),
+    background-color var(--rt-duration-fast) var(--rt-ease);
+}
+
+.versionCard:hover {
+  border-color: var(--ry-border-strong);
+  background: var(--ry-hover);
+}
+
+.versionCard[aria-pressed="true"] {
+  border-color: var(--ry-brand-line);
+  background: var(--ry-elevated);
+}
+
+.versionHead {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ry-s2);
+}
+
+.versionHead b {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-value);
+  font-weight: 600;
+}
+
+.versionChip {
+  padding: 1px var(--ry-s2);
+  border-radius: var(--ry-r-pill);
+  border: 1px solid var(--ry-brand-line);
+  background: var(--ry-brand-soft);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ry-accent-fg);
+}
+
+.versionTime {
+  margin-inline-start: auto;
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+}
+
+.versionReason {
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+}
+
+/* ── Activity ─────────────────────────────────────────────────────────── */
+
+.timeline {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.timeline li {
+  position: relative;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: var(--ry-s3);
+  padding-bottom: var(--ry-s4);
+}
+
+.timeline li:last-child {
+  padding-bottom: 0;
+}
+
+.timeline li::before {
+  content: "";
+  position: absolute;
+  top: 18px;
+  bottom: -2px;
+  left: 9px;
+  width: 2px;
+  background: var(--ry-border);
+}
+
+.timeline li:last-child::before {
+  display: none;
+}
+
+.timelineDot {
+  width: 20px;
+  height: 20px;
+  margin-top: 0;
+  border-radius: var(--ry-r-pill);
+  border: 2px solid var(--ry-border-strong);
+  background: var(--ry-card);
+}
+
+.timeline li[data-event="created"] .timelineDot,
+.timeline li[data-event="edited"] .timelineDot,
+.timeline li[data-event="reviewed"] .timelineDot {
+  border-color: var(--ry-text-muted);
+  background: var(--ry-text-muted);
+  box-shadow: inset 0 0 0 3px var(--ry-card);
+}
+
+.timeline li[data-event="activated"] .timelineDot,
+.timeline li[data-event="executed"] .timelineDot {
+  border-color: var(--ry-pnl-pos);
+  background: var(--ry-pnl-pos);
+  box-shadow: inset 0 0 0 3px var(--ry-card);
+}
+
+.timeline li[data-event="cancelled"] .timelineDot,
+.timeline li[data-event="expired"] .timelineDot {
+  border-color: var(--ry-caution);
+  background: var(--ry-caution);
+  box-shadow: inset 0 0 0 3px var(--ry-card);
+}
+
+.timeline li[data-event="waiting"] .timelineDot {
+  border-style: dashed;
+}
+
+.timelineBody {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding-top: 1px;
+}
+
+.timelineTitle {
+  font-size: var(--ry-fs-copy);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.timeline li[data-event="waiting"] .timelineTitle {
+  color: var(--ry-muted);
+  font-weight: 500;
+}
+
+.timelineNote {
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-text);
+}
+
+.timelineMeta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ry-s3);
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+}
+
+.timelineMeta time {
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.timelineLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--ry-accent-fg);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.timelineLink:hover {
+  text-decoration: underline;
+}
+
+/* ── Plan status ──────────────────────────────────────────────────────── */
+
+.statusCard {
+  border-color: var(--ry-border-strong);
+}
+
+.statusLine {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s3);
+}
+
+.statusVersion {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-value);
+  font-weight: 600;
+  color: var(--ry-muted);
+}
+
+.stateLine {
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  line-height: 1.45;
+  color: var(--ry-text);
+}
+
+.nowHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ry-s2);
+  padding-top: var(--ry-s2);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ry-muted);
+}
+
+.nowHead .muted {
+  font-size: var(--ry-fs-label);
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.conditions {
+  display: grid;
+  gap: var(--ry-s2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.conditions li {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  min-height: 36px;
+  padding: var(--ry-s2) var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-chip);
+  background: var(--ry-deep);
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-text);
+}
+
+.conditions li svg {
+  flex: 0 0 auto;
+  color: var(--ry-text-muted);
+}
+
+.conditions li[data-tone="ok"] svg {
+  color: var(--ry-pnl-pos);
+}
+
+.conditions li[data-tone="caution"] {
+  border-color: color-mix(in srgb, var(--ry-caution) 45%, var(--ry-border));
+}
+
+.conditions li[data-tone="caution"] svg {
+  color: var(--ry-caution);
+}
+
+.conditionText {
+  flex: 1 1 auto;
+  min-width: 0;
+  line-height: 1.4;
+}
+
+.conditionText b {
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.footnote {
+  margin: 0;
+  font-size: var(--ry-fs-label);
+  color: var(--ry-text-muted);
+}
+
+.sideAction {
+  display: grid;
+  padding-top: var(--ry-s2);
+}
+
+.sideAction :global(.rw-btn) {
+  width: 100%;
+  min-height: 48px;
+  font-size: var(--ry-fs-value);
+}
+
+.quietAction {
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ry-muted);
+  font: inherit;
+  font-size: var(--ry-fs-dense);
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.quietAction:hover {
+  color: var(--ry-caution);
+}
+
+.dialog {
+  display: grid;
+  gap: var(--ry-s3);
+  padding: var(--ry-s4);
+  border: 1px solid var(--ry-border-strong);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-elevated);
+}
+
+.prose {
+  margin: 0;
+  max-width: 72ch;
+  font-size: var(--ry-fs-copy);
+  line-height: 1.55;
+  color: var(--ry-text);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 1180px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* Stacked, the status panel comes right after the key figures: what is
+     true now and the next action, before the rules. */
+  .side {
+    position: static;
+    order: -1;
+  }
+
+  .keys {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .key:nth-child(3) {
+    border-inline-start: 0;
+  }
+
+  .key:nth-child(n + 3) {
+    border-top: 1px solid var(--ry-border);
+  }
+}
+
+@media (max-width: 720px) {
+  .ruleGrid,
+  .pairGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .key {
+    padding: var(--ry-s3) var(--ry-s4);
+  }
+
+  .heroIdentity {
+    flex-basis: 100%;
+  }
+
+  .heroActions {
+    width: 100%;
+  }
+
+  .heroActions :global(.rw-btn) {
+    flex: 1 1 auto;
+  }
+}
+
+/* ── Plan vs Actual (stage B) ────────────────────────────────────────────
+   One card per execution: the same four figures in three columns — the
+   version, the Review before the signature, the settled row — the verdict
+   about the entry, the checks on the fill as chips. The table scrolls in
+   its own frame on a phone; the page never does. */
+
+.result {
+  display: grid;
+  gap: var(--ry-s3);
+  min-width: 0;
+  padding: var(--ry-s4);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+}
+
+.result[data-verdict="followed"] {
+  border-color: color-mix(in srgb, var(--ry-pnl-pos) 40%, var(--ry-border));
+}
+
+.result[data-verdict="deviated"] {
+  border-color: color-mix(in srgb, var(--ry-caution) 45%, var(--ry-border));
+}
+
+.resultHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ry-s2);
+}
+
+.resultTitle {
+  font-size: var(--ry-fs-value);
+  font-weight: 600;
+  color: var(--ry-text);
+  text-decoration: none;
+}
+
+.resultTitle:hover {
+  color: var(--ry-accent-fg);
+}
+
+.resultVerdict {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px var(--ry-s2);
+  border-radius: var(--ry-r-pill);
+  border: 1px solid var(--ry-border-strong);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ry-muted);
+  white-space: nowrap;
+}
+
+.resultVerdict[data-verdict="followed"] {
+  color: var(--ry-pnl-pos);
+  border-color: color-mix(in srgb, var(--ry-pnl-pos) 45%, transparent);
+  background: var(--ry-verified-soft);
+}
+
+.resultVerdict[data-verdict="deviated"] {
+  color: var(--ry-caution);
+  border-color: color-mix(in srgb, var(--ry-caution) 45%, transparent);
+}
+
+.resultTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--ry-fs-dense);
+}
+
+.resultTable th,
+.resultTable td {
+  padding: var(--ry-s2) 0;
+  border-bottom: 1px solid var(--ry-border);
+  text-align: right;
+  vertical-align: baseline;
+}
+
+.resultTable thead th {
+  padding-top: 0;
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--ry-muted);
+}
+
+.resultTable tbody th {
+  font-weight: 500;
+  text-align: left;
+  color: var(--ry-muted);
+}
+
+.resultTable td {
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--ry-fs-value);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.resultTable td:last-child,
+.resultTable thead th:last-child {
+  color: var(--ry-text);
+}
+
+.resultTable tbody tr:last-child th,
+.resultTable tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.resultFoot {
+  display: grid;
+  gap: var(--ry-s2);
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+}
+
+.resultFoot time {
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.resultFoot a {
+  color: var(--ry-text);
+  font-family: var(--ry-font-mono);
+  text-decoration: none;
+}
+
+.resultFoot a:hover {
+  color: var(--ry-accent-fg);
+}
+
+.resultChecks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s1) var(--ry-s2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.resultChecks li {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px var(--ry-s2);
+  border-radius: var(--ry-r-pill);
+  border: 1px solid var(--ry-border);
+  font-size: var(--ry-fs-label);
+  color: var(--ry-text);
+}
+
+.resultChecks li svg {
+  color: var(--ry-pnl-pos);
+}
+
+.resultChecks li[data-outcome="fail"] svg {
+  color: var(--ry-caution);
+}
+
+.resultChecks li[data-outcome="unknown"] svg {
+  color: var(--ry-muted);
+}
+
+.results {
+  display: grid;
+  gap: var(--ry-s3);
+}
+
+@media (max-width: 720px) {
+  /* Four columns on a phone: the labels wrap, the figures do not, every column keeps its own gutter. */
+  .resultTable {
+    table-layout: fixed;
+    font-size: var(--ry-fs-label-sm);
+  }
+
+  .resultTable th,
+  .resultTable td {
+    padding: var(--ry-s2) var(--ry-s1);
+  }
+
+  .resultTable tbody th {
+    width: 31%;
+    padding-left: 0;
+    line-height: var(--ry-lh-tight);
+  }
+
+  .resultTable td,
+  .resultTable thead th {
+    font-size: var(--ry-fs-label-sm);
+    white-space: nowrap;
+  }
+
+  .resultTable thead th {
+    letter-spacing: 0;
+    text-transform: none;
+  }
+}
+
+/* ── The clarity pass (RYN-UX-CLARITY-001, 2026-09-16) ─────────────────────
+   A bound and its own switch as one cell of the grid; the stock picker a
+   plan with no stock in the address starts from; the plan page's summary,
+   its folded rules and its one history. */
+
+.fieldGroup {
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  min-width: 0;
+}
+
+.fieldGroup .checkbox {
+  min-height: 36px;
+  font-size: var(--ry-fs-label);
+  color: var(--ry-text-muted);
+}
+
+.field input[type="search"] {
+  font-family: var(--ry-font-sans);
+  font-variant-numeric: normal;
+}
+
+.pickList {
+  list-style: none;
+  margin: var(--ry-s3) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--ry-s1);
+}
+
+.pickList[data-stale="true"] {
+  opacity: 0.6;
+}
+
+/* The picker's two groups (1.7.0): the confirmed stocks and the catalogue's verified crypto and memes, each under its own small label. */
+.pickGroups {
+  list-style: none;
+  margin: var(--ry-s3) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--ry-s4);
+}
+
+.pickGroups[data-stale="true"] {
+  opacity: 0.6;
+}
+
+.pickGroup {
+  display: grid;
+  gap: var(--ry-s1);
+}
+
+.pickGroup .pickList {
+  margin-top: 0;
+}
+
+.pickGroupLabel {
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ry-text-muted);
+}
+
+.pickRow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--ry-s3);
+  width: 100%;
+  min-height: 52px;
+  padding: 8px 12px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  background: var(--ry-bg);
+  color: var(--ry-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.pickRow:hover,
+.pickRow:focus-visible {
+  border-color: var(--ry-border-strong);
+  background: var(--ry-hover);
+}
+
+.pickRow:focus-visible {
+  outline: 2px solid var(--ry-focus);
+  outline-offset: 2px;
+}
+
+.pickIcon {
+  flex: none;
+}
+
+.pickText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pickText b {
+  font-size: var(--ry-fs-value);
+}
+
+.pickText .muted {
+  font-size: var(--ry-fs-label);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pickPrice {
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--ry-fs-value);
+}
+
+/* The plan page's summary: the four figures, then the one material note under them. */
+.summaryCard {
+  display: grid;
+}
+
+.summaryNote {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  margin: 0;
+  padding: var(--ry-s3) var(--ry-s5);
+  border-top: 1px solid var(--ry-border);
+  font-size: var(--ry-fs-label);
+  color: var(--ry-text-muted);
+}
+
+.summaryNote svg {
+  flex: none;
+  color: var(--ry-caution);
+}
+
+/* A card that folds: every rule, one press deep, nothing removed. */
+.fold summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ry-s2) var(--ry-s3);
+  min-height: 48px;
+  padding: 0 var(--ry-s4);
+  cursor: pointer;
+  font-size: var(--ry-fs-section);
+  font-weight: 600;
+  color: var(--ry-text);
+  list-style: none;
+}
+
+.fold summary::-webkit-details-marker {
+  display: none;
+}
+
+.fold summary::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid var(--ry-muted);
+  border-bottom: 1.5px solid var(--ry-muted);
+  transform: rotate(-45deg);
+  transition: transform var(--rt-duration-fast) var(--rt-ease);
+}
+
+.fold[open] summary::before {
+  transform: rotate(45deg);
+}
+
+.fold[open] summary {
+  border-bottom: 1px solid var(--ry-border);
+}
+
+.foldSub {
+  font-size: var(--ry-fs-label);
+  font-weight: 500;
+  color: var(--ry-text-muted);
+}
+
+.foldBody {
+  padding: var(--ry-s4);
+}
+
+.foldBody .ruleGrid .card {
+  box-shadow: none;
+}
+
+.sectionLabel {
+  margin: var(--ry-s2) 0 0;
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ry-muted);
+}
+
+.nowHead [data-stale="true"] {
+  color: var(--ry-caution);
+}
+
+@media (max-width: 900px) {
+  .summaryNote {
+    padding: var(--ry-s3) var(--ry-s4);
+  }
+}
+
+.summaryCard .keySub {
+  white-space: normal;
+  line-height: 1.35;
+}
+
+.summaryCard .keyLabel {
+  white-space: normal;
+  line-height: 1.3;
+}
+
+/* ── Conditions on what the market did (RYN-NANSEN-EVIDENCE-001) ─────────
+   One row per rule: five fields across, the rule read back as a sentence
+   under them with its remove control; the threshold's hint carries the
+   figure as it stands now, so the number is written against a real one. */
+
+.conditionRow {
+  display: grid;
+  gap: var(--ry-s2);
+  padding: var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  background: color-mix(in srgb, var(--ry-elevated) 40%, transparent);
+}
+
+.conditionRow[data-issue="true"] {
+  border-color: color-mix(in srgb, var(--ry-caution) 60%, var(--ry-border));
+}
+
+/* Two rows in the form's own width: the figure and its window, then the rule, the threshold and the mode — nothing truncated at 640px. */
+.fields.conditionFields {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.conditionFields > :nth-child(1) {
+  grid-column: span 4;
+}
+
+.conditionFields > :nth-child(2),
+.conditionFields > :nth-child(3),
+.conditionFields > :nth-child(4),
+.conditionFields > :nth-child(5) {
+  grid-column: span 2;
+}
+
+.conditionFields .field select {
+  font-family: var(--ry-font-sans);
+  font-variant-numeric: normal;
+}
+
+/* An authority is a state, not a number: the threshold field steps aside and the state select and the mode share the row (RYN-DDXYZ-RISK-001). */
+.conditionFields[data-flag="true"] > :nth-child(4) {
+  display: none;
+}
+
+.conditionFields[data-flag="true"] > :nth-child(5) {
+  grid-column: span 4;
+}
+
+.conditionFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ry-s3);
+  min-width: 0;
+}
+
+.conditionSentence {
+  min-width: 0;
+  font-size: var(--ry-fs-label);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-text);
+}
+
+.conditionRemove {
+  appearance: none;
+  flex: 0 0 auto;
+  min-height: 32px;
+  padding: 0 var(--ry-s2);
+  border: 0;
+  border-radius: var(--ry-r-btn-sm);
+  background: transparent;
+  color: var(--ry-muted);
+  font: inherit;
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.conditionRemove:hover {
+  color: var(--ry-text);
+  background: var(--ry-hover);
+}
+
+.conditionRemove:focus-visible {
+  outline: 2px solid var(--ry-focus);
+  outline-offset: 1px;
+}
+
+@media (max-width: 560px) {
+  .fields.conditionFields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .conditionFields > * {
+    grid-column: span 1;
+  }
+
+  .conditionFoot {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* The strip of a token plan (1.7.0): the planning line is a sentence, not a figure — it wraps under the price and never pushes the price off the card. */
+.assetStrip[data-kind] {
+  flex-wrap: wrap;
+}
+
+.assetStrip[data-kind] .assetText {
+  flex: 1 1 12em;
+}
+
+.assetStrip[data-kind] .assetPrices {
+  flex: 1 1 100%;
+  margin-inline-start: 0;
+  text-align: left;
+  padding-inline-start: calc(40px + var(--ry-s3));
+}
+
+.assetStrip[data-kind] .assetRef {
+  white-space: normal;
+  font-family: var(--ry-font-sans);
+  line-height: 1.4;
+}
+
+@media (min-width: 721px) {
+  .assetStrip[data-kind] .assetPrices {
+    flex: 0 1 auto;
+    margin-inline-start: auto;
+    max-width: 24em;
+    text-align: right;
+    padding-inline-start: 0;
+  }
+}
+
+/* The three price fields stack on a narrow screen — the rule the 960px block already states, restated after the three-column base so the cascade keeps it. */
+@media (max-width: 960px) {
+  .fields.fieldsThree {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ── A plan on a pre-IPO token (RYN-FIRST-SCREEN-001, 2026-09-23) ─────────
+   One line of state with its one action, the three things to know, and the
+   whole plan one press deep. The fold's own summary is styled through the
+   child combinator only, so the folds inside it keep their own look. */
+
+.preIpoState {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--ry-s3) var(--ry-s4);
+  padding: var(--ry-s3) var(--ry-s4);
+}
+
+.preIpoState .stateLine {
+  flex: 1 1 24ch;
+  min-width: 0;
+}
+
+.preIpoAction {
+  display: flex;
+  flex: 0 0 auto;
+}
+
+.preIpoBanner {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  margin: 0;
+  padding: var(--ry-s3) var(--ry-s4);
+  border: 1px solid color-mix(in srgb, var(--ry-caution) 45%, var(--ry-border));
+  border-radius: var(--ry-r-card);
+  background: var(--ry-caution-soft);
+  font-size: var(--ry-fs-copy);
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--ry-text);
+}
+
+.preIpoBanner svg {
+  flex: none;
+  color: var(--ry-caution);
+}
+
+.preIpoFold {
+  min-width: 0;
+}
+
+.preIpoFold > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s3);
+  min-height: 48px;
+  padding: 0 var(--ry-s4);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+  box-shadow: var(--ry-shadow-sm);
+  cursor: pointer;
+  font-size: var(--ry-fs-section);
+  font-weight: 600;
+  color: var(--ry-text);
+  list-style: none;
+}
+
+.preIpoFold > summary::-webkit-details-marker {
+  display: none;
+}
+
+.preIpoFold > summary::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid var(--ry-muted);
+  border-bottom: 1.5px solid var(--ry-muted);
+  transform: rotate(-45deg);
+  transition: transform var(--rt-duration-fast) var(--rt-ease);
+}
+
+.preIpoFold[open] > summary::before {
+  transform: rotate(45deg);
+}
+
+.preIpoFold > summary:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+}
+
+.preIpoBody {
+  display: grid;
+  gap: var(--ry-s4);
+  padding-top: var(--ry-s4);
+  min-width: 0;
+}
+
+@media (max-width: 560px) {
+  .preIpoAction,
+  .preIpoAction > * {
+    flex: 1 1 100%;
+  }
+}

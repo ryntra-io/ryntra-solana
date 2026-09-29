@@ -1,0 +1,70 @@
+{
+  "capture": "RYN-RH-MCP-001 production egress probe",
+  "capturedAt": "2026-08-24",
+  "egress": "Ryntra production deployment on Vercel, project ryntra, region iad1",
+  "instrument": "GET https://ryntra.io/api/robinhood-mcp/reachability",
+  "note": "Derived facts only. The two OAuth discovery documents are public and unauthenticated by RFC 8414 and RFC 9728; only the fields those standards define are kept. No credential, account, token or order exists on Ryntra's side to capture.",
+  "state": "AUTHENTICATION_REQUIRED",
+  "discoveryPossible": false,
+  "observations": [
+    {
+      "id": "mcp-transport",
+      "url": "https://agent.robinhood.com/mcp/trading",
+      "httpStatus": 401,
+      "state": "AUTHENTICATION_REQUIRED",
+      "providerMessage": "authentication required",
+      "challenge": "Bearer resource_metadata=\"https://agent.robinhood.com/.well-known/oauth-protected-resource/mcp/trading\"",
+      "metadata": null
+    },
+    {
+      "id": "protected-resource-metadata",
+      "url": "https://agent.robinhood.com/.well-known/oauth-protected-resource/mcp/trading",
+      "httpStatus": 200,
+      "state": "REACHABLE",
+      "providerMessage": null,
+      "challenge": null,
+      "metadata": {
+        "scopes_supported": [
+          "internal"
+        ],
+        "resource": "https://agent.robinhood.com/mcp/trading",
+        "authorization_servers": [
+          "https://agent.robinhood.com/mcp/trading"
+        ],
+        "bearer_methods_supported": [
+          "header"
+        ]
+      }
+    },
+    {
+      "id": "authorization-server-metadata",
+      "url": "https://agent.robinhood.com/.well-known/oauth-authorization-server",
+      "httpStatus": 200,
+      "state": "REACHABLE",
+      "providerMessage": null,
+      "challenge": null,
+      "metadata": {
+        "issuer": "https://agent.robinhood.com/mcp/trading",
+        "authorization_endpoint": "https://robinhood.com/oauth",
+        "token_endpoint": "https://api.robinhood.com/oauth2/token/",
+        "registration_endpoint": "https://agent.robinhood.com/oauth/trading/register",
+        "scopes_supported": [
+          "internal"
+        ],
+        "response_types_supported": [
+          "code"
+        ],
+        "grant_types_supported": [
+          "authorization_code",
+          "refresh_token"
+        ],
+        "code_challenge_methods_supported": [
+          "S256"
+        ],
+        "token_endpoint_auth_methods_supported": [
+          "none"
+        ]
+      }
+    }
+  ]
+}

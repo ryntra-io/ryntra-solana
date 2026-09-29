@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "2.0.0",
+  "id": "outcome_bnb_testnet_matched",
+  "createdAt": "2026-08-17T09:00:00.000Z",
+  "registry": {
+    "registryDigest": "0x36f10a82139a6d182feae5939127b5c1de8968068454cca2a052282d02b354a2",
+    "refs": [
+      {
+        "ref": "action:bnb-apex/fund-job@1",
+        "contentHash": "0x08f9f397bb5fc37b2b40f094f3794acaf5c6e54df0d087908f63b43f306213a1"
+      },
+      {
+        "ref": "adapter:bnb-apex@1",
+        "contentHash": "0x9edee7acd9369124822c52305e48037fc58038768f555ec841af5895fd9112b0"
+      }
+    ]
+  },
+  "contentHash": "0x76f0362977f78c88338745bbd23a6bb61d1629598d2c6608a004172142496f99",
+  "issuer": {
+    "status": "SIGNED",
+    "algorithm": "Ed25519",
+    "keyId": "ryntra-issuer-21082e64945d2ba6",
+    "publicKey": "MCowBQYDK2VwAyEAvJVbaFq/zHWKz9lC3hGbm6lXd5UMyss4IpVGTL5Rpzc=",
+    "signature": "lKf672ZrkfN4vRMPamPt644lIbaAO8GMrsUsLX7uSip2EPbZwlcLYTHFfhdedsdwG4IjPqjykEY6ycH8yJzaCw==",
+    "signedAt": "2026-08-17T09:00:00.000Z"
+  },
+  "integrity": {
+    "algorithm": "SHA-256",
+    "hash": "0x24c628549861b1047ad990db7e499bef28361a943ef6ddd0cce4dba0dad70dac"
+  },
+  "kind": "OUTCOME_RECEIPT",
+  "maturity": "OBSERVED",
+  "actionPassportHash": "0x3333333333333333333333333333333333333333333333333333333333333333",
+  "outcome": {
+    "status": "MATCHED",
+    "chainRef": "eip155:97",
+    "transactionHash": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "observedEffects": [
+      {
+        "description": "Job 526 exists on chain with the expected job type.",
+        "sourceRef": "eip155:97:contract:getJob",
+        "observedAt": "2026-08-17T09:00:00.000Z"
+      }
+    ],
+    "reconciledAt": "2026-08-17T09:00:00.000Z"
+  },
+  "limitations": [
+    "OUTCOME RECEIPT — AN OBSERVATION, NOT AN INSTRUCTION",
+    "Ryntra observed and reconciled this outcome; it did not sign, submit, fund or execute it."
+  ]
+}

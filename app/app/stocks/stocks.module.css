@@ -1,0 +1,2125 @@
+/*
+ * Stocks — the tokenized-stock desk. Tokens only (DESIGN.md → app/design/
+ * tokens.css): graphite ground, one card tone, a hairline, mono figures with
+ * tabular numerals, sans for every word. No max-width: the shell's rule is
+ * that an operator's screen is used to its edge, and a table of eight
+ * columns is exactly what earns the width.
+ *
+ * Three surfaces share this sheet — Discover, the screener, the asset page —
+ * and one table. Technical facts (sources, times, identifiers) live in a
+ * disclosure or a title, one click deep; the resting surface is figures,
+ * states and the next action.
+ */
+
+.page {
+  display: grid;
+  gap: var(--ry-s4);
+  min-width: 0;
+}
+
+/* ── Head ─────────────────────────────────────────────────────────────── */
+
+.head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--ry-s3) var(--ry-s4);
+}
+
+.headTitle {
+  display: grid;
+  gap: var(--ry-s1);
+  min-width: 0;
+}
+
+.headTitle h1 {
+  margin: 0;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-page);
+  line-height: var(--ry-lh-tight);
+  letter-spacing: var(--ry-ls-head);
+  color: var(--ry-text);
+}
+
+.crumbs {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  margin: 0;
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+}
+
+.crumbs a {
+  color: var(--ry-muted);
+  text-decoration: none;
+}
+
+.crumbs a:hover {
+  color: var(--ry-text);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s2);
+}
+
+/* ── The strip: five instruments in one bar ───────────────────────────── */
+
+.card {
+  min-width: 0;
+  background: var(--ry-card);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  box-shadow: var(--ry-shadow-sm);
+}
+
+.strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(176px, 1fr));
+}
+
+.metric {
+  display: grid;
+  align-content: start;
+  gap: var(--ry-s1);
+  min-width: 0;
+  padding: var(--ry-s3) var(--ry-s4);
+  border-inline-start: 1px solid var(--ry-border);
+}
+
+.metric:first-child {
+  border-inline-start: 0;
+}
+
+.metricLabel {
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ry-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.metricValue {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--ry-fs-data-m);
+  font-weight: 600;
+  line-height: var(--ry-lh-tight);
+  color: var(--ry-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.metricValue[data-prose="true"] {
+  font-family: var(--ry-font-sans);
+  font-variant-numeric: normal;
+}
+
+.metricSub {
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── The markets panel ────────────────────────────────────────────────── */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ry-s2) var(--ry-s3);
+  padding: var(--ry-s3) var(--ry-s4);
+  border-bottom: 1px solid var(--ry-border);
+}
+
+.search {
+  flex: 1 1 260px;
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  max-width: 420px;
+  min-height: 40px;
+  padding: 0 var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  background: var(--ry-bg);
+  color: var(--ry-muted);
+  transition: border-color var(--rt-duration-fast) var(--rt-ease);
+}
+
+.search:focus-within {
+  border-color: var(--ry-border-strong);
+}
+
+.search input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ry-text);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  outline: none;
+}
+
+.search input::placeholder {
+  color: var(--ry-muted);
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s1);
+  margin-inline-start: auto;
+}
+
+.tab,
+.chip {
+  min-height: 34px;
+  padding: 0 var(--ry-s3);
+  border: 1px solid transparent;
+  border-radius: var(--ry-r-chip);
+  background: transparent;
+  color: var(--ry-muted);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color var(--rt-duration-fast) var(--rt-ease), background-color var(--rt-duration-fast) var(--rt-ease), border-color var(--rt-duration-fast) var(--rt-ease);
+}
+
+.tab:hover,
+.chip:hover {
+  color: var(--ry-text);
+  background: var(--ry-hover);
+}
+
+.tab[aria-pressed="true"],
+.chip[aria-pressed="true"] {
+  color: var(--ry-accent-fg);
+  background: var(--ry-elevated);
+  border-color: var(--ry-brand-line);
+}
+
+.tab:focus-visible,
+.chip:focus-visible,
+.sortButton:focus-visible,
+.select:focus-visible,
+.search:has(input:focus-visible) {
+  outline: 2px solid var(--ry-focus);
+  outline-offset: 2px;
+}
+
+.select {
+  min-height: 34px;
+  padding: 0 var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-chip);
+  background: var(--ry-bg);
+  color: var(--ry-text);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ry-s1);
+}
+
+/* ── The table ────────────────────────────────────────────────────────── */
+
+.tableWrap {
+  overflow-x: auto;
+  min-width: 0;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table thead th {
+  padding: var(--ry-s2) var(--ry-s3);
+  border-bottom: 1px solid var(--ry-border);
+  background: var(--ry-card);
+  text-align: right;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.table thead th:first-child {
+  text-align: left;
+  padding-inline-start: var(--ry-s4);
+}
+
+.table thead th:last-child {
+  padding-inline-end: var(--ry-s4);
+}
+
+/* The header's word and its `?`, right-aligned like the figures under them. */
+.headCell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sortButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s1);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ry-muted);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.sortButton:hover,
+.sortButton[data-active="true"] {
+  color: var(--ry-text);
+}
+
+.table td,
+.table tbody th {
+  height: 56px;
+  padding: 0 var(--ry-s3);
+  border-bottom: 1px solid var(--ry-border);
+  font-size: var(--ry-fs-value);
+  color: var(--ry-text);
+  vertical-align: middle;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.table tbody th {
+  text-align: left;
+  font-weight: 600;
+  padding-inline-start: var(--ry-s4);
+}
+
+.table td:last-child {
+  padding-inline-end: var(--ry-s4);
+}
+
+.table tbody tr:last-child td,
+.table tbody tr:last-child th {
+  border-bottom: 0;
+}
+
+.row {
+  transition: background-color var(--rt-duration-fast) var(--rt-ease);
+}
+
+.row:hover {
+  background: var(--ry-hover);
+}
+
+.stock {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s3);
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.stock:focus-visible {
+  outline: 2px solid var(--ry-focus);
+  outline-offset: 2px;
+  border-radius: var(--ry-r-focus-sm);
+}
+
+/* The picture, or the two letters that stand in for it. */
+.icon {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-elevated);
+  object-fit: cover;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.names {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.symbol {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  color: var(--ry-text);
+  line-height: var(--ry-lh-tight);
+}
+
+.name {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 34ch;
+  font-size: var(--ry-fs-label);
+  font-weight: 400;
+  color: var(--ry-muted);
+  line-height: var(--ry-lh-tight);
+}
+
+.issuer {
+  color: var(--ry-text-muted);
+}
+
+.flag {
+  padding: 1px var(--ry-s2);
+  border-radius: var(--ry-r-pill);
+  border: 1px solid var(--ry-border-strong);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ry-muted);
+}
+
+.num {
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.num[data-tone="up"] {
+  color: var(--ry-pnl-pos);
+}
+
+.num[data-tone="down"] {
+  color: var(--ry-pnl-neg);
+}
+
+.num[data-tone="flat"] {
+  color: var(--ry-muted);
+}
+
+.dash {
+  color: var(--ry-text-muted);
+}
+
+/* A reference that is not current says so in one word under the figure. */
+.state {
+  display: block;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 500;
+  color: var(--ry-muted);
+  line-height: var(--ry-lh-tight);
+}
+
+.state[data-state="stale"] {
+  color: var(--ry-caution);
+}
+
+.stateQuiet {
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-label);
+  color: var(--ry-text-muted);
+}
+
+.session {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-label);
+  font-weight: 500;
+  color: var(--ry-text);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-unknown);
+}
+
+.session[data-tone="open"] .dot {
+  background: var(--ry-verified);
+}
+
+.session[data-tone="extended"] .dot {
+  background: var(--ry-info);
+}
+
+.session[data-tone="closed"] .dot {
+  background: var(--ry-unknown);
+}
+
+.session[data-tone="closed"] {
+  color: var(--ry-muted);
+}
+
+/* Column visibility follows the width: the identity, the price and the day
+   always; the rest as the screen allows. */
+@media (max-width: 1180px) {
+  .cSession,
+  .cLiquidity {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .cReference,
+  .cDeviation {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .cVolume {
+    display: none;
+  }
+
+  .name {
+    max-width: 22ch;
+  }
+
+  .table thead th:first-child,
+  .table tbody th {
+    padding-inline-start: var(--ry-s3);
+  }
+
+  .table thead th:last-child,
+  .table td:last-child {
+    padding-inline-end: var(--ry-s3);
+  }
+}
+
+/* ── The panel foot: the count, the way to the rest, the sources ──────── */
+
+.foot {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ry-s2) var(--ry-s4);
+  padding: var(--ry-s3) var(--ry-s4);
+  border-top: 1px solid var(--ry-border);
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+}
+
+.footSpacer {
+  flex: 1 1 auto;
+}
+
+.footLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s1);
+  color: var(--ry-accent-fg);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.footLink:hover {
+  text-decoration: underline;
+}
+
+.sources {
+  position: relative;
+}
+
+.sources summary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s1);
+  list-style: none;
+  cursor: pointer;
+  color: var(--ry-muted);
+  font-weight: 600;
+}
+
+.sources summary::-webkit-details-marker {
+  display: none;
+}
+
+.sources summary:hover {
+  color: var(--ry-text);
+}
+
+.sources[open] summary {
+  color: var(--ry-text);
+}
+
+.sourcesBody {
+  position: absolute;
+  inset-inline-end: 0;
+  bottom: calc(100% + var(--ry-s2));
+  z-index: 5;
+  width: min(440px, 88vw);
+  display: grid;
+  gap: var(--ry-s2);
+  padding: var(--ry-s3) var(--ry-s4);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-elevated);
+  box-shadow: var(--ry-shadow-md);
+  color: var(--ry-text);
+  font-size: var(--ry-fs-label);
+  line-height: var(--ry-lh-body);
+  text-align: left;
+}
+
+.sourcesBody p {
+  margin: 0;
+}
+
+.sourcesBody b {
+  color: var(--ry-text);
+}
+
+/* Prose facts for a pre-IPO row — the issuer's terms and the structure risks:
+   a title and a body per item, read left to right, two columns where the
+   width allows. The `facts` list is a label/value row; this one is a
+   paragraph with a heading. */
+.terms {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ry-s4) var(--ry-s6);
+  margin: 0;
+}
+
+.terms > div {
+  display: grid;
+  gap: var(--ry-s1);
+  min-width: 0;
+}
+
+.terms dt {
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.terms dd {
+  margin: 0;
+  font-size: var(--ry-fs-label);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.termsFoot {
+  margin: var(--ry-s4) 0 0;
+  font-size: var(--ry-fs-label-sm);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+}
+
+.termsFoot a {
+  color: var(--ry-text);
+}
+
+/* A dated report's sources under its risk line — the line on the page, the sources here (canon v5.2 C.8). */
+.termsSource {
+  display: block;
+  margin-top: var(--ry-s1);
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+}
+
+.termsSource a {
+  color: var(--ry-text);
+}
+
+@media (max-width: 720px) {
+  .terms {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.empty {
+  margin: 0;
+  padding: var(--ry-s6) var(--ry-s4);
+  text-align: center;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-dense);
+}
+
+/* A catalogue that did not answer is one composed panel: one line, one action. */
+.unavailable {
+  display: grid;
+  justify-items: center;
+  gap: var(--ry-s2);
+  padding: var(--ry-s7) var(--ry-s4);
+  text-align: center;
+}
+
+.unavailable b {
+  font-size: var(--ry-fs-app);
+  color: var(--ry-text);
+}
+
+.unavailable p {
+  margin: 0;
+  max-width: 48ch;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-dense);
+}
+
+/* ── The skeleton: the page's own shapes, before its figures ──────────── */
+
+.bone {
+  border-radius: var(--ry-r-btn-sm);
+  background: var(--ry-elevated);
+  animation: stocks-bone 1.4s ease-in-out infinite;
+}
+
+@keyframes stocks-bone {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bone {
+    animation: none;
+    opacity: 0.7;
+  }
+}
+
+.boneRows {
+  display: grid;
+}
+
+.boneRow {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) repeat(5, minmax(0, 1fr));
+  align-items: center;
+  gap: var(--ry-s4);
+  height: 52px;
+  padding: 0 var(--ry-s4);
+  border-bottom: 1px solid var(--ry-border);
+}
+
+.boneRow:last-child {
+  border-bottom: 0;
+}
+
+.boneStock {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s3);
+}
+
+.boneIcon {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--ry-r-pill);
+}
+
+/* ── The asset page ───────────────────────────────────────────────────── */
+
+.assetHead {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ry-s3) var(--ry-s5);
+  padding: var(--ry-s4);
+}
+
+.identity {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s3);
+  min-width: 0;
+  flex: 1 1 280px;
+}
+
+.identity .icon {
+  width: 44px;
+  height: 44px;
+  font-size: var(--ry-fs-dense);
+}
+
+.identityText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+/* The one label of what the token is, on its own line under the symbol, its `?` after the last word — a line, not a chip, so it wraps rather than pushing into the price (canon v5.0 §7). */
+.truth {
+  justify-self: start;
+  min-width: 0;
+  font-size: var(--ry-fs-copy);
+  font-weight: 500;
+  line-height: var(--ry-lh-head);
+  color: var(--ry-text);
+}
+
+.truthTail {
+  white-space: nowrap;
+}
+
+.identityText h1 {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ry-s2);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-page);
+  font-weight: 700;
+  line-height: var(--ry-lh-tight);
+  color: var(--ry-text);
+}
+
+.identityText p {
+  margin: 0;
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.price {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.priceValue {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ry-s2);
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--ry-fs-data-lg);
+  font-weight: 600;
+  line-height: var(--ry-lh-tight);
+  color: var(--ry-text);
+}
+
+.priceChange {
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+}
+
+.priceChange[data-tone="up"] {
+  color: var(--ry-pnl-pos);
+}
+
+.priceChange[data-tone="down"] {
+  color: var(--ry-pnl-neg);
+}
+
+.priceChange[data-tone="flat"] {
+  color: var(--ry-muted);
+}
+
+.priceSub {
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+}
+
+.headFacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s2) var(--ry-s5);
+}
+
+.headFact {
+  display: grid;
+  gap: 2px;
+}
+
+.headFactLabel {
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ry-muted);
+}
+
+.headFactValue {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.headFactValue[data-prose="true"] {
+  font-family: var(--ry-font-sans);
+}
+
+.headFactValue[data-tone="up"] {
+  color: var(--ry-pnl-pos);
+}
+
+.headFactValue[data-tone="down"] {
+  color: var(--ry-pnl-neg);
+}
+
+.headActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s2);
+  margin-inline-start: auto;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--ry-s4);
+}
+
+.w8 {
+  grid-column: span 8;
+}
+
+.w4 {
+  grid-column: span 4;
+}
+
+.w12 {
+  grid-column: span 12;
+}
+
+/* Two cards of facts share the row since the chain facts folded (RYN-UX-CLARITY-001). */
+.w6 {
+  grid-column: span 6;
+}
+
+@media (max-width: 1180px) {
+  .w8,
+  .w4 {
+    grid-column: span 12;
+  }
+
+  .w4.half {
+    grid-column: span 6;
+  }
+}
+
+@media (max-width: 720px) {
+  .w4.half,
+  .w6 {
+    grid-column: span 12;
+  }
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s3);
+  min-height: 44px;
+  padding: 0 var(--ry-s4);
+  border-bottom: 1px solid var(--ry-border);
+  background: color-mix(in srgb, var(--ry-elevated) 55%, transparent);
+  border-start-start-radius: var(--ry-r-card);
+  border-start-end-radius: var(--ry-r-card);
+}
+
+.cardHead h2 {
+  margin: 0;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.cardHeadSpacer {
+  flex: 1 1 auto;
+}
+
+.cardBody {
+  display: grid;
+  /* One column never wider than the card: a long figure wraps inside its row instead of pushing the column over the right padding (seen at 390 on a pre-IPO buy estimate). */
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ry-s3);
+  padding: var(--ry-s4);
+}
+
+.chartBody {
+  padding: var(--ry-s2);
+  min-height: 360px;
+}
+
+.facts {
+  display: grid;
+  gap: var(--ry-s3);
+  margin: 0;
+}
+
+.facts > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ry-s3);
+  min-width: 0;
+}
+
+.facts dt {
+  flex: 0 0 auto;
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+}
+
+.facts dd {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+  margin: 0;
+  min-width: 0;
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  color: var(--ry-text);
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.facts dd[data-prose="true"] {
+  font-family: var(--ry-font-sans);
+  font-weight: 500;
+}
+
+.facts dd[data-tone="up"] {
+  color: var(--ry-pnl-pos);
+}
+
+.facts dd[data-tone="down"] {
+  color: var(--ry-pnl-neg);
+}
+
+.facts dd a {
+  color: var(--ry-text);
+}
+
+.factSub {
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 400;
+  color: var(--ry-muted);
+}
+
+.factSub[data-tone="caution"] {
+  color: var(--ry-caution);
+}
+
+.mono {
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── The quote card ───────────────────────────────────────────────────── */
+
+.sides {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--ry-s1);
+  padding: var(--ry-s1);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  background: var(--ry-bg);
+}
+
+.side {
+  min-height: 36px;
+  border: 0;
+  border-radius: var(--ry-r-focus-md);
+  background: transparent;
+  color: var(--ry-muted);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  cursor: pointer;
+  transition: color var(--rt-duration-fast) var(--rt-ease), background-color var(--rt-duration-fast) var(--rt-ease);
+}
+
+.side[aria-pressed="true"][data-side="buy"] {
+  color: var(--ry-pnl-pos);
+  background: var(--ry-verified-soft);
+}
+
+.side[aria-pressed="true"][data-side="sell"] {
+  color: var(--ry-pnl-neg);
+  background: var(--ry-risk-soft);
+}
+
+.presets {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--ry-s1);
+}
+
+.preset {
+  min-height: 36px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  background: transparent;
+  color: var(--ry-muted);
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.preset:hover {
+  color: var(--ry-text);
+  background: var(--ry-hover);
+}
+
+.preset[aria-pressed="true"] {
+  color: var(--ry-accent-fg);
+  border-color: var(--ry-brand-line);
+  background: var(--ry-elevated);
+}
+
+.amountRow {
+  display: flex;
+  gap: var(--ry-s1);
+}
+
+.amountRow .search {
+  flex: 1 1 auto;
+  max-width: none;
+  min-height: 36px;
+}
+
+.amountRow .search input {
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.quoteResult {
+  display: grid;
+  gap: var(--ry-s2);
+  padding-top: var(--ry-s3);
+  border-top: 1px solid var(--ry-border);
+}
+
+.quoteBig {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ry-s3);
+}
+
+.quoteBig b {
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--ry-fs-data-m);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.quoteBig span {
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+}
+
+.quoteNote {
+  margin: 0;
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-text-muted);
+}
+
+.quoteStatus {
+  margin: 0;
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+}
+
+.quoteStatus[data-kind="failed"] {
+  color: var(--ry-caution);
+}
+
+.quoteBone {
+  height: 88px;
+}
+
+/* ── The chart host: Spot's chart inside the asset card, without a second frame ── */
+
+.chartHost {
+  --spot-chart-h: clamp(340px, 42vh, 520px);
+  min-width: 0;
+}
+
+.chartHost > section {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.quoteResult[data-stale="true"] {
+  opacity: 0.6;
+  transition: opacity var(--rt-duration-fast) var(--rt-ease);
+}
+
+/* A phone keeps the strip as four instruments in two rows rather than a
+   column that pushes the list off the screen. */
+@media (max-width: 640px) {
+  .strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .metric {
+    padding: var(--ry-s3);
+    border-inline-start: 0;
+  }
+
+  .metric:nth-child(even) {
+    border-inline-start: 1px solid var(--ry-border);
+  }
+
+  .metric:nth-child(n + 3) {
+    border-top: 1px solid var(--ry-border);
+  }
+
+  .metricValue {
+    font-size: var(--ry-fs-title);
+  }
+
+  .metricSub {
+    white-space: normal;
+  }
+}
+
+/* ── The terms of the deal and the representations compared (§7.7) ─────── */
+
+/* The comparison keeps the screener's table; the first column holds the
+   representation with its issuer and confirmation under the symbol, the
+   last holds the two actions. A stale read (the amount just changed) is
+   dimmed rather than emptied, so the previous figures stay readable. */
+.tableWrap[data-stale="true"] {
+  opacity: 0.55;
+  transition: opacity var(--rt-duration-fast) var(--rt-ease);
+}
+
+.compare thead th:last-child {
+  width: 1px;
+}
+
+.compare tbody th {
+  padding-block: var(--ry-s2);
+}
+
+.compare .name {
+  max-width: 34ch;
+  white-space: normal;
+}
+
+.compare td {
+  height: auto;
+  min-height: 56px;
+  padding-block: var(--ry-s2);
+  line-height: var(--ry-lh-tight);
+}
+
+.compare td .state,
+.compare td .stateQuiet {
+  display: block;
+  margin-top: 2px;
+  white-space: normal;
+  max-width: 22ch;
+  margin-inline-start: auto;
+}
+
+.row[data-anchor="true"] {
+  background: color-mix(in srgb, var(--ry-elevated) 45%, transparent);
+}
+
+.row[data-lowest="true"] th {
+  box-shadow: inset 3px 0 0 var(--ry-brand-line);
+}
+
+.lowest {
+  padding: 1px var(--ry-s2);
+  border-radius: var(--ry-r-pill);
+  border: 1px solid var(--ry-brand-line);
+  background: var(--ry-verified-soft);
+  color: var(--ry-accent-fg);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.rowActions {
+  display: inline-flex;
+  gap: var(--ry-s1);
+}
+
+.rowActions :global(.rw-btn) {
+  min-height: 30px;
+  padding: 4px 8px;
+  font-size: var(--ry-fs-label);
+}
+
+.compareNote {
+  margin: 0;
+  padding: var(--ry-s3) var(--ry-s4);
+  border-top: 1px solid var(--ry-border);
+  font-size: var(--ry-fs-label);
+  color: var(--ry-text-muted);
+}
+
+/* Nine columns became eight; on a laptop the reference sits under the
+   per-share price and the cells breathe less, so the whole row fits without
+   a horizontal scroll at 1440. On a phone the chips beside the symbol wrap
+   instead of running off the cell. */
+.compare td,
+.compare thead th {
+  padding-inline: var(--ry-s2);
+}
+
+.compare td .state {
+  max-width: 30ch;
+}
+
+.compare .symbol {
+  flex-wrap: wrap;
+  row-gap: 2px;
+}
+
+@media (max-width: 720px) {
+  /* The chip keeps its meaning and drops the amount — the card's head names it. */
+  .lowestAmount {
+    display: none;
+  }
+
+  .compare tbody th {
+    min-width: 230px;
+  }
+
+  .compare .names {
+    min-width: 0;
+  }
+
+  .compare .name {
+    max-width: 26ch;
+    white-space: normal;
+  }
+}
+
+/* ── The clarity pass (RYN-UX-CLARITY-001, 2026-09-16) ─────────────────────
+   The estimate as a flow — what goes out → what comes back — the next step
+   beside it, and the chain facts one press deep. */
+
+.quoteFlow {
+  display: grid;
+  gap: var(--ry-s1);
+}
+
+.quoteLeg {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--ry-s1) var(--ry-s3);
+  min-width: 0;
+}
+
+.quoteLeg > span {
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+}
+
+.quoteLeg b {
+  margin-inline-start: auto;
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--ry-fs-data-m);
+  font-weight: 600;
+  color: var(--ry-text);
+  /* A figure moves to its own line, whole and to the right, rather than breaking between the number and its unit. */
+  white-space: nowrap;
+}
+
+.quoteArrow {
+  justify-self: start;
+  margin-inline-start: 2px;
+  color: var(--ry-text-muted);
+}
+
+.quoteActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s2);
+  padding-top: var(--ry-s2);
+}
+
+.quoteActions :global(.rw-btn) {
+  flex: 1 1 auto;
+}
+
+.fold summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ry-s2) var(--ry-s3);
+  min-height: 48px;
+  padding: 0 var(--ry-s4);
+  cursor: pointer;
+  font-size: var(--ry-fs-section);
+  font-weight: 600;
+  color: var(--ry-text);
+  list-style: none;
+}
+
+.fold summary::-webkit-details-marker {
+  display: none;
+}
+
+.fold summary::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid var(--ry-muted);
+  border-bottom: 1.5px solid var(--ry-muted);
+  transform: rotate(-45deg);
+  transition: transform var(--rt-duration-fast) var(--rt-ease);
+}
+
+.fold[open] summary::before {
+  transform: rotate(45deg);
+}
+
+.fold[open] summary {
+  border-bottom: 1px solid var(--ry-border);
+}
+
+.foldSub {
+  font-size: var(--ry-fs-label);
+  font-weight: 500;
+  color: var(--ry-text-muted);
+}
+
+.fold .facts {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: var(--ry-s6);
+}
+
+@media (max-width: 720px) {
+  .fold .facts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ── The first-screen pass (RYN-FIRST-SCREEN-001, 2026-09-23) ────────────
+   The page's Buy brings the buy card under the sticky bar, not behind it;
+   the estimate's technical lines fold under one quiet Details; an unknown
+   ticker gets the product's own page instead of a bare 404. */
+
+.dealCard {
+  scroll-margin-top: calc(var(--rs-top, 64px) + var(--ry-s3));
+}
+
+/*
+ * The page's *Buy* before it has measured the buy card (the first paint): on
+ * a wide screen the card stands beside the chart, on the first screen, and
+ * its own *Review purchase* is the one orange action, so *Buy* is quiet;
+ * where the card falls below the chart, *Buy* is the orange action from the
+ * first paint — the same look `.rw-btn--primary` gives once measured.
+ */
+@media (max-width: 1180px) {
+  .headActions > [data-buy-jump="pending"] {
+    background: var(--ry-gradient);
+    color: var(--ry-on-iris);
+    border-color: var(--ry-brand-edge);
+    font-weight: 600;
+    box-shadow: var(--ry-brand-glow);
+  }
+}
+
+/* On a phone *Buy* leads the row at full width — held by its own mark, so the row never moves when its colour settles; the two quiet ones share the row under it, each on one line, and stack when a narrow phone has no room for both. */
+@media (max-width: 560px) {
+  .headActions {
+    width: 100%;
+  }
+
+  .headActions > :global(.rw-btn) {
+    flex: 1 1 auto;
+    white-space: nowrap;
+  }
+
+  .headActions > [data-buy-jump] {
+    order: -1;
+    flex-basis: 100%;
+  }
+}
+
+/* ── The purchase with a loss limit (canon v5.0 §5.2; RYN-FIRST-SCREEN-001, S3) ── */
+
+.limitRow {
+  display: grid;
+  gap: var(--ry-s1);
+  min-width: 0;
+}
+
+.limitLabel {
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+}
+
+.limitPresets {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--ry-s1);
+}
+
+.limitPreset {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0 4px;
+  min-height: 36px;
+  min-width: 0;
+  padding: 2px var(--ry-s2);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  background: transparent;
+  color: var(--ry-muted);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  line-height: var(--ry-lh-head);
+  cursor: pointer;
+}
+
+/* The preset's name and its percentage: one line where there is room, the percentage under the name where there is not — never an ellipsis. */
+.limitPreset > span {
+  white-space: nowrap;
+}
+
+.limitPreset:hover {
+  color: var(--ry-text);
+  background: var(--ry-hover);
+}
+
+.limitPreset[aria-pressed="true"] {
+  color: var(--ry-accent-fg);
+  border-color: var(--ry-brand-line);
+  background: var(--ry-elevated);
+}
+
+.limitPreset:focus-visible {
+  outline: 2px solid var(--ry-focus);
+  outline-offset: 2px;
+}
+
+.limitCard {
+  display: grid;
+  gap: var(--ry-s3);
+  min-width: 0;
+  padding-top: var(--ry-s3);
+  border-top: 1px solid var(--ry-border);
+}
+
+.limitHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--ry-s1) var(--ry-s2);
+}
+
+.limitHead b {
+  font-size: var(--ry-fs-value);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.limitHead span {
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+}
+
+.limitBone {
+  height: 120px;
+}
+
+/* The loop in one line: done steps checked, the next one in the text colour, the rest quiet. */
+.loop {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s1) var(--ry-s2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+}
+
+.loop li {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.loop li + li::before {
+  content: "→";
+  margin-inline-end: var(--ry-s1);
+  color: var(--ry-muted);
+}
+
+.loop li[data-done="true"] {
+  color: var(--ry-text-muted);
+}
+
+.loop li[data-next="true"] {
+  color: var(--ry-text);
+  font-weight: 600;
+}
+
+.limitWarning {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s1);
+  margin: 0;
+  font-size: var(--ry-fs-label);
+  color: var(--ry-text-muted);
+}
+
+.dealCard:focus {
+  outline: none;
+}
+
+.dealCard:focus-visible {
+  box-shadow: var(--ry-focus);
+}
+
+.dealDetails {
+  min-width: 0;
+}
+
+.dealDetails summary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  min-height: 44px;
+  cursor: pointer;
+  font-size: var(--ry-fs-label);
+  font-weight: 500;
+  color: var(--ry-muted);
+  list-style: none;
+}
+
+.dealDetails summary::-webkit-details-marker {
+  display: none;
+}
+
+.dealDetails summary::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform var(--rt-duration-fast) var(--rt-ease);
+}
+
+.dealDetails[open] summary::before {
+  transform: rotate(45deg);
+}
+
+.dealDetails summary:hover {
+  color: var(--ry-text);
+}
+
+.dealDetails summary:focus-visible {
+  outline: none;
+  border-radius: var(--ry-r-btn-sm);
+  box-shadow: var(--ry-focus);
+}
+
+.missing {
+  display: grid;
+  justify-items: start;
+  gap: var(--ry-s3);
+  padding: var(--ry-s6) var(--ry-s5);
+}
+
+.missing h1 {
+  margin: 0;
+  font-size: var(--ry-fs-title);
+  font-weight: 600;
+  letter-spacing: var(--ry-ls-head);
+  color: var(--ry-text);
+  overflow-wrap: anywhere;
+}
+
+.missing p {
+  margin: 0;
+  max-width: 56ch;
+  font-size: var(--ry-fs-copy);
+  line-height: 1.5;
+  color: var(--ry-muted);
+}
+
+.missingActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s2);
+  padding-top: var(--ry-s1);
+}
+
+@media (max-width: 560px) {
+  .missing {
+    padding: var(--ry-s5) var(--ry-s4);
+  }
+
+  .missingActions > * {
+    flex: 1 1 auto;
+  }
+}
+
+/* ── Liquidity: where the token actually trades (RYN-STOCKS-LIQUIDITY-001) ──
+   At rest one line (RYN-FIRST-SCREEN-001, S4): the primary pool's value and
+   its day, with Details beside it; open, the card holds what it always held.
+   Nothing here is orange — the page's one orange action is Buy. Labels in
+   normal case from 13px, figures in Geist with tabular numerals, Mono only in
+   the pool table. */
+
+.liqRest,
+.liqSummary {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s3);
+  min-height: 52px;
+  margin: 0;
+  padding: var(--ry-s3) var(--ry-s4);
+}
+
+.liqSummary {
+  cursor: pointer;
+  list-style: none;
+  border-radius: var(--ry-r-card);
+}
+
+.liqSummary::-webkit-details-marker {
+  display: none;
+}
+
+.liqSummary:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+}
+
+.liqDetails[open] > .liqSummary {
+  border-bottom: 1px solid var(--ry-border);
+  border-end-start-radius: 0;
+  border-end-end-radius: 0;
+}
+
+.liqLine {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  font-weight: 500;
+  line-height: 1.45;
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+  overflow-wrap: anywhere;
+}
+
+.liqLineLabel {
+  color: var(--ry-muted);
+}
+
+.liqFigure {
+  font-weight: 600;
+}
+
+.liqLineStatus {
+  color: var(--ry-caution);
+}
+
+.liqMore {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  font-size: var(--ry-fs-dense);
+  font-weight: 500;
+  color: var(--ry-muted);
+  transition: color var(--rt-duration-fast) var(--rt-ease);
+}
+
+.liqMore::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform var(--rt-duration-fast) var(--rt-ease);
+}
+
+.liqDetails[open] > .liqSummary .liqMore::after {
+  transform: rotate(45deg);
+}
+
+.liqSummary:hover .liqMore {
+  color: var(--ry-text);
+}
+
+.liqBone {
+  display: inline-block;
+  width: min(30ch, 60%);
+  height: 0.9em;
+  vertical-align: middle;
+}
+
+.liqBody {
+  display: grid;
+  gap: var(--ry-s4);
+  padding: var(--ry-s4);
+}
+
+.liqCaution {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-caution);
+}
+
+.liqEmpty {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  line-height: 1.5;
+  color: var(--ry-muted);
+}
+
+.liqPrimary {
+  display: grid;
+  gap: var(--ry-s3);
+}
+
+.liqPrimaryHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--ry-s2) var(--ry-s3);
+  min-width: 0;
+}
+
+.liqLabel {
+  font-size: var(--ry-fs-dense);
+  font-weight: 500;
+  color: var(--ry-muted);
+}
+
+.liqPair {
+  font-size: var(--ry-fs-section);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.liqVenue {
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+}
+
+/* A quiet text link to the venue — muted, underlined, never the orange of an action. */
+.liqLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-inline-start: auto;
+  font-size: var(--ry-fs-dense);
+  font-weight: 500;
+  color: var(--ry-muted);
+  text-decoration: underline;
+  text-decoration-color: var(--ry-border-strong);
+  text-underline-offset: 3px;
+  transition: color var(--rt-duration-fast) var(--rt-ease);
+}
+
+.liqLink:hover {
+  color: var(--ry-text);
+  text-decoration-color: currentColor;
+}
+
+.liqLink:focus-visible {
+  outline: none;
+  border-radius: var(--ry-r-btn-sm);
+  box-shadow: var(--ry-focus);
+}
+
+.liqMetrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--ry-s3);
+  margin: 0;
+}
+
+.liqMetrics > div {
+  display: grid;
+  align-content: start;
+  gap: var(--ry-s1);
+  min-width: 0;
+  padding: var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  background: color-mix(in srgb, var(--ry-elevated) 45%, transparent);
+}
+
+.liqMetrics dt {
+  font-size: var(--ry-fs-dense);
+  font-weight: 500;
+  color: var(--ry-muted);
+}
+
+.liqMetrics dd {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  min-width: 0;
+  font-family: var(--ry-font-sans);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--ry-fs-data-m);
+  font-weight: 600;
+  color: var(--ry-text);
+  overflow-wrap: anywhere;
+}
+
+.liqSub {
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-data);
+  font-weight: 400;
+  color: var(--ry-muted);
+}
+
+.liqHolds {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  line-height: 1.5;
+  color: var(--ry-muted);
+}
+
+.liqHolds b {
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.liqOthers {
+  display: grid;
+  gap: var(--ry-s2);
+}
+
+.liqOthers h3 {
+  margin: 0;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.liqList {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+}
+
+.liqPool {
+  display: grid;
+  grid-template-columns: minmax(0, 2.2fr) repeat(4, minmax(0, 1fr));
+  align-items: center;
+  gap: var(--ry-s3);
+  min-height: 48px;
+  padding: var(--ry-s2) var(--ry-s3);
+  border-bottom: 1px solid var(--ry-border);
+}
+
+.liqPool:last-child {
+  border-bottom: 0;
+}
+
+.liqPool[data-meaningful="false"] {
+  color: var(--ry-text-muted);
+}
+
+.liqPoolPair {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+}
+
+.liqPoolPair a {
+  color: var(--ry-text);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.liqPoolPair a:hover {
+  text-decoration: underline;
+}
+
+.liqPool[data-meaningful="false"] .liqPoolPair a {
+  color: var(--ry-text-muted);
+}
+
+.liqPoolFigure {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  text-align: right;
+}
+
+.liqPoolLabel {
+  display: none;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-data);
+  font-weight: 500;
+  color: var(--ry-muted);
+}
+
+.liqListHead {
+  display: grid;
+  grid-template-columns: minmax(0, 2.2fr) repeat(4, minmax(0, 1fr));
+  gap: var(--ry-s3);
+  padding: var(--ry-s2) var(--ry-s3);
+  border-bottom: 1px solid var(--ry-border);
+  font-size: var(--ry-fs-data);
+  font-weight: 500;
+  color: var(--ry-muted);
+  text-align: right;
+}
+
+.liqListHead span:first-child {
+  text-align: left;
+}
+
+.liqFold summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ry-s2) var(--ry-s3);
+  min-height: 44px;
+  cursor: pointer;
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  color: var(--ry-text);
+  list-style: none;
+}
+
+.liqFold summary::-webkit-details-marker {
+  display: none;
+}
+
+.liqFold summary::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid var(--ry-muted);
+  border-bottom: 1.5px solid var(--ry-muted);
+  transform: rotate(-45deg);
+  transition: transform var(--rt-duration-fast) var(--rt-ease);
+}
+
+.liqFold[open] summary::before {
+  transform: rotate(45deg);
+}
+
+.liqFold[open] summary {
+  margin-bottom: var(--ry-s2);
+}
+
+.liqFold summary:focus-visible {
+  outline: none;
+  border-radius: var(--ry-r-btn-sm);
+  box-shadow: var(--ry-focus);
+}
+
+.liqFold .liqHolds {
+  margin-top: var(--ry-s2);
+}
+
+.liqSource {
+  margin: 0;
+  font-size: var(--ry-fs-data);
+  color: var(--ry-muted);
+}
+
+@media (max-width: 720px) {
+  .liqMetrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .liqPool {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: var(--ry-s2);
+  }
+
+  .liqPoolPair {
+    grid-column: span 2;
+  }
+
+  .liqPoolFigure {
+    text-align: left;
+  }
+
+  .liqPoolLabel {
+    display: block;
+  }
+
+  .liqListHead {
+    display: none;
+  }
+
+  .liqLink {
+    margin-inline-start: 0;
+  }
+}

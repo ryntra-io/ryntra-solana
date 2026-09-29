@@ -1,0 +1,253 @@
+/**
+ * History as values — pure. The server's ledger of a wallet's operations,
+ * folded into the rows of a statement: what kind of operation, what left
+ * and what arrived in the asset's own units, what it cost where the record
+ * says, the state as a word, the identity on the chain. A leg whose
+ * decimals the record does not carry is resolved from what the app already
+ * knows — the holdings, the market rows — or shown without a figure rather
+ * than with a wrong one. Nothing here reads the network.
+ */
+
+import { SOL_MINT, USDC_MINT, type ActionMovement, type WalletAction } from '../../lib/api.ts'
+import { DASH, shortAddress } from '../../utils/format.ts'
+import { formatUnits } from '../trade/trade-model.ts'
+
+/** The system program stands for native SOL in a Send's record. */
+const SYSTEM_PROGRAM = '11111111111111111111111111111111'
+
+export type HistoryKind = 'buy' | 'sell' | 'swap' | 'send' | 'receive' | 'bridge' | 'crossSwap' | 'other'
+export type HistoryStatus = 'done' | 'pending' | 'failed' | 'needsYou'
+
+/** What the app knows of a mint on its own: for the legs the record left without decimals or a name. */
+export type MintFacts = Readonly<{ decimals: number | null; symbol: string | null }>
+export type KnownMints = ReadonlyMap<string, MintFacts>
+
+/** Native SOL and USDC are known without a read. */
+export const BUILT_IN_MINTS: KnownMints = new Map([
+  [SOL_MINT, { decimals: 9, symbol: 'SOL' }],
+  [SYSTEM_PROGRAM, { decimals: 9, symbol: 'SOL' }],
+  [USDC_MINT, { decimals: 6, symbol: 'USDC' }],
+])
+
+export type HistoryLeg = Readonly<{
+  /** The market's address; native SOL answers to wrapped SOL's. */
+  mint: string | null
+  symbol: string
+  amountRaw: string
+  decimals: number | null
+  /** The amount in the asset's units, or a dash when the decimals are unknown. */
+  amountText: string
+}>
+
+export type HistoryFee = Readonly<{
+  collected: boolean
+  /** "0.017104 USDC", "0.50%" or a dash — the most exact fact the record carries. */
+  text: string
+  basisPoints: number | null
+  usd: number | null
+}>
+
+export type HistoryRow = Readonly<{
+  id: string
+  kind: HistoryKind
+  status: HistoryStatus
+  at: string
+  updatedAt: string
+  out: HistoryLeg | null
+  in: HistoryLeg | null
+  fee: HistoryFee | null
+  /** The provider's own dollar figure for the fill, never a price read later. */
+  statedUsd: number | null
+  signature: string | null
+  sourceTx: string | null
+  destinationTx: string | null
+  destination: string | null
+  /** Every mint the row touches, for the filter by asset. */
+  mints: readonly string[]
+  plan: Readonly<{ planId: string; version: number }> | null
+  /** A purchase made under an autoinvest reminder (`origin.rule`, 1.12.0) — the receipt's mark of the rule. */
+  rule: boolean
+}>
+
+export function historyStatus(outcome: string): HistoryStatus {
+  switch (outcome) {
+    case 'DONE':
+      return 'done'
+    case 'FAILED':
+      return 'failed'
+    case 'NEEDS_YOU':
+      return 'needsYou'
+    default:
+      return 'pending'
+  }
+}
+
+export function historyKind(action: WalletAction): HistoryKind {
+  switch (action.lane) {
+    case 'SWAP':
+      return action.origin?.side === 'BUY' ? 'buy' : action.origin?.side === 'SELL' ? 'sell' : 'swap'
+    case 'SEND':
+      return 'send'
+    case 'RECEIVE':
+      return 'receive'
+    case 'BRIDGE':
+      return 'bridge'
+    case 'CROSS_SWAP':
+      return 'crossSwap'
+    default:
+      return 'other'
+  }
+}
+
+/** The market address a leg answers to: the system program and a null mint with SOL's symbol both mean native SOL. */
+function marketMint(movement: ActionMovement): string | null {
+  if (movement.mint === SYSTEM_PROGRAM) return SOL_MINT
+  if (movement.mint === null) return movement.symbol === 'SOL' || movement.decimals === 9 ? SOL_MINT : null
+  return movement.mint
+}
+
+function legOf(movement: ActionMovement | null, known: KnownMints): HistoryLeg | null {
+  if (movement === null) return null
+  const mint = marketMint(movement)
+  const facts = mint ? (known.get(mint) ?? BUILT_IN_MINTS.get(mint) ?? null) : null
+  const decimals = movement.decimals ?? facts?.decimals ?? null
+  const symbol = movement.symbol ?? facts?.symbol ?? (mint ? shortAddress(mint) : DASH)
+  return {
+    mint,
+    symbol,
+    amountRaw: movement.amountRaw,
+    decimals,
+    amountText: decimals === null ? DASH : formatUnits(movement.amountRaw, decimals, Math.min(6, decimals)),
+  }
+}
+
+function feeOf(action: WalletAction, known: KnownMints): HistoryFee | null {
+  const fee = action.fee ?? null
+  if (!fee) return null
+  const assetMint = fee.asset ?? null
+  const facts = assetMint ? (known.get(assetMint) ?? BUILT_IN_MINTS.get(assetMint) ?? null) : null
+  const decimals = fee.decimals ?? facts?.decimals ?? null
+  const symbol = fee.symbol ?? facts?.symbol ?? null
+  let text = DASH
+  if (fee.amountRaw && decimals !== null && symbol)
+    text = `${formatUnits(fee.amountRaw, decimals, Math.min(6, decimals))} ${symbol}`
+  else if (fee.usd !== null && Number.isFinite(fee.usd))
+    text = `$${fee.usd < 1 ? fee.usd.toFixed(4).replace(/0+$/, '').replace(/\.$/, '') : fee.usd.toFixed(2)}`
+  else if (fee.basisPoints !== null) text = `${(fee.basisPoints / 100).toFixed(2)}%`
+  return { collected: fee.collected, text, basisPoints: fee.basisPoints, usd: fee.usd }
+}
+
+export function historyRow(action: WalletAction, known: KnownMints = BUILT_IN_MINTS): HistoryRow {
+  const out = legOf(action.out, known)
+  const arrived = legOf(action.in, known)
+  const mints = [out?.mint ?? null, arrived?.mint ?? null].filter((mint): mint is string => mint !== null)
+  return {
+    id: action.actionId,
+    kind: historyKind(action),
+    status: historyStatus(action.outcome),
+    at: action.startedAt,
+    updatedAt: action.updatedAt,
+    out,
+    in: arrived,
+    fee: feeOf(action, known),
+    statedUsd: typeof action.statedUsd === 'number' && Number.isFinite(action.statedUsd) ? action.statedUsd : null,
+    signature: action.signature ?? null,
+    sourceTx: action.sourceTx ?? null,
+    destinationTx: action.destinationTx ?? null,
+    destination: action.destination ?? null,
+    mints,
+    plan: action.origin?.plan ? { planId: action.origin.plan.planId, version: action.origin.plan.version } : null,
+    rule: Boolean(action.origin?.rule),
+  }
+}
+
+/** The mints whose decimals or name the records leave out — what the app should look up before drawing the rows. */
+export function unresolvedMints(actions: readonly WalletAction[], known: KnownMints = BUILT_IN_MINTS): string[] {
+  const out = new Set<string>()
+  const consider = (mint: string | null, decimals: number | null, symbol: string | null) => {
+    if (mint === null || (decimals !== null && symbol !== null)) return
+    if (known.has(mint) || BUILT_IN_MINTS.has(mint)) return
+    out.add(mint)
+  }
+  for (const action of actions) {
+    for (const leg of [action.out, action.in]) if (leg) consider(marketMint(leg), leg.decimals, leg.symbol)
+    if (action.fee?.asset) consider(action.fee.asset, action.fee.decimals, action.fee.symbol)
+  }
+  return [...out]
+}
+
+/** The statement, newest first, with what the app knows folded in. */
+export function historyRows(actions: readonly WalletAction[], known: KnownMints = BUILT_IN_MINTS): HistoryRow[] {
+  return actions.map((action) => historyRow(action, known)).sort((a, b) => Date.parse(b.at) - Date.parse(a.at))
+}
+
+/** The rows that touched one asset. */
+export function rowsForMint(rows: readonly HistoryRow[], mint: string): HistoryRow[] {
+  return rows.filter((row) => row.mints.includes(mint))
+}
+
+export type HistoryDay = Readonly<{ day: string; rows: readonly HistoryRow[] }>
+
+/** Rows grouped by the calendar day they started, in the order given. */
+export function groupByDay(rows: readonly HistoryRow[]): HistoryDay[] {
+  const days: HistoryDay[] = []
+  for (const row of rows) {
+    const time = Date.parse(row.at)
+    const date = Number.isNaN(time) ? new Date(0) : new Date(time)
+    const day = new Date(date.getFullYear(), date.getMonth(), date.getDate()).toISOString()
+    const last = days[days.length - 1]
+    if (last && last.day === day) days[days.length - 1] = { day, rows: [...last.rows, row] }
+    else days.push({ day, rows: [row] })
+  }
+  return days
+}
+
+/** The words a title needs, in one language. */
+export type HistoryWords = Readonly<{
+  bought: (symbol: string) => string
+  sold: (symbol: string) => string
+  swapped: (from: string, to: string) => string
+  sent: (symbol: string) => string
+  received: (symbol: string) => string
+  bridged: (to: string | null) => string
+  crossSwapped: (from: string, to: string) => string
+  operation: string
+}>
+
+/** One line that says what happened, in the asset's names. */
+export function historyTitle(row: HistoryRow, words: HistoryWords): string {
+  const outSymbol = row.out?.symbol ?? DASH
+  const inSymbol = row.in?.symbol ?? DASH
+  switch (row.kind) {
+    case 'buy':
+      return words.bought(row.in?.symbol ?? outSymbol)
+    case 'sell':
+      return words.sold(row.out?.symbol ?? inSymbol)
+    case 'swap':
+      return words.swapped(outSymbol, inSymbol)
+    case 'send':
+      return words.sent(outSymbol)
+    case 'receive':
+      return words.received(inSymbol)
+    case 'bridge':
+      return words.bridged(row.destination)
+    case 'crossSwap':
+      return words.crossSwapped(outSymbol, inSymbol)
+    default:
+      return words.operation
+  }
+}
+
+/** The one line under the title: what moved, in units — "0.02 SOL → 1.921719 USDC". */
+export function historyAmounts(row: HistoryRow): string {
+  const leg = (value: HistoryLeg | null) => (value ? `${value.amountText} ${value.symbol}` : null)
+  const out = leg(row.out)
+  const arrived = leg(row.in)
+  if (out && arrived) return `${out} → ${arrived}`
+  return out ?? arrived ?? DASH
+}
+
+/** The explorer page of a Solana signature — the proof, one tap deep. */
+export function explorerUrl(signature: string): string {
+  return `https://solscan.io/tx/${encodeURIComponent(signature)}`
+}

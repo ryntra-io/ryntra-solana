@@ -1,0 +1,565 @@
+/* Ryntra Home — Decisions, the AdviceCase queue and the exact-action index.
+ *
+ * Authored directly on the frozen `--rt-*` projection, so this surface joins
+ * `MIGRATED_SURFACES` on the commit that creates it.
+ *
+ * The page answers one question per row — *what is waiting on me, and what is
+ * missing before it can move* — with a state chip, a subject and a link. Every
+ * sentence that explains a section lives behind the shell's `InfoControl`.
+ *
+ * The one shape this surface adds to the Home vocabulary is the **chain**: the
+ * audited links of a case drawn as a sequence rather than as a table, because
+ * the product claim is that they connect. A four-column table of the same
+ * fields would say they are four independent attributes.
+ *
+ * Every grid column is `minmax(0, 1fr)` rather than the implicit `auto`, which
+ * is what stops a long instrument key from pushing a row wider than the shell
+ * at 375px — the Portfolio surface's lesson, inherited rather than relearned. */
+
+.surface {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--rt-space-lg);
+  width: min(100%, var(--rt-maxw));
+  margin-inline: auto;
+  color: var(--rt-ink-high);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--rt-space-sm);
+}
+
+.head h1 {
+  margin: 0;
+  font-family: var(--ry-font-display);
+  font-size: var(--ry-fs-h2);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.eyebrow {
+  margin: 0 0 var(--rt-space-2xs);
+  color: var(--rt-ink-mid);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.headMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rt-space-xs);
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  padding-inline: var(--rt-space-sm);
+  border: 1px solid var(--rt-hairline-strong);
+  border-radius: var(--rt-radius-sm);
+  color: var(--rt-ink-high);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.link:hover { border-color: var(--rt-action-blue); color: var(--rt-action-blue-fg); }
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rt-space-xs);
+}
+
+/* ── case rows ──────────────────────────────────────────────────────────── */
+
+.cases {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--rt-space-2xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.case {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--rt-space-xs);
+  padding: var(--rt-space-xs) var(--rt-space-sm);
+  border: 1px solid var(--rt-hairline);
+  border-radius: var(--rt-radius-sm);
+  background: var(--rt-panel);
+}
+
+.caseBody {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.caseTitle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rt-space-2xs);
+  font-size: var(--ry-fs-app);
+  font-weight: 600;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.caseMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rt-space-2xs);
+  color: var(--rt-ink-mid);
+  font-size: var(--ry-fs-dense);
+  line-height: 1.4;
+}
+
+.caseMeta b {
+  color: var(--rt-ink-high);
+  font-family: var(--ry-font-mono);
+  font-weight: 500;
+}
+
+.caseMeta time { font-variant-numeric: tabular-nums; }
+
+/* The open question is the row's reason to exist, so it is not dimmed into
+   metadata. It is what the reader is being asked. */
+.question {
+  color: var(--rt-ink-high);
+  font-size: var(--ry-fs-dense);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+/* ── the audited chain ──────────────────────────────────────────────────── */
+
+/* Drawn as a sequence, because the product claim is that these links connect.
+   A table of the same fields would present them as four unrelated columns. */
+.chain {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--rt-space-2xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: chain;
+}
+
+.chainLink {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: var(--rt-space-xs);
+  padding: var(--rt-space-xs) var(--rt-space-sm);
+  border: 1px solid var(--rt-hairline);
+  border-radius: var(--rt-radius-sm);
+  background: var(--rt-panel);
+}
+
+/* The rail dot, and the line that joins one link to the next. Only the dot is
+   coloured: a coloured rail would read as a progress bar, and a chain that
+   stops at link three has not failed — it has not happened yet. */
+.chainMark {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin-block-start: 2px;
+  border: 1px solid var(--rt-hairline-strong);
+  border-radius: var(--rt-radius-pill);
+  background: var(--rt-raised);
+  color: var(--rt-ink-mid);
+  flex: none;
+}
+
+.chainLink[data-state="RECORDED"] .chainMark,
+.chainLink[data-state="done"] .chainMark {
+  border-color: var(--rt-reconciled-green);
+  color: var(--rt-reconciled-green-fg);
+}
+
+.chainLink[data-state="attention"] .chainMark {
+  border-color: var(--rt-review-amber);
+  color: var(--rt-review-amber-fg);
+}
+
+.chainBody {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.chainName {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rt-space-2xs);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--rt-ink-mid);
+}
+
+.chainValue {
+  font-size: var(--ry-fs-app);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+/* Why a link is missing, on the link. A blank with no reason beside it is the
+   state this product refuses on every other surface. */
+.chainReason {
+  color: var(--rt-ink-mid);
+  font-size: var(--ry-fs-dense);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.chainMissing {
+  color: var(--rt-ink-mid);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-data);
+}
+
+/* ── alternatives ───────────────────────────────────────────────────────── */
+
+/* Listed rather than ranked, and the unavailable ones stay on the page with the
+   reason. A menu that silently hides what cannot be done reads as a menu of
+   everything that is sensible. */
+.alternatives {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: var(--rt-space-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.alternative {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: var(--rt-space-sm);
+  border: 1px solid var(--rt-hairline);
+  border-radius: var(--rt-radius-sm);
+  background: var(--rt-raised);
+}
+
+.alternative[data-available="false"] { border-style: dashed; }
+
+.alternativeName {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rt-space-2xs);
+  font-size: var(--ry-fs-app);
+  font-weight: 600;
+}
+
+.alternativeWhy {
+  color: var(--rt-ink-mid);
+  font-size: var(--ry-fs-dense);
+  line-height: 1.45;
+}
+
+/* ── stages, facts and rows shared with the rest of Home ────────────────── */
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 168px), 1fr));
+  gap: var(--rt-space-xs);
+  margin: 0;
+}
+
+.fact {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--rt-space-xs);
+  border: 1px solid var(--rt-hairline);
+  border-radius: var(--rt-radius-sm);
+  background: var(--rt-raised);
+}
+
+.factKey {
+  color: var(--rt-ink-mid);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.factValue {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-data);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.factUnknown {
+  color: var(--rt-ink-mid);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-data);
+}
+
+.rows {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--rt-space-xs);
+  padding: var(--rt-space-2xs) var(--rt-space-xs);
+  border: 1px solid var(--rt-hairline);
+  border-radius: var(--rt-radius-sm);
+  background: var(--rt-panel);
+  font-size: var(--ry-fs-dense);
+}
+
+/* A reason that needs its own line.
+ *
+ * Found by looking: as a two-column `.row` the refusal reason landed in the
+ * `auto` track and sat pinned against the far edge, a screen-width away from
+ * the subject it was about. */
+.stackedRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 4px;
+  padding: var(--rt-space-xs) var(--rt-space-sm);
+  border: 1px solid var(--rt-hairline);
+  border-radius: var(--rt-radius-sm);
+  background: var(--rt-panel);
+  font-size: var(--ry-fs-dense);
+}
+
+/* ── conflicting readings ──────────────────────────────────────────────── */
+
+/* Every disagreeing value keeps its own row and its own source. There is
+ * deliberately no reconciled figure and no "best" value: a single number here
+ * would be one nobody reported.
+ *
+ * Sized to the comparison rather than to the page — the Research surface's own
+ * measured lesson, inherited rather than rediscovered. Stretched full width the
+ * two numbers are too far apart to hold in one glance, which defeats the entire
+ * reason both are shown. */
+.conflict {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+  width: min(100%, 340px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.conflictRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--rt-space-xs);
+  padding: var(--rt-space-2xs) var(--rt-space-xs);
+  border: 1px solid var(--rt-review-amber);
+  border-radius: var(--rt-radius-sm);
+  background: var(--rt-review-amber-soft);
+  color: var(--rt-review-amber-fg);
+  font-size: var(--ry-fs-dense);
+}
+
+.conflictValue {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-data);
+  font-weight: 600;
+}
+
+.rowName {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rt-space-2xs);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* A digest is a literal. Drawn as running text it reads as a broken word; boxed
+   and sized to itself it reads as the identifier it is. */
+.literal {
+  justify-self: start;
+  width: fit-content;
+  max-width: 100%;
+  padding: 2px 8px;
+  border: 1px solid var(--rt-hairline-strong);
+  border-radius: var(--rt-radius-sm);
+  background: var(--rt-raised);
+  color: var(--rt-ink-high);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label);
+  letter-spacing: 0.04em;
+  overflow-wrap: anywhere;
+}
+
+/* ── receipts ───────────────────────────────────────────────────────────── */
+
+/* One block per book, and no combined figure anywhere. Adding a simulated
+   result to a real one produces a number describing nothing that happened. */
+.book {
+  display: grid;
+  gap: var(--rt-space-xs);
+  padding: var(--rt-space-sm);
+  border: 1px solid var(--rt-hairline);
+  border-radius: var(--rt-radius-sm);
+  background: var(--rt-panel);
+}
+
+.bookHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rt-space-xs);
+}
+
+.bookName {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rt-space-2xs);
+  font-size: var(--ry-fs-app);
+  font-weight: 600;
+}
+
+.books {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--rt-space-xs);
+}
+
+/* ── activity ───────────────────────────────────────────────────────────── */
+
+.events {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.event {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--rt-space-xs);
+  padding: var(--rt-space-2xs) var(--rt-space-xs);
+  border: 1px solid var(--rt-hairline);
+  border-radius: var(--rt-radius-sm);
+  background: var(--rt-panel);
+  font-size: var(--ry-fs-dense);
+}
+
+.eventIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--rt-ink-mid);
+  flex: none;
+}
+
+.eventBody {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.eventKind {
+  color: var(--rt-ink-mid);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.eventText {
+  color: var(--rt-ink-high);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.eventTime {
+  color: var(--rt-ink-mid);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label);
+  font-variant-numeric: tabular-nums;
+  flex: none;
+}
+
+/* ── shared text ────────────────────────────────────────────────────────── */
+
+.note {
+  display: grid;
+  gap: var(--rt-space-2xs);
+  margin: 0;
+  color: var(--rt-ink-mid);
+  font-size: var(--ry-fs-dense);
+  line-height: 1.5;
+}
+
+.note li { margin-inline-start: var(--rt-space-md); }
+
+.empty {
+  display: flex;
+  align-items: center;
+  gap: var(--rt-space-xs);
+  color: var(--rt-ink-mid);
+  font-size: var(--ry-fs-dense);
+  line-height: 1.5;
+}
+
+.empty svg { flex: none; color: var(--rt-ink-mid); }
+
+/* Green only where something was answered and came back quiet. An unanswerable
+   state keeps the neutral mark: unknown is never drawn as fine. */
+.empty[data-tone="CALM"] svg { color: var(--rt-reconciled-green-fg); }
+
+/* ── loading ────────────────────────────────────────────────────────────── */
+
+.skeleton {
+  border-radius: var(--rt-radius-sm);
+  background: var(--rt-hairline);
+}
+
+.skeletonRow { height: 52px; }
+.skeletonLine { height: 14px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton { animation: pulse 1.6s var(--rt-ease) infinite; }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 0.85; }
+}

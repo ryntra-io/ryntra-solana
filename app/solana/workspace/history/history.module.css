@@ -1,0 +1,530 @@
+/* Activity — a statement a person can read.
+   The page that made each row, the day it happened, what went out and what
+   came in; one row opened is the receipt in words. Tokens only. */
+
+.card {
+  display: grid;
+  gap: var(--ry-s4);
+  min-width: 0;
+}
+
+.note {
+  margin: 0;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-dense);
+}
+
+.coverage {
+  margin: 0;
+  color: var(--ry-caution);
+  font-size: var(--ry-fs-label);
+}
+
+.message {
+  display: grid;
+  gap: var(--ry-s2);
+  justify-items: start;
+  color: var(--ry-text);
+  font-size: var(--ry-fs-dense);
+}
+
+.message p {
+  margin: 0;
+}
+
+.retry,
+.primary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 var(--ry-s4);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-card);
+  color: var(--ry-text);
+  font: inherit;
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.primary {
+  border-color: transparent;
+  background: var(--ry-iris-deep);
+  color: var(--ry-on-iris);
+}
+
+.empty {
+  display: grid;
+  gap: var(--ry-s3);
+  justify-items: center;
+  padding: var(--ry-s6) var(--ry-s4);
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-dense);
+  text-align: center;
+}
+
+.empty p {
+  margin: 0;
+}
+
+/* ── Toolbar: the pages as filters, and the export ─────────────────────── */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ry-s3);
+  flex-wrap: wrap;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s1);
+  padding: var(--ry-s1);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-bg);
+}
+
+.filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 var(--ry-s3);
+  border: 0;
+  border-radius: var(--ry-r-btn-sm);
+  background: transparent;
+  color: var(--ry-muted);
+  font: inherit;
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 120ms ease-out, color 120ms ease-out;
+}
+
+.filter:hover {
+  color: var(--ry-text);
+}
+
+.filter[data-active="true"] {
+  background: var(--ry-card);
+  color: var(--ry-text);
+  box-shadow: var(--ry-shadow-sm);
+}
+
+.filter[data-active="true"][data-filter="NEEDS_YOU"] {
+  color: var(--ry-caution);
+}
+
+.filterCount {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 500;
+  color: var(--ry-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.filter[data-active="true"] .filterCount {
+  color: var(--ry-text);
+}
+
+.export {
+  min-height: 36px;
+  padding: 0 var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  background: transparent;
+  color: var(--ry-text);
+  font: inherit;
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+
+.export:disabled {
+  color: var(--ry-muted);
+  cursor: not-allowed;
+}
+
+/* ── Days and rows ──────────────────────────────────────────────────────── */
+
+.days {
+  display: grid;
+  gap: var(--ry-s4);
+}
+
+.day {
+  display: grid;
+  gap: var(--ry-s1);
+}
+
+.dayLabel {
+  margin: 0;
+  padding: 0 var(--ry-s2);
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.list {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  min-width: 0;
+  border-radius: var(--ry-r-btn);
+}
+
+.row[data-open="true"] {
+  background: var(--ry-elevated);
+}
+
+.rowMain {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--ry-s3);
+  min-height: 60px;
+  padding: var(--ry-s2) var(--ry-s3);
+  border-radius: var(--ry-r-btn);
+  color: inherit;
+  text-decoration: none;
+  transition: background 120ms ease-out;
+}
+
+.rowMain:hover {
+  background: var(--ry-hover);
+}
+
+.row[data-open="true"] .rowMain:hover {
+  background: transparent;
+}
+
+.glyph {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: var(--ry-bg);
+  color: var(--ry-muted);
+}
+
+.glyph[data-page="SPOT"][data-side="BUY"] {
+  color: var(--ry-pnl-pos);
+  background: var(--ry-verified-soft);
+}
+
+.glyph[data-page="SPOT"][data-side="SELL"] {
+  color: var(--ry-pnl-neg);
+  background: var(--ry-risk-soft);
+}
+
+.glyph[data-page="RECEIVE"] {
+  color: var(--ry-pnl-pos);
+  background: var(--ry-verified-soft);
+}
+
+.glyph[data-page="SWAP"],
+.glyph[data-page="BRIDGE"] {
+  color: var(--ry-text);
+  background: var(--ry-elevated);
+}
+
+.row[data-outcome="FAILED"] .glyph {
+  color: var(--ry-muted);
+  background: var(--ry-bg);
+}
+
+.what {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.title {
+  overflow: hidden;
+  font-size: var(--ry-fs-app);
+  font-weight: 600;
+  color: var(--ry-text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.row[data-outcome="FAILED"] .title {
+  color: var(--ry-muted);
+  text-decoration: line-through;
+  text-decoration-color: color-mix(in srgb, var(--ry-muted) 50%, transparent);
+}
+
+.sub {
+  overflow: hidden;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.when {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.state {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 84px;
+  min-height: 26px;
+  padding: 0 var(--ry-s2);
+  border-radius: var(--ry-r-pill);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ry-verified);
+  background: var(--ry-verified-soft);
+  white-space: nowrap;
+}
+
+.state[data-outcome="FAILED"] {
+  color: var(--ry-risk);
+  background: var(--ry-risk-soft);
+}
+
+.state[data-outcome="NEEDS_YOU"] {
+  color: var(--ry-caution);
+  background: var(--ry-caution-soft);
+}
+
+.state[data-outcome="IN_FLIGHT"] {
+  color: var(--ry-text);
+  background: var(--ry-elevated);
+}
+
+/* ── The receipt in words ───────────────────────────────────────────────── */
+
+.detail {
+  display: grid;
+  gap: var(--ry-s3);
+  padding: var(--ry-s2) var(--ry-s3) var(--ry-s4) calc(40px + var(--ry-s3) * 2);
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--ry-s2) var(--ry-s4);
+  margin: 0;
+}
+
+.facts > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.facts dt {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.facts dd {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-data);
+  color: var(--ry-text);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.mono {
+  font-family: var(--ry-font-mono);
+}
+
+.copy {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ry-muted);
+  cursor: pointer;
+}
+
+.copy:hover {
+  background: var(--ry-hover);
+  color: var(--ry-text);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s2);
+}
+
+.action,
+.actionPrimary {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 36px;
+  padding: 0 var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  background: transparent;
+  color: var(--ry-text);
+  font: inherit;
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.action:hover,
+.actionPrimary:hover {
+  background: var(--ry-hover);
+}
+
+.actionPrimary {
+  border-color: transparent;
+  background: var(--ry-iris-deep);
+  color: var(--ry-on-iris);
+}
+
+.action:disabled,
+.actionPrimary:disabled {
+  color: var(--ry-muted);
+  cursor: not-allowed;
+}
+
+/* ── Rewards, one line each ─────────────────────────────────────────────── */
+
+.rewards {
+  display: grid;
+  gap: var(--ry-s2);
+  padding-top: var(--ry-s3);
+  border-top: 1px solid var(--ry-border);
+}
+
+.rewardsTitle {
+  margin: 0;
+  padding: 0 var(--ry-s2);
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.rewardsList {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rewardsRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--ry-s3);
+  min-height: 40px;
+  padding: 0 var(--ry-s3);
+  font-size: var(--ry-fs-dense);
+}
+
+.rewardsWhat {
+  color: var(--ry-text);
+}
+
+.rewardsAmount {
+  font-family: var(--ry-font-mono);
+  color: var(--ry-pnl-pos);
+  font-variant-numeric: tabular-nums;
+}
+
+.rewardsAt {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+}
+
+.rewardsMore {
+  justify-self: start;
+  padding: 0 var(--ry-s3);
+  color: var(--ry-iris-lift, var(--ry-iris));
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* ── The phone ──────────────────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .rowMain {
+    grid-template-columns: 36px minmax(0, 1fr) auto;
+    grid-template-areas:
+      "glyph what state"
+      "glyph when when";
+    row-gap: 2px;
+    min-height: 56px;
+  }
+
+  .glyph {
+    grid-area: glyph;
+    width: 36px;
+    height: 36px;
+  }
+
+  .what {
+    grid-area: what;
+  }
+
+  .when {
+    grid-area: when;
+    padding-left: 0;
+  }
+
+  .state {
+    grid-area: state;
+    min-width: 0;
+  }
+
+  .detail {
+    padding-left: var(--ry-s3);
+  }
+
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filters {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    scrollbar-width: none;
+  }
+}

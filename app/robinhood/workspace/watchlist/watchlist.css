@@ -1,0 +1,233 @@
+/*
+ * The Watchlist — cards rather than a table, and that is the one visual
+ * decision worth writing down.
+ *
+ * Radar, the Screener and the Scanner are tables because they answer *which
+ * ones*: a hundred rows scanned at a glance, one weight throughout. A
+ * watchlist answers *what happened to this one*, twenty-five times over, and
+ * each answer is a history rather than a value. A row cannot hold a history
+ * without either truncating it or making every other row as tall as the
+ * longest one, so the entry gets a card and the history goes behind a
+ * disclosure that is closed until asked.
+ *
+ * Everything else follows the shell: one token family, no literal colours, no
+ * fallbacks — the three properties `lib/markets/discovery.test.mjs` fails the
+ * build on, after a release shipped both surfaces pinned to dark because a
+ * hardcoded hex behind every token was quietly doing all the work.
+ */
+
+.rw-list {
+  display: grid;
+  /* Explicit and shrinkable, for the same reason `.rm` needs it: an implicit
+     grid column is sized to its widest child's max-content, and a card holding
+     a 42-character address and a seven-column fact grid has a wide one. At
+     375px the cards laid out 885px inside a 311px list and the body did not
+     scroll, so the surface simply lost its right-hand half without saying so. */
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.rw-card {
+  border: 1px solid var(--ry-border);
+  grid-template-columns: minmax(0, 1fr);
+  border-radius: var(--ry-r-card);
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+}
+
+.rw-head {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.rw-title {
+  /* One step below the section heading and level with `.rs-h2`, which is the
+     scale this surface already speaks. 16px was off the ramp entirely. */
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.rw-address {
+  color: var(--ry-muted);
+  font-size: 13px;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* The observed facts. A definition list because that is what they are: a
+   dimension and the last state it was seen in. */
+.rw-facts {
+  display: grid;
+  gap: 12px 28px;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  margin: 4px 0 0;
+}
+
+.rw-facts dt {
+  color: var(--ry-muted);
+  font-size: 13px;
+}
+
+.rw-facts dd {
+  color: var(--ry-text);
+  font-size: 14px;
+  margin: 2px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.rw-note {
+  border-left: 2px solid var(--ry-border);
+  color: var(--ry-text);
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 4px 0;
+  padding: 2px 0 2px 14px;
+}
+
+.rw-h4 {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  margin: 10px 0 0;
+  text-transform: uppercase;
+}
+
+.rw-alerts,
+.rw-arm,
+.rw-events {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.rw-alert {
+  border-bottom: 1px solid var(--ry-border);
+  font-size: 14px;
+  line-height: 1.6;
+  padding-bottom: 8px;
+}
+
+/* A fired condition is marked, not coloured red: it is a condition becoming
+   true, which is what the person asked for, and not a fault. */
+.rw-alert-fired {
+  border-left: 2px solid var(--ry-hover);
+  padding-left: 12px;
+}
+
+.rw-condition {
+  color: var(--ry-text);
+  font-weight: 600;
+}
+
+.rw-observed {
+  color: var(--ry-muted);
+  font-size: 13px;
+}
+
+/* A quiet phrase, not a quiet label.
+ *
+ * `.rm-muted` carries `white-space: nowrap`, which is right for the one-word
+ * states it was written for in Radar's table — `verified`, `Noted` — and wrong
+ * for a sentence. Reused here it laid a 130-character reason out on one
+ * 847px line inside a 273px card, at 375px, without the page scrolling: the
+ * text simply ran off the edge. */
+.rw-aside {
+  color: var(--ry-muted);
+}
+
+.rw-arm li {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 14px;
+  gap: 10px;
+}
+
+.rw-arm label {
+  align-items: center;
+  display: inline-flex;
+  gap: 7px;
+  min-height: 32px;
+}
+
+/* The select holds all 231 instruments and would otherwise be as wide as the
+   longest name. Shrinking is handled once for every field on this surface in
+   `markets.css`; this only makes it fill the space it is given. */
+.rw-asset select {
+  width: 100%;
+}
+
+.rw-threshold input {
+  background: var(--ry-elevated);
+  border: 1px solid var(--ry-border);
+  border-radius: 8px;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  margin: 0 4px;
+  min-height: 36px;
+  padding: 6px 8px;
+  width: 84px;
+}
+
+.rw-history {
+  margin-top: 6px;
+}
+
+.rw-history summary {
+  color: var(--ry-muted);
+  cursor: pointer;
+  font-size: 13px;
+  min-height: 32px;
+  padding: 7px 0;
+}
+
+.rw-event {
+  border-bottom: 1px solid var(--ry-border);
+  display: grid;
+  font-size: 14px;
+  gap: 2px 14px;
+  grid-template-columns: 96px minmax(0, 1fr);
+  line-height: 1.6;
+  padding-bottom: 8px;
+}
+
+.rw-when {
+  color: var(--ry-muted);
+  font-size: 13px;
+}
+
+.rw-what {
+  color: var(--ry-text);
+}
+
+.rw-event .rw-observed,
+.rw-event .rs-src {
+  grid-column: 2;
+}
+
+@media (width <= 640px) {
+  .rw-event {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rw-event .rw-observed,
+  .rw-event .rs-src {
+    grid-column: 1;
+  }
+
+  /* The 44px floor, measured rather than assumed — see markets.css. */
+  .rw-arm label,
+  .rw-history summary,
+  .rw-threshold input {
+    min-height: 44px;
+  }
+}

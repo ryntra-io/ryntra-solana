@@ -1,0 +1,389 @@
+/*
+ * The tile system.
+ *
+ * **Every value is a `--ry-*` token**, which is the cabinet's own family and
+ * not the one this file was first written in.
+ *
+ * The first version used `--rt-*` throughout. That is a legitimate family and
+ * `design:check` accepts it, so nothing failed — but `app/design/tokens.css`
+ * says in as many words that the legacy tokens *remain until each surface
+ * migrates* and that **new surfaces use `--ry-*` only**, and Shell v2 draws its
+ * chrome from it. So the rail's active row was Iris `#FF5A1F` while every chart
+ * beside it was evidence cyan `#67E8F9`: two accent hues on one screen, from
+ * two families, one of them explicitly superseded. The founder saw it
+ * immediately and asked where the colour came from, which is the correct
+ * question and had an uncomfortable answer.
+ *
+ * The categorical chart series was already declared — `--ry-c1` through
+ * `--ry-c6`, with a rule attached that green, red and amber are **forbidden in
+ * a series** because they are risk semantics. Direction uses `--ry-pnl-pos` and
+ * `--ry-pnl-neg`; state chips use `--ry-verified`, `--ry-caution`, `--ry-risk`.
+ * Nothing here invents a colour.
+ *
+ * Three things this file does that the surfaces before it did not:
+ *
+ *   1. **A ground and an edge.** A tile sits on `--rt-panel` inside a page on
+ *      `--rt-page`, with `--rt-hairline` around it. Content on a bare canvas is
+ *      what made five screens read as one column of prose.
+ *   2. **A number that is the subject.** Mono on the design system's own data
+ *      ramp — `v2-data-xl` for the one figure that is the headline,
+ *      `v2-data-m` for the rest — against 13px labels. The previous surfaces
+ *      typed every figure at the size of the sentence explaining it, which is
+ *      how a dashboard becomes a document.
+ *   3. **Emphasis that is spent once.** `.tl-lead` is the one tile per surface
+ *      allowed to raise its ground and thicken its edge. Colour appears only
+ *      through `data-tone`, and only where a tone means something.
+ */
+
+/* ------------------------------------------------------------------- grid */
+
+/* Three across, then two, then one.
+   `auto-fit` with a minimum laid six tiles out as five and a stray, which reads
+   as a layout that ran out rather than one that was composed. A fixed count per
+   breakpoint keeps the rows whole. */
+.tl-grid {
+  display: grid;
+  gap: var(--ry-s4);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (width >= 640px) {
+  .tl-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (width >= 1040px) {
+  .tl-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* ------------------------------------------------------------------- tile */
+
+.tl {
+  background: var(--ry-card);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  display: grid;
+  gap: var(--ry-s2);
+  min-width: 0;
+  padding: var(--ry-s4);
+}
+
+/* The one tile that is the answer. Raised ground, stronger edge, and a rule of
+   its accent along the top — three cheap signals that together read as "start
+   here" without a single extra word. */
+.tl-lead {
+  background: var(--ry-elevated);
+  border-color: var(--ry-border-strong);
+  box-shadow: var(--ry-shadow-elevated);
+  position: relative;
+}
+
+.tl-lead::before {
+  background: var(--ry-iris);
+  border-radius: var(--ry-r-card) var(--ry-r-card) 0 0;
+  content: "";
+  height: 2px;
+  inset: -1px -1px auto;
+  position: absolute;
+}
+
+.tl-head {
+  align-items: center;
+  display: flex;
+  gap: var(--ry-s1);
+  justify-content: space-between;
+  min-height: 20px;
+}
+
+.tl-label {
+  color: var(--ry-muted);
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.tl-value {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s1);
+  margin: 0;
+}
+
+/* The ramp already anticipated this pair. DESIGN.md declares `v2-data-m` at
+   1.25rem for a supporting figure and `v2-data-xl` for the one that is the
+   headline — so the hierarchy comes from the design system rather than from a
+   size invented here. 30px was off the ramp entirely, which is how a type scale
+   stops being a scale. */
+.tl-num {
+  color: var(--ry-text);
+  font-family: var(--ry-font-mono);
+  font-size: 1.25rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.tl-lead .tl-num {
+  font-size: clamp(2.75rem, 5vw, 3rem);
+  line-height: 1.05;
+}
+
+.tl-unit {
+  color: var(--ry-muted);
+  font-size: 14px;
+}
+
+.tl-state {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s1);
+}
+
+.tl-chart {
+  min-width: 0;
+  padding-top: var(--ry-s1);
+}
+
+.tl-facts {
+  color: var(--ry-text);
+  display: grid;
+  font-size: 13px;
+  gap: 2px;
+  line-height: 1.5;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* ------------------------------------------------------------------- chip */
+
+.tl-chip {
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-chip);
+  color: var(--ry-text);
+  display: inline-flex;
+  font-size: 13px;
+  line-height: 1;
+  padding: 5px 10px;
+  white-space: nowrap;
+}
+
+.tl-tone-good {
+  background: var(--ry-hover);
+  border-color: var(--ry-hover);
+  color: var(--ry-verified);
+}
+
+.tl-tone-warn {
+  background: var(--ry-hover);
+  border-color: var(--ry-hover);
+  color: var(--ry-caution);
+}
+
+.tl-tone-bad {
+  background: var(--ry-hover);
+  border-color: var(--ry-hover);
+  color: var(--ry-risk);
+}
+
+.tl-tone-evidence {
+  background: var(--ry-hover);
+  border-color: var(--ry-hover);
+  color: var(--ry-iris);
+}
+
+/* ------------------------------------------------------------------- note */
+
+.tl-note {
+  position: relative;
+}
+
+.tl-note summary {
+  align-items: center;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-chip);
+  color: var(--ry-muted);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 13px;
+  height: 22px;
+  justify-content: center;
+  list-style: none;
+  width: 22px;
+}
+
+.tl-note summary::-webkit-details-marker {
+  display: none;
+}
+
+.tl-note summary:hover,
+.tl-note[open] summary {
+  border-color: var(--ry-iris);
+  color: var(--ry-iris);
+}
+
+.tl-note-body {
+  background: var(--ry-elevated);
+  border: 1px solid var(--ry-border-strong);
+  border-radius: var(--ry-r-card);
+  box-shadow: var(--ry-shadow-elevated);
+  color: var(--ry-text);
+  font-size: 14px;
+  line-height: 1.6;
+  padding: var(--ry-s3);
+  position: absolute;
+  right: 0;
+  top: 26px;
+  width: min(320px, 78vw);
+  z-index: 5;
+}
+
+/* ------------------------------------------------------------------ panel */
+
+.tl-panel {
+  background: var(--ry-card);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  display: grid;
+  gap: var(--ry-s3);
+  grid-template-columns: minmax(0, 1fr);
+  padding: var(--ry-s5);
+}
+
+.tl-panel-head {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s2);
+}
+
+.tl-panel-title {
+  color: var(--ry-text);
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.tl-panel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s1);
+  margin-left: auto;
+}
+
+/* ------------------------------------------------------------- microcharts */
+
+.mc {
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+
+.mc-fixed {
+  display: block;
+}
+
+.mc-empty {
+  color: var(--ry-muted);
+  font-size: 14px;
+}
+
+.mc-line {
+  fill: none;
+  stroke: var(--ry-c1);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+
+.mc-area {
+  fill: var(--ry-hover);
+  stroke: none;
+}
+
+.mc-dot {
+  fill: var(--ry-c1);
+  stroke: none;
+}
+
+/* An inactive mark takes the strong border rather than the plain one. Drawn in
+   a hairline meant for a gridline behind data, every unaccented bar and every
+   gauge track was invisible, so a distribution read as one lonely bar and a
+   gauge as a floating arc with nothing to measure against. */
+.mc-bar {
+  fill: var(--ry-border-strong);
+}
+
+.mc-bar-accent {
+  fill: var(--ry-c1);
+}
+
+.mc-track {
+  stroke: var(--ry-border-strong);
+}
+
+.mc-value {
+  stroke: var(--ry-c1);
+}
+
+.mc-cell {
+  fill: var(--ry-c1);
+}
+
+.mc-gap {
+  fill: var(--ry-border-strong);
+}
+
+.mc-split {
+  fill: var(--ry-border-strong);
+}
+
+/* A composition of named categories is monochrome. The first version painted
+   the three instrument classes cyan, grey and red — and red here means
+   `blocked`. A community token is not blocked. Colour carries meaning on this
+   surface or it is not spent, so a composition gets three steps of one hue and
+   the legend under it does the naming. */
+.mc-step-1 {
+  fill: var(--ry-c1);
+}
+
+/* Opacity was the wrong ramp: on a dark ground a faded mark goes toward the
+   background, so the third class disappeared entirely. Three distinct tokens
+   instead — full series, deep series, neutral ink — which stay separable in
+   both themes because each is defined in both. */
+.mc-step-2 {
+  fill: var(--ry-c2);
+}
+
+.mc-step-3 {
+  fill: var(--ry-muted);
+}
+
+.mc-caption {
+  fill: var(--ry-text);
+  font-family: var(--ry-font-mono);
+  font-size: 13px;
+}
+
+.mc-legend {
+  color: var(--ry-muted);
+  font-size: 13px;
+  margin: var(--ry-s1) 0 0;
+}
+
+/* ------------------------------------------------------------------ mobile */
+
+@media (width <= 640px) {
+  .tl-note summary {
+    height: 44px;
+    width: 44px;
+  }
+
+  .tl-note-body {
+    top: 48px;
+  }
+}

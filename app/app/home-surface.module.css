@@ -1,0 +1,488 @@
+/* The chrome the three wave-6 Home surfaces share.
+ *
+ * `/app/adviser`, `/app/strategies` and `/app/control` arrived together and
+ * they are the same kind of page: a head, a state chip, sections of rows, and
+ * every sentence behind an info control. Three near-identical stylesheets would
+ * have been three places to fix one spacing decision, and this repository has
+ * recorded what happens to two places that must agree.
+ *
+ * The section chrome itself is NOT here — `Section` and `StateChip` come from
+ * the Portfolio surface, imported rather than copied, so the tone vocabulary
+ * and the info control stay one system across every Home route.
+ *
+ * Every grid column is `minmax(0, 1fr)` rather than the implicit `auto`, which
+ * is what stops a long instrument key or a version hash from pushing a row
+ * wider than the shell at 375px. That lesson is inherited from the Portfolio
+ * and Decisions surfaces rather than relearned. */
+
+.surface {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--rt-space-lg);
+  width: min(100%, var(--rt-maxw));
+  margin-inline: auto;
+  color: var(--rt-ink-high);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--rt-space-sm);
+}
+
+.head h1 {
+  margin: 0;
+  font-family: var(--ry-font-display);
+  font-size: var(--ry-fs-h2);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.eyebrow {
+  margin: 0 0 var(--rt-space-2xs);
+  color: var(--rt-ink-mid);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.headMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rt-space-xs);
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  padding-inline: var(--rt-space-sm);
+  border: 1px solid var(--rt-hairline-strong);
+  border-radius: var(--rt-radius-sm);
+  color: var(--rt-ink-high);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.link:hover { border-color: var(--rt-action-blue); color: var(--rt-action-blue-fg); }
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rt-space-xs);
+}
+
+.empty {
+  margin: 0;
+  color: var(--rt-ink-mid);
+  font-size: var(--ry-fs-app);
+  line-height: 1.5;
+}
+
+.note {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-inline-start: var(--rt-space-sm);
+  color: var(--rt-ink-mid);
+  font-size: var(--ry-fs-dense);
+  line-height: 1.5;
+}
+
+/* ── the question rail ──────────────────────────────────────────────────── */
+
+/* A question is a link, not a chat bubble. The reader picks the thing they
+   want answered; nothing here accepts free text, because there is no model on
+   this path to answer free text with. */
+.questions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--rt-space-2xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.question {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--rt-space-xs);
+  padding: var(--rt-space-xs) var(--rt-space-sm);
+  border: 1px solid var(--rt-hairline);
+  border-radius: var(--rt-radius-sm);
+  background: var(--rt-panel);
+  color: var(--rt-ink-high);
+  text-decoration: none;
+}
+
+.question:hover { border-color: var(--rt-action-blue); }
+
+.question[data-selected="true"] {
+  border-color: var(--rt-action-blue);
+  background: var(--rt-raised);
+}
+
+.questionBody {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.questionPrompt {
+  font-size: var(--ry-fs-app);
+  font-weight: 600;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.questionMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rt-space-2xs);
+  color: var(--rt-ink-mid);
+  font-size: var(--ry-fs-dense);
+  line-height: 1.4;
+}
+
+/* ── the answer, in its eight fixed sections ────────────────────────────── */
+
+/* The plain answer is the one sentence the reader came for, so it is the only
+   thing on this surface set larger than the rows around it. */
+.plain {
+  margin: 0;
+  color: var(--rt-ink-high);
+  font-size: var(--ry-fs-app);
+  font-weight: 600;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.plainWithheld {
+  margin: 0;
+  color: var(--rt-ink-mid);
+  font-size: var(--ry-fs-app);
+  line-height: 1.45;
+}
+
+/* The structure map: eight chips that say, at a glance, which parts of the
+   fixed answer this one actually reached. An omitted section is impossible, so
+   the map's job is to show which are empty and why — not to prove they exist. */
+.structure {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rt-space-2xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.structureItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.rows {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--rt-space-2xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--rt-space-xs);
+  padding: var(--rt-space-xs) var(--rt-space-sm);
+  border: 1px solid var(--rt-hairline);
+  border-radius: var(--rt-radius-sm);
+  background: var(--rt-panel);
+}
+
+/* A reason belongs under the thing it is about, never a screen-width away from
+   it. The Decisions surface found this by looking; it is inherited here. */
+.stackedRow {
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: start;
+}
+
+.rowBody {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.rowName {
+  font-size: var(--ry-fs-app);
+  font-weight: 600;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.rowMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rt-space-2xs);
+  color: var(--rt-ink-mid);
+  font-size: var(--ry-fs-dense);
+  line-height: 1.4;
+}
+
+.rowMeta b {
+  color: var(--rt-ink-high);
+  font-family: var(--ry-font-mono);
+  font-weight: 500;
+}
+
+.rowMeta time { font-variant-numeric: tabular-nums; }
+
+/* A meta row of four labelled values, separated.
+ *
+ * The row's own 4px gap is right for a chip beside a time; it is not enough
+ * between `Cooldown 1h` and `Cap 20 per day`, which ran together into one
+ * unbroken string. The dot is the separator this system already uses for a
+ * wrapped list and it wraps with the items rather than leading a new line. */
+.rowMetaSeparated { gap: var(--rt-space-xs); }
+
+.rowMetaSeparated > span + span::before {
+  content: "·";
+  margin-inline-end: var(--rt-space-xs);
+  color: var(--rt-ink-mid);
+}
+
+.rowValue {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.rowReason {
+  color: var(--rt-ink-mid);
+  font-size: var(--ry-fs-dense);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+/* ── disagreeing readings ───────────────────────────────────────────────── */
+
+/* Held side by side and narrow on purpose: the two numbers a reader is here to
+   compare must be within one glance of each other. Stretched to the full page
+   width they were seven hundred pixels apart, which the Research surface
+   measured and fixed; the constraint is inherited rather than rediscovered. */
+.conflict {
+  display: grid;
+  gap: var(--rt-space-2xs);
+  padding: var(--rt-space-xs) var(--rt-space-sm);
+  border: 1px solid var(--rt-review-amber);
+  border-radius: var(--rt-radius-sm);
+  background: var(--rt-panel);
+}
+
+.conflictRows {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), max-content));
+  gap: var(--rt-space-xs);
+}
+
+.conflictRow {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.conflictValue {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-app);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+/* ── compact tiles (the control projections) ────────────────────────────── */
+
+/* `auto-fill`, not `auto-fit`. Found by looking: a group holding one tile
+   stretched it the full width of the shell, so a single commitment read as a
+   banner. `auto-fill` keeps the empty tracks and the tile keeps its size. */
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr));
+  gap: var(--rt-space-xs);
+}
+
+.tile {
+  display: grid;
+  gap: 4px;
+  align-content: start;
+  padding: var(--rt-space-xs) var(--rt-space-sm);
+  border: 1px solid var(--rt-hairline);
+  border-radius: var(--rt-radius-sm);
+  background: var(--rt-panel);
+}
+
+.tileHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rt-space-2xs);
+  color: var(--rt-ink-mid);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+}
+
+.tileValue {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-app);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.tileNote {
+  color: var(--rt-ink-mid);
+  font-size: var(--ry-fs-dense);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+/* The owner line is what makes a tile a projection rather than a second source
+   of truth, so it is on the tile itself and not in an info panel.
+   `min-height: 44px` because measuring found it 22px tall — a real link on a
+   real tile that a thumb could not reliably hit. The tile grows; that is the
+   correct trade. */
+.tileOwner {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  margin-block-start: auto;
+  color: var(--rt-ink-mid);
+  font-size: var(--ry-fs-dense);
+  text-decoration: none;
+}
+
+.tileOwner:hover { color: var(--rt-action-blue-fg); }
+
+/* ── facts ──────────────────────────────────────────────────────────────── */
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(180px, 100%), 1fr));
+  gap: var(--rt-space-xs);
+}
+
+/* An imported vocabulary, drawn so it reads as a list rather than as one long
+   mono string. Found by looking: thirteen action classes ran together into a
+   single unbroken line nobody could count. */
+.vocab {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rt-space-2xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.vocabItem {
+  padding: 2px var(--rt-space-2xs);
+  border: 1px solid var(--rt-hairline);
+  border-radius: var(--rt-radius-sm);
+  background: var(--rt-raised);
+  color: var(--rt-ink-mid);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+}
+
+.fact {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.factKey {
+  color: var(--rt-ink-mid);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+}
+
+.factValue {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+/* ── loading ────────────────────────────────────────────────────────────── */
+
+/* Reserved geometry, never the last read's content. A surface that shows its
+   previous answer while fetching the next is the most convincing way to tell a
+   reader something is current when it is not. The pulse sits behind
+   `prefers-reduced-motion`, so with motion reduced this is a still, correctly
+   sized placeholder rather than nothing at all. */
+.skeleton {
+  border-radius: var(--rt-radius-sm);
+  background: var(--rt-hairline);
+}
+
+.skeletonRow { height: 52px; }
+.skeletonLine { height: 14px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton { animation: pulse 1.6s var(--rt-ease) infinite; }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 0.85; }
+}
+
+/* ── the narrow layout ──────────────────────────────────────────────────── */
+
+/* 375, which is the width of the phone this product is most often opened on.
+ *
+ * Three things break at that width and all three are grid decisions rather than
+ * font ones. A `minmax(220px, 1fr)` tile track cannot fit 220px plus the shell's
+ * own padding, so the grid overflows sideways rather than wrapping — the single
+ * most common cause of a page that scrolls horizontally. A `1fr auto` row puts a
+ * value hard against a name with nothing between them. And a head that lays its
+ * title and its state chips out in one flex line pushes the chips off the right
+ * edge instead of dropping them to a second line.
+ *
+ * Everything here is layout. No size, weight or colour changes: a phone reader
+ * gets the same facts at the same contrast, arranged in one column. */
+@media (max-width: 767px) {
+  .surface { gap: var(--rt-space-md); }
+
+  .head {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: var(--rt-space-xs);
+  }
+
+  .tiles { grid-template-columns: minmax(0, 1fr); }
+
+  .row {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: start;
+  }
+
+  .rowValue { white-space: normal; }
+
+  /* The conflicting-readings block holds two numbers side by side so they can
+     be compared in one glance. At 375 there is no width for two, and stacked
+     they are still within one glance of each other. */
+  .conflictRows { grid-template-columns: minmax(0, 1fr); }
+}

@@ -1,0 +1,288 @@
+/* The public homepage.
+   Written on the frozen `--ry-*` projection: no colour literal, no font size
+   off the ramp, no radius off the scale. Dark is the default ground; the light
+   ground follows the same tokens, so nothing here has a second palette. */
+
+.root, .page { color: var(--ry-text); }
+/* The landing of 2026-09-13 is one continuous ground in both themes — the
+   tone of the hero render's own last rows (measured: about 2 / 4 / 6), which
+   midnight at 30 % over black reproduces — painted once here so that no
+   section carries a ground, a light or a line of its own at a boundary. The
+   picture's foot is this colour; the next section begins in it, and so does
+   the footer (2026-09-14), which is transparent on the landing and would
+   otherwise have shown the site's own ground as a band under the last block. */
+.root {
+  --landing-ground: color-mix(in srgb, var(--ry-midnight) 30%, black);
+  /* The landing's own ink, dust, shade and panel (Owner, 2026-09-14: the
+     theme switch works on every page, the landing included). The blocks are
+     drawn on these five rather than on the static mist, so the light theme is
+     the same drawing on a light ground: the ink turns graphite, the dust
+     darkens, the shade softens, the panel becomes the site's card. What is a
+     device or a scene — the hero's terminal, the universe's spheres, the
+     workflow's frame — keeps its own dark material in both themes, the way a
+     dark screen sits on a light desk. */
+  --landing-ink: var(--ry-mist);
+  --landing-mote: var(--ry-mist);
+  --landing-shade: black;
+  --landing-panel: color-mix(in srgb, var(--ry-mist) 4%, var(--ry-midnight));
+  background: var(--landing-ground);
+}
+:global([data-theme="light"]) .root, :global([data-ry-theme="light"]) .root {
+  --landing-ground: var(--ry-bg);
+  --landing-ink: var(--ry-text);
+  --landing-mote: color-mix(in srgb, var(--ry-text) 55%, transparent);
+  --landing-shade: color-mix(in srgb, var(--ry-text) 32%, transparent);
+  --landing-panel: var(--ry-card);
+}
+.page { background: var(--landing-ground); }
+.hero, .workflow, .trade, .versions, .finalCta { width: 100%; max-width: 1440px; margin-inline: auto; padding-inline: 80px; box-sizing: border-box; }
+
+/* ── shared controls ─────────────────────────────────────────────────────── */
+.primaryAction, .textLink, .secondaryButton, .plainButton { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; font: inherit; font-size: var(--ry-fs-app); line-height: 1.4; cursor: pointer; }
+.primaryAction { border: 0; border-radius: var(--ry-r-btn); padding: 15px 30px; background: var(--ry-iris-deep); color: var(--ry-on-iris); text-decoration: none; font-weight: 600; }
+.primaryAction:hover { background: var(--ry-iris); }
+.primaryAction:active { background: var(--ry-iris-pressed); }
+.textLink { width: fit-content; color: var(--ry-text); text-decoration: underline; text-underline-offset: 7px; text-decoration-thickness: 1px; text-decoration-color: var(--ry-border-strong); }
+.textLink:hover { text-decoration-color: currentColor; }
+.secondaryButton { border: 1px solid var(--ry-border-strong); border-radius: var(--ry-r-btn-sm); background: var(--ry-card); color: var(--ry-text); padding: 10px 20px; }
+.secondaryButton:hover:not(:disabled) { background: var(--ry-hover); }
+.secondaryButton[aria-pressed="true"] { border-color: var(--ry-iris); }
+.secondaryButton:disabled { cursor: default; opacity: .42; }
+.plainButton { background: transparent; color: var(--ry-muted); padding: 10px 8px; border: 0; }
+.plainButton:hover { color: var(--ry-text); }
+.textLink svg, .primaryAction svg, .secondaryButton svg, .plainButton svg { flex: none; }
+.sectionLead { margin: 18px 0 0; color: var(--ry-muted); font-size: var(--ry-fs-lead); line-height: 1.55; text-wrap: pretty; }
+.workflow h2, .trade h2, .versions h2, .finalCta h2 { margin: 0; font-family: var(--ry-font-display); font-size: var(--ry-fs-h1); line-height: 1.2; letter-spacing: -.03em; font-weight: 600; text-wrap: balance; }
+
+/* ── 1 · hero ────────────────────────────────────────────────────────────── */
+.hero { position: relative; text-align: center; padding-top: 118px; padding-bottom: 96px; }
+/* One wash, the only one on the page: the brand hue at low strength behind the
+   headline. Mixed from the token, so it follows the theme rather than fixing a
+   colour of its own. */
+.hero::before { content: ""; position: absolute; inset: -40px 0 auto; height: 520px; z-index: 0; pointer-events: none;
+  background: radial-gradient(58% 70% at 50% 0%, color-mix(in srgb, var(--ry-iris) 13%, transparent), transparent 72%); }
+.hero > * { position: relative; z-index: 1; }
+.h1 { margin: 0; font: 600 clamp(var(--ry-fs-h1), 6.3vw, calc(var(--ry-fs-display) * 1.35))/1.12 var(--ry-font-display); letter-spacing: -.035em; text-wrap: balance; }
+.h1 span { display: block; }
+.h1 span:last-child { color: var(--ry-muted); }
+.heroLead { margin: 38px auto 0; max-width: 74ch; color: var(--ry-muted); font-size: var(--ry-fs-lead); line-height: 1.6; text-wrap: pretty; }
+.heroActions { display: flex; justify-content: center; align-items: center; gap: 30px; flex-wrap: wrap; margin-top: 40px; }
+.trustLine { display: flex; justify-content: center; align-items: center; gap: 14px; flex-wrap: wrap; list-style: none; margin: 34px 0 0; padding: 0; font-family: var(--ry-font-mono); font-size: var(--ry-fs-label); letter-spacing: .04em; color: var(--ry-muted); }
+.trustLine li { display: flex; align-items: center; gap: 14px; }
+.trustLine li + li::before { content: "·"; opacity: .5; }
+.heroAvailability { position: relative; margin: 62px auto 0; padding-top: 24px; max-width: 72ch; font-size: var(--ry-fs-dense); color: var(--ry-muted); line-height: 1.6; }
+.heroAvailability::before { content: ""; position: absolute; top: 0; left: calc(50% - 22px); width: 44px; height: 1px; background: var(--ry-border-strong); }
+
+/* ── 2 · strategy demonstration ──────────────────────────────────────────── */
+.workflow { position: relative; padding-top: 48px; padding-bottom: 92px; scroll-margin-top: 96px; }
+.anchorAlias { position: absolute; top: 0; }
+.workflowHeading { display: flex; align-items: flex-start; justify-content: space-between; gap: 32px; flex-wrap: wrap; }
+.workflowHeading > div { flex: 1 1 620px; }
+.demoStatus { position: relative; max-width: 330px; margin: 10px 0 0; padding-left: 34px; color: var(--ry-muted); font-size: var(--ry-fs-dense); line-height: 1.6; }
+.demoStatus::before { content: ""; position: absolute; left: 0; top: .75em; width: 22px; height: 1px; background: var(--ry-border-strong); }
+
+/* The state, before the walkthrough. A reader who stops at this card still
+   learns what the product does with a plan when the market moves away from it. */
+.planCard { margin-top: 36px; border: 1px solid var(--ry-border); border-radius: var(--ry-r-card); background: var(--ry-elevated); padding: 24px 30px 22px;
+  box-shadow: 0 22px 44px -34px color-mix(in srgb, var(--ry-text) 46%, transparent); }
+.planCardHead { display: flex; align-items: baseline; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+.planCardHead h3 { margin: 0; font-size: var(--ry-fs-title); font-weight: 600; line-height: 1.4; }
+.planCardHead > span { font-family: var(--ry-font-mono); font-size: var(--ry-fs-label); letter-spacing: .08em; text-transform: uppercase; color: var(--ry-muted); }
+.planCardRows { display: grid; grid-template-columns: 1.6fr repeat(3, minmax(0, 1fr)); gap: 24px; margin: 22px 0 0; }
+.planCardRows > div { min-width: 0; }
+.planCardRows dt { font-family: var(--ry-font-mono); font-size: var(--ry-fs-label); letter-spacing: .07em; text-transform: uppercase; color: var(--ry-muted); }
+.planCardRows dd { margin: 9px 0 0; font-size: var(--ry-fs-app); line-height: 1.45; }
+.planCardRows dd[data-estimate="over"] { color: var(--ry-accent); }
+.planCardState { position: relative; display: inline-flex; align-items: center; margin: 22px 0 0; padding: 11px 18px 11px 38px; border-radius: var(--ry-r-btn-sm); background: var(--ry-hover); font-size: var(--ry-fs-app); line-height: 1.5; }
+.planCardState::before { content: ""; position: absolute; left: 18px; top: calc(50% - 4px); width: 8px; height: 8px; border-radius: var(--ry-r-focus-sm); background: currentColor; }
+.planCardState[data-tone="ok"] { color: var(--ry-pnl-pos); }
+.planCardState[data-tone="attention"] { color: var(--ry-accent); }
+.planCardState[data-tone="neutral"] { color: var(--ry-muted); }
+
+.deck { display: grid; grid-template-columns: minmax(0, 352px) minmax(0, 1fr); gap: 60px; margin-top: 28px; align-items: start; perspective: 1150px; perspective-origin: 12% 50%; }
+/* The rail is one plane standing at an angle in the scene. The depth belongs to
+   the plane, not to the individual rows — offsetting each row reads as a
+   decorative staircase, which is the one thing this section must not look like. */
+.rail { display: grid; gap: 10px; align-content: start; transform-style: preserve-3d; transform: rotateY(-14deg); transform-origin: left center; }
+.stage { position: relative; margin: 0; font-weight: 400; opacity: calc(1 - min(var(--stage-distance), 4) * .09);
+  transition: transform 260ms cubic-bezier(.2, .7, .3, 1), opacity 260ms ease; }
+/* The open stage lifts off the plane and turns square-on to the reader. */
+.stage[data-active="true"] { transform: translateZ(58px) rotateY(14deg); opacity: 1; }
+.stageButton { display: grid; grid-template-columns: auto 1fr auto; align-items: center; column-gap: 16px; width: 100%; text-align: left;
+  padding: 15px 18px; border: 1px solid var(--ry-border); border-radius: var(--ry-r-card); background: var(--ry-card); color: var(--ry-text); font: inherit;
+  box-shadow: 0 14px 22px -20px color-mix(in srgb, var(--ry-text) 30%, transparent); transition: border-color 180ms ease, background 180ms ease; }
+.stage:not([data-active="true"]) .stageButton { background: color-mix(in srgb, var(--ry-card) 72%, var(--ry-bg)); }
+.stageButton:hover { border-color: var(--ry-iris); }
+.stage[data-active="true"] .stageButton { border-color: var(--ry-iris); box-shadow: 0 20px 34px -20px color-mix(in srgb, var(--ry-text) 42%, transparent); }
+.stageNumber { font-family: var(--ry-font-mono); font-size: var(--ry-fs-dense); line-height: 1; color: var(--ry-muted); }
+.stage[data-active="true"] .stageNumber, .stage[data-active="true"] .stageIcon { color: var(--ry-iris); }
+.stageName { font-size: var(--ry-fs-title); font-weight: 600; line-height: 1.35; }
+.stageIcon { color: var(--ry-muted); flex: none; }
+.stageShort { grid-column: 2 / -1; margin-top: 4px; font-size: var(--ry-fs-dense); line-height: 1.5; color: var(--ry-muted); font-weight: 400; }
+.stage:not([data-active="true"]) .stageShort { display: none; }
+.mobileCaret { display: none; }
+
+/* Full height on purpose: the card must not resize as the reader moves between
+   stages, so the plan sits at its foot and the height stays put. */
+/* A floor rather than a match to the rail: the plan now lives above the deck,
+   so the panel no longer has to be as tall as eight stage buttons. */
+.demoPanel { min-width: 0; min-height: 296px; display: flex; flex-direction: column; border: 1px solid var(--ry-border); border-radius: var(--ry-r-card); background: var(--ry-elevated);
+  padding: 32px 34px; box-shadow: 0 26px 48px -34px color-mix(in srgb, var(--ry-text) 46%, transparent); }
+.panelHead { display: flex; align-items: baseline; gap: 20px; flex-wrap: wrap; padding-bottom: 20px; border-bottom: 1px solid var(--ry-border); }
+.panelHead strong { font-size: var(--ry-fs-h3); font-weight: 600; line-height: 1.35; }
+.panelHead > span { font-family: var(--ry-font-mono); font-size: var(--ry-fs-label); color: var(--ry-muted); letter-spacing: .08em; text-transform: uppercase; }
+.panelMain { flex: 1; display: flex; flex-direction: column; padding-top: 22px; }
+.demoBody { margin: 0; color: var(--ry-muted); font-size: var(--ry-fs-app); line-height: 1.68; }
+.demoQuote { margin: 0 0 16px; padding-left: 18px; border-left: 2px solid var(--ry-iris); color: var(--ry-text); font-size: var(--ry-fs-lead); line-height: 1.5; }
+.demoRows { margin: 24px 0 0; display: grid; }
+.demoRows > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; gap: 24px; padding: 13px 0; border-top: 1px solid var(--ry-border); }
+.demoRows dt { color: var(--ry-muted); font-size: var(--ry-fs-dense); line-height: 1.5; }
+.demoRows dd { margin: 0; font-family: var(--ry-font-mono); font-size: var(--ry-fs-dense); line-height: 1.5; text-align: right; }
+.demoHint { margin: 16px 0 0; color: var(--ry-muted); font-size: var(--ry-fs-label); line-height: 1.6; }
+.reviewMessage { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 18px; align-items: start; }
+.reviewMessage > svg { color: var(--ry-iris); margin-top: 2px; }
+.reviewMessage p { margin: 0; color: var(--ry-text); font-size: var(--ry-fs-app); line-height: 1.65; }
+.decisionActions, .budgetChoices { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.decisionActions { margin-top: auto; padding-top: 26px; }
+.budgetChoices { margin-top: 22px; }
+.stageAnnouncement { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+.demoControls { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 26px; margin-top: 36px; border-top: 1px solid var(--ry-border-strong); padding-top: 28px; }
+.sequentialControls, .extraControls { display: flex; align-items: center; gap: 14px; }
+.sequentialControls .secondaryButton { min-width: 132px; }
+.extraControls { padding-left: 26px; border-left: 1px solid var(--ry-border-strong); gap: 22px; }
+.demoFoot { margin: 18px 0 0; color: var(--ry-muted); text-align: center; font-size: var(--ry-fs-label); line-height: 1.6; }
+
+/* ── risk rows, shared by the demonstration and the Risk section ─────────── */
+.riskRows { list-style: none; margin: 0; padding: 0; }
+.riskRows li { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 20px; padding: 16px 0; border-top: 1px solid var(--ry-border); }
+.riskRows li:first-child { border-top: 0; }
+.riskKey { font-size: var(--ry-fs-app); line-height: 1.5; }
+.riskValue { font-family: var(--ry-font-mono); font-size: var(--ry-fs-dense); line-height: 1.5; color: var(--ry-muted); text-align: right; }
+/* Both tokens flip with the theme, so neither needs a light stand-in here. */
+.riskValue[data-tone="ok"] { color: var(--ry-pnl-pos); }
+.riskValue[data-tone="attention"] { color: var(--ry-accent); }
+.riskValue[data-tone="unknown"] { color: var(--ry-unknown); }
+.riskValue[data-tone="neutral"] { color: var(--ry-text); }
+.riskValue[data-tone="ok"]::after { content: " ✓"; }
+
+/* ── 3 · trade ───────────────────────────────────────────────────────────── */
+.trade { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 80px; align-items: start; padding-block: 92px 100px; }
+.tradeIntro .sectionLead { margin-top: 20px; }
+/* Readiness stays honest but stops being a table: three quiet rows of chips
+   instead of a feature grid that competed with the product itself. */
+.chipGroup { margin-top: 26px; }
+.chipGroupLabel { display: block; font-family: var(--ry-font-mono); font-size: var(--ry-fs-label); letter-spacing: .08em; text-transform: uppercase; color: var(--ry-muted); }
+.chipRow { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 0; padding: 0; }
+.chipRow li { display: inline-flex; align-items: baseline; gap: 9px; padding: 6px 13px; border: 1px solid var(--ry-border-strong); border-radius: var(--ry-r-chip); font-size: var(--ry-fs-dense); line-height: 1.4; }
+.chipStatus { font-family: var(--ry-font-mono); font-size: var(--ry-fs-label); line-height: 1.4; color: var(--ry-muted); white-space: nowrap; }
+.chipStatus[data-status="AVAILABLE"], .chipStatus[data-status="SUPPORTED_ROUTES"] { color: var(--ry-pnl-pos); }
+.chipStatus[data-status="BUILDING"] { color: var(--ry-accent); }
+.tradeIntro > .primaryAction { margin-top: 36px; }
+.ticket { border: 1px solid var(--ry-border); border-radius: var(--ry-r-card); background: var(--ry-card); padding: 26px 30px 24px;
+  box-shadow: 0 26px 48px -36px color-mix(in srgb, var(--ry-text) 46%, transparent); }
+.ticketHead { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding-bottom: 18px; border-bottom: 1px solid var(--ry-border); }
+.ticketHead h3 { margin: 0; font-size: var(--ry-fs-title); font-weight: 600; line-height: 1.4; }
+.ticketHead > span { font-family: var(--ry-font-mono); font-size: var(--ry-fs-label); letter-spacing: .08em; text-transform: uppercase; color: var(--ry-muted); }
+.ticketRows { margin: 0; }
+.ticketRows > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; gap: 20px; padding: 15px 0; border-bottom: 1px solid var(--ry-border); }
+.ticketRows > div:last-child { border-bottom: 0; }
+.ticketRows dt { color: var(--ry-muted); font-size: var(--ry-fs-app); line-height: 1.5; }
+.ticketRows dd { margin: 0; font-family: var(--ry-font-mono); font-size: var(--ry-fs-app); line-height: 1.5; text-align: right; }
+.ticketNote { margin: 18px 0 0; padding-top: 16px; border-top: 1px solid var(--ry-border-strong); color: var(--ry-muted); font-size: var(--ry-fs-dense); line-height: 1.6; }
+
+/* ── 4 · what a strategy remembers ───────────────────────────────────────── */
+.versions { padding-block: 78px 92px; }
+.versions h2 { max-width: 26ch; text-wrap: pretty; }
+.versionsIntro .sectionLead { max-width: 82ch; }
+.versionColumns { list-style: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; margin: 44px 0 0; padding: 0; counter-reset: version; }
+.versionColumns > li { min-width: 0; position: relative; border: 1px solid var(--ry-border); border-radius: var(--ry-r-card); background: var(--ry-card); padding: 22px 24px 20px; }
+/* The middle column is the one that carries the point — what the market did
+   and what it cost — so it is the one the eye lands on. */
+.versionColumns > li:nth-child(2) { background: var(--ry-elevated); border-color: var(--ry-border-strong); }
+.versionTag { display: block; font-family: var(--ry-font-mono); font-size: var(--ry-fs-label); letter-spacing: .08em; text-transform: uppercase; color: var(--ry-muted); }
+.versionColumns > li:nth-child(2) .versionTag { color: var(--ry-accent); }
+.versionRows { margin: 16px 0 0; }
+.versionRows > div { display: grid; gap: 4px; padding: 11px 0; border-top: 1px solid var(--ry-border); }
+.versionRows > div:first-child { border-top: 0; }
+.versionRows dt { color: var(--ry-muted); font-size: var(--ry-fs-label); line-height: 1.4; }
+.versionRows dd { margin: 0; font-family: var(--ry-font-mono); font-size: var(--ry-fs-dense); line-height: 1.45; }
+.versionsEnd { margin-top: 40px; }
+.versionsReason { margin: 0; max-width: 92ch; font-size: var(--ry-fs-lead); line-height: 1.55; text-wrap: pretty; }
+.versionsReason > span { display: block; margin-bottom: 8px; font-family: var(--ry-font-mono); font-size: var(--ry-fs-label); letter-spacing: .08em; text-transform: uppercase; color: var(--ry-muted); }
+.versionsNote { margin: 20px 0 0; max-width: 92ch; color: var(--ry-muted); font-size: var(--ry-fs-dense); line-height: 1.6; }
+.versionsEnd .textLink { margin-top: 16px; }
+
+/* ── 5 · close ───────────────────────────────────────────────────────────── */
+/* Centred on purpose: it bookends the hero, and a split row left a dead gap
+   between a three-line heading and two buttons. */
+.finalCta { text-align: center; padding-block: 92px 100px; border-top: 1px solid var(--ry-border); }
+.finalCta h2 { max-width: 28ch; margin-inline: auto; }
+.finalCta p { max-width: 56ch; margin: 18px auto 0; color: var(--ry-muted); font-size: var(--ry-fs-lead); line-height: 1.6; }
+.finalActions { display: flex; align-items: center; justify-content: center; gap: 28px; flex-wrap: wrap; margin-top: 38px; }
+
+.primaryAction:focus-visible, .textLink:focus-visible, .workflow button:focus-visible { outline: 2px solid var(--ry-iris); outline-offset: 4px; }
+
+/* ── responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 1250px) {
+  .hero, .workflow, .trade, .versions, .finalCta { padding-inline: 48px; }
+  .deck { grid-template-columns: minmax(0, 300px) minmax(0, 1fr); gap: 36px; }
+  .trade { gap: 48px; }
+  .demoPanel { padding: 28px 26px; }
+}
+
+@media (max-width: 960px) {
+  .hero, .workflow, .trade, .versions, .finalCta { padding-inline: 24px; }
+  .hero { padding-top: 80px; padding-bottom: 64px; }
+  /* The plane flattens and the rail becomes a readable sequence of cards: each
+     stage opens its own panel in place, in reading order. */
+  /* `display: contents` dissolves the rail so the stages and the panel become
+     siblings of one column, and `order` puts the open panel directly under the
+     stage the reader tapped instead of below all eight. */
+  .deck { display: flex; flex-direction: column; gap: 0; perspective: none; margin-top: 32px; }
+  .rail { display: contents; }
+  .stage, .stage[data-active="true"] { transform: none; opacity: 1; margin-bottom: 12px; }
+  .stage:not([data-active="true"]) .stageShort { display: block; }
+  /* The caret takes the icon's corner: on a phone the open/closed affordance is
+     worth more than the stage's glyph. */
+  .stageIcon { display: none; }
+  .mobileCaret { display: inline-flex; grid-column: 3; grid-row: 1; color: var(--ry-muted); }
+  .demoPanel { margin: 0 0 12px; padding: 24px 22px; }
+  .planStrip { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 24px; }
+  .trade { grid-template-columns: minmax(0, 1fr); }
+  .versions h2 { max-width: none; }
+  .versionColumns { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .planCardRows { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 24px; }
+}
+
+@media (max-width: 620px) {
+  .hero, .workflow, .trade, .versions, .finalCta { padding-inline: 18px; }
+  /* Twenty-pixel type over nine lines is a wall on a phone; the paragraph is
+     the one place the whole cycle is spelled out, so it stays — smaller. */
+  .heroLead, .sectionLead, .versionsReason { font-size: var(--ry-fs-app); }
+  .heroActions { flex-direction: column; align-items: stretch; gap: 14px; }
+  .heroActions .primaryAction, .heroActions .textLink { width: 100%; }
+  .trustLine { gap: 10px; }
+  .trustLine li { gap: 10px; }
+  .demoRows > div, .ticketRows > div { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .demoRows dd, .ticketRows dd { text-align: left; }
+  .planCardRows { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .planCard { padding: 20px 18px; }
+  .riskRows li { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .riskValue { text-align: left; }
+  .decisionActions, .budgetChoices { gap: 10px; }
+  .decisionActions > * { flex: 1 1 auto; }
+  .demoControls { gap: 14px; }
+  .extraControls { padding-left: 0; border-left: 0; border-top: 1px solid var(--ry-border-strong); padding-top: 14px; width: 100%; justify-content: center; }
+  .sequentialControls .secondaryButton { min-width: 0; flex: 1; }
+  .sequentialControls { width: 100%; }
+  .finalActions .primaryAction { width: 100%; }
+}
+
+/* The section has to be readable with the depth switched off, so the plane
+   flattens too — not only its transitions. */
+@media (prefers-reduced-motion: reduce) {
+  .deck { perspective: none; }
+  .rail { transform: none; }
+  .stage, .stage[data-active="true"] { transform: none; transition: none; opacity: 1; }
+  .stageButton { transition: none; }
+}

@@ -1,0 +1,2515 @@
+/*
+ * «Простий»'s company page and its purchase in dollars (canon v5.1 §2, §4;
+ * RYN-INVEST-SIMPLE-001, session 2). Drawn for 390px first (В20), then
+ * widened: the company by its logo and name, a big price, a line, one line
+ * of truth, one orange action; the purchase rises as a sheet from the bottom
+ * of a phone and stands in the middle of a wide screen. Tokens only
+ * (DESIGN.md → app/design/tokens.css): big figures in Geist with tabular
+ * numerals, no mono, no capitals, no word under 13px.
+ */
+
+.page {
+  display: grid;
+  gap: var(--ry-s5);
+  width: 100%;
+  max-width: 1760px;
+  min-width: 0;
+}
+
+/*
+ * The company page, complete (RYN-COMPANY-PAGE-001): laid out like Home from
+ * 1280 px — the company in the main column (its head and line, then its facts),
+ * the purchase in a card beside it that stays in view. Under 1280 one column:
+ * the head and the line, the purchase, the facts — the order a phone reads.
+ */
+.layout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ry-s5);
+  min-width: 0;
+}
+
+/* Under 1280 the three columns dissolve into one reading order: the head and the line, the purchase, the facts, then the other companies. */
+.layout > .main,
+.layout > .aside,
+.asideStick,
+.layout > .facts2 {
+  display: contents;
+}
+
+.layout > .main > * {
+  order: 1;
+}
+
+.buyCard {
+  order: 2;
+}
+
+.layout > .facts2 > * {
+  order: 3;
+}
+
+.popular {
+  order: 4;
+}
+
+@media (min-width: 1280px) {
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(340px, 26vw, 420px);
+    grid-template-areas:
+      "main aside"
+      "facts aside";
+    column-gap: var(--ry-s6);
+    row-gap: var(--ry-s6);
+    align-items: start;
+  }
+
+  .layout > .main {
+    display: grid;
+    grid-area: main;
+  }
+
+  .layout > .aside {
+    display: block;
+    grid-area: aside;
+    align-self: stretch;
+  }
+
+  /* The purchase and the other companies stay in view while the facts scroll. */
+  .asideStick {
+    display: grid;
+    gap: var(--ry-s5);
+    position: sticky;
+    top: var(--ry-s5);
+  }
+
+  .layout > .facts2 {
+    display: grid;
+    grid-area: facts;
+  }
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  width: fit-content;
+  min-height: 44px;
+  font-size: var(--ry-fs-dense);
+  font-weight: 500;
+  color: var(--ry-muted);
+  text-decoration: none;
+}
+
+.back:hover {
+  color: var(--ry-text);
+}
+
+/* ── The head: who the company is ─────────────────────────────────────── */
+
+.main {
+  display: grid;
+  gap: var(--ry-s4);
+  min-width: 0;
+}
+
+.head,
+.identity {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s4);
+  min-width: 0;
+}
+
+.headText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.logo {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 56px;
+  height: 56px;
+  overflow: hidden;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-elevated);
+  box-shadow: 0 0 0 1px var(--ry-border);
+  object-fit: cover;
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  color: var(--ry-muted);
+}
+
+.name {
+  margin: 0;
+  min-width: 0;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-key);
+  font-weight: 650;
+  line-height: var(--ry-lh-head);
+  letter-spacing: var(--ry-ls-head);
+  color: var(--ry-text);
+  overflow-wrap: anywhere;
+}
+
+/* The ticker on its exchange and the industry, under the name — the one line that says what kind of thing this is. */
+.subline {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  font-weight: 500;
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+  overflow-wrap: anywhere;
+}
+
+/* A private company's line: what the token is not, before any figure. */
+.warning,
+.sheetWarning {
+  margin: 0;
+  padding: var(--ry-s3) var(--ry-s4);
+  border: 1px solid color-mix(in srgb, var(--ry-caution) 45%, transparent);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-caution-soft);
+  font-size: var(--ry-fs-dense);
+  font-weight: 500;
+  line-height: var(--ry-lh-body);
+  color: var(--ry-text);
+}
+
+.warning > p {
+  margin: 0;
+}
+
+/* The company's own dated statement under the truth, in the same box — its sources are under «Деталі» (canon v5.2 C.8). */
+.warning > .warningNote {
+  margin-top: var(--ry-s2);
+  padding-top: var(--ry-s2);
+  border-top: 1px solid color-mix(in srgb, var(--ry-caution) 30%, transparent);
+  font-weight: 400;
+  color: var(--ry-text-muted);
+}
+
+/* The issuer's event under the truth, in the same box, before any figure (canon v5.2 В27, §7): the window and its deadline; a holder's line says what to do. */
+.warning > .warningEvent,
+.sheetWarning > .warningEvent {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ry-s2);
+  margin: var(--ry-s2) 0 0;
+  padding-top: var(--ry-s2);
+  border-top: 1px solid color-mix(in srgb, var(--ry-caution) 30%, transparent);
+  font-weight: 600;
+  color: var(--ry-text);
+  text-wrap: pretty;
+}
+
+.warningEvent > svg {
+  flex: 0 0 auto;
+  margin-top: 0.2em;
+  color: var(--ry-caution);
+}
+
+.sheetWarning > p {
+  margin: 0;
+}
+
+/* A holder's one action and the quiet second, right under the event — «Купити» steps back to quiet for a holder, so the screen keeps one orange action (canon §2, rule 1). */
+.eventActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ry-s2) var(--ry-s4);
+}
+
+.eventActions > :global(.rw-btn--primary) {
+  min-height: 48px;
+}
+
+@media (max-width: 640px) {
+  .eventActions > :global(.rw-btn--primary) {
+    width: 100%;
+  }
+
+  .eventActions > .quietButton {
+    width: 100%;
+  }
+}
+
+/* ── «Шлях компанії» (RYN-COMPANY-PATH-001) ─────────────────────────── */
+
+/* One strip under the company's name: the four steps, this token at its step, the company's other token one press away, the swap's deadline under them. */
+.path {
+  display: grid;
+  gap: var(--ry-s4);
+  min-width: 0;
+  padding: var(--ry-s4);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+}
+
+@media (min-width: 720px) {
+  .path {
+    padding: var(--ry-s5);
+  }
+}
+
+.pathTitle {
+  margin: 0;
+  font-size: var(--ry-fs-section);
+  font-weight: 650;
+  line-height: var(--ry-lh-head);
+  color: var(--ry-text);
+}
+
+/* A phone reads the steps top to bottom along one line; from 720 px they stand side by side along it. */
+.pathSteps {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pathStep {
+  position: relative;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  column-gap: var(--ry-s3);
+  min-width: 0;
+  padding-bottom: var(--ry-s3);
+}
+
+.pathStep:last-child {
+  padding-bottom: 0;
+}
+
+/* The line to the next step: solid up to where the company stands, dashed beyond it. */
+.pathStep:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  top: 26px;
+  bottom: 4px;
+  left: 10px;
+  width: 2px;
+  background: var(--ry-text-muted);
+}
+
+.pathStep[data-state="current"]:not(:last-child)::before,
+.pathStep[data-state="unannounced"]:not(:last-child)::before {
+  background: repeating-linear-gradient(to bottom, var(--ry-border-strong) 0 4px, transparent 4px 8px);
+}
+
+.pathDot {
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--ry-r-pill);
+}
+
+.pathStep[data-state="passed"] .pathDot {
+  background: var(--ry-text);
+  color: var(--ry-bg);
+}
+
+.pathStep[data-state="current"] .pathDot {
+  background: var(--ry-accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--ry-accent) 22%, transparent);
+}
+
+.pathStep[data-state="unannounced"] .pathDot {
+  border: 2px dashed var(--ry-border-strong);
+  background: var(--ry-card);
+}
+
+/* On a phone the step's name and its day share a row — the name on the left, the day on the right — and the token under both. */
+.pathBody {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-content: start;
+  align-items: baseline;
+  column-gap: var(--ry-s3);
+  row-gap: 2px;
+  min-width: 0;
+}
+
+.pathLines {
+  display: grid;
+  justify-items: end;
+  text-align: right;
+}
+
+.pathName {
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  font-weight: 650;
+  line-height: var(--ry-lh-body);
+  color: var(--ry-text);
+}
+
+.pathLine {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  line-height: var(--ry-lh-body);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text-muted);
+}
+
+.pathStep[data-state="unannounced"] .pathName,
+.pathStep[data-state="unannounced"] .pathLine {
+  color: var(--ry-muted);
+}
+
+.pathToken {
+  display: flex;
+  flex-wrap: wrap;
+  grid-column: 1 / -1;
+  align-items: center;
+  gap: var(--ry-s1) var(--ry-s2);
+  margin-top: var(--ry-s1);
+}
+
+.pathChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 var(--ry-s3);
+  border: 1px solid var(--ry-border-strong);
+  border-radius: var(--ry-r-pill);
+  font-size: var(--ry-fs-dense);
+  font-weight: 650;
+  color: var(--ry-text);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+a.pathChip:hover {
+  border-color: var(--ry-text);
+}
+
+a.pathChip:focus-visible {
+  outline: 2px solid var(--ry-focus);
+  outline-offset: 2px;
+}
+
+/* This page's own token: set apart without looking pressable. */
+.pathChip[data-here="true"] {
+  border-color: var(--ry-border);
+  background: var(--ry-elevated);
+}
+
+.pathChipHere {
+  font-weight: 500;
+  color: var(--ry-muted);
+}
+
+.pathNature {
+  font-size: var(--ry-fs-data);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+}
+
+@media (min-width: 720px) {
+  .pathSteps {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    column-gap: var(--ry-s3);
+  }
+
+  .pathStep {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 22px auto;
+    row-gap: var(--ry-s3);
+    padding-bottom: 0;
+  }
+
+  /* From 720 px the day stands under the name. */
+  .pathBody {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pathLines {
+    justify-items: start;
+    text-align: left;
+  }
+
+  .pathToken {
+    margin-top: var(--ry-s2);
+  }
+
+  .pathStep:not(:last-child)::before {
+    top: 10px;
+    right: calc(8px - var(--ry-s3));
+    bottom: auto;
+    left: 30px;
+    width: auto;
+    height: 2px;
+  }
+
+  .pathStep[data-state="current"]:not(:last-child)::before,
+  .pathStep[data-state="unannounced"]:not(:last-child)::before {
+    background: repeating-linear-gradient(to right, var(--ry-border-strong) 0 4px, transparent 4px 8px);
+  }
+}
+
+/* The line under the steps that a holder acts on: the swap's deadline with the issuer's minute. */
+.pathSwap {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ry-s2);
+  margin: 0;
+  padding-top: var(--ry-s3);
+  border-top: 1px solid var(--ry-border);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  line-height: var(--ry-lh-body);
+  color: var(--ry-text);
+  text-wrap: pretty;
+}
+
+.pathSwap > svg {
+  flex: 0 0 auto;
+  margin-top: 0.2em;
+  color: var(--ry-caution);
+}
+
+/* The issuer's rule while the company is private. */
+.pathRule {
+  margin: 0;
+  padding-top: var(--ry-s3);
+  border-top: 1px solid var(--ry-border);
+  font-size: var(--ry-fs-dense);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-text-muted);
+}
+
+/* The holder's swap under the deadline, inside the strip. */
+.pathEvent {
+  display: grid;
+  gap: var(--ry-s3);
+}
+
+.pathSources {
+  font-size: var(--ry-fs-data);
+  color: var(--ry-muted);
+}
+
+.pathSources > summary {
+  width: fit-content;
+  padding: 6px 0;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.pathSources > summary:hover {
+  color: var(--ry-text);
+}
+
+.pathSources > ul {
+  display: grid;
+  gap: 6px;
+  margin: var(--ry-s1) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* ── The price and its line ───────────────────────────────────────────── */
+
+.quote {
+  display: grid;
+  gap: var(--ry-s1);
+  min-width: 0;
+}
+
+.price {
+  margin: 0;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-data-xl);
+  font-weight: 600;
+  line-height: var(--ry-lh-tight);
+  letter-spacing: var(--ry-ls-display);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+}
+
+.change {
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.change[data-tone="up"] {
+  color: var(--ry-verified);
+}
+
+.change[data-tone="down"] {
+  color: var(--ry-risk);
+}
+
+.change[data-tone="flat"] {
+  color: var(--ry-muted);
+}
+
+.changeWord {
+  font-weight: 400;
+  color: var(--ry-muted);
+}
+
+/* A private company's one number under the price — no tone of good or bad (canon v5.2 В27). */
+.premium {
+  margin: var(--ry-s1) 0 0;
+  font-size: var(--ry-fs-dense);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.premiumAt {
+  color: var(--ry-muted);
+}
+
+.chart {
+  position: relative;
+  height: 180px;
+  margin-top: var(--ry-s4);
+  color: var(--ry-muted);
+  /* A finger reads the line sideways and still scrolls the page up and down. */
+  touch-action: pan-y;
+  user-select: none;
+}
+
+@media (min-width: 720px) {
+  .chart {
+    height: 300px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .chart {
+    height: clamp(320px, 34vh, 400px);
+  }
+}
+
+/* Under the line: its ranges, and at the end the way to the candles. */
+.chartFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ry-s2) var(--ry-s4);
+  margin-top: var(--ry-s2);
+}
+
+.chart[data-tone="up"] {
+  color: var(--ry-verified);
+}
+
+.chart[data-tone="down"] {
+  color: var(--ry-risk);
+}
+
+.chart[data-state="ready"] {
+  cursor: crosshair;
+}
+
+.chartSvg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.line {
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.baseline {
+  stroke: var(--ry-border-strong);
+  stroke-width: 1;
+  stroke-dasharray: 3 5;
+}
+
+.hair {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--ry-border-strong);
+  transform: translateX(-0.5px);
+  pointer-events: none;
+}
+
+.pin {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--ry-card);
+  border-radius: var(--ry-r-pill);
+  background: currentColor;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.chartBone {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--ry-r-card);
+  background: var(--ry-elevated);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.chartNote {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  margin: 0;
+  padding: 0 var(--ry-s4);
+  border: 1px dashed var(--ry-border);
+  border-radius: var(--ry-r-card);
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+  text-align: center;
+}
+
+.ranges {
+  display: flex;
+  flex: 1 1 260px;
+  gap: var(--ry-s1);
+}
+
+@media (min-width: 720px) {
+  .ranges {
+    flex: 0 0 auto;
+  }
+}
+
+.range {
+  flex: 1 1 0;
+  min-height: 40px;
+  padding: 0 var(--ry-s3);
+  border: 0;
+  border-radius: var(--ry-r-pill);
+  background: transparent;
+  font: inherit;
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  color: var(--ry-muted);
+  cursor: pointer;
+}
+
+@media (min-width: 720px) {
+  .range {
+    flex: 0 0 auto;
+    min-width: 64px;
+  }
+}
+
+.range:hover {
+  color: var(--ry-text);
+}
+
+.range[aria-pressed="true"] {
+  background: var(--ry-elevated);
+  color: var(--ry-text);
+}
+
+/* The way to the candles: quiet, under the line it deepens (canon v5.3 В28). */
+.toSpot {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  width: fit-content;
+  min-height: 44px;
+  font-size: var(--ry-fs-dense);
+  font-weight: 500;
+  color: var(--ry-muted);
+  text-decoration: none;
+}
+
+.toSpot:hover {
+  color: var(--ry-text);
+}
+
+/* ── The purchase: a card beside the company that stays in view ─────────── */
+
+.aside {
+  display: grid;
+  align-content: start;
+  min-width: 0;
+}
+
+.buyCard {
+  display: grid;
+  gap: var(--ry-s3);
+  padding: var(--ry-s4);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+  box-shadow: var(--ry-shadow-sm);
+}
+
+@media (min-width: 720px) {
+  .buyCard {
+    padding: var(--ry-s5);
+  }
+}
+
+/* ── Популярні компанії: the way on to the next company ─────────────────── */
+
+.popular {
+  display: grid;
+  gap: var(--ry-s3);
+  min-width: 0;
+  padding: var(--ry-s4);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+}
+
+@media (min-width: 720px) {
+  .popular {
+    padding: var(--ry-s5);
+  }
+}
+
+.popularHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ry-s3);
+}
+
+.popularAll {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s1);
+  font-size: var(--ry-fs-dense);
+  font-weight: 500;
+  color: var(--ry-muted);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.popularAll:hover {
+  color: var(--ry-text);
+}
+
+.popularList {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.popularRow {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s3);
+  min-height: 52px;
+  margin: 0 calc(var(--ry-s2) * -1);
+  padding: var(--ry-s1) var(--ry-s2);
+  border-radius: var(--ry-r-btn);
+  color: var(--ry-text);
+  text-decoration: none;
+}
+
+.popularRow:hover {
+  background: var(--ry-hover);
+}
+
+.popularRow:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+}
+
+.popularLogo {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  overflow: hidden;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-elevated);
+}
+
+.popularName {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--ry-fs-copy);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.popularFigures {
+  display: grid;
+  justify-items: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.popularPrice {
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+}
+
+.popularChange {
+  font-size: var(--ry-fs-data);
+  font-weight: 600;
+  color: var(--ry-muted);
+}
+
+.popularChange[data-tone="up"] {
+  color: var(--ry-verified);
+}
+
+.popularChange[data-tone="down"] {
+  color: var(--ry-risk);
+}
+
+.buyTitle {
+  margin: 0;
+  font-size: var(--ry-fs-section);
+  font-weight: 650;
+  line-height: var(--ry-lh-head);
+  color: var(--ry-text);
+  overflow-wrap: anywhere;
+}
+
+.truth {
+  display: grid;
+  justify-items: start;
+  gap: var(--ry-s2);
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+}
+
+/* On a phone the card keeps the label and lets its line wait for «Що ти купуєш» below — so «Купити» stands on the first screen. */
+@media (max-width: 719px) {
+  .truthText {
+    display: none;
+  }
+}
+
+/* The label from the issuer's documents (canon §7), as a quiet chip over its line. */
+.truthLabel {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 var(--ry-s2);
+  border: 1px solid var(--ry-border-strong);
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-elevated);
+  font-size: var(--ry-fs-data);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.buyNote {
+  margin: 0;
+  font-size: var(--ry-fs-data);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+  text-align: center;
+}
+
+/* The reader's own position, when the wallet holds the token — and «Продати» beside it, quiet (RYN-BUY-FLOW-001). */
+.position {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--ry-s3);
+  padding-top: var(--ry-s3);
+  border-top: 1px solid var(--ry-border);
+}
+
+.positionText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sell {
+  min-height: 44px;
+  padding-inline: var(--ry-s5);
+}
+
+/* While the sale's sheet is open the page's action steps aside, as «Купити» does. */
+.sell[data-sell-open="true"] {
+  visibility: hidden;
+}
+
+/* And the page's purchase with it: one orange action on a screen — the sale's own, in its sheet; «Ryntra попередить»'s own in its (RYN-PROTECT-SIGNAL-001). */
+body:has(dialog[data-sale][open]) .buy,
+body:has(dialog[data-warn][open]) .buy {
+  visibility: hidden;
+}
+
+.positionValue {
+  font-size: var(--ry-fs-data-m);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+}
+
+.positionUnits {
+  font-size: var(--ry-fs-dense);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-muted);
+}
+
+.exchange {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  margin: var(--ry-s1) 0 0;
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+}
+
+.dot {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-muted);
+}
+
+.exchange[data-state="open"] .dot {
+  background: var(--ry-verified);
+}
+
+.buy {
+  width: 100%;
+  min-height: 52px;
+  margin-top: var(--ry-s1);
+}
+
+/* While the sheet is open the page's action steps aside: one orange action on a screen. */
+.buy[data-sheet-open="true"] {
+  visibility: hidden;
+}
+
+/* «Автоінвест» — quiet beside «Купити» (canon v5.1 §4). */
+.autoinvest {
+  width: 100%;
+  min-height: 48px;
+}
+
+/* A rule's reminder is open (canon v5.3 В29): what it is, in one line above its purchase — the brand's colour as a dot, never a second orange button. */
+.ruleDue {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ry-s2);
+  margin: var(--ry-s1) 0 0;
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: var(--ry-lh-body);
+  color: var(--ry-text);
+  text-wrap: balance;
+}
+
+.ruleDue::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  margin-top: 0.5lh;
+  translate: 0 -50%;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-accent);
+}
+
+/* A line breaks between its parts, never inside «чт о 18:55». */
+.ruleDue > span > span {
+  white-space: nowrap;
+}
+
+/* The ordinary purchase while the reminder is open: the second action, quiet, and the line that it leaves the reminder open. */
+.plainBuy {
+  width: 100%;
+  min-height: 48px;
+}
+
+.plainNote {
+  margin: calc(var(--ry-s2) * -1) 0 0;
+  font-size: var(--ry-fs-data);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+  text-align: center;
+}
+
+/* The same, said inside the ordinary purchase's sheet before any sum. */
+.plainSheetNote {
+  margin: 0;
+  padding: var(--ry-s2) var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-elevated);
+  font-size: var(--ry-fs-dense);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-text);
+  text-align: center;
+  text-wrap: balance;
+}
+
+/* A company's rule in the action's place: how much, how often, when next — one press opens it. */
+.ruleCard {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s3);
+  width: 100%;
+  min-height: 56px;
+  padding: var(--ry-s3) var(--ry-s4);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-card);
+  font: inherit;
+  color: var(--ry-muted);
+  text-align: start;
+  cursor: pointer;
+}
+
+.ruleCard:hover {
+  border-color: var(--ry-border-strong);
+  color: var(--ry-text);
+}
+
+.ruleCard:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+}
+
+/* The month's budget holds the rule: said in the caution colour, nothing to press but the rule itself. */
+.ruleCard[data-state="held"] .ruleCardSub {
+  color: var(--ry-caution);
+}
+
+/* The price condition holds the purchase back (canon v5.5 В37): the wait in the caution colour, the reason under it in the quiet one. */
+.ruleCard[data-state="deferred"] .ruleCardSub {
+  color: var(--ry-caution);
+}
+
+.ruleCard[data-state="deferred"] .ruleCardSub[data-deferral] {
+  color: var(--ry-muted);
+}
+
+.ruleCardText {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ruleCardTitle {
+  font-size: var(--ry-fs-copy);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+}
+
+.ruleCardSub {
+  font-size: var(--ry-fs-dense);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-muted);
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ry-s3);
+  margin: 0;
+  padding: var(--ry-s4);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+  font-size: var(--ry-fs-copy);
+  color: var(--ry-muted);
+}
+
+.status p {
+  flex: 1 1 220px;
+  margin: 0;
+}
+
+/* A token Ryntra no longer supports (canon v5.2 В26): what it is now, the way out, one quiet action — read top to bottom, as wide as a sentence. */
+.retired {
+  display: grid;
+  justify-items: start;
+  gap: var(--ry-s2);
+  max-width: 560px;
+  margin: 0;
+  padding: var(--ry-s4) var(--ry-s5);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+}
+
+.retired p {
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-text-muted);
+}
+
+.retired .retiredState {
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.retired :global(.rw-btn) {
+  margin-top: var(--ry-s2);
+}
+
+/* ── The facts at rest (RYN-COMPANY-PAGE-001) ─────────────────────────── */
+
+.facts2 {
+  display: grid;
+  gap: var(--ry-s5);
+  min-width: 0;
+}
+
+/* «Про компанію» and «Що ти купуєш» side by side where there is room; one over the other on a phone. */
+.pair {
+  display: grid;
+  gap: var(--ry-s5);
+  min-width: 0;
+}
+
+@media (min-width: 1024px) {
+  .pair {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+  }
+}
+
+.block {
+  display: grid;
+  align-content: start;
+  gap: var(--ry-s4);
+  min-width: 0;
+  padding: var(--ry-s4);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+}
+
+@media (min-width: 720px) {
+  .block {
+    padding: var(--ry-s5);
+  }
+}
+
+.blockTitle {
+  margin: 0;
+  font-size: var(--ry-fs-section);
+  font-weight: 650;
+  line-height: var(--ry-lh-head);
+  color: var(--ry-text);
+}
+
+.blockNote {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+}
+
+/* A row of figures: each its label over its value — two across on a phone, up to five on a wide screen. */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ry-s5) var(--ry-s5);
+  margin: 0;
+}
+
+@media (min-width: 720px) {
+  .stats[data-columns="3"],
+  .stats[data-columns="4"],
+  .stats[data-columns="5"] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .stats[data-columns="4"] {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .stats[data-columns="5"] {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+.stat {
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  min-width: 0;
+}
+
+.stat dd {
+  margin: 0;
+}
+
+.statLabel {
+  font-size: var(--ry-fs-data);
+  font-weight: 500;
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+}
+
+.statValue {
+  font-size: var(--ry-fs-data-m);
+  font-weight: 650;
+  line-height: var(--ry-lh-tight);
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+  overflow-wrap: anywhere;
+}
+
+.statValue[data-tone="down"] {
+  color: var(--ry-risk);
+}
+
+.statHint {
+  font-size: var(--ry-fs-data);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+}
+
+/* Where the figures come from and when, once under the block. */
+.source {
+  margin: 0;
+  font-size: var(--ry-fs-data);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+}
+
+.sourceLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--ry-muted);
+  text-decoration: underline;
+  text-decoration-color: var(--ry-border-strong);
+  text-underline-offset: 3px;
+}
+
+.sourceLink:hover {
+  color: var(--ry-text);
+  text-decoration-color: currentColor;
+}
+
+/* «Про компанію»: the one line of what it does, then its facts as label — value rows. */
+.lead {
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-text);
+  text-wrap: pretty;
+}
+
+/* Facts as label over value, two to a row where there is room — a name wraps under its own label, never beside another. */
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr));
+  gap: var(--ry-s4) var(--ry-s5);
+  margin: 0;
+  padding-top: var(--ry-s4);
+  border-top: 1px solid var(--ry-border);
+}
+
+.blockTitle + .facts {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.fact {
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  min-width: 0;
+  line-height: var(--ry-lh-body);
+}
+
+.fact > dt {
+  font-size: var(--ry-fs-data);
+  font-weight: 500;
+  color: var(--ry-muted);
+}
+
+.fact > dd {
+  min-width: 0;
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+  overflow-wrap: anywhere;
+}
+
+.factStack {
+  display: grid;
+  gap: 2px;
+}
+
+.factNote {
+  font-size: var(--ry-fs-data);
+  font-weight: 400;
+  color: var(--ry-muted);
+}
+
+/* «Що ти купуєш»: the label from the issuer's documents and its line, before the facts. */
+.truthRow {
+  display: grid;
+  justify-items: start;
+  gap: var(--ry-s2);
+}
+
+.truthChip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s1);
+  min-height: 28px;
+  padding: 0 var(--ry-s1) 0 var(--ry-s3);
+  border: 1px solid var(--ry-border-strong);
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-elevated);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.truthLine {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+}
+
+/* «Торги на Solana»: buying against selling in a day's trades — green is buying, red is selling (DESIGN). */
+.pressure {
+  display: grid;
+  gap: var(--ry-s2);
+  padding-top: var(--ry-s4);
+  border-top: 1px solid var(--ry-border);
+}
+
+.pressureHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ry-s1) var(--ry-s3);
+  font-size: var(--ry-fs-dense);
+  font-variant-numeric: tabular-nums;
+}
+
+.pressureBuy {
+  font-weight: 600;
+  color: var(--ry-verified);
+}
+
+.pressureSell {
+  margin-inline-start: var(--ry-s3);
+  font-weight: 600;
+  color: var(--ry-risk);
+}
+
+.pressureWhy {
+  font-size: var(--ry-fs-data);
+  color: var(--ry-muted);
+}
+
+.pressureBar {
+  display: flex;
+  height: 8px;
+  overflow: hidden;
+  border-radius: var(--ry-r-pill);
+  background: color-mix(in srgb, var(--ry-risk) 70%, var(--ry-card));
+}
+
+.pressureBuyFill {
+  display: block;
+  height: 100%;
+  border-inline-end: 2px solid var(--ry-card);
+  background: var(--ry-verified);
+}
+
+.sinceLine {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+}
+
+.sinceLine > span {
+  font-weight: 500;
+  color: var(--ry-text);
+}
+
+/* The price over the year: the low and the high at the ends, the price between them. */
+.year {
+  display: grid;
+  gap: var(--ry-s2);
+  padding-top: var(--ry-s4);
+  border-top: 1px solid var(--ry-border);
+}
+
+/* Straight under the title — no figures above it — the year needs no rule of its own. */
+.blockTitle + .year {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.yearHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ry-s3);
+}
+
+.yearSince {
+  font-size: var(--ry-fs-data);
+  color: var(--ry-muted);
+}
+
+.yearTrack {
+  position: relative;
+  height: 6px;
+  margin: var(--ry-s2) 0;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-elevated);
+  box-shadow: inset 0 0 0 1px var(--ry-border);
+}
+
+.yearFill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: var(--ry-r-pill);
+  background: color-mix(in srgb, var(--ry-muted) 55%, transparent);
+}
+
+.yearMark {
+  position: absolute;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  border: 3px solid var(--ry-card);
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-text);
+  transform: translate(-50%, -50%);
+}
+
+.yearEnds {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--ry-s4);
+}
+
+.yearEnds > span {
+  display: grid;
+  gap: 2px;
+}
+
+.yearEnds > span[data-end="high"] {
+  justify-items: end;
+  text-align: end;
+}
+
+.yearValue {
+  font-size: var(--ry-fs-copy);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+}
+
+.yearWhen {
+  font-size: var(--ry-fs-data);
+  color: var(--ry-muted);
+}
+
+.yearBone,
+.statsBone {
+  height: 72px;
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-elevated);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+/* ── Деталі ───────────────────────────────────────────────────────────── */
+
+.details {
+  min-width: 0;
+  border-top: 1px solid var(--ry-border);
+}
+
+.details > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s3);
+  min-height: 56px;
+  font-size: var(--ry-fs-section);
+  font-weight: 600;
+  color: var(--ry-text);
+  cursor: pointer;
+  list-style: none;
+}
+
+.details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.details > summary::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  margin-inline-start: auto;
+  border-right: 1.5px solid var(--ry-muted);
+  border-bottom: 1.5px solid var(--ry-muted);
+  transform: rotate(45deg);
+  transition: transform var(--rt-duration-fast) var(--rt-ease);
+}
+
+.details[open] > summary::after {
+  transform: rotate(-135deg);
+}
+
+.detailsGrid {
+  padding-bottom: var(--ry-s5);
+}
+
+/* ── The sheet ────────────────────────────────────────────────────────── */
+
+/* The dialog is the dimmed page; the panel inside it is the sheet. */
+.sheet {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  background: var(--ry-shadow-ink);
+  color: var(--ry-text);
+}
+
+.sheet[open] {
+  display: grid;
+  align-items: end;
+  justify-items: center;
+  /* A phone's keyboard covers the screen's foot: the sheet stands above it, its one action in sight (`useSheetAboveKeyboard`). */
+  padding-bottom: var(--sheet-keyboard, 0px);
+}
+
+.sheet::backdrop {
+  background: transparent;
+}
+
+@media (min-width: 720px) {
+  .sheet[open] {
+    align-items: center;
+  }
+}
+
+.sheetBody {
+  display: grid;
+  gap: var(--ry-s4);
+  width: 100%;
+  max-width: 480px;
+  /* Within what the person sees: the whole screen, or above a keyboard that is up. */
+  max-height: min(92dvh, calc(var(--sheet-visible, 100dvh) - var(--ry-s3)));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--ry-s2) var(--ry-s5) calc(var(--ry-s5) + env(safe-area-inset-bottom));
+  border: 1px solid var(--ry-border);
+  border-bottom: 0;
+  border-radius: var(--ry-r-landing) var(--ry-r-landing) 0 0;
+  background: var(--ry-card);
+  box-shadow: var(--ry-shadow-elevated);
+  animation: rise 220ms var(--rt-ease);
+}
+
+/* While a phone's keyboard stands under the sheet, its spacing tightens so all of it — the sum, what it buys and the one action — fits above the keys (on a 390 × 844 phone with a number pad the purchase needed 36 px more). */
+.sheet[data-keyboard] .sheetBody {
+  gap: var(--ry-s2);
+  padding-bottom: var(--ry-s3);
+}
+
+@media (min-width: 720px) {
+  .sheetBody {
+    padding: var(--ry-s5);
+    border-bottom: 1px solid var(--ry-border);
+    border-radius: var(--ry-r-landing);
+  }
+}
+
+.sheetHead {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--ry-s3);
+  padding-top: var(--ry-s3);
+}
+
+.grab {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 36px;
+  height: 4px;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-border-strong);
+  transform: translateX(-50%);
+}
+
+@media (min-width: 720px) {
+  .grab {
+    display: none;
+  }
+
+  .sheetHead {
+    padding-top: 0;
+  }
+}
+
+.sheetLogo {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  overflow: hidden;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-elevated);
+  object-fit: cover;
+  font-size: var(--ry-fs-data);
+  font-weight: 600;
+  color: var(--ry-muted);
+}
+
+.sheetTitle {
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--ry-fs-title);
+  font-weight: 600;
+  line-height: var(--ry-lh-head);
+  color: var(--ry-text);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.sheetClose {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-inline-end: calc(var(--ry-s2) * -1);
+  border: 0;
+  border-radius: var(--ry-r-pill);
+  background: transparent;
+  color: var(--ry-muted);
+  cursor: pointer;
+}
+
+.sheetClose:hover:not(:disabled) {
+  background: var(--ry-elevated);
+  color: var(--ry-text);
+}
+
+.sheetClose:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* What the sum is — «Кожна купівля» in a rule's sheet, «Не більше на місяць» in the budget's: the two sums never read alike (canon v5.3 В29). */
+.amountLabel {
+  margin: 0 0 calc(var(--ry-s3) * -1);
+  font-size: var(--ry-fs-dense);
+  font-weight: 500;
+  color: var(--ry-muted);
+  text-align: center;
+}
+
+/* The amount: a sum in dollars, large, centred, typed or chosen. */
+.amount {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: var(--ry-s1);
+  padding: var(--ry-s2) 0 0;
+}
+
+.amountSign {
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-data-xl);
+  font-weight: 600;
+  line-height: var(--ry-lh-tight);
+  color: var(--ry-muted);
+}
+
+/* The field is as wide as the sum in it, so «$ 20» stands centred; a browser without `field-sizing` keeps a fixed width. */
+.amountInput {
+  min-width: 1.2ch;
+  max-width: 9ch;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: inset 0 -2px 0 var(--ry-border);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-data-xl);
+  font-weight: 600;
+  line-height: var(--ry-lh-tight);
+  letter-spacing: var(--ry-ls-display);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+  field-sizing: content;
+  outline: none;
+}
+
+/* The sum's own focus: its line turns to the text's colour — never the shell's ring around a field that opens chosen for typing
+   (`.ry-product :is(input, …, [tabindex]):focus-visible` weighs three classes, so this one weighs four). */
+.sheetBody .amount .amountInput:focus-visible {
+  outline: none;
+  box-shadow: inset 0 -2px 0 var(--ry-text);
+}
+
+/* The sum's form lends the field the keyboard's own action key and adds no box of its own. */
+.sumForm {
+  display: contents;
+}
+
+@supports not (field-sizing: content) {
+  .amountInput {
+    width: 4ch;
+  }
+}
+
+.presets {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--ry-s2);
+}
+
+.preset {
+  min-height: 44px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-card);
+  font: inherit;
+  font-size: var(--ry-fs-copy);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+  cursor: pointer;
+}
+
+.preset:hover:not(:disabled) {
+  border-color: var(--ry-border-strong);
+}
+
+.preset[aria-pressed="true"] {
+  border-color: var(--ry-text);
+  background: var(--ry-elevated);
+}
+
+.estimate {
+  min-height: 1.5em;
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+  text-align: center;
+}
+
+/* The loss limit: a choice of three, «Немає» by default. */
+.limit {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--ry-s2) var(--ry-s3);
+}
+
+.limitLabel {
+  font-size: var(--ry-fs-dense);
+  font-weight: 500;
+  color: var(--ry-text);
+}
+
+.limitChips {
+  display: flex;
+  gap: var(--ry-s1);
+  padding: var(--ry-s1);
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-elevated);
+}
+
+.chip {
+  min-width: 64px;
+  min-height: 36px;
+  padding: 0 var(--ry-s3);
+  border: 0;
+  border-radius: var(--ry-r-pill);
+  background: transparent;
+  font: inherit;
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-muted);
+  cursor: pointer;
+}
+
+.chip[aria-pressed="true"] {
+  background: var(--ry-card);
+  color: var(--ry-text);
+  box-shadow: var(--ry-shadow-sm);
+}
+
+.limitLine {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--ry-s2);
+  margin: 0;
+  font-size: var(--ry-fs-data);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-muted);
+}
+
+.limitLine > * + *::before {
+  content: "·";
+  margin-inline-end: var(--ry-s2);
+}
+
+.limitLine a {
+  color: var(--ry-caution);
+}
+
+.lineBone {
+  display: block;
+  width: 60%;
+  height: 12px;
+  border-radius: var(--ry-r-chip);
+  background: var(--ry-elevated);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.risk {
+  font-size: var(--ry-fs-data);
+  color: var(--ry-muted);
+}
+
+.risk > summary {
+  width: fit-content;
+  cursor: pointer;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+
+.risk > p {
+  margin: var(--ry-s2) 0 0;
+  line-height: var(--ry-lh-body);
+}
+
+/* The swap before the deadline (RYN-PRESTOCKS-001, session 2): from what into what, one line under the sheet's head. */
+.convertTo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--ry-s2);
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.convertTo > span[aria-hidden="true"] {
+  color: var(--ry-muted);
+}
+
+/* How much is given, in the wallet's unit, as big as the purchase's sum. */
+.convertGive {
+  margin: 0;
+  font-size: var(--ry-fs-key);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: var(--ry-lh-head);
+  color: var(--ry-text);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+/* «Деталі» of the swap's Review: the route, the issuer's deadline to the minute, what the target is, the notice. */
+.convertFacts {
+  display: grid;
+  gap: var(--ry-s2);
+  margin: var(--ry-s2) 0 0;
+}
+
+.convertFacts > div {
+  display: grid;
+  grid-template-columns: minmax(96px, auto) minmax(0, 1fr);
+  gap: var(--ry-s3);
+}
+
+.convertFacts dt {
+  color: var(--ry-muted);
+}
+
+.convertFacts dd {
+  display: grid;
+  gap: var(--ry-s1);
+  margin: 0;
+  color: var(--ry-text);
+  overflow-wrap: anywhere;
+}
+
+.convertFacts a {
+  color: var(--ry-text);
+}
+
+/* The Review: exactly four lines, and the one action under them. */
+.review {
+  display: grid;
+  margin: 0;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+}
+
+.review > div {
+  display: grid;
+  grid-template-columns: minmax(88px, auto) minmax(0, 1fr);
+  align-items: baseline;
+  gap: var(--ry-s3);
+  padding: var(--ry-s3) var(--ry-s4);
+  border-top: 1px solid var(--ry-border);
+}
+
+.review > div:first-child {
+  border-top: 0;
+}
+
+.review dt {
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+}
+
+.review dd {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+  margin: 0;
+  min-width: 0;
+  font-size: var(--ry-fs-copy);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+  text-align: end;
+}
+
+.review dd > span {
+  font-size: var(--ry-fs-data);
+  font-weight: 400;
+  color: var(--ry-muted);
+}
+
+/* What the token is reads as a sentence, not a figure: lighter, and from the line's start. */
+.review dd[data-prose="true"] {
+  justify-items: start;
+  font-size: var(--ry-fs-dense);
+  font-weight: 400;
+  line-height: var(--ry-lh-body);
+  text-align: start;
+}
+
+.review dd[data-caution="true"] {
+  color: var(--ry-caution);
+}
+
+/* The one-time reserve that opens the token's account: its own line under «Усі витрати», across the row and never one of the costs — it stays in the wallet (canon v5.5 В35). */
+.review dd[data-reserve] {
+  grid-column: 1 / -1;
+  justify-items: start;
+  margin-top: calc(-1 * var(--ry-s1));
+  font-size: var(--ry-fs-data);
+  font-weight: 400;
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+  text-align: start;
+  text-wrap: pretty;
+}
+
+.sheetTimer {
+  min-height: 1.2em;
+  margin: 0;
+  font-size: var(--ry-fs-data);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-muted);
+  text-align: center;
+}
+
+.sheetActions {
+  display: grid;
+  gap: var(--ry-s2);
+}
+
+.sheetActions > :global(.rw-btn) {
+  width: 100%;
+  min-height: 52px;
+}
+
+.quietButton {
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: var(--ry-fs-dense);
+  font-weight: 500;
+  color: var(--ry-muted);
+  cursor: pointer;
+}
+
+.quietButton:hover:not(:disabled) {
+  color: var(--ry-text);
+}
+
+.sheetLinks {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--ry-s1) var(--ry-s4);
+  margin: 0;
+  font-size: var(--ry-fs-data);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-muted);
+}
+
+.sheetLinks a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s1);
+  min-height: 32px;
+  color: var(--ry-muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.sheetLinks a:hover {
+  color: var(--ry-text);
+}
+
+.sheetError {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-risk);
+  text-align: center;
+}
+
+.sheetNote {
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-text);
+  text-align: center;
+}
+
+/* The receipt: the mark, the sentence, the amount. */
+.receipt {
+  display: grid;
+  justify-items: center;
+  gap: var(--ry-s2);
+  padding: var(--ry-s4) 0 var(--ry-s2);
+  text-align: center;
+}
+
+.receiptMark {
+  display: grid;
+  color: var(--ry-muted);
+}
+
+.receipt[data-tone="matched"] .receiptMark {
+  color: var(--ry-verified);
+}
+
+.receipt[data-tone="risk"] .receiptMark {
+  color: var(--ry-risk);
+}
+
+.receipt[data-tone="caution"] .receiptMark {
+  color: var(--ry-caution);
+}
+
+.receiptTitle {
+  margin: 0;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-data-lg);
+  font-weight: 600;
+  line-height: var(--ry-lh-head);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+  text-wrap: balance;
+}
+
+.receiptSub {
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-muted);
+}
+
+.receiptNote {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-caution);
+}
+
+.receiptWatch {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-text);
+}
+
+.receiptWatch a {
+  color: var(--ry-caution);
+}
+
+/* ── «Автоінвест»: the rule's sheet ───────────────────────────────────── */
+
+.ruleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--ry-s2) var(--ry-s3);
+}
+
+.ruleWhenGroup {
+  display: grid;
+  gap: var(--ry-s2);
+}
+
+/* Seven days in one row on a 390px phone: short names, equal cells. */
+.dayChips {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--ry-s1);
+  padding: var(--ry-s1);
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-elevated);
+}
+
+.dayChip {
+  min-width: 0;
+  min-height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--ry-r-pill);
+  background: transparent;
+  font: inherit;
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  color: var(--ry-muted);
+  cursor: pointer;
+}
+
+.dayChip[aria-pressed="true"] {
+  background: var(--ry-card);
+  color: var(--ry-text);
+  box-shadow: var(--ry-shadow-sm);
+}
+
+.whenFields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s2);
+}
+
+.field {
+  display: flex;
+  flex: 1 1 140px;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ry-s2);
+  min-height: 44px;
+  padding: 0 var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-card);
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+}
+
+.field input,
+.field select {
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: var(--ry-fs-copy);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+  color-scheme: inherit;
+  text-align: end;
+}
+
+.field:focus-within {
+  border-color: var(--ry-border-strong);
+  box-shadow: var(--ry-focus);
+}
+
+/* One ring, on the whole field: the product ring on the bare input inside it would draw a second one around the digits. */
+.whenFields .field input:focus-visible,
+.whenFields .field select:focus-visible {
+  outline: none;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+/* «Регулярно» | «Якщо впаде» — two rules, one choice, the whole width. */
+.kindSwitch {
+  display: grid;
+  /* As many equal cells as there are choices: three kinds of rule, three ways to set aside from payments. */
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: var(--ry-s1);
+  padding: var(--ry-s1);
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-elevated);
+}
+
+.kindSwitch .chip {
+  min-width: 0;
+  padding: var(--ry-s1) var(--ry-s2);
+  font-size: var(--ry-fs-copy);
+  /* A longer name («From payments») wraps inside its own cell, evenly — every cell keeps the row's height. */
+  line-height: var(--ry-lh-tight);
+  white-space: normal;
+  text-wrap: balance;
+}
+
+/* «Що відкладати» — three ways to set aside from payments: the longer words wrap inside their cell on a phone, never off it. */
+.modeSwitch .chip {
+  padding: var(--ry-s1) var(--ry-s2);
+  font-size: var(--ry-fs-dense);
+  line-height: var(--ry-lh-tight);
+  white-space: normal;
+  text-wrap: balance;
+}
+
+/* «Останні оплати» — the newest counted events of a «З кожної оплати» rule: the sum and the share on one line, the time and the Solana Pay label under it; never the other side's name. */
+.payEvents {
+  display: grid;
+  gap: var(--ry-s2);
+}
+
+.payList {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+}
+
+.payItem {
+  display: grid;
+  gap: 2px;
+  padding: var(--ry-s3) var(--ry-s4);
+  border-top: 1px solid var(--ry-border);
+}
+
+.payItem:first-child {
+  border-top: 0;
+}
+
+.payRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ry-s3);
+}
+
+.payWhat,
+.payAdd {
+  font-size: var(--ry-fs-copy);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+}
+
+.payMeta,
+.payLabel {
+  margin: 0;
+  font-size: var(--ry-fs-data);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-muted);
+}
+
+.payLabel {
+  overflow-wrap: anywhere;
+}
+
+/* Taken by a reminder: the share said, quieter — it waits no more. */
+.payItem:not([data-waiting="true"]) .payAdd {
+  color: var(--ry-muted);
+}
+
+.payOwn {
+  justify-self: start;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: var(--ry-fs-data);
+  color: var(--ry-muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.payOwn:hover:not(:disabled) {
+  color: var(--ry-text);
+}
+
+.payConfirm {
+  display: grid;
+  gap: var(--ry-s2);
+  margin-top: var(--ry-s1);
+}
+
+/* The question reads from the line's start, over its two answers. */
+.payConfirm > p {
+  text-align: start;
+}
+
+.payConfirmActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ry-s2) var(--ry-s3);
+}
+
+/* A sheet with no company in its head — the budget's: the title and the close. */
+.sheetHeadPlain {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+/* «Ryntra нагадає — ти підтвердиш одним дотиком. Гроші лишаються у твоєму гаманці.» — under every rule, always. */
+.rulePromise {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-text);
+  text-align: center;
+  text-wrap: balance;
+}
+
+.ruleNote {
+  margin: 0;
+  font-size: var(--ry-fs-data);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-muted);
+  text-align: center;
+}
+
+.ruleNote a {
+  color: var(--ry-caution);
+}
+
+.ruleSummary {
+  display: grid;
+  justify-items: center;
+  gap: var(--ry-s1);
+  text-align: center;
+}
+
+.ruleAmount {
+  margin: 0;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-data-lg);
+  font-weight: 600;
+  line-height: var(--ry-lh-head);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+  text-wrap: balance;
+}
+
+.ruleWhen {
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-muted);
+}
+
+/* The receipt's mark of the rule: the rule, then when it reminds next. */
+.ruleMark {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+}
+
+.ruleMark > span + span {
+  color: var(--ry-muted);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@keyframes rise {
+  from {
+    transform: translateY(24px);
+    opacity: 0.6;
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheetBody,
+  .chartBone,
+  .lineBone {
+    animation: none;
+  }
+}

@@ -1,0 +1,883 @@
+/* Portfolio — the value, the allocation, the holdings as a table. Tokens only.
+   From 1280 px a main column (the value on its full width, the table under
+   it) and «Автоінвест» on the right, as on Home (RYN-WIDTH-PREMIUM-001); a
+   narrower desk keeps the summary column beside the table; one column on a
+   phone. */
+
+.workspace {
+  --pf-side: clamp(300px, 26vw, 380px);
+  display: grid;
+  grid-template-columns: var(--pf-side) minmax(0, 1fr);
+  /* «Автоінвест» under the value on a desk: the table spans both rows, and the second row takes what it leaves. */
+  grid-template-areas:
+    "value holdings"
+    "rules holdings";
+  grid-template-rows: auto 1fr;
+  gap: var(--ry-s3);
+  align-items: start;
+  min-width: 0;
+}
+
+.workspace > .valuePanel {
+  grid-area: value;
+}
+
+.workspace > .holdings {
+  grid-area: holdings;
+}
+
+/* The wallet's rules and the month's budget — the block Home draws (canon v5.3 В29); its title stands apart from the panel above. */
+.autoinvest {
+  grid-area: rules;
+  min-width: 0;
+  padding-top: var(--ry-s3);
+}
+
+/* ── Width (RYN-WIDTH-PREMIUM-001): the main column and the right one ──── */
+
+@media (min-width: 1280px) {
+  .workspace {
+    grid-template-columns: minmax(0, 1fr) clamp(340px, 26vw, 420px);
+    grid-template-areas:
+      "value rules"
+      "holdings rules";
+    gap: var(--ry-s5) var(--ry-s6);
+    max-width: 1760px;
+  }
+
+  .autoinvest {
+    padding-top: 0;
+  }
+}
+
+.panel {
+  min-width: 0;
+  background: var(--ry-card);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+}
+
+/* ── Value ──────────────────────────────────────────────────────────────── */
+
+.valuePanel {
+  position: relative;
+  display: grid;
+  gap: var(--ry-s4);
+  padding: var(--ry-s5);
+  overflow: hidden;
+  container-type: inline-size;
+}
+
+/* The total on one side and what it is in on the other, once the panel is
+   wide enough for both; stacked in the summary column and on a phone. */
+.valueBody,
+.valueMain,
+.valueSide {
+  display: grid;
+  gap: var(--ry-s4);
+  align-content: start;
+  min-width: 0;
+}
+
+@container (min-width: 640px) {
+  .valueBody {
+    grid-template-columns: minmax(0, 1fr) minmax(240px, 0.9fr);
+    column-gap: var(--ry-s7);
+    align-items: center;
+  }
+}
+
+.valuePanel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(90% 60% at 20% 0%, var(--ry-brand-soft), transparent 70%);
+  pointer-events: none;
+}
+
+.valuePanel > * {
+  position: relative;
+}
+
+.eyebrow {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.totalValue {
+  margin-top: calc(var(--ry-s3) * -1);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-data-xl);
+  font-weight: 600;
+  line-height: var(--ry-lh-tight);
+  letter-spacing: -0.03em;
+  color: var(--ry-text);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.dayChange {
+  margin-top: calc(var(--ry-s2) * -1);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  font-weight: 500;
+  color: var(--ry-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.dayChange[data-tone="up"] {
+  color: var(--ry-pnl-pos);
+}
+
+.dayChange[data-tone="down"] {
+  color: var(--ry-pnl-neg);
+}
+
+.dayChange span {
+  color: var(--ry-muted);
+  font-family: var(--ry-font-sans);
+}
+
+.coverage {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s2);
+  margin: 0;
+}
+
+.fact {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 0 var(--ry-s2);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-pill);
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+}
+
+.fact dt {
+  margin: 0;
+}
+
+.fact dd {
+  margin: 0;
+  font-family: var(--ry-font-mono);
+  color: var(--ry-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.fact[data-tone="motion"] {
+  border-color: color-mix(in srgb, var(--ry-caution) 40%, var(--ry-border));
+  color: var(--ry-caution);
+}
+
+.fact[data-tone="motion"] dd {
+  color: var(--ry-caution);
+}
+
+/* ── Allocation ─────────────────────────────────────────────────────────── */
+
+.allocation {
+  display: grid;
+  gap: var(--ry-s3);
+  padding-top: var(--ry-s3);
+  border-top: 1px solid var(--ry-border);
+}
+
+.bar {
+  display: flex;
+  gap: 2px;
+  height: 10px;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.slice {
+  flex-basis: 0;
+  min-width: 3px;
+  background: var(--ry-c1);
+}
+
+.legend {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.legendRow {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--ry-s2);
+  font-size: var(--ry-fs-dense);
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--ry-c1);
+}
+
+.slice[data-slice="1"], .dot[data-slice="1"] { background: var(--ry-c2); }
+.slice[data-slice="2"], .dot[data-slice="2"] { background: var(--ry-c3); }
+.slice[data-slice="3"], .dot[data-slice="3"] { background: var(--ry-c4); }
+.slice[data-slice="4"], .dot[data-slice="4"] { background: var(--ry-c5); }
+.slice[data-slice="5"], .dot[data-slice="5"] { background: var(--ry-c6); }
+.slice[data-slice="6"], .dot[data-slice="6"] { background: var(--ry-muted); }
+
+.legendLabel {
+  overflow: hidden;
+  color: var(--ry-text);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.legendShare,
+.legendValue {
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.legendValue {
+  color: var(--ry-text);
+}
+
+/* ── Rewards row and money in motion, in the summary column ────────────── */
+
+.rewardsRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--ry-s2);
+  min-height: 44px;
+  padding: 0 var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  color: inherit;
+  text-decoration: none;
+  transition: background 120ms ease-out;
+}
+
+.rewardsRow:hover {
+  background: var(--ry-hover);
+}
+
+.rewardsLabel {
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-text);
+}
+
+.rewardsValue {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-data);
+  color: var(--ry-pnl-pos);
+  font-variant-numeric: tabular-nums;
+}
+
+.rewardsGo {
+  color: var(--ry-muted);
+}
+
+.motion:empty {
+  display: none;
+}
+
+.quiet {
+  margin: 0;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+}
+
+.motionList {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.motionRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--ry-s2);
+  min-height: 40px;
+  padding: 0 var(--ry-s3);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-caution-soft);
+  color: var(--ry-text);
+  font-size: var(--ry-fs-dense);
+  text-decoration: none;
+}
+
+.motionRow span:last-of-type {
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Holdings ───────────────────────────────────────────────────────────── */
+
+.holdings {
+  display: grid;
+  gap: var(--ry-s3);
+  padding: var(--ry-s4);
+  container: holdings / inline-size;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ry-s3);
+  flex-wrap: wrap;
+}
+
+.categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s1);
+  padding: var(--ry-s1);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-bg);
+}
+
+.category {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 var(--ry-s3);
+  border: 0;
+  border-radius: var(--ry-r-btn-sm);
+  background: transparent;
+  color: var(--ry-muted);
+  font: inherit;
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 120ms ease-out, color 120ms ease-out;
+}
+
+.category:hover {
+  color: var(--ry-text);
+}
+
+.category[data-active="true"] {
+  background: var(--ry-card);
+  color: var(--ry-text);
+  box-shadow: var(--ry-shadow-sm);
+}
+
+.categoryCount {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 500;
+  color: var(--ry-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.tools {
+  display: flex;
+  gap: var(--ry-s2);
+  flex: 1 1 320px;
+  justify-content: flex-end;
+}
+
+.search {
+  flex: 1 1 200px;
+  max-width: 360px;
+  min-height: 44px;
+  padding: 0 var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-bg);
+  color: var(--ry-text);
+  font: inherit;
+  font-size: var(--ry-fs-dense);
+}
+
+.search::placeholder {
+  color: var(--ry-muted);
+}
+
+.action {
+  min-height: 44px;
+  padding: 0 var(--ry-s4);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: transparent;
+  color: var(--ry-text);
+  font: inherit;
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.action:hover:not(:disabled) {
+  background: var(--ry-hover);
+}
+
+.action:disabled {
+  color: var(--ry-muted);
+  cursor: not-allowed;
+}
+
+.error {
+  margin: 0;
+  color: var(--ry-risk);
+  font-size: var(--ry-fs-dense);
+}
+
+.note {
+  margin: 0;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-dense);
+}
+
+/* The table: asset · price · 24h · amount · value · share · «Продати» · details. */
+.tableHead,
+.row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.6fr) minmax(90px, 0.9fr) minmax(70px, 0.6fr) minmax(120px, 1fr) minmax(90px, 0.8fr) minmax(56px, 0.5fr) 96px 32px;
+  align-items: center;
+  gap: var(--ry-s3);
+  min-width: 0;
+}
+
+.tableHead {
+  padding: 0 var(--ry-s3);
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.tableHead > span:not(:first-child) {
+  text-align: right;
+}
+
+.list {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  min-height: 60px;
+  padding: var(--ry-s2) var(--ry-s3);
+  border-radius: var(--ry-r-btn);
+  transition: background 120ms ease-out;
+}
+
+.row:hover {
+  background: var(--ry-hover);
+}
+
+.row[data-dust="true"] {
+  min-height: 48px;
+  opacity: 0.8;
+}
+
+/* The first cell holds the asset and, when the wallet has one, the plan it
+   belongs to — two links side by side rather than one nested in the other. */
+.assetCell {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  min-width: 0;
+}
+
+.asset {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s3);
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+  flex: 1 1 auto;
+}
+
+.planChip {
+  flex: 0 0 auto;
+  padding: 1px 8px;
+  border: 1px solid var(--ry-brand-line);
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-brand-soft);
+  color: var(--ry-text);
+  font-size: var(--ry-fs-label-sm);
+  line-height: 1.6;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.planChip:hover {
+  border-color: var(--ry-accent);
+}
+
+.icon {
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  object-fit: cover;
+}
+
+.assetText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ticker {
+  overflow: hidden;
+  font-size: var(--ry-fs-app);
+  font-weight: 600;
+  color: var(--ry-text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.assetName {
+  overflow: hidden;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A token Ryntra no longer supports (canon v5.2 В26): the line may wrap — it is the way out, not a label to cut. */
+.assetRetired {
+  color: var(--ry-caution);
+  font-size: var(--ry-fs-label);
+  line-height: var(--ry-lh-body);
+}
+
+/* The issuer's event under a position (the IPO and conversion watch, canon v5.2 В27): a sentence as wide as the row, past the icon — the deadline, then the swap and the quiet sale. Neither is orange: the page's one orange action is «Поповнити». */
+.rowEvent {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ry-s2) var(--ry-s4);
+  margin: 0 0 var(--ry-s1) calc(32px + var(--ry-s3));
+  font-size: var(--ry-fs-label);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-text);
+}
+
+/* Нагляд over a company the wallet holds (RYN-PROTECT-SIGNAL-001): a line of the position itself, under its name — the row's gap is taken back so the line reads as the name's own. */
+.rowWatch {
+  grid-column: 1 / -1;
+  margin: calc(var(--ry-s2) * -1) 0 var(--ry-s1) calc(32px + var(--ry-s3));
+  min-width: 0;
+}
+
+.rowEvent > p {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ry-s2);
+  flex: 1 1 320px;
+  margin: 0;
+  font-weight: 500;
+  text-wrap: pretty;
+}
+
+.rowEvent > p > svg {
+  flex: 0 0 auto;
+  margin-top: 0.2em;
+  color: var(--ry-caution);
+}
+
+.eventSwap {
+  flex: 0 0 auto;
+  padding: 6px 12px;
+  border: 1px solid color-mix(in srgb, var(--ry-caution) 55%, transparent);
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-caution-soft);
+  color: var(--ry-text);
+  font-weight: 600;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.eventSwap:hover {
+  border-color: var(--ry-caution);
+}
+
+.eventSell {
+  flex: 0 0 auto;
+  color: var(--ry-muted);
+  white-space: nowrap;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+
+.eventSell:hover {
+  color: var(--ry-text);
+}
+
+.price,
+.change,
+.amount,
+.value,
+.share {
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-text);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.price,
+.share {
+  color: var(--ry-muted);
+}
+
+.change[data-tone="up"] {
+  color: var(--ry-pnl-pos);
+}
+
+.change[data-tone="down"] {
+  color: var(--ry-pnl-neg);
+}
+
+.change:not([data-tone]) {
+  color: var(--ry-muted);
+}
+
+/* What a position is worth is the figure a person reads first: the biggest in the row. */
+.value {
+  font-size: var(--ry-fs-value);
+  font-weight: 600;
+}
+
+.value[data-unpriced="true"] {
+  font-weight: 400;
+  color: var(--text-faint);
+}
+
+/* «Продати» on a company the wallet holds (RYN-BUY-FLOW-001): quiet, in its own column — the page's one orange action is the wallet's next step above. */
+.sellCell {
+  display: flex;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.sell {
+  min-height: 32px;
+  padding: 5px 12px;
+}
+
+/* «Дія» (RYN-PROTECT-SIGNAL-001): the price reached the loss limit or the target — the row's «Продати» is the sale the watch asks for, in the state's colour; never orange. */
+.sell[data-urgent="limit"] {
+  border-color: color-mix(in srgb, var(--ry-risk) 55%, transparent);
+  background: var(--ry-risk-soft);
+  color: var(--rt-blocked-red-fg, var(--ry-risk));
+}
+
+.sell[data-urgent="target"] {
+  border-color: color-mix(in srgb, var(--ry-verified) 55%, transparent);
+  background: var(--ry-verified-soft);
+  color: var(--rt-reconciled-green-fg, var(--ry-verified));
+}
+
+/* While a sale's sheet is open, the wallet's next step steps aside: one orange action on a screen — the sale's own, in its sheet. */
+body:has(dialog[data-sale][open]) .valuePanel :global(.rw-btn--primary),
+body:has(dialog[data-warn][open]) .valuePanel :global(.rw-btn--primary) {
+  visibility: hidden;
+}
+
+.open {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: var(--ry-muted);
+}
+
+.open:hover {
+  background: var(--ry-elevated);
+  color: var(--ry-text);
+}
+
+.dustToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  justify-self: start;
+  min-height: 40px;
+  padding: 0 var(--ry-s3);
+  border: 0;
+  border-radius: var(--ry-r-btn-sm);
+  background: transparent;
+  color: var(--ry-muted);
+  font: inherit;
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dustToggle:hover {
+  background: var(--ry-hover);
+  color: var(--ry-text);
+}
+
+/* ── Narrower screens ───────────────────────────────────────────────────── */
+
+/* The table's own width decides its columns: beside «Автоінвест» on a 1440
+   desk, or in the summary layout, it drops the amount and the share (the
+   share stands in the allocation above) — never a column past the panel. */
+@container holdings (max-width: 820px) {
+  .tableHead,
+  .row {
+    grid-template-columns: minmax(160px, 1.6fr) minmax(90px, 0.9fr) minmax(64px, 0.6fr) minmax(90px, 0.8fr) 96px 32px;
+  }
+
+  .tableHead > span:nth-child(4),
+  .amount,
+  .tableHead > span:nth-child(6),
+  .share {
+    display: none;
+  }
+}
+
+@media (max-width: 1100px) {
+  /* One column: the value, the positions, then the rules. */
+  .workspace {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "value"
+      "holdings"
+      "rules";
+    grid-template-rows: none;
+  }
+
+  .tableHead,
+  .row {
+    grid-template-columns: minmax(160px, 1.6fr) minmax(90px, 0.9fr) minmax(64px, 0.6fr) minmax(90px, 0.8fr) 96px 32px;
+  }
+
+  .tableHead > span:nth-child(4),
+  .amount,
+  .tableHead > span:nth-child(6),
+  .share {
+    display: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .valuePanel,
+  .holdings {
+    padding: var(--ry-s4);
+  }
+
+  .tableHead {
+    display: none;
+  }
+
+  .row {
+    grid-template-columns: minmax(0, 1fr) auto 32px;
+    grid-template-areas:
+      "asset value open"
+      "asset change open";
+    row-gap: 2px;
+  }
+
+  .assetCell {
+    grid-area: asset;
+  }
+
+  /* A position that can be sold: «Продати» takes the details' place on a phone — the company's own page carries the details. */
+  .row[data-sell="true"] {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      "asset value sell"
+      "asset change sell";
+  }
+
+  .sellCell {
+    grid-area: sell;
+  }
+
+  .sellCell:empty,
+  .row[data-sell="true"] .open {
+    display: none;
+  }
+
+  .sell {
+    min-height: 36px;
+  }
+
+  /* A position with an issuer's event: the sentence under the row, as wide as the phone. */
+  .row[data-event="true"] {
+    grid-template-areas:
+      "asset value open"
+      "asset change open"
+      "event event event";
+  }
+
+  .rowEvent {
+    grid-area: event;
+    margin-left: 0;
+  }
+
+  /* On a phone the watch's line stands under the name, as on a desk, across the row's width. */
+  .rowWatch {
+    grid-column: 1 / -1;
+  }
+
+  .eventSwap {
+    white-space: normal;
+  }
+
+  .price {
+    display: none;
+  }
+
+  .change {
+    grid-area: change;
+  }
+
+  .value {
+    grid-area: value;
+  }
+
+  .open {
+    grid-area: open;
+  }
+
+  .tools {
+    flex: 1 1 100%;
+  }
+
+  .search {
+    max-width: none;
+  }
+
+  .categories {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .category {
+    white-space: nowrap;
+  }
+}

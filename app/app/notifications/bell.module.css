@@ -1,0 +1,123 @@
+/*
+ * The bell's panel (canon v5.4 В31): a title, the latest notes, one way to
+ * all of them. Tokens only; nothing orange — the page's one orange action is
+ * the page's, and a note is read, not pressed into a purchase from here.
+ */
+
+.panel {
+  display: grid;
+  gap: var(--ry-s2);
+  padding: var(--ry-s2);
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  padding: var(--ry-s1) var(--ry-s2) 0;
+  font-size: var(--ry-fs-copy);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.line {
+  margin: 0;
+  padding: var(--ry-s2);
+  font-size: var(--ry-fs-dense);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+}
+
+.gate {
+  display: grid;
+  gap: var(--ry-s2);
+}
+
+.list {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.note {
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: var(--ry-s3);
+  min-height: 44px;
+  padding: var(--ry-s2) var(--ry-s3);
+  border-radius: var(--ry-r-btn-sm);
+  color: var(--ry-text);
+  text-decoration: none;
+}
+
+.note:hover {
+  background: var(--ry-hover);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  margin-top: 6px;
+  border-radius: var(--ry-r-pill);
+  background: transparent;
+}
+
+.note[data-unread="true"] .dot {
+  background: var(--ry-iris);
+}
+
+.body {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.noteTitle {
+  overflow: hidden;
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  line-height: var(--ry-lh-head);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.note[data-unread="false"] .noteTitle {
+  font-weight: 500;
+  color: color-mix(in srgb, var(--ry-text) 80%, var(--ry-muted));
+}
+
+.reason {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: var(--ry-fs-data);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+}
+
+.time {
+  font-size: var(--ry-fs-data);
+  color: var(--ry-muted);
+  white-space: nowrap;
+}
+
+.all {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  margin-top: var(--ry-s1);
+  border-top: 1px solid var(--ry-border);
+  padding-top: var(--ry-s2);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  color: var(--ry-text);
+  text-decoration: none;
+}
+
+.all:hover {
+  color: var(--ry-accent-fg);
+}

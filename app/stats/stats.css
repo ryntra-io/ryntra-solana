@@ -1,0 +1,544 @@
+/*
+ * The public statistics page — an operations dashboard.
+ *
+ * Mode is Read. Four figures carry the overview, two chip rows filter it, and
+ * the feed is a real table whose rows open into their execution detail. Every
+ * value is a token, and the module bar, the table, the pill and the buttons
+ * are the frozen chrome's own — this sheet adds the figure grid, the chips,
+ * the row detail and the methodology disclosure.
+ */
+
+/* ── figures ─────────────────────────────────────────────────────────────── */
+
+.rx-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--ry-s5);
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--ry-border);
+}
+
+.rx-stats-grid--two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.rx-stats-figure {
+  min-width: 0;
+  padding-block: var(--ry-s4) var(--ry-s3);
+}
+
+.rx-stats-figure + .rx-stats-figure {
+  border-left: 1px solid var(--ry-border);
+  padding-left: var(--ry-s5);
+}
+
+.rx-stats-figure dt {
+  margin: 0;
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ry-muted);
+}
+
+.rx-stats-figure dd {
+  margin: var(--ry-s2) 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ry-s1);
+}
+
+/* The number: display face, tabular, capped by the ramp so a long dollar
+   figure never pushes its neighbour off the row. */
+.rx-stats-value {
+  font-family: var(--ry-font-display);
+  font-size: min(var(--ry-fs-data-xl), 7vw);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+  overflow-wrap: anywhere;
+}
+
+/* A number is one token: it shrinks with the ramp, it never breaks in two. */
+.rx-stats-figure[data-kind="number"] .rx-stats-value {
+  white-space: nowrap;
+  font-size: min(var(--ry-fs-data-xl), 2.6vw);
+}
+
+/* A fee list or a pair of figures is text, not a magnitude: the data face at
+   the medium size, so it stays on the row beside the numbers. */
+.rx-stats-figure[data-kind="text"] .rx-stats-value,
+.rx-stats-figure[data-kind="list"] .rx-stats-value {
+  font-size: min(var(--ry-fs-data-lg), 6vw);
+  letter-spacing: -0.01em;
+  padding-top: 0.35em;
+}
+
+/* One asset per line: fees in three assets are three lines, not one long one —
+   at the size a line of `0.051974 USDC` keeps to one line in a quarter column. */
+.rx-stats-value--list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2em;
+  line-height: 1.2;
+}
+
+.rx-stats-figure[data-kind="list"] .rx-stats-value {
+  font-size: var(--ry-fs-body);
+}
+
+.rx-stats-value--list > span {
+  white-space: nowrap;
+}
+
+.rx-stats-figure-note,
+.rx-stats-note,
+.rx-stats-empty,
+.rx-stats-detail-note {
+  font-size: var(--ry-fs-dense);
+  line-height: 1.55;
+  color: var(--ry-muted);
+}
+
+.rx-stats-note {
+  margin: var(--ry-s5) 0 0;
+  max-width: 72ch;
+}
+
+.rx-stats-empty {
+  margin: 0;
+  padding-block: var(--ry-s4);
+  border-top: 1px solid var(--ry-border);
+}
+
+/* ── filters ─────────────────────────────────────────────────────────────── */
+
+.rx-stats-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s3) var(--ry-s5);
+  margin-block: var(--ry-s4) var(--ry-s5);
+}
+
+.rx-stats-chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s2);
+}
+
+.rx-stats-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding-inline: var(--ry-s4);
+  border-radius: var(--ry-r-chip);
+  border: 1px solid var(--ry-border);
+  background: transparent;
+  color: var(--ry-muted);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+
+.rx-stats-chip:hover {
+  background: var(--ry-hover);
+  border-color: var(--ry-border-strong);
+  color: var(--ry-text);
+}
+
+.rx-stats-chip[aria-pressed="true"] {
+  background: var(--ry-iris-deep);
+  border-color: transparent;
+  color: var(--ry-on-iris);
+}
+
+.rx-stats-chip:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+}
+
+/* ── the feed ────────────────────────────────────────────────────────────── */
+
+/* The feed is the one thing on the page allowed to be wider than the page:
+   it scrolls inside its own box, and the page body never does. */
+.rx-stats-feed {
+  border-top: 1px solid var(--ry-border);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+.rx-stats-table td,
+.rx-stats-table th {
+  white-space: nowrap;
+  padding-inline: var(--ry-s3);
+}
+
+/* The action keeps its width when a row opens beneath it: `SOL → USDC` is one line. */
+.rx-stats-table td:nth-child(4) {
+  white-space: normal;
+  min-width: 7.5rem;
+}
+
+.rx-stats-num {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.rx-stats-table code {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+}
+
+.rx-stats-table a {
+  color: var(--ry-text);
+  text-decoration: underline;
+  text-decoration-color: var(--ry-border-strong);
+  text-underline-offset: 0.2em;
+  white-space: nowrap;
+}
+
+.rx-stats-table a:hover {
+  text-decoration-color: currentColor;
+}
+
+.rx-stats-table a:focus-visible,
+.rx-stats-rowtoggle:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+  border-radius: 2px;
+}
+
+.rx-stats-row {
+  cursor: pointer;
+}
+
+.rx-stats-row:hover td {
+  background: var(--ry-hover);
+}
+
+.rx-stats-row[data-open="true"] td {
+  border-bottom-color: transparent;
+}
+
+/* The time is the row's own control: a plain text button with the caret. */
+.rx-stats-rowtoggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  min-height: 24px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ry-text);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  text-align: start;
+}
+
+/* The caret is one small triangle, drawn by a clip on its own box; it turns when the row opens. */
+.rx-stats-caret {
+  display: inline-block;
+  width: 6px;
+  height: 9px;
+  background: var(--ry-muted);
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+  transition: transform 140ms ease;
+}
+
+.rx-stats-rowtoggle[aria-expanded="true"] .rx-stats-caret {
+  transform: rotate(90deg);
+}
+
+.rx-stats-own {
+  margin-left: var(--ry-s1);
+  color: var(--ry-accent);
+  font-weight: 700;
+}
+
+.rx-stats-rowdetail td {
+  padding-top: 0;
+  background: var(--ry-hover);
+  white-space: normal;
+}
+
+/* ── row detail ──────────────────────────────────────────────────────────── */
+
+.rx-stats-detail {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ry-s3) var(--ry-s6);
+  margin: 0;
+  padding: var(--ry-s3) 0 var(--ry-s4);
+}
+
+.rx-stats-detail > div {
+  min-width: 0;
+}
+
+.rx-stats-detail dt {
+  margin: 0;
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ry-muted);
+}
+
+.rx-stats-detail dd {
+  margin: var(--ry-s1) 0 0;
+  font-size: var(--ry-fs-body);
+  line-height: 1.5;
+  color: var(--ry-text);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.rx-stats-detail code {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+  overflow-wrap: anywhere;
+}
+
+.rx-stats-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s2) var(--ry-s4);
+}
+
+/* ── methodology ─────────────────────────────────────────────────────────── */
+
+.rx-stats-method {
+  border-top: 1px solid var(--ry-border);
+}
+
+.rx-stats-method > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s3);
+  min-height: 48px;
+  padding-block: var(--ry-s3);
+  list-style: none;
+  cursor: pointer;
+  font-size: var(--ry-fs-body);
+  font-weight: 500;
+  color: var(--ry-text);
+}
+
+.rx-stats-method > summary::-webkit-details-marker {
+  display: none;
+}
+
+.rx-stats-method > summary::before {
+  content: "";
+  width: 7px;
+  height: 11px;
+  background: var(--ry-muted);
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+  transition: transform 140ms ease;
+}
+
+.rx-stats-method[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+.rx-stats-method > summary:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+  border-radius: 2px;
+}
+
+.rx-stats-two {
+  margin-top: var(--ry-s3);
+}
+
+.rx-stats-rule {
+  margin: var(--ry-s5) 0 0;
+  padding: 0 0 0 1.4em;
+  max-width: 72ch;
+  color: var(--ry-text);
+  font-size: var(--ry-fs-body);
+  line-height: 1.65;
+}
+
+.rx-stats-rule li + li {
+  margin-top: var(--ry-s3);
+}
+
+.rx-stats-rule li::marker {
+  font-family: var(--ry-font-mono);
+  color: var(--ry-muted);
+}
+
+.rx-stats-verify {
+  margin: var(--ry-s6) 0 0;
+  padding: 0;
+}
+
+.rx-stats-verify > div {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) minmax(0, 3fr);
+  gap: var(--ry-s2) var(--ry-s5);
+  align-items: baseline;
+  padding-block: var(--ry-s3);
+  border-top: 1px solid var(--ry-border);
+}
+
+.rx-stats-verify dt {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ry-muted);
+}
+
+.rx-stats-verify dd {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s2) var(--ry-s5);
+  font-size: var(--ry-fs-body);
+  line-height: var(--ry-lh-body, 1.5);
+  color: var(--ry-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.rx-stats-verify a {
+  color: var(--ry-text);
+  text-decoration: underline;
+  text-decoration-color: var(--ry-border-strong);
+  text-underline-offset: 0.2em;
+}
+
+.rx-stats-verify a:hover {
+  text-decoration-color: currentColor;
+}
+
+.rx-stats-verify a:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+  border-radius: 2px;
+}
+
+.rx-stats-verify code {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+  overflow-wrap: anywhere;
+}
+
+/* ── narrow ──────────────────────────────────────────────────────────────── */
+
+@media (max-width: 900px) {
+  .rx-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .rx-stats-figure[data-kind="number"] .rx-stats-value {
+    font-size: min(var(--ry-fs-data-xl), 7vw);
+  }
+
+  .rx-stats-figure + .rx-stats-figure {
+    border-left: 0;
+    padding-left: 0;
+  }
+
+  .rx-stats-figure:nth-child(even) {
+    border-left: 1px solid var(--ry-border);
+    padding-left: var(--ry-s5);
+  }
+
+  .rx-stats-detail {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* The feed becomes a stack of cards: each cell labels itself from the column
+   it came from, the time leads and the proof closes. */
+@media (max-width: 760px) {
+  .rx-stats-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+
+  .rx-stats-table,
+  .rx-stats-table tbody,
+  .rx-stats-table tr,
+  .rx-stats-table td {
+    display: block;
+  }
+
+  .rx-stats-table tr {
+    padding-block: var(--ry-s3);
+    border-bottom: 1px solid var(--ry-border);
+  }
+
+  .rx-stats-table tr:last-child {
+    border-bottom: 0;
+  }
+
+  .rx-stats-table td {
+    display: grid;
+    grid-template-columns: minmax(96px, 1fr) minmax(0, 2fr);
+    gap: var(--ry-s4);
+    padding: var(--ry-s1) 0;
+    border-bottom: 0;
+    white-space: normal;
+    text-align: start;
+  }
+
+  .rx-stats-table td::before {
+    content: attr(data-label);
+    font-family: var(--ry-font-mono);
+    font-size: var(--ry-fs-dense);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ry-muted);
+  }
+
+  .rx-stats-row:hover td {
+    background: transparent;
+  }
+
+  .rx-stats-rowdetail td {
+    display: block;
+    padding: 0;
+    background: transparent;
+  }
+
+  .rx-stats-rowdetail td::before {
+    content: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .rx-stats-grid,
+  .rx-stats-grid--two {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .rx-stats-figure,
+  .rx-stats-figure:nth-child(even) {
+    border-left: 0;
+    padding-left: 0;
+    border-top: 1px solid var(--ry-border);
+  }
+
+  .rx-stats-figure:first-child {
+    border-top: 0;
+  }
+
+  .rx-stats-verify > div {
+    grid-template-columns: 1fr;
+    gap: var(--ry-s1);
+  }
+}

@@ -1,0 +1,110 @@
+/* Moved verbatim from a hub's own info-popover stylesheet.
+
+   Not a rewrite: that hub's control was already the right one — 32px on a
+   pointer, 44px on a phone, a native `<details>` so it is keyboard-operable
+   without script, and a bottom sheet rather than an off-screen popover on a
+   narrow viewport. Copying it into a second workspace would have produced two
+   controls to keep in step; it lives in the shell instead, and that hub re-exports
+   it under its original name so nothing there re-renders differently. */
+
+.root {
+  position: relative;
+  display: inline-flex;
+  vertical-align: middle;
+}
+
+/*
+ * A resting state, so the control looks like one.
+ *
+ * `border: 0` on no background left a faint glyph floating beside a heading —
+ * on every page header in the workspace, and beside every panel title that has
+ * one. It is the control the whole product's explanation-behind-an-icon rule
+ * depends on, and a reader who does not know it is pressable never presses it.
+ * A hairline and a panel fill are enough; the hover and open states below stay
+ * exactly as they were.
+ */
+.root > summary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--rt-hairline);
+  border-radius: 8px;
+  background: var(--rt-panel);
+  color: var(--rt-ink-mid);
+  cursor: pointer;
+  list-style: none;
+  transition: color var(--rt-duration-fast, 0.16s) var(--rt-ease, ease),
+    border-color var(--rt-duration-fast, 0.16s) var(--rt-ease, ease),
+    background-color var(--rt-duration-fast, 0.16s) var(--rt-ease, ease);
+}
+
+.root > summary::-webkit-details-marker {
+  display: none;
+}
+
+.root > summary:hover,
+.root[open] > summary {
+  border-color: var(--rt-action-blue-line, var(--rt-hairline-strong));
+  background: var(--rt-action-blue-soft);
+  color: var(--rt-action-blue-fg);
+}
+
+.root > summary > span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.panel {
+  position: absolute;
+  z-index: 90;
+  inset-block-start: calc(100% + 8px);
+  inset-inline-end: 0;
+  width: min(320px, calc(100vw - 40px));
+  padding: 14px 16px;
+  border: 1px solid var(--rt-hairline-strong);
+  border-radius: 12px;
+  background: var(--rt-overlay);
+  box-shadow: var(--rt-shadow-overlay);
+  color: var(--rt-ink-mid);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+/* The panel is right-anchored because the original hub's control sits at the right
+   edge of its header. A control placed beside a left-aligned heading opens the
+   same panel leftwards and it leaves the card — measured on Ryntra Home, where
+   a 320px panel next to a section title reached 70px past the card's left edge
+   into the rail gutter. `align="start"` is the same panel anchored the other
+   way; the default is unchanged, so no existing surface moves. */
+.alignStart {
+  inset-inline-start: 0;
+  inset-inline-end: auto;
+}
+
+.panel :where(p, ul) {
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .root > summary {
+    width: 44px;
+    height: 44px;
+  }
+
+  .panel {
+    position: fixed;
+    inset: auto 12px 12px;
+    width: auto;
+    max-height: 48vh;
+    overflow-y: auto;
+  }
+}

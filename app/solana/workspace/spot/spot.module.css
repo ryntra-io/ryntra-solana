@@ -1,0 +1,2169 @@
+/* Spot — one trading canvas.
+   Tokens only (DESIGN.md → app/design/tokens.css). Three columns on a wide
+   screen — Markets · Market · Order ticket — with the trading state under the
+   market; Simple drops the market column for a picker; a phone stacks the
+   same panels in the order a person acts. */
+
+.workspace {
+  /* Measured on the Owner's 2 300 px screen (2026-09-11): 296 and 344 px
+     beside a 1 600 px chart read as two gutters, the category switch
+     clipped and every second line truncated. The side columns now follow
+     the screen and the chart grows with the window, within bounds. */
+  --spot-list: clamp(288px, 17.5vw, 400px);
+  --spot-ticket: clamp(336px, 19vw, 440px);
+  --spot-chart-h: clamp(420px, 44vh, 600px);
+  display: grid;
+  grid-template-columns: var(--spot-list) minmax(0, 1fr) var(--spot-ticket);
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  grid-template-areas:
+    "markets header ticket"
+    "markets chart ticket"
+    "markets evidence ticket"
+    "markets state ticket";
+  gap: var(--ry-s3);
+  align-items: start;
+  min-width: 0;
+}
+
+.workspace[data-depth="guided"] {
+  grid-template-columns: minmax(0, 1fr) var(--spot-ticket);
+  grid-template-areas:
+    "header ticket"
+    "chart ticket"
+    "evidence ticket"
+    "state ticket";
+}
+
+/* The two sensors of the selected token (RYN-NANSEN-EVIDENCE-001, RYN-DDXYZ-RISK-001): their own row between the chart and the wallet's state — side by side where the column is wide enough, stacked where it is not. */
+.evidence {
+  grid-area: evidence;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  gap: var(--ry-s3);
+  align-items: start;
+  min-width: 0;
+}
+
+/* The Brief and the Critic, once asked for: one full-width row under the two sensors, inside their area (RYN-FIRST-SCREEN-001). */
+.lensRow {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+/* A press drawn as a line in the asset facts, where a button would shout. */
+.linkButton {
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: var(--ry-iris-lift);
+  cursor: pointer;
+}
+
+.linkButton:hover {
+  text-decoration: underline;
+}
+
+.linkButton:focus-visible {
+  outline: none;
+  border-radius: var(--ry-r-btn-sm);
+  box-shadow: var(--ry-focus);
+}
+
+.panel {
+  min-width: 0;
+  background: var(--ry-card);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+}
+
+/* ── Markets ─────────────────────────────────────────────────────────── */
+
+.markets {
+  grid-area: markets;
+  position: relative;
+  align-self: stretch;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* The panel spans the header, the chart and the trading state and must not
+   size them: its content is taken out of flow, so the column's height is the
+   middle column's, and the list scrolls inside whatever is left. */
+.marketsInner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  container: markets / inline-size;
+}
+
+.marketsHead {
+  display: grid;
+  gap: var(--ry-s2);
+  padding: var(--ry-s3) var(--ry-s3) var(--ry-s2);
+  border-bottom: 1px solid var(--ry-border);
+}
+
+.searchRow {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s2);
+}
+
+.search {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  min-height: 40px;
+  padding: 0 var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  background: var(--ry-bg);
+  color: var(--ry-muted);
+}
+
+.search:focus-within {
+  border-color: var(--ry-border-strong);
+}
+
+.search input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ry-text);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  outline: none;
+}
+
+.search input::placeholder {
+  color: var(--ry-muted);
+}
+
+/* Five views in one row; a narrower column wraps them rather than clipping
+   the last one mid-word. */
+.views {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s1);
+}
+
+.view {
+  flex: 1 1 auto;
+  min-height: 32px;
+  padding: 0 var(--ry-s2);
+  border: 1px solid transparent;
+  border-radius: var(--ry-r-chip);
+  background: transparent;
+  color: var(--ry-muted);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.view:hover {
+  color: var(--ry-text);
+  background: var(--ry-hover);
+}
+
+.view[aria-pressed="true"] {
+  color: var(--ry-accent-fg);
+  background: var(--ry-elevated);
+  border-color: var(--ry-brand-line);
+}
+
+/* The watchlist toggle beside the search: filled while the list is open. */
+.watchToggle {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  background: var(--ry-bg);
+  color: var(--ry-muted);
+  cursor: pointer;
+}
+
+.watchToggle:hover {
+  color: var(--ry-text);
+  background: var(--ry-hover);
+}
+
+.watchToggle[aria-pressed="true"] {
+  color: var(--ry-caution);
+  border-color: var(--ry-border-strong);
+  background: var(--ry-elevated);
+}
+
+.marketsBody {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.marketsBody ul {
+  list-style: none;
+  margin: 0;
+  padding: var(--ry-s1) 0;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s1);
+  padding: 0 var(--ry-s2) 0 var(--ry-s3);
+  min-height: 52px;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.row:hover {
+  background: var(--ry-hover);
+}
+
+.row[aria-current="true"] {
+  background: var(--ry-elevated);
+  box-shadow: inset 3px 0 0 var(--ry-iris);
+}
+
+.rowMain {
+  flex: 1 1 auto;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--ry-s3);
+  min-width: 0;
+  min-height: 52px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.rowName {
+  display: grid;
+  min-width: 0;
+}
+
+.rowName b {
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  color: var(--ry-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rowName span {
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rowSub {
+  display: flex;
+  gap: 4px;
+  min-width: 0;
+}
+
+.rowNameText {
+  flex: 0 1 auto;
+}
+
+.rowVol {
+  flex: 0 0 auto;
+}
+
+/* A narrow column carries the identity and drops the day's volume; the wide
+   column the Owner's screen gives it carries both. */
+@container markets (max-width: 339px) {
+  .rowVol {
+    display: none;
+  }
+}
+
+.rowNumbers {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+}
+
+.rowNumbers b {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+  font-weight: 500;
+  color: var(--ry-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.rowNumbers span {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label);
+  font-variant-numeric: tabular-nums;
+}
+
+.up {
+  color: var(--ry-pnl-pos);
+}
+
+.down {
+  color: var(--ry-pnl-neg);
+}
+
+.flat {
+  color: var(--ry-muted);
+}
+
+.icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--ry-elevated);
+  object-fit: cover;
+  flex: 0 0 auto;
+}
+
+.iconFallback {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--ry-elevated);
+  color: var(--ry-muted);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+/* Quiet until it is used: a column of forty grey stars is noise, one filled
+   star is information. */
+.star {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: var(--ry-r-chip);
+  background: transparent;
+  color: var(--ry-muted);
+  opacity: 0.45;
+  cursor: pointer;
+  transition: opacity 120ms ease-out;
+}
+
+.row:hover .star,
+.star:hover,
+.star:focus-visible,
+.star[aria-pressed="true"] {
+  opacity: 1;
+}
+
+.star:hover {
+  color: var(--ry-text);
+  background: var(--ry-hover);
+}
+
+.star[aria-pressed="true"] {
+  color: var(--ry-caution);
+}
+
+.listNote {
+  padding: var(--ry-s4) var(--ry-s3);
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-dense);
+}
+
+.listNote b {
+  display: block;
+  color: var(--ry-text);
+  font-weight: 600;
+  margin-bottom: var(--ry-s1);
+}
+
+.listNote .ghost {
+  display: inline-flex;
+  margin-top: var(--ry-s2);
+}
+
+.syncLine {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ry-s2);
+  padding: var(--ry-s2) var(--ry-s3);
+  border-top: 1px solid var(--ry-border);
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+}
+
+/* ── Market header ───────────────────────────────────────────────────── */
+
+.header {
+  grid-area: header;
+  display: grid;
+  gap: var(--ry-s3);
+  padding: var(--ry-s4);
+  min-width: 0;
+}
+
+.header > * {
+  min-width: 0;
+}
+
+.headerTop {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s3);
+  min-width: 0;
+}
+
+.identity {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s3);
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.identity .icon,
+.identity .iconFallback {
+  width: 36px;
+  height: 36px;
+}
+
+.identityText {
+  display: grid;
+  min-width: 0;
+}
+
+.identityText > * {
+  min-width: 0;
+}
+
+/* A token Ryntra no longer supports: its state on a line of its own under the
+   name — as wide as the header, set in from the icon so it reads under the
+   name, and drawn close to it. */
+.retiredState {
+  margin: calc(-1 * var(--ry-s2)) 0 0;
+  padding-inline-start: calc(36px + var(--ry-s3));
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--ry-caution);
+  overflow-wrap: anywhere;
+}
+
+.identityText h2 {
+  margin: 0;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-title);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--ry-text);
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  flex-wrap: wrap;
+}
+
+.identityText span {
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 22px;
+  padding: 0 var(--ry-s2);
+  border-radius: var(--ry-r-pill, 999px);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  background: var(--ry-env-bg);
+  color: var(--ry-env-tx);
+}
+
+.chip[data-tone="verified"] {
+  background: var(--ry-env-bg);
+  color: var(--ry-verified);
+}
+
+.chip[data-tone="caution"] {
+  background: var(--ry-env-bg);
+  color: var(--ry-caution);
+}
+
+.chip[data-tone="risk"] {
+  background: var(--ry-env-bg);
+  color: var(--ry-risk);
+}
+
+.pickerButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  min-height: 40px;
+  padding: 0 var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  background: var(--ry-bg);
+  color: var(--ry-text);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.pickerButton:hover {
+  background: var(--ry-hover);
+}
+
+.priceRow {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ry-s3);
+  flex-wrap: wrap;
+}
+
+.price {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-data-xl);
+  font-weight: 500;
+  line-height: var(--ry-lh-tight);
+  letter-spacing: -0.02em;
+  color: var(--ry-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.change {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-data-m);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.priceMeta {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+  margin-inline-start: auto;
+}
+
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s2) var(--ry-s5);
+  margin: 0;
+  padding: var(--ry-s3) 0 0;
+  border-top: 1px solid var(--ry-border);
+}
+
+.stats > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.stats dt {
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ry-muted);
+}
+
+.stats dd {
+  margin: 0;
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-data);
+  color: var(--ry-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.stats dd[data-tone="up"] {
+  color: var(--ry-pnl-pos);
+}
+
+.stats dd[data-tone="down"] {
+  color: var(--ry-pnl-neg);
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  flex: 0 0 auto;
+}
+
+.ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s1);
+  min-height: 36px;
+  padding: 0 var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  background: transparent;
+  color: var(--ry-text);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.ghost:hover {
+  background: var(--ry-hover);
+}
+
+/* Asset details: one disclosure, one click deep. */
+
+.details {
+  border-top: 1px solid var(--ry-border);
+  padding-top: var(--ry-s2);
+}
+
+.details > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  min-height: 32px;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  list-style: none;
+}
+
+.details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.details > summary::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform 140ms ease-out;
+}
+
+.details[open] > summary::before {
+  transform: rotate(45deg);
+}
+
+.detailGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--ry-s2) var(--ry-s4);
+  margin: var(--ry-s2) 0 0;
+}
+
+.detailGrid > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.detailGrid dt {
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ry-muted);
+}
+
+.detailGrid dd {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-text);
+  overflow-wrap: anywhere;
+}
+
+.detailGrid dd[data-mono="true"] {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-data);
+}
+
+.detailGrid a {
+  color: var(--ry-iris-lift);
+  text-decoration: none;
+}
+
+.detailGrid a:hover {
+  text-decoration: underline;
+}
+
+.copyButton {
+  margin-inline-start: var(--ry-s1);
+  border: 0;
+  background: transparent;
+  color: var(--ry-muted);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-label-sm);
+  cursor: pointer;
+}
+
+.copyButton:hover {
+  color: var(--ry-text);
+}
+
+.disclosure {
+  margin: var(--ry-s2) 0 0;
+  padding: var(--ry-s2) var(--ry-s3);
+  border-radius: var(--ry-r-chip);
+  background: var(--ry-env-bg);
+  color: var(--ry-text);
+  font-size: var(--ry-fs-dense);
+  line-height: var(--ry-lh-body);
+}
+
+/* ── Chart ───────────────────────────────────────────────────────────── */
+
+.chart {
+  grid-area: chart;
+  min-height: 0;
+  min-width: 0;
+  padding: var(--ry-s3) var(--ry-s3) var(--ry-s2);
+  display: grid;
+  gap: var(--ry-s2);
+  overflow: hidden;
+}
+
+.chartCanvas {
+  width: 100%;
+  height: var(--spot-chart-h);
+}
+
+.chart :global(.dm-tfs button) {
+  min-height: 30px;
+  padding: 0 var(--ry-s2);
+  border: 1px solid transparent;
+  border-radius: var(--ry-r-chip);
+  background: transparent;
+  color: var(--ry-muted);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label);
+  cursor: pointer;
+}
+
+.chart :global(.dm-tfs button:hover) {
+  color: var(--ry-text);
+  background: var(--ry-hover);
+}
+
+.chart :global(.dm-tfs button.on) {
+  color: var(--ry-text);
+  background: var(--ry-elevated);
+  border-color: var(--ry-border);
+}
+
+.chartNote {
+  margin-inline-start: auto;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+  white-space: nowrap;
+}
+
+.chartState {
+  display: grid;
+  place-items: center;
+  height: var(--spot-chart-h);
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-dense);
+  text-align: center;
+  padding: var(--ry-s4);
+}
+
+.chartState b {
+  display: block;
+  color: var(--ry-text);
+  font-weight: 600;
+  margin-bottom: var(--ry-s1);
+}
+
+/* ── Order ticket ─────────────────────────────────────────────────────── */
+
+.ticket {
+  grid-area: ticket;
+  display: grid;
+  gap: var(--ry-s4);
+  padding: var(--ry-s5);
+  position: sticky;
+  top: var(--ry-s3);
+  min-width: 0;
+}
+
+.ticket > * {
+  min-width: 0;
+}
+
+.sides {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--ry-s1);
+  padding: var(--ry-s1);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-bg);
+}
+
+.side {
+  min-height: 44px;
+  border: 1px solid transparent;
+  border-radius: var(--ry-r-btn-sm);
+  background: transparent;
+  color: var(--ry-muted);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-app);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background 120ms ease-out, color 120ms ease-out;
+}
+
+.side:hover:not(:disabled) {
+  color: var(--ry-text);
+}
+
+/* The chosen side is tinted by what it means — the same two inks the day's
+   change and every P&L already use, at the chip family's own mix. */
+.side[aria-pressed="true"][data-side="BUY"] {
+  background: color-mix(in srgb, var(--ry-pnl-pos) 16%, transparent);
+  border-color: color-mix(in srgb, var(--ry-pnl-pos) 45%, transparent);
+  color: var(--ry-pnl-pos);
+}
+
+.side[aria-pressed="true"][data-side="SELL"] {
+  background: color-mix(in srgb, var(--ry-pnl-neg) 16%, transparent);
+  border-color: color-mix(in srgb, var(--ry-pnl-neg) 45%, transparent);
+  color: var(--ry-pnl-neg);
+}
+
+.ticketRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ry-s2);
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+}
+
+.ticketRow b {
+  color: var(--ry-text);
+  font-weight: 600;
+}
+
+.orderType {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s1);
+  min-height: 26px;
+  padding: 0 var(--ry-s2);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-chip);
+  color: var(--ry-text);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+}
+
+.amountBox {
+  display: grid;
+  gap: var(--ry-s3);
+  padding: var(--ry-s4);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-bg);
+}
+
+.amountBox:focus-within {
+  border-color: var(--ry-border-strong);
+}
+
+.amountHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ry-s2);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ry-muted);
+}
+
+.amountLine {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s2);
+}
+
+.amountInput {
+  flex: 1 1 0;
+  width: 0;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ry-text);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-h2);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  padding: 0;
+  outline: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.amountInput::placeholder {
+  color: var(--ry-muted);
+}
+
+.assetPill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s1);
+  min-height: 36px;
+  padding: 0 var(--ry-s2) 0 var(--ry-s1);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-pill, 999px);
+  background: var(--ry-card);
+  color: var(--ry-text);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.assetPill .icon,
+.assetPill .iconFallback {
+  width: 22px;
+  height: 22px;
+  font-size: var(--ry-fs-label-sm);
+}
+
+/* The quote-asset switch: both choices on one pill, the pressed one lit. It
+   replaced a native select whose list the browser painted in its own light
+   colours over the dark ticket. */
+.quoteSwitch {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-pill, 999px);
+  background: var(--ry-bg);
+}
+
+.quoteOption {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 0 10px 0 6px;
+  border: 1px solid transparent;
+  border-radius: var(--ry-r-pill, 999px);
+  background: transparent;
+  color: var(--ry-muted);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 120ms ease-out, color 120ms ease-out, border-color 120ms ease-out;
+}
+
+.quoteOption:hover:not(:disabled) {
+  color: var(--ry-text);
+}
+
+.quoteOption[aria-checked="true"] {
+  background: var(--ry-card);
+  color: var(--ry-text);
+  border-color: var(--ry-border-strong, var(--ry-border));
+}
+
+.quoteOption:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.quoteOption .icon,
+.quoteOption .iconFallback {
+  width: 18px;
+  height: 18px;
+  font-size: var(--ry-fs-label-sm);
+}
+
+.quickFills {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--ry-s1);
+}
+
+.quickFills button {
+  min-height: 32px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-chip);
+  background: transparent;
+  color: var(--ry-muted);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label);
+  cursor: pointer;
+}
+
+.quickFills button:hover:not(:disabled) {
+  color: var(--ry-text);
+  background: var(--ry-hover);
+}
+
+.quickFills button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.usdLine {
+  color: var(--ry-muted);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label);
+}
+
+.costs {
+  display: grid;
+  gap: var(--ry-s2);
+  margin: 0;
+  padding-top: var(--ry-s3);
+  border-top: 1px solid var(--ry-border);
+}
+
+.costs > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ry-s3);
+}
+
+.costs dt {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+}
+
+.costs dd {
+  margin: 0;
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-data);
+  color: var(--ry-text);
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.costs dd[data-tone="caution"] {
+  color: var(--ry-caution);
+}
+
+.costs dd[data-tone="risk"] {
+  color: var(--ry-risk);
+}
+
+.receiveLine {
+  display: grid;
+  gap: 2px;
+  padding: var(--ry-s4);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-elevated);
+}
+
+/* The estimate's dollar value, when the provider states one. */
+.receiveUsd {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.receiveLine span {
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ry-muted);
+}
+
+.receiveLine b {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-data-lg);
+  font-weight: 500;
+  color: var(--ry-text);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.receiveLine[data-state="pending"] b {
+  color: var(--ry-muted);
+}
+
+.cta {
+  width: 100%;
+  min-height: 56px;
+  border: 0;
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-iris-deep);
+  color: var(--ry-on-iris);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-app);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: background 140ms ease-out;
+}
+
+.cta:hover:not(:disabled) {
+  background: var(--ry-iris-pressed);
+}
+
+.cta:disabled {
+  background: var(--ry-elevated);
+  color: var(--ry-muted);
+  cursor: not-allowed;
+}
+
+.secondary {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: transparent;
+  color: var(--ry-text);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.secondary:hover:not(:disabled) {
+  background: var(--ry-hover);
+}
+
+.secondary:disabled {
+  color: var(--ry-muted);
+  cursor: not-allowed;
+}
+
+.note {
+  margin: 0;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+  line-height: var(--ry-lh-body);
+}
+
+.error {
+  margin: 0;
+  padding: var(--ry-s2) var(--ry-s3);
+  border-radius: var(--ry-r-chip);
+  background: var(--ry-env-bg);
+  color: var(--ry-risk);
+  font-size: var(--ry-fs-dense);
+  line-height: var(--ry-lh-body);
+}
+
+.warning {
+  margin: 0;
+  padding: var(--ry-s2) var(--ry-s3);
+  border-radius: var(--ry-r-chip);
+  background: var(--ry-env-bg);
+  color: var(--ry-caution);
+  font-size: var(--ry-fs-dense);
+  line-height: var(--ry-lh-body);
+}
+
+/* A rule's reminder is open for this token (canon v5.3 В29): a purchase here does not close it — the line says so and leads to the rule's own purchase. The brand's colour as a line, never a second orange button. */
+.ruleReminder {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: var(--ry-s2) var(--ry-s3);
+  border: 1px solid var(--ry-brand-line);
+  border-radius: var(--ry-r-btn-sm);
+  box-shadow: inset 3px 0 0 var(--ry-accent);
+  font-size: var(--ry-fs-dense);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+}
+
+.ruleReminder b {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+}
+
+.ruleReminder a {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: var(--ry-s1);
+  min-height: 36px;
+  font-weight: 500;
+  color: var(--ry-text);
+  text-decoration: underline;
+  text-decoration-color: var(--ry-border-strong);
+  text-underline-offset: 3px;
+}
+
+.ruleReminder a:hover {
+  text-decoration-color: var(--ry-text);
+}
+
+.reviewHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ry-s2);
+}
+
+.reviewHead b {
+  font-size: var(--ry-fs-dense);
+  font-weight: 700;
+  color: var(--ry-text);
+}
+
+.reviewHead span {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+}
+
+/* ── The settled answer ──────────────────────────────────────────────────
+   One card for what the signature came to. A fill is the moment the terminal
+   exists for, so it is the largest figure on the ticket: the amount received,
+   then what it cost, then the price achieved and the fee; a check in the
+   success ink, and a short entrance the reduced-motion setting removes.
+   Nothing happened and not filled use the same frame in their own tones. */
+.settled {
+  position: relative;
+  display: grid;
+  gap: var(--ry-s3);
+  padding: var(--ry-s4);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-elevated);
+}
+
+.settled[data-tone="matched"] {
+  border-color: color-mix(in srgb, var(--ry-verified) 32%, var(--ry-border));
+  background:
+    radial-gradient(120% 90% at 50% -20%, var(--ry-verified-soft), transparent 62%),
+    var(--ry-elevated);
+}
+
+.settled[data-tone="risk"] {
+  border-color: color-mix(in srgb, var(--ry-risk) 28%, var(--ry-border));
+}
+
+.settled[data-tone="caution"] {
+  border-color: color-mix(in srgb, var(--ry-caution) 28%, var(--ry-border));
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .settled {
+    animation: settledIn 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+
+  .settled[data-tone="matched"] .settledMark {
+    animation: markIn 560ms cubic-bezier(0.2, 0.9, 0.3, 1.3) 80ms both;
+  }
+}
+
+@keyframes settledIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes markIn {
+  from { opacity: 0; transform: scale(0.6); }
+  to { opacity: 1; transform: none; }
+}
+
+.settledMark {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  color: var(--ry-caution);
+  background: var(--ry-caution-soft);
+}
+
+.settledMark[data-tone="matched"] {
+  color: var(--ry-verified);
+  background: var(--ry-verified-soft);
+}
+
+.settledMark[data-tone="risk"] {
+  color: var(--ry-risk);
+  background: var(--ry-risk-soft);
+}
+
+.settledMark[data-tone="quiet"] {
+  color: var(--ry-muted);
+  background: var(--ry-bg);
+}
+
+.settledHead {
+  display: grid;
+  gap: 2px;
+}
+
+.settledHead b {
+  font-size: var(--ry-fs-title);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--ry-text);
+}
+
+.settledHead[data-tone="matched"] b {
+  color: var(--ry-verified);
+}
+
+.settledHead[data-tone="risk"] b {
+  color: var(--ry-risk);
+}
+
+.settledKicker {
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ry-muted);
+}
+
+.fill {
+  display: grid;
+  gap: var(--ry-s2);
+}
+
+.fillAmount {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-h2);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--ry-text);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.fillAmount span {
+  font-size: var(--ry-fs-data-lg);
+  color: var(--ry-muted);
+}
+
+.fillAmount[data-side="BUY"] {
+  color: var(--ry-pnl-pos);
+}
+
+.fillFor {
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+}
+
+.fillFor b {
+  font-family: var(--ry-font-mono);
+  font-weight: 500;
+  color: var(--ry-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.fillFacts {
+  display: grid;
+  gap: var(--ry-s1);
+  margin: var(--ry-s1) 0 0;
+  padding-top: var(--ry-s2);
+  border-top: 1px solid var(--ry-border);
+}
+
+.fillFacts > div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--ry-s3);
+}
+
+.fillFacts dt {
+  flex: 0 0 auto;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+  white-space: nowrap;
+}
+
+.fillFacts dd {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label);
+  color: var(--ry-text);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.settledSentence {
+  margin: 0;
+  color: var(--ry-text);
+  font-size: var(--ry-fs-dense);
+  line-height: var(--ry-lh-body);
+}
+
+/* The watch that follows a purchase made under a plan: one line, the limit, the way to the plan (RYN-FIRST-SCREEN-001, S3). */
+.settledWatch {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--ry-s1) var(--ry-s3);
+  margin: 0;
+  padding: var(--ry-s2) var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-text-muted);
+}
+
+.settledWatch b {
+  color: var(--ry-text);
+  font-weight: 600;
+}
+
+/* Explorer · Receipt · Activity on one row, equal widths, whatever the ticket's width. */
+.settledLinks {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: var(--ry-s2);
+}
+
+.settledLinks > * {
+  justify-content: center;
+  padding: 0 var(--ry-s2);
+}
+
+/* One quiet line under the action of a tokenized stock or RWA: whose terms
+   apply. The sentence itself lives in Asset details. */
+.issuerLine {
+  margin: 0;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+  line-height: var(--ry-lh-body);
+  text-align: center;
+}
+
+/* A token Ryntra no longer supports (canon v5.2 В26): the ticket's place says so, and where it can be sold. */
+.retiredNotice {
+  display: grid;
+  gap: var(--ry-s1);
+  margin: 0;
+  padding: var(--ry-s4);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-env-bg);
+  font-size: var(--ry-fs-dense);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-text-muted);
+}
+
+.retiredNotice b {
+  color: var(--ry-text);
+  font-weight: 600;
+}
+
+.holdingLine {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ry-s2);
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+}
+
+.holdingLine b {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-data);
+  font-weight: 500;
+  color: var(--ry-text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Trading state ───────────────────────────────────────────────────── */
+
+.state {
+  grid-area: state;
+  display: grid;
+  gap: 0;
+}
+
+.stateTabs {
+  display: flex;
+  gap: var(--ry-s1);
+  padding: var(--ry-s2) var(--ry-s3) 0;
+  border-bottom: 1px solid var(--ry-border);
+}
+
+.stateTab {
+  min-height: 36px;
+  padding: 0 var(--ry-s2);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--ry-muted);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.stateTab[aria-selected="true"] {
+  color: var(--ry-text);
+  border-bottom-color: var(--ry-iris);
+}
+
+.stateBody {
+  padding: var(--ry-s2) var(--ry-s3) var(--ry-s3);
+  min-height: 96px;
+}
+
+.fills {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.fills th {
+  padding: var(--ry-s2) var(--ry-s2);
+  text-align: start;
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ry-muted);
+  border-bottom: 1px solid var(--ry-border);
+}
+
+.fills td {
+  padding: var(--ry-s2) var(--ry-s2);
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-text);
+  border-bottom: 1px solid var(--ry-border);
+  white-space: nowrap;
+}
+
+.fills td[data-mono="true"] {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-data);
+  font-variant-numeric: tabular-nums;
+}
+
+.fills tr:last-child td {
+  border-bottom: 0;
+}
+
+.fills a {
+  color: var(--ry-iris-lift);
+  text-decoration: none;
+}
+
+.fills a:hover {
+  text-decoration: underline;
+}
+
+.holdingGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--ry-s3);
+  margin: 0;
+}
+
+.holdingGrid > div {
+  display: grid;
+  gap: 2px;
+}
+
+.holdingGrid dt {
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ry-muted);
+}
+
+.holdingGrid dd {
+  margin: 0;
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-data-m);
+  font-weight: 500;
+  color: var(--ry-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.empty {
+  display: grid;
+  gap: var(--ry-s2);
+  justify-items: start;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-dense);
+  padding: var(--ry-s2) 0;
+}
+
+/* ── Markets sheet (Simple, and every phone) ─────────────────────────── */
+
+.sheetBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: var(--rt-shadow-ink);
+  display: grid;
+  align-items: end;
+  justify-items: center;
+}
+
+.sheet {
+  width: min(560px, 100%);
+  max-height: min(80dvh, 720px);
+  display: flex;
+  flex-direction: column;
+  background: var(--ry-card);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card) var(--ry-r-card) 0 0;
+  box-shadow: var(--ry-shadow-elevated);
+  overflow: hidden;
+}
+
+.sheetHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ry-s2);
+  padding: var(--ry-s3) var(--ry-s3) 0;
+}
+
+.sheetHead b {
+  font-size: var(--ry-fs-title);
+  font-weight: 700;
+  color: var(--ry-text);
+}
+
+.sheetClose {
+  min-width: 40px;
+  min-height: 40px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  background: transparent;
+  color: var(--ry-text);
+  font-size: var(--ry-fs-dense);
+  cursor: pointer;
+}
+
+@media (min-width: 901px) {
+  .sheetBackdrop {
+    align-items: center;
+  }
+
+  .sheet {
+    border-radius: var(--ry-r-card);
+    max-height: min(80vh, 720px);
+  }
+}
+
+/* Pro has the column; the picker is for Simple and for narrow screens. */
+.workspace[data-depth="pro"] .pickerButton {
+  display: none;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────── */
+
+@media (max-width: 1240px) {
+  .workspace {
+    --spot-list: 272px;
+    --spot-ticket: 320px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .workspace,
+  .workspace[data-depth="guided"] {
+    grid-template-columns: minmax(0, 1fr) var(--spot-ticket);
+    grid-template-areas:
+      "header ticket"
+      "chart ticket"
+      "evidence ticket"
+      "state ticket";
+  }
+
+  .markets {
+    display: none;
+  }
+
+  .workspace[data-depth="pro"] .pickerButton {
+    display: inline-flex;
+  }
+}
+
+@media (max-width: 900px) {
+  .workspace,
+  .workspace[data-depth="guided"] {
+    --spot-chart-h: 300px;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "header"
+      "chart"
+      "ticket"
+      "evidence"
+      "state";
+    gap: var(--ry-s2);
+  }
+
+  .ticket {
+    position: static;
+  }
+
+  .header,
+  .ticket {
+    padding: var(--ry-s3);
+  }
+
+  .amountInput {
+    font-size: var(--ry-fs-data-lg);
+  }
+
+  .price {
+    font-size: var(--ry-fs-data-lg);
+  }
+
+  .change {
+    font-size: var(--ry-fs-data);
+  }
+
+  .stats {
+    gap: var(--ry-s2) var(--ry-s4);
+  }
+
+  .cta {
+    min-height: 56px;
+  }
+
+  .fills {
+    display: block;
+    overflow-x: auto;
+  }
+
+  /* Tap targets: 44px on a phone, canon §3. */
+  .details > summary,
+  .view,
+  .star,
+  .stateTab,
+  .quickFills button,
+  .assetPill,
+  .ghost,
+  .copyButton {
+    min-height: 44px;
+  }
+
+  .star {
+    width: 44px;
+    height: 44px;
+  }
+
+  .detailGrid a,
+  .fills a,
+  .settledLinks a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+}
+
+/* The stock context under a tokenized stock's price: the issuer's reference and
+   its state, the session, the deviation, the way to the research page. One
+   quiet line, never a second price row. */
+.stockLine {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--ry-muted);
+}
+.stockLine b { font-weight: 600; color: var(--ry-text); }
+.stockLine a { color: var(--ry-text); font-weight: 600; text-decoration: none; }
+.stockLine a:hover { color: var(--ry-accent); }
+/* The two chips a Portfolio row of a stock carries. */
+.stockChips { display: inline-flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+.stockChips .chip[data-tone="up"] { color: var(--ry-pnl-pos); }
+.stockChips .chip[data-tone="down"] { color: var(--ry-pnl-neg); }
+
+/* ── The plan on the ticket (RYN-STRATEGY-PLAN-001 stage B) ─────────────────
+   One chip above the amount says which plan and version the order is under
+   and what that version sized; the Strategy block inside the Review is the
+   server's own judgement — the verdict, the open checks in full, the passed
+   ones folded. Tones are the three the ticket already speaks: verified,
+   caution, risk. */
+.planChip {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ry-s2);
+  padding: var(--ry-s2) var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-left: 3px solid var(--ry-iris);
+  border-radius: var(--ry-r-chip);
+  background: var(--ry-elevated);
+}
+
+.planChip[data-state="wrongMarket"],
+.planChip[data-state="inactive"],
+.planChip[data-state="notFound"] {
+  border-left-color: var(--ry-caution);
+}
+
+.planChipText {
+  display: grid;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+  font-size: var(--ry-fs-label);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+}
+
+.planChipText b {
+  color: var(--ry-text);
+  font-size: var(--ry-fs-dense);
+}
+
+.planChipText a {
+  color: var(--ry-text);
+  text-decoration: none;
+  border-bottom: 1px solid var(--ry-border-strong);
+}
+
+.planChipText a:hover {
+  color: var(--ry-accent);
+  border-bottom-color: var(--ry-accent);
+}
+
+.planChipLeave {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: var(--ry-r-chip);
+  background: transparent;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-app);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.planChipLeave:hover {
+  background: var(--ry-hover);
+  color: var(--ry-text);
+}
+
+.planBlock {
+  display: grid;
+  gap: var(--ry-s2);
+  padding: var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-elevated);
+}
+
+.planBlock[data-verdict="blocked"] {
+  border-color: color-mix(in oklab, var(--ry-risk) 45%, var(--ry-border));
+}
+
+.planBlock[data-verdict="attention"] {
+  border-color: color-mix(in oklab, var(--ry-caution) 45%, var(--ry-border));
+}
+
+/* The refusal said once, plainly, under the verdict (1.7.0). */
+.planReason {
+  margin: 0;
+  font-size: var(--ry-fs-label);
+  line-height: 1.45;
+  color: var(--ry-text);
+}
+
+/* The Review's four answers (1.7.0): four rows, the plan's row coloured by its verdict. */
+.reviewAnswers {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  background: var(--ry-bg);
+}
+
+.reviewAnswers > div {
+  display: grid;
+  grid-template-columns: minmax(0, 9em) minmax(0, 1fr);
+  gap: 8px;
+  align-items: baseline;
+}
+
+.reviewAnswers dt {
+  margin: 0;
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-text-muted);
+}
+
+.reviewAnswers dd {
+  margin: 0;
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  color: var(--ry-text);
+  overflow-wrap: anywhere;
+}
+
+.reviewAnswers > div[data-verdict="blocked"] dd {
+  color: var(--ry-risk);
+}
+
+.reviewAnswers > div[data-verdict="attention"] dd {
+  color: var(--ry-caution);
+}
+
+@media (max-width: 480px) {
+  .reviewAnswers > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+}
+
+.planBlockHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ry-s2);
+}
+
+.planBlockHead b {
+  font-size: var(--ry-fs-dense);
+  font-weight: 700;
+  color: var(--ry-text);
+}
+
+.planVerdict {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 var(--ry-s2);
+  border-radius: var(--ry-r-pill, 999px);
+  background: var(--ry-env-bg);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--ry-verified);
+}
+
+.planVerdict[data-verdict="attention"] {
+  color: var(--ry-caution);
+}
+
+.planVerdict[data-verdict="blocked"] {
+  color: var(--ry-risk);
+}
+
+.planModel {
+  margin: 0;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+  line-height: var(--ry-lh-body);
+}
+
+.planModel b {
+  font-family: var(--ry-font-mono);
+  font-weight: 600;
+  color: var(--ry-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.planChecks {
+  display: grid;
+  gap: var(--ry-s1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.planCheck {
+  display: grid;
+  grid-template-columns: 16px 1fr auto;
+  align-items: start;
+  gap: var(--ry-s2);
+  font-size: var(--ry-fs-label);
+  line-height: 1.35;
+  color: var(--ry-text);
+}
+
+.planCheck svg {
+  margin-top: 1px;
+  color: var(--ry-verified);
+}
+
+.planCheck[data-outcome="fail"] svg {
+  color: var(--ry-risk);
+}
+
+.planCheck[data-outcome="unknown"] svg {
+  color: var(--ry-caution);
+}
+
+.planCheck[data-outcome="fail"][data-required="false"] svg,
+.planCheck[data-outcome="unknown"][data-required="false"] svg {
+  color: var(--ry-caution);
+}
+
+.planCheckLabel em {
+  font-style: normal;
+  color: var(--ry-muted);
+}
+
+.planCheckFigure {
+  display: grid;
+  justify-items: end;
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label);
+  color: var(--ry-text);
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.planCheckFigure small {
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+}
+
+.planPassed summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+  list-style: none;
+}
+
+.planPassed summary::-webkit-details-marker {
+  display: none;
+}
+
+.planPassed summary svg {
+  color: var(--ry-verified);
+}
+
+.planPassed[open] summary {
+  margin-bottom: var(--ry-s2);
+}
+
+/* One line per evidence source the Review read — when, how far behind it may be, whose data (RYN-DDXYZ-RISK-001). */
+.planSources {
+  display: grid;
+  gap: 2px;
+  margin: var(--ry-s2) 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--ry-fs-label-sm);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+}
+
+.planSources li > span:first-child {
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.planSources a {
+  color: var(--ry-text);
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--ry-text) 25%, transparent);
+}
+
+/* Simple folds the provider, the route, a small impact and the stock's secondary facts — RYN-UX-CLARITY-001 §5.3. */
+.ticketDetails summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  cursor: pointer;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  list-style: none;
+}
+
+.ticketDetails summary::-webkit-details-marker {
+  display: none;
+}
+
+.ticketDetails summary::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform var(--rt-duration-fast) var(--rt-ease);
+}
+
+.ticketDetails[open] summary::before {
+  transform: rotate(45deg);
+}
+
+.ticketDetails summary:hover {
+  color: var(--ry-text);
+}
+
+.ticketDetails .costs {
+  border-top: 0;
+  padding-top: var(--ry-s1);
+}
+
+.costs dd[data-tone="caution"] {
+  color: var(--ry-caution);
+}

@@ -1,0 +1,50 @@
+/*
+ * The aggregator's components under Ryntra's tokens — tab 3's comparison
+ * view only. The variable names are AGG's public theming surface (their
+ * Customize UI guide); the values are Ryntra's own from app/design/tokens.css,
+ * so a change of the brand there is a change here. Their Partner Theme Studio
+ * read ryntra.io on 2026-09-17 and derived the same dark set; its light set
+ * was wrong (a derived brown for the accent), so the light values are mapped
+ * by hand from the tokens instead of pasted from the studio.
+ */
+
+.agg-root.ryntra-agg-theme {
+  --agg-color-primary: var(--ry-accent);
+  --agg-color-primary-hover: var(--ry-iris-hover, var(--ry-accent));
+  --agg-color-secondary: var(--ry-card);
+  --agg-color-secondary-hover: var(--ry-hover);
+  --agg-color-border: var(--ry-border);
+  --agg-color-foreground: var(--ry-text);
+  --agg-color-muted-foreground: var(--ry-muted);
+  --agg-color-on-primary: var(--ry-accent-fg);
+  --agg-color-success: var(--ry-pnl-pos);
+  --agg-color-warning: var(--ry-caution);
+  --agg-color-error: var(--ry-risk);
+  --agg-font-family-sans: var(--ry-font-sans);
+  --agg-radius-md: var(--ry-r-btn-sm);
+  --agg-radius-lg: var(--ry-r-btn);
+  --agg-radius-full: var(--ry-r-pill);
+  --agg-shadow-card: none;
+  --agg-shadow-card-hover: none;
+}
+
+/* Same names under AGG's dark selector shape, so the dark Ryntra tokens win
+   when the lab and the site are dark. */
+.dark .agg-root.ryntra-agg-theme:not(.light),
+.agg-dark .agg-root.ryntra-agg-theme:not(.light),
+.agg-root.ryntra-agg-theme.dark,
+.agg-root.ryntra-agg-theme[data-agg-theme="dark"] {
+  --agg-color-primary: var(--ry-accent);
+  --agg-color-primary-hover: var(--ry-iris-hover, var(--ry-accent));
+  --agg-color-secondary: var(--ry-card);
+  --agg-color-secondary-hover: var(--ry-hover);
+  --agg-color-border: var(--ry-border);
+  --agg-color-foreground: var(--ry-text);
+  --agg-color-muted-foreground: var(--ry-muted);
+  --agg-color-on-primary: var(--ry-accent-fg);
+  --agg-color-success: var(--ry-pnl-pos);
+  --agg-color-warning: var(--ry-caution);
+  --agg-color-error: var(--ry-risk);
+  --agg-gradient-brand: var(--ry-accent);
+  --agg-gradient-brand-hover: var(--ry-accent);
+}

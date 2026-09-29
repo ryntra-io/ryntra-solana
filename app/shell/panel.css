@@ -1,0 +1,908 @@
+/* ============================================================================
+   RWS panel system — docs/design/workspace-system.md (APPROVED DESIGN SPEC v1.0)
+   ============================================================================
+
+   One grid, one panel anatomy, everywhere inside the shell canvas.
+
+   `padding: 0` on `.rw` is load-bearing and the first rule in this file for a
+   reason: `globals.css` gives every `<section>` 78px of vertical padding for
+   landing-page rhythm. A panel is a container, not a landing section — without
+   this the header is pushed ~78px down, lands on top of the body, and the rest
+   of the panel is clipped by `overflow: hidden`. That is exactly what shipped
+   in the first pass, on every panel of every migrated screen at once.
+
+   Every colour is a token. A hex literal in this file is a spec violation the
+   panel-system test exists to catch.
+   ========================================================================== */
+
+.rw-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-auto-rows: var(--rw-row);
+  gap: var(--rw-gap);
+  width: 100%;
+}
+
+/* A page whose whole job is one panel hands that panel the canvas.
+   The fixed row height is right for a dashboard, where the rhythm between
+   panels is the layout. On a single-panel page it leaves a band of dead page
+   underneath — measured at 489px below Holdings on a 1305px viewport, which is
+   the founder's own display. Opt-in, so no multi-panel screen changes.
+
+   `flex: 1`, not `min-height: 100%`. The canvas is a flex column that also
+   holds the page head, and a percentage minimum is taken against the whole
+   canvas rather than what is left of it — so the grid claimed the head's
+   height a second time and pushed the page 29px past the viewport. A surface
+   with nothing to scroll grew a scrollbar. Measured on `/solana/workspace`
+   at 1305px: document 1334, and the same defect ran to 83px on Bridge. */
+.rw-grid--fill {
+  flex: 1 1 auto;
+  grid-auto-rows: minmax(var(--rw-row), 1fr);
+}
+
+/* The same stretch, asked for by a panel rather than by the page.
+
+   A page cannot know it is about to be one panel: Portfolio and Activity are
+   three panels with a wallet connected and one composed gate without one, and
+   only the client component that reads the connection knows which. Measured
+   disconnected, Portfolio drew 752px and left 404px of empty page beneath it.
+   The descendant selector rather than the child one is deliberate — the widget
+   wrapper is `display: contents`, so a panel is a grid item without being a
+   DOM child of the grid. */
+.rw-grid:has([data-stretch="true"]) {
+  flex: 1 1 auto;
+  grid-auto-rows: minmax(var(--rw-row), 1fr);
+}
+
+/* ------------------------------------------------------------------- panel */
+
+.rw {
+  /* See the header comment. Never remove. */
+  padding: 0;
+  --pb: 16px;
+  grid-column: span 12;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  /* A card separates from the ground by tone, a 1px border, the faintest
+     shadow and spacing — never by glow (Brand Canon v1.0 §8). */
+  background: var(--ry-card, var(--panel));
+  border: 1px solid var(--border);
+  border-radius: var(--ry-r-card, var(--radius-sm));
+  box-shadow: var(--ry-shadow-sm);
+}
+.rw[data-density="compact"] { --pb: 12px; }
+/* Orange only when the card is the selected, the premium or the active one. */
+.rw[data-active="true"] { border-color: var(--accent-line); box-shadow: var(--ry-shadow-sm), 0 0 0 1px var(--ry-brand-soft); }
+
+.rw-w3 { grid-column: span 3; }
+.rw-w4 { grid-column: span 4; }
+.rw-w6 { grid-column: span 6; }
+.rw-w8 { grid-column: span 8; }
+.rw-w9 { grid-column: span 9; }
+.rw-w12 { grid-column: span 12; }
+/*
+ * The height ramp, every step from two rows to eight and then in pairs to
+ * sixteen.
+ *
+ * It used to be 2 | 4 | 6 | 8, and content does not come in fours. Measured on
+ * the rendered pages, that quantisation was doing damage in both directions at
+ * once: twenty-nine panels of ninety-two sat under 70% full — one at 21%, a
+ * 752px box holding 155px of words — while
+ * panels whose content ran past the top step simply cut it off, because `.rw`
+ * is `overflow: hidden` and `.rw-b` only scrolls when a page asks it to. The
+ * Bridge's `Перевірка` ended mid-sentence, the capability register showed three
+ * of the five providers its own badge counted, and Settings lost a whole
+ * security row under the panel edge.
+ *
+ * Odd steps halve the error under eight; the wider steps above it exist so a
+ * long list can be given the room it needs instead of being trimmed by the
+ * frame. Nothing about the row unit or the gap changes.
+ */
+.rw-h2 { grid-row: span 2; }
+.rw-h3 { grid-row: span 3; }
+.rw-h4 { grid-row: span 4; }
+.rw-h5 { grid-row: span 5; }
+.rw-h6 { grid-row: span 6; }
+.rw-h7 { grid-row: span 7; }
+.rw-h8 { grid-row: span 8; }
+.rw-h10 { grid-row: span 10; }
+.rw-h12 { grid-row: span 12; }
+.rw-h14 { grid-row: span 14; }
+.rw-h16 { grid-row: span 16; }
+
+/* ------------------------------------------------------------------ header */
+
+.rw-h {
+  flex: 0 0 42px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 var(--pb);
+  border-bottom: 1px solid var(--border);
+  /* A header band, not just a line: the tint is what makes a panel read as a
+     panel at a glance instead of as text floating in a box. */
+  /* A flat tonal band, not a wash: one step up the surface ladder is what
+     makes a panel read as a panel. */
+  background: color-mix(in srgb, var(--ry-elevated, var(--panel-3)) 55%, transparent);
+}
+.rw-h h2 {
+  margin: 0;
+  font-size: var(--fs-14);
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.3;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rw-hsp { flex: 1; }
+
+/* A status chip carries a word, and a word set in monospace reads as terminal
+   output rather than as product UI — `Перевірено в тестнеті` in a mono pill is
+   the single thing that made the workspace look like a console. Monospace stays
+   where it belongs: addresses, hashes, amounts. Numerals keep tabular figures
+   so a column of counts still lines up. */
+.rw-badge {
+  flex: 0 0 auto;
+  font-family: var(--font);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--fs-12);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  padding: 2px 8px;
+  border-radius: var(--r-badge);
+  border: 1px solid var(--border-strong);
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+.rw-badge[data-tone="verified"] { color: var(--success); border-color: color-mix(in srgb, var(--success) 42%, transparent); background: var(--success-soft); }
+.rw-badge[data-tone="evidence"] { color: var(--accent); border-color: var(--accent-line); background: var(--accent-soft); }
+.rw-badge[data-tone="caution"] { color: var(--warning); border-color: color-mix(in srgb, var(--warning) 42%, transparent); background: var(--warning-soft); }
+.rw-badge[data-tone="danger"] { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, transparent); background: var(--danger-soft); }
+[data-theme="light"] .rw-badge[data-tone="verified"] { color: var(--success-strong); }
+/* `--accent-strong` is the *fill* value — the colour a filled button is
+   painted, meant to sit under white text. Used as text on the badge's own
+   pale tint it measured 3.98:1, under the floor, which is why the light
+   theme's status chips read washed out. `--accent` is the reading value. */
+[data-theme="light"] .rw-badge[data-tone="evidence"] { color: var(--accent); }
+[data-theme="light"] .rw-badge[data-tone="caution"] { color: var(--warning-strong); }
+
+/* -------------------------------------------------------------------- body */
+
+.rw-b {
+  flex: 1;
+  min-height: 0;
+  padding: var(--pb);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  /* Data panels scroll; action panels never do (spec §3). Either way the body
+     — not the page — absorbs the excess, so a long list cannot push a footer
+     or a critical control out of the panel. */
+  overflow: hidden;
+}
+/* A body that scrolls shows that it does. Without a gutter the cut lands
+   mid-word and reads as broken layout rather than as more content below. */
+.rw-b[data-scroll="true"] {
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+.rw-f {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px var(--pb);
+  border-top: 1px solid var(--border);
+  background: color-mix(in srgb, var(--panel-3) 40%, transparent);
+  font-size: var(--fs-12);
+  color: var(--text-faint);
+}
+
+/* -------------------------------------------------------------- primitives */
+
+.rw-lead { font-size: var(--fs-14); color: var(--text); line-height: 1.55; margin: 0; }
+.rw-note { font-size: var(--fs-12); color: var(--text-faint); line-height: 1.5; margin: 0; }
+
+/* A metric strip reads like an instrument panel: even columns, hairline
+   dividers, mono values on one baseline. */
+.rw-metricrow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  align-content: center;
+  flex: 1;
+  min-height: 0;
+  margin: calc(var(--pb) * -1);
+  margin-block: 0;
+}
+/* `flex: 1` is right when the metrics are the panel — they centre in the box and
+   the strip reads as one object. It is wrong when they share the panel with
+   anything else: the row takes all the slack, and the remaining content is
+   pushed to the floor with a void between. Seen first on the Stellar Overview,
+   where two metrics and a note left roughly 120px of nothing in the middle.
+   Composition found it; no measurement of a single element could. */
+.rw-metricrow:not(:only-child) {
+  flex: 0 0 auto;
+}
+.rw-metric {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  min-width: 0;
+  padding: 2px var(--pb);
+  border-inline-start: 1px solid var(--border);
+}
+.rw-metric:first-child { border-inline-start: 0; }
+.rw-metric-l {
+  font-size: var(--fs-12);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rw-metric-v {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--fs-15);
+  font-weight: 600;
+  color: var(--text);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Hero numbers on stat tiles take the data-lg step (DESIGN.md §Hierarchy). */
+.rw-metric-v[data-size="lg"] { font-size: var(--fs-24); }
+/*
+ * A metric whose value is a word, not a number.
+ *
+ * `readsAsProse` decides; see `reads-as-prose.ts` for the rule and for the
+ * finding that forced it — the network pulse printed `4 з 5` and, in a
+ * monospace face with tabular numerals, the Cyrillic `з` rendered as a digit,
+ * so the panel reported its reachable endpoints as `4 3 5`. `Невідомо`,
+ * `Недоступно` and `Так` were being set in the machine face on the same row.
+ */
+.rw-metric-v[data-prose="true"] {
+  font-family: var(--font);
+  font-variant-numeric: normal;
+  letter-spacing: 0;
+  /* And it wraps. `.rw-metric-v` is a flex box, so `text-overflow: ellipsis`
+     never applied to it and the text was cut dry, mid-letter and without the
+     ellipsis that would have said so: `Завантажен`, `Налаштований операто`,
+     `Невідомо · під'єднайте та`. A number is short and stays on one line. */
+  white-space: normal;
+  overflow: visible;
+  overflow-wrap: break-word;
+}
+.rw-metric-s { font-size: var(--fs-12); color: var(--text-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* A metric label is one line at a width where labels are short, and two lines
+   at a width where they are not. Found at 375 in the first eye pass any hub row
+   has run there: the capability register showed `МАНІФЕСТІВ ПЕРЕ…` and
+   `ОДИН ЗАПУСК ЗА…` — 181px and 203px of label in a 139px column, because two
+   metrics share a mobile row and Ukrainian is longer than English. An ellipsis
+   is the right answer when the tail is redundant; here it removed the verb the
+   label existed for. The tile grows a line instead. */
+/* The sub carries whole sentences — `Жодного переказу не виконано`,
+   `Принаймні одну алокацію не вдалося прочитати` — and lost them at the same
+   139px. A sentence cut at a third of its length is not a shorter sentence.
+
+   This is not width-conditional, and the first attempt at it was. A metric
+   column is roughly 250px at 1440 too, so `Пропозиції, що очікують` and two
+   sentences were still being cut on the wide screen while the mobile rule sat
+   above them doing nothing for it. The constraint was never the viewport. */
+.rw-metric-l,
+.rw-metric-s {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.rw-dot { width: 8px; height: 8px; flex: 0 0 auto; border-radius: 50%; background: var(--success); }
+.rw-dot[data-tone="down"] { background: var(--danger); }
+.rw-dot[data-tone="warn"] { background: var(--warning); }
+.rw-dot[data-tone="idle"] { background: var(--text-faint); }
+.rw-dot[data-live="true"] { animation: rw-pulse 2s infinite; }
+@keyframes rw-pulse {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--success) 45%, transparent); }
+  70% { box-shadow: 0 0 0 7px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+@media (prefers-reduced-motion: reduce) { .rw-dot[data-live="true"] { animation: none; } }
+
+.rw-empty {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 6px;
+  color: var(--text-faint);
+  font-size: var(--fs-13);
+  padding: 8px;
+}
+.rw-empty b { font-size: var(--fs-14); font-weight: 600; color: var(--text); }
+.rw-empty p { margin: 0; max-width: 52ch; line-height: 1.5; }
+
+/*
+ * An empty state centres itself in the panel it is the whole content of.
+ *
+ * `.rw-empty` already asks for `flex: 1` and centres, and that works only while
+ * it is a direct child of `.rw-b`. Half the surfaces wrap it in something else
+ * — one workbench puts it inside `.draft`, a grid that is not stretched
+ * — so the message was pinned to the top of a 752px panel with six hundred
+ * pixels of nothing beneath it. Measured across the workspace that was the
+ * emptiest panel in the product at 21% full, and eight more sat under 60%.
+ *
+ * Two rules, because the wrapper can be either kind of box: a sole child that
+ * *holds an empty state* is given the body's height, and the empty state
+ * centres inside whatever that turns out to be. `margin-block: auto` centres in
+ * a flex column and in a grid area alike, which `justify-content` alone does
+ * not.
+ *
+ * The selector is narrow on purpose. Stretching any sole child stretched the
+ * watched-flows list on the overview too — a three-row `display: grid` given
+ * 100% height spreads its rows, and the panel went from a list to three rows
+ * with air between them. Only an empty state wants the whole box.
+ */
+.rw-b > .rw-empty:only-child,
+.rw-b > *:only-child:has(> .rw-empty) {
+  min-block-size: 100%;
+}
+.rw-empty { margin-block: auto; }
+
+/* A key/value ledger row. Hairline separated, value right-aligned and mono, so
+   a column of them scans down like a statement. */
+.rw-kv {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--ch-grid);
+  font-size: var(--fs-13);
+  color: var(--text-dim);
+}
+.rw-kv:last-child { border-bottom: 0; }
+/*
+ * The same rule on the value of a labelled fact.
+ *
+ * `Несе реальну вартість → Ні — testnet` and a testnet's name under `Назва` were both
+ * set in mono and right-aligned, which is what turns a column of answers into a
+ * ragged edge of machine text. A word takes the reading face; a hash, an
+ * address, a host and an amount keep the one they had.
+ */
+.rw-kv b[data-prose="true"] {
+  font-family: var(--font);
+  font-variant-numeric: normal;
+  font-weight: 600;
+  /* A hash may be broken anywhere; a sentence may not. `anywhere` is what put
+     `запитуєтьс` and `я` on two lines. */
+  overflow-wrap: break-word;
+}
+.rw-kv b {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  color: var(--text);
+  text-align: end;
+  overflow-wrap: anywhere;
+}
+/* The hint sits with its label, never in the value.
+
+   A value column is right-aligned mono for numbers and addresses; an info
+   control dropped into it would push the number it explains out of the column
+   a reader scans down. */
+.rw-kv > span { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+.rw-kv-hint { display: inline-flex; flex: 0 0 auto; }
+/* A text link inside a value takes the action ink. A button-shaped anchor
+   keeps the button's own ink: the broader selector used to override white on
+   a filled primary CTA, producing 1.89:1 on dark and 1:1 on light. */
+.rw-kv a:not(.rw-btn) { color: var(--accent); }
+[data-theme="light"] .rw-kv a:not(.rw-btn) { color: var(--accent-strong); }
+
+/*
+ * On a wide panel the pair becomes two columns instead of two ends.
+ *
+ * `space-between` is right in a 4-column panel, where the row is 300px and the
+ * value is never far from what it names. In an 8- or 12-column panel it is the
+ * defect `ryntra-design-bar` §7 records from the swap surface: on the Asset
+ * Passport the value sat roughly 800px from its label, and the eye stopped
+ * reading them as one statement.
+ *
+ * The Passport's own retired stylesheet had solved this and said so — "a
+ * two-column grid rather than a space-between row… on a wide canvas a
+ * space-between value drifts to the far edge" — and moving to the shared
+ * component reintroduced exactly what that comment warned about. The fix belongs
+ * here rather than back in a local file, so the next wide panel inherits it.
+ *
+ * Narrow panels are untouched, which is why this is keyed to the width tokens
+ * rather than applied to every `.rw-kv`.
+ */
+.rw-w6 .rw-kv,
+.rw-w8 .rw-kv,
+.rw-w9 .rw-kv,
+.rw-w12 .rw-kv {
+  display: grid;
+  /*
+   * The label may take up to twenty rems **or forty-five per cent**, whichever
+   * is smaller.
+   *
+   * `minmax(0, 20rem)` alone reads the panel's span and not the row's actual
+   * width, and a wide panel routinely holds two sub-columns. Settings is where
+   * that showed: `Приватність і безпека` is a `rw-w12` panel split in two, each
+   * side about 368px, so the label track took its full 320px and left **48px**
+   * for the value. `Ніколи не запитується, не отримується й не зберігається`
+   * was rendered four characters at a time, breaking mid-word — `запитуєтьс`
+   * on one line and `я` on the next. Six rows on that page were laid out that
+   * way. The per-cent cap makes the split proportional to the room there is.
+   */
+  grid-template-columns: minmax(0, min(20rem, 45%)) minmax(0, 1fr);
+  align-items: baseline;
+  gap: 2px 24px;
+}
+
+/* In the two-column layout a sentence is read from a left edge, not stacked
+   against a right one. Machine values keep `text-align: end`, which is what
+   makes a column of hashes and amounts line up. */
+.rw-w6 .rw-kv b[data-prose="true"],
+.rw-w8 .rw-kv b[data-prose="true"],
+.rw-w9 .rw-kv b[data-prose="true"],
+.rw-w12 .rw-kv b[data-prose="true"] {
+  text-align: start;
+}
+
+.rw-w6 .rw-kv b,
+.rw-w8 .rw-kv b,
+.rw-w9 .rw-kv b,
+.rw-w12 .rw-kv b {
+  text-align: start;
+}
+
+@media (max-width: 720px) {
+  .rw-w6 .rw-kv,
+  .rw-w8 .rw-kv,
+  .rw-w9 .rw-kv,
+  .rw-w12 .rw-kv {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.rw-hair { height: 1px; background: var(--border); margin: 4px 0; border: 0; }
+
+/*
+ * A secondary button that looks like a button.
+ *
+ * It was `background: transparent` with `--text-dim` ink on a hairline, which
+ * on a panel that is itself a raised surface is a label with a rectangle round
+ * it. Opening a desk, the founder could not tell which of the things on screen
+ * were pressable — *«є якісь кнопки, що це не видно, що це кнопка»* — and the
+ * two most consequential controls on the surface were among them. So the resting state now carries a fill, a
+ * full-strength border and ink-high text, and hover moves the fill rather than
+ * introducing one. Nothing about the hierarchy changes: primary is still the
+ * only filled *accent*, and this is still quieter than it.
+ */
+.rw-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 9px 14px;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--border-strong);
+  background: var(--panel-3);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: var(--fs-13);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.12s ease, border-color 0.12s ease, background-color 0.12s ease;
+}
+.rw-btn:hover:not(:disabled) {
+  color: var(--text);
+  border-color: var(--accent-line);
+  background: color-mix(in srgb, var(--accent) 14%, var(--panel-3));
+}
+/* Keyboard reaches every one of these, so keyboard has to be able to see which
+   one it is on. The shared focus ring, on the control rather than on the page. */
+.rw-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+/* Primary is Action Blue, not evidence cyan (DESIGN.md §Components/Buttons).
+   The workspace had them merged, which left the colour that means "this is
+   verified data" also meaning "press this" — the one confusion a desk about
+   evidence cannot afford. Hover deepens to the canon hover value rather than
+   brightening the fill, so light and dark move the same way. */
+/* `data-variant` is honoured beside the modifier class, and that is a fix
+   rather than a convenience. One desk marked its primary controls
+   `data-variant="primary"` — the preflight, the wallet's approval, the send —
+   and nothing in this sheet read the attribute, so the whole money path
+   rendered in the secondary style. Both spellings now resolve
+   to one rule; neither is a second definition of the colour. */
+.rw-btn--primary,
+.rw-btn[data-variant="primary"] { background: var(--blue); border-color: transparent; color: var(--blue-ink); }
+.rw-btn--primary:hover:not(:disabled),
+.rw-btn[data-variant="primary"]:hover:not(:disabled) { background: var(--rt-action-blue-hover); color: var(--blue-ink); }
+/* Violet is reserved for one thing: a person explicitly authorizing an
+   operation (DESIGN.md §Components/Buttons, Cabinet Master Plan §10). The
+   token existed and no control ever used it, so "continue" and "authorize this
+   exact intent" were the same blue — and the single most consequential click
+   in the product looked like every other one. Nothing else may take this
+   class. */
+.rw-btn--authorize,
+.rw-btn[data-variant="authorize"] {
+  background: var(--violet);
+  border-color: transparent;
+  color: var(--rt-authorization-violet-ink);
+}
+.rw-btn--authorize:hover:not(:disabled),
+.rw-btn[data-variant="authorize"]:hover:not(:disabled) { filter: brightness(1.08); }
+/*
+ * A disabled button that can still be read.
+ *
+ * `opacity: 0.5` fades the fill and the label by the same amount, so a filled
+ * primary keeps its saturated blue and loses its white text: measured at 2.1:1
+ * on the Swap request panel and on the verifier, under the 4.5:1 floor, and the
+ * page's loudest element was also its least legible one. On Reports the same
+ * rule left a disabled `Завантажити CSV` as the only blue block on the panel.
+ *
+ * The state is stated instead of dimmed: no fill, a hairline, and faint ink. It
+ * reads as unavailable at a glance and every label stays readable in both
+ * themes.
+ */
+.rw-btn:disabled {
+  opacity: 1;
+  cursor: not-allowed;
+  background: var(--panel-3);
+  border-color: var(--border);
+  color: var(--text-dim);
+  box-shadow: none;
+  filter: none;
+}
+.rw-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.rw-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xs);
+  font-size: var(--fs-13);
+  color: var(--text);
+  line-height: 1.5;
+}
+.rw-alert svg { flex: 0 0 auto; margin-top: 2px; }
+.rw-alert[data-tone="warn"] { border-color: color-mix(in srgb, var(--warning) 40%, transparent); background: var(--warning-soft); }
+.rw-alert[data-tone="warn"] svg { color: var(--warning); }
+.rw-alert[data-tone="danger"] { border-color: color-mix(in srgb, var(--danger) 42%, transparent); background: var(--danger-soft); }
+.rw-alert[data-tone="danger"] svg { color: var(--danger); }
+
+/* Authorization — brand blue, always icon + label + state, never colour alone. */
+.rw-auth {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  background: var(--blue-soft);
+  border-inline-start: 2px solid var(--blue);
+  border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
+  font-size: var(--fs-13);
+  color: var(--text);
+  line-height: 1.5;
+}
+.rw-auth svg { flex: 0 0 auto; color: var(--blue); margin-top: 1px; }
+.rw-auth b { color: var(--text); font-weight: 600; }
+
+/* Stepper — the guarded-action rail (spec §9). */
+.rw-steps { display: flex; flex-direction: column; list-style: none; margin: 0; padding: 0; }
+.rw-step { position: relative; display: grid; grid-template-columns: 22px minmax(0, 1fr); column-gap: 10px; padding: 7px 0; }
+.rw-step-m {
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border-strong);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-faint);
+  background: var(--panel-2);
+  z-index: 1;
+}
+.rw-step:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 8.5px;
+  top: 27px;
+  bottom: -7px;
+  width: 1px;
+  background: var(--border);
+}
+.rw-step b { font-size: var(--fs-13); font-weight: 600; color: var(--text); line-height: 1.4; }
+.rw-step small { display: block; margin-top: 2px; font-size: var(--fs-12); color: var(--text-faint); line-height: 1.45; }
+.rw-step[data-state="done"] .rw-step-m { border-color: var(--success); color: var(--success); }
+.rw-step[data-state="active"] .rw-step-m { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.rw-step[data-state="active"] b { color: var(--text); }
+.rw-step[data-state="blocked"] .rw-step-m { border-color: color-mix(in srgb, var(--danger) 60%, transparent); color: var(--danger); }
+[data-theme="light"] .rw-step[data-state="done"] .rw-step-m { color: var(--success-strong); }
+
+/* Action cards inside a panel. Internal primitives, never nested panels. */
+.rw-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(206px, 1fr)); gap: 12px; flex: 1; min-height: 0; }
+.rw-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+  padding: 13px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  background: color-mix(in srgb, var(--panel-3) 45%, transparent);
+  color: inherit;
+  transition: background-color 0.12s ease, border-color 0.12s ease, transform 0.12s ease;
+}
+a.rw-card:hover { background: var(--panel-3); border-color: var(--accent-line); transform: translateY(-2px); }
+.rw-card[aria-disabled="true"] { opacity: 0.55; cursor: not-allowed; }
+.rw-card-h { display: flex; align-items: center; gap: 9px; }
+.rw-card-h svg { color: var(--accent); flex: 0 0 auto; }
+[data-theme="light"] .rw-card-h svg { color: var(--accent-strong); }
+.rw-card[aria-disabled="true"] .rw-card-h svg { color: var(--text-faint); }
+.rw-card-h b { font-size: var(--fs-14); font-weight: 600; color: var(--text); }
+.rw-card p { margin: 0; font-size: var(--fs-12); color: var(--text-faint); line-height: 1.5; flex: 1; }
+/* The footer wraps rather than letting a long CTA push past the card edge and
+   collide with the next card's badge — measured on the rendered screen, not
+   assumed from the column arithmetic. */
+.rw-card-f { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; min-width: 0; }
+.rw-card-cta { font-size: var(--fs-12); font-weight: 600; color: var(--accent); display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+[data-theme="light"] .rw-card-cta { color: var(--accent-strong); }
+
+/* The lifecycle band — the product's own idea, drawn rather than described.
+   Stages that the current surface can actually reach are lit; the rest stay
+   quiet, so the band states scope instead of decorating. */
+.rw-flow { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+.rw-flow-i {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 9px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-badge);
+  background: color-mix(in srgb, var(--panel-3) 50%, transparent);
+  font-family: var(--mono);
+  font-size: var(--fs-12);
+  letter-spacing: 0.04em;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+.rw-flow-i[data-on="true"] { color: var(--accent); border-color: var(--accent-line); background: var(--accent-soft); }
+[data-theme="light"] .rw-flow-i[data-on="true"] { color: var(--accent-strong); }
+.rw-flow-s { color: var(--text-faint); font-size: var(--fs-12); }
+
+/* A capability row: name + description, state, action. */
+.rw-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--ch-grid);
+}
+.rw-row:last-child { border-bottom: 0; }
+.rw-row-main { flex: 1; min-width: 0; }
+.rw-row-main b { display: block; font-size: var(--fs-13); font-weight: 600; color: var(--text); }
+.rw-row-main span { display: block; font-size: var(--fs-12); color: var(--text-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Tables */
+.rw-tablewrap { overflow: auto; min-height: 0; margin-inline: calc(var(--pb) * -1); padding-inline: var(--pb); }
+.rw-tablewrap:focus-visible, .rw-b:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.rw-table { width: 100%; border-collapse: collapse; }
+/* Column headers. Scoped to `thead` because this treatment — sticky, uppercase,
+   faint, `nowrap` — describes a column label and nothing else. It used to apply
+   to every `th`, so the first `<th scope="row">` written on a Stellar table
+   rendered a full sentence in capitals inside a sticky, non-wrapping cell. A row
+   header is a cell that happens to name its row, and it gets the cell rules
+   below. */
+.rw-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--panel);
+  font-size: var(--fs-12);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--text-faint);
+  text-align: start;
+  padding: 2px 10px 8px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.rw-table td, .rw-table tbody th { padding: 0 10px; height: 40px; font-size: var(--fs-13); color: var(--text); border-bottom: 1px solid var(--ch-grid); }
+/* A row header is a cell that names its row: same box, ordinary case, and the
+   emphasis a name earns. */
+.rw-table tbody th { text-align: start; font-weight: 600; color: var(--text); }
+.rw[data-density="compact"] .rw-table td { height: 32px; }
+/* `th` is in the selector because a row header is now a cell: without it the
+   last row kept a border under its header and lost it under its data, drawing a
+   rule that stops halfway across the table. */
+.rw-table tr:last-child td, .rw-table tbody tr:last-child th { border-bottom: 0; }
+.rw-table tr:hover td, .rw-table tbody tr:hover th { background: var(--panel-3); }
+.rw-table .m, .rw-mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.rw-table td.m { color: var(--text); }
+/*
+ * A mono cell that turned out to hold a word.
+ *
+ * `.m` marks the columns that carry identifiers — a host, a chain id, an error
+ * code. Those columns fall back to a *sentence* when the value is missing:
+ * `Невідомо`, `Немає`, `Налаштований оператором`. Same rule as the panel
+ * values, same reason — see `reads-as-prose.ts`.
+ */
+.rw-table td.m[data-prose="true"] {
+  font-family: var(--font);
+  font-variant-numeric: normal;
+}
+
+
+/* Form fields — action panels only; values are always mono. */
+.rw-field { display: flex; flex-direction: column; gap: 6px; }
+/* A field's caption is styled whether it is a decorative `<span>` or a real
+   `<label for>`. Only the span was styled before, which quietly pushed every
+   author towards the inaccessible one to get the right look. */
+.rw-field > :where(span, label) {
+  font-size: var(--fs-12);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.rw-input {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+}
+.rw-input:focus-within { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.rw-input input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: 0;
+  outline: none;
+  color: var(--text);
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--fs-15);
+  text-align: end;
+}
+.rw-input .rw-tk {
+  flex: 0 0 auto;
+  font-size: var(--fs-12);
+  font-weight: 600;
+  color: var(--text-dim);
+  background: var(--panel-3);
+  border-radius: var(--r-badge);
+  padding: 3px 8px;
+}
+
+/* Compact code-example tabs share one visual language with the panel actions.
+   They are real buttons, so the mobile target contract applies to them too. */
+.rw-tabs { display: inline-flex; align-items: center; gap: 2px; }
+/* A resting tab looks like a control.
+   `border: transparent` on `background: transparent` made `API` and `HEALTH`
+   beside a selected `SDK` read as two faint words rather than as the two other
+   tabs — the same complaint as a button that is not visibly a button. The
+   hierarchy is unchanged: only the selected tab takes the accent. */
+.rw-tab {
+  min-height: 36px;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  background: var(--panel-3);
+  color: var(--text-dim);
+  font-family: var(--font);
+  font-size: var(--fs-12);
+  font-weight: 600;
+  cursor: pointer;
+}
+.rw-tab:hover { color: var(--text); background: var(--panel-3); }
+.rw-tab[aria-selected="true"] {
+  color: var(--accent);
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+}
+
+/* ------------------------------------------------------------- responsive */
+
+/* Compact laptop: full-width canvases, paired KPI tiles. */
+@media (max-width: 1279px) {
+  .rw-w8, .rw-w9, .rw-w4 { grid-column: span 12; }
+  .rw-w3 { grid-column: span 6; }
+}
+
+/* Below the shell's drawer breakpoint the grid releases its spans: panels
+   stack full-width at content-driven heights (spec §3 mobile rule). */
+@media (max-width: 900px) {
+  .rw-grid { grid-auto-rows: auto; }
+  .rw-w3, .rw-w6 { grid-column: span 12; }
+  .rw-h2,
+  .rw-h3,
+  .rw-h4,
+  .rw-h5,
+  .rw-h6,
+  .rw-h7,
+  .rw-h8,
+  .rw-h10,
+  .rw-h12,
+  .rw-h14,
+  .rw-h16 { grid-row: auto; }
+  .rw { min-height: 150px; }
+  .rw[data-metric="true"] { min-height: 0; }
+  .rw-metricrow { grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)); }
+  .rw-metric { padding-block: 10px; border-inline-start: 0; border-top: 1px solid var(--border); }
+  .rw-metric:first-child { border-top: 0; }
+}
+
+/* The ≤640 tap-target rule (DESIGN.md §Components/Buttons). Measured at 375 on
+   an earlier hub: panel buttons came out 36–41px, which is a control a thumb has
+   to aim at. Inline text links inside a sentence keep their line height — WCAG
+   2.5.8 exempts them, and stretching one would break the row it sits in. */
+@media (max-width: 640px) {
+  .rw-h {
+    flex: 0 0 auto;
+    min-height: 42px;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding-block: 8px;
+  }
+  .rw-h h2 {
+    flex: 1 1 132px;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+  .rw-hsp { display: none; }
+  .rw-badge {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  /* At this width the label already wraps; the value has to as well, or it is
+     cut mid-letter in a 139px column. */
+  .rw-metric-v {
+    white-space: normal;
+    overflow: visible;
+    overflow-wrap: anywhere;
+  }
+  .rw-btn,
+  .rw-tab {
+    min-height: 44px;
+  }
+  .rw-tab { min-width: 44px; }
+  .rw-input { padding-block: 0; }
+  .rw-input input { min-height: 44px; }
+}
+
+
+/* A tab strip inside a panel header already has the header's rule under it,
+   so it does not draw a second one. Declared here rather than as an inline
+   style — which was the only one in the workspace and bypassed the token
+   layer entirely. */
+.rw-tabs[data-flush="true"] { border: 0; }

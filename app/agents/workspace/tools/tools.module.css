@@ -1,0 +1,453 @@
+/*
+ * The agent-tools surface's own layout.
+ *
+ * Every colour is a workspace token, and the two that carry meaning carry it
+ * consistently: a write is amber everywhere it appears, and a rung or
+ * a cell nobody can reach is `--text-faint` everywhere it appears. A read and a
+ * write that looked alike would erase the one distinction this page exists to
+ * make.
+ */
+
+.inventory {
+  min-width: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 0 13px;
+  color: var(--text-dim);
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: var(--fs-14);
+  cursor: pointer;
+}
+
+.filter > span {
+  min-width: 2ch;
+  padding: 1px 6px;
+  color: var(--text-faint);
+  background: color-mix(in srgb, var(--panel-3) 60%, transparent);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-12);
+  font-variant-numeric: tabular-nums;
+}
+
+.filter:hover { border-color: var(--accent-line); color: var(--text); }
+.filter:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.filter[aria-pressed="true"] {
+  color: var(--text);
+  border-color: var(--accent-line);
+  background: color-mix(in srgb, var(--accent) 12%, var(--panel-2));
+}
+
+.filter[aria-pressed="true"] > span { color: var(--text); }
+
+.filterFact {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: var(--fs-13);
+}
+
+.toolList {
+  list-style: none;
+  display: grid;
+  /* 300px rather than 250: `inspect_agent_launch_testnet_token` is 34
+     characters, and at 250 the track forced a break in the middle of an
+     identifier. A tool name split as `toke / n` reads as a rendering fault. */
+  grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+}
+
+.tool {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+  padding: 10px 11px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--panel-3) 40%, transparent);
+}
+
+.tool[data-kind="WRITE"] {
+  border-color: color-mix(in srgb, var(--warning-strong) 40%, var(--border));
+}
+
+.toolHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 8px;
+}
+
+.toolHead code {
+  min-width: 0;
+  color: var(--text);
+  font-size: var(--fs-13);
+  /* `break-word`, not `anywhere`: break only when a name cannot fit at all,
+     rather than at the first opportunity. */
+  overflow-wrap: break-word;
+}
+
+.kind {
+  flex: none;
+  padding: 1px 7px;
+  color: var(--text-dim);
+  background: color-mix(in srgb, var(--panel-2) 70%, transparent);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-12);
+}
+
+.kind[data-kind="WRITE"] {
+  color: var(--warning-strong);
+  border-color: color-mix(in srgb, var(--warning-strong) 45%, var(--border));
+  background: color-mix(in srgb, var(--warning-strong) 12%, transparent);
+}
+
+.toolFacts,
+.classes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  color: var(--text-faint);
+  font-size: var(--fs-12);
+}
+
+.classes span {
+  padding: 0 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.probes {
+  list-style: none;
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  counter-reset: probe;
+}
+
+.probe {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  padding: 9px 11px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--panel-3) 40%, transparent);
+}
+
+.probeOrder {
+  align-self: start;
+  min-width: 22px;
+  padding: 1px 0;
+  color: var(--text-faint);
+  background: color-mix(in srgb, var(--panel-2) 70%, transparent);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-12);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.probe > div {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.probe b {
+  color: var(--text);
+  font-size: var(--fs-14);
+  font-weight: 600;
+}
+
+.probe code {
+  color: var(--warning-strong);
+  font-size: var(--fs-12);
+  overflow-wrap: anywhere;
+}
+
+.probe > div > span {
+  color: var(--text-dim);
+  font-size: var(--fs-13);
+  line-height: 1.45;
+}
+
+.states {
+  list-style: none;
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+}
+
+.state {
+  /* `min-width: 0` on the row and on both groups, because a flex child refuses
+     to shrink below its content by default. Without it the nine rows kept their
+     full width at 375 and bled 86px past the page — invisible at 2560, which is
+     the width this window is stuck at. */
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+  padding: 8px 11px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--panel-3) 40%, transparent);
+}
+
+.state > div {
+  min-width: 0;
+}
+
+.state > div:first-child {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+}
+
+.state b {
+  color: var(--text);
+  font-size: var(--fs-14);
+  font-weight: 600;
+}
+
+/*
+ * State is carried by the word, not by a coloured bar down the side of the row.
+ *
+ * The first version put a 3px accent border on each row's left edge. Two things
+ * were wrong with it: nothing else in this workspace does that - the shared
+ * idiom is a tinted value, as `commerce.module.css` does with `data-tone` - and
+ * the bar repeated a chip that was already sitting two pixels to its right. A
+ * second encoding of a fact the row already states is decoration wearing the
+ * costume of meaning.
+ */
+.state[data-class="TERMINAL"] .stateClass { color: var(--text-faint); }
+.state[data-class="INTERRUPTED"] .stateClass { color: var(--warning-strong); }
+.state[data-class="OPEN"] .stateClass { color: var(--mint); }
+.state[data-class="REFUSED"] .stateClass { color: var(--danger); }
+
+.stateClass,
+.stateFacts span {
+  color: var(--text-faint);
+  font-size: var(--fs-12);
+}
+
+.stateFacts {
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+}
+
+/* An underscored uppercase reason code carries no break opportunity, so at 375
+   `A2A_TASK_STATE_INDETERMINATE` ran 74px off the page. Wide enough and it
+   never breaks; too narrow and breaking it beats losing it. */
+.stateFacts span,
+.event {
+  overflow-wrap: anywhere;
+}
+
+.event {
+  padding: 0 6px;
+  color: var(--warning-strong);
+  border: 1px solid color-mix(in srgb, var(--warning-strong) 45%, var(--border));
+  border-radius: var(--radius-sm);
+}
+
+/* The grid is three columns wide and it cannot usefully get narrower, so it
+   scrolls inside its own box rather than pushing the page sideways. */
+.axesScroll {
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.axes {
+  width: 100%;
+  min-width: 22rem;
+  border-collapse: collapse;
+  font-size: var(--fs-13);
+}
+
+.axes th,
+.axes td {
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  text-align: left;
+}
+
+.axes thead th,
+.axes tbody th {
+  color: var(--text-dim);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.axes td {
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.axes td[data-authorization="REQUESTED"] {
+  color: var(--warning-strong);
+  background: color-mix(in srgb, var(--warning-strong) 10%, transparent);
+}
+
+.ladder {
+  list-style: none;
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+}
+
+.rung {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 3px 12px;
+  padding: 8px 11px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--panel-3) 40%, transparent);
+}
+
+.rung b {
+  color: var(--text);
+  font-size: var(--fs-14);
+  font-weight: 600;
+}
+
+.rung span {
+  color: var(--text-faint);
+  font-size: var(--fs-12);
+}
+
+.rung[data-reachable="false"] {
+  border-style: dashed;
+  background: none;
+}
+
+.rung[data-reachable="false"] b { color: var(--text-faint); }
+
+.blockers {
+  list-style: none;
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+}
+
+.blockers li {
+  position: relative;
+  padding-left: 15px;
+  max-width: 92ch;
+  color: var(--text-dim);
+  font-size: var(--fs-13);
+  line-height: 1.5;
+}
+
+.blockers li::before {
+  content: "";
+  position: absolute;
+  top: 0.62em;
+  left: 2px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--text-faint);
+}
+
+.explain { min-width: 0; }
+
+.explain summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  color: var(--text-dim);
+  font-size: var(--fs-13);
+  cursor: pointer;
+  list-style: none;
+}
+
+.explain summary::-webkit-details-marker { display: none; }
+.explain summary:hover { color: var(--text); }
+.explain summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.explain > div {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--panel-3) 40%, transparent);
+}
+
+.explain p {
+  margin: 0;
+  max-width: 72ch;
+  color: var(--text-dim);
+  font-size: var(--fs-13);
+  line-height: 1.5;
+}
+
+.explain ul {
+  list-style: none;
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+}
+
+.explain li {
+  position: relative;
+  padding-left: 14px;
+  max-width: 72ch;
+  color: var(--text-dim);
+  font-size: var(--fs-13);
+  line-height: 1.45;
+}
+
+.explain li::before {
+  content: "";
+  position: absolute;
+  top: 0.6em;
+  left: 2px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--text-faint);
+}
+
+@media (max-width: 640px) {
+  .probe { grid-template-columns: minmax(0, 1fr); }
+  .probeOrder { justify-self: start; min-width: 26px; }
+  .axes { font-size: var(--fs-12); }
+  .axes th,
+  .axes td { padding: 6px 7px; }
+}

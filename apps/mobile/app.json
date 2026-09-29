@@ -1,0 +1,95 @@
+{
+  "expo": {
+    "name": "Ryntra",
+    "slug": "ryntra",
+    "scheme": "ryntra",
+    "version": "1.9.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "userInterfaceStyle": "automatic",
+    "backgroundColor": "#080D13",
+    "android": {
+      "package": "io.ryntra.app",
+      "versionCode": 4,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-foreground.png",
+        "monochromeImage": "./assets/images/adaptive-monochrome.png",
+        "backgroundColor": "#06080D"
+      },
+      "predictiveBackGestureEnabled": false,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "ryntra.io",
+              "pathPrefix": "/app/alerts"
+            },
+            {
+              "scheme": "https",
+              "host": "ryntra.io",
+              "pathPrefix": "/app/strategies"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ]
+    },
+    "plugins": [
+      [
+        "expo-dev-client",
+        {
+          "showMenuAtLaunch": false,
+          "skipOnboarding": true
+        }
+      ],
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#080D13",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 112,
+          "dark": {
+            "backgroundColor": "#080D13",
+            "image": "./assets/images/splash-icon.png"
+          }
+        }
+      ],
+      "expo-status-bar",
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "node_modules/@expo-google-fonts/geist/400Regular/Geist_400Regular.ttf",
+            "node_modules/@expo-google-fonts/geist/500Medium/Geist_500Medium.ttf",
+            "node_modules/@expo-google-fonts/geist/600SemiBold/Geist_600SemiBold.ttf",
+            "node_modules/@expo-google-fonts/geist-mono/400Regular/GeistMono_400Regular.ttf",
+            "node_modules/@expo-google-fonts/geist-mono/500Medium/GeistMono_500Medium.ttf",
+            "node_modules/@expo-google-fonts/geist-mono/600SemiBold/GeistMono_600SemiBold.ttf"
+          ]
+        }
+      ],
+      "expo-image",
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#FF681C",
+          "defaultChannel": "plans"
+        }
+      ],
+      "./plugins/with-release-signing.js"
+    ],
+    "experiments": {
+      "reactCompiler": true,
+      "typedRoutes": true
+    }
+  }
+}

@@ -1,0 +1,1040 @@
+.acw-shell { min-height: 100dvh; }
+
+.acw-page {
+  --rw-row: 76px;
+  --rw-gap: 12px;
+  min-width: 0;
+  padding: 24px;
+}
+
+.acw-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 18px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+}
+.acw-head h1 { margin: 4px 0 0; font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; }
+.acw-head p { max-width: 64ch; margin: 10px 0 0; color: var(--text-dim); font-size: var(--fs-15); line-height: 1.55; }
+
+.acw-eyebrow,
+.acw-environment,
+.acw-account-boundary,
+.acw-nav-boundary { font-family: var(--mono); font-size: var(--fs-12); font-weight: 650; letter-spacing: 0.1em; text-transform: uppercase; }
+.acw-eyebrow { display: block; margin-top: 7px; color: var(--accent); font-size: var(--fs-14); }
+.acw-environment { flex: none; padding: 6px 9px; border: 1px solid var(--accent-line); color: var(--accent); }
+
+.acw-account-boundary { padding: 5px 8px; border: 1px solid var(--border-strong); color: var(--text-faint); }
+
+.acw-nav-footer { display: grid; gap: 9px; }
+/* 44, not 42. It was two pixels under the target floor and the only control
+   in this workspace that still was — measured at 375, not read from source. */
+.acw-nav-footer > a { min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 10px; border: 1px solid var(--border); color: var(--text-dim); font-size: var(--fs-13); }
+.acw-nav-footer > a:hover { border-color: var(--accent-line); color: var(--text); }
+.acw-nav-boundary { color: var(--text-faint); line-height: 1.45; }
+
+.acw-fact-list,
+.acw-action-stack { display: grid; gap: 10px; }
+.acw-fact-list p { margin: 0; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+.acw-fact-list p:last-child { border-bottom: 0; padding-bottom: 0; }
+.acw-fact-list b,
+.acw-fact-list span { display: block; }
+.acw-fact-list b { color: var(--text); font-size: var(--fs-13); }
+.acw-fact-list span { margin-top: 3px; color: var(--text-faint); font-size: var(--fs-12); line-height: 1.45; }
+.acw-action-stack .rw-btn { justify-content: flex-start; min-height: 44px; }
+
+/* ── Adapter projections ──────────────────────────────────────────────────
+   The centre is identity, not a third product. The two side columns state
+   responsibility; the shared object between them is the only lifecycle link. */
+.acw-projection-contract {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 0.8fr) minmax(0, 1fr);
+  align-items: stretch;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+[data-panel="agent-control-projection-contract"] .acw-projection-contract {
+  flex: 1;
+}
+
+.acw-projection-contract > section,
+.acw-projection-contract > div {
+  min-width: 0;
+  display: grid;
+  align-content: center;
+  gap: 6px;
+  padding: 16px;
+}
+
+.acw-projection-contract > div {
+  grid-template-columns: auto minmax(0, 1fr);
+  border-right: 1px solid var(--border);
+  border-left: 1px solid var(--border);
+  background: var(--accent-soft);
+}
+
+.acw-projection-contract > div > svg { margin-top: 1px; color: var(--accent); }
+.acw-projection-contract > div > span { grid-column: 1 / -1; }
+.acw-projection-contract b { color: var(--text); font-size: var(--fs-14); }
+.acw-projection-contract span { color: var(--text-dim); font-size: var(--fs-14); line-height: 1.5; }
+
+.rs-canvas .ag-workspace--lab { min-height: 100%; }
+.rs-canvas .ag-workspace--lab .ag-workspace-shell { width: 100%; max-width: none; padding: 24px; }
+
+@media (max-width: 900px) {
+  /* The depth switch is `.sh-mode` now — the shell's one control. */
+  .rs-context .sh-mode, .acw-account-boundary { display: none; }
+  .acw-page { padding: 16px; }
+  .acw-head { align-items: flex-start; flex-direction: column; }
+  .acw-shell .rs:not([data-drawer="open"]) .rs-nav {
+    visibility: hidden;
+    pointer-events: none;
+    box-shadow: none;
+  }
+  .acw-shell .rs[data-drawer="open"] .rs-nav { visibility: visible; }
+}
+
+@media (max-width: 640px) {
+  .acw-page { padding: 12px; }
+  .acw-environment { white-space: normal; }
+  .rs-canvas .ag-workspace--lab .ag-workspace-shell { padding: 12px; }
+}
+
+@media (max-width: 520px) {
+  .acw-shell .rs-switch { flex-basis: 104px; min-width: 104px; }
+  .acw-shell .rs-switch-trigger { min-width: 104px; }
+}
+
+/* `.rs-link` is `22px minmax(0, 1fr) auto`, so a long label and a long state
+   tag compete for one row and the label loses.
+
+   The first attempt at this was `overflow-wrap: anywhere` on the label, which
+   stopped the overlap and started something worse: with the tag taking its
+   width first, "Agent Passport" rendered as "Age nt Pass port". A rule that
+   trades an overlap for shredded words is not a fix, and only opening the page
+   showed it.
+
+   The tag gets its own row instead. Nothing has to shrink, nothing breaks
+   mid-word, and every label in this workspace reads — which is what the column
+   was for. Scoped here because this workspace is the one pairing long
+   one-word labels with long state words. */
+.acw-shell .rs-link {
+  grid-template-columns: 22px minmax(0, 1fr);
+  row-gap: 3px;
+}
+
+.acw-shell .rs-link > :first-child {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.acw-shell .rs-link-label {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.acw-shell .rs-link .rs-tag {
+  grid-column: 2;
+  grid-row: 2;
+  justify-self: start;
+}
+
+/* ── Action Case views ─────────────────────────────────────────────────────
+   The list and the inspector are two readings of one case, so they share this
+   vocabulary rather than each inventing a row. */
+
+.acw-cases { display: grid; gap: 10px; }
+.acw-cases-note { margin: 0; color: var(--text-faint); font-size: var(--fs-12); line-height: 1.45; }
+.acw-case-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.acw-case-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+
+.acw-case-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.4fr) auto auto;
+  gap: 10px;
+  align-items: center;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--ry-r-btn-sm);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.acw-case-row:hover { border-color: var(--accent-line); }
+.acw-case-row:focus-visible { outline: none; box-shadow: var(--ry-focus); }
+.acw-case-row--on { border-color: var(--ry-iris); box-shadow: inset 2px 0 0 var(--ry-iris); }
+
+.acw-case-kind { font-size: var(--fs-13); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.acw-case-meta { font-family: var(--mono); font-size: var(--fs-12); color: var(--text-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.acw-case-amount { font-family: var(--mono); font-size: var(--fs-12); color: var(--text-dim); white-space: nowrap; }
+
+.acw-verdict { display: inline-flex; align-items: center; gap: 5px; font-family: var(--mono); font-size: var(--fs-12); letter-spacing: 0.1em; white-space: nowrap; }
+.acw-verdict--ok { color: var(--mint); }
+.acw-verdict--warn { color: var(--amber); }
+.acw-verdict--bad { color: var(--danger); }
+.acw-verdict--unknown { color: var(--text-faint); }
+
+.acw-case-open { min-height: 44px; display: inline-flex; align-items: center; gap: 5px; padding: 0 10px; font-size: var(--fs-12); color: var(--text-dim); }
+.acw-case-open:hover { color: var(--text); }
+.acw-case-clear { justify-self: start; min-height: 44px; padding: 0 10px; border: 1px solid var(--border); border-radius: var(--ry-r-btn-sm); background: transparent; color: var(--text-faint); font-size: var(--fs-12); cursor: pointer; }
+.acw-case-clear:hover { color: var(--text); border-color: var(--accent-line); }
+
+/* The Actions list occupies four of twelve desktop columns and still keeps an
+   explicit Open target beside the selection control. Its old four-column
+   inner row asked the amount and verdict to share the few pixels left over;
+   both remained in the DOM but visibly collided. Give the verdict the first
+   row and the long evidence-bearing fields their own full-width rows. */
+[data-panel="agent-control-actions-list"] .acw-case-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+[data-panel="agent-control-actions-list"] .acw-case-meta,
+[data-panel="agent-control-actions-list"] .acw-case-amount {
+  grid-column: 1 / -1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.acw-next { margin: 0 0 12px; color: var(--text-dim); }
+
+/* Eight stages. Each states its party and its limitation, because a stage that
+   shows only a tick is a stage that has stopped saying who is responsible. */
+.acw-stages {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+.acw-stage {
+  display: grid;
+  grid-template-columns: minmax(148px, 0.55fr) minmax(120px, 0.45fr) minmax(0, 1fr) minmax(0, 1.25fr);
+  gap: 12px;
+  align-items: start;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+}
+.acw-stage:last-child { border-bottom: 0; }
+.acw-stage--current { background: var(--accent-soft); }
+.acw-stage-head { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 2px 7px; }
+.acw-stage-mark { grid-row: 1 / 3; display: inline-flex; color: var(--text-dim); }
+.acw-stage--done .acw-stage-mark { color: var(--mint); }
+.acw-stage--attention .acw-stage-mark { color: var(--amber); }
+.acw-stage--waiting .acw-stage-mark { color: var(--amber); }
+.acw-stage--blocked .acw-stage-mark { color: var(--danger); }
+.acw-stage--unavailable .acw-stage-mark { color: var(--text-faint); }
+.acw-stage-name { font-size: var(--fs-13); color: var(--text); }
+.acw-stage-state { grid-column: 2; font-family: var(--mono); font-size: var(--fs-13); letter-spacing: 0.08em; color: var(--text-faint); text-transform: uppercase; }
+.acw-stage-party { font-family: var(--mono); font-size: var(--fs-13); letter-spacing: 0.08em; color: var(--cyan); }
+.acw-stage-summary { font-size: var(--fs-13); color: var(--text-dim); line-height: 1.45; }
+.acw-stage-limit { font-size: var(--fs-13); color: var(--text-faint); line-height: 1.45; }
+
+.acw-facts { display: grid; gap: 8px; margin: 0; }
+.acw-fact { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 12px; align-items: baseline; }
+.acw-fact dt { font-family: var(--mono); font-size: var(--fs-13); letter-spacing: 0.08em; color: var(--text-faint); text-transform: uppercase; }
+.acw-fact dd { margin: 0; font-size: var(--fs-13); color: var(--text-dim); }
+.acw-break { overflow-wrap: anywhere; font-family: var(--mono); font-size: var(--fs-13); }
+
+@media (max-width: 1080px) {
+  .acw-stage { grid-template-columns: minmax(140px, 0.55fr) minmax(110px, 0.45fr) minmax(0, 1fr); }
+  .acw-stage-limit { grid-column: 1 / -1; }
+}
+
+@media (max-width: 720px) {
+  .acw-stage { grid-template-columns: 1fr; gap: 5px; }
+  .acw-stage-limit { grid-column: auto; padding-top: 5px; border-top: 1px solid var(--border); }
+  .acw-case-row { grid-template-columns: minmax(0, 1fr) auto; }
+  .acw-case-meta { grid-column: 1 / -1; }
+  .acw-fact { grid-template-columns: 1fr; gap: 2px; }
+  .acw-projection-contract { grid-template-columns: 1fr; }
+  .acw-projection-contract > div {
+    border-right: 0;
+    border-left: 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+}
+
+/* ── Golden RWA · Simple / Pro ────────────────────────────────────────────
+   One selected Action Case changes depth, never identity. The sample banner
+   and the external-wallet boundary stay outside both projections so neither
+   mode can hide the facts that define the demo. */
+
+.acw-rwa-demo { display: grid; gap: 14px; }
+
+.acw-rwa-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--accent-line);
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  color: var(--text-dim);
+}
+.acw-rwa-banner > svg { flex: none; margin-top: 1px; color: var(--accent); }
+.acw-rwa-banner > div { display: grid; gap: 3px; }
+.acw-rwa-banner b { color: var(--text); font: 700 var(--fs-14)/1.35 var(--mono); letter-spacing: 0.07em; }
+.acw-rwa-banner span { font-size: var(--fs-14); line-height: 1.45; }
+
+.acw-rwa-controls {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.acw-rwa-controls > button,
+.acw-rwa-wallet {
+  min-width: 0;
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 11px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xs);
+  background: var(--panel);
+  color: var(--text-dim);
+  text-align: left;
+}
+.acw-rwa-controls > button { font: inherit; cursor: pointer; }
+.acw-rwa-controls > button:hover { border-color: var(--accent-line); color: var(--text); }
+.acw-rwa-controls > button:focus-visible { outline: none; box-shadow: var(--ry-focus); }
+.acw-rwa-controls > button[aria-pressed="true"] { border-color: var(--accent-strong); background: var(--accent-soft); color: var(--text); }
+.acw-rwa-controls > button:disabled { opacity: 0.48; cursor: not-allowed; }
+.acw-rwa-controls > button > svg,
+.acw-rwa-wallet > svg { flex: none; color: var(--accent); }
+.acw-rwa-controls > button > span,
+.acw-rwa-wallet > span { min-width: 0; display: grid; gap: 2px; }
+.acw-rwa-controls b { color: inherit; font-size: var(--fs-14); }
+.acw-rwa-controls small { color: var(--text-faint); font: 500 var(--fs-14)/1.35 var(--mono); }
+.acw-rwa-wallet { border-style: dashed; }
+
+.acw-rwa-launch {
+  min-height: 180px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 24px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+}
+.acw-rwa-launch > svg { color: var(--accent); }
+.acw-rwa-launch h2 { margin: 0; color: var(--text); font-size: var(--fs-18); }
+.acw-rwa-launch p { margin: 5px 0 0; color: var(--text-dim); font-size: var(--fs-14); line-height: 1.5; }
+.acw-rwa-launch button {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--accent-strong);
+  border-radius: var(--ry-r-btn-sm);
+  background: var(--accent-strong);
+  color: var(--rt-authorization-violet-ink);
+  font: 700 var(--fs-14)/1 var(--font);
+  cursor: pointer;
+}
+.acw-rwa-launch button:focus-visible { outline: none; box-shadow: var(--ry-focus); }
+
+.acw-rwa-simple {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+  overflow: hidden;
+}
+.acw-rwa-request,
+.acw-rwa-decision { min-width: 0; padding: 20px; }
+.acw-rwa-request { border-right: 1px solid var(--border); }
+.acw-rwa-label { display: block; color: var(--text-faint); font: 700 var(--fs-14)/1.35 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; }
+.acw-rwa-request h2 { margin: 0 0 8px; color: var(--text); font-size: var(--fs-24); line-height: 1.35; letter-spacing: -0.02em; }
+.acw-rwa-request .acw-rwa-label { margin-bottom: 14px; }
+.acw-rwa-request dl,
+.acw-rwa-next { display: grid; gap: 0; margin: 0; }
+.acw-rwa-request dl > div,
+.acw-rwa-next > div {
+  display: grid;
+  grid-template-columns: 142px minmax(0, 1fr);
+  gap: 12px;
+  padding: 9px 0;
+  border-top: 1px solid var(--border);
+}
+.acw-rwa-request dt,
+.acw-rwa-next dt { color: var(--text-faint); font: 600 var(--fs-14)/1.4 var(--mono); text-transform: uppercase; }
+.acw-rwa-request dd,
+.acw-rwa-next dd { margin: 0; color: var(--text-dim); font-size: var(--fs-14); line-height: 1.45; overflow-wrap: anywhere; }
+
+.acw-rwa-decision { display: grid; align-content: start; gap: 14px; }
+.acw-rwa-decision > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.acw-rwa-decision h2 { margin: 0; color: var(--text); font-size: var(--fs-18); }
+.acw-rwa-verdict { display: inline-flex; align-items: center; gap: 6px; }
+.acw-rwa-verdict.acw-verdict { font-size: var(--fs-14); }
+.acw-rwa-reason { margin: 0; padding: 14px; border: 1px solid var(--border-strong); background: var(--panel-2); color: var(--text); font-size: var(--fs-14); line-height: 1.55; }
+.acw-rwa-codes { display: flex; flex-wrap: wrap; gap: 6px; }
+.acw-rwa-codes code { padding: 5px 7px; border: 1px solid var(--border); border-radius: var(--radius-xs); color: var(--amber); font-size: var(--fs-14); }
+
+.acw-rwa-phases {
+  grid-column: 1 / -1;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--border-strong);
+}
+.acw-rwa-phases li {
+  min-width: 0;
+  min-height: 82px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-content: center;
+  gap: 4px 8px;
+  padding: 12px;
+  border-right: 1px solid var(--border);
+  color: var(--text-faint);
+}
+.acw-rwa-phases li:last-child { border-right: 0; }
+.acw-rwa-phases li > span { grid-row: 1 / 3; align-self: center; display: inline-flex; }
+.acw-rwa-phases li > b { color: var(--text-dim); font-size: var(--fs-14); }
+.acw-rwa-phases li > small { min-width: 0; color: var(--text-faint); font: 500 var(--fs-14)/1.35 var(--mono); text-transform: uppercase; }
+.acw-rwa-phases li[data-state="done"] > span { color: var(--mint); }
+.acw-rwa-phases li[data-state="attention"] > span,
+.acw-rwa-phases li[data-state="waiting"] > span { color: var(--amber); }
+.acw-rwa-phases li[data-state="blocked"] > span { color: var(--danger); }
+.acw-rwa-phases li[data-state="unavailable"] { color: var(--text-faint); }
+
+.acw-rwa-pro { display: grid; gap: 12px; }
+.acw-rwa-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+  overflow: hidden;
+}
+.acw-rwa-kpis > div { min-height: 74px; display: grid; align-content: center; gap: 7px; padding: 12px 14px; border-right: 1px solid var(--border); }
+.acw-rwa-kpis > div:last-child { border-right: 0; }
+.acw-rwa-kpis > div > span:first-child { color: var(--text-faint); font: 700 var(--fs-13)/1.3 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; }
+.acw-rwa-kpis b { color: var(--text); font: 700 var(--fs-15)/1.3 var(--mono); text-transform: uppercase; }
+
+.acw-rwa-section {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+}
+.acw-rwa-section > header { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+.acw-rwa-section h2 { margin: 0 0 4px; color: var(--text); font-size: var(--fs-18); }
+.acw-rwa-section .acw-rwa-label { font-size: var(--fs-13); }
+.acw-rwa-boundary { color: var(--text-faint); font: 650 var(--fs-13)/1.35 var(--mono); letter-spacing: 0.07em; text-transform: uppercase; }
+.acw-rwa-pro-grid { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 12px; align-items: start; }
+
+.acw-rwa-evidence { list-style: none; display: grid; gap: 0; margin: 0; padding: 0; }
+.acw-rwa-evidence li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; padding: 11px 0; border-bottom: 1px solid var(--border); background: transparent; }
+.acw-rwa-evidence li:last-child { border-bottom: 0; }
+.acw-rwa-evidence li > div { min-width: 0; display: grid; gap: 3px; }
+.acw-rwa-evidence li b { color: var(--text); font-size: var(--fs-13); }
+.acw-rwa-evidence li div > span { color: var(--text-faint); }
+.acw-rwa-evidence li > small { grid-column: 1 / -1; color: var(--text-faint); font: 500 var(--fs-13)/1.4 var(--mono); overflow-wrap: anywhere; }
+.acw-rwa-evidence li > p { grid-column: 1 / -1; margin: 2px 0 0; color: var(--amber); font-size: var(--fs-13); line-height: 1.45; }
+.acw-rwa-evidence-state { display: inline-flex; align-items: center; gap: 5px; align-self: start; color: var(--amber); font: 700 var(--fs-13)/1.3 var(--mono); }
+.acw-rwa-evidence-state[data-state="FRESH"] { color: var(--mint); }
+
+.acw-rwa-limitations ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 24px; margin: 0; padding-left: 18px; color: var(--text-dim); font-size: var(--fs-14); line-height: 1.5; }
+
+@media (max-width: 1080px) {
+  .acw-rwa-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .acw-rwa-pro-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 780px) {
+  .acw-rwa-simple { grid-template-columns: 1fr; }
+  .acw-rwa-request { border-right: 0; border-bottom: 1px solid var(--border); }
+  .acw-rwa-phases { grid-template-columns: 1fr; }
+  .acw-rwa-phases li { min-height: 64px; border-right: 0; border-bottom: 1px solid var(--border); }
+  .acw-rwa-phases li:last-child { border-bottom: 0; }
+  .acw-rwa-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .acw-rwa-kpis > div:nth-child(2) { border-right: 0; }
+  .acw-rwa-kpis > div:nth-child(-n+2) { border-bottom: 1px solid var(--border); }
+  .acw-rwa-limitations ul { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 520px) {
+  .acw-rwa-controls { grid-template-columns: 1fr; }
+  .acw-rwa-banner { padding: 11px; }
+  .acw-rwa-banner b { letter-spacing: 0.04em; }
+  .acw-rwa-request,
+  .acw-rwa-decision,
+  .acw-rwa-section { padding: 13px; }
+  .acw-rwa-request dl > div,
+  .acw-rwa-next > div { grid-template-columns: 1fr; gap: 3px; }
+  .acw-rwa-launch { grid-template-columns: 1fr; padding: 18px; }
+  .acw-rwa-launch button { width: 100%; }
+  .acw-rwa-kpis { grid-template-columns: 1fr; }
+  .acw-rwa-kpis > div { border-right: 0; border-bottom: 1px solid var(--border); }
+  .acw-rwa-kpis > div:last-child { border-bottom: 0; }
+  .acw-rwa-evidence li { grid-template-columns: 1fr; }
+  .acw-rwa-evidence-state { justify-self: start; }
+}
+
+/* ── Agent Radar ───────────────────────────────────────────────────────────
+   One evidence ledger: a bounded list beside the selected canonical Passport
+   projection. Rows divide information; they do not pretend to be a marketplace
+   of comparable actors. */
+
+.acw-radar-page { max-width: 1720px; margin-inline: auto; }
+.acw-radar-head { align-items: center; }
+.acw-radar-head .acw-environment { font-size: var(--fs-14); }
+
+.acw-radar-scope {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 18px;
+  align-items: center;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+}
+.acw-radar-scope > span { display: inline-flex; align-items: center; gap: 7px; color: var(--accent); font: 700 var(--fs-14)/1.3 var(--mono); letter-spacing: 0.06em; }
+.acw-radar-scope p { margin: 0; color: var(--text-dim); font-size: var(--fs-14); line-height: 1.45; }
+
+.acw-radar-toolbar {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(210px, 0.55fr) auto;
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 14px;
+}
+.acw-radar-toolbar label { display: grid; gap: 6px; min-width: 0; }
+.acw-radar-toolbar label > span:first-child { color: var(--text-faint); font: 700 var(--fs-14)/1.3 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; }
+
+.acw-radar-input,
+.acw-radar-select {
+  min-width: 0;
+  min-height: 44px;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xs);
+  background: var(--panel);
+  color: var(--text-faint);
+}
+.acw-radar-input:focus-within,
+.acw-radar-select:focus-within { border-color: var(--accent-line); box-shadow: var(--ry-focus); }
+.acw-radar-input input,
+.acw-radar-select select {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text);
+  font: 500 var(--fs-14)/1.3 var(--font);
+}
+.acw-radar-select select { cursor: pointer; }
+
+.acw-radar-clear,
+.acw-radar-primary,
+.acw-radar-detail-actions a,
+.acw-radar-detail-actions button {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 13px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xs);
+  background: var(--panel);
+  color: var(--text-dim);
+  font: 650 var(--fs-14)/1.25 var(--font);
+  cursor: pointer;
+}
+.acw-radar-clear:hover,
+.acw-radar-detail-actions a:hover,
+.acw-radar-detail-actions button:hover { border-color: var(--accent-line); color: var(--text); }
+.acw-radar-clear:focus-visible,
+.acw-radar-primary:focus-visible,
+.acw-radar-detail-actions a:focus-visible,
+.acw-radar-detail-actions button:focus-visible { outline: none; box-shadow: var(--ry-focus); }
+.acw-radar-primary { border-color: var(--accent-strong); background: var(--accent-strong); color: var(--rt-authorization-violet-ink); }
+
+.acw-radar-restoring,
+.acw-radar-empty {
+  min-height: 360px;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  padding: 40px 20px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+  text-align: center;
+}
+.acw-radar-restoring { color: var(--text-dim); font-size: var(--fs-14); }
+.acw-radar-empty > svg { color: var(--text-faint); }
+.acw-radar-empty h2 { margin: 14px 0 0; color: var(--text); font-size: var(--fs-24); letter-spacing: -0.02em; }
+.acw-radar-empty p { max-width: 58ch; margin: 9px 0 18px; color: var(--text-dim); font-size: var(--fs-14); line-height: 1.55; }
+
+.acw-radar-layout {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(280px, 0.34fr) minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.acw-radar-directory,
+.acw-radar-detail {
+  min-width: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+  overflow: hidden;
+}
+.acw-radar-directory > header {
+  min-height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.acw-radar-directory h2 { margin: 0; color: var(--text); font-size: var(--fs-15); }
+.acw-radar-directory header p { margin: 4px 0 0; color: var(--text-faint); font-size: var(--fs-14); }
+.acw-radar-directory header button {
+  width: 44px;
+  height: 44px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  background: transparent;
+  color: var(--text-faint);
+  cursor: pointer;
+}
+.acw-radar-directory header button:hover { border-color: var(--accent-line); color: var(--text); }
+.acw-radar-directory header button:focus-visible { outline: none; box-shadow: var(--ry-focus); }
+.acw-radar-directory ul { max-height: calc(100dvh - 330px); min-height: 360px; margin: 0; padding: 0; list-style: none; overflow: auto; }
+.acw-radar-directory li + li { border-top: 1px solid var(--border); }
+
+.acw-radar-record {
+  width: 100%;
+  min-height: 112px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 5px 10px;
+  align-items: baseline;
+  padding: 13px 14px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.acw-radar-record:hover { background: var(--panel-2); }
+.acw-radar-record:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--accent-line); }
+.acw-radar-record--active { background: var(--accent-soft); }
+.acw-radar-record-name { min-width: 0; color: var(--text); font-size: var(--fs-14); font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.acw-radar-record > code { color: var(--text-faint); font: 500 var(--fs-14)/1.3 var(--mono); }
+.acw-radar-record-facts { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 5px 11px; color: var(--text-dim); font-size: var(--fs-14); }
+.acw-radar-record-facts > span { display: inline-flex; align-items: center; gap: 4px; }
+.acw-radar-record > small { grid-column: 1 / -1; color: var(--text-faint); font: 500 var(--fs-14)/1.3 var(--mono); }
+
+.acw-radar-detail-head {
+  min-height: 112px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px;
+  border-bottom: 1px solid var(--border);
+}
+.acw-radar-detail-head > div:first-child { min-width: 0; }
+.acw-radar-detail-head > div:first-child > span { display: block; margin-bottom: 5px; color: var(--accent); font: 700 var(--fs-14)/1.3 var(--mono); letter-spacing: 0.04em; }
+.acw-radar-detail-head h2 { margin: 0 0 5px; color: var(--text); font-size: var(--fs-24); letter-spacing: -0.025em; }
+.acw-radar-detail-head code { display: block; color: var(--text-dim); font: 500 var(--fs-14)/1.45 var(--mono); overflow-wrap: anywhere; }
+.acw-radar-detail-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.acw-radar-detail-actions button { background: transparent; color: var(--text-faint); }
+
+.acw-radar-sources,
+.acw-radar-capabilities { padding: 18px; }
+.acw-radar-capabilities { border-top: 1px solid var(--border); }
+.acw-radar-section-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
+.acw-radar-section-head h3 { margin: 0; color: var(--text); font-size: var(--fs-15); }
+.acw-radar-section-head p { margin: 4px 0 0; color: var(--text-dim); font-size: var(--fs-14); line-height: 1.45; }
+.acw-radar-section-head > span { flex: none; color: var(--text-faint); font: 500 var(--fs-14)/1.35 var(--mono); }
+
+.acw-radar-source-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--border); border-left: 1px solid var(--border); }
+.acw-radar-source-row > div { min-width: 0; display: grid; gap: 5px; padding: 12px; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.acw-radar-source-row b { color: var(--text); font-size: var(--fs-14); }
+.acw-radar-source-row small { color: var(--text-faint); font: 500 var(--fs-14)/1.4 var(--mono); overflow-wrap: anywhere; }
+.acw-radar-source-mark { display: inline-flex; align-items: center; gap: 5px; justify-self: start; color: var(--text-faint); font: 700 var(--fs-14)/1.3 var(--mono); }
+.acw-radar-source-mark[data-tone="ok"] { color: var(--mint); }
+.acw-radar-source-mark[data-tone="warn"] { color: var(--amber); }
+.acw-radar-source-mark[data-tone="bad"] { color: var(--danger); }
+
+.acw-radar-capability-table { border-top: 1px solid var(--border); border-left: 1px solid var(--border); }
+.acw-radar-capability-head,
+.acw-radar-capability-row { display: grid; grid-template-columns: minmax(190px, 1.2fr) 122px 150px minmax(140px, 0.8fr); }
+.acw-radar-capability-head { color: var(--text-faint); font: 700 var(--fs-14)/1.3 var(--mono); letter-spacing: 0.05em; text-transform: uppercase; }
+.acw-radar-capability-head > span,
+.acw-radar-capability-row > * { min-width: 0; padding: 11px; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.acw-radar-capability-row { color: var(--text-dim); font-size: var(--fs-14); }
+.acw-radar-capability-row > div:first-child b,
+.acw-radar-capability-row > div:first-child span { display: block; }
+.acw-radar-capability-row > div:first-child b { color: var(--text); font-size: var(--fs-14); }
+.acw-radar-capability-row > div:first-child span { margin-top: 4px; line-height: 1.45; }
+.acw-radar-axis { color: var(--text-faint); font: 600 var(--fs-14)/1.4 var(--mono); overflow-wrap: anywhere; }
+
+.acw-radar-state { display: inline-flex; align-items: center; gap: 5px; color: var(--text-faint); font: 700 var(--fs-14)/1.3 var(--mono); }
+.acw-radar-state[data-state="DISCOVERED"],
+.acw-radar-state[data-state="OBSERVED"] { color: var(--cyan); }
+.acw-radar-state[data-state="PROVEN"] { color: var(--mint); }
+.acw-radar-state[data-state="CONFLICTING"],
+.acw-radar-state[data-state="UNAVAILABLE"] { color: var(--danger); }
+.acw-radar-state[data-state="UNKNOWN"] { color: var(--amber); }
+
+.acw-radar-capability-row details { padding: 0; }
+.acw-radar-capability-row summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 11px;
+  color: var(--accent);
+  font-weight: 650;
+  cursor: pointer;
+  list-style: none;
+}
+.acw-radar-capability-row summary::-webkit-details-marker { display: none; }
+.acw-radar-capability-row summary:focus-visible { outline: none; box-shadow: var(--ry-focus); }
+.acw-radar-capability-row details dl { display: grid; gap: 8px; margin: 0; padding: 0 11px 11px; }
+.acw-radar-capability-row details dl > div { min-width: 0; }
+.acw-radar-capability-row details dt { color: var(--text-faint); font: 700 var(--fs-14)/1.3 var(--mono); text-transform: uppercase; }
+.acw-radar-capability-row details dd { margin: 2px 0 0; color: var(--text-dim); line-height: 1.45; overflow-wrap: anywhere; }
+
+.acw-radar-proof-limit { display: flex; align-items: flex-start; gap: 7px; margin: 12px 0 0; color: var(--amber); font-size: var(--fs-14); line-height: 1.5; }
+.acw-radar-proof-limit svg { flex: 0 0 auto; margin-top: 2px; }
+
+@media (max-width: 1180px) {
+  .acw-radar-layout { grid-template-columns: minmax(240px, 0.4fr) minmax(0, 1fr); }
+  .acw-radar-capability-head,
+  .acw-radar-capability-row { grid-template-columns: minmax(180px, 1.1fr) 118px minmax(140px, 0.8fr); }
+  .acw-radar-capability-head > :nth-child(3),
+  .acw-radar-capability-row > :nth-child(3) { display: none; }
+}
+
+@media (max-width: 980px) {
+  .acw-radar-layout { grid-template-columns: 1fr; }
+  .acw-radar-directory ul { max-height: 420px; min-height: 0; }
+}
+
+@media (max-width: 720px) {
+  .acw-radar-scope { grid-template-columns: 1fr; gap: 5px; }
+  .acw-radar-toolbar { grid-template-columns: 1fr; }
+  .acw-radar-clear { width: 100%; }
+  .acw-radar-detail-head,
+  .acw-radar-section-head { align-items: flex-start; flex-direction: column; }
+  .acw-radar-detail-actions { width: 100%; justify-content: stretch; }
+  .acw-radar-detail-actions > * { flex: 1 1 180px; }
+  .acw-radar-source-row { grid-template-columns: 1fr; }
+  .acw-radar-capability-head { display: none; }
+  .acw-radar-capability-row { grid-template-columns: 1fr 1fr; }
+  .acw-radar-capability-row > :first-child,
+  .acw-radar-capability-row > details { grid-column: 1 / -1; }
+  .acw-radar-capability-row > :nth-child(3) { display: block; }
+}
+
+@media (max-width: 520px) {
+  .acw-radar-sources,
+  .acw-radar-capabilities,
+  .acw-radar-detail-head { padding: 14px; }
+  .acw-radar-detail-actions { display: grid; grid-template-columns: 1fr; }
+  .acw-radar-detail-actions > * { width: 100%; }
+  .acw-radar-record { grid-template-columns: 1fr; }
+  .acw-radar-record > code { overflow-wrap: anywhere; }
+  .acw-radar-capability-row { grid-template-columns: 1fr; }
+  .acw-radar-capability-row > * { grid-column: 1; }
+}
+
+/* ── Owner policy, mandate and budget control ─────────────────────────────
+   One operating surface, not a stack of decorative cards. Policy, authority
+   and budget are distinct sections because each answers a different control
+   question; shared borders keep them reading as one instrument. */
+
+.acw-oc { min-width: 0; display: grid; gap: 14px; }
+
+.acw-oc-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 12px 14px;
+  border: 1px solid var(--warning);
+  border-radius: var(--radius-sm);
+  background: var(--warning-soft);
+  color: var(--amber);
+}
+.acw-oc-banner svg { flex: 0 0 auto; margin-top: 1px; }
+.acw-oc-banner b,
+.acw-oc-banner span { display: block; }
+.acw-oc-banner b { font: 700 var(--fs-14)/1.35 var(--mono); letter-spacing: 0.05em; }
+.acw-oc-banner span { margin-top: 3px; color: var(--text-dim); font-size: var(--fs-14); line-height: 1.45; }
+
+.acw-oc-strip {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+  overflow: hidden;
+}
+.acw-oc-strip > div {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 3px 8px;
+  align-items: center;
+  padding: 15px;
+  border-right: 1px solid var(--border);
+}
+.acw-oc-strip > div:last-child { border-right: 0; }
+.acw-oc-strip svg { grid-row: 1 / 4; color: var(--accent); }
+.acw-oc-strip span { color: var(--text-faint); font-size: var(--fs-14); }
+.acw-oc-strip b { min-width: 0; color: var(--text); font: 700 var(--fs-14)/1.35 var(--mono); overflow-wrap: anywhere; }
+.acw-oc-strip small { color: var(--text-dim); font-size: var(--fs-14); line-height: 1.4; }
+
+.acw-oc-authority,
+.acw-oc-section {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+  overflow: hidden;
+}
+.acw-oc-authority > header,
+.acw-oc-section > header {
+  min-height: 68px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 15px 17px;
+  border-bottom: 1px solid var(--border);
+}
+.acw-oc-authority h2,
+.acw-oc-section h2 { margin: 0; color: var(--text); font-size: var(--fs-18); letter-spacing: -0.02em; }
+.acw-oc-authority header p,
+.acw-oc-section header p { margin: 5px 0 0; color: var(--text-dim); font-size: var(--fs-14); line-height: 1.45; }
+.acw-oc-authority header > span,
+.acw-oc-section header > span {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-faint);
+  font: 700 var(--fs-14)/1.35 var(--mono);
+  letter-spacing: 0.04em;
+}
+
+.acw-oc-authority-flow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  padding: 18px;
+}
+.acw-oc-authority-flow > div {
+  min-width: 0;
+  min-height: 108px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 4px 8px;
+  align-content: center;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  background: var(--panel-2);
+}
+.acw-oc-authority-flow > svg { color: var(--text-faint); }
+.acw-oc-authority-flow > div > svg { grid-row: 1 / 4; color: var(--text-faint); }
+.acw-oc-authority-flow > div[data-state="active"] > svg { color: var(--mint); }
+.acw-oc-authority-flow > div[data-state="blocked"] > svg { color: var(--amber); }
+.acw-oc-authority-flow > div[data-state="external"] > svg { color: var(--accent); }
+.acw-oc-authority-flow span { color: var(--text-faint); font-size: var(--fs-14); }
+.acw-oc-authority-flow b { color: var(--text); font: 700 var(--fs-14)/1.35 var(--mono); overflow-wrap: anywhere; }
+.acw-oc-authority-flow small { color: var(--text-dim); font-size: var(--fs-14); line-height: 1.4; }
+
+.acw-oc-authority-reasons {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-top: 1px solid var(--border);
+}
+.acw-oc-authority-reasons p {
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin: 0;
+  padding: 13px 15px;
+  border-right: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: var(--fs-14);
+  line-height: 1.45;
+}
+.acw-oc-authority-reasons p:last-child { border-right: 0; }
+.acw-oc-authority-reasons svg { flex: 0 0 auto; margin-top: 2px; color: var(--amber); }
+.acw-oc-authority-reasons b { color: var(--text); font-family: var(--mono); }
+
+.acw-oc-grid { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
+
+.acw-oc-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0; }
+.acw-oc-facts > div { min-width: 0; padding: 13px 16px; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.acw-oc-facts > div:nth-child(2n) { border-right: 0; }
+.acw-oc-facts > div:nth-last-child(-n + 2) { border-bottom: 0; }
+.acw-oc-facts dt { color: var(--text-faint); font: 700 var(--fs-14)/1.3 var(--mono); text-transform: uppercase; }
+.acw-oc-facts dd { margin: 5px 0 0; color: var(--text); font-size: var(--fs-14); line-height: 1.45; overflow-wrap: anywhere; }
+
+.acw-oc-budget-total { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; padding: 16px 17px 10px; }
+.acw-oc-budget-total span { color: var(--text-faint); font: 700 var(--fs-14)/1.3 var(--mono); }
+.acw-oc-budget-total b { color: var(--text); font: 700 var(--fs-18)/1.3 var(--mono); }
+.acw-oc-budget-track { min-height: 16px; display: flex; margin: 0 17px 15px; overflow: hidden; border-radius: var(--ry-r-chip); background: var(--panel-2); }
+.acw-oc-budget-track span { min-width: 2px; }
+.acw-oc-budget-track [data-bucket="reserved"] { background: var(--amber); }
+.acw-oc-budget-track [data-bucket="committed"] { background: var(--accent); }
+.acw-oc-budget-track [data-bucket="settled"] { background: var(--mint); }
+.acw-oc-budget-track [data-bucket="available"] { background: var(--border-strong); }
+.acw-oc-budget-legend { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0; border-top: 1px solid var(--border); }
+.acw-oc-budget-legend > div { min-width: 0; position: relative; padding: 12px 15px 12px 31px; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.acw-oc-budget-legend > div:nth-child(2n) { border-right: 0; }
+.acw-oc-budget-legend > div::before { content: ""; position: absolute; top: 16px; left: 15px; width: 8px; height: 8px; border-radius: var(--ry-r-chip); background: var(--text-faint); }
+.acw-oc-budget-legend > div[data-bucket="reserved"]::before { background: var(--amber); }
+.acw-oc-budget-legend > div[data-bucket="committed"]::before { background: var(--accent); }
+.acw-oc-budget-legend > div[data-bucket="settled"]::before { background: var(--mint); }
+.acw-oc-budget-legend dt { color: var(--text-faint); font: 700 var(--fs-14)/1.3 var(--mono); }
+.acw-oc-budget-legend dd { margin: 4px 0 0; color: var(--text); font: 600 var(--fs-14)/1.35 var(--mono); overflow-wrap: anywhere; }
+.acw-oc-budget-rule { margin: 0; padding: 13px 16px; color: var(--text-dim); font-size: var(--fs-14); line-height: 1.5; }
+
+.acw-oc-profile-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.acw-oc-profile-list details { min-width: 0; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.acw-oc-profile-list details:nth-child(2n) { border-right: 0; }
+.acw-oc-profile-list details:nth-last-child(-n + 2) { border-bottom: 0; }
+.acw-oc-profile-list summary {
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 3px 12px;
+  align-items: center;
+  padding: 11px 15px;
+  cursor: pointer;
+  list-style: none;
+}
+.acw-oc-profile-list summary::-webkit-details-marker { display: none; }
+.acw-oc-profile-list summary:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--accent-line); }
+.acw-oc-profile-list summary span { color: var(--text); font-size: var(--fs-14); font-weight: 700; }
+.acw-oc-profile-list summary b { color: var(--accent); font: 700 var(--fs-14)/1.3 var(--mono); }
+.acw-oc-profile-list summary small { grid-column: 1 / -1; color: var(--text-faint); font: 600 var(--fs-14)/1.3 var(--mono); }
+.acw-oc-profile-list details[open] summary { background: var(--accent-soft); }
+.acw-oc-profile-list details > div { padding: 0 15px 14px; }
+.acw-oc-profile-list details p { margin: 0 0 10px; color: var(--text-dim); font-size: var(--fs-14); line-height: 1.5; }
+.acw-oc-profile-list ul,
+.acw-action-owner-detail ul { margin: 0; padding-left: 18px; color: var(--text-dim); font: 500 var(--fs-14)/1.55 var(--mono); }
+
+.acw-oc-empty {
+  min-height: 220px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+}
+.acw-oc-empty > svg { color: var(--amber); }
+.acw-oc-empty h2 { margin: 0; color: var(--text); font-size: var(--fs-18); }
+.acw-oc-empty p { max-width: 70ch; margin: 6px 0 0; color: var(--text-dim); font-size: var(--fs-14); line-height: 1.5; }
+.acw-oc-empty button { min-height: 44px; display: inline-flex; align-items: center; gap: 8px; padding: 0 14px; border: 1px solid var(--accent-line); border-radius: var(--ry-r-btn-sm); background: var(--accent); color: var(--accent-ink); font-weight: 700; cursor: pointer; }
+.acw-oc-empty button:focus-visible { outline: none; box-shadow: var(--ry-focus); }
+
+/* The Actions surface consumes the same queue projection in a denser operator
+   block. It keeps the explanation one disclosure deep instead of turning the
+   list row into documentation. */
+.acw-action-owner { min-width: 0; display: grid; gap: 12px; }
+.acw-action-owner-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--border); }
+.acw-action-owner-summary > div { min-width: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 3px 8px; align-items: center; padding: 12px; border-right: 1px solid var(--border); }
+.acw-action-owner-summary > div:last-child { border-right: 0; }
+.acw-action-owner-summary svg { grid-row: 1 / 4; color: var(--accent); }
+.acw-action-owner-summary span { color: var(--text-faint); font-size: var(--fs-14); }
+.acw-action-owner-summary b { color: var(--text); font: 700 var(--fs-14)/1.35 var(--mono); overflow-wrap: anywhere; }
+.acw-action-owner-summary small { color: var(--text-dim); font-size: var(--fs-14); line-height: 1.4; overflow-wrap: anywhere; }
+.acw-action-owner-detail { border: 1px solid var(--border); }
+.acw-action-owner-detail summary { min-height: 44px; display: flex; align-items: center; padding: 9px 12px; color: var(--accent); font-size: var(--fs-14); font-weight: 700; cursor: pointer; }
+.acw-action-owner-detail summary:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--accent-line); }
+.acw-action-owner-detail > div { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--border); }
+.acw-action-owner-detail section { min-width: 0; padding: 13px; border-right: 1px solid var(--border); }
+.acw-action-owner-detail section:last-child { border-right: 0; }
+.acw-action-owner-detail h3 { margin: 0 0 9px; color: var(--text); font-size: var(--fs-14); }
+
+@media (max-width: 1080px) {
+  .acw-oc-strip,
+  .acw-action-owner-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .acw-oc-strip > div:nth-child(2),
+  .acw-action-owner-summary > div:nth-child(2) { border-right: 0; }
+  .acw-oc-strip > div:nth-child(-n + 2),
+  .acw-action-owner-summary > div:nth-child(-n + 2) { border-bottom: 1px solid var(--border); }
+}
+
+@media (max-width: 860px) {
+  .acw-oc-grid { grid-template-columns: 1fr; }
+  .acw-oc-authority-flow { grid-template-columns: 1fr; }
+  .acw-oc-authority-flow > svg { transform: rotate(90deg); justify-self: center; }
+  .acw-oc-authority-flow > div { min-height: 92px; }
+  .acw-oc-authority-reasons,
+  .acw-action-owner-detail > div { grid-template-columns: 1fr; }
+  .acw-oc-authority-reasons p,
+  .acw-action-owner-detail section { border-right: 0; border-bottom: 1px solid var(--border); }
+  .acw-oc-authority-reasons p:last-child,
+  .acw-action-owner-detail section:last-child { border-bottom: 0; }
+}
+
+@media (max-width: 620px) {
+  .acw-oc-strip,
+  .acw-action-owner-summary,
+  .acw-oc-facts,
+  .acw-oc-budget-legend,
+  .acw-oc-profile-list { grid-template-columns: 1fr; }
+  .acw-oc-strip > div,
+  .acw-action-owner-summary > div,
+  .acw-oc-facts > div,
+  .acw-oc-budget-legend > div,
+  .acw-oc-profile-list details { border-right: 0; border-bottom: 1px solid var(--border); }
+  .acw-oc-strip > div:last-child,
+  .acw-action-owner-summary > div:last-child,
+  .acw-oc-facts > div:last-child,
+  .acw-oc-budget-legend > div:last-child,
+  .acw-oc-profile-list details:last-child { border-bottom: 0; }
+  .acw-oc-authority > header,
+  .acw-oc-section > header { flex-direction: column; }
+  .acw-oc-authority-flow { padding: 14px; }
+  .acw-oc-empty { grid-template-columns: 1fr; }
+  .acw-oc-empty button { width: 100%; justify-content: center; }
+}

@@ -1,0 +1,2163 @@
+/* ============================================================================
+   Ryntra public site — "The Decision Circuit"
+   ============================================================================
+
+   One visual idea runs through every page:
+
+     INTENT → EVIDENCE → POLICY → AUTHORIZE
+            → EXECUTE → SETTLE → RECONCILE → LEARN
+
+   and it is drawn, not decorated. Two connected worlds carry it:
+
+     Operational surface — deep navy, dense, the system while it is deciding.
+     Evidence surface    — warm paper, editorial, the record after it decided.
+
+   That contrast is the identity. It is also the argument: the dark side is
+   where a decision is prepared, the light side is what survives it.
+
+   Everything is scoped under `.rx` so this layer cannot leak into the cabinet,
+   the ecosystem workspaces or the parked landing, each of which owns its own
+   system.
+
+   Colour is meaning, never mood:
+     cyan   — evidence and data
+     mint   — verified, proven by something that exists
+     violet — human authorization, the one act software never performs
+     amber  — caution, a claim aging out of its review window
+     red    — a real blocker or failure, and nothing else
+   ========================================================================== */
+
+/* The chrome carries the token block with it.
+
+   `.rx-header` and `.rx-footer` are not inside `.rx` on every page that mounts
+   them: the reviewer pages, `/beta` and the legal pages own their content
+   layer and only borrow the chrome. While the tokens lived on `.rx` alone,
+   those pages resolved `--ink` to nothing, so the header background computed to
+   `transparent`, its hairline fell back to the inherited text colour, and the
+   primary call to action rendered as a transparent box with light text on a
+   dark page — a button nobody could see. Every computed-style check on the
+   pages that *are* wrapped passed the whole time.
+
+   So the custom properties are declared for the chrome as well, and the
+   surface properties below — background, type, the clipped overflow, the
+   drawn grid — stay on `.rx`, where they belong to the page rather than to a
+   component. */
+.rx,
+.rx-header,
+.rx-footer,
+.rx-skip {
+  /* The site rung of the DESIGN.md ladder: every name below is a projection
+     of app/design/tokens.css. The site never sets `data-theme` (the boot
+     script lives in the cabinet layout only), so the operational surface is
+     dark by construction — and the paper world uses the standalone
+     `--rt-paper-*` constants precisely so evidence stays mineral paper while
+     the page around it is navy. */
+  /* -- operational surface ------------------------------------------------ */
+  --ink: var(--rt-page);
+  --deep: var(--rt-panel);
+  --raised: var(--rt-raised);
+  --hairline: var(--rt-hairline);
+  --hairline-strong: var(--rt-hairline-strong);
+
+  /* -- evidence surface --------------------------------------------------- */
+  --paper: var(--rt-paper-page);
+  /* The deeper stone step has no canon token yet; it stays literal until the
+     site-screens rung either amends the canon or retires the step. */
+  --paper-2: #e7e4da;
+  --paper-ink: var(--rt-paper-ink-high);
+  --paper-muted: var(--rt-paper-ink-mid);
+  --paper-line: var(--rt-paper-hairline-strong);
+
+  /* -- type --------------------------------------------------------------- */
+  --fg: var(--rt-ink-high);
+  --fg-dim: var(--rt-ink-mid);
+  --fg-muted: var(--rt-ink-low);
+
+  /* -- meaning ------------------------------------------------------------ */
+  /* Semantic palette per DESIGN.md (superseding the 2026-08-09 tints): Ryntra
+     Blue and Cyan carry the identity; the one official gradient is
+     `--rt-brand-gradient`, permitted here by the One-Gradient Rule (R mark,
+     landing hero, one brand visualization). Mint consolidated onto the one
+     reconciled green; amber and red onto the lifecycle palette. */
+  --blue: var(--rt-action-blue);
+  --cyan: var(--rt-evidence-cyan-fg);
+  --grad: var(--rt-brand-gradient);
+  --mint: var(--rt-reconciled-green-fg);
+  --violet: var(--rt-authorization-violet);
+  --amber: var(--rt-review-amber-fg);
+  --red: var(--rt-blocked-red);
+
+  /* Two families (founder decision 2026-08-10, DESIGN.md §Typography): the
+     display role resolves to Inter — weight and scale carry the hero, not a
+     third face. JetBrains Mono keeps every instrument label and number. */
+  --display: var(--rt-font);
+  --tech: var(--rt-mono);
+  --body: var(--rt-font);
+  --mono: var(--rt-mono);
+
+  --gutter: clamp(20px, 4.4vw, 56px);
+  --measure: 68ch;
+  /* The shell grows on a wide screen instead of stranding 600px of it. Line
+     length is protected by `--measure` on prose, so a wider container gives the
+     product panels and tables more presence without hurting reading. */
+  --shell: min(1480px, 100%);
+}
+
+/* The page surface. Deliberately not on the chrome: `overflow-x: clip` on a
+   sticky header would break the sticking, and a page that borrows the chrome
+   keeps its own background and type. */
+.rx {
+  background: var(--ink);
+  color: var(--fg);
+  font-family: var(--body);
+  font-size: 0.9375rem;
+  line-height: 1.62;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  /* The page itself never scrolls sideways. Wide things scroll inside their
+     own container — see `.rx-scroll`. */
+  overflow-x: clip;
+}
+
+/* The chrome sets its own type, because on a borrowed page it would otherwise
+   inherit whatever that page's content layer uses — and a header in the
+   landing's face beside a footer in the site's is the drift this whole
+   consolidation exists to remove. */
+.rx-header,
+.rx-footer {
+  color: var(--fg);
+  font-family: var(--body);
+  font-size: 0.9375rem;
+  line-height: 1.62;
+}
+
+/* A faint technical grid, not a hero graphic. It reads as graph paper under
+   the whole system rather than as an effect placed on top of one section.
+   The 5.5% ink alpha and the #000 mask ramp are the documented
+   instrument-surface identity of the Decision Circuit (a screens-rung
+   classification recorded on its task card): drawing geometry, not palette
+   drift. */
+.rx::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(to right, var(--rt-site-grid) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--rt-site-grid) 1px, transparent 1px);
+  background-size: 96px 96px;
+  mask-image: radial-gradient(ellipse 120% 80% at 50% 0%, #000 20%, transparent 78%);
+}
+
+.rx > * { position: relative; z-index: 1; }
+
+.rx *,
+.rx *::before,
+.rx *::after { box-sizing: border-box; }
+
+/*
+ * Zero-specificity base rules.
+ *
+ * `.rx a { color: inherit }` would out-rank every single-class rule below it —
+ * `.rx-btn--primary` sets dark text on a near-white button, and the plain
+ * descendant selector silently kept the inherited near-white instead, so the
+ * primary call to action rendered as a blank white rectangle. `:where()`
+ * contributes nothing to specificity, which is exactly what a base rule wants:
+ * it supplies a default and loses to anything that states an intent.
+ */
+:where(.rx) :where(a) { color: inherit; text-decoration: none; }
+:where(.rx) :where(img) { max-width: 100%; height: auto; display: block; }
+
+.rx :where(a, button, summary, [tabindex]):focus-visible,
+.rx-header :where(a, button, [tabindex]):focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 3px;
+  border-radius: var(--rt-focus-radius-tight);
+}
+
+/* ---------------------------------------------------------------- shell -- */
+
+.rx-shell {
+  width: 100%;
+  max-width: var(--shell);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.rx-section { padding-block: clamp(72px, 9vw, 140px); }
+.rx-section--tight { padding-block: clamp(52px, 6vw, 92px); }
+
+/* The header is sticky, so an anchor jump would otherwise land with the
+   section's own index and title tucked underneath it. */
+.rx :where([id]) { scroll-margin-top: 84px; }
+
+/* Hairline between sections. One rule, drawn once, instead of a border on
+   every block — which is how a page ends up with doubled dividers. */
+.rx-section + .rx-section { border-top: 1px solid var(--hairline); }
+
+/* The numbered section head. Editorial pacing: a mono index, a rule, a title
+   and at most one lead paragraph. */
+.rx-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+  margin-bottom: clamp(36px, 4.6vw, 68px);
+}
+
+.rx-index {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-family: var(--tech);
+  font-size: 0.6875rem;
+  letter-spacing: 0.19em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+.rx-index::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--hairline);
+}
+
+.rx-h1 {
+  font-family: var(--display);
+  font-size: clamp(2rem, 5vw, 3rem);
+  line-height: 1.0;
+  letter-spacing: -0.045em;
+  font-weight: 400;
+  margin: 0;
+  text-wrap: balance;
+}
+
+.rx-h2 {
+  font-family: var(--display);
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  line-height: 1.08;
+  letter-spacing: -0.038em;
+  font-weight: 400;
+  margin: 0;
+  text-wrap: balance;
+}
+
+.rx-h3 {
+  font-family: var(--display);
+  font-size: 1.125rem;
+  line-height: 1.22;
+  letter-spacing: -0.028em;
+  font-weight: 600;
+  margin: 0;
+}
+
+.rx-lead {
+  font-size: 1.125rem;
+  line-height: 1.6;
+  color: var(--fg-dim);
+  max-width: var(--measure);
+  margin: 0;
+}
+
+.rx-body { color: var(--fg-dim); max-width: var(--measure); margin: 0; }
+.rx-fine { font-size: 0.8125rem; line-height: 1.6; color: var(--fg-muted); margin: 0; }
+
+.rx-mono {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+}
+
+/* Long identifiers — hashes, receipt ids — must wrap rather than widen the
+   page. This is the single rule that keeps 390px free of sideways scroll. */
+.rx-hash {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  color: var(--fg-dim);
+}
+
+/* Wide content scrolls inside itself, never through the body. */
+.rx-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+/* Screen-reader-only text: content that exists for assistive technology while
+   a purely visual treatment carries it for everyone else. */
+.rx-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------------------------------------------------------------- state -- */
+
+/*
+ * The status pill. Its label and colour are resolved from the capability
+ * registry on the server, so this component has no idea what "live" means and
+ * cannot be argued into saying it.
+ */
+.rx-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 9px 4px 8px;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--rt-radius-pill);
+  font-family: var(--tech);
+  font-size: 0.6875rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--fg-dim);
+  background: color-mix(in srgb, var(--fg) 2%, transparent);
+}
+
+.rx-state::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+
+.rx-state[data-tone="verified"] { color: var(--mint); border-color: color-mix(in srgb, var(--mint) 40%, transparent); background: color-mix(in srgb, var(--mint) 7%, transparent); }
+.rx-state[data-tone="evidence"] { color: var(--cyan); border-color: color-mix(in srgb, var(--cyan) 36%, transparent); background: color-mix(in srgb, var(--cyan) 6%, transparent); }
+.rx-state[data-tone="caution"] { color: var(--amber); border-color: color-mix(in srgb, var(--amber) 40%, transparent); background: color-mix(in srgb, var(--amber) 7%, transparent); }
+.rx-state[data-tone="neutral"] { color: var(--fg-muted); }
+
+/* ---------------------------------------------------------------- buttons */
+
+.rx-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 13px 22px;
+  border: 1px solid transparent;
+  border-radius: var(--rt-radius-sm);
+  font-family: var(--body);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  cursor: pointer;
+  transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.rx-btn--primary { background: var(--fg); color: var(--ink); }
+.rx-btn--ghost { border-color: var(--hairline-strong); color: var(--fg); }
+
+.rx-btn--sm { padding: 9px 15px; font-size: 0.875rem; }
+
+/* A link that reads as an action without pretending to be a button. */
+.rx-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.9375rem;
+  color: var(--cyan);
+  border-bottom: 1px solid color-mix(in srgb, var(--cyan) 32%, transparent);
+  padding-bottom: 1px;
+  transition: border-color 0.18s ease;
+}
+.rx-link--paper { color: var(--rt-paper-evidence-cyan-fg); border-bottom-color: color-mix(in srgb, var(--rt-paper-evidence-cyan-fg) 34%, transparent); }
+
+/* A stated gap. An artifact that does not exist renders here, as prose, and
+   never as a disabled-looking button a reviewer might try to click. */
+.rx-gap {
+  display: block;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  line-height: 1.55;
+  letter-spacing: 0.03em;
+  color: var(--fg-muted);
+  border-left: 2px solid var(--hairline-strong);
+  padding-left: 12px;
+}
+
+/* ============================================================ proof rail == */
+
+.rx-rail {
+  border-bottom: 1px solid var(--hairline);
+  background: color-mix(in srgb, var(--mint) 4.5%, transparent);
+}
+
+.rx-rail-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 18px;
+  padding-block: 10px;
+  font-family: var(--tech);
+  font-size: 0.6875rem;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.rx-rail-tag { color: var(--mint); display: inline-flex; align-items: center; gap: 7px; }
+.rx-rail-tag::before {
+  content: "";
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--mint);
+}
+.rx-rail-text { color: var(--fg-muted); }
+.rx-rail-link { margin-inline-start: auto; color: var(--fg); border-bottom: 1px solid var(--hairline-strong); }
+
+/* ============================================================== wordmark == */
+
+/* The lockup is the canonical brand component — `app/brand/ryntra-brand.tsx`
+   and its own `brand.css`. Nothing here may restyle or redraw it. */
+
+/* ================================================================ header == */
+
+.rx-header {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  background: color-mix(in srgb, var(--ink) 86%, transparent);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.rx-header-inner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 62px;
+}
+
+/* The wordmark is drawn, not set — see app/site/wordmark.tsx. */
+
+/* One product-family disclosure and two direct paths. The active family/page is
+   marked by a hairline under the label rather than a filled pill — at this
+   density a background block reads as a second call to action. */
+.rx-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-inline-start: clamp(18px, 2.4vw, 34px);
+}
+
+.rx-navlink {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 13px;
+  color: var(--fg-muted);
+  font-size: 0.9063rem;
+  letter-spacing: -0.005em;
+  border-radius: var(--rt-radius-sm);
+  transition: color 0.18s var(--rx-ease, ease);
+}
+
+button.rx-navlink {
+  border: 0;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+/* The underline is drawn on a pseudo-element so it can grow from the centre
+   without the label reflowing, and so it never adds height to the 62px bar. */
+.rx-navlink::after {
+  content: "";
+  position: absolute;
+  inset-inline: 13px;
+  bottom: 2px;
+  height: 1px;
+  background: var(--cyan);
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform 0.22s var(--rx-ease, ease);
+}
+
+.rx-navlink[data-current] { color: var(--fg); }
+.rx-navlink[data-current]::after { transform: scaleX(1); }
+
+.rx-products { position: relative; }
+
+.rx-navtrigger { gap: 6px; }
+.rx-navtrigger svg {
+  color: var(--fg-muted);
+  transition: transform 0.18s var(--rx-ease, ease), color 0.18s var(--rx-ease, ease);
+}
+.rx-navtrigger[data-open] svg { transform: rotate(180deg); color: var(--cyan); }
+
+.rx-products-popover {
+  position: absolute;
+  inset-block-start: calc(100% + 12px);
+  inset-inline-start: -12px;
+  width: min(760px, calc(100vw - 48px));
+  display: grid;
+  grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
+  gap: 1px;
+  padding: 1px;
+  background: var(--hairline-strong);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--rt-radius-md);
+  box-shadow: 0 24px 70px rgb(0 0 0 / 0.48);
+  overflow: hidden;
+}
+
+.rx-product-group {
+  min-width: 0;
+  padding: 16px;
+  background: color-mix(in srgb, var(--deep) 96%, var(--ink));
+}
+
+.rx-product-group h2,
+.rx-sheet-products > h2,
+.rx-sheet-product-group h3 {
+  margin: 0;
+  font-family: var(--tech);
+  font-size: 0.625rem;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+.rx-product-list { display: grid; gap: 5px; margin-top: 11px; }
+
+.rx-product-destination,
+.rx-sheet-product {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+  border: 1px solid transparent;
+  border-radius: var(--rt-radius-sm);
+  color: var(--fg-dim);
+}
+
+.rx-product-destination { padding: 11px 12px; }
+
+.rx-product-destination[data-current],
+.rx-sheet-product[data-current] {
+  border-color: color-mix(in srgb, var(--cyan) 52%, transparent);
+  background: color-mix(in srgb, var(--cyan) 7%, transparent);
+}
+
+.rx-product-destination[data-disabled],
+.rx-sheet-product[data-disabled] {
+  color: var(--fg-muted);
+  opacity: 0.72;
+}
+
+.rx-product-name {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--fg);
+  font-size: 0.8438rem;
+  font-weight: 650;
+  line-height: 1.25;
+}
+
+.rx-product-state {
+  flex: 0 0 auto;
+  padding: 3px 6px;
+  border: 1px solid var(--hairline-strong);
+  border-radius: 999px;
+  font-family: var(--tech);
+  font-size: 0.5625rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+.rx-product-state[data-state="testnet_verified"] {
+  border-color: color-mix(in srgb, var(--mint) 46%, transparent);
+  color: var(--mint);
+}
+.rx-product-state[data-state="preview"] {
+  border-color: color-mix(in srgb, var(--cyan) 46%, transparent);
+  color: var(--cyan);
+}
+/* Cyan like preview's read surfaces, not mint: a live read-only workspace is
+   evidence, and green stays reserved for a verified lifecycle. */
+.rx-product-state[data-state="read_only"] {
+  border-color: color-mix(in srgb, var(--cyan) 46%, transparent);
+  color: var(--cyan);
+}
+
+.rx-product-note {
+  color: var(--fg-muted);
+  font-size: 0.7188rem;
+  line-height: 1.45;
+}
+
+.rx-header-cta { margin-inline-start: auto; display: flex; align-items: center; gap: 9px; }
+
+.rx-burger {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 38px; height: 38px;
+  background: none;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--rt-radius-sm);
+  color: var(--fg);
+  cursor: pointer;
+}
+
+/* The mobile sheet is one reveal with the hierarchy already expanded. It was
+   once four accordions over twenty links; no second tap or hover is needed now. */
+.rx-sheet {
+  display: none;
+  border-top: 1px solid var(--hairline);
+  background: var(--deep);
+  max-height: min(74vh, 620px);
+  overflow-y: auto;
+}
+.rx-sheet[data-open="true"] { display: block; }
+
+.rx-sheet-nav { display: grid; }
+.rx-sheet-nav > a {
+  display: grid;
+  gap: 3px;
+  /* 44px minimum target is met by padding plus line height, and the note keeps
+     the row well above it — the label alone would not. */
+  padding: 14px var(--gutter);
+  border-bottom: 1px solid var(--hairline);
+  color: var(--fg);
+  font-size: 0.9375rem;
+}
+.rx-sheet-nav > a[data-current] { box-shadow: inset 2px 0 0 var(--cyan); }
+.rx-sheet-nav > a span { font-size: 0.75rem; color: var(--fg-muted); line-height: 1.45; }
+
+.rx-sheet-products {
+  display: grid;
+  gap: 18px;
+  padding: 17px var(--gutter) 19px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.rx-sheet-product-group { display: grid; gap: 9px; padding: 0; }
+.rx-sheet-product-group > div { display: grid; gap: 5px; }
+.rx-sheet-product {
+  min-height: 52px;
+  padding: 10px 11px;
+  border-color: var(--hairline);
+  background: color-mix(in srgb, var(--raised) 62%, transparent);
+}
+.rx-sheet-actions { display: grid; gap: 10px; padding: 16px var(--gutter) 22px; }
+
+.rx-skip {
+  position: absolute;
+  inset-inline-start: -9999px;
+  top: 8px;
+  z-index: 90;
+  padding: 10px 16px;
+  background: var(--fg);
+  color: var(--ink);
+  border-radius: var(--rt-radius-sm);
+  font-size: 0.9375rem;
+}
+.rx-skip:focus { inset-inline-start: 12px; }
+
+/* ================================================================== hero == */
+
+.rx-hero { padding-block: clamp(56px, 7.5vw, 108px) clamp(48px, 6vw, 92px); position: relative; }
+
+/* The aurora. Two soft brand glows drift slowly behind the hero — the cyan
+   one behind the run panel, a quieter blue one behind the words. Transform
+   and opacity only, slow enough to read as atmosphere rather than an effect. */
+.rx-hero::after {
+  content: "";
+  position: absolute;
+  top: 4%;
+  inset-inline-end: -8%;
+  width: min(720px, 78vw);
+  height: min(560px, 62vh);
+  pointer-events: none;
+  background: radial-gradient(circle at 60% 40%, color-mix(in srgb, var(--cyan) 14%, transparent), transparent 62%);
+  filter: blur(28px);
+  z-index: 0;
+  animation: rx-drift-a 21s ease-in-out infinite alternate;
+}
+
+.rx-hero::before {
+  content: "";
+  position: absolute;
+  bottom: -12%;
+  inset-inline-start: -10%;
+  width: min(640px, 70vw);
+  height: min(480px, 54vh);
+  pointer-events: none;
+  background: radial-gradient(circle at 40% 60%, color-mix(in srgb, var(--blue) 12%, transparent), transparent 60%);
+  filter: blur(30px);
+  z-index: 0;
+  animation: rx-drift-b 26s ease-in-out infinite alternate;
+}
+
+@keyframes rx-drift-a {
+  from { transform: translate3d(0, 0, 0) scale(1); opacity: 0.9; }
+  to { transform: translate3d(-56px, 42px, 0) scale(1.12); opacity: 1; }
+}
+
+@keyframes rx-drift-b {
+  from { transform: translate3d(0, 0, 0) scale(1.06); opacity: 0.85; }
+  to { transform: translate3d(64px, -36px, 0) scale(0.98); opacity: 1; }
+}
+
+.rx-hero-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 0.94fr) minmax(0, 1.06fr);
+  gap: clamp(38px, 5vw, 76px);
+  /* Stretch, not start: the product panel matches the column beside it instead
+     of ending halfway down and leaving a void under itself. */
+  align-items: stretch;
+}
+
+.rx-eyebrow {
+  font-family: var(--tech);
+  font-size: 0.6875rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--cyan);
+  margin: 0 0 22px;
+}
+
+.rx-hero-title { margin-bottom: 26px; }
+/* Three lines, three weights of the same promise: the plain claim, the brand
+   line in the one official gradient, and the quiet close. */
+.rx-hero-title em {
+  display: block;
+  font-style: normal;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.rx-hero-title span { display: block; color: var(--fg-muted); }
+
+/* Entrance: the hero introduces itself once, top to bottom, on the same
+   expo-out curve the reveals use. CSS-only, so a blocked script changes
+   nothing, and the global reduced-motion rule collapses it to instant. */
+@keyframes rx-rise {
+  from { opacity: 0; transform: translate3d(0, 26px, 0); }
+  to { opacity: 1; transform: none; }
+}
+
+.rx-hero-lede > * { animation: rx-rise 0.9s var(--rx-ease, ease) both; }
+.rx-hero-lede > :nth-child(1) { animation-delay: 60ms; }
+.rx-hero-lede > :nth-child(2) { animation-delay: 140ms; }
+.rx-hero-lede > :nth-child(3) { animation-delay: 240ms; }
+.rx-hero-lede > :nth-child(4) { animation-delay: 320ms; }
+.rx-hero-lede > :nth-child(5) { animation-delay: 400ms; }
+.rx-hero-lede > :nth-child(6) { animation-delay: 480ms; }
+.rx-hero-lede > :nth-child(7) { animation-delay: 560ms; }
+.rx-hero-lede > :nth-child(8) { animation-delay: 640ms; }
+.rx-hero-stage { animation: rx-rise 1s var(--rx-ease, ease) 260ms both; }
+
+.rx-hero-copy { margin-bottom: 22px; max-width: 56ch; }
+
+/* The scope line bounds the execution claim directly above it. Set as a quiet
+   rule rather than a warning box: it is the honest shape of the offer, not an
+   apology for it, and a red panel in the first viewport would read as one. */
+.rx-hero-scope {
+  max-width: 56ch;
+  margin: 0 0 28px;
+  padding-left: 14px;
+  border-left: 2px solid var(--hairline-strong);
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--fg-muted);
+}
+.rx-hero-scope strong { color: var(--fg); font-weight: 600; white-space: nowrap; }
+
+.rx-hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 30px; }
+.rx-hero-actions .rx-btn { flex: 0 1 auto; }
+
+.rx-hero-note { font-size: 0.8125rem; color: var(--fg-muted); margin: -18px 0 18px; }
+
+/* The business route: present, findable, and not a second primary button. */
+.rx-hero-aside { margin: 0 0 30px; }
+
+/* The walkthrough owns the right column and needs no styling of its own here —
+   `walk.css` draws it. This wrapper exists so the `See how it works` anchor has
+   a focusable target, which is what makes the control work with a keyboard. */
+.rx-hero-stage:focus-visible { outline: 2px solid var(--cyan); outline-offset: 6px; border-radius: var(--rt-focus-radius-md); }
+
+.rx-trust {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 20px;
+  padding-top: 22px;
+  border-top: 1px solid var(--hairline);
+  font-family: var(--tech);
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  list-style: none;
+  margin: 0;
+  padding-inline-start: 0;
+}
+.rx-trust li { display: inline-flex; align-items: center; gap: 7px; }
+.rx-trust li::before {
+  content: "";
+  width: 4px; height: 4px;
+  background: var(--fg-muted);
+  transform: rotate(45deg);
+}
+.rx-hero .rx-trust { margin-bottom: 30px; }
+
+/* ------------------------------------------------------------ flow panel - */
+
+/*
+ * The flow panel is the product, not an illustration of it: the stages of one
+ * recorded run, with its real transaction and real receipt.
+ */
+.rx-flow {
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--rt-radius-md);
+  background: var(--deep);
+  overflow: hidden;
+}
+
+.rx-flow-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--hairline);
+  font-family: var(--tech);
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+.rx-flow-list { list-style: none; margin: 0; padding: 6px 0; }
+
+.rx-flow-step {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 12px;
+  padding: 11px 16px;
+  position: relative;
+}
+
+/* The circuit itself: a hairline spine joining the stage markers. */
+.rx-flow-step::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 28px;
+  top: 26px;
+  bottom: -11px;
+  width: 1px;
+  background: var(--hairline);
+}
+.rx-flow-step:last-child::before { display: none; }
+
+.rx-flow-dot {
+  width: 11px; height: 11px;
+  margin-top: 5px;
+  margin-inline-start: 7px;
+  border-radius: 50%;
+  border: 1.5px solid var(--hairline-strong);
+  background: var(--deep);
+  position: relative;
+  z-index: 1;
+  transition: border-color 0.4s ease, background-color 0.4s ease, box-shadow 0.4s ease;
+}
+
+.rx-flow-step[data-done="true"] .rx-flow-dot {
+  border-color: var(--mint);
+  background: var(--mint);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--mint) 12%, transparent);
+}
+/* Authorization is the human act, and it is the only violet thing on the page. */
+.rx-flow-step[data-actor="human"][data-done="true"] .rx-flow-dot {
+  border-color: var(--violet);
+  background: var(--violet);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--violet) 16%, transparent);
+}
+
+.rx-flow-name { display: block; font-size: 0.9375rem; color: var(--fg); }
+/* Block, not inline: as inline spans the stage name and its identifier ran
+   together into "Intent createdint_58e9…" with no gap anywhere to break. */
+.rx-flow-detail {
+  display: block;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  line-height: 1.5;
+  color: var(--fg-muted);
+  overflow-wrap: anywhere;
+  margin-top: 2px;
+}
+.rx-flow-mark {
+  font-family: var(--tech);
+  font-size: 0.6875rem;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  padding-top: 5px;
+  white-space: nowrap;
+}
+.rx-flow-step[data-done="true"] .rx-flow-mark { color: var(--mint); }
+.rx-flow-step[data-actor="human"][data-done="true"] .rx-flow-mark { color: var(--violet); }
+
+.rx-flow-foot {
+  border-top: 1px solid var(--hairline);
+  padding: 12px 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* --------------------------------------------------------- page heroes -- */
+
+.rx-pagehero {
+  padding-block: clamp(50px, 6.5vw, 96px) clamp(34px, 4vw, 56px);
+  position: relative;
+}
+
+/* Every sub-page opens under the same slow aurora the homepage carries, so
+   the system reads as one site rather than a lit cover and plain chapters. */
+.rx-pagehero::after {
+  content: "";
+  position: absolute;
+  top: -10%;
+  inset-inline-end: -6%;
+  width: min(620px, 70vw);
+  height: min(440px, 52vh);
+  pointer-events: none;
+  background: radial-gradient(circle at 60% 40%, color-mix(in srgb, var(--cyan) 11%, transparent), transparent 62%);
+  filter: blur(28px);
+  z-index: 0;
+  animation: rx-drift-a 24s ease-in-out infinite alternate;
+}
+.rx-pagehero > * { position: relative; z-index: 1; }
+.rx-pagehero .rx-h1 { max-width: 20ch; }
+.rx-pagehero .rx-lead { max-width: 62ch; }
+.rx-pagehero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+.rx-pagehero .rx-trust { margin-top: 32px; }
+
+/* A prose column for documents — security, company, methodology summaries. */
+.rx-prose { display: grid; gap: 18px; max-width: var(--measure); }
+.rx-prose h3 { margin-top: 14px; }
+.rx-prose ul { margin: 0; padding-inline-start: 0; list-style: none; display: grid; gap: 9px; }
+.rx-prose li { position: relative; padding-inline-start: 17px; color: var(--fg-dim); }
+.rx-prose li::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0.62em;
+  width: 7px; height: 1px;
+  background: var(--hairline-strong);
+}
+.rx-paper .rx-prose li { color: var(--paper-muted); }
+.rx-paper .rx-prose li::before { background: var(--paper-line); }
+
+/* Two-column document layout: sticky contents beside the body. */
+.rx-doc { display: grid; grid-template-columns: minmax(0, 220px) minmax(0, 1fr); gap: clamp(26px, 3.4vw, 64px); align-items: start; }
+.rx-doc-toc { position: sticky; top: 82px; display: grid; gap: 7px; }
+.rx-doc-toc a {
+  font-family: var(--tech);
+  font-size: 0.6875rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  padding: 5px 0;
+  border-top: 1px solid var(--hairline);
+}
+.rx-doc-body { display: grid; gap: clamp(30px, 3.4vw, 52px); }
+
+@media (max-width: 900px) {
+  .rx-doc { grid-template-columns: minmax(0, 1fr); }
+  .rx-doc-toc { position: static; grid-auto-flow: row; }
+}
+
+/*
+ * The small-screen hero has one job the wide one does not: fit.
+ *
+ * At 320×720 the desktop rhythm put the primary action at 818px and the trust
+ * line at 694 — both below the fold, on the one viewport where a visitor is
+ * least likely to scroll before deciding. The measured cost was margins and a
+ * four-item trust rail stacking one per line, not the copy itself, so the copy
+ * is unchanged and the spacing is what gives.
+ *
+ * The trust rail goes to two columns rather than shrinking further: at 10.5px
+ * it is already at the floor for uppercase tracking, and four lines of it is
+ * the single largest block of dead height in the hero.
+ */
+@media (max-width: 520px) {
+  .rx-eyebrow { margin-bottom: 12px; }
+  .rx-hero-title { margin-bottom: 16px; }
+  .rx-hero-copy { margin-bottom: 14px; }
+
+  .rx-hero-scope {
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    margin-bottom: 16px;
+    padding-left: 11px;
+  }
+
+  /* `.rx-hero .rx-trust` sets the bottom margin at a higher specificity, so the
+     override has to match it or the rail keeps its desktop spacing here. */
+  .rx-hero .rx-trust {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 14px;
+    padding-top: 16px;
+    margin-bottom: 18px;
+  }
+
+  .rx-hero-actions { gap: 10px; margin-bottom: 22px; }
+  .rx-hero-note { margin: -12px 0 14px; }
+  .rx-hero-aside { margin-bottom: 22px; }
+
+  /*
+   * On a 320-wide screen the route-scope paragraph is six lines, and six lines
+   * between the benefit and the button is what pushed the button off the first
+   * viewport. It moves below the action here.
+   *
+   * What must be visible before scrolling is the heading, the benefit, the
+   * action, and the non-custody / no-profit boundary — and the trust rail
+   * carries that boundary, above the button, unchanged. The scope line is the
+   * narrower qualifier on the execution claim; it stays in the hero, one
+   * element below the action rather than three above it.
+   *
+   * Visual order only. The paragraph holds no focusable content, so the tab
+   * order is identical to the DOM order either way.
+   */
+  .rx-hero-lede { display: flex; flex-direction: column; }
+  .rx-hero-lede > .rx-eyebrow { order: 1; }
+  .rx-hero-lede > .rx-hero-title { order: 2; }
+  .rx-hero-lede > .rx-hero-copy { order: 3; }
+  .rx-hero-lede > .rx-trust { order: 4; }
+  .rx-hero-lede > .rx-hero-actions { order: 5; }
+  .rx-hero-lede > .rx-hero-note { order: 6; }
+  .rx-hero-lede > .rx-hero-scope { order: 7; margin-bottom: 20px; }
+  .rx-hero-lede > .rx-hero-aside { order: 8; }
+}
+
+/* ============================================================== columns == */
+
+.rx-cols {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--hairline);
+  border-block: 1px solid var(--hairline);
+}
+
+/* The product surfaces, weighted.
+
+   Equal cards read as products from different companies. The Workspace is the
+   product, and the layout says so — the lead card takes the full width above,
+   any other card shares the row below — so the hierarchy does not depend on a
+   visitor reading the copy in order.
+
+   Same construction as `.rx-cols`: hairline showing through a 1px gap, so the
+   three read as one plate rather than as three floating boxes. It lives here,
+   beside the grid it is a variant of, rather than at the end of the file —
+   declared after the media queries it has equal specificity and wins, which is
+   exactly how the mobile single-column override came to do nothing and leave
+   two 148px cards at 375. */
+.rx-surfaces {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--hairline);
+  border-block: 1px solid var(--hairline);
+}
+
+.rx-surfaces > .rx-col--lead {
+  grid-column: 1 / -1;
+  /* The lead card is a landscape panel rather than a taller column: its weight
+     comes from width, from the raised surface and from carrying the only
+     primary action in the section — not from extra padding. */
+  background: var(--deep);
+}
+
+.rx-surfaces > .rx-col--lead > p { max-width: 62ch; }
+
+.rx-col {
+  background: var(--ink);
+  padding: clamp(24px, 2.6vw, 38px) clamp(20px, 2.2vw, 32px);
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+
+.rx-col-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--tech);
+  font-size: 0.6875rem;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+  color: var(--cyan);
+}
+.rx-col-tag svg { flex: none; opacity: 0.9; }
+.rx-col p { color: var(--fg-dim); margin: 0; }
+
+/*
+ * The quad variant: four standalone blocks instead of a shared grid — a
+ * four-item set in a three-track grid leaves two empty cells, which is
+ * exactly the void it replaces. Each block carries its glyph, and the brand
+ * gradient rises along the border under a fine pointer.
+ */
+.rx-cols--quad {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  background: none;
+  border-block: 0;
+}
+
+/* Flat card, canon hover: accent-line border plus lift. The gradient border
+   and the --grad hover retired — the One-Gradient Rule budgets the gradient
+   to the R mark, the hero line and one designated visualization, and a hover
+   border on every quad card is none of them. */
+.rx-cols--quad .rx-col {
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--rt-radius-md);
+  background: var(--deep);
+  padding: clamp(18px, 2vw, 26px) clamp(16px, 1.8vw, 22px);
+  transition: background-color 0.4s ease, border-color 0.3s ease, transform 0.3s var(--rx-ease, ease);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .rx-cols--quad .rx-col:hover {
+    transform: translateY(-4px);
+    background: var(--raised);
+    border-color: var(--rt-evidence-cyan-line);
+  }
+}
+
+@media (max-width: 1100px) {
+  .rx-cols--quad { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 620px) {
+  .rx-cols--quad { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ================================================================ glyphs == */
+
+/*
+ * Abstract mechanism diagrams — see app/site/glyphs.tsx. Rendered finished;
+ * the draw-in exists only while the reveal gate is armed, mirroring the
+ * reveal contract: no JavaScript, no hidden content.
+ */
+.rx-glyph { width: 100%; height: auto; display: block; margin-bottom: 4px; }
+
+.rx-glyph-line { stroke: var(--fg-muted); stroke-width: 1.3; fill: none; opacity: 0.75; }
+.rx-glyph-accent { stroke: var(--cyan); stroke-width: 1.5; fill: none; }
+.rx-glyph-danger { stroke: var(--red); stroke-width: 1.3; fill: none; opacity: 0.85; }
+.rx-glyph-human { stroke: var(--violet); stroke-width: 1.5; fill: none; }
+.rx-glyph-ring { opacity: 0.4; }
+.rx-glyph-bar { fill: color-mix(in srgb, var(--cyan) 16%, transparent); stroke: var(--cyan); stroke-width: 1; }
+.rx-glyph-ghost { fill: none; stroke: var(--amber); stroke-width: 1.2; stroke-dasharray: 4 4; opacity: 0.85; }
+.rx-glyph-accent-fill { fill: color-mix(in srgb, var(--cyan) 18%, transparent); stroke: var(--cyan); stroke-width: 1.4; }
+.rx-glyph-human-fill { fill: color-mix(in srgb, var(--violet) 22%, transparent); stroke: var(--violet); stroke-width: 1.4; }
+.rx-glyph-good-fill { fill: color-mix(in srgb, var(--mint) 24%, transparent); stroke: var(--mint); stroke-width: 1.4; }
+
+.rx-glyph-label {
+  font-family: var(--tech);
+  /* SVG user units inside a scaled viewBox — drawing geometry like the
+     stroke widths beside it, not a rendered type-ramp step. */
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  fill: var(--fg-muted);
+}
+.rx-glyph-label--accent { fill: var(--cyan); }
+.rx-glyph-label--danger { fill: var(--red); }
+.rx-glyph-label--human { fill: var(--violet); }
+.rx-glyph-label--good { fill: var(--mint); }
+.rx-glyph-label--warn { fill: var(--amber); }
+
+/* Draw-in and pop-in, armed only by the motion gate and released by the
+   reveal observer — the exact contract the reveals follow. */
+.rx-glyph .rx-draw {
+  stroke-dasharray: 100 100;
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 1.1s var(--rx-ease) calc(0.3s + var(--rx-gi, 0) * 0.22s);
+}
+.rx-glyph .rx-pop {
+  opacity: 1;
+  transition: opacity 0.6s ease calc(0.42s + var(--rx-gi, 0) * 0.18s);
+}
+.rx-glyph [data-i="1"] { --rx-gi: 1; }
+.rx-glyph [data-i="2"] { --rx-gi: 2; }
+.rx-glyph [data-i="3"] { --rx-gi: 3; }
+.rx-glyph [data-i="4"] { --rx-gi: 4; }
+
+html.rxm .rx [data-rx-reveal]:not([data-rx-in="true"]) .rx-glyph .rx-draw { stroke-dashoffset: 100; }
+html.rxm .rx [data-rx-reveal]:not([data-rx-in="true"]) .rx-glyph .rx-pop { opacity: 0; }
+
+.rx-closing {
+  margin-top: clamp(30px, 3.4vw, 48px);
+  font-family: var(--display);
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  line-height: 1.22;
+  letter-spacing: -0.02em;
+  color: var(--fg);
+  max-width: 24ch;
+}
+
+/* ========================================================= capability cards */
+
+/*
+ * One card, one capability, one badge.
+ *
+ * A wrapping flex row lets the final line use the available width instead of
+ * leaving three empty grid cells after a deliberately short public list.
+ */
+.rx-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1px;
+  background: var(--hairline);
+  border: 1px solid var(--hairline);
+  border-radius: var(--rt-radius-md);
+  overflow: hidden;
+}
+
+.rx-card {
+  flex: 1 1 320px;
+  min-width: 0;
+  background: var(--deep);
+  padding: clamp(17px, 1.9vw, 22px);
+  display: grid;
+  gap: 9px;
+  align-content: start;
+  transition: background-color 0.22s var(--rx-ease), transform 0.2s var(--rx-ease);
+}
+
+/* Lift on a fine pointer only. On touch it either does nothing or sticks after
+   a tap, and a card that stays raised reads as selected. */
+/* Canon hover: tone plus lift. The inset top stroke retired — no inner strokes. */
+@media (hover: hover) and (pointer: fine) {
+  .rx-card:hover {
+    background: var(--raised);
+    transform: translateY(-3px);
+  }
+}
+
+.rx-card-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+
+.rx-card-title {
+  font-family: var(--display);
+  font-size: 1.125rem;
+  line-height: 1.24;
+  letter-spacing: -0.024em;
+  font-weight: 600;
+  margin: 0;
+  color: var(--fg);
+}
+
+.rx-card-body { margin: 0; font-size: 0.875rem; line-height: 1.55; color: var(--fg-dim); }
+
+/* Exact scope, in the data typeface, because it is data. */
+.rx-card-scope {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.02em;
+  line-height: 1.5;
+  color: var(--cyan);
+  overflow-wrap: anywhere;
+}
+
+/* The stated boundary of the claim, verbatim from the registry. It is set
+   quieter than the promise above it and is never allowed to be hidden behind an
+   interaction — a limitation a reader has to hover to find is decoration. */
+.rx-card-limit {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.55;
+  color: var(--fg-muted);
+  border-top: 1px solid var(--hairline);
+  padding-top: 9px;
+}
+
+/* Not-yet-shipped rows read quieter than shipped ones, on purpose. */
+.rx-cards--quiet .rx-card-title { font-weight: 500; color: var(--fg-dim); }
+.rx-cards--quiet .rx-card-scope { color: var(--fg-muted); }
+
+/* ======================================================== specialist wedge */
+
+.rx-wedge {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 360px);
+  gap: clamp(24px, 3.2vw, 56px);
+  /* Stretch: the question list fills the same height as the orbit column
+     beside it instead of ending in a void two thirds of the way down. */
+  align-items: stretch;
+}
+
+.rx-wedge-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-auto-rows: 1fr;
+  gap: 1px;
+  height: 100%;
+  background: var(--hairline);
+  border-block: 1px solid var(--hairline);
+}
+
+.rx-wedge-list li {
+  position: relative;
+  background: var(--ink);
+  padding: 15px clamp(12px, 1.4vw, 18px);
+  display: grid;
+  grid-template-columns: minmax(0, 0.32fr) minmax(0, 0.68fr);
+  gap: 8px 22px;
+  align-items: baseline;
+  align-content: center;
+  transition: background-color 0.4s ease, box-shadow 0.4s ease;
+}
+
+/* The scanning highlight — see app/site/cycle.tsx. One row at a time is lit,
+   with a hairline filling along its base for the dwell. Pure decoration:
+   every row stays fully readable whether or not the walk is running. */
+.rx-wedge-list li[data-cycle="on"] {
+  background: var(--deep);
+  /* The system's one active-bar idiom is 2px (the shell nav uses the same). */
+  box-shadow: inset 2px 0 0 var(--cyan);
+}
+.rx-wedge-list li[data-cycle="on"]::after {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  bottom: 0;
+  width: 100%;
+  height: 1px;
+  background: var(--cyan);
+  opacity: 0.55;
+  transform: scaleX(0);
+  transform-origin: left center;
+  animation: rx-cycle-dwell 3.6s linear forwards;
+}
+
+@keyframes rx-cycle-dwell {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+.rx-wedge-list b {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-weight: 500;
+  font-size: 0.9375rem;
+  color: var(--fg);
+}
+.rx-wedge-list b svg { flex: none; }
+.rx-wedge-list span { color: var(--fg-dim); font-size: 0.875rem; line-height: 1.55; }
+
+.rx-wedge-side { display: grid; gap: 18px; align-content: start; }
+
+.rx-wedge-note {
+  border: 1px solid var(--hairline);
+  border-radius: var(--rt-radius-md);
+  background: var(--deep);
+  padding: clamp(18px, 2.2vw, 26px);
+  display: grid;
+  gap: 13px;
+  align-content: start;
+}
+
+/* ================================================================= orbit == */
+
+/*
+ * The supported routes as a small solar system. Transform-only rotation on
+ * two belts; each satellite un-spins so its ticker stays upright. Hover
+ * pauses the whole thing so a ticker can be read; reduced motion parks it.
+ */
+.rx-orbit-wrap { display: grid; gap: 12px; }
+
+.rx-orbit {
+  position: relative;
+  width: min(100%, 340px);
+  aspect-ratio: 1;
+  margin-inline: auto;
+}
+
+.rx-orbit-ring {
+  position: absolute;
+  border: 1px dashed var(--hairline-strong);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.rx-orbit-ring--outer { inset: 7%; }
+.rx-orbit-ring--inner { inset: 29%; }
+
+.rx-orbit-core {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
+  width: 84px;
+  height: 84px;
+  border: 1px solid var(--hairline-strong);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--cyan) 14%, transparent), transparent 68%),
+    var(--deep);
+}
+
+.rx-orbit-belt {
+  position: absolute;
+  inset: 7%;
+  animation: rx-orbit-spin 56s linear infinite;
+}
+.rx-orbit-belt--inner {
+  inset: 29%;
+  animation-duration: 34s;
+  animation-direction: reverse;
+}
+
+.rx-orbit:hover .rx-orbit-belt,
+.rx-orbit:hover .rx-orbit-unspin { animation-play-state: paused; }
+
+.rx-orbit-seat {
+  position: absolute;
+  inset: 0;
+  transform: rotate(var(--a, 0deg));
+}
+
+.rx-orbit-arm {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.rx-orbit-unspin {
+  display: block;
+  animation: rx-orbit-spin 56s linear infinite reverse;
+}
+.rx-orbit-belt--inner .rx-orbit-unspin {
+  animation-duration: 34s;
+  animation-direction: normal;
+}
+
+/* The un-spinner cancels the belt; the satellite cancels its seat angle, so
+   the ticker reads upright at every point of the circle. */
+.rx-orbit-sat {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transform: rotate(calc(var(--a, 0deg) * -1));
+  padding: 5px 10px;
+  border: 1px solid color-mix(in srgb, var(--cyan) 36%, transparent);
+  border-radius: var(--rt-radius-pill);
+  background: color-mix(in srgb, var(--ink) 92%, transparent);
+  color: var(--cyan);
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+.rx-orbit-sat::before {
+  content: "";
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.rx-orbit-belt--inner .rx-orbit-sat {
+  border-color: color-mix(in srgb, var(--mint) 40%, transparent);
+  color: var(--mint);
+}
+
+.rx-orbit-caption {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.55;
+  color: var(--fg-muted);
+  text-align: center;
+}
+
+@keyframes rx-orbit-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.rx-wedge-note p { margin: 0; font-size: 0.875rem; line-height: 1.6; color: var(--fg-dim); }
+
+.rx-wedge-tag {
+  font-family: var(--tech);
+  font-size: 0.6875rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--cyan);
+}
+
+/* ========================================================= business teaser */
+
+.rx-biz {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  gap: clamp(24px, 3.2vw, 52px);
+  align-items: start;
+}
+
+.rx-biz-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; }
+
+.rx-biz-list li {
+  position: relative;
+  padding-inline-start: 17px;
+  color: var(--fg-dim);
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+.rx-biz-list li::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0.62em;
+  width: 6px;
+  height: 1px;
+  background: var(--hairline-strong);
+}
+
+/* ============================================================= surfaces == */
+
+.rx-split {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--hairline);
+  border: 1px solid var(--hairline);
+  border-radius: var(--rt-radius-md);
+  overflow: hidden;
+}
+
+.rx-face {
+  background: var(--deep);
+  padding: clamp(26px, 3vw, 42px);
+  display: grid;
+  gap: 18px;
+  align-content: start;
+}
+
+.rx-face-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.rx-face ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; }
+.rx-face li {
+  padding-inline-start: 17px;
+  position: relative;
+  font-size: 0.9375rem;
+  color: var(--fg-dim);
+}
+.rx-face li::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0.62em;
+  width: 7px; height: 1px;
+  background: var(--hairline-strong);
+}
+
+/* The kernel bar under both faces: one truth model, drawn as one bar. */
+.rx-kernel {
+  margin-top: 1px;
+  background: var(--raised);
+  border: 1px solid var(--hairline);
+  border-top: 0;
+  /* zero-corner composite of the canon step — the bar joins the split above */
+  border-radius: 0 0 var(--rt-radius-md) var(--rt-radius-md);
+  padding: 20px clamp(24px, 3vw, 40px);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 22px;
+}
+.rx-kernel-name {
+  font-family: var(--display);
+  font-size: 1.125rem;
+  letter-spacing: -0.012em;
+}
+.rx-kernel-stages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  font-family: var(--tech);
+  font-size: 0.6875rem;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  margin-inline-start: auto;
+}
+.rx-kernel-stages span { display: inline-flex; align-items: center; gap: 8px; }
+.rx-kernel-stages span:not(:last-child)::after { content: "→"; color: var(--hairline-strong); }
+
+/* ============================================================== circuit == */
+
+.rx-circuit { display: grid; grid-template-columns: minmax(0, 320px) minmax(0, 1fr); gap: clamp(24px, 3vw, 48px); }
+
+.rx-stages { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; background: var(--hairline); border: 1px solid var(--hairline); border-radius: var(--rt-radius-md); overflow: hidden; }
+
+.rx-stage {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 13px 15px;
+  background: var(--deep);
+  border: 0;
+  color: var(--fg-dim);
+  font-family: var(--body);
+  font-size: 0.9375rem;
+  text-align: start;
+  cursor: pointer;
+  transition: background-color 0.16s ease, color 0.16s ease;
+}
+.rx-stage[aria-selected="true"] { background: var(--raised); color: var(--fg); box-shadow: inset 3px 0 0 var(--cyan); }
+.rx-stage-n { font-family: var(--tech); font-size: 0.6875rem; letter-spacing: 0.1em; color: var(--fg-muted); }
+.rx-stage[aria-selected="true"] .rx-stage-n { color: var(--cyan); }
+
+.rx-panel {
+  border: 1px solid var(--hairline);
+  border-radius: var(--rt-radius-md);
+  background: var(--deep);
+  padding: clamp(24px, 3vw, 40px);
+  display: grid;
+  gap: 22px;
+  align-content: start;
+}
+
+.rx-panel-top { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+
+.rx-facts { display: grid; gap: 1px; background: var(--hairline); border: 1px solid var(--hairline); border-radius: var(--rt-radius-md); overflow: hidden; }
+.rx-fact { display: grid; grid-template-columns: minmax(120px, 0.32fr) minmax(0, 1fr); gap: 14px; background: var(--deep); padding: 12px 15px; }
+.rx-fact dt {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  padding-top: 2px;
+}
+.rx-fact dd { margin: 0; font-size: 0.875rem; color: var(--fg-dim); overflow-wrap: anywhere; }
+
+/* "What Ryntra never does" is a first-class row, in the blocker colour,
+   because the boundary is the product. */
+.rx-never { border-inline-start: 2px solid var(--red); padding-inline-start: 14px; }
+.rx-never dt { color: var(--red); }
+
+/* =============================================== evidence (paper) surface = */
+
+/*
+ * The light world. Everything a decision leaves behind is set on paper: the
+ * receipt, the reconciliation, the capability record. A visitor should feel the
+ * change of material, not just of colour.
+ */
+.rx-paper {
+  background: var(--paper);
+  color: var(--paper-ink);
+  border-block: 1px solid var(--paper-line);
+}
+.rx-paper .rx-h2, .rx-paper .rx-h3, .rx-paper .rx-h1 { color: var(--paper-ink); }
+.rx-paper .rx-lead, .rx-paper .rx-body { color: var(--paper-muted); }
+.rx-paper .rx-fine { color: var(--paper-muted); }
+.rx-paper .rx-index { color: var(--paper-muted); }
+.rx-paper .rx-index::after { background: var(--paper-line); }
+.rx-paper .rx-eyebrow { color: var(--rt-paper-evidence-cyan-fg); }
+.rx-paper .rx-hash { color: var(--paper-ink); }
+.rx-paper .rx-btn--ghost { border-color: var(--paper-line); color: var(--paper-ink); }
+.rx-paper .rx-btn--primary { background: var(--paper-ink); color: var(--paper); }
+.rx-paper .rx-gap { color: var(--paper-muted); border-left-color: var(--paper-line); }
+.rx-paper .rx-state { color: var(--paper-muted); border-color: var(--paper-line); background: color-mix(in srgb, var(--paper-ink) 3%, transparent); }
+.rx-paper .rx-state[data-tone="verified"] { color: var(--rt-paper-reconciled-green-fg); border-color: color-mix(in srgb, var(--rt-paper-reconciled-green-fg) 34%, transparent); background: color-mix(in srgb, var(--rt-paper-reconciled-green-fg) 7%, transparent); }
+.rx-paper .rx-state[data-tone="evidence"] { color: var(--rt-paper-evidence-cyan-fg); border-color: color-mix(in srgb, var(--rt-paper-evidence-cyan-fg) 32%, transparent); background: color-mix(in srgb, var(--rt-paper-evidence-cyan-fg) 6%, transparent); }
+.rx-paper .rx-state[data-tone="caution"] { color: var(--rt-paper-review-amber-fg); border-color: color-mix(in srgb, var(--rt-paper-review-amber-fg) 34%, transparent); background: color-mix(in srgb, var(--rt-paper-review-amber-fg) 7%, transparent); }
+.rx-paper :where(a, button, summary, [tabindex]):focus-visible { outline-color: var(--rt-paper-evidence-cyan-fg); }
+
+/* ---------------------------------------------------------- the ledger --- */
+
+/*
+ * The Evidence Ledger. Deliberately a document, not a card: a rule above, a
+ * rule below, rows that align on a shared column, and a serial in the corner.
+ */
+.rx-ledger {
+  border: 1px solid var(--paper-line);
+  background: var(--rt-paper-panel);
+}
+
+.rx-ledger-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px 18px;
+  padding: 16px clamp(18px, 2.4vw, 28px);
+  border-bottom: 1px solid var(--paper-line);
+}
+.rx-ledger-title {
+  font-family: var(--tech);
+  font-size: 0.6875rem;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+  color: var(--paper-ink);
+}
+.rx-ledger-serial { font-family: var(--mono); font-size: 0.6875rem; color: var(--paper-muted); overflow-wrap: anywhere; }
+
+.rx-ledger-rows { margin: 0; padding: 0; }
+.rx-ledger-row {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.28fr) minmax(0, 1fr);
+  gap: 10px 22px;
+  padding: 12px clamp(18px, 2.4vw, 28px);
+  border-bottom: 1px solid color-mix(in srgb, var(--paper-ink) 9%, transparent);
+}
+.rx-ledger-row:last-child { border-bottom: 0; }
+.rx-ledger-row dt {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--paper-muted);
+  padding-top: 3px;
+}
+.rx-ledger-row dd { margin: 0; font-size: 0.875rem; line-height: 1.55; color: var(--paper-ink); overflow-wrap: anywhere; }
+.rx-ledger-row dd a { color: var(--rt-paper-evidence-cyan-fg); border-bottom: 1px solid color-mix(in srgb, var(--rt-paper-evidence-cyan-fg) 32%, transparent); }
+
+/* Expected against actual, side by side, because that comparison is the point. */
+.rx-vs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: var(--paper-line); border: 1px solid var(--paper-line); }
+.rx-vs > div { background: var(--rt-paper-panel); padding: 14px 16px; display: grid; gap: 5px; }
+.rx-vs dt, .rx-vs .rx-vs-k {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--paper-muted);
+}
+.rx-vs .rx-vs-v { font-family: var(--mono); font-size: 0.875rem; color: var(--paper-ink); overflow-wrap: anywhere; }
+
+/* ================================================================ tables == */
+
+.rx-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; min-width: 640px; }
+.rx-table--wide { min-width: 860px; }
+.rx-table--auto { min-width: 0; }
+.rx-table th {
+  text-align: start;
+  font-family: var(--tech);
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 400;
+  color: var(--fg-muted);
+  padding: 0 16px 12px 0;
+  border-bottom: 1px solid var(--hairline-strong);
+  white-space: nowrap;
+}
+.rx-table td { padding: 15px 16px 15px 0; border-bottom: 1px solid var(--hairline); vertical-align: top; color: var(--fg-dim); }
+.rx-table td:first-child { color: var(--fg); }
+.rx-table tr:last-child td { border-bottom: 0; }
+
+.rx-paper .rx-table th { color: var(--paper-muted); border-bottom-color: var(--paper-line); }
+.rx-paper .rx-table td { border-bottom-color: color-mix(in srgb, var(--paper-ink) 10%, transparent); color: var(--paper-muted); }
+.rx-paper .rx-table td:first-child { color: var(--paper-ink); }
+
+/* ================================================================== deck == */
+
+/*
+ * The surface rail: snap-scrolling cards the reader pulls past themselves.
+ * It replaces six editorial rows — same registry-resolved facts, a fraction
+ * of the standing text. Focusable, so the overflow is keyboard-reachable, and
+ * masked at the trailing edge so the cut card reads as "there is more".
+ */
+.rx-deck {
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding-block: 6px 14px;
+  -webkit-mask-image: linear-gradient(90deg, #000 90%, transparent);
+  mask-image: linear-gradient(90deg, #000 90%, transparent);
+}
+.rx-deck::-webkit-scrollbar { display: none; }
+.rx-deck:focus-visible { outline: 2px solid var(--cyan); outline-offset: 4px; border-radius: var(--rt-focus-radius-sm); }
+
+.rx-deck-track {
+  display: flex;
+  align-items: stretch;
+  gap: 14px;
+  width: max-content;
+  padding-inline-end: 56px;
+}
+
+/* Flat card, canon hover — same retirement as the quad above. */
+.rx-deck-card {
+  scroll-snap-align: start;
+  flex: none;
+  width: clamp(292px, 30vw, 396px);
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  grid-template-rows: auto auto 1fr auto;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--rt-radius-md);
+  background: var(--deep);
+  padding: clamp(18px, 2vw, 24px);
+  transition: background-color 0.4s ease, border-color 0.3s ease, transform 0.3s var(--rx-ease, ease);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .rx-deck-card:hover {
+    transform: translateY(-4px);
+    background: var(--raised);
+    border-color: var(--rt-evidence-cyan-line);
+  }
+}
+
+.rx-deck-top { display: flex; align-items: center; gap: 10px; color: var(--cyan); }
+.rx-deck-top svg { flex: none; }
+.rx-deck-n {
+  font-family: var(--tech);
+  font-size: 0.6875rem;
+  letter-spacing: 0.15em;
+  color: var(--fg-muted);
+  margin-inline-end: auto;
+}
+
+.rx-deck-promise { margin: 0; font-size: 0.9375rem; line-height: 1.6; color: var(--fg-dim); }
+.rx-deck-scope {
+  color: var(--fg-muted);
+  overflow-wrap: anywhere;
+  border-top: 1px solid var(--hairline);
+  padding-top: 10px;
+}
+
+/* Grab affordance: the rail is pullable with a mouse, and while a drag is
+   live the snap lets go so the rail follows the hand. */
+.rx-deck { cursor: grab; }
+.rx-deck[data-dragging="true"] {
+  cursor: grabbing;
+  scroll-snap-type: none;
+  scroll-behavior: auto;
+  user-select: none;
+}
+
+.rx-deck-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.rx-deck-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--rt-radius-sm);
+  background: none;
+  color: var(--fg);
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease, opacity 0.2s ease;
+}
+.rx-deck-btn:disabled { opacity: 0.32; cursor: default; }
+
+@media (hover: hover) and (pointer: fine) {
+  .rx-deck-btn:not(:disabled):hover {
+    border-color: var(--cyan);
+    background: color-mix(in srgb, var(--cyan) 7%, transparent);
+  }
+}
+
+.rx-deck-hint {
+  margin: 0 0 0 8px;
+  font-family: var(--tech);
+  font-size: 0.6875rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+/* ============================================================= narrative == */
+
+/* The product surfaces: one long editorial run, not a grid of tiles. */
+.rx-story { display: grid; gap: 1px; background: var(--hairline); border-block: 1px solid var(--hairline); }
+
+.rx-chapter {
+  background: var(--ink);
+  display: grid;
+  grid-template-columns: minmax(0, 0.42fr) minmax(0, 0.58fr);
+  gap: clamp(22px, 3vw, 56px);
+  padding: clamp(28px, 3.4vw, 52px) 0;
+}
+
+.rx-chapter-side { display: grid; gap: 14px; align-content: start; }
+.rx-chapter-n { font-family: var(--tech); font-size: 0.6875rem; letter-spacing: 0.17em; color: var(--fg-muted); }
+.rx-chapter-body { display: grid; gap: 16px; align-content: start; }
+.rx-chapter-problem {
+  border-inline-start: 2px solid var(--hairline-strong);
+  padding-inline-start: 16px;
+  color: var(--fg-muted);
+  font-size: 0.9375rem;
+}
+
+/* Audience blocks. Three, not six. */
+.rx-audience { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--hairline); border: 1px solid var(--hairline); border-radius: var(--rt-radius-md); overflow: hidden; }
+.rx-audience > div { background: var(--deep); padding: clamp(22px, 2.6vw, 34px); display: grid; gap: 13px; align-content: start; }
+
+/* Methodology axes. Four independent states, drawn as four independent rows. */
+.rx-axes { display: grid; gap: 1px; background: var(--hairline); border: 1px solid var(--hairline); border-radius: var(--rt-radius-md); overflow: hidden; }
+.rx-axis { background: var(--deep); padding: 18px clamp(18px, 2.2vw, 26px); display: grid; grid-template-columns: minmax(0, 0.3fr) minmax(0, 0.7fr); gap: 12px 24px; align-items: baseline; }
+.rx-axis-name { font-family: var(--display); font-size: 1.125rem; letter-spacing: -0.012em; }
+.rx-axis-values { display: flex; flex-wrap: wrap; gap: 6px 8px; font-family: var(--tech); font-size: 0.75rem; color: var(--fg-muted); }
+.rx-axis-values span { border: 1px solid var(--hairline); border-radius: var(--rt-radius-pill); padding: 2px 7px; }
+
+/* Research, with the one restrained appearance of Ryn. */
+.rx-research { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 340px); gap: clamp(26px, 3.4vw, 56px); align-items: start; }
+.rx-research-lines { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; background: var(--hairline); border-block: 1px solid var(--hairline); }
+.rx-research-lines li { background: var(--ink); padding: 13px 0; display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.rx-research-lines b { font-weight: 500; font-size: 0.9375rem; }
+.rx-research-lines span { color: var(--fg-muted); font-size: 0.875rem; }
+.rx-ryn { border: 1px solid var(--hairline); border-radius: var(--rt-radius-md); overflow: hidden; background: var(--deep); }
+/* The source is a portrait. An enforced square cropped the top of the head off
+   — the ratio comes from the file now, so the frame fits the image. */
+.rx-ryn img { width: 100%; height: auto; opacity: 0.94; }
+.rx-ryn figcaption { padding: 13px 15px; border-top: 1px solid var(--hairline); font-size: 0.8125rem; color: var(--fg-muted); }
+
+/* Founder block. */
+.rx-founder { display: grid; grid-template-columns: minmax(0, 0.55fr) minmax(0, 0.45fr); gap: clamp(26px, 3.4vw, 56px); align-items: start; }
+.rx-founder-card { border: 1px solid var(--hairline); border-radius: var(--rt-radius-md); background: var(--deep); padding: clamp(22px, 2.6vw, 32px); display: grid; gap: 14px; align-content: start; }
+.rx-founder-name { font-family: var(--display); font-size: 1.5rem; letter-spacing: -0.018em; }
+.rx-founder-role { font-family: var(--tech); font-size: 0.75rem; letter-spacing: 0.13em; text-transform: uppercase; color: var(--fg-muted); }
+.rx-contacts { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+
+/* Final CTA. */
+.rx-close { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: var(--hairline); border: 1px solid var(--hairline); border-radius: var(--rt-radius-md); overflow: hidden; }
+.rx-close > div { background: var(--deep); padding: clamp(28px, 3.4vw, 46px); display: grid; gap: 16px; align-content: start; }
+
+/* One closing action, not two competing ones. The business route is a line of
+   text inside it, which is the weight it should carry on a consumer page. */
+.rx-close--single { grid-template-columns: minmax(0, 1fr); }
+.rx-close--single > div { max-width: 74ch; }
+.rx-close-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+
+/* The closing visual: how access opens, drawn. It fills the half of the plate
+   that used to be an empty track beside a width-capped paragraph. */
+.rx-close-visual {
+  display: grid;
+  align-content: center;
+  gap: 10px;
+}
+.rx-close-visual .rx-glyph { max-width: 420px; margin-inline: auto; }
+.rx-close-visual .rx-fine { text-align: center; }
+
+/* ================================================================ footer == */
+
+.rx-footer { border-top: 1px solid var(--hairline); background: var(--ink); padding-block: clamp(44px, 5vw, 72px) 28px; }
+/* Three columns, by contract. The brand block takes the slack a fourth column
+   used to fill with links that were already in the header. */
+.rx-footer-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) repeat(3, minmax(0, 1fr)); gap: clamp(22px, 3vw, 44px); }
+.rx-footer-brand { display: grid; gap: 14px; align-content: start; max-width: 34ch; }
+.rx-footer-social { display: flex; gap: 8px; }
+.rx-footer-social a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--rt-radius-sm);
+  color: var(--fg-muted);
+  transition: color 0.18s ease, border-color 0.18s ease;
+}
+.rx-footer-col { display: grid; gap: 9px; align-content: start; }
+.rx-footer-col h3 {
+  font-family: var(--tech);
+  font-size: 0.6875rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 400;
+  color: var(--fg-muted);
+  margin: 0 0 3px;
+}
+.rx-footer-col a { display: inline-flex; align-items: center; gap: 5px; font-size: 0.875rem; color: var(--fg-dim); }
+.rx-footer-col a svg { opacity: 0.5; }
+.rx-footer-legal {
+  margin-top: clamp(34px, 4vw, 56px);
+  padding-top: 22px;
+  border-top: 1px solid var(--hairline);
+  display: grid;
+  gap: 14px;
+}
+.rx-footer-legal p { font-size: 0.75rem; color: var(--fg-muted); margin: 0; max-width: 92ch; }
+.rx-footer-legal p a { color: var(--fg-dim); border-bottom: 1px solid var(--hairline-strong); }
+.rx-footer-meta { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; font-size: 0.75rem; color: var(--fg-muted); }
+.rx-footer-meta a { color: var(--fg-muted); }
+
+@media (hover: hover) and (pointer: fine) {
+  .rx-btn--primary:hover { background: #ffffff; }
+  .rx-btn--ghost:hover { border-color: var(--fg-dim); background: color-mix(in srgb, var(--fg) 4%, transparent); }
+  .rx-link:hover { border-bottom-color: var(--cyan); }
+  .rx-link--paper:hover { border-bottom-color: var(--rt-paper-evidence-cyan-fg); }
+  .rx-rail-link:hover { border-bottom-color: var(--fg); }
+  .rx-navlink:hover { color: var(--fg); }
+  .rx-navlink:hover::after { transform: scaleX(1); background: var(--hairline-strong); }
+  .rx-navlink[data-current]:hover::after { background: var(--cyan); }
+  .rx-product-destination[href]:hover {
+    color: var(--fg);
+    border-color: var(--hairline-strong);
+    background: color-mix(in srgb, var(--raised) 78%, transparent);
+  }
+  .rx-doc-toc a:hover { color: var(--fg); }
+  .rx-footer-social a:hover { color: var(--fg); border-color: var(--hairline-strong); }
+  .rx-footer-legal p a:hover { color: var(--fg); border-bottom-color: var(--cyan); }
+  .rx-stage:hover { background: var(--raised); color: var(--fg); }
+  .rx-paper .rx-btn--ghost:hover { background: color-mix(in srgb, var(--paper-ink) 5%, transparent); border-color: var(--paper-ink); }
+  .rx-footer-col a:hover { color: var(--fg); }
+  .rx-footer-meta a:hover { color: var(--fg-dim); }
+}
+
+/* ================================================================= motion = */
+
+/*
+ * Motion is only allowed to explain state. The hero flow resolves stage by
+ * stage in the order the lifecycle actually runs; nothing else animates.
+ */
+@keyframes rx-resolve {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: none; }
+}
+
+.rx-flow-step { animation: rx-resolve 0.5s ease both; animation-delay: calc(var(--i, 0) * 150ms); }
+
+@media (prefers-reduced-motion: reduce) {
+  .rx *, .rx *::before, .rx *::after {
+    animation-duration: 0.001ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================================= responsive = */
+
+@media (max-width: 1080px) {
+  .rx-hero-grid { grid-template-columns: minmax(0, 1fr); }
+  .rx-circuit { grid-template-columns: minmax(0, 1fr); }
+  /* Three columns survive the tablet step; the brand block takes its own row
+     rather than being squeezed into a quarter of it. */
+  .rx-footer-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .rx-footer-brand { grid-column: 1 / -1; max-width: none; }
+  .rx-research { grid-template-columns: minmax(0, 1fr); }
+  .rx-ryn { max-width: 320px; }
+  .rx-founder { grid-template-columns: minmax(0, 1fr); }
+  .rx-wedge { grid-template-columns: minmax(0, 1fr); }
+  .rx-biz { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 900px) {
+  .rx-nav { display: none; }
+  .rx-burger { display: inline-flex; }
+  .rx-cols { grid-template-columns: minmax(0, 1fr); }
+  /* Below the tablet step the hierarchy is reading order, which already puts
+     the Workspace first — a half-width card would only be narrower, not
+     secondary. */
+  .rx-surfaces { grid-template-columns: minmax(0, 1fr); }
+  .rx-split { grid-template-columns: minmax(0, 1fr); }
+  .rx-audience { grid-template-columns: minmax(0, 1fr); }
+  .rx-chapter { grid-template-columns: minmax(0, 1fr); }
+  .rx-close { grid-template-columns: minmax(0, 1fr); }
+  .rx-axis { grid-template-columns: minmax(0, 1fr); }
+  .rx-kernel-stages { margin-inline-start: 0; }
+  .rx-wedge-list li { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+}
+
+@media (max-width: 620px) {
+  .rx-vs { grid-template-columns: minmax(0, 1fr); }
+  .rx-ledger-row { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .rx-fact { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .rx-hero-actions { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .rx-hero-actions .rx-btn { width: 100%; }
+  .rx-flow-step { grid-template-columns: 26px minmax(0, 1fr); }
+  .rx-flow-mark { grid-column: 2; padding-top: 0; }
+  .rx-footer-grid { grid-template-columns: minmax(0, 1fr); }
+  .rx-rail-link { margin-inline-start: 0; }
+}
+
+@media (max-width: 420px) {
+  /* The mobile sheet already contains this action, and the hero repeats it.
+     Removing the header copy prevents a two- or three-line button at 320px. */
+  .rx-header-cta > .rx-btn--primary { display: none; }
+}
+
+/* 200% zoom on a laptop lands near 640px wide with desktop pointer input; the
+   breakpoints above are width-based precisely so that case is covered by the
+   same rules as a phone rather than by a separate path. */
+
+/* A row of destinations — the same shape as the footer columns, and governed
+   by the same rule below: it is navigation, not prose, so its links are tap
+   targets on a phone rather than words in a sentence. */
+.rx-linkrow { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 22px; }
+
+
+/* Footer navigation is a row of destinations, not text inside a sentence, so
+   the phone tap-target rule applies to it. Measured at 375: 21px.
+
+   The page-hero action row joined the list on 2026-08-14: `/stellar` puts a
+   quiet third link beside its two buttons and it measured 25px, because the
+   rule named `.rx-linkrow` rather than "a destination in a row of them". Same
+   defect, one selector away. */
+@media (max-width: 640px) {
+  .rx-footer-col a,
+  .rx-footer-legal a,
+  .rx-pagehero-actions a:not(.rx-btn),
+  .rx-linkrow a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  /* The compact button variant exists for the header bar, where it sits beside
+     a 44px control and reads correctly at 38px. Anywhere a thumb has to find
+     it, it is a tap target like any other — measured at 375 before this: 43px,
+     which is one pixel short and therefore still short. */
+  .rx-btn--sm { min-height: 44px; }
+
+  /* The walkthrough's advance control, measured under the target at 375. */
+  .rx-walk-next {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  /* The same rule, applied to the controls it had never reached. Measured at
+     375 before this: the menu button rendered 38px, the brand link 33px and the
+     two social icons 34px — all real controls, all under the target this
+     project holds every other mobile control to. The brand keeps its drawn
+     wordmark and gains the height around it rather than growing the mark. */
+  .rx-burger { width: 44px; height: 44px; }
+  .rx-footer-social a { width: 44px; height: 44px; }
+  .rx-header-inner > a[aria-label] {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+}

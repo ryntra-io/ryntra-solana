@@ -1,0 +1,183 @@
+{
+  "capturedAt": "2026-08-23T12:22:55Z",
+  "note": "Public Binance REST market data captured by the RYN-BIN-AOS-001 read-only discovery probe. The Binance MCP Server states its tools are \"the same endpoints as the Binance REST API, exposed as individual callable tools\"; these payloads are REST-verified and MCP-UNVERIFIED.",
+  "ticker": {
+    "endpoint": "GET https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT",
+    "httpStatus": 200,
+    "usedWeight1m": 2,
+    "body": {
+      "symbol": "BTCUSDT",
+      "priceChange": "-172.01000000",
+      "priceChangePercent": "-0.223",
+      "weightedAvgPrice": "76804.75631793",
+      "prevClosePrice": "77284.00000000",
+      "lastPrice": "77112.00000000",
+      "lastQty": "0.00234000",
+      "bidPrice": "77112.00000000",
+      "bidQty": "0.00818000",
+      "askPrice": "77112.01000000",
+      "askQty": "4.49167000",
+      "openPrice": "77284.01000000",
+      "highPrice": "77547.96000000",
+      "lowPrice": "75545.67000000",
+      "volume": "14159.85747000",
+      "quoteVolume": "1087544402.48001810",
+      "openTime": 1787401375003,
+      "closeTime": 1787487775003,
+      "firstId": 6602283802,
+      "lastId": 6605308690,
+      "count": 3024889
+    }
+  },
+  "orderBook": {
+    "endpoint": "GET https://api.binance.com/api/v3/depth?symbol=BTCUSDT&limit=5",
+    "httpStatus": 200,
+    "usedWeight1m": 7,
+    "body": {
+      "lastUpdateId": 98979820731,
+      "bids": [
+        [
+          "77112.00000000",
+          "0.00818000"
+        ],
+        [
+          "77111.99000000",
+          "0.00118000"
+        ],
+        [
+          "77111.98000000",
+          "0.00013000"
+        ],
+        [
+          "77111.63000000",
+          "0.00014000"
+        ],
+        [
+          "77111.62000000",
+          "0.00007000"
+        ]
+      ],
+      "asks": [
+        [
+          "77112.01000000",
+          "4.49100000"
+        ],
+        [
+          "77112.02000000",
+          "0.00027000"
+        ],
+        [
+          "77112.03000000",
+          "0.00013000"
+        ],
+        [
+          "77112.64000000",
+          "0.00014000"
+        ],
+        [
+          "77112.65000000",
+          "0.14706000"
+        ]
+      ]
+    }
+  },
+  "candles": {
+    "endpoint": "GET https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=3",
+    "httpStatus": 200,
+    "usedWeight1m": 9,
+    "body": [
+      [
+        1787479200000,
+        "76549.99000000",
+        "76924.29000000",
+        "76542.00000000",
+        "76790.35000000",
+        "533.71157000",
+        1787482799999,
+        "40970225.80233980",
+        133177,
+        "317.02425000",
+        "24333484.32357520",
+        "0"
+      ],
+      [
+        1787482800000,
+        "76790.35000000",
+        "77400.00000000",
+        "76744.94000000",
+        "77311.02000000",
+        "784.82342000",
+        1787486399999,
+        "60567967.17207120",
+        193660,
+        "470.99708000",
+        "36349813.22362360",
+        "0"
+      ],
+      [
+        1787486400000,
+        "77311.02000000",
+        "77311.99000000",
+        "76975.63000000",
+        "77112.01000000",
+        "296.46914000",
+        1787489999999,
+        "22853295.32661240",
+        46029,
+        "87.41426000",
+        "6741126.43583720",
+        "0"
+      ]
+    ]
+  },
+  "funding": {
+    "endpoint": "GET https://fapi.binance.com/fapi/v1/premiumIndex?symbol=BTCUSDT",
+    "httpStatus": 200,
+    "usedWeight1m": 1,
+    "body": {
+      "symbol": "BTCUSDT",
+      "markPrice": "77108.90753064",
+      "indexPrice": "77105.42065217",
+      "estimatedSettlePrice": "77177.62390205",
+      "lastFundingRate": "0.00010000",
+      "interestRate": "0.00010000",
+      "nextFundingTime": 1787500800000,
+      "time": 1787487776000
+    }
+  },
+  "fundingHistory": {
+    "endpoint": "GET https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&limit=2",
+    "httpStatus": 200,
+    "body": [
+      {
+        "symbol": "BTCUSDT",
+        "fundingTime": 1787443200000,
+        "fundingRate": "0.00010000",
+        "markPrice": "77084.01150675",
+        "rateType": "Regular"
+      },
+      {
+        "symbol": "BTCUSDT",
+        "fundingTime": 1787472000000,
+        "fundingRate": "0.00010000",
+        "markPrice": "76015.82505072",
+        "rateType": "Regular"
+      }
+    ]
+  },
+  "serverTime": {
+    "endpoint": "GET https://api.binance.com/api/v3/time",
+    "httpStatus": 200,
+    "body": {
+      "serverTime": 1787487777093
+    }
+  },
+  "equityMarketDataUnauthenticated": {
+    "endpoint": "GET https://api.binance.com/sapi/v1/equity/market/exchangeInfo",
+    "httpStatus": 400,
+    "body": {
+      "code": -2014,
+      "msg": "API-key format invalid."
+    }
+  }
+}

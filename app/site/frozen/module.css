@@ -1,0 +1,521 @@
+/*
+ * The module layer: a numbered step and a ledger of stated facts.
+ *
+ * `/developers` describes the kernel as eight steps, each with what it takes,
+ * what it creates, who is accountable and what it must never do. Those four
+ * are a definition list, and without these rules they rendered as bare
+ * alternating lines with no columns and no hierarchy — the founder's screenshot
+ * of it is why this file exists. The step bar rendered the same way: numbers
+ * welded to labels, chips crammed against them, wrapping mid-row.
+ *
+ * The lesson is recorded rather than just fixed: the class inventory for a
+ * migrating page has to include the components it *renders*, not only the
+ * classes its own file mentions. `parts.tsx` brings its own vocabulary.
+ */
+
+/* ── the step bar ─────────────────────────────────────────────────────────── */
+
+.rx-circuit {
+  display: grid;
+  gap: var(--ry-s5);
+  margin-top: var(--ry-s5);
+}
+
+.rx-stages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s2);
+}
+
+.rx-stage {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s3);
+  min-height: 44px;
+  padding: var(--ry-s2) var(--ry-s4);
+  border-radius: var(--ry-r-btn-sm);
+  border: 1px solid var(--ry-border);
+  background: var(--ry-card);
+  color: var(--ry-text);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  cursor: pointer;
+  transition: background-color 140ms ease, border-color 140ms ease;
+}
+
+.rx-stage:hover {
+  background: var(--ry-hover);
+  border-color: var(--ry-border-strong);
+}
+
+.rx-stage:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+}
+
+.rx-stage[aria-pressed="true"],
+.rx-stage[aria-current="true"] {
+  border-color: var(--ry-iris);
+  background: var(--ry-st-live-bg);
+}
+
+/* The number is a place marker beside the label, not welded to it. */
+.rx-stage-n {
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-accent);
+}
+
+/* ── one step ─────────────────────────────────────────────────────────────── */
+
+.rx-panel {
+  display: grid;
+  gap: var(--ry-s4);
+  padding: var(--ry-s6);
+  border-radius: var(--ry-r-landing);
+  background: var(--ry-card);
+  border: 1px solid var(--ry-border);
+}
+
+.rx-panel-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ry-s3) var(--ry-s4);
+  padding-bottom: var(--ry-s4);
+  border-bottom: 1px solid var(--ry-border);
+}
+
+/* ── the ledger ─────────────────────────────────────────────────────────── */
+
+/*
+ * Takes · Creates · Accountable · Never. Two columns so the label reads as a
+ * label and the statement reads as a statement; stacked bare lines made the
+ * two indistinguishable, which is exactly what the screenshot showed.
+ */
+.rx-fact,
+.rx-ledger-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) minmax(0, 3fr);
+  gap: var(--ry-s3) var(--ry-s5);
+  align-items: baseline;
+  padding-block: var(--ry-s3);
+  border-top: 1px solid var(--ry-border);
+}
+
+.rx-fact > dt,
+.rx-ledger-row dt {
+  font-size: var(--ry-fs-dense);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ry-muted);
+  margin: 0;
+}
+
+.rx-fact > dd,
+.rx-ledger-row dd {
+  font-size: var(--ry-fs-body);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-text);
+  margin: 0;
+}
+
+/* ── containers ───────────────────────────────────────────────────────────── */
+
+.rx-facts {
+  display: grid;
+  margin: 0;
+}
+
+/* A refusal is a boundary, stated. It is not a risk, so it takes no risk
+   colour — only the muted rule that says the sentence is a limit. */
+.rx-never > dd {
+  color: var(--ry-muted);
+}
+
+.rx-group {
+  display: grid;
+  gap: var(--ry-s5);
+}
+
+.rx-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--ry-s3) var(--ry-s4);
+}
+
+.rx-paper {
+  padding: var(--ry-s6);
+  border-radius: var(--ry-r-landing);
+  background: var(--ry-sidebar);
+  border: 1px solid var(--ry-border);
+}
+
+/* The legacy reveal hook. Migrated surfaces do not animate on scroll, and an
+   element that stayed at opacity 0 waiting for a script that no longer runs
+   would simply be missing. */
+.rx-reveal {
+  opacity: 1;
+}
+
+@media (max-width: 900px) {
+  .rx-fact,
+  .rx-ledger-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--ry-s1);
+  }
+
+  .rx-panel {
+    padding: var(--ry-s5);
+  }
+}
+
+/* ── the directory ────────────────────────────────────────────────────────── */
+
+/*
+ * Two shapes, deliberately different, because they answer different questions.
+ *
+ * A workspace is a door: few of them, each one a decision to go somewhere, so
+ * it gets area, a name you can read across the room and one status word. A
+ * registered direction is a fact on a list: eleven of them, read by scanning,
+ * so it gets a dense row and no card chrome at all.
+ *
+ * The Workspace Map had both as the same card, and eleven identical cards after
+ * six identical cards is what made the page read as one undifferentiated wall
+ * — the founder's word for it was «портянка». Same content, same registry
+ * bindings, same sentences; the difference is entirely which shape carries it.
+ */
+
+.rx-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(268px, 1fr));
+  gap: var(--ry-s4);
+  margin-top: var(--ry-s6);
+}
+
+.rx-tile {
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  gap: var(--ry-s3);
+  padding: var(--ry-s5);
+  border-radius: var(--ry-r-landing);
+  border: 1px solid var(--ry-border);
+  background: var(--ry-card);
+  color: inherit;
+  text-decoration: none;
+  /* Exponential ease-out from an already-visible default. */
+  transition:
+    border-color 220ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.rx-tile:hover {
+  border-color: var(--ry-border-strong);
+  background: var(--ry-elevated);
+}
+
+.rx-tile:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+}
+
+.rx-tile-top {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: var(--ry-s3);
+}
+
+.rx-tile-name {
+  font-family: var(--ry-font-display);
+  font-weight: 600;
+  font-size: var(--ry-fs-h3);
+  line-height: var(--ry-lh-head);
+  letter-spacing: var(--ry-ls-head);
+  color: var(--ry-text);
+  margin: 0;
+}
+
+.rx-tile-note {
+  font-size: var(--ry-fs-dense);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+  margin: 0;
+}
+
+/* The environment is data about where you land, so it is mono like every other
+   number and identifier on this system — not mono as a costume. */
+.rx-tile-env {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+  letter-spacing: 0.02em;
+  color: var(--ry-accent);
+  margin: 0;
+}
+
+.rx-tile-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ry-s3);
+  padding-top: var(--ry-s3);
+  border-top: 1px solid var(--ry-border);
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+}
+
+/* One authored moment on the page: the arrow leaves before you do. */
+.rx-tile-go {
+  display: inline-flex;
+  color: var(--ry-accent);
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.rx-tile:hover .rx-tile-go {
+  transform: translateX(4px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rx-tile,
+  .rx-tile-go {
+    transition: none;
+  }
+
+  .rx-tile:hover .rx-tile-go {
+    transform: none;
+  }
+}
+
+/* ── registered directions ────────────────────────────────────────────────── */
+
+.rx-dir {
+  display: grid;
+  margin-top: var(--ry-s4);
+  border-top: 1px solid var(--ry-border);
+}
+
+.rx-dir-row {
+  display: grid;
+  grid-template-columns: minmax(210px, 1fr) minmax(0, 2.4fr);
+  gap: var(--ry-s3) var(--ry-s6);
+  padding-block: var(--ry-s4);
+  border-bottom: 1px solid var(--ry-border);
+}
+
+.rx-dir-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ry-s2) var(--ry-s3);
+  align-content: start;
+}
+
+.rx-dir-name {
+  font-family: var(--ry-font-display);
+  font-weight: 600;
+  font-size: var(--ry-fs-app);
+  line-height: var(--ry-lh-head);
+  color: var(--ry-text);
+  margin: 0;
+}
+
+.rx-dir-body {
+  display: grid;
+  gap: var(--ry-s2);
+  margin: 0;
+}
+
+.rx-dir-role {
+  font-size: var(--ry-fs-body);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-text);
+  margin: 0;
+}
+
+/* The gate is the boundary verbatim. It is quiet, never coloured: a limit is
+   not a risk, and painting it red would state a danger the registry does not. */
+.rx-dir-gate {
+  font-size: var(--ry-fs-dense);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+  margin: 0;
+}
+
+.rx-dir-open {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-accent);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+
+.rx-dir-open:hover {
+  border-bottom-color: currentColor;
+}
+
+.rx-dir-open:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+  border-radius: var(--ry-r-btn-sm);
+}
+
+@media (max-width: 860px) {
+  .rx-dir-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--ry-s2);
+  }
+}
+
+/* Groups stacked inside one section: chain packs, then venue adapters. The
+   section's own rhythm separates them; without this they inherit the group gap
+   and read as one continuous list under the first heading. */
+.rx-group--stacked {
+  margin-top: var(--ry-s8);
+}
+
+/* Where the row stacks, the open link is the row's action and has to be big
+   enough to hit: 23px is a link, not a target. */
+@media (max-width: 860px) {
+  .rx-dir-open {
+    min-height: 44px;
+    align-items: center;
+  }
+}
+
+/* ── the section plate, ported ─────────────────────────────────────────────── */
+
+/*
+ * `Section` in `app/site/parts.tsx` renders a bounded block with a header strip
+ * carrying its index, subject and state. Four pages still on the legacy chrome
+ * are built entirely out of it, so the frozen system has to speak the same
+ * class names or their migration stops being a stylesheet swap and becomes a
+ * markup rewrite — which is what loses facts.
+ *
+ * It is a translation, not a copy. The v1 plate was an instrument: a chamfered
+ * clip-path, cyan corner ticks and a light that sweeps across on hover. Quiet
+ * Intelligence has no chamfers, no glow outside the primary CTA and no cyan, so
+ * the same idea — this block is bounded, and it announces itself before you
+ * read a word — is carried by a 1px border, a radius and a quiet header strip.
+ */
+
+.rx-mod {
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-landing);
+  background: var(--ry-card);
+  overflow: hidden;
+}
+
+/* Corner ticks were v1 instrumentation. The markup keeps emitting them because
+   the component is shared with unmigrated pages; here they draw nothing. */
+.rx-mod-tick {
+  display: none;
+}
+
+.rx-mod-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ry-s2) var(--ry-s4);
+  padding: var(--ry-s3) var(--ry-s5);
+  border-bottom: 1px solid var(--ry-border);
+  background: var(--ry-sidebar);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ry-muted);
+}
+
+/* The index is a place marker, and it does not wear a diamond. */
+.rx-mod-n {
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-accent);
+}
+
+.rx-mod-subject {
+  color: var(--ry-text);
+}
+
+.rx-mod-meta {
+  margin-inline-start: auto;
+  letter-spacing: 0.08em;
+}
+
+.rx-mod-body {
+  padding: var(--ry-s7) var(--ry-s6);
+}
+
+/*
+ * Two shapes for one head, decided by what is in it.
+ *
+ * A heading with a qualifying paragraph is an editorial spread: statement left,
+ * qualification right, both halves occupied. A heading with a short factual note
+ * is a label beside a title and belongs on one baseline. The flex default above
+ * is that second case; this is the first, and `:has()` picks between them so no
+ * page has to carry a modifier class it would forget.
+ */
+.rx-head:has(> .rx-lead) {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+  gap: var(--ry-s4) var(--ry-s7);
+  align-items: end;
+  margin-bottom: var(--ry-s6);
+}
+
+.rx-head:has(> .rx-lead) > .rx-h2 {
+  grid-column: 1;
+}
+
+.rx-head:has(> .rx-lead) > .rx-lead {
+  grid-column: 2;
+  max-width: 46ch;
+  /* The stacked-rhythm rule in primitives adds space above a lead that follows
+     a heading; in this grid they are side by side and it would be a hole. */
+  margin-top: 0;
+}
+
+/* The legacy inline index row is replaced by the module bar. */
+.rx-head > .rx-index {
+  display: none;
+}
+
+/*
+ * `paper` switches a section onto the light evidence surface. On the frozen
+ * system that is the Mist band of the landing rhythm, so the class re-resolves
+ * the theme — see the selector list in `app/design/tokens.css` — and paints the
+ * ground it just resolved, exactly like `[data-ry-theme]` does.
+ */
+.rx-section.rx-paper {
+  background: var(--ry-bg);
+  color: var(--ry-text);
+  border: 0;
+  border-radius: 0;
+  padding-block: var(--ry-s9);
+}
+
+@media (max-width: 860px) {
+  .rx-head:has(> .rx-lead) {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .rx-head:has(> .rx-lead) > .rx-h2,
+  .rx-head:has(> .rx-lead) > .rx-lead {
+    grid-column: 1;
+  }
+
+  .rx-mod-body {
+    padding: var(--ry-s5) var(--ry-s4);
+  }
+}
+
+/* The two tick modifiers the shared component still emits. The base class hides
+   them; these exist so a class-inventory audit of a migrated page reports zero
+   undefined names rather than two that happen to be harmless. */
+.rx-mod-tick--tr,
+.rx-mod-tick--bl {
+  display: none;
+}

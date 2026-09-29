@@ -1,0 +1,178 @@
+/*
+ * The Ryntra Handbook, on the frozen Quiet Intelligence system.
+ *
+ * Mode is Read: one document, ten chapters, a rail that can be filtered. The
+ * shape is unchanged from the version this replaces — the rail's filter and
+ * scroll spy both find sections through `data-hb-sec`, and the numbered chapter
+ * heads are how a reader keeps their place in a long page — so nothing here
+ * moves a fact. What changes is the system underneath it.
+ *
+ * Midnight is the ground on purpose. This document is read beside the product,
+ * which is dark, and the landing hands the reader over from its own Midnight
+ * block; a light document would break that handover and re-light the room every
+ * time someone follows a link out of the app.
+ */
+
+/* ── the two columns ──────────────────────────────────────────────────────── */
+
+.rx-hb {
+  display: grid;
+  grid-template-columns: 232px minmax(0, 1fr);
+  gap: var(--ry-s8);
+  align-items: start;
+}
+
+.rx-hb-side {
+  position: sticky;
+  top: 96px;
+  align-self: start;
+  display: grid;
+  gap: var(--ry-s4);
+  /* No scroller. Ten entries and a search field fit any laptop, and a permanent
+     scrollbar down the side of an index looks unfinished — which is exactly how
+     it looked. */
+}
+
+.rx-hb-body {
+  min-width: 0;
+  display: grid;
+  gap: var(--ry-s9);
+}
+
+/* ── the rail ─────────────────────────────────────────────────────────────── */
+
+.rx-hb-search {
+  display: grid;
+  gap: var(--ry-s2);
+}
+
+/* The magnifier belongs inside the field. As a grid sibling it sat above the
+   input as a loose glyph, reading as broken markup rather than as an icon —
+   the kind of defect only looking at the page reports. */
+.rx-hb-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+}
+
+.rx-hb-field > svg {
+  position: absolute;
+  inset-inline-start: var(--ry-s3);
+  color: var(--ry-muted);
+  pointer-events: none;
+}
+
+.rx-hb-input {
+  width: 100%;
+  min-height: 44px;
+  padding-inline: var(--ry-s7) var(--ry-s3);
+  border-radius: var(--ry-r-btn-sm);
+  border: 1px solid var(--ry-border);
+  background: var(--ry-sidebar);
+  color: var(--ry-text);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-app);
+}
+
+.rx-hb-input::placeholder {
+  color: var(--ry-muted);
+}
+
+.rx-hb-input:focus-visible {
+  outline: none;
+  border-color: var(--ry-iris-deep);
+  box-shadow: var(--ry-focus);
+}
+
+.rx-hb-count {
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+}
+
+.rx-hb-nav {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rx-hb-nav a {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--ry-s2);
+  min-height: 44px;
+  padding-inline: var(--ry-s3);
+  border-radius: var(--ry-r-btn-sm);
+  border-inline-start: 2px solid transparent;
+  color: var(--ry-muted);
+  text-decoration: none;
+  font-size: var(--ry-fs-dense);
+  line-height: 1.3;
+  transition: color 140ms ease, background-color 140ms ease, border-color 140ms ease;
+}
+
+.rx-hb-nav a:hover {
+  background: var(--ry-hover);
+  color: var(--ry-text);
+}
+
+.rx-hb-nav a:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+}
+
+/* The scroll spy marks one entry. A 2px rule carries it — an accent that reads
+   at a glance without turning the rail into a second navigation. */
+.rx-hb-nav a[aria-current="true"],
+.rx-hb-nav a[data-current="true"] {
+  border-inline-start-color: var(--ry-iris);
+  background: var(--ry-st-live-bg);
+  color: var(--ry-text);
+}
+
+.rx-hb-nav a span:first-child {
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-muted);
+}
+
+.rx-hb-empty {
+  padding: var(--ry-s3);
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+}
+
+/* ── responsive ───────────────────────────────────────────────────────────── */
+
+@media (max-width: 900px) {
+  /*
+   * The rail stops being a rail. A sticky index above a document reads as a
+   * table of contents, which is what a phone needs; a 232px column beside
+   * 375px of text is not a choice worth offering.
+   */
+  .rx-hb {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--ry-s7);
+  }
+
+  .rx-hb-side {
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .rx-hb-nav {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    display: grid;
+  }
+
+  .rx-hb-body {
+    gap: var(--ry-s8);
+  }
+}

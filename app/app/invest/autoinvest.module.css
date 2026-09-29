@@ -1,0 +1,376 @@
+/*
+ * «Автоінвест» — one block on Home and in Portfolio (canon v5.1 §4.1, v5.3
+ * В29; RYN-INVEST-SIMPLE-001 session 4, RYN-NAV-V5-001 session 2): the
+ * month's budget as its own line, the rules with a switch each, «Додати
+ * правило», and the budget's line inside a rule's sheet. Tokens only; the
+ * orange belongs to «Купити» — nothing here wears it.
+ */
+
+.panel {
+  display: grid;
+  gap: var(--ry-s3);
+  padding: var(--ry-s4);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+}
+
+.line {
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+}
+
+/* A quiet action written as words: never orange, never a second button's weight. */
+.textButton {
+  justify-self: start;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: var(--ry-fs-dense);
+  font-weight: 500;
+  color: var(--ry-text);
+  text-decoration: underline;
+  text-decoration-color: var(--ry-border-strong);
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.textButton:hover:not(:disabled) {
+  text-decoration-color: var(--ry-text);
+}
+
+.textButton:disabled {
+  color: var(--ry-muted);
+  cursor: default;
+}
+
+/* ── The month's budget: its own line, never the rule's sum ────────────── */
+
+.budget {
+  display: grid;
+  gap: var(--ry-s2);
+}
+
+/* In the block: a line above the rules, apart from them. */
+.budget[data-variant="block"] {
+  padding-bottom: var(--ry-s3);
+  border-bottom: 1px solid var(--ry-border);
+}
+
+/* In a rule's sheet: a framed row under the rule's own fields. */
+.budget[data-variant="sheet"] {
+  padding: var(--ry-s1) var(--ry-s3) var(--ry-s2);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-card);
+}
+
+.budget[data-variant="sheet"][data-state="unset"] {
+  padding-bottom: var(--ry-s1);
+}
+
+.budgetHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0 var(--ry-s3);
+}
+
+.budgetLine {
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-muted);
+}
+
+.budgetLine b {
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.budget[data-state="unset"] .budgetLine {
+  color: var(--ry-text);
+}
+
+/* The month's bar: the text colour on a quiet track — the orange belongs to «Купити». */
+.bar {
+  height: 8px;
+  overflow: hidden;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-elevated);
+}
+
+.bar > span {
+  display: block;
+  height: 100%;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-text);
+  transition: width var(--rt-duration-fast) var(--rt-ease);
+}
+
+.budget[data-state="spent"] .bar > span {
+  background: var(--ry-caution);
+}
+
+.budgetHeld {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-caution);
+}
+
+/* ── The rules ─────────────────────────────────────────────────────────── */
+
+.rules {
+  display: grid;
+  gap: var(--ry-s2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rule {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--ry-s3);
+  min-height: 64px;
+  padding: var(--ry-s2) var(--ry-s3) var(--ry-s2) var(--ry-s2);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-card);
+}
+
+/* An open reminder: a line of the brand's colour, never a second orange button. */
+.rule[data-state="due"] {
+  border-color: var(--ry-brand-line);
+  box-shadow: inset 3px 0 0 var(--ry-accent);
+}
+
+.ruleMain {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--ry-s3);
+  min-width: 0;
+  padding: var(--ry-s1);
+  border-radius: var(--ry-r-btn);
+  color: var(--ry-text);
+  text-decoration: none;
+}
+
+.ruleMain:hover .ruleName {
+  text-decoration: underline;
+  text-decoration-color: var(--ry-border-strong);
+  text-underline-offset: 3px;
+}
+
+.ruleMain:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+}
+
+.ruleText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ruleName {
+  overflow: hidden;
+  font-size: var(--ry-fs-copy);
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.ruleSub,
+.ruleState {
+  overflow: hidden;
+  font-size: var(--ry-fs-data);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--ry-muted);
+}
+
+/* The sum, the schedule and the state are read whole: they wrap rather than cut «on the 1st at 10:00». */
+.ruleSub,
+.ruleState {
+  white-space: normal;
+  text-wrap: pretty;
+}
+
+.rule[data-state="due"] .ruleState {
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.rule[data-state="held"] .ruleState {
+  color: var(--ry-caution);
+}
+
+/* The price condition holds the purchase back (canon v5.5 В37): a wait, said in the caution colour — nothing to buy until the rule judges it met. */
+.rule[data-state="deferred"] .ruleState {
+  color: var(--ry-caution);
+}
+
+.rule[data-state="paused"] .ruleName {
+  color: var(--ry-muted);
+}
+
+/* The rule's switch: a 44px target around a 44×26 track — on in the confirmed green, off quiet. */
+.switch {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 48px;
+  min-width: 48px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--ry-r-btn);
+  background: transparent;
+  cursor: pointer;
+}
+
+.track {
+  position: relative;
+  display: block;
+  width: 44px;
+  height: 26px;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-border-strong);
+  transition: background-color var(--rt-duration-fast) var(--rt-ease);
+}
+
+.switch[aria-checked="true"] .track {
+  background: var(--ry-verified);
+}
+
+.switch:focus-visible {
+  outline: none;
+}
+
+.switch:focus-visible .track {
+  box-shadow: var(--ry-focus);
+}
+
+.switch:disabled {
+  opacity: 0.55;
+  cursor: progress;
+}
+
+.knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--ry-r-pill);
+  /* White in both themes, the way a switch's knob reads on any track. */
+  background: var(--ry-on-iris);
+  box-shadow: var(--ry-shadow-sm);
+  transition: transform var(--rt-duration-fast) var(--rt-ease);
+}
+
+.switch[aria-checked="true"] .knob {
+  transform: translateX(18px);
+}
+
+.add {
+  display: inline-flex;
+  justify-self: start;
+  align-items: center;
+  gap: var(--ry-s2);
+  min-height: 44px;
+  padding: 0 var(--ry-s3);
+  border: 1px dashed var(--ry-border-strong);
+  border-radius: var(--ry-r-btn);
+  background: transparent;
+  font: inherit;
+  font-size: var(--ry-fs-dense);
+  font-weight: 500;
+  color: var(--ry-text);
+  cursor: pointer;
+}
+
+.add:hover {
+  border-style: solid;
+  background: var(--ry-elevated);
+}
+
+/* «Для якої компанії?» — what the wallet owns, then the popular companies. */
+.picks {
+  display: grid;
+  gap: var(--ry-s1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pickGroup {
+  margin: var(--ry-s2) 0 var(--ry-s1);
+  font-size: var(--ry-fs-data);
+  font-weight: 500;
+  color: var(--ry-muted);
+}
+
+.pick {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--ry-s3);
+  width: 100%;
+  min-height: 52px;
+  padding: var(--ry-s2) var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-card);
+  font: inherit;
+  color: var(--ry-text);
+  text-align: start;
+  cursor: pointer;
+}
+
+.pick:hover {
+  border-color: var(--ry-border-strong);
+  background: var(--ry-elevated);
+}
+
+.pick:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+}
+
+.pickName {
+  overflow: hidden;
+  font-size: var(--ry-fs-copy);
+  font-weight: 500;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar > span,
+  .track,
+  .knob {
+    transition: none;
+  }
+}
+
+/* Home's right column (RYN-WIDTH-PREMIUM-001): a rule in one line — the sum
+   and the next purchase — so the column stays as short as the main one. */
+.rule[data-compact="true"] {
+  min-height: 56px;
+  padding-block: var(--ry-s1);
+}
+
+.rule[data-compact="true"] .ruleState {
+  white-space: nowrap;
+}

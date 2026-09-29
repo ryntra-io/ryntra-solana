@@ -1,0 +1,49 @@
+{
+  "name": "@ryntra/action-evidence-mcp",
+  "private": true,
+  "version": "0.2.0",
+  "type": "module",
+  "description": "Local stdio MCP server for bounded Ryntra action-evidence read and preview tools.",
+  "keywords": [
+    "ryntra",
+    "action-evidence",
+    "evidence",
+    "mcp",
+    "model-context-protocol",
+    "read-only"
+  ],
+  "license": "Apache-2.0",
+  "author": "Dmytro Plavutskyi",
+  "homepage": "https://ryntra.io/developers/agent-control",
+  "bugs": {
+    "url": "https://github.com/ryntra-io/ryntra-agent-control/issues"
+  },
+  "engines": {
+    "node": ">=22.18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ryntra-io/ryntra-agent-control.git",
+    "directory": "packages/agent-control-mcp"
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "exports": {
+    ".": "./src/server.ts"
+  },
+  "types": "./src/server.ts",
+  "sideEffects": false,
+  "dependencies": {
+    "@modelcontextprotocol/server": "2.0.0",
+    "@ryntra/action-evidence-sdk": "file:../agent-control-sdk",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/client": "2.0.0"
+  }
+}

@@ -1,0 +1,808 @@
+/*
+ * «Простий»'s Home and Markets (canon v5.0 §2–§4; RYN-INVEST-SIMPLE-001,
+ * session 1). Drawn for 390px first (В20), then widened: a company by its
+ * logo and name, a price in dollars, the day's change, one orange action a
+ * screen. Tokens only (DESIGN.md → app/design/tokens.css): big figures in
+ * Geist with tabular numerals, no mono, no capitals, no word under 13px.
+ */
+
+.page {
+  display: grid;
+  gap: var(--ry-s6);
+  width: 100%;
+  max-width: 1200px;
+  min-width: 0;
+}
+
+/* ── The head: a guest's promise, or a wallet's balance ──────────────── */
+
+.hero {
+  display: grid;
+  gap: var(--ry-s3);
+  padding: var(--ry-s5);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+  box-shadow: var(--ry-shadow-sm);
+}
+
+.heroTitle {
+  margin: 0;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-key);
+  font-weight: 600;
+  line-height: var(--ry-lh-head);
+  letter-spacing: var(--ry-ls-head);
+  color: var(--ry-text);
+  text-wrap: balance;
+}
+
+.heroLine {
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+}
+
+.balanceLabel {
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  color: var(--ry-muted);
+}
+
+.balance {
+  margin: 0;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-data-xl);
+  font-weight: 600;
+  line-height: var(--ry-lh-tight);
+  letter-spacing: var(--ry-ls-display);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ry-s2);
+  margin-top: var(--ry-s2);
+}
+
+/* On a phone the actions share the width, so the orange one is a thumb's
+   reach wide rather than a word wide. */
+.actions > * {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+@media (min-width: 720px) {
+  .actions > * {
+    flex: 0 0 auto;
+    min-width: 168px;
+  }
+}
+
+.quiet {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  min-height: 44px;
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+  text-decoration: none;
+}
+
+.quiet:hover {
+  color: var(--ry-text);
+}
+
+/* ── Sections ─────────────────────────────────────────────────────────── */
+
+.section {
+  display: grid;
+  gap: var(--ry-s3);
+  min-width: 0;
+}
+
+.sectionHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--ry-s1) var(--ry-s3);
+}
+
+.sectionTitles {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: var(--ry-fs-section);
+  font-weight: 600;
+  line-height: var(--ry-lh-head);
+  color: var(--ry-text);
+}
+
+.sectionTitle span {
+  font-weight: 500;
+  color: var(--ry-muted);
+}
+
+.sectionNote {
+  margin: 0;
+  font-size: var(--ry-fs-data);
+  color: var(--ry-text-muted);
+}
+
+/* A second line under a list's head — the private shelf's valuation time. */
+.sectionNoteLine {
+  display: block;
+}
+
+.sectionLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s1);
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  font-size: var(--ry-fs-dense);
+  font-weight: 500;
+  color: var(--ry-muted);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.sectionLink:hover {
+  color: var(--ry-text);
+}
+
+.more {
+  justify-self: center;
+}
+
+.empty {
+  margin: 0;
+  padding: var(--ry-s4) 0;
+  font-size: var(--ry-fs-copy);
+  color: var(--ry-muted);
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ry-s3);
+  padding: var(--ry-s4);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+  font-size: var(--ry-fs-copy);
+  color: var(--ry-muted);
+}
+
+.status p {
+  margin: 0;
+  flex: 1 1 220px;
+}
+
+.updating {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  font-size: var(--ry-fs-data);
+  color: var(--ry-muted);
+}
+
+.updating::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-muted);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+/* ── Search ───────────────────────────────────────────────────────────── */
+
+.search {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.searchIcon {
+  position: absolute;
+  inset-inline-start: var(--ry-s4);
+  color: var(--ry-muted);
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 var(--ry-s4) 0 calc(var(--ry-s4) + 28px);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-card);
+  color: var(--ry-text);
+  font: inherit;
+  /* Sixteen pixels: a phone zooms into a smaller field and never back. */
+  font-size: var(--ry-fs-app);
+}
+
+.searchInput:hover {
+  border-color: var(--ry-border-strong);
+}
+
+/* ── Tiles: Home's popular companies ──────────────────────────────────── */
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ry-s3);
+}
+
+@media (min-width: 720px) {
+  .tiles {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.tile {
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  gap: var(--ry-s2);
+  min-width: 0;
+  min-height: 136px;
+  padding: var(--ry-s4);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+  color: var(--ry-text);
+  text-decoration: none;
+  transition: border-color var(--rt-duration-fast) var(--rt-ease), background-color var(--rt-duration-fast) var(--rt-ease);
+}
+
+a.tile:hover,
+a.row:hover {
+  border-color: var(--ry-border-strong);
+  background: var(--ry-elevated);
+}
+
+.logo,
+.rowLogo {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  overflow: hidden;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-elevated);
+  object-fit: cover;
+  font-size: var(--ry-fs-data);
+  font-weight: 600;
+  color: var(--ry-muted);
+}
+
+.logo {
+  width: 40px;
+  height: 40px;
+}
+
+.rowLogo {
+  width: 36px;
+  height: 36px;
+}
+
+.tileName {
+  overflow: hidden;
+  font-size: var(--ry-fs-copy);
+  font-weight: 500;
+  line-height: var(--ry-lh-head);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.tileFigures {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  align-self: end;
+  gap: var(--ry-s1) var(--ry-s2);
+}
+
+.price {
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-value);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--ry-text);
+}
+
+.change {
+  font-size: var(--ry-fs-data);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.change[data-tone="up"] {
+  color: var(--ry-verified);
+}
+
+.change[data-tone="down"] {
+  color: var(--ry-risk);
+}
+
+.change[data-tone="flat"] {
+  color: var(--ry-muted);
+}
+
+/* ── Rows: Markets, and what a wallet owns ────────────────────────────── */
+
+.rows {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ry-s2);
+}
+
+@media (min-width: 760px) {
+  .rows {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1180px) {
+  .rows {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* What a wallet owns: a handful of rows, so two columns at most — three
+   would leave a lone row hanging under a short list. */
+@media (min-width: 1180px) {
+  .rowsPair {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--ry-s3);
+  min-width: 0;
+  min-height: 64px;
+  padding: var(--ry-s3) var(--ry-s4);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+  color: var(--ry-text);
+  text-decoration: none;
+  transition: border-color var(--rt-duration-fast) var(--rt-ease), background-color var(--rt-duration-fast) var(--rt-ease);
+}
+
+.rowName {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.rowTitle {
+  overflow: hidden;
+  font-size: var(--ry-fs-copy);
+  font-weight: 500;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.rowSub {
+  overflow: hidden;
+  font-size: var(--ry-fs-data);
+  color: var(--ry-muted);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+}
+
+.rowMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  min-width: 0;
+}
+
+/* A private company's row (canon v5.2 В27): the name and «Це не акція» on one
+   line, its one number under them — whole, wrapping on a narrow phone rather
+   than cut, and without a tone of good or bad. */
+.rowTitleLine {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  min-width: 0;
+}
+
+.rowTitleLine .rowTitle {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.rowPremium {
+  font-size: var(--ry-fs-data);
+  line-height: 1.35;
+  color: var(--ry-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.note {
+  display: inline-flex;
+  flex: 0 0 auto;
+  width: fit-content;
+  padding: 0 var(--ry-s2);
+  border: 1px solid color-mix(in srgb, var(--ry-caution) 45%, transparent);
+  border-radius: var(--ry-r-pill);
+  font-size: var(--ry-fs-data);
+  line-height: 1.6;
+  color: var(--ry-caution);
+  white-space: nowrap;
+}
+
+.rowFigures {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+}
+
+/* Markets' «Для досвідчених»: a tool is a row of the same shape, its glyph in
+   the logo's place and its one line allowed to wrap rather than be cut. */
+.toolIcon {
+  color: var(--ry-text);
+}
+
+.toolLine {
+  font-size: var(--ry-fs-data);
+  line-height: var(--ry-lh-head);
+  color: var(--ry-muted);
+}
+
+.toolArrow {
+  color: var(--ry-muted);
+}
+
+/* ── A place's own head: a title and one line under it ──────────────── */
+
+.placeHead {
+  display: grid;
+  gap: var(--ry-s2);
+}
+
+.heroLead {
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-text);
+}
+
+/* ── Markets: the title, the tabs, «Для досвідчених» (canon v5.4 В33) ── */
+
+.marketsHead {
+  display: grid;
+  gap: var(--ry-s4);
+  min-width: 0;
+}
+
+.marketsBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ry-s3) var(--ry-s5);
+  min-width: 0;
+}
+
+/* The tabs scroll sideways on a phone rather than wrap into two rows: one
+   line of words a thumb slides, the current one filled. */
+.tabs {
+  display: flex;
+  gap: var(--ry-s1);
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 2px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-card);
+}
+
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.tab {
+  flex: none;
+  min-height: 36px;
+  padding: 0 var(--ry-s4);
+  border: 0;
+  border-radius: var(--ry-r-pill);
+  background: transparent;
+  color: var(--ry-muted);
+  font: inherit;
+  font-size: var(--ry-fs-dense);
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--rt-duration-fast) var(--rt-ease), color var(--rt-duration-fast) var(--rt-ease);
+}
+
+.tab:hover {
+  color: var(--ry-text);
+}
+
+.tab[aria-selected="true"] {
+  background: var(--ry-hover);
+  color: var(--ry-text);
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px var(--ry-border-strong);
+}
+
+.tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ry-s2);
+  min-width: 0;
+}
+
+.toolsLabel {
+  font-size: var(--ry-fs-data);
+  font-weight: 500;
+  color: var(--ry-muted);
+  white-space: nowrap;
+}
+
+.toolChip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  min-height: 36px;
+  padding: 0 var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-pill);
+  background: transparent;
+  color: var(--ry-text);
+  font-size: var(--ry-fs-dense);
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: border-color var(--rt-duration-fast) var(--rt-ease), background-color var(--rt-duration-fast) var(--rt-ease);
+}
+
+.toolChip:hover {
+  border-color: var(--ry-border-strong);
+  background: var(--ry-hover);
+}
+
+.toolChipIcon {
+  display: inline-flex;
+  color: var(--ry-muted);
+}
+
+/*
+ * The board: every list of the three streams in one column, in the order the
+ * tab decides. The slots around each stream take no box of their own
+ * (`display: contents`), so the lists — not the streams — are what is
+ * ordered: in «Усі» the companies, then crypto, then the private companies,
+ * the memes and the dollars, so crypto stands on the first screen.
+ */
+.board {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ry-s6);
+  min-width: 0;
+}
+
+.board .slot,
+.board .copy,
+.board .live,
+.board .fallback {
+  display: contents;
+}
+
+.board .slot[data-copy="true"] .fallback,
+.board .slot:has(.copy) .fallback,
+.board .slot:has(.live) .copy {
+  display: none;
+}
+
+.board [data-section="companies"] {
+  order: 1;
+}
+
+.board [data-section="crypto"] {
+  order: 2;
+}
+
+.board [data-section="private"] {
+  order: 3;
+}
+
+.board [data-section="memes"] {
+  order: 4;
+}
+
+.board [data-section="dollars"] {
+  order: 5;
+}
+
+/* ── Width (RYN-WIDTH-PREMIUM-001): Markets on the full width ─────────── */
+
+/* The page reaches the edge of a wide screen; the cap keeps a line of
+   four readable on a very wide one. */
+.wide {
+  max-width: 1760px;
+}
+
+/* The price is the figure a person came for: bigger on the board. */
+.board .price {
+  font-size: var(--ry-fs-data-m);
+}
+
+@media (min-width: 1600px) {
+  .board .rows {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* «Усі» carries eight companies and eight coins, four private companies and
+   four memes — two rows of four; below four columns, six and three. */
+@media (max-width: 1599px) {
+  .board[data-tab="all"] [data-section="companies"] .rows > :nth-child(n + 7),
+  .board[data-tab="all"] [data-section="crypto"] .rows > :nth-child(n + 7),
+  .board[data-tab="all"] [data-section="private"] .rows > :nth-child(n + 4),
+  .board[data-tab="all"] [data-section="memes"] .rows > :nth-child(n + 4) {
+    display: none;
+  }
+}
+
+/* «Усі» on a phone: three of each, so the next list is one short scroll away. */
+@media (max-width: 759px) {
+  .board[data-tab="all"] .rows > :nth-child(n + 4) {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .marketsBar {
+    align-items: stretch;
+    flex-direction: column;
+    gap: var(--ry-s3);
+  }
+
+  /* The last tab fades at the edge, so a thumb knows the row goes on. */
+  .tabs {
+    align-self: stretch;
+    -webkit-mask-image: linear-gradient(to right, black calc(100% - 28px), transparent);
+    mask-image: linear-gradient(to right, black calc(100% - 28px), transparent);
+  }
+
+  /* «Для досвідчених» over its three tools in one row, not a label wrapped between them. */
+  .tools {
+    display: grid;
+    grid-template-columns: repeat(3, max-content);
+    gap: var(--ry-s2);
+  }
+
+  .toolsLabel {
+    grid-column: 1 / -1;
+  }
+
+  .toolChip {
+    min-height: 40px;
+  }
+}
+
+/* ── The shape of what is coming ──────────────────────────────────────── */
+
+/* A shelf's place: the browser's copy stands above the streaming boundary
+   and its skeleton steps aside (shelf-slot.tsx). The live list arrives as
+   server HTML before React hydrates it, so the copy steps aside by CSS the
+   moment the live list is in the page — no frame shows both. */
+.slot {
+  display: grid;
+  gap: var(--ry-s3);
+  min-width: 0;
+}
+
+.slotWide {
+  gap: var(--ry-s6);
+}
+
+.slot[data-copy="true"] .fallback,
+.slot:has(.copy) .fallback,
+.slot:has(.live) .copy {
+  display: none;
+}
+
+.fallback,
+.copy,
+.live {
+  display: grid;
+  gap: inherit;
+  min-width: 0;
+}
+
+.ghost {
+  pointer-events: none;
+}
+
+.ghostLogo,
+.ghostLine,
+.ghostLineShort {
+  display: block;
+  background: var(--ry-elevated);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.ghostLogo {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--ry-r-pill);
+}
+
+.ghostLine,
+.ghostLineShort {
+  height: 12px;
+  border-radius: var(--ry-r-chip);
+}
+
+.ghostLine {
+  width: 72%;
+}
+
+.ghostLineShort {
+  width: 44%;
+  justify-self: end;
+}
+
+.tile .ghostLineShort {
+  justify-self: start;
+  align-self: end;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ghostLogo,
+  .ghostLine,
+  .ghostLineShort,
+  .updating::before {
+    animation: none;
+  }
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

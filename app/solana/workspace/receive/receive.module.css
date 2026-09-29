@@ -1,0 +1,297 @@
+/* Receive. Two jobs, one card: an address to be paid, or a request for an
+   exact amount. The QR is the largest thing on the screen because on a phone
+   it is the whole interaction. */
+
+.card {
+  display: grid;
+  gap: var(--rt-space-md);
+}
+
+
+
+
+
+.error {
+  margin: 0;
+  font-size: var(--fs-13);
+  line-height: 1.5;
+  color: var(--danger);
+}
+
+
+
+/* ------------------------------------------------------------------ modes */
+
+.modes {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--panel-2);
+  justify-self: start;
+}
+
+.mode {
+  min-height: 36px;
+  padding: 0 var(--rt-space-sm);
+  border: 0;
+  border-radius: var(--radius-xs);
+  background: transparent;
+  color: var(--text-dim);
+  font-size: var(--fs-13);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mode[data-active="true"] {
+  background: var(--surface-elevated);
+  color: var(--brand-fg);
+  box-shadow: var(--shadow-sm), inset 0 0 0 1px var(--brand-soft);
+}
+
+/* ------------------------------------------------------------------- body */
+
+.body {
+  display: grid;
+  grid-template-columns: minmax(0, 260px) minmax(0, 1fr);
+  gap: var(--rt-space-lg);
+  align-items: start;
+}
+
+@media (max-width: 720px) {
+  .body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.qrWrap {
+  display: grid;
+  place-items: center;
+  padding: var(--rt-space-md);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  /* White behind the code regardless of theme: a scanner needs the contrast
+     the format was designed for, and a dark-themed QR is a QR that sometimes
+     does not read. */
+  background: #ffffff;
+}
+
+.qr {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 228px;
+}
+
+.qrPending {
+  width: 228px;
+  height: 228px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--panel-2) 60%, transparent);
+}
+
+.detail {
+  display: grid;
+  gap: var(--rt-space-xs);
+  align-content: start;
+}
+
+.fieldLabel {
+  font-size: var(--fs-12);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-dim);
+}
+
+.optional {
+  font-weight: 400;
+  color: var(--text-faint);
+}
+
+.address {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: var(--fs-14);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+  color: var(--text);
+}
+
+.note {
+  margin: 0;
+  font-size: var(--fs-13);
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+
+.input,
+.select {
+  min-height: 44px;
+  padding: 0 var(--rt-space-sm);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--panel-2);
+  color: var(--text);
+  font-size: var(--fs-14);
+  width: 100%;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rt-space-xs);
+  margin-block-start: var(--rt-space-xs);
+}
+
+.action {
+  min-height: 44px;
+  padding: 0 var(--rt-space-md);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+  color: var(--text);
+  font-size: var(--fs-14);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.action:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.actionPrimary {
+  min-height: 44px;
+  padding: 0 var(--rt-space-md);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: var(--fs-14);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.actionPrimary:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* ------------------------------------------------------------------- form */
+
+/* The request form: the card's whole width, four fields in two rows, one
+   primary action. It replaces a column of fields squeezed beside an empty
+   QR slot — the shape the first cut shipped with. */
+.form {
+  display: grid;
+  gap: var(--rt-space-md);
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--rt-space-sm) var(--rt-space-md);
+}
+
+@media (max-width: 520px) {
+  .fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.field {
+  display: grid;
+  gap: var(--rt-space-2xs);
+  min-width: 0;
+}
+
+.proof {
+  display: grid;
+  gap: var(--rt-space-xs);
+  padding: var(--rt-space-sm) var(--rt-space-md);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel-2);
+}
+
+.cta {
+  width: 100%;
+  min-height: 52px;
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-family: var(--font);
+  font-size: var(--fs-15);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: filter 140ms ease-out;
+}
+
+.cta:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.cta:disabled {
+  background: var(--panel-3);
+  color: var(--text-faint);
+  cursor: not-allowed;
+}
+
+.summary {
+  display: grid;
+  gap: var(--rt-space-2xs);
+  margin: 0;
+}
+
+.summary > div {
+  display: grid;
+  grid-template-columns: minmax(96px, 36%) minmax(0, 1fr);
+  gap: var(--rt-space-sm);
+  font-size: var(--fs-13);
+}
+
+.summary dt {
+  color: var(--text-faint);
+}
+
+.summary dd {
+  margin: 0;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+/* --------------------------------------------------------------- advanced */
+
+.advancedToggle {
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-dim);
+  font-size: var(--fs-13);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.advanced {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: var(--rt-space-2xs) var(--rt-space-sm);
+  margin: 0;
+  font-size: var(--fs-12);
+}
+
+.advanced dt {
+  color: var(--text-faint);
+}
+
+.advanced dd {
+  margin: 0;
+  font-family: var(--mono);
+  color: var(--text-dim);
+  overflow-wrap: anywhere;
+}

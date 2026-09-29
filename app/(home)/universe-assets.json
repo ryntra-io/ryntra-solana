@@ -1,0 +1,156 @@
+{
+  "note": "The thirteen assets the public market universe orbits, every one a market on Spot (mint = the Solana mint the product trades; source = the token's own metadata image, copied by scripts/site/fetch-universe-icons.mjs; glow = the logo's own brand hue, used only as the light around that logo; watermark = xstocks marks a Backed tile whose diagonal watermark the fetch script flattens).",
+  "assets": [
+    {
+      "symbol": "NVDAx",
+      "name": "NVIDIA",
+      "kind": "stock",
+      "mint": "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh",
+      "icon": "NVDAx.png",
+      "source": "https://xstocks-metadata.backed.fi/logos/tokens/NVDAx.png",
+      "glow": "#76B900",
+      "ring": 1,
+      "phase": 0.08,
+      "watermark": "xstocks"
+    },
+    {
+      "symbol": "AAPLx",
+      "name": "Apple",
+      "kind": "stock",
+      "mint": "XsbEhLAtcf6HdfpFZ5xEMdqW8nfAvcsP5bdudRLJzJp",
+      "icon": "AAPLx.png",
+      "source": "https://xstocks-metadata.backed.fi/logos/tokens/AAPLx.png",
+      "glow": "#D7DCE3",
+      "ring": 1,
+      "phase": 0.33,
+      "watermark": "xstocks"
+    },
+    {
+      "symbol": "TSLAx",
+      "name": "Tesla",
+      "kind": "stock",
+      "mint": "XsDoVfqeBukxuZHWhdvWHBhgEHjGNst4MLodqsJHzoB",
+      "icon": "TSLAx.png",
+      "source": "https://xstocks-metadata.backed.fi/logos/tokens/TSLAx.png",
+      "glow": "#E82127",
+      "ring": 1,
+      "phase": 0.58,
+      "watermark": "xstocks"
+    },
+    {
+      "symbol": "SPYx",
+      "name": "S&P 500",
+      "kind": "stock",
+      "mint": "XsoCS1TfEyfFhfvj8EtZ528L3CaKBDBRqRapnBbDF2W",
+      "icon": "SPYx.png",
+      "source": "https://xstocks-metadata.backed.fi/logos/tokens/SPYx.png",
+      "glow": "#3B82F6",
+      "ring": 1,
+      "phase": 0.83,
+      "watermark": "xstocks"
+    },
+    {
+      "symbol": "MSFTx",
+      "name": "Microsoft",
+      "kind": "stock",
+      "mint": "XspzcW1PRtgf6Wj92HCiZdjzKCyFekVD8P5Ueh3dRMX",
+      "icon": "MSFTx.png",
+      "source": "https://xstocks-metadata.backed.fi/logos/tokens/MSFTx.png",
+      "glow": "#7FBA00",
+      "ring": 2,
+      "phase": 0.0,
+      "watermark": "xstocks"
+    },
+    {
+      "symbol": "GOOGLx",
+      "name": "Alphabet",
+      "kind": "stock",
+      "mint": "XsCPL9dNWBMvFtTmwcCA5v3xWPSMEBCszbQdiLLq6aN",
+      "icon": "GOOGLx.png",
+      "source": "https://xstocks-metadata.backed.fi/logos/tokens/GOOGLx.png",
+      "glow": "#FBBC05",
+      "ring": 2,
+      "phase": 0.2,
+      "watermark": "xstocks"
+    },
+    {
+      "symbol": "METAx",
+      "name": "Meta",
+      "kind": "stock",
+      "mint": "Xsa62P5mvPszXL1krVUnU5ar38bBSVcWAB6fmPCo5Zu",
+      "icon": "METAx.png",
+      "source": "https://xstocks-metadata.backed.fi/logos/tokens/METAx.png",
+      "glow": "#0081FB",
+      "ring": 2,
+      "phase": 0.4,
+      "watermark": "xstocks"
+    },
+    {
+      "symbol": "AMZNx",
+      "name": "Amazon",
+      "kind": "stock",
+      "mint": "Xs3eBt7uRfJX8QUs4suhyU8p2M6DoUDrJyWBa8LLZsg",
+      "icon": "AMZNx.png",
+      "source": "https://xstocks-metadata.backed.fi/logos/tokens/AMZNx.png",
+      "glow": "#FF9900",
+      "ring": 2,
+      "phase": 0.6,
+      "watermark": "xstocks"
+    },
+    {
+      "symbol": "SOL",
+      "name": "Solana",
+      "kind": "crypto",
+      "mint": "So11111111111111111111111111111111111111112",
+      "icon": "SOL.png",
+      "source": "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
+      "glow": "#9945FF",
+      "ring": 2,
+      "phase": 0.8
+    },
+    {
+      "symbol": "JUP",
+      "name": "Jupiter",
+      "kind": "crypto",
+      "mint": "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN",
+      "icon": "JUP.png",
+      "source": "https://static.jup.ag/jup/icon.png",
+      "glow": "#44E0F5",
+      "ring": 3,
+      "phase": 0.05
+    },
+    {
+      "symbol": "USDC",
+      "name": "USD Coin",
+      "kind": "crypto",
+      "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "icon": "USDC.png",
+      "source": "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png",
+      "glow": "#2775CA",
+      "ring": 3,
+      "phase": 0.3
+    },
+    {
+      "symbol": "BONK",
+      "name": "Bonk",
+      "kind": "meme",
+      "mint": "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
+      "icon": "BONK.png",
+      "source": "https://arweave.net/hQiPZOsRZXGXBJd_82PhVdlM_hACsT_q6wqwf5cSY7I",
+      "glow": "#F5C044",
+      "ring": 3,
+      "phase": 0.55
+    },
+    {
+      "symbol": "PENGU",
+      "name": "Pudgy Penguins",
+      "kind": "meme",
+      "mint": "2zMMhcVQEXDtdE6vsFS7S7D5oUodfJHE8vd1gnBouauv",
+      "icon": "PENGU.png",
+      "source": "https://arweave.net/BW67hICaKGd2_wamSB0IQq-x7Xwtmr2oJj1WnWGJRHU",
+      "glow": "#7CC6FF",
+      "ring": 3,
+      "phase": 0.8
+    }
+  ]
+}

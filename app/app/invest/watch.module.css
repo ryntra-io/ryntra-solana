@@ -1,0 +1,537 @@
+/* Нагляд over a position (RYN-PROTECT-SIGNAL-001): the state, its figures, its one action — in one language
+   wherever a position is drawn. In a Portfolio row, a line of the position itself: no panel, no tall button.
+   On the company page and in Нагляд, a panel: the state over the range its exit makes. Amber is the missing
+   exit; «Дія» speaks in the risk's colour at the loss limit and the verified one at the target; the rest stay
+   quiet. Colours are the roles measured for text on both grounds (`--rt-*-fg`), never a raw hue. */
+
+.watchIcon {
+  flex: none;
+}
+
+.watchState {
+  font-weight: 650;
+  color: var(--ry-text);
+}
+
+.watchLine {
+  font-variant-numeric: tabular-nums;
+}
+
+[data-tone="calm"] > * > .watchIcon,
+[data-tone="calm"] > * > .watchState {
+  color: var(--rt-reconciled-green-fg, var(--ry-verified));
+}
+
+[data-tone="caution"] > * > .watchIcon,
+[data-tone="caution"] > * > .watchState {
+  color: var(--rt-review-amber-fg, var(--ry-caution));
+}
+
+[data-tone="act"] > * > .watchIcon,
+[data-tone="act"] > * > .watchState {
+  color: var(--rt-blocked-red-fg, var(--ry-risk));
+}
+
+[data-tone="act"][data-reason="target"] > * > .watchIcon,
+[data-tone="act"][data-reason="target"] > * > .watchState {
+  color: var(--rt-reconciled-green-fg, var(--ry-verified));
+}
+
+[data-tone="quiet"] > * > .watchIcon {
+  color: var(--ry-muted);
+}
+
+/* ── A Portfolio row: one line under the name — the state, its range, its figures, its action. ── */
+
+.rowLine {
+  display: grid;
+  gap: var(--ry-s1);
+  min-width: 0;
+}
+
+.rowText {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px var(--ry-s2);
+  min-width: 0;
+  margin: 0;
+  font-size: var(--ry-fs-label);
+  line-height: 1.5;
+  color: var(--ry-muted);
+}
+
+/* The action in a row: the press is the product's 44 px, reaching past the line above and below; what shows
+   is a small capsule in the state's own colour — plainly pressable, never a second «Продати». */
+.inlineAction {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-block: -9px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.capsule {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 26px;
+  padding: 0 var(--ry-s2) 0 var(--ry-s3);
+  border: 1px solid var(--ry-border-strong);
+  border-radius: var(--ry-r-pill);
+  font-weight: 650;
+  color: var(--ry-text);
+  white-space: nowrap;
+  transition: background 120ms ease-out, border-color 120ms ease-out;
+}
+
+.inlineAction:hover .capsule {
+  border-color: var(--ry-muted);
+  background: var(--ry-hover);
+}
+
+/* The keyboard's ring is drawn on what shows, not on the reach around it — ahead of the product's own ring whatever order the sheets load in. */
+:global(.ry-product) .rowText .inlineAction:focus-visible {
+  box-shadow: none;
+}
+
+.inlineAction:focus-visible .capsule {
+  box-shadow: var(--ry-focus);
+}
+
+[data-tone="caution"] .capsule {
+  border-color: color-mix(in srgb, var(--ry-caution) 50%, transparent);
+  background: var(--ry-caution-soft);
+  color: var(--rt-review-amber-fg, var(--ry-caution));
+}
+
+[data-tone="caution"] .inlineAction:hover .capsule {
+  border-color: var(--ry-caution);
+  background: var(--ry-caution-soft);
+}
+
+[data-tone="act"] .capsule {
+  border-color: color-mix(in srgb, var(--ry-risk) 50%, transparent);
+  background: var(--ry-risk-soft);
+  color: var(--rt-blocked-red-fg, var(--ry-risk));
+}
+
+[data-tone="act"][data-reason="target"] .capsule {
+  border-color: color-mix(in srgb, var(--ry-verified) 50%, transparent);
+  background: var(--ry-verified-soft);
+  color: var(--rt-reconciled-green-fg, var(--ry-verified));
+}
+
+/* «Деталі» of an issuer's pause opens under the line: its arrow turns. */
+.caret {
+  transition: transform 160ms ease-out;
+}
+
+[aria-expanded="true"] .caret {
+  transform: rotate(180deg);
+}
+
+.detailsText {
+  margin: 0;
+  font-size: var(--ry-fs-label);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-text);
+}
+
+/* ── The company page and Нагляд: a panel — the state, what it stands on, the range, the action. ── */
+
+.panel {
+  display: grid;
+  gap: var(--ry-s2);
+  min-width: 0;
+  padding: var(--ry-s3) var(--ry-s4);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-elevated);
+}
+
+/* The missing exit is the one amber panel; «Дія» is the risk's, or the target's green. */
+.panel[data-watch="exit-not-set"] {
+  border-color: color-mix(in srgb, var(--ry-caution) 38%, transparent);
+  background: var(--ry-caution-soft);
+}
+
+.panel[data-watch="action"] {
+  border-color: color-mix(in srgb, var(--ry-risk) 38%, transparent);
+  background: var(--ry-risk-soft);
+}
+
+.panel[data-watch="action"][data-reason="target"] {
+  border-color: color-mix(in srgb, var(--ry-verified) 38%, transparent);
+  background: var(--ry-verified-soft);
+}
+
+.panelHead {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ry-s2);
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  line-height: 1.4;
+  text-wrap: balance;
+}
+
+.panelHead .watchIcon {
+  margin-top: 2px;
+}
+
+/* A wide card keeps the range at a reading width: the limit and the target a glance apart, not a screen. */
+.panel .range[data-size="full"] {
+  max-width: 34rem;
+}
+
+.panelLine {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+  font-variant-numeric: tabular-nums;
+  text-wrap: pretty;
+}
+
+.panel .detailsText {
+  font-size: var(--ry-fs-dense);
+}
+
+.panelAction {
+  display: flex;
+  margin-top: var(--ry-s1);
+}
+
+.watchAction {
+  min-height: 44px;
+  padding-inline: var(--ry-s5, 20px);
+  white-space: nowrap;
+}
+
+/* On the company page the panel is as narrow as its column: the action takes its width. */
+.panel[data-place="page"] .watchAction {
+  flex: 1 1 auto;
+}
+
+/* ── The range: the loss limit, the price now and the target on one line. ── */
+
+.range {
+  display: grid;
+  gap: var(--ry-s2);
+  min-width: 0;
+}
+
+.range[data-size="full"] {
+  padding-top: 18px;
+}
+
+.range[data-size="mini"] {
+  display: inline-grid;
+  flex: none;
+  width: 56px;
+}
+
+.rangeTrack {
+  position: relative;
+  height: 6px;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-border-strong);
+}
+
+.range[data-size="mini"] .rangeTrack {
+  height: 4px;
+}
+
+.rangeLoss,
+.rangeGain {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+
+.rangeLoss {
+  left: 0;
+  border-radius: var(--ry-r-pill) 0 0 var(--ry-r-pill);
+  background: color-mix(in srgb, var(--ry-risk) 55%, transparent);
+}
+
+.rangeGain {
+  right: 0;
+  border-radius: 0 var(--ry-r-pill) var(--ry-r-pill) 0;
+  background: color-mix(in srgb, var(--ry-verified) 55%, transparent);
+}
+
+.rangeTick {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 2px;
+  margin-left: -1px;
+}
+
+.range[data-size="mini"] .rangeTick {
+  top: -3px;
+  bottom: -3px;
+}
+
+.rangeTick[data-kind="limit"] {
+  background: var(--rt-blocked-red-fg, var(--ry-risk));
+}
+
+.rangeTick[data-kind="target"] {
+  background: var(--rt-reconciled-green-fg, var(--ry-verified));
+}
+
+/* The price now: a dot on the line, ringed by the ground it stands on. */
+.rangeDot {
+  position: absolute;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  border: 2px solid var(--ry-card);
+  border-radius: 50%;
+  background: var(--ry-text);
+  box-shadow: var(--ry-shadow-sm);
+}
+
+.range[data-size="mini"] .rangeDot {
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  border-width: 1px;
+  box-shadow: none;
+}
+
+.range[data-where="limit"] .rangeDot {
+  background: var(--rt-blocked-red-fg, var(--ry-risk));
+}
+
+.range[data-where="target"] .rangeDot {
+  background: var(--rt-reconciled-green-fg, var(--ry-verified));
+}
+
+.rangeNow {
+  position: absolute;
+  bottom: calc(100% + 5px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  color: var(--ry-muted);
+  white-space: nowrap;
+}
+
+.rangeEnds {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--ry-s3);
+}
+
+.rangeEnds > span {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.rangeEnds > span[data-kind="target"] {
+  justify-items: end;
+  text-align: end;
+}
+
+.rangeEnds small {
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+}
+
+.rangeEnds b {
+  font-size: var(--ry-fs-dense);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.rangeEnds > span[data-kind="limit"] b {
+  color: var(--rt-blocked-red-fg, var(--ry-risk));
+}
+
+.rangeEnds > span[data-kind="target"] b {
+  color: var(--rt-reconciled-green-fg, var(--ry-verified));
+}
+
+/* A card in Нагляд on a desk: the range stands beside the state, so the card reads in one glance. */
+@media (min-width: 1100px) {
+  .panel[data-place="card"]:has(> .range) {
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 24rem);
+    column-gap: var(--ry-s6);
+    align-items: center;
+  }
+
+  .panel[data-place="card"]:has(> .range) > .range {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+  }
+
+  .panel[data-place="card"]:has(> .range) > :not(.range) {
+    grid-column: 1;
+  }
+}
+
+/* On a phone a panel's action takes the width under the words, never squeezed beside them. */
+@media (max-width: 520px) {
+  .panelAction .watchAction {
+    flex: 1 1 auto;
+  }
+}
+
+/* The sheet of «Ryntra попередить». */
+.warnPrice {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ry-s3);
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+}
+
+.warnPrice b {
+  font-size: var(--ry-fs-data-m, 1.125rem);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+}
+
+.warnPresets {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ry-s2);
+}
+
+.warnPreset {
+  display: grid;
+  gap: 2px;
+  justify-items: start;
+  min-height: 60px;
+  padding: var(--ry-s2) var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-card);
+  font: inherit;
+  text-align: start;
+  color: var(--ry-text);
+  cursor: pointer;
+}
+
+.warnPreset b {
+  font-size: var(--ry-fs-copy);
+  font-weight: 650;
+}
+
+.warnPreset span {
+  font-size: var(--ry-fs-dense);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-muted);
+}
+
+.warnPreset:hover:not(:disabled) {
+  border-color: var(--ry-border-strong);
+}
+
+.warnPreset[aria-checked="true"] {
+  border-color: var(--ry-text);
+  background: var(--ry-elevated);
+}
+
+.warnLead {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+}
+
+/* Turned on: the sheet says so, in the verified colour, over the range the server wrote. */
+.warnDone {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  margin: 0;
+  font-size: var(--ry-fs-data-m, 1.125rem);
+  color: var(--rt-reconciled-green-fg, var(--ry-verified));
+}
+
+.warnDone b {
+  font-weight: 650;
+  color: var(--ry-text);
+}
+
+.warnNote {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+}
+
+/* Нагляд's section of positions: one card per company, its name and value over the state's line. */
+.positions {
+  display: grid;
+  gap: var(--ry-s3);
+}
+
+.positionCard {
+  display: grid;
+  gap: var(--ry-s3);
+  padding: var(--ry-s4);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+  box-shadow: var(--ry-shadow-sm);
+}
+
+.positionHead {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--ry-s3);
+  color: inherit;
+  text-decoration: none;
+}
+
+.positionName {
+  display: grid;
+  min-width: 0;
+}
+
+.positionName b {
+  overflow: hidden;
+  font-size: var(--ry-fs-copy);
+  font-weight: 650;
+  color: var(--ry-text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.positionName span {
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+}
+
+.positionValue {
+  font-size: var(--ry-fs-copy);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+}
+
+/* While «Ryntra попередить»'s sheet is open, Нагляд's own orange steps aside: one orange action on a screen — the sheet's. */
+:global(body:has(dialog[data-warn][open])) .positionCard :global(.rw-btn--primary) {
+  visibility: hidden;
+}

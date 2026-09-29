@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "2.0.0",
+  "id": "outcome_solana_devnet_deviation",
+  "createdAt": "2026-08-17T09:00:00.000Z",
+  "registry": {
+    "registryDigest": "0x36f10a82139a6d182feae5939127b5c1de8968068454cca2a052282d02b354a2",
+    "refs": [
+      {
+        "ref": "action:solana-token-2022/spl-transfer@1",
+        "contentHash": "0xde007b7d0231fd40e20ad522186651689042113fa152cdee074d6f1c968fc147"
+      },
+      {
+        "ref": "adapter:solana-token-2022@1",
+        "contentHash": "0xc57796f3f2ef6304ad7a82375fa20cae7c311fbaa43b9e9265ee2263b9383221"
+      }
+    ]
+  },
+  "contentHash": "0x4bcc8438cd9af32af1a80d98648ba117e1b0ed52323c81f320f969d0ae92d749",
+  "issuer": {
+    "status": "UNSIGNED",
+    "reasonCode": "NO_ISSUER_KEY_CONFIGURED",
+    "keyId": null,
+    "publicKey": null,
+    "signature": null,
+    "signedAt": null
+  },
+  "integrity": {
+    "algorithm": "SHA-256",
+    "hash": "0xe80844bd563896efec3ba0f6e2632cd90dffc8c475ec9a9150c5e26778671ac0"
+  },
+  "kind": "OUTCOME_RECEIPT",
+  "maturity": "OBSERVED",
+  "actionPassportHash": "0x2222222222222222222222222222222222222222222222222222222222222222",
+  "outcome": {
+    "status": "DEVIATION_RECORDED",
+    "chainRef": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1",
+    "transactionHash": "6666666666666666666666666666666666666666666666666666666666666666666666666666666666666666",
+    "observedEffects": [
+      {
+        "description": "The transfer succeeded but the recipient received 999000 base units, not the 1000000 expected.",
+        "sourceRef": "solana:devnet:rpc:getTransaction",
+        "observedAt": "2026-08-17T09:00:00.000Z"
+      }
+    ],
+    "reconciledAt": "2026-08-17T09:00:00.000Z"
+  },
+  "limitations": [
+    "OUTCOME RECEIPT — AN OBSERVATION, NOT AN INSTRUCTION",
+    "Ryntra observed and reconciled this outcome; it did not sign, submit, fund or execute it."
+  ]
+}

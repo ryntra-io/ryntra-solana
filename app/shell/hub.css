@@ -1,0 +1,254 @@
+/*
+ * Hub chrome shared by every ecosystem workspace.
+ *
+ * These rules were born in the Stellar Hub's stylesheet already wearing the
+ * shell prefix — `sh-mode`, `sh-map-*`, `sh-state` — because they were never
+ * about Stellar: the Guided|Pro switch, the Hub Map card grammar and the
+ * evidence-state chip are the workspace *system's* vocabulary. The Solana Hub
+ * is the second consumer, and the rule this repository keeps re-learning is
+ * that a second copy of anything disagrees with the first silently. So the
+ * blocks moved here byte-for-byte instead of being cloned; `st-*` stays in
+ * Stellar's own file, `so-*` in Solana's, and this file owns only what is
+ * genuinely shared.
+ *
+ * Token discipline is inherited from the incident that created the sweep gate:
+ * every custom property named here is defined in the token layer — an
+ * undefined one drops the whole declaration, and `hub.test.mjs` fails the
+ * suite on any new unresolved name.
+ */
+
+/* ------------------------------------------------------------------ chrome -- */
+
+/* `Simple | Pro`. A control, not a label: the rail resolves two different trees
+   from the layout mode, so without this the Pro tree is unreachable.
+ *
+ * This is the one styling, promoted from a hub's own `.hub-mode-switch` rather than
+ * kept as the older of the two. That one was already on the frozen `--ry-*` tokens
+ * and already carried hover, pressed and focus states; the version that lived
+ * here was on the legacy names and had no hover at all. Agent Control's third
+ * copy sat at 28px with `--fs-12`, below the type floor.
+ *
+ * The 30px is measured, not preferred: two borders and 2px of padding around a
+ * 36px button made a 42px control in a row of 36px ones — six pixels that read
+ * as one control sitting slightly lower than the rest of the bar. The buttons
+ * carry the height; the frame carries nothing. */
+.sh-mode {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  background: var(--ry-card);
+}
+
+.sh-mode button {
+  min-height: 30px;
+  padding-inline: var(--ry-s3);
+  border: 0;
+  border-radius: var(--ry-r-chip);
+  background: transparent;
+  color: var(--ry-muted);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--rt-duration-fast) var(--rt-ease),
+    color var(--rt-duration-fast) var(--rt-ease);
+}
+
+.sh-mode button:hover {
+  color: var(--ry-text);
+}
+
+.sh-mode button[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--ry-iris) 16%, transparent);
+  color: var(--ry-text);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ry-iris) 45%, transparent);
+}
+
+/* One focus ring in the system: the brand orange. */
+.sh-mode button:focus-visible {
+  outline: 2px solid var(--ry-iris);
+  outline-offset: 2px;
+}
+
+/* Below the desktop breakpoint the top bar hides its context slot, and each
+   workspace re-renders the switch inside its navigation footer. Full width and
+   a 44px target there, which is the one place it is thumb-operated. */
+@media (max-width: 900px) {
+  .rs-nav .sh-mode {
+    width: 100%;
+  }
+
+  .rs-nav .sh-mode button {
+    min-height: 44px;
+    flex: 1 1 0;
+  }
+}
+
+/* ----------------------------------------------------------------- state -- */
+
+.sh-state {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  color: var(--text-faint);
+}
+
+/* Cyan is evidence. Green is reserved for a reconciled fact, and a read is not
+   one however fresh it is. */
+.sh-state[data-state="FRESH"] {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 36%, transparent);
+}
+
+.sh-state[data-state="STALE"],
+.sh-state[data-state="CONFLICTING"] {
+  color: var(--warning);
+  border-color: color-mix(in srgb, var(--warning) 38%, transparent);
+}
+
+/* --------------------------------------------------------------- hub map -- */
+
+/*
+ * The Hub Map is the one Document-template surface: it flows down the page
+ * rather than living inside a fixed-height panel, because an earlier hub once
+ * rendered 6,118px of map into a 672px scroller and that defect is not worth
+ * repeating.
+ */
+
+.sh-map-group {
+  margin-top: 28px;
+}
+
+.sh-map-title {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.sh-map-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sh-map-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.sh-map-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.sh-map-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.sh-map-purpose {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-dim);
+}
+
+.sh-map-detail {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-faint);
+}
+
+/* The environment, beside the maturity but never merged into it. How far a
+   module has come and which network it deals in are two facts, and writing them
+   as one word is what let `Mainnet · read-only` describe a signing product. */
+.sh-map-env {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+/* `MAINNET_DATA` is the Stellar hub's word for the same fact, `MAINNET` the
+   Solana hub's after its vocabulary moved to the canon's five axes; both mean
+   "reads a live mainnet", and both read as evidence. */
+.sh-map-env[data-env="MAINNET_DATA"],
+.sh-map-env[data-env="MAINNET"],
+.sh-map-env[data-env="BOTH"] {
+  color: var(--accent);
+}
+
+.sh-map-env[data-env="TESTNET_ACTION"] {
+  color: var(--text-dim);
+}
+
+/*
+ * What exists, what is missing, the gate, and when it was last true.
+ *
+ * A state word alone is not checkable. These four are, and putting them on the
+ * card means an overstatement has to be written as a sentence somebody can
+ * disagree with rather than hidden in a label nobody can.
+ */
+.sh-map-facts {
+  display: grid;
+  gap: 6px;
+  margin: 4px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.sh-map-facts > div {
+  display: grid;
+  grid-template-columns: 6.5rem 1fr;
+  gap: 10px;
+  align-items: baseline;
+}
+
+.sh-map-facts dt {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.sh-map-facts dd {
+  margin: 0;
+  font-size: var(--fs-13);
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+
+@media (max-width: 560px) {
+  .sh-map-facts > div {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+}
+
+/* ---------------------------------------------------------------- status -- */
+
+/* The chip's rules moved to `app/shell/status-chip.css`, which
+   `status-chip.tsx` imports, so they reach every consumer rather than only
+   the workspaces that load this hub stylesheet. */

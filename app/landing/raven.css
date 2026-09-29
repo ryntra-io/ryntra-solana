@@ -1,0 +1,2586 @@
+/*
+ * Raven landing — design tokens.
+ *
+ * Ported from the founder's design macquette ("Персонаж ворона для
+ * лендінга", Ryntra Site.dc.html). This file carries only the vocabulary; the
+ * layout lives with the components that consume it.
+ *
+ * Two deliberate departures from the previous landing system:
+ *   - the palette gains mint / amber / gold alongside cyan, because the
+ *     macquette uses four accent families to separate signal types rather than
+ *     one accent repeated;
+ *   - display type is Space Grotesk, which holds a 96px headline without the
+ *     softness Inter shows at that size. Inter stays for body copy.
+ *
+ * Risk semantics (green / amber / red) are NOT redefined here. They carry
+ * meaning, not decoration, and keep the values the rest of the product uses.
+ */
+
+:root {
+  /* Surfaces — near-black with a blue cast, not neutral grey. */
+  --rv-bg: #05070b;
+  --rv-bg-raised: #0a0f18;
+  --rv-bg-card: #0d1420;
+  --rv-hairline: rgba(255, 255, 255, 0.07);
+  --rv-hairline-strong: rgba(255, 255, 255, 0.13);
+
+  /* Text ramp — four steps, deliberately not more. */
+  --rv-text: #eaecf2;
+  --rv-text-soft: #dfe4ef;
+  --rv-text-muted: #a2abbf;
+  --rv-text-dim: #6a7185;
+
+  /* Accents. Each one means something specific on this page:
+   * cyan   — the product itself, scanner, primary action
+   * mint   — a verified / passing state
+   * amber  — attention, review, "read this before you sign"
+   * gold   — real-world assets, tokenized instruments
+   * violet — chains and infrastructure
+   */
+  --rv-cyan: #ff5a1f;
+  --rv-cyan-bright: #6ff0ff;
+  --rv-cyan-soft: #7fdcef;
+  --rv-mint: #7de3ac;
+  --rv-mint-bright: #4ad991;
+  --rv-amber: #ff8a3d;
+  --rv-amber-soft: #ffb27d;
+  --rv-gold: #e6c579;
+  --rv-violet: #8ea9ff;
+
+  /* Glows. Kept as tokens so no component invents its own blur radius. */
+  --rv-glow-cyan: 0 0 40px rgba(255, 90, 31, 0.28);
+  --rv-glow-mint: 0 0 32px rgba(125, 227, 172, 0.22);
+  --rv-glow-amber: 0 0 32px rgba(255, 138, 61, 0.22);
+
+  /* Type. Display face is loaded via next/font — never a Google CDN link,
+   * because the production CSP allows no external hosts. */
+  --rv-font-display: var(--font-space-grotesk), "Space Grotesk", system-ui, sans-serif;
+  --rv-font-body: var(--font-inter), Onest, system-ui, sans-serif;
+  --rv-font-mono: var(--font-jbmono), "IBM Plex Mono", ui-monospace, monospace;
+
+  /* Display scale. Clamped so the headline never needs a mobile override. */
+  --rv-display-1: clamp(2.75rem, 7vw, 6rem);
+  --rv-display-2: clamp(2rem, 4.5vw, 3.5rem);
+  --rv-display-3: clamp(1.5rem, 2.6vw, 2.25rem);
+  --rv-lead: clamp(1rem, 1.35vw, 1.25rem);
+
+  /* Motion. Every duration on this page comes from here — a literal in a
+   * component is a bug, because the reduced-motion switch has to reach all of
+   * them at once. */
+  --rv-dur-instant: 120ms;
+  --rv-dur-quick: 240ms;
+  --rv-dur-calm: 520ms;
+  --rv-dur-scene: 900ms;
+  --rv-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --rv-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* Ambient loops — the breathing, floating and orbiting the macquette uses. */
+  --rv-loop-breathe: 7s;
+  --rv-loop-float: 5.5s;
+  --rv-loop-orbit: 18s;
+  --rv-loop-ticker: 42s;
+}
+
+/*
+ * One switch stops everything.
+ *
+ * The macquette animates through 25 keyframe sets. Anything that moves must be
+ * reachable from here, or "reduced motion" becomes a claim the page does not
+ * honour — the same defect the previous landing shipped with, where pausing
+ * covered CSS keyframes but not the JavaScript-driven parallax.
+ */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --rv-dur-instant: 1ms;
+    --rv-dur-quick: 1ms;
+    --rv-dur-calm: 1ms;
+    --rv-dur-scene: 1ms;
+    --rv-loop-breathe: 0s;
+    --rv-loop-float: 0s;
+    --rv-loop-orbit: 0s;
+    --rv-loop-ticker: 0s;
+  }
+}
+
+/*
+ * Performance contract for this page.
+ *
+ * Animate transform and opacity only. Anything that animates width, height,
+ * top, left, box-shadow or filter forces layout or paint on every frame, and
+ * with this many concurrent loops that is what makes a laptop fan spin up.
+ * Layers are promoted explicitly and only while they are on screen — the
+ * IntersectionObserver in the scene controller removes the class when a
+ * section scrolls away, because a permanent will-change is a memory leak.
+ */
+.rv-layer {
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+.rv-layer-idle {
+  will-change: auto;
+}
+
+/* ---------------------------------------------------------------- hero shell */
+
+.rv-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: clamp(2rem, 5vw, 4.5rem) 0 0;
+  background: var(--rv-bg);
+  color: var(--rv-text);
+  font-family: var(--rv-font-body);
+}
+
+/* Light behind the character. A radial gradient rather than a box-shadow so it
+   never participates in layout or repaint. */
+.rv-hero-glow {
+  position: absolute;
+  inset: -20% -10% auto;
+  height: 120%;
+  z-index: -1;
+  background:
+    radial-gradient(58% 44% at 72% 34%, rgba(255, 90, 31, 0.17), transparent 70%),
+    radial-gradient(40% 34% at 84% 52%, rgba(142, 169, 255, 0.12), transparent 72%);
+  pointer-events: none;
+}
+
+.rv-hero-inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  align-items: center;
+  gap: clamp(1.5rem, 4vw, 3rem);
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 clamp(1.15rem, 3vw, 2.5rem);
+}
+
+.rv-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.34rem 0.7rem;
+  border: 1px solid var(--rv-hairline-strong);
+  border-radius: 999px;
+  color: var(--rv-cyan);
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+}
+
+.rv-eyebrow::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--rv-cyan);
+  box-shadow: var(--rv-glow-cyan);
+  animation: rv-pulse 2.4s var(--rv-ease-in-out) infinite;
+}
+
+.rv-headline {
+  display: flex;
+  flex-direction: column;
+  margin: 1.1rem 0 0;
+  font-family: var(--rv-font-display);
+  font-size: var(--rv-display-1);
+  font-weight: 700;
+  line-height: 0.98;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+.rv-headline span:last-child {
+  color: var(--rv-text-soft);
+}
+
+.rv-lead {
+  max-width: 46ch;
+  margin: 1.15rem 0 0;
+  color: var(--rv-text-muted);
+  font-size: var(--rv-lead);
+  line-height: 1.6;
+}
+
+/* ------------------------------------------------------------------ actions */
+
+.rv-cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  margin-top: 1.6rem;
+}
+
+.rv-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.78rem 1.25rem;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-decoration: none;
+  transition: transform var(--rv-dur-quick) var(--rv-ease),
+    background-color var(--rv-dur-quick) var(--rv-ease),
+    border-color var(--rv-dur-quick) var(--rv-ease);
+}
+
+.rv-btn:hover {
+  transform: translateY(-1px);
+}
+
+.rv-btn-primary {
+  background: var(--rv-cyan);
+  color: #04222a;
+  box-shadow: var(--rv-glow-cyan);
+}
+
+.rv-btn-primary:hover {
+  background: var(--rv-cyan-bright);
+}
+
+.rv-btn-ghost {
+  border: 1px solid var(--rv-hairline-strong);
+  color: var(--rv-text-soft);
+}
+
+.rv-btn-ghost:hover {
+  border-color: var(--rv-cyan);
+  color: var(--rv-cyan);
+}
+
+/* ------------------------------------------------------------- data states */
+
+.rv-states {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+}
+
+.rv-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.22rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  font-family: var(--rv-font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.1em;
+}
+
+.rv-chip::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.rv-chip-live { color: var(--rv-mint-bright); }
+.rv-chip-stale { color: var(--rv-gold); }
+.rv-chip-none { color: var(--rv-text-dim); }
+
+.rv-states-note {
+  color: var(--rv-text-dim);
+  font-size: 0.72rem;
+}
+
+/* -------------------------------------------------------------- the raven */
+
+.rv-hero-figure {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  min-height: clamp(320px, 46vw, 560px);
+  /* Depth for the orbit. The character sits at z = 0, so chips pass behind and
+     in front of him rather than all in one plane. */
+  perspective: 1100px;
+  transform-style: preserve-3d;
+}
+
+.rv-raven {
+  position: relative;
+  transform-style: preserve-3d;
+  width: auto;
+  height: clamp(320px, 46vw, 560px);
+  object-fit: contain;
+  animation: rv-breathe var(--rv-loop-breathe) var(--rv-ease-in-out) infinite;
+  filter: drop-shadow(0 24px 60px rgba(0, 0, 0, 0.55));
+}
+
+/*
+ * Ticker orbit — a real 3D ring around the character.
+ *
+ * The figure stands at z = 0 inside a preserve-3d stage, and the tickers travel
+ * a circle around the vertical axis. Half the ring is therefore BEHIND him and
+ * half in front, which is the whole point: the orbit goes around the character
+ * rather than beside him.
+ *
+ * The angle travels through a registered custom property and each slot computes
+ * its own position — nothing is rotated. Two earlier attempts spun a container
+ * and counter-spun each chip; both left the labels visibly crooked, because a
+ * rotated parent shears its children and two opposing animations never stay
+ * perfectly in phase. A chip that is only ever translated cannot tilt.
+ *
+ * Perspective does the depth work for free: a chip at the back is further away,
+ * so the browser draws it smaller without a single scale() in this file.
+ *
+ * Colour is the asset class. Equities, crypto, commodities, indices and the
+ * stable they price against are five different things, and one grey for all of
+ * them said nothing about what the product watches.
+ */
+@property --rv-spin {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: true;
+}
+
+.rv-orbit-plane {
+  position: absolute;
+  /* Held inside the figure column. At full width the ring used to reach across
+     the grid gap and park a ticker on top of the headline. */
+  inset: 0 0 12% 6%;
+  pointer-events: none;
+  transform-style: preserve-3d;
+  animation: rv-orbit-travel var(--rv-loop-orbit) linear infinite;
+}
+
+.rv-orbit-ring {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+}
+
+.rv-orbit-slot {
+  --a: calc(360deg / var(--n) * var(--i) + var(--rv-spin));
+  --rx: clamp(150px, 17vw, 265px);
+  --rz: clamp(150px, 18vw, 280px);
+  --ry: clamp(30px, 4vw, 58px);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform-style: preserve-3d;
+  /* x sweeps side to side, z sweeps front to back, y gives the ring a slight
+     tilt so it reads as a plane rather than a flat line. */
+  transform: translate(-50%, -50%)
+    translate3d(
+      calc(sin(var(--a)) * var(--rx)),
+      calc(cos(var(--a)) * var(--ry)),
+      calc(cos(var(--a)) * var(--rz))
+    );
+}
+
+.rv-orbit-chip {
+  display: inline-block;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid currentColor;
+  border-radius: 8px;
+  background: rgba(5, 7, 11, 0.76);
+  font-size: 0.7rem;
+  letter-spacing: 0.09em;
+  white-space: nowrap;
+}
+
+.rv-orbit-chip[data-kind="equity"] { color: #7fdcef; }
+.rv-orbit-chip[data-kind="crypto"] { color: var(--rv-violet); }
+.rv-orbit-chip[data-kind="commodity"] { color: var(--rv-gold); }
+.rv-orbit-chip[data-kind="index"] { color: var(--rv-amber-soft); }
+.rv-orbit-chip[data-kind="stable"] { color: var(--rv-mint); }
+
+/* The three routes where money actually moves, plus the stable they quote
+   against, carry their class colour as a glow. */
+.rv-orbit-chip[data-route="true"] {
+  background: rgba(5, 7, 11, 0.92);
+  box-shadow: 0 0 20px currentColor;
+  font-weight: 600;
+}
+
+@keyframes rv-orbit-travel {
+  from { --rv-spin: 0deg; }
+  to { --rv-spin: 360deg; }
+}
+
+/* ---------------------------------------------------------------- cards */
+
+.rv-cards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.85rem;
+  max-width: 1240px;
+  margin: clamp(1.5rem, 3vw, 2.75rem) auto 0;
+  padding: 0 clamp(1.15rem, 3vw, 2.5rem);
+}
+
+.rv-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-height: 132px;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--rv-hairline);
+  border-radius: 14px;
+  background: linear-gradient(160deg, var(--rv-bg-card), var(--rv-bg-raised));
+}
+
+.rv-card header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.rv-card-label {
+  color: var(--rv-text-dim);
+  font-size: 0.64rem;
+  letter-spacing: 0.13em;
+}
+
+.rv-card-title {
+  margin: 0;
+  font-family: var(--rv-font-display);
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.rv-card-meta {
+  margin: 0;
+  color: var(--rv-text-dim);
+  font-size: 0.7rem;
+}
+
+.rv-card-body {
+  margin: 0;
+  color: var(--rv-text-soft);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.rv-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: auto;
+}
+
+.rv-card-tags span {
+  padding: 0.16rem 0.45rem;
+  border: 1px solid var(--rv-hairline);
+  border-radius: 6px;
+  color: var(--rv-text-muted);
+  font-size: 0.66rem;
+}
+
+.rv-card-scan { border-color: rgba(255, 90, 31, 0.22); }
+.rv-card-risk { border-color: rgba(255, 138, 61, 0.26); }
+
+.rv-spark {
+  height: 34px;
+  color: var(--rv-cyan);
+}
+
+.rv-spark svg {
+  width: 100%;
+  height: 100%;
+}
+
+.rv-card footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+  color: var(--rv-text-dim);
+  font-size: 0.66rem;
+  letter-spacing: 0.1em;
+}
+
+.rv-verdict {
+  font-family: var(--rv-font-mono);
+  font-weight: 600;
+}
+
+.rv-verdict-mint { color: var(--rv-mint-bright); }
+.rv-verdict-amber { color: var(--rv-amber); }
+
+.rv-hash {
+  margin: 0;
+  color: var(--rv-cyan-soft);
+  font-size: 0.95rem;
+}
+
+.rv-guarantees {
+  display: grid;
+  gap: 0.28rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--rv-text-muted);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+}
+
+/* ------------------------------------------------------------ pause + rail */
+
+.rv-pause {
+  position: absolute;
+  right: clamp(1.15rem, 3vw, 2.5rem);
+  bottom: 4.2rem;
+  z-index: 2;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--rv-hairline-strong);
+  border-radius: 8px;
+  background: rgba(5, 7, 11, 0.72);
+  color: var(--rv-text-muted);
+  font-size: 0.62rem;
+  cursor: pointer;
+  transition: color var(--rv-dur-quick) var(--rv-ease),
+    border-color var(--rv-dur-quick) var(--rv-ease);
+}
+
+.rv-pause:hover {
+  border-color: var(--rv-cyan);
+  color: var(--rv-cyan);
+}
+
+.rv-rail {
+  margin-top: clamp(1.5rem, 3vw, 2.5rem);
+  padding: 0.7rem 0;
+  border-top: 1px solid var(--rv-hairline);
+  border-bottom: 1px solid var(--rv-hairline);
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+
+.rv-rail-track {
+  display: flex;
+  gap: 2.5rem;
+  width: max-content;
+  color: var(--rv-text-dim);
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  animation: rv-rail var(--rv-loop-ticker) linear infinite;
+}
+
+.rv-rail-track span::after {
+  content: "◆";
+  margin-left: 2.5rem;
+  color: var(--rv-cyan);
+  opacity: 0.4;
+}
+
+/* ------------------------------------------------------------------ motion */
+
+@keyframes rv-breathe {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, -12px, 0); }
+}
+
+@keyframes rv-float {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, -16px, 0); }
+}
+
+@keyframes rv-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+@keyframes rv-rail {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+
+/* One switch, every layer — including the ones JavaScript drives, which the
+   component stops by reading the same state. */
+.rv-hero[data-paused="true"] .rv-raven,
+.rv-hero[data-paused="true"] .rv-orbit-ring,
+.rv-hero[data-paused="true"] .rv-orbit-plane,
+.rv-hero[data-paused="true"] .rv-rail-track,
+.rv-hero[data-paused="true"] .rv-eyebrow::before {
+  animation-play-state: paused;
+}
+
+/* ----------------------------------------------------------------- narrow */
+
+@media (max-width: 900px) {
+  .rv-hero-inner {
+    grid-template-columns: 1fr;
+    text-align: left;
+  }
+
+  .rv-hero-figure {
+    order: -1;
+    min-height: 300px;
+  }
+
+  .rv-raven {
+    height: 300px;
+  }
+
+  .rv-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .rv-pause {
+    bottom: 3.6rem;
+  }
+}
+
+@media (max-width: 560px) {
+  .rv-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ------------------------------------------------------- shared section shell */
+
+.rv-section {
+  position: relative;
+  padding: clamp(3rem, 7vw, 6rem) 0;
+  background: var(--rv-bg);
+  color: var(--rv-text);
+  font-family: var(--rv-font-body);
+}
+
+.rv-section-inner {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 clamp(1.15rem, 3vw, 2.5rem);
+}
+
+.rv-section-head {
+  max-width: 60ch;
+}
+
+.rv-h2 {
+  margin: 0.9rem 0 0;
+  font-family: var(--rv-font-display);
+  font-size: var(--rv-display-2);
+  font-weight: 700;
+  line-height: 1.06;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.rv-section-lead {
+  max-width: 56ch;
+  margin: 1rem 0 0;
+  color: var(--rv-text-muted);
+  font-size: var(--rv-lead);
+  line-height: 1.6;
+}
+
+/* Resolved from the capability registry, never authored in the section. */
+.rv-maturity {
+  display: inline-block;
+  margin-left: 0.6rem;
+  padding: 0.2rem 0.5rem;
+  border: 1px solid var(--rv-hairline-strong);
+  border-radius: 6px;
+  color: var(--rv-text-dim);
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  vertical-align: middle;
+}
+
+.rv-maturity[data-maturity="live"] { color: var(--rv-mint-bright); border-color: rgba(74, 217, 145, 0.4); }
+.rv-maturity[data-maturity="beta"] { color: var(--rv-cyan); border-color: rgba(255, 90, 31, 0.4); }
+.rv-maturity[data-maturity="next"],
+.rv-maturity[data-maturity="preview"] { color: var(--rv-gold); border-color: rgba(230, 197, 121, 0.36); }
+
+/* ----------------------------------------------------------------- scanner */
+
+.rv-scanner-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.62fr) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(1rem, 3vw, 2.5rem);
+  margin-top: clamp(1.75rem, 4vw, 3rem);
+}
+
+.rv-scanner-figure {
+  display: flex;
+  justify-content: center;
+}
+
+.rv-raven-scanner {
+  width: auto;
+  height: clamp(280px, 34vw, 460px);
+  object-fit: contain;
+  filter: drop-shadow(0 20px 48px rgba(0, 0, 0, 0.5));
+  animation: rv-breathe calc(var(--rv-loop-breathe) * 1.15) var(--rv-ease-in-out) infinite;
+}
+
+/* The panel the pointing hand is aimed at. */
+/*
+ * The scanner instrument.
+ *
+ * One panel, in the order a reader needs it: what is being scanned, what each
+ * check returned, how much of the evidence is in, and only then the verdict.
+ * Putting coverage before the verdict is deliberate — a verdict over partial
+ * evidence is the failure this whole block argues against, so the reader meets
+ * the completeness number first.
+ */
+.rv-scan {
+  border: 1px solid rgba(255, 90, 31, 0.24);
+  border-radius: 16px;
+  background: linear-gradient(150deg, rgba(13, 20, 32, 0.95), rgba(10, 15, 24, 0.9));
+  box-shadow: 0 0 60px rgba(255, 90, 31, 0.09);
+  overflow: hidden;
+}
+
+.rv-scan-top {
+  padding: 0.8rem clamp(0.75rem, 2vw, 1.1rem) 0;
+}
+
+.rv-scan-assets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0.75rem clamp(0.75rem, 2vw, 1.1rem);
+  border-bottom: 1px solid var(--rv-hairline);
+}
+
+.rv-scan-asset {
+  padding: 0.34rem 0.68rem;
+  border: 1px solid var(--rv-hairline-strong);
+  border-radius: 7px;
+  background: none;
+  color: var(--rv-text-muted);
+  font-family: var(--rv-font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition:
+    color var(--rv-dur-quick) var(--rv-ease),
+    border-color var(--rv-dur-quick) var(--rv-ease),
+    background-color var(--rv-dur-quick) var(--rv-ease);
+}
+
+.rv-scan-asset:hover {
+  color: var(--rv-text);
+  border-color: rgba(255, 90, 31, 0.4);
+}
+
+.rv-scan-asset[data-active="true"] {
+  background: rgba(255, 90, 31, 0.1);
+  border-color: rgba(255, 90, 31, 0.55);
+  color: var(--rv-cyan-bright);
+}
+
+.rv-scan-head,
+.rv-scan-rows li {
+  display: grid;
+  grid-template-columns: 1.4rem minmax(0, 1.15fr) minmax(0, 1.1fr) minmax(0, 0.62fr);
+  gap: 0.6rem;
+  align-items: center;
+  padding: 0.5rem clamp(0.75rem, 2vw, 1.1rem);
+}
+
+.rv-scan-head {
+  padding-left: calc(clamp(0.75rem, 2vw, 1.1rem) + 2rem);
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1.1fr) minmax(0, 0.62fr);
+  border-bottom: 1px solid var(--rv-hairline);
+  color: var(--rv-text-dim);
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+}
+
+.rv-scan-rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rv-scan-rows li {
+  position: relative;
+  color: var(--rv-text-dim);
+  font-size: 0.78rem;
+  transition:
+    color var(--rv-dur-calm) var(--rv-ease),
+    background-color var(--rv-dur-calm) var(--rv-ease);
+}
+
+.rv-scan-rows li + li {
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+/* A check that has reported lifts out of the idle ramp. The distinction is
+   carried by text as well as colour — "not run" is a word, not a shade. */
+.rv-scan-rows li[data-reported="true"] {
+  color: var(--rv-text-soft);
+}
+
+.rv-scan-rows li[data-reported="true"]::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--rv-hairline-strong);
+}
+
+.rv-scan-rows li[data-state="ok"]::before { background: var(--rv-mint-bright); }
+.rv-scan-rows li[data-state="warn"]::before { background: var(--rv-amber); }
+.rv-scan-rows li[data-state="none"]::before { background: var(--rv-text-dim); }
+
+.rv-scan-i {
+  color: var(--rv-text-dim);
+  font-size: 0.62rem;
+}
+
+.rv-scan-value {
+  color: var(--rv-text);
+  font-size: 0.74rem;
+}
+
+.rv-scan-rows li[data-reported="true"] .rv-scan-state { color: var(--rv-text-muted); }
+.rv-scan-rows li[data-state="ok"] .rv-scan-state { color: var(--rv-mint-bright); }
+.rv-scan-rows li[data-state="warn"] .rv-scan-state { color: var(--rv-amber); }
+
+.rv-scan-state {
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  text-align: end;
+}
+
+/* Coverage. Scaled, never resized. */
+.rv-scan-meter {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.85rem clamp(0.75rem, 2vw, 1.1rem);
+  border-top: 1px solid var(--rv-hairline);
+}
+
+.rv-scan-meter-label {
+  color: var(--rv-text-dim);
+  font-size: 0.56rem;
+  letter-spacing: 0.16em;
+}
+
+.rv-scan-track {
+  position: relative;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.07);
+  overflow: hidden;
+}
+
+.rv-scan-fill {
+  position: absolute;
+  inset: 0;
+  border-radius: 2px;
+  background: var(--rv-cyan);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform var(--rv-dur-quick) var(--rv-ease);
+}
+
+.rv-scan-fill[data-verdict="ready"] { background: var(--rv-mint-bright); }
+.rv-scan-fill[data-verdict="review"] { background: var(--rv-amber); }
+.rv-scan-fill[data-verdict="blocked"] { background: #ef6a6a; }
+
+.rv-scan-count {
+  color: var(--rv-text-muted);
+  font-size: 0.66rem;
+}
+
+.rv-scan-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0 clamp(0.75rem, 2vw, 1.1rem) 0.9rem;
+}
+
+.rv-scan-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid rgba(255, 90, 31, 0.4);
+  border-radius: 8px;
+  background: rgba(255, 90, 31, 0.08);
+  color: var(--rv-cyan-bright);
+  font-family: var(--rv-font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition:
+    color var(--rv-dur-quick) var(--rv-ease),
+    border-color var(--rv-dur-quick) var(--rv-ease),
+    background-color var(--rv-dur-quick) var(--rv-ease);
+}
+
+.rv-scan-btn:hover:not(:disabled) {
+  background: rgba(255, 90, 31, 0.16);
+}
+
+.rv-scan-btn-ghost {
+  border-color: var(--rv-hairline-strong);
+  background: none;
+  color: var(--rv-text-muted);
+}
+
+.rv-scan-btn-ghost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--rv-text);
+}
+
+.rv-scan-btn:disabled {
+  opacity: 0.42;
+  cursor: default;
+}
+
+/* The brief. Bordered by its verdict so the outcome is legible before it is
+   read — but the word is always present, because colour alone is not a state. */
+.rv-scan-brief {
+  margin: 0 clamp(0.75rem, 2vw, 1.1rem) 0.9rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid var(--rv-hairline);
+  border-inline-start: 2px solid var(--rv-text-dim);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.rv-scan-brief[data-verdict="ready"] { border-inline-start-color: var(--rv-mint-bright); }
+.rv-scan-brief[data-verdict="review"] { border-inline-start-color: var(--rv-amber); }
+.rv-scan-brief[data-verdict="blocked"] { border-inline-start-color: #ef6a6a; }
+
+.rv-scan-brief-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  color: var(--rv-text-dim);
+  font-size: 0.56rem;
+  letter-spacing: 0.16em;
+}
+
+.rv-scan-verdict {
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  color: var(--rv-text-muted);
+}
+
+.rv-scan-verdict[data-verdict="ready"] { color: var(--rv-mint-bright); }
+.rv-scan-verdict[data-verdict="review"] { color: var(--rv-amber); }
+.rv-scan-verdict[data-verdict="blocked"] { color: #ef6a6a; }
+
+.rv-scan-brief p {
+  margin: 0.55rem 0 0;
+  color: var(--rv-text-soft);
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+
+.rv-scan-legend {
+  margin: 0;
+  padding: 0 clamp(0.75rem, 2vw, 1.1rem) 0.9rem;
+  color: var(--rv-text-dim);
+  font-size: 0.7rem;
+  line-height: 1.5;
+}
+
+.rv-sample {
+  padding: 0.14rem 0.4rem;
+  border: 1px solid var(--rv-hairline-strong);
+  border-radius: 5px;
+  color: var(--rv-gold);
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+}
+
+/* ------------------------------------------------------------------- steps */
+
+.rv-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
+  margin: clamp(1.5rem, 3vw, 2.5rem) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rv-steps li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--rv-hairline);
+  border-radius: 14px;
+  background: linear-gradient(160deg, var(--rv-bg-card), var(--rv-bg-raised));
+}
+
+.rv-step-index {
+  color: var(--rv-cyan);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+}
+
+.rv-steps b {
+  font-family: var(--rv-font-display);
+  font-size: 1.05rem;
+}
+
+.rv-step-body {
+  color: var(--rv-text-muted);
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 900px) {
+  .rv-scanner-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .rv-scanner-figure {
+    order: -1;
+  }
+
+  .rv-raven-scanner {
+    height: 260px;
+  }
+
+  .rv-steps {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------------------------------------------------------------- coverage */
+
+/* Two clocks, stated once. The rule they describe belongs to the market, not
+   to a live status we would have to invent per instrument. */
+.rv-clocks {
+  display: grid;
+  grid-template-columns: auto auto auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: clamp(1.5rem, 3vw, 2.25rem);
+  padding: 0.9rem clamp(0.9rem, 2vw, 1.25rem);
+  border: 1px solid var(--rv-hairline);
+  border-radius: 14px;
+  background: linear-gradient(160deg, var(--rv-bg-card), var(--rv-bg-raised));
+}
+
+.rv-clock {
+  padding: 0.3rem 0.6rem;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+}
+
+.rv-clock-always { color: var(--rv-cyan); }
+.rv-clock-sessions { color: var(--rv-gold); }
+
+.rv-clock-sep {
+  width: 22px;
+  height: 1px;
+  background: var(--rv-hairline-strong);
+}
+
+.rv-clock-note {
+  margin: 0;
+  color: var(--rv-text-muted);
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.rv-coverage {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.85rem;
+  margin: 0.85rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rv-coverage li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 1.1rem 1.15rem;
+  border: 1px solid var(--rv-hairline);
+  border-radius: 14px;
+  background: linear-gradient(160deg, var(--rv-bg-card), var(--rv-bg-raised));
+  transition: border-color var(--rv-dur-quick) var(--rv-ease),
+    transform var(--rv-dur-quick) var(--rv-ease);
+}
+
+.rv-coverage li:hover {
+  transform: translateY(-2px);
+  border-color: var(--rv-hairline-strong);
+}
+
+/* The role is the honest part of this block: reading a feed and moving money
+   are different permissions, and the colour keeps them from blurring. */
+.rv-coverage-role {
+  align-self: flex-start;
+  padding: 0.16rem 0.45rem;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  color: var(--rv-text-dim);
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+}
+
+.rv-coverage li[data-role="trade"] .rv-coverage-role,
+.rv-coverage li[data-role="swap"] .rv-coverage-role { color: var(--rv-mint-bright); }
+.rv-coverage li[data-role="read"] .rv-coverage-role { color: var(--rv-cyan); }
+
+.rv-coverage h3 {
+  margin: 0;
+  font-family: var(--rv-font-display);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.rv-coverage p {
+  margin: 0;
+  color: var(--rv-text-muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 720px) {
+  .rv-clocks {
+    grid-template-columns: auto auto auto;
+  }
+
+  .rv-clock-note {
+    grid-column: 1 / -1;
+  }
+}
+
+/* -------------------------------------------------------------------- loop */
+
+/*
+ * Five stages on one rail.
+ *
+ * The stages are tabs: the detail is long enough that five open at once is a
+ * wall, and a reader wants one at a time. The rail stays visible whichever tab
+ * is selected, so the shape of the circuit never depends on the selection.
+ *
+ * A stage the registry has not shipped is dimmed and its node stays hollow. The
+ * signing stage carries the anchor treatment because it is the only stage that
+ * produces an action rather than evidence — that is a fact about the product,
+ * not an emphasis choice.
+ */
+.rv-cyc {
+  position: relative;
+  margin-top: clamp(2rem, 5vw, 3.5rem);
+}
+
+.rv-cyc-rail {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 15px;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    var(--rv-hairline-strong),
+    var(--rv-hairline-strong) 86%,
+    transparent
+  );
+  overflow: hidden;
+}
+
+.rv-cyc-pulse {
+  position: absolute;
+  top: -1px;
+  left: 0;
+  width: 160px;
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, var(--rv-cyan), transparent);
+  box-shadow: var(--rv-glow-cyan);
+  animation: rv-loop-run var(--rv-loop-orbit) linear infinite;
+}
+
+.rv-cyc-stages {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: clamp(0.5rem, 1.5vw, 1.2rem);
+}
+
+.rv-cyc-stage {
+  display: grid;
+  justify-items: start;
+  gap: 0.4rem;
+  padding: 0 0.6rem 0.9rem 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: start;
+  font: inherit;
+  cursor: pointer;
+}
+
+/* The node sits on the rail. Filled when the registry says the stage ships. */
+.rv-cyc-node {
+  display: grid;
+  place-items: center;
+  width: 31px;
+  height: 31px;
+  border: 1px solid var(--rv-hairline-strong);
+  border-radius: 50%;
+  background: var(--rv-bg);
+  transition:
+    border-color var(--rv-dur-quick) var(--rv-ease),
+    background-color var(--rv-dur-quick) var(--rv-ease);
+}
+
+.rv-cyc-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--rv-text-dim);
+  transition: background-color var(--rv-dur-quick) var(--rv-ease);
+}
+
+.rv-cyc-stage[data-working="true"] .rv-cyc-node {
+  border-color: rgba(74, 217, 145, 0.45);
+}
+
+.rv-cyc-stage[data-working="true"] .rv-cyc-dot {
+  background: var(--rv-mint-bright);
+  box-shadow: 0 0 10px var(--rv-mint-bright);
+}
+
+.rv-cyc-stage[data-active="true"] .rv-cyc-node {
+  border-color: var(--rv-cyan);
+  background: rgba(255, 90, 31, 0.1);
+}
+
+/* The anchor. The one stage that produces an action rather than evidence. */
+.rv-cyc-stage[data-anchor="true"] .rv-cyc-node {
+  width: 37px;
+  height: 37px;
+  margin-top: -3px;
+  border-color: var(--rv-cyan);
+  box-shadow: var(--rv-glow-cyan);
+}
+
+.rv-cyc-stage[data-anchor="true"] .rv-cyc-dot {
+  width: 9px;
+  height: 9px;
+  background: var(--rv-cyan-bright);
+  box-shadow: 0 0 12px var(--rv-cyan);
+}
+
+.rv-cyc-n {
+  color: var(--rv-text-dim);
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+}
+
+.rv-cyc-label {
+  font-family: var(--rv-font-display);
+  font-size: clamp(0.95rem, 1.35vw, 1.18rem);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--rv-text-muted);
+  transition: color var(--rv-dur-quick) var(--rv-ease);
+}
+
+.rv-cyc-stage[data-active="true"] .rv-cyc-label,
+.rv-cyc-stage:hover .rv-cyc-label {
+  color: var(--rv-text);
+}
+
+.rv-cyc-stage .rv-maturity {
+  margin-left: 0;
+}
+
+/* The detail panel. One stage at a time. */
+.rv-cyc-panel {
+  margin-top: 0.6rem;
+  padding: clamp(1.1rem, 2.5vw, 1.6rem) clamp(1.1rem, 2.5vw, 1.6rem);
+  border: 1px solid var(--rv-hairline);
+  border-inline-start: 2px solid var(--rv-hairline-strong);
+  border-radius: 14px;
+  background: linear-gradient(160deg, rgba(13, 20, 32, 0.7), rgba(10, 15, 24, 0.5));
+}
+
+.rv-cyc-panel[data-anchor="true"] {
+  border-inline-start-color: var(--rv-cyan);
+}
+
+.rv-cyc-body {
+  margin: 0;
+  max-width: 70ch;
+  color: var(--rv-text-soft);
+  font-size: clamp(0.95rem, 1.2vw, 1.06rem);
+  line-height: 1.6;
+}
+
+.rv-cyc-output {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.6rem;
+  margin: 0.9rem 0 0;
+  color: var(--rv-text-muted);
+  font-size: 0.86rem;
+}
+
+.rv-cyc-output .mono {
+  color: var(--rv-text-dim);
+  font-size: 0.56rem;
+  letter-spacing: 0.16em;
+}
+
+/* The anchor claim. Stated once, away from the tabs, so it does not read as a
+   property of whichever stage happens to be selected. */
+.rv-cyc-anchor {
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: clamp(0.75rem, 2vw, 1.6rem);
+  margin-top: clamp(1.5rem, 3vw, 2.2rem);
+  padding: clamp(1rem, 2vw, 1.3rem) clamp(1.1rem, 2.5vw, 1.5rem);
+  border: 1px solid rgba(255, 90, 31, 0.28);
+  border-radius: 14px;
+  background: rgba(255, 90, 31, 0.04);
+}
+
+.rv-cyc-anchor b {
+  font-family: var(--rv-font-display);
+  font-size: clamp(1rem, 1.5vw, 1.25rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--rv-cyan-bright);
+}
+
+.rv-cyc-anchor p {
+  margin: 0;
+  max-width: 64ch;
+  color: var(--rv-text-muted);
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.rv-cyc-count {
+  margin: 0;
+  color: var(--rv-text-dim);
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.rv-cyc-count b {
+  color: var(--rv-mint-bright);
+  font-weight: 600;
+}
+
+/* The return arc. Without it the row is a list, not a loop. */
+.rv-loop-close {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.9rem;
+  margin-top: clamp(2rem, 4vw, 3rem);
+  padding-top: 1.1rem;
+  border-top: 1px solid var(--rv-hairline);
+}
+
+.rv-loop-close-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--rv-cyan);
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  white-space: nowrap;
+}
+
+.rv-loop-close p {
+  flex: 1 1 26rem;
+  margin: 0;
+  max-width: 66ch;
+  color: var(--rv-text-muted);
+  font-size: 0.94rem;
+  line-height: 1.6;
+}
+
+@keyframes rv-loop-run {
+  from { transform: translate3d(-180px, 0, 0); }
+  to { transform: translate3d(calc(100vw + 180px), 0, 0); }
+}
+
+/* Narrow: the rail becomes a scrollable strip of stages rather than five
+   columns crushed to nothing. The selected panel stays full width below it, so
+   no detail is lost — only the stage picker changes shape. */
+@media (max-width: 820px) {
+  .rv-cyc-rail {
+    display: none;
+  }
+
+  .rv-cyc-stages {
+    grid-template-columns: repeat(5, minmax(8.5rem, 1fr));
+    overflow-x: auto;
+    padding-bottom: 0.35rem;
+    scrollbar-width: thin;
+  }
+
+  .rv-cyc-anchor {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.55rem;
+  }
+}
+
+/* ---------------------------------------------------------------- coverage */
+
+/* Two clocks, stated once. The rule they describe belongs to the market, not
+   to a live status we would have to invent per instrument. */
+.rv-clocks {
+  display: grid;
+  grid-template-columns: auto auto auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: clamp(1.5rem, 3vw, 2.25rem);
+  padding: 0.9rem clamp(0.9rem, 2vw, 1.25rem);
+  border: 1px solid var(--rv-hairline);
+  border-radius: 14px;
+  background: linear-gradient(160deg, var(--rv-bg-card), var(--rv-bg-raised));
+}
+
+.rv-clock {
+  padding: 0.3rem 0.6rem;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+}
+
+.rv-clock-always { color: var(--rv-cyan); }
+.rv-clock-sessions { color: var(--rv-gold); }
+
+.rv-clock-sep {
+  width: 22px;
+  height: 1px;
+  background: var(--rv-hairline-strong);
+}
+
+.rv-clock-note {
+  margin: 0;
+  color: var(--rv-text-muted);
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.rv-coverage {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.85rem;
+  margin: 0.85rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rv-coverage li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 1.1rem 1.15rem;
+  border: 1px solid var(--rv-hairline);
+  border-radius: 14px;
+  background: linear-gradient(160deg, var(--rv-bg-card), var(--rv-bg-raised));
+  transition: border-color var(--rv-dur-quick) var(--rv-ease),
+    transform var(--rv-dur-quick) var(--rv-ease);
+}
+
+.rv-coverage li:hover {
+  transform: translateY(-2px);
+  border-color: var(--rv-hairline-strong);
+}
+
+/* The role is the honest part of this block: reading a feed and moving money
+   are different permissions, and the colour keeps them from blurring. */
+.rv-coverage-role {
+  align-self: flex-start;
+  padding: 0.16rem 0.45rem;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  color: var(--rv-text-dim);
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+}
+
+.rv-coverage li[data-role="trade"] .rv-coverage-role,
+.rv-coverage li[data-role="swap"] .rv-coverage-role { color: var(--rv-mint-bright); }
+.rv-coverage li[data-role="read"] .rv-coverage-role { color: var(--rv-cyan); }
+
+.rv-coverage h3 {
+  margin: 0;
+  font-family: var(--rv-font-display);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.rv-coverage p {
+  margin: 0;
+  color: var(--rv-text-muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 720px) {
+  .rv-clocks {
+    grid-template-columns: auto auto auto;
+  }
+
+  .rv-clock-note {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ------------------------------------------------------------------- close */
+
+.rv-close {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.rv-close-glow {
+  position: absolute;
+  inset: auto -10% -30% auto;
+  width: 70%;
+  height: 130%;
+  z-index: -1;
+  background: radial-gradient(46% 40% at 74% 60%, rgba(255, 90, 31, 0.16), transparent 72%);
+  pointer-events: none;
+}
+
+.rv-close-inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  align-items: center;
+  gap: clamp(1.25rem, 3vw, 2.5rem);
+}
+
+.rv-close-title {
+  max-width: 18ch;
+}
+
+.rv-close-figure {
+  display: flex;
+  justify-content: center;
+}
+
+.rv-raven-close {
+  width: auto;
+  height: clamp(300px, 38vw, 480px);
+  object-fit: contain;
+  filter: drop-shadow(0 24px 56px rgba(0, 0, 0, 0.55));
+  animation: rv-breathe calc(var(--rv-loop-breathe) * 1.3) var(--rv-ease-in-out) infinite;
+}
+
+/* Where a promise would normally go. */
+.rv-no-promise {
+  max-width: 54ch;
+  margin: 1.4rem 0 0;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--rv-hairline);
+  color: var(--rv-text-dim);
+  font-size: 0.74rem;
+  line-height: 1.6;
+  letter-spacing: 0.02em;
+}
+
+@media (max-width: 900px) {
+  .rv-principles-grid,
+  .rv-close-inner {
+    grid-template-columns: 1fr;
+  }
+
+  .rv-rules {
+    grid-template-columns: 1fr;
+  }
+
+  .rv-close-figure {
+    order: -1;
+  }
+
+  .rv-raven-close {
+    height: 280px;
+  }
+}
+
+/* --------------------------------------------------------------------- now */
+
+/*
+ * Rows, not cards.
+ *
+ * Four bordered boxes side by side is the shape every generated landing page
+ * reaches for, and it reads as one. This is a list: a large muted numeral, a
+ * large heading, a hairline between entries, and enough air that the eye moves
+ * down a column instead of scanning four identical rectangles.
+ */
+.rv-now-grid {
+  display: grid;
+  gap: 0;
+  margin: clamp(2rem, 5vw, 3.5rem) 0 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--rv-hairline);
+}
+
+.rv-now-grid li {
+  display: grid;
+  grid-template-columns: 4.5rem minmax(11rem, 0.9fr) minmax(0, 1.5fr) auto;
+  align-items: baseline;
+  gap: clamp(0.75rem, 2.5vw, 2rem);
+  padding: clamp(1.4rem, 3vw, 2.1rem) 0;
+  border-bottom: 1px solid var(--rv-hairline);
+  transition: background-color var(--rv-dur-calm) var(--rv-ease);
+}
+
+.rv-now-grid li:hover {
+  background: rgba(255, 255, 255, 0.014);
+}
+
+/* The header wrapper dissolves into the row grid, so each part must claim its
+   own column explicitly — source order alone put the badge where the heading
+   belongs. */
+.rv-now-head {
+  display: contents;
+}
+
+/* Row 1 for every part. Auto-placement fills columns in source order, and the
+   badge sitting in column 4 pushed the heading onto a second row. */
+.rv-now-n { grid-area: 1 / 1; }
+.rv-now-grid h3 { grid-area: 1 / 2; }
+.rv-now-grid p { grid-area: 1 / 3; }
+.rv-now-head .rv-maturity { grid-area: 1 / 4; }
+.rv-recheck { grid-area: 2 / 4; }
+
+.rv-now-n {
+  font-family: var(--rv-font-display);
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  font-weight: 500;
+  color: var(--rv-text-dim);
+  opacity: 0.5;
+  letter-spacing: -0.02em;
+}
+
+.rv-now-grid h3 {
+  margin: 0;
+  font-family: var(--rv-font-display);
+  font-size: clamp(1.15rem, 2vw, 1.6rem);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.rv-now-grid p {
+  margin: 0;
+  color: var(--rv-text-muted);
+  font-size: 0.94rem;
+  line-height: 1.6;
+}
+
+.rv-now-grid li[data-confirmed="false"] h3 {
+  color: var(--rv-text-muted);
+}
+
+.rv-recheck {
+  padding: 0.18rem 0.5rem;
+  border: 1px solid rgba(230, 197, 121, 0.36);
+  border-radius: 6px;
+  color: var(--rv-gold);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+
+.rv-now-head .rv-maturity {
+  margin-left: 0;
+  justify-self: end;
+}
+
+@media (max-width: 860px) {
+  .rv-now-grid li {
+    grid-template-columns: 3rem minmax(0, 1fr);
+    row-gap: 0.5rem;
+  }
+
+  .rv-now-grid p,
+  .rv-now-head .rv-maturity,
+  .rv-recheck {
+    grid-column: 2;
+    justify-self: start;
+  }
+}
+
+/* -------------------------------------------------------------- principles */
+
+.rv-text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--rv-cyan);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.rv-text-link:hover { color: var(--rv-cyan-bright); }
+
+.rv-principles-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  gap: clamp(1rem, 3vw, 2.25rem);
+  margin-top: clamp(1.75rem, 4vw, 2.75rem);
+  align-items: start;
+}
+
+.rv-rules {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: rule;
+}
+
+.rv-rules li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.32rem;
+  padding: 1.05rem 1.1rem;
+  border: 1px solid var(--rv-hairline);
+  border-radius: 14px;
+  background: linear-gradient(160deg, var(--rv-bg-card), var(--rv-bg-raised));
+}
+
+/* The count is part of the claim: four rules, and no fifth hiding anywhere. */
+.rv-rule-n {
+  color: var(--rv-mint-bright);
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+}
+
+.rv-rules h3 {
+  margin: 0.2rem 0 0;
+  font-family: var(--rv-font-display);
+  font-size: 1.02rem;
+  font-weight: 600;
+}
+
+.rv-rules p {
+  margin: 0;
+  color: var(--rv-text-muted);
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+/* Evidence column. Bordered in mint because it is the one block on the page
+   whose contents were verified in production rather than authored. */
+.rv-proof {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 1.15rem 1.2rem;
+  border: 1px solid rgba(74, 217, 145, 0.26);
+  border-radius: 16px;
+  background: linear-gradient(160deg, rgba(13, 20, 32, 0.96), rgba(10, 15, 24, 0.92));
+}
+
+.rv-proof-lead {
+  color: var(--rv-mint-bright);
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+}
+
+.rv-proof-kicker {
+  color: var(--rv-text-dim);
+  font-size: 0.6rem;
+  letter-spacing: 0.13em;
+}
+
+.rv-proof h3 {
+  margin: 0.15rem 0 0.35rem;
+  font-family: var(--rv-font-display);
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.rv-proof-rows {
+  display: grid;
+  gap: 0.05rem;
+  margin: 0;
+}
+
+.rv-proof-rows div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 0.42rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.rv-proof-rows dt {
+  color: var(--rv-text-dim);
+  font-size: 0.74rem;
+}
+
+.rv-proof-rows dd {
+  margin: 0;
+  color: var(--rv-text-soft);
+  font-size: 0.78rem;
+  text-align: right;
+}
+
+.rv-proof-status {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.5rem 0 0;
+  color: var(--rv-mint-bright);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.rv-proof-note {
+  margin: 0;
+  color: var(--rv-text-dim);
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.rv-fine {
+  margin-top: clamp(1.25rem, 3vw, 2rem);
+}
+
+.rv-fine p {
+  margin: 0.3rem 0 0;
+  color: var(--rv-text-dim);
+  font-size: 0.76rem;
+  line-height: 1.55;
+}
+
+/* ------------------------------------------------------------------- close */
+
+.rv-close {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.rv-close-glow {
+  position: absolute;
+  inset: auto -10% -30% auto;
+  width: 70%;
+  height: 130%;
+  z-index: -1;
+  background: radial-gradient(46% 40% at 74% 60%, rgba(255, 90, 31, 0.16), transparent 72%);
+  pointer-events: none;
+}
+
+.rv-close-inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  align-items: center;
+  gap: clamp(1.25rem, 3vw, 2.5rem);
+}
+
+.rv-close-title {
+  max-width: 18ch;
+}
+
+.rv-close-figure {
+  display: flex;
+  justify-content: center;
+}
+
+.rv-raven-close {
+  width: auto;
+  height: clamp(300px, 38vw, 480px);
+  object-fit: contain;
+  filter: drop-shadow(0 24px 56px rgba(0, 0, 0, 0.55));
+  animation: rv-breathe calc(var(--rv-loop-breathe) * 1.3) var(--rv-ease-in-out) infinite;
+}
+
+/* Where a promise would normally go. */
+.rv-no-promise {
+  max-width: 54ch;
+  margin: 1.4rem 0 0;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--rv-hairline);
+  color: var(--rv-text-dim);
+  font-size: 0.74rem;
+  line-height: 1.6;
+  letter-spacing: 0.02em;
+}
+
+@media (max-width: 900px) {
+  .rv-principles-grid,
+  .rv-close-inner {
+    grid-template-columns: 1fr;
+  }
+
+  .rv-rules {
+    grid-template-columns: 1fr;
+  }
+
+  .rv-close-figure {
+    order: -1;
+  }
+
+  .rv-raven-close {
+    height: 280px;
+  }
+}
+
+/* ------------------------------------------------------------------ reveal */
+
+/*
+ * Scroll reveal.
+ *
+ * The hidden start state is scoped to html.rv-armed, which the observer adds
+ * only once it is actually running. Ship-visible, hide-on-arm: a blocked script
+ * leaves a readable page instead of a blank one.
+ */
+.rv-armed .rv-reveal {
+  opacity: 0;
+  transform: translate3d(0, 18px, 0);
+}
+
+.rv-armed .rv-reveal.in {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity var(--rv-dur-scene) var(--rv-ease),
+    transform var(--rv-dur-scene) var(--rv-ease);
+}
+
+/* Staggered children: rows and steps arrive one after another rather than as a
+   single slab. The delay is capped so a long list never leaves the reader
+   waiting on the last entry. */
+.rv-armed .rv-reveal.in > * {
+  animation: rv-rise var(--rv-dur-scene) var(--rv-ease) both;
+}
+
+.rv-armed .rv-reveal.in > *:nth-child(1) { animation-delay: 0ms; }
+.rv-armed .rv-reveal.in > *:nth-child(2) { animation-delay: 70ms; }
+.rv-armed .rv-reveal.in > *:nth-child(3) { animation-delay: 140ms; }
+.rv-armed .rv-reveal.in > *:nth-child(4) { animation-delay: 210ms; }
+.rv-armed .rv-reveal.in > *:nth-child(n + 5) { animation-delay: 260ms; }
+
+@keyframes rv-rise {
+  from { opacity: 0; transform: translate3d(0, 14px, 0); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rv-armed .rv-reveal,
+  .rv-armed .rv-reveal.in > * {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+}
+
+/* ----------------------------------------------------------------- roadmap */
+
+/*
+ * The roadmap draws the line instead of listing it.
+ *
+ * One continuous rail carries every milestone. The lit stretch runs to the last
+ * shipped one and the rest is dashed, so the line itself reports progress
+ * before a single label is read. A lit node means the registry says the
+ * capability ships — this stylesheet cannot make anything glow on its own.
+ */
+.rv-map {
+  position: relative;
+  margin-top: clamp(2.5rem, 6vw, 4rem);
+  padding: 0 0 0.5rem;
+}
+
+/* The rail. Dashed by default; the solid lit stretch is layered over it. */
+.rv-map-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 34px;
+  height: 2px;
+  background-image: linear-gradient(90deg, var(--rv-hairline-strong) 60%, transparent 0);
+  background-size: 10px 1px;
+  background-repeat: repeat-x;
+  background-position: 0 center;
+}
+
+.rv-map-line-done {
+  position: absolute;
+  left: 0;
+  top: -1px;
+  height: 3px;
+  width: var(--p, 0%);
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--rv-mint-bright), var(--rv-cyan));
+  box-shadow: 0 0 16px rgba(74, 217, 145, 0.45);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 1.5s var(--rv-ease);
+}
+
+.rv-roadmap[data-drawn="true"] .rv-map-line-done {
+  transform: scaleX(1);
+}
+
+.rv-map-rail {
+  position: relative;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  align-items: start;
+  gap: 0.9rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rv-map-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* The whole milestone is the hit area, so the target is a milestone rather
+   than a 34px dot — the same reason a table row is clickable, not its icon. */
+.rv-map-hit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.85rem;
+  width: 100%;
+  padding: 0 0 0.5rem;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: center;
+  font: inherit;
+  cursor: pointer;
+  transition: opacity var(--rv-dur-quick) var(--rv-ease);
+}
+
+/* Filtered out, not hidden: the shape of the plan stays legible and no
+   milestone disappears from the count while a filter is active. */
+.rv-map-stage[data-dimmed="true"] {
+  opacity: 0.32;
+}
+
+.rv-map-stage[data-open="true"] .rv-map-body b {
+  color: var(--rv-cyan-bright);
+}
+
+/* Filter chips. */
+.rv-map-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: clamp(1.5rem, 3vw, 2.25rem);
+}
+
+.rv-map-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 26px;
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--rv-hairline-strong);
+  border-radius: 999px;
+  background: none;
+  color: var(--rv-text-muted);
+  font-size: 0.64rem;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition:
+    color var(--rv-dur-quick) var(--rv-ease),
+    border-color var(--rv-dur-quick) var(--rv-ease),
+    background-color var(--rv-dur-quick) var(--rv-ease);
+}
+
+.rv-map-filter span {
+  color: var(--rv-text-dim);
+}
+
+.rv-map-filter:hover {
+  color: var(--rv-text);
+}
+
+.rv-map-filter[data-active="true"] {
+  border-color: rgba(255, 90, 31, 0.5);
+  background: rgba(255, 90, 31, 0.1);
+  color: var(--rv-cyan-bright);
+}
+
+.rv-map-filter[data-active="true"] span {
+  color: var(--rv-cyan);
+}
+
+.rv-map-filter[data-status="shipped"][data-active="true"] {
+  border-color: rgba(74, 217, 145, 0.5);
+  background: rgba(74, 217, 145, 0.1);
+  color: var(--rv-mint-bright);
+}
+
+.rv-map-filter[data-status="shipped"][data-active="true"] span {
+  color: var(--rv-mint-bright);
+}
+
+/*
+ * No entrance animation on the milestones.
+ *
+ * Three attempts tied their opacity to an observer flag or a fill-mode
+ * animation, and all three ended with an empty diagram on screen. The rail
+ * still draws itself, which is enough motion for the section; the content is
+ * simply always there. An effect that can hide the page is not worth its cost.
+ */
+
+.rv-map-node {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--rv-hairline-strong);
+  border-radius: 50%;
+  background: var(--rv-bg);
+  margin-top: 17px;
+  transform: translateY(-17px);
+}
+
+.rv-map-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--rv-text-dim);
+}
+
+.rv-map-stage[data-status="shipped"] .rv-map-node {
+  border-color: rgba(74, 217, 145, 0.6);
+  box-shadow: 0 0 20px rgba(74, 217, 145, 0.25);
+}
+
+.rv-map-stage[data-status="shipped"] .rv-map-dot {
+  background: var(--rv-mint-bright);
+  box-shadow: 0 0 10px var(--rv-mint-bright);
+}
+
+/* In build: the product is working on it, and the node says so without
+   implying it can be used. */
+.rv-map-stage[data-status="build"] .rv-map-node {
+  border-color: rgba(255, 90, 31, 0.55);
+  box-shadow: 0 0 20px rgba(255, 90, 31, 0.2);
+}
+
+.rv-map-stage[data-status="build"] .rv-map-dot {
+  background: var(--rv-cyan);
+  box-shadow: 0 0 10px var(--rv-cyan);
+}
+
+.rv-map-stage[data-status="ahead"] .rv-map-node {
+  border-style: dashed;
+}
+
+.rv-map-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  max-width: 18ch;
+}
+
+.rv-map-state {
+  font-size: 0.56rem;
+  letter-spacing: 0.14em;
+  color: var(--rv-text-dim);
+}
+
+.rv-map-stage[data-status="shipped"] .rv-map-state { color: var(--rv-mint-bright); }
+.rv-map-stage[data-status="build"] .rv-map-state { color: var(--rv-cyan); }
+
+.rv-map-body b {
+  font-family: var(--rv-font-display);
+  font-size: 0.98rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.rv-map-stage[data-status="ahead"] .rv-map-body b {
+  color: var(--rv-text-muted);
+}
+
+.rv-map-detail {
+  color: var(--rv-text-dim);
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+/* The detail panel. The second field is the one a roadmap usually omits:
+   what the milestone is waiting for. It is always a gate, never a date. */
+.rv-map-panel {
+  margin-top: clamp(1.25rem, 2.5vw, 1.75rem);
+  padding: clamp(1rem, 2.2vw, 1.4rem);
+  border: 1px solid var(--rv-hairline);
+  border-inline-start: 2px solid var(--rv-hairline-strong);
+  border-radius: 14px;
+  background: linear-gradient(160deg, rgba(13, 20, 32, 0.72), rgba(10, 15, 24, 0.5));
+  text-align: start;
+}
+
+.rv-map-panel[data-status="shipped"] { border-inline-start-color: var(--rv-mint-bright); }
+.rv-map-panel[data-status="build"] { border-inline-start-color: var(--rv-cyan); }
+
+.rv-map-panel-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.rv-map-panel-head b {
+  font-family: var(--rv-font-display);
+  font-size: clamp(1rem, 1.5vw, 1.25rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.rv-map-panel-head .rv-maturity {
+  margin-left: 0;
+}
+
+.rv-map-panel dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 0.9rem;
+  margin: 0.9rem 0 0;
+}
+
+.rv-map-panel dt {
+  color: var(--rv-text-dim);
+  font-family: var(--rv-font-mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.16em;
+}
+
+.rv-map-panel dd {
+  margin: 0.45rem 0 0;
+  color: var(--rv-text-soft);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.rv-map-nodates {
+  margin: 0.9rem 0 0;
+  color: var(--rv-text-dim);
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+.rv-map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin: clamp(1.75rem, 3vw, 2.5rem) 0 0;
+  color: var(--rv-text-dim);
+  font-size: 0.66rem;
+  letter-spacing: 0.1em;
+}
+
+.rv-map-key {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--rv-text-dim);
+}
+
+.rv-map-key[data-status="shipped"] { background: var(--rv-mint-bright); box-shadow: 0 0 8px var(--rv-mint-bright); }
+.rv-map-key[data-status="build"] { background: var(--rv-cyan); box-shadow: 0 0 8px var(--rv-cyan); }
+.rv-map-key[data-status="build"],
+.rv-map-key[data-status="ahead"] { margin-left: 0.9rem; }
+
+.rv-map-count {
+  margin-left: auto;
+  color: var(--rv-text-muted);
+}
+
+/* Narrow: the rail turns vertical and the milestones stack along it. */
+@media (max-width: 900px) {
+  .rv-map-line {
+    left: 17px;
+    right: auto;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    height: auto;
+    background-image: linear-gradient(180deg, var(--rv-hairline-strong) 60%, transparent 0);
+    background-size: 1px 10px;
+    background-repeat: repeat-y;
+  }
+
+  .rv-map-line-done {
+    left: -1px;
+    top: 0;
+    width: 3px;
+    height: var(--p, 0%);
+    background: linear-gradient(180deg, var(--rv-mint-bright), var(--rv-cyan));
+    transform: scaleY(0);
+    transform-origin: top center;
+  }
+
+  .rv-roadmap[data-drawn="true"] .rv-map-line-done {
+    transform: scaleY(1);
+  }
+
+  .rv-map-rail {
+    grid-auto-flow: row;
+    grid-auto-columns: auto;
+    gap: 1.5rem;
+  }
+
+  .rv-map-stage,
+  .rv-map-hit {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 1rem;
+    text-align: start;
+  }
+
+  .rv-map-node {
+    margin-top: 0;
+    transform: none;
+    flex: 0 0 auto;
+  }
+
+  .rv-map-body {
+    max-width: none;
+  }
+}
+
+/* ------------------------------------------------------- capability rows */
+
+/*
+ * "What you can do now" — four rows, each openable to its evidence.
+ *
+ * The row is one hairline-separated band rather than a card, because four cards
+ * in a column is card-spam and the content is a ledger, not a gallery. The
+ * right-hand column carries the pledge pair: what it does, what it never does.
+ * Green appears only on the affirmative half and only when the registry has
+ * confirmed the capability — colour here is a signal, never decoration.
+ */
+.rv-caps-list {
+  margin: clamp(2rem, 5vw, 3.25rem) 0 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--rv-hairline);
+}
+
+.rv-caps-row {
+  border-bottom: 1px solid var(--rv-hairline);
+}
+
+.rv-caps-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  align-items: start;
+  gap: clamp(1rem, 3vw, 2.75rem);
+  width: 100%;
+  padding: clamp(1.35rem, 3vw, 2rem) clamp(0.5rem, 1.5vw, 1rem);
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: start;
+  font: inherit;
+  cursor: pointer;
+  transition: background-color var(--rv-dur-quick) var(--rv-ease);
+}
+
+.rv-caps-head:hover {
+  background: rgba(255, 255, 255, 0.016);
+}
+
+.rv-caps-main {
+  display: flex;
+  gap: clamp(0.75rem, 2vw, 1.15rem);
+  min-width: 0;
+}
+
+.rv-caps-n {
+  flex: 0 0 auto;
+  padding-top: 0.32rem;
+  color: var(--rv-text-dim);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+}
+
+.rv-caps-text {
+  min-width: 0;
+}
+
+.rv-caps-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.rv-caps-title b {
+  font-family: var(--rv-font-display);
+  font-size: clamp(1.05rem, 1.7vw, 1.4rem);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+.rv-caps-title .rv-maturity {
+  margin-left: 0;
+}
+
+.rv-caps-p {
+  display: block;
+  max-width: 44ch;
+  margin-top: 0.6rem;
+  color: var(--rv-text-muted);
+  font-size: 0.925rem;
+  line-height: 1.55;
+}
+
+/* The pledge pair. */
+.rv-caps-pledges {
+  display: grid;
+  gap: 0.55rem;
+  align-content: start;
+  padding-top: 0.28rem;
+}
+
+.rv-caps-does,
+.rv-caps-never {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr);
+  gap: 0.6rem;
+  align-items: start;
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.rv-caps-does {
+  color: var(--rv-text-soft);
+}
+
+.rv-caps-does svg {
+  margin-top: 0.22rem;
+  color: var(--rv-mint-bright);
+}
+
+.rv-caps-never {
+  color: var(--rv-text-muted);
+}
+
+.rv-caps-never svg {
+  margin-top: 0.22rem;
+  color: #ef6a6a;
+}
+
+/* Fail-closed: an unconfirmed capability keeps its evidence but loses the
+   affirmative colour, because a green tick beside stale verification reads as
+   a guarantee the product cannot currently make. */
+.rv-caps-row[data-confirmed="false"] .rv-caps-does svg {
+  color: var(--rv-text-dim);
+}
+
+.rv-caps-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.15rem;
+  color: var(--rv-cyan);
+  font-size: 0.66rem;
+  letter-spacing: 0.16em;
+}
+
+.rv-caps-caret {
+  transition: transform var(--rv-dur-quick) var(--rv-ease);
+}
+
+.rv-caps-row[data-open="true"] .rv-caps-caret {
+  transform: rotate(180deg);
+}
+
+/* Evidence drawer. */
+.rv-caps-drawer {
+  padding: 0 clamp(0.5rem, 1.5vw, 1rem) clamp(1.35rem, 3vw, 1.9rem);
+}
+
+.rv-caps-evidence {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13.5rem, 1fr));
+  gap: 0.6rem;
+  margin: 0;
+  padding-top: clamp(1rem, 2vw, 1.35rem);
+  border-top: 1px solid var(--rv-hairline);
+}
+
+.rv-caps-evidence > div {
+  padding: 0.85rem 0.95rem;
+  border: 1px solid var(--rv-hairline);
+  border-radius: 11px;
+  background: var(--rv-bg-card);
+}
+
+.rv-caps-evidence dt {
+  color: var(--rv-text-dim);
+  font-family: var(--rv-font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.16em;
+}
+
+.rv-caps-evidence dd {
+  margin: 0.5rem 0 0;
+  color: var(--rv-text-soft);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.rv-caps-evidence dd[data-tone="live"] { color: var(--rv-mint-bright); }
+.rv-caps-evidence dd[data-tone="paper"],
+.rv-caps-evidence dd[data-tone="preview"] { color: var(--rv-gold); }
+.rv-caps-evidence dd[data-tone="planned"],
+.rv-caps-evidence dd[data-tone="unverified"] { color: var(--rv-text-muted); }
+.rv-caps-evidence dd[data-tone="refuse"] { color: var(--rv-text-muted); }
+.rv-caps-evidence dd[data-tone="approve"] { color: var(--rv-cyan-soft); }
+
+.rv-caps-note {
+  margin: clamp(1.1rem, 2.5vw, 1.5rem) 0 0;
+  color: var(--rv-text-dim);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+}
+
+@media (max-width: 860px) {
+  .rv-caps-head {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.1rem;
+  }
+
+  .rv-caps-p {
+    max-width: none;
+  }
+}

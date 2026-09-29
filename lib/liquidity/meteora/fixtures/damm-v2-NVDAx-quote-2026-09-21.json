@@ -1,0 +1,513 @@
+{
+  "total": 34,
+  "pages": 7,
+  "current_page": 1,
+  "page_size": 5,
+  "data": [
+    {
+      "address": "GNCR91v4bo6DG9ALVDUzNv5wMkawDMLPTA3JfFE95FA6",
+      "name": "GPUCAT-NVDAx",
+      "token_x": {
+        "address": "7XmaUUj2PQw2sQvPKkomKUQXFNtqzMo2DURHhrk7rnN2",
+        "name": "GPU Cat",
+        "symbol": "GPUCAT",
+        "decimals": 6,
+        "is_verified": false,
+        "holders": 259,
+        "freeze_authority_disabled": true,
+        "total_supply": 999859534.076992,
+        "price": 0.000014372498490062409,
+        "market_cap": 14370.479643796072
+      },
+      "token_y": {
+        "address": "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh",
+        "name": "NVIDIA xStock",
+        "symbol": "NVDAx",
+        "decimals": 8,
+        "is_verified": true,
+        "holders": 95688,
+        "freeze_authority_disabled": false,
+        "total_supply": 321822.7626200365,
+        "price": 223.7900545468499,
+        "market_cap": 72020733.60115589
+      },
+      "token_x_amount": 399197998.752567,
+      "token_y_amount": 24.986746272231304,
+      "created_at": 1788995758000,
+      "vault_x": "FM61zoYsomk99gSNXvK5uhYKXviBibeximoEbCsaFSYG",
+      "vault_y": "FuLq5fcnu5sHZDR1WEM6z1wvjGq9TbXVSrjM3RATdiTt",
+      "alpha_vault": "11111111111111111111111111111111",
+      "pool_config": {
+        "collect_fee_mode": 1,
+        "base_fee_mode": 0,
+        "base_fee_pct": 2,
+        "protocol_fee_pct": 20,
+        "partner_fee_pct": 0,
+        "referral_fee_pct": 20,
+        "dynamic_fee_initialized": false,
+        "compounding_fee_pct": 0,
+        "pool_type": 1,
+        "concentrated_liquidity": false,
+        "min_price": 5.430437183256533e-22,
+        "max_price": 184774310762026080,
+        "activation_type": 1,
+        "activation_point": 1788995758,
+        "has_fee_scheduler": false,
+        "is_fee_scheduler_active": false
+      },
+      "tvl": 11484.67195212396,
+      "current_price": 6.259236938375096e-8,
+      "has_farm": false,
+      "farm_apr": 0,
+      "farm_apy": 0,
+      "permanent_lock_liquidity": 11479.22352590781,
+      "vested_liquidity": {
+        "months_3": 0,
+        "months_6": 0
+      },
+      "volume": {
+        "30m": 143.6293638884238,
+        "1h": 143.6293638884238,
+        "2h": 162.70287898981277,
+        "4h": 317.5368677749093,
+        "12h": 1881.9383501480072,
+        "24h": 3814.095316523105
+      },
+      "fees": {
+        "30m": 2.3449700098703974,
+        "1h": 2.3449700098703974,
+        "2h": 2.656377404963809,
+        "4h": 5.184282128169271,
+        "12h": 30.403151659682106,
+        "24h": 61.5808705205454
+      },
+      "protocol_fees": {
+        "30m": 0.5862425024675993,
+        "1h": 0.5862425024675993,
+        "2h": 0.6640921149542556,
+        "4h": 1.296064941940434,
+        "12h": 7.600759260456659,
+        "24h": 15.395155394796252
+      },
+      "fee_tvl_ratio": {
+        "30m": 0.020418258524456348,
+        "1h": 0.020418258524456348,
+        "2h": 0.02312976300966561,
+        "4h": 0.04514088125269001,
+        "12h": 0.2647280809275479,
+        "24h": 0.5362005181972719
+      },
+      "cumulative_metrics": {
+        "volume": 1173927.433127654,
+        "fees": 9724.943330763308
+      },
+      "is_blacklisted": false,
+      "launchpad": "ember",
+      "tags": []
+    },
+    {
+      "address": "3UWQC4dR9Bf7gpNAYuy7iobfug1uSQFS8mvbmm3J3Mey",
+      "name": "VORE-NVDAx",
+      "token_x": {
+        "address": "8QmwwR5fK5Au5NjfG1dqjrUJgJ393c8AzzRTnvDCsmax",
+        "name": "Omnivore",
+        "symbol": "VORE",
+        "decimals": 6,
+        "is_verified": false,
+        "holders": 19,
+        "freeze_authority_disabled": true,
+        "total_supply": 525947657.714208,
+        "price": 0.000009924332990976742,
+        "market_cap": 5219.679690980058
+      },
+      "token_y": {
+        "address": "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh",
+        "name": "NVIDIA xStock",
+        "symbol": "NVDAx",
+        "decimals": 8,
+        "is_verified": true,
+        "holders": 95690,
+        "freeze_authority_disabled": false,
+        "total_supply": 321822.7626200365,
+        "price": 223.65108210602608,
+        "market_cap": 71976009.10632192
+      },
+      "token_x_amount": 294276434.838554,
+      "token_y_amount": 6.497742425640216,
+      "created_at": 1789908560000,
+      "vault_x": "7ht7w9rth54HBeZLiie9wTxXxznkGGPJZ3vjs1TCiVHa",
+      "vault_y": "5DWRD4k3LwvizVdACYWnNUVzj4EPbaSht6NUGDrzroUj",
+      "alpha_vault": "11111111111111111111111111111111",
+      "pool_config": {
+        "collect_fee_mode": 1,
+        "base_fee_mode": 0,
+        "base_fee_pct": 1,
+        "protocol_fee_pct": 20,
+        "partner_fee_pct": 0,
+        "referral_fee_pct": 20,
+        "dynamic_fee_initialized": false,
+        "compounding_fee_pct": 0,
+        "pool_type": 1,
+        "concentrated_liquidity": true,
+        "min_price": 2.2698871443486806e-8,
+        "max_price": 2.2698871443486808e-7,
+        "activation_type": 1,
+        "activation_point": 1789908560,
+        "has_fee_scheduler": false,
+        "is_fee_scheduler_active": false
+      },
+      "tvl": 4370.300769211333,
+      "current_price": 4.3949367958810307e-8,
+      "has_farm": false,
+      "farm_apr": 0,
+      "farm_apy": 0,
+      "permanent_lock_liquidity": 4373.181106631595,
+      "vested_liquidity": {
+        "months_3": 0,
+        "months_6": 0
+      },
+      "volume": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 0,
+        "24h": 15607.037429533042
+      },
+      "fees": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 0,
+        "24h": 125.42735495995994
+      },
+      "protocol_fees": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 0,
+        "24h": 31.3566482714195
+      },
+      "fee_tvl_ratio": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 0,
+        "24h": 2.869993659099912
+      },
+      "cumulative_metrics": {
+        "volume": 15607.037429533038,
+        "fees": 125.42735495995991
+      },
+      "is_blacklisted": false,
+      "launchpad": "",
+      "tags": []
+    },
+    {
+      "address": "9gVRdL7zt5v6rLVVcp14AjV6LEARYriq14wCMe5LyZZj",
+      "name": "MULTICAT-NVDAx",
+      "token_x": {
+        "address": "ArGMQizaiy7yU4KBKKe1TqU1zGAoYPp8Ch4Aq9qMcK8D",
+        "name": "MULTICAT",
+        "symbol": "MULTICAT",
+        "decimals": 6,
+        "is_verified": false,
+        "holders": 31,
+        "freeze_authority_disabled": true,
+        "total_supply": 999999998.707608,
+        "price": 0.000007872875903670392,
+        "market_cap": 7872.875893495549
+      },
+      "token_y": {
+        "address": "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh",
+        "name": "NVIDIA xStock",
+        "symbol": "NVDAx",
+        "decimals": 8,
+        "is_verified": true,
+        "holders": 95690,
+        "freeze_authority_disabled": false,
+        "total_supply": 321822.7626200365,
+        "price": 223.74420240102617,
+        "market_cap": 72005977.33691484
+      },
+      "token_x_amount": 440403445.77113,
+      "token_y_amount": 1.8656728264251947,
+      "created_at": 1789262218000,
+      "vault_x": "4H7ZjzLL2F4knt6u4LXYaTbScaLoqY1W1qwfzTSpEXU8",
+      "vault_y": "8PTtmHEkaxjzqpLSdwaTrovYZt1puqMR7tKQDKCPytf",
+      "alpha_vault": "11111111111111111111111111111111",
+      "pool_config": {
+        "collect_fee_mode": 1,
+        "base_fee_mode": 1,
+        "base_fee_pct": 1.25,
+        "protocol_fee_pct": 20,
+        "partner_fee_pct": 0,
+        "referral_fee_pct": 20,
+        "dynamic_fee_initialized": false,
+        "compounding_fee_pct": 0,
+        "pool_type": 1,
+        "concentrated_liquidity": true,
+        "min_price": 2.7573699472074844e-8,
+        "max_price": 184774310762026080,
+        "activation_type": 1,
+        "activation_point": 1789262331,
+        "has_fee_scheduler": true,
+        "is_fee_scheduler_active": false
+      },
+      "tvl": 3884.612434773392,
+      "current_price": 3.554132626529833e-8,
+      "has_farm": false,
+      "farm_apr": 0,
+      "farm_apy": 0,
+      "permanent_lock_liquidity": 3884.3454128403127,
+      "vested_liquidity": {
+        "months_3": 0,
+        "months_6": 0
+      },
+      "volume": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 6.162313356942247,
+        "24h": 6.162313356942247
+      },
+      "fees": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 0.062405938489618146,
+        "24h": 0.062405938489618146
+      },
+      "protocol_fees": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 0.01559982294548235,
+        "24h": 0.01559982294548235
+      },
+      "fee_tvl_ratio": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 0.0016064907255865944,
+        "24h": 0.0016064907255865944
+      },
+      "cumulative_metrics": {
+        "volume": 63323.493463481434,
+        "fees": 643.1562669220323
+      },
+      "is_blacklisted": false,
+      "launchpad": "",
+      "tags": []
+    },
+    {
+      "address": "jzdKxpKSzWhdLCyzpNdi4b6KohueJd8uxb1rBHom4sf",
+      "name": "SOLSTOCKS-NVDAx",
+      "token_x": {
+        "address": "GZXFd4fgprvRwdnbUoAWZTcqmvnHJ8Y8EN1mEZSgvxbZ",
+        "name": "SOLSTOCKS",
+        "symbol": "SOLSTOCKS",
+        "decimals": 6,
+        "is_verified": false,
+        "holders": 188,
+        "freeze_authority_disabled": true,
+        "total_supply": 999892783.591423,
+        "price": 0.000004641730896592004,
+        "market_cap": 4641.233226875691
+      },
+      "token_y": {
+        "address": "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh",
+        "name": "NVIDIA xStock",
+        "symbol": "NVDAx",
+        "decimals": 8,
+        "is_verified": true,
+        "holders": 95688,
+        "freeze_authority_disabled": false,
+        "total_supply": 321822.7626200365,
+        "price": 223.7900545468499,
+        "market_cap": 72020733.60115589
+      },
+      "token_x_amount": 147312146.676022,
+      "token_y_amount": 3.0675196520779693,
+      "created_at": 1789049934000,
+      "vault_x": "GF45Snp2L6M7nADbeXPpjtF447QyyME1LqtWNLyzAnF7",
+      "vault_y": "FFtDG6utoQ4oMs7hU7kcWRM77VB6riFp5YLW2nZ6YyWc",
+      "alpha_vault": "11111111111111111111111111111111",
+      "pool_config": {
+        "collect_fee_mode": 1,
+        "base_fee_mode": 0,
+        "base_fee_pct": 1.25,
+        "protocol_fee_pct": 20,
+        "partner_fee_pct": 0,
+        "referral_fee_pct": 20,
+        "dynamic_fee_initialized": false,
+        "compounding_fee_pct": 0,
+        "pool_type": 1,
+        "concentrated_liquidity": false,
+        "min_price": 5.430437183256533e-22,
+        "max_price": 184774310762026080,
+        "activation_type": 0,
+        "activation_point": 445905011,
+        "has_fee_scheduler": false,
+        "is_fee_scheduler_active": false
+      },
+      "tvl": 1368.6905436153174,
+      "current_price": 2.0791141360186715e-8,
+      "has_farm": false,
+      "farm_apr": 0,
+      "farm_apy": 0,
+      "permanent_lock_liquidity": 1369.5809226462052,
+      "vested_liquidity": {
+        "months_3": 0,
+        "months_6": 0
+      },
+      "volume": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 88.32785182453726,
+        "4h": 88.32785182453726,
+        "12h": 90.10320245241172,
+        "24h": 90.10320245241172
+      },
+      "fees": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0.8905048144749128,
+        "4h": 0.8905048144749128,
+        "12h": 0.9084865341969608,
+        "24h": 0.9084865341969608
+      },
+      "protocol_fees": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0.21407846007164005,
+        "4h": 0.21407846007164005,
+        "12h": 0.2185712155724728,
+        "24h": 0.2185712155724728
+      },
+      "fee_tvl_ratio": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0.06506253868918356,
+        "4h": 0.06506253868918356,
+        "12h": 0.06637632870592104,
+        "24h": 0.06637632870592104
+      },
+      "cumulative_metrics": {
+        "volume": 229249.3146457041,
+        "fees": 2306.9749893807725
+      },
+      "is_blacklisted": false,
+      "launchpad": "",
+      "tags": []
+    },
+    {
+      "address": "EQv5w5CJFxMGST8F1b3f2bK9jEJepQtk97z7pXGhJd7J",
+      "name": "SLOP-NVDAx",
+      "token_x": {
+        "address": "yTUVPT9swC93WDjmm1B2B6VKYJrzpLza5C8Wa8vBAGS",
+        "name": "slopcoin",
+        "symbol": "SLOP",
+        "decimals": 9,
+        "is_verified": false,
+        "holders": 3,
+        "freeze_authority_disabled": true,
+        "total_supply": 1000000000,
+        "price": 0.000003534359986314592,
+        "market_cap": 3534.3599863145923
+      },
+      "token_y": {
+        "address": "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh",
+        "name": "NVIDIA xStock",
+        "symbol": "NVDAx",
+        "decimals": 8,
+        "is_verified": true,
+        "holders": 96421,
+        "freeze_authority_disabled": false,
+        "total_supply": 321822.81012219976,
+        "price": 223.06176303337577,
+        "market_cap": 71786363.4102132
+      },
+      "token_x_amount": 951687889.85729,
+      "token_y_amount": 0.6653608574312186,
+      "created_at": 1788663197000,
+      "vault_x": "9WZ8zRhMuXn2aPszqBYmDSZDwCcftvixRNxNumJoRNnr",
+      "vault_y": "EuA6KzQTjhmZnhBkcU8fuTArpdm1gGh88SBBMDfnWggd",
+      "alpha_vault": "11111111111111111111111111111111",
+      "pool_config": {
+        "collect_fee_mode": 1,
+        "base_fee_mode": 0,
+        "base_fee_pct": 2,
+        "protocol_fee_pct": 20,
+        "partner_fee_pct": 0,
+        "referral_fee_pct": 20,
+        "dynamic_fee_initialized": false,
+        "compounding_fee_pct": 0,
+        "pool_type": 1,
+        "concentrated_liquidity": true,
+        "min_price": 1.3106773076924867e-8,
+        "max_price": 184774310762026070000,
+        "activation_type": 0,
+        "activation_point": 444683805,
+        "has_fee_scheduler": false,
+        "is_fee_scheduler_active": false
+      },
+      "tvl": 148.60894181962024,
+      "current_price": 1.7497541096834578e-8,
+      "has_farm": false,
+      "farm_apr": 0,
+      "farm_apy": 0,
+      "permanent_lock_liquidity": 148.75303750002976,
+      "vested_liquidity": {
+        "months_3": 0,
+        "months_6": 0
+      },
+      "volume": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 0,
+        "24h": 0
+      },
+      "fees": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 0,
+        "24h": 0
+      },
+      "protocol_fees": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 0,
+        "24h": 0
+      },
+      "fee_tvl_ratio": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 0,
+        "24h": 0
+      },
+      "cumulative_metrics": {
+        "volume": 2824.696288312857,
+        "fees": 45.64028944471909
+      },
+      "is_blacklisted": false,
+      "launchpad": "",
+      "tags": []
+    }
+  ]
+}

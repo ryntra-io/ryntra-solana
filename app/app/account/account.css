@@ -1,0 +1,131 @@
+/* The account surfaces: the sheet, the notice, the menu trigger. Tokens only. */
+
+.ry-account-trigger { min-height: 44px; }
+.ry-account-name { max-width: 14ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ry-account-link { background: none; border: 0; font: inherit; cursor: pointer; }
+
+.ry-account-notice {
+  position: fixed;
+  inset-inline: 0;
+  bottom: calc(var(--ry-s4) + env(safe-area-inset-bottom, 0px));
+  margin-inline: auto;
+  width: max-content;
+  max-width: min(92vw, 520px);
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s3);
+  padding: var(--ry-s3) var(--ry-s4);
+  border: 1px solid var(--ry-border-strong);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-elevated);
+  color: var(--ry-text);
+  box-shadow: var(--ry-shadow-elevated);
+  z-index: 70;
+  font-size: var(--ry-fs-body);
+}
+.ry-account-notice-close { background: none; border: 0; color: var(--ry-muted); font: inherit; font-size: 18px; line-height: 1; cursor: pointer; min-width: 32px; min-height: 32px; }
+
+.ry-login-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 66;
+  display: grid;
+  place-items: end center;
+  background: rgba(0, 0, 0, 0.45);
+  padding: var(--ry-s4);
+}
+@media (min-width: 720px) { .ry-login-backdrop { place-items: center; } }
+
+.ry-login {
+  width: min(100%, 440px);
+  max-height: min(92vh, 720px);
+  overflow: auto;
+  display: grid;
+  gap: var(--ry-s4);
+  padding: var(--ry-s5);
+  border: 1px solid var(--ry-border-strong);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+  color: var(--ry-text);
+  box-shadow: var(--ry-shadow-elevated);
+}
+.ry-login-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--ry-s3); }
+.ry-login-title { margin: 0; font-family: var(--ry-font-display); font-size: var(--ry-fs-h3); line-height: var(--ry-lh-head); letter-spacing: var(--ry-ls-head); }
+.ry-login-reason { margin: var(--ry-s2) 0 0; font-weight: 600; color: var(--ry-text); }
+.ry-login-lead { margin: 0; color: var(--ry-muted); font-size: var(--ry-fs-dense); line-height: var(--ry-lh-body); }
+.ry-login-close { flex: none; width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: var(--ry-r-chip); background: none; color: var(--ry-muted); cursor: pointer; }
+.ry-login-close:hover { background: var(--ry-hover); color: var(--ry-text); }
+
+.ry-login-providers { display: grid; gap: var(--ry-s2); }
+.ry-login-provider { justify-content: center; gap: var(--ry-s2); min-height: 44px; width: 100%; }
+
+.ry-login-tabs { display: flex; gap: var(--ry-s1); border-bottom: 1px solid var(--ry-border); }
+.ry-login-tab { background: none; border: 0; border-bottom: 2px solid transparent; padding: var(--ry-s2) var(--ry-s3); font: inherit; font-size: var(--ry-fs-dense); color: var(--ry-muted); cursor: pointer; min-height: 40px; }
+.ry-login-tab[aria-selected="true"] { color: var(--ry-text); border-bottom-color: var(--ry-iris); }
+
+.ry-login-form { display: grid; gap: var(--ry-s3); }
+/* The sheet mounts above the product shell, where `.rw-btn` has no base
+   style of its own on pages outside the workspace: without these rules the
+   sign-in button is the browser's default grey. */
+.ry-login .rw-btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--ry-s2); min-height: 44px; padding: 10px 16px; border: 1px solid var(--ry-border); border-radius: var(--ry-r-btn); background: var(--ry-card); color: var(--ry-text); font: inherit; font-weight: 500; text-decoration: none; cursor: pointer; transition: background-color var(--rt-duration-fast) var(--rt-ease), border-color var(--rt-duration-fast) var(--rt-ease), transform var(--rt-duration-fast) var(--rt-ease), box-shadow var(--rt-duration-fast) var(--rt-ease); }
+.ry-login .rw-btn:hover:not(:disabled) { background: var(--ry-hover); border-color: var(--ry-border-strong); }
+.ry-login .rw-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.ry-login .rw-btn[data-variant="primary"] { background: var(--ry-gradient); color: var(--ry-on-iris); border-color: var(--ry-brand-edge); font-weight: 600; box-shadow: var(--ry-brand-glow); }
+.ry-login .rw-btn[data-variant="primary"]:hover:not(:disabled) { filter: none; background: var(--ry-gradient-hover); transform: translateY(-1px); box-shadow: var(--ry-brand-glow-strong); }
+.ry-login .rw-btn[data-variant="primary"]:active:not(:disabled) { transform: translateY(0); box-shadow: var(--ry-brand-glow); }
+.ry-login-form .rw-btn, .ry-login-transitional .rw-btn { min-height: 44px; justify-content: center; }
+.ry-login-field { display: grid; gap: var(--ry-s1); font-size: var(--ry-fs-dense); }
+.ry-login-field input { min-height: 44px; padding: var(--ry-s2) var(--ry-s3); border: 1px solid var(--ry-border); border-radius: var(--ry-r-btn); background: var(--ry-bg); color: var(--ry-text); font: inherit; }
+.ry-login-field input:focus-visible { outline: 2px solid var(--ry-iris); outline-offset: 1px; }
+.ry-login-field small { color: var(--ry-muted); }
+.ry-login-error { margin: 0; color: var(--ry-risk); font-size: var(--ry-fs-dense); }
+.ry-login-state { display: grid; gap: var(--ry-s2); margin: 0; padding: var(--ry-s3); border: 1px dashed var(--ry-border-strong); border-radius: var(--ry-r-chip); font-size: var(--ry-fs-dense); }
+.ry-login-state p { margin: 0; }
+.ry-login-transitional { display: grid; gap: var(--ry-s3); }
+.ry-login-foot { margin: 0; font-size: var(--ry-fs-dense); }
+.ry-login-foot a { color: var(--ry-text); }
+
+/* Settings → wallets & notifications: each block is a title, one line of
+   help, its rows and its one action; the blocks breathe apart from each other. */
+.ry-account-settings-block { display: grid; gap: var(--ry-s3); }
+.ry-account-settings-block > p { margin: 0; line-height: var(--ry-lh-body); font-size: var(--ry-fs-dense); }
+.ry-product .ry-account-settings-block > .ry-section-title { margin: var(--ry-s5) 0 0; font-size: 1.05rem; }
+.ry-product .ry-account-settings-block > .ry-section-title:first-child { margin-top: 0; }
+.ry-account-settings-block > .rw-btn { justify-self: start; }
+.ry-account-settings-block button.ry-action-link {
+  padding: 0; border: 0; background: transparent; color: var(--ry-text);
+  font: inherit; font-size: var(--ry-fs-dense); text-decoration: underline; text-underline-offset: 3px; cursor: pointer;
+}
+.ry-account-settings-block button.ry-action-link:disabled { opacity: 0.5; cursor: not-allowed; }
+.ry-account-list { display: grid; gap: var(--ry-s2); margin: 0; padding: 0; list-style: none; }
+.ry-account-row { display: flex; align-items: center; justify-content: space-between; gap: var(--ry-s3); padding: var(--ry-s2) 0; border-bottom: 1px solid var(--ry-border); min-height: 44px; }
+.ry-account-row:last-child { border-bottom: 0; }
+.ry-account-row-meta { display: grid; gap: 2px; min-width: 0; }
+.ry-account-row-meta small { color: var(--ry-muted); }
+.ry-account-mono { font-family: var(--ry-font-mono); font-size: var(--ry-fs-dense); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 28ch; }
+.ry-account-actions { display: flex; flex-wrap: wrap; gap: var(--ry-s2); }
+.ry-wallet-entry { display: grid; gap: var(--ry-s3); }
+.ry-wallet-entry p { margin: 0; line-height: var(--ry-lh-body); }
+.ry-wallet-entry .rw-btn { min-height: 44px; justify-content: center; }
+.ry-wallet-entry .ry-action-link, .ry-wallet-legacy {
+  min-height: 44px;
+  padding: var(--ry-s2) 0;
+  border: 0;
+  background: transparent;
+  color: var(--ry-text);
+  font: inherit;
+  font-size: var(--ry-fs-dense);
+  line-height: var(--ry-lh-body);
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.ry-wallet-legacy { border-top: 1px solid var(--ry-border); padding-top: var(--ry-s3); }
+.ry-wallet-entry button:focus-visible, .ry-wallet-legacy:focus-visible, .ry-login-close:focus-visible {
+  outline: 2px solid var(--ry-iris); outline-offset: 3px;
+}
+.ry-login-close { width: 44px; height: 44px; }
+
+/* The signed-in fact at the top of the wallet panel: a check and a sentence. */
+.ry-product .ry-identity-fact { display: inline-flex; align-items: center; gap: 6px; color: var(--ry-verified); }

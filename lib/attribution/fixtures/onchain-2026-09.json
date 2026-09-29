@@ -1,0 +1,431 @@
+{
+  "note": "Four mainnet transactions, read from api.mainnet-beta.solana.com on 2026-09-15 (getTransaction, jsonParsed, maxSupportedTransactionVersion 0), trimmed to the fields the attribution rule reads, with the signing wallets and the signatures replaced by stand-ins. Referral account F9pV233uBksW4U1BKiK7u9qShgXkwoR6F8MzU4FZYPUv; its token accounts 55p9Zk8tzq6YhnPgopW5X1sX5kHX1v1zuRiQNwqa5hYH (USDC) and A3QWi67fFpQ2PrGXghjLMQdWAkHeN43NbFp9FxpCeorY (wSOL).",
+  "referralAccount": "F9pV233uBksW4U1BKiK7u9qShgXkwoR6F8MzU4FZYPUv",
+  "transactions": {
+    "proofSwap": {
+      "signature": "43PjEcUriSZVXHQqE19nNSMqtNC4frz4ka1J1Tf1daBfWewP2k7T81D6Q8VD7xHmVYF7sAE4vLUuAtS9ULgiW58h",
+      "slot": 445833175,
+      "blockTime": 1789027246,
+      "failed": false,
+      "signers": [
+        "4MS4RQ3Vj2oYFHJz4EtLyxtq6panVcDUpDyXdoGxfQ1n"
+      ],
+      "programs": [
+        "ComputeBudget111111111111111111111111111111",
+        "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL",
+        "11111111111111111111111111111111",
+        "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+        "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4",
+        "L2TExMFKdjpN9kozasaurPirfHy9P8sbXoAN1qA3S95"
+      ],
+      "preTokenBalances": [
+        {
+          "accountIndex": 1,
+          "mint": "USD1ttGY1N17NEEHLmELoaybftRBUSErhqYiQzvEmuB",
+          "owner": "9472rxm9665Kg7cgDBCH16LnjHWjf1hwAfVpJ1tbhnr7",
+          "uiTokenAmount": {
+            "amount": "3667223",
+            "decimals": 6
+          }
+        },
+        {
+          "accountIndex": 4,
+          "mint": "So11111111111111111111111111111111111111112",
+          "owner": "F9pV233uBksW4U1BKiK7u9qShgXkwoR6F8MzU4FZYPUv",
+          "uiTokenAmount": {
+            "amount": "0",
+            "decimals": 9
+          }
+        },
+        {
+          "accountIndex": 5,
+          "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "owner": "4MS4RQ3Vj2oYFHJz4EtLyxtq6panVcDUpDyXdoGxfQ1n",
+          "uiTokenAmount": {
+            "amount": "2769495",
+            "decimals": 6
+          }
+        },
+        {
+          "accountIndex": 12,
+          "mint": "So11111111111111111111111111111111111111112",
+          "owner": "9472rxm9665Kg7cgDBCH16LnjHWjf1hwAfVpJ1tbhnr7",
+          "uiTokenAmount": {
+            "amount": "5147067206",
+            "decimals": 9
+          }
+        },
+        {
+          "accountIndex": 13,
+          "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "owner": "9472rxm9665Kg7cgDBCH16LnjHWjf1hwAfVpJ1tbhnr7",
+          "uiTokenAmount": {
+            "amount": "375681291",
+            "decimals": 6
+          }
+        },
+        {
+          "accountIndex": 14,
+          "mint": "USD1ttGY1N17NEEHLmELoaybftRBUSErhqYiQzvEmuB",
+          "owner": "DyzGYEhdgSn5EEUt4XXviavZ7v7SV2YGrYV8HX3Aw5XT",
+          "uiTokenAmount": {
+            "amount": "28395650227",
+            "decimals": 6
+          }
+        },
+        {
+          "accountIndex": 15,
+          "mint": "So11111111111111111111111111111111111111112",
+          "owner": "DyzGYEhdgSn5EEUt4XXviavZ7v7SV2YGrYV8HX3Aw5XT",
+          "uiTokenAmount": {
+            "amount": "77298814605",
+            "decimals": 9
+          }
+        },
+        {
+          "accountIndex": 20,
+          "mint": "USD1ttGY1N17NEEHLmELoaybftRBUSErhqYiQzvEmuB",
+          "owner": "CQUfYBxF2KFVjYyCPyGa7JCFX9zw2PwmNnECzY3merGA",
+          "uiTokenAmount": {
+            "amount": "10348363398",
+            "decimals": 6
+          }
+        },
+        {
+          "accountIndex": 21,
+          "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "owner": "F2KCaXcp7AoQtxTDvNEDCyMyWjSCAMWNzcyN9dsPfPs5",
+          "uiTokenAmount": {
+            "amount": "334500728725",
+            "decimals": 6
+          }
+        }
+      ],
+      "postTokenBalances": [
+        {
+          "accountIndex": 1,
+          "mint": "USD1ttGY1N17NEEHLmELoaybftRBUSErhqYiQzvEmuB",
+          "owner": "9472rxm9665Kg7cgDBCH16LnjHWjf1hwAfVpJ1tbhnr7",
+          "uiTokenAmount": {
+            "amount": "3667223",
+            "decimals": 6
+          }
+        },
+        {
+          "accountIndex": 4,
+          "mint": "So11111111111111111111111111111111111111112",
+          "owner": "F9pV233uBksW4U1BKiK7u9qShgXkwoR6F8MzU4FZYPUv",
+          "uiTokenAmount": {
+            "amount": "50000",
+            "decimals": 9
+          }
+        },
+        {
+          "accountIndex": 5,
+          "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "owner": "4MS4RQ3Vj2oYFHJz4EtLyxtq6panVcDUpDyXdoGxfQ1n",
+          "uiTokenAmount": {
+            "amount": "3777309",
+            "decimals": 6
+          }
+        },
+        {
+          "accountIndex": 12,
+          "mint": "So11111111111111111111111111111111111111112",
+          "owner": "9472rxm9665Kg7cgDBCH16LnjHWjf1hwAfVpJ1tbhnr7",
+          "uiTokenAmount": {
+            "amount": "5147067206",
+            "decimals": 9
+          }
+        },
+        {
+          "accountIndex": 13,
+          "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "owner": "9472rxm9665Kg7cgDBCH16LnjHWjf1hwAfVpJ1tbhnr7",
+          "uiTokenAmount": {
+            "amount": "375681291",
+            "decimals": 6
+          }
+        },
+        {
+          "accountIndex": 14,
+          "mint": "USD1ttGY1N17NEEHLmELoaybftRBUSErhqYiQzvEmuB",
+          "owner": "DyzGYEhdgSn5EEUt4XXviavZ7v7SV2YGrYV8HX3Aw5XT",
+          "uiTokenAmount": {
+            "amount": "28394641921",
+            "decimals": 6
+          }
+        },
+        {
+          "accountIndex": 15,
+          "mint": "So11111111111111111111111111111111111111112",
+          "owner": "DyzGYEhdgSn5EEUt4XXviavZ7v7SV2YGrYV8HX3Aw5XT",
+          "uiTokenAmount": {
+            "amount": "77308764605",
+            "decimals": 9
+          }
+        },
+        {
+          "accountIndex": 20,
+          "mint": "USD1ttGY1N17NEEHLmELoaybftRBUSErhqYiQzvEmuB",
+          "owner": "CQUfYBxF2KFVjYyCPyGa7JCFX9zw2PwmNnECzY3merGA",
+          "uiTokenAmount": {
+            "amount": "10349371704",
+            "decimals": 6
+          }
+        },
+        {
+          "accountIndex": 21,
+          "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "owner": "F2KCaXcp7AoQtxTDvNEDCyMyWjSCAMWNzcyN9dsPfPs5",
+          "uiTokenAmount": {
+            "amount": "334499720911",
+            "decimals": 6
+          }
+        }
+      ]
+    },
+    "ataCreation": {
+      "signature": "2wT2tGTtzuJfEkGExCiYmbG7ZxgjdupNSeKn9YfRVT4FzUr3jPWLCy4zQtdQfXwwWj69258bhWCkKhJQCcU4mSUv",
+      "slot": 445829475,
+      "blockTime": 1789026081,
+      "failed": false,
+      "signers": [
+        "4MS4RQ3Vj2oYFHJz4EtLyxtq6panVcDUpDyXdoGxfQ1n"
+      ],
+      "programs": [
+        "ComputeBudget111111111111111111111111111111",
+        "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+      ],
+      "preTokenBalances": [],
+      "postTokenBalances": [
+        {
+          "accountIndex": 1,
+          "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "owner": "F9pV233uBksW4U1BKiK7u9qShgXkwoR6F8MzU4FZYPUv",
+          "uiTokenAmount": {
+            "amount": "0",
+            "decimals": 6
+          }
+        },
+        {
+          "accountIndex": 2,
+          "mint": "So11111111111111111111111111111111111111112",
+          "owner": "F9pV233uBksW4U1BKiK7u9qShgXkwoR6F8MzU4FZYPUv",
+          "uiTokenAmount": {
+            "amount": "0",
+            "decimals": 9
+          }
+        }
+      ]
+    },
+    "partnerRouter": {
+      "signature": "5pUE36YmfGmF1ECZuQAWcvjREJ5GstQF15dUxNNPkVMwrXpLCwrPkLs5G9dGUE556GbYB4u5N5pc8bchtSVJ9bvF",
+      "slot": 446269764,
+      "blockTime": 1789165493,
+      "failed": false,
+      "signers": [
+        "DiYBuFEwKMG1fcUYjeyfg4sannSmXpk4TtRFeH1tjHtM"
+      ],
+      "programs": [
+        "ComputeBudget111111111111111111111111111111",
+        "DF1ow4tspfHX9JwWJsAb9epbkA8hmpSEAtxXy1V27QBH",
+        "L2TExMFKdjpN9kozasaurPirfHy9P8sbXoAN1qA3S95"
+      ],
+      "preTokenBalances": [
+        {
+          "accountIndex": 1,
+          "mint": "So11111111111111111111111111111111111111112",
+          "owner": "F9pV233uBksW4U1BKiK7u9qShgXkwoR6F8MzU4FZYPUv",
+          "uiTokenAmount": {
+            "amount": "334076",
+            "decimals": 9
+          }
+        },
+        {
+          "accountIndex": 2,
+          "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "owner": "DiYBuFEwKMG1fcUYjeyfg4sannSmXpk4TtRFeH1tjHtM",
+          "uiTokenAmount": {
+            "amount": "0",
+            "decimals": 6
+          }
+        },
+        {
+          "accountIndex": 8,
+          "mint": "So11111111111111111111111111111111111111112",
+          "owner": "8ekCy2jHHUbW2yeNGFWYJT9Hm9FW7SvZcZK66dSZCDiF",
+          "uiTokenAmount": {
+            "amount": "66367820803009",
+            "decimals": 9
+          }
+        },
+        {
+          "accountIndex": 9,
+          "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "owner": "8ekCy2jHHUbW2yeNGFWYJT9Hm9FW7SvZcZK66dSZCDiF",
+          "uiTokenAmount": {
+            "amount": "3658323035795",
+            "decimals": 6
+          }
+        },
+        {
+          "accountIndex": 11,
+          "mint": "So11111111111111111111111111111111111111112",
+          "owner": "G2fEbHKhEWkiArcWAm5UNasXpzC6jXzg6EfUResyncQ6",
+          "uiTokenAmount": {
+            "amount": "0",
+            "decimals": 9
+          }
+        }
+      ],
+      "postTokenBalances": [
+        {
+          "accountIndex": 1,
+          "mint": "So11111111111111111111111111111111111111112",
+          "owner": "F9pV233uBksW4U1BKiK7u9qShgXkwoR6F8MzU4FZYPUv",
+          "uiTokenAmount": {
+            "amount": "507376",
+            "decimals": 9
+          }
+        },
+        {
+          "accountIndex": 2,
+          "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "owner": "DiYBuFEwKMG1fcUYjeyfg4sannSmXpk4TtRFeH1tjHtM",
+          "uiTokenAmount": {
+            "amount": "3525904",
+            "decimals": 6
+          }
+        },
+        {
+          "accountIndex": 8,
+          "mint": "So11111111111111111111111111111111111111112",
+          "owner": "8ekCy2jHHUbW2yeNGFWYJT9Hm9FW7SvZcZK66dSZCDiF",
+          "uiTokenAmount": {
+            "amount": "66367855289710",
+            "decimals": 9
+          }
+        },
+        {
+          "accountIndex": 9,
+          "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "owner": "8ekCy2jHHUbW2yeNGFWYJT9Hm9FW7SvZcZK66dSZCDiF",
+          "uiTokenAmount": {
+            "amount": "3658319509891",
+            "decimals": 6
+          }
+        },
+        {
+          "accountIndex": 11,
+          "mint": "So11111111111111111111111111111111111111112",
+          "owner": "G2fEbHKhEWkiArcWAm5UNasXpzC6jXzg6EfUResyncQ6",
+          "uiTokenAmount": {
+            "amount": "0",
+            "decimals": 9
+          }
+        }
+      ]
+    },
+    "usdcFeeStockBuy": {
+      "signature": "2Bv5QttV3nWfmBqWNGB1VSYM5JStTcFw8fUv1jcLCEp8NVTo7xMRudVXm6zLMPEPuWcGb3U4sxh8ktWvv5soUrPf",
+      "slot": 446915591,
+      "blockTime": 1789369654,
+      "failed": false,
+      "signers": [
+        "4MS4RQ3Vj2oYFHJz4EtLyxtq6panVcDUpDyXdoGxfQ1n"
+      ],
+      "programs": [
+        "ComputeBudget111111111111111111111111111111",
+        "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL",
+        "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4",
+        "L2TExMFKdjpN9kozasaurPirfHy9P8sbXoAN1qA3S95"
+      ],
+      "preTokenBalances": [
+        {
+          "accountIndex": 1,
+          "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "owner": "F9pV233uBksW4U1BKiK7u9qShgXkwoR6F8MzU4FZYPUv",
+          "uiTokenAmount": {
+            "amount": "24370",
+            "decimals": 6
+          }
+        },
+        {
+          "accountIndex": 3,
+          "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "owner": "4MS4RQ3Vj2oYFHJz4EtLyxtq6panVcDUpDyXdoGxfQ1n",
+          "uiTokenAmount": {
+            "amount": "1190937",
+            "decimals": 6
+          }
+        },
+        {
+          "accountIndex": 8,
+          "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "owner": "GxGxQBvMQ7vUZWRM6v26umC9w8bCxu4hXTHxCtgEcopa",
+          "uiTokenAmount": {
+            "amount": "133144477730",
+            "decimals": 6
+          }
+        },
+        {
+          "accountIndex": 9,
+          "mint": "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh",
+          "owner": "GxGxQBvMQ7vUZWRM6v26umC9w8bCxu4hXTHxCtgEcopa",
+          "uiTokenAmount": {
+            "amount": "31629949387",
+            "decimals": 8
+          }
+        }
+      ],
+      "postTokenBalances": [
+        {
+          "accountIndex": 1,
+          "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "owner": "F9pV233uBksW4U1BKiK7u9qShgXkwoR6F8MzU4FZYPUv",
+          "uiTokenAmount": {
+            "amount": "26870",
+            "decimals": 6
+          }
+        },
+        {
+          "accountIndex": 2,
+          "mint": "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh",
+          "owner": "4MS4RQ3Vj2oYFHJz4EtLyxtq6panVcDUpDyXdoGxfQ1n",
+          "uiTokenAmount": {
+            "amount": "231926",
+            "decimals": 8
+          }
+        },
+        {
+          "accountIndex": 3,
+          "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "owner": "4MS4RQ3Vj2oYFHJz4EtLyxtq6panVcDUpDyXdoGxfQ1n",
+          "uiTokenAmount": {
+            "amount": "690937",
+            "decimals": 6
+          }
+        },
+        {
+          "accountIndex": 8,
+          "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "owner": "GxGxQBvMQ7vUZWRM6v26umC9w8bCxu4hXTHxCtgEcopa",
+          "uiTokenAmount": {
+            "amount": "133144975230",
+            "decimals": 6
+          }
+        },
+        {
+          "accountIndex": 9,
+          "mint": "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh",
+          "owner": "GxGxQBvMQ7vUZWRM6v26umC9w8bCxu4hXTHxCtgEcopa",
+          "uiTokenAmount": {
+            "amount": "31629717461",
+            "decimals": 8
+          }
+        }
+      ]
+    }
+  }
+}

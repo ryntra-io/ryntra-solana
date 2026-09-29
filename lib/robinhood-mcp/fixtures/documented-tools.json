@@ -1,0 +1,108 @@
+{
+  "capture": "RYN-RH-MCP-001 documented tool inventory",
+  "capturedAt": "2026-08-24",
+  "source": "https://robinhood.com/us/en/support/articles/trading-with-your-agent/ (HTTP 200, Reference No. 5847437)",
+  "boundary": "Documentation-sourced. Not one of these names was seen over the MCP transport: agent.robinhood.com refuses this egress at the CDN edge, so tools/list was never reached.",
+  "providerSentence": "Your agent can make the following tools. We'll be adding more tools in future releases.",
+  "families": [
+    {
+      "id": "account",
+      "label": "Account, portfolio, and other tools",
+      "tools": [
+        { "name": "get_accounts", "description": "View all your Robinhood accounts" },
+        { "name": "get_portfolio", "description": "Get a snapshot of your portfolio, including total value, values by asset class, and real-time buying power" },
+        { "name": "get_realized_pnl", "description": "View realized profit and loss for your account over a custom time window, broken down by asset class" },
+        { "name": "get_pnl_trade_history", "description": "View your trade-by-trade realized P&L history" },
+        { "name": "search", "description": "Find a company name or partial name to a ticker" }
+      ]
+    },
+    {
+      "id": "watchlist",
+      "label": "Watchlist tools",
+      "tools": [
+        { "name": "get_watchlists", "description": "List user's watchlists" },
+        { "name": "get_watchlist_items", "description": "List symbols in a specific watchlist" },
+        { "name": "get_option_watchlist", "description": "Load an options watchlist" },
+        { "name": "get_popular_watchlists", "description": "Discover Robinhood lists (like '100 most popular')" },
+        { "name": "create_watchlist", "description": "Make a new custom watchlist." },
+        { "name": "update_watchlist", "description": "Rename or update a watchlist's name description" },
+        { "name": "follow_watchlist", "description": "Follow a Robinhood list" },
+        { "name": "unfollow_watchlist", "description": "Stop following a Robinhood list" },
+        { "name": "add_to_watchlist", "description": "Add stocks, crypto, or indexes to a watchlist" },
+        { "name": "remove_from_watchlist", "description": "Remove stocks, crypto, or indexes from a watchlist" },
+        { "name": "add_option_to_watchlist", "description": "Add an options contract to a watchlist" },
+        { "name": "remove_option_from_watchlist", "description": "Remove an options contract from a watchlist" }
+      ]
+    },
+    {
+      "id": "market-data",
+      "label": "Market data tools",
+      "tools": [
+        { "name": "get_equity_historicals", "description": "Get OHLCV price bars across a time range" },
+        { "name": "get_equity_fundamentals", "description": "Get valuation ratios, market cap, 52-week range, dividend info, and today's OHLCV" },
+        { "name": "get_financials", "description": "Get a company's reported financials over time - revenue, gross profit, net income, and net margin - by quarter or year for one or more stocks" },
+        { "name": "get_equity_price_book", "description": "Get a real-time Level 2 order book showing bid/ask price levels and resting size on each side, for up to 4 stocks" },
+        { "name": "get_equity_technical_indicators", "description": "Compute a technical indicator (RSI, MACD, Bollinger Bands, moving averages, and more) for a stock over a time range" },
+        { "name": "get_earnings_results", "description": "Look up a specific stock's earnings history and next report. See estimated vs. actual EPS for recent quarters, plus the upcoming quarter's estimate and report date." },
+        { "name": "get_earnings_calendar", "description": "List earnings reports scheduled across the market over a date window (up to 31 days), optionally limited to large-cap names" },
+        { "name": "get_indexes", "description": "Look up market indexes by symbol" },
+        { "name": "get_index_quotes", "description": "Get real-time index values" }
+      ]
+    },
+    {
+      "id": "equities",
+      "label": "Equities tools",
+      "tools": [
+        { "name": "get_equity_positions", "description": "View open equity positions with quantity and cost basis" },
+        { "name": "get_equity_tax_lots", "description": "View the open tax lots for an equity holding, each with its quantity, cost basis, acquisition date, and long/short-term status" },
+        { "name": "get_equity_quotes", "description": "Get real-time equity quotes and prior close for up to 20 symbols" },
+        { "name": "get_equity_orders", "description": "Get equity order status history" },
+        { "name": "get_equity_tradability", "description": "Check if a symbol can be traded and find out if it can be traded fractionally" },
+        { "name": "review_equity_order", "description": "Simulate an equity order and get pre-trade warnings" },
+        { "name": "place_equity_order", "description": "Place an equity order" },
+        { "name": "cancel_equity_order", "description": "Cancel an open equity order" }
+      ]
+    },
+    {
+      "id": "options",
+      "label": "Options tools",
+      "tools": [
+        { "name": "get_option_level_upgrade_info", "description": "Get a link to apply for options trading access on an account" },
+        { "name": "get_option_historicals", "description": "Get OHLC price bars for option contracts across a time range" },
+        { "name": "get_option_chains", "description": "Load option chains" },
+        { "name": "get_option_instruments", "description": "Load option contracts filtered by expiry, strike, or type" },
+        { "name": "get_option_quotes", "description": "Get real-time quotes for option contracts" },
+        { "name": "get_option_positions", "description": "View open or closed options positions" },
+        { "name": "get_option_orders", "description": "Get options order history" },
+        { "name": "review_option_order", "description": "Simulate an options order with pre-trade alerts" },
+        { "name": "cancel_option_order", "description": "Cancel an open options order" },
+        { "name": "place_option_order", "description": "Place a real options order" }
+      ]
+    },
+    {
+      "id": "crypto",
+      "label": "Crypto tools",
+      "tools": [
+        { "name": "get_currency_pairs", "description": "List Robinhood-supported crypto assets" },
+        { "name": "get_crypto_quotes", "description": "Get real-time bid/ask/mark prices plus previous close for one or more crypto assets" },
+        { "name": "get_crypto_positions", "description": "List all positions across all crypto accounts." },
+        { "name": "get_crypto_orders", "description": "Get crypto order history" },
+        { "name": "preview_crypto_order", "description": "Preview a crypto order" },
+        { "name": "place_crypto_order", "description": "Place a real crypto order" },
+        { "name": "cancel_crypto_order", "description": "Cancel an open crypto order" }
+      ]
+    },
+    {
+      "id": "scanner",
+      "label": "Scanner tool calls",
+      "tools": [
+        { "name": "get_scans", "description": "List your saved scans" },
+        { "name": "get_scanner_filter_specs", "description": "List every available scanner filter and how to use it before building or updating a scan" },
+        { "name": "create_scan", "description": "Create a new scan from a starting preset or with your own custom filters" },
+        { "name": "run_scan", "description": "Run a saved scan and get live market results" },
+        { "name": "update_scan_filters", "description": "Change the filters on an existing saved scan" },
+        { "name": "update_scan_config", "description": "Change the way results are sorted" }
+      ]
+    }
+  ]
+}

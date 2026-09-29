@@ -1,0 +1,144 @@
+/*
+ * The document layer, shared by every long-form public page on the frozen
+ * system. The Handbook wrote these first; `/developers` speaks the same
+ * vocabulary — numbered chapters, a lead, blocks, folded detail and a source
+ * footer — so they live here rather than being copied per page.
+ *
+ * Chapters carry their own `data-ry-theme`, which is what lets a page alternate
+ * ground without a single colour being restated: every rule below is written in
+ * tokens, so flipping the attribute re-resolves the whole chapter.
+ */
+
+.rx-hb-sec {
+  scroll-margin-top: 96px;
+  display: grid;
+  gap: var(--ry-s5);
+  padding: var(--ry-s7) var(--ry-s6);
+  border-radius: var(--ry-r-landing);
+  background: var(--ry-bg);
+  border: 1px solid var(--ry-border);
+  color: var(--ry-text);
+}
+
+.rx-hb-sec[data-ry-theme="light"] {
+  background: var(--ry-mist);
+}
+
+.rx-hb-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: var(--ry-s3) var(--ry-s4);
+  padding-bottom: var(--ry-s4);
+  border-bottom: 1px solid var(--ry-border);
+  scroll-margin-top: 96px;
+}
+
+.rx-hb-n {
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--ry-fs-dense);
+  letter-spacing: 0.12em;
+  color: var(--ry-accent);
+}
+
+.rx-hb-title {
+  margin: 0;
+}
+
+.rx-hb-meta {
+  grid-column: 2;
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+}
+
+.rx-hb-lead {
+  font-size: var(--ry-fs-lead);
+  line-height: 1.5;
+  color: var(--ry-text);
+  max-width: 68ch;
+  margin: 0;
+}
+
+.rx-hb-h3 {
+  margin-top: var(--ry-s5);
+}
+
+.rx-hb-block {
+  display: grid;
+  gap: var(--ry-s4);
+  padding: var(--ry-s5);
+  border-radius: var(--ry-r-landing);
+  background: var(--ry-card);
+  border: 1px solid var(--ry-border);
+}
+
+.rx-hb-source {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s2) var(--ry-s4);
+  padding-top: var(--ry-s4);
+  border-top: 1px solid var(--ry-border);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+}
+
+.rx-hb-detail {
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-sidebar);
+}
+
+.rx-hb-detail > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s3);
+  min-height: 48px;
+  padding-inline: var(--ry-s4);
+  color: var(--ry-text);
+  font-size: var(--ry-fs-app);
+  font-weight: 500;
+  cursor: pointer;
+  list-style: none;
+}
+
+.rx-hb-detail > summary::-webkit-details-marker {
+  display: none;
+}
+
+.rx-hb-detail > summary:hover {
+  background: var(--ry-hover);
+  border-radius: var(--ry-r-card);
+}
+
+.rx-hb-detail > summary:focus-visible {
+  outline: none;
+  border-radius: var(--ry-r-card);
+  box-shadow: var(--ry-focus);
+}
+
+.rx-hb-detail > summary svg {
+  flex: none;
+  color: var(--ry-muted);
+  transition: transform 180ms ease;
+}
+
+.rx-hb-detail[open] > summary svg {
+  transform: rotate(90deg);
+}
+
+.rx-hb-detail-body {
+  padding: 0 var(--ry-s4) var(--ry-s4);
+  border-top: 1px solid var(--ry-border);
+  padding-top: var(--ry-s4);
+  font-size: var(--ry-fs-dense);
+  line-height: 1.6;
+  color: var(--ry-muted);
+}
+
+.rx-hb-detail-body > * + * {
+  margin-top: var(--ry-s3);
+}
+

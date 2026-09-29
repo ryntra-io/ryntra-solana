@@ -1,0 +1,279 @@
+/* The hero, drawn in code (hero.tsx, hero-atmosphere.tsx).
+
+   The Owner's render's composition — the words on the left, the Spot
+   workspace in a tilted device, two cards at its lower corners, the rail of
+   three proofs, the strip of four — as HTML on the page's own light. The
+   section is transparent on the landing's one ground; the atmosphere is
+   painted here and reaches zero before the section's foot, so nothing marks
+   where the hero ends and the universe begins.
+
+   Tokens only, ramp sizes only. The device and the cards are a picture of
+   the dark terminal in both themes, so the canon's dark environment is named
+   once here as `--hero-t-*` — the same set the drawn terminal reads. The
+   device is a 3D-transformed layer with no filter, no blend and no clipped
+   shadow of its own light: its glow is a gradient in a box of its own
+   (`.floorLight`) and the rim is a masked gradient, the lesson of the
+   universe's squares (2026-09-14). */
+
+.hero {
+  /* The dark environment of the canon, fixed for the product stage. */
+  --hero-t-bg: #0B121A;
+  --hero-t-surface: #0E1620;
+  --hero-t-elevated: #131E2A;
+  --hero-t-hover: #172230;
+  --hero-t-border: #22303E;
+  --hero-t-border-strong: #2F4052;
+  --hero-t-text: #F5F7FA;
+  --hero-t-muted: #91A0B2;
+  --hero-t-dim: #7A8899;
+  --hero-t-up: #19C77A;
+  --hero-t-down: #FF4D55;
+  --hero-t-buy: #169B62;
+  --hero-t-brand: #FF681C;
+  --hero-t-brand-fg: #FF7A2F;
+  --hero-t-brand-soft: rgba(255, 104, 28, 0.12);
+  --hero-t-brand-chip: rgba(255, 104, 28, 0.14);
+  --hero-t-brand-line: rgba(255, 104, 28, 0.32);
+  --hero-t-up-soft: rgba(25, 199, 122, 0.13);
+  --hero-t-shadow: rgba(0, 0, 0, 0.50);
+  position: relative;
+  isolation: isolate;
+  /* `clip`, not `hidden`: a hidden overflow would make the section the
+     scrollport of the scroll-driven recession below. */
+  overflow: clip;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: calc(100vh - 72px);
+  padding: 0;
+  background: transparent;
+  color: var(--landing-ink);
+}
+
+/* ── the light ───────────────────────────────────────────────────────────── */
+.backdrop { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+/* One great arc across the upper left — the edge of a circle four screens
+   wide whose centre lies below the fold, so the arc rises from the left edge
+   to the top the way the render's did. The field masks it to that corner. */
+.arcField { position: absolute; inset: 0; mask-image: radial-gradient(ellipse 44% 58% at 22% 18%, black 0%, color-mix(in srgb, black 55%, transparent) 55%, transparent 100%); }
+.arc {
+  position: absolute; left: -23.4vw; top: -2vw; width: 160vw; height: 160vw; border-radius: 50%;
+  box-shadow:
+    inset 0 0 0 2px color-mix(in srgb, var(--ry-iris) 62%, transparent),
+    inset 0 0 70px 0 color-mix(in srgb, var(--ry-iris) 20%, transparent),
+    0 0 80px 4px color-mix(in srgb, var(--ry-iris) 16%, transparent);
+  animation: arcBreath 14s ease-in-out infinite alternate;
+}
+@keyframes arcBreath { from { opacity: .72; } to { opacity: 1; } }
+/* The warm horizon behind and beneath the device: the render's own light,
+   at zero before the section's foot. */
+.horizon {
+  position: absolute; left: 22%; right: -6%; top: 40%; bottom: 12%;
+  background: radial-gradient(ellipse 52% 46% at 58% 72%, color-mix(in srgb, var(--ry-iris) 36%, transparent) 0%, color-mix(in srgb, var(--ry-iris) 11%, transparent) 42%, transparent 70%);
+  filter: blur(34px);
+  animation: horizonBreath 11s ease-in-out infinite alternate;
+}
+@keyframes horizonBreath { from { opacity: .82; transform: translateY(0); } to { opacity: 1; transform: translateY(-1.5%); } }
+.dust { position: absolute; inset: 0; }
+.mote { position: absolute; border-radius: 50%; background: var(--landing-mote); opacity: .5; animation: twinkle 8s ease-in-out infinite alternate; }
+.mote[data-dim] { opacity: .2; animation-duration: 12s; }
+@keyframes twinkle { from { opacity: .1; transform: scale(.8); } to { opacity: .6; transform: scale(1.15); } }
+/* Off screen, the light stands still. */
+.hero[data-js]:not([data-active]) .arc, .hero[data-js]:not([data-active]) .horizon, .hero[data-js]:not([data-active]) .mote { animation-play-state: paused; }
+
+/* ── the scene: words, device, rail ──────────────────────────────────────── */
+.scene {
+  position: relative; z-index: 1;
+  display: grid; grid-template-columns: minmax(320px, 36%) minmax(0, 1fr) auto; column-gap: clamp(24px, 3vw, 64px); align-items: center;
+  width: 100%; max-width: 2160px; margin: 0 auto; padding: clamp(40px, 5vh, 72px) clamp(24px, 3.2vw, 64px) 0; box-sizing: border-box;
+}
+/* The words are a container so the headline can be sized to its column: two
+   lines, never four, whatever the screen. */
+.copy { display: flex; flex-direction: column; align-items: flex-start; gap: var(--ry-s4); min-width: 0; container-type: inline-size; }
+.eyebrow { margin: 0 0 var(--ry-s2); font-family: var(--ry-font-mono); font-size: var(--ry-fs-label-sm); font-weight: 500; letter-spacing: .24em; text-transform: uppercase; color: var(--ry-unknown); }
+.h1 {
+  margin: 0; font-family: var(--ry-font-sans); font-weight: 700; line-height: .96; letter-spacing: -.03em; text-transform: uppercase;
+  /* The line of canon v5.5 — «Купи частинку компанії від $1 — у своєму
+     гаманці» — is two long lines of capitals, so each may wrap once, balanced:
+     8.2cqw holds the longer word of either language on a line of its column;
+     the viewport term keeps it in step with the device beside it. */
+  font-size: min(clamp(var(--ry-fs-h2), 3vw, var(--ry-fs-display)), 8.2cqw);
+}
+.h1 span { display: block; text-wrap: balance; }
+.h1Accent { color: var(--ry-iris); }
+.sub { margin: var(--ry-s2) 0 0; font-size: var(--ry-fs-lead); font-weight: 500; line-height: 1.3; letter-spacing: -.01em; }
+.lead { margin: 0; max-width: 32em; font-size: var(--ry-fs-body); line-height: 1.55; color: var(--ry-unknown); text-wrap: pretty; }
+.actions { display: flex; flex-wrap: wrap; gap: var(--ry-s4); margin-top: var(--ry-s3); }
+.primary {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--ry-s3); height: 56px; padding: 0 36px;
+  border-radius: var(--ry-r-btn); background: var(--ry-gradient); border: 1px solid var(--ry-brand-edge);
+  color: var(--ry-on-iris); font-size: var(--ry-fs-lead); font-weight: 600; line-height: 1; text-decoration: none;
+  box-shadow: var(--ry-brand-glow-strong);
+  transition: transform 160ms cubic-bezier(.16, 1, .3, 1), box-shadow 160ms cubic-bezier(.16, 1, .3, 1), background-color 160ms ease;
+}
+.primary:hover { background: var(--ry-gradient-hover); transform: translateY(-1px); }
+.primary:active { transform: translateY(0); }
+.primary:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--landing-ink), var(--ry-focus); }
+.srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+
+/* ── the device ──────────────────────────────────────────────────────────── */
+.visual { position: relative; min-width: 0; padding: 0 0 clamp(120px, 11vw, 200px); perspective: 2400px; perspective-origin: 28% 42%; }
+/* `.visual` has perspective but no preserve-3d, so the device and the two
+   cards are flat layers drawn in order — no plane ever cuts another, and
+   their shadows and lights may be ordinary box-shadows. */
+.device {
+  position: relative; transform: rotateY(-9deg) rotateX(3deg); transform-origin: 40% 50%;
+  transition: transform 700ms cubic-bezier(.2, .7, .3, 1);
+}
+.visual:hover .device { transform: rotateY(-6.5deg) rotateX(2deg); }
+.lid {
+  position: relative; padding: 12px 12px 16px; border-radius: 20px;
+  background: linear-gradient(160deg, var(--hero-t-elevated) 0%, var(--hero-t-bg) 55%, var(--hero-t-surface) 100%);
+  border: 1px solid var(--hero-t-border-strong);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--ry-mist) 10%, transparent), inset 0 -1px 0 black,
+    0 50px 120px -40px black,
+    28px -6px 90px -34px color-mix(in srgb, var(--ry-iris) 45%, transparent);
+}
+/* The rim: the brand's light along the lid's upper right edge, a masked
+   gradient ring one pixel and a half wide. */
+.rim {
+  position: absolute; inset: -1px; border-radius: 20px; padding: 1.5px; pointer-events: none;
+  background: conic-gradient(from 200deg at 62% 40%, transparent 0%, transparent 38%, color-mix(in srgb, var(--ry-iris) 85%, transparent) 52%, var(--ry-brand-edge) 60%, transparent 76%, transparent 100%);
+  -webkit-mask: linear-gradient(black 0 0) content-box, linear-gradient(black 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(black 0 0) content-box, linear-gradient(black 0 0);
+  mask-composite: exclude;
+}
+.screen { position: relative; aspect-ratio: 900 / 560; border-radius: 10px; overflow: hidden; container-type: inline-size; background: var(--hero-t-bg); }
+.glass { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(112deg, color-mix(in srgb, var(--ry-mist) 7%, transparent) 0%, transparent 28%, transparent 70%, color-mix(in srgb, var(--ry-iris) 5%, transparent) 100%); }
+.foot { display: block; height: 14px; margin: 0 5% 0 4%; border-radius: 0 0 16px 16px; background: linear-gradient(180deg, var(--hero-t-elevated) 0%, var(--hero-t-bg) 100%); box-shadow: inset 0 1px 0 color-mix(in srgb, var(--ry-mist) 6%, transparent); }
+/* The device's light on the floor, painted in a box of its own below it. */
+.floorLight {
+  position: absolute; left: -6%; right: -6%; top: 100%; height: 42%; margin-top: -8%; pointer-events: none;
+  background: radial-gradient(ellipse 50% 60% at 50% 20%, color-mix(in srgb, var(--ry-iris) 26%, transparent) 0%, color-mix(in srgb, var(--ry-iris) 6%, transparent) 40%, transparent 70%);
+}
+
+/* ── the two cards ───────────────────────────────────────────────────────── */
+.card {
+  position: absolute; z-index: 2; display: flex; flex-direction: column; gap: var(--ry-s4); box-sizing: border-box;
+  padding: 18px 20px; border: 1px solid var(--hero-t-border-strong); border-radius: 16px; background: var(--hero-t-surface); color: var(--hero-t-text);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ry-mist) 3%, transparent), inset 0 1px 0 color-mix(in srgb, var(--ry-mist) 8%, transparent), 0 34px 70px -30px black;
+}
+.portfolioCard { left: -5%; bottom: clamp(24px, 3vw, 56px); width: min(340px, 42%); transform: rotateY(9deg) rotateX(4deg) rotateZ(-2.5deg); transform-origin: 100% 0; }
+.rewardsCard { right: -4%; bottom: clamp(36px, 4vw, 72px); width: min(330px, 40%); border-color: var(--hero-t-brand-line); transform: rotateY(-9deg) rotateX(4deg) rotateZ(2.5deg); transform-origin: 0 0; }
+.cardHead { display: flex; align-items: center; justify-content: space-between; gap: var(--ry-s3); }
+.cardTitle { display: inline-flex; align-items: center; gap: var(--ry-s2); font-size: var(--ry-fs-app); font-weight: 600; }
+.cardMark { width: 16px; height: 16px; border-radius: 50%; background: var(--hero-t-brand); }
+.cardStar { width: 15px; height: 15px; background: var(--hero-t-brand); clip-path: polygon(50% 0, 63% 36%, 100% 38%, 70% 61%, 80% 100%, 50% 76%, 20% 100%, 30% 61%, 0 38%, 37% 36%); }
+.cardView { font-size: var(--ry-fs-label); font-weight: 500; padding: 5px 10px; border: 1px solid var(--hero-t-border); border-radius: var(--ry-r-focus-md); color: var(--hero-t-muted); }
+.cardValue { display: flex; align-items: baseline; gap: var(--ry-s2); font-variant-numeric: tabular-nums; }
+.cardValue strong { font-family: var(--ry-font-mono); font-size: var(--ry-fs-h2); font-weight: 600; letter-spacing: -.02em; line-height: 1; }
+.cardChange { font-family: var(--ry-font-mono); font-size: var(--ry-fs-data); font-weight: 500; color: var(--hero-t-down); }
+.cardToday { font-size: var(--ry-fs-label); color: var(--hero-t-dim); }
+.allocation { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--ry-s2); }
+.allocation li { display: grid; grid-template-columns: 72px minmax(0, 1fr) 48px; gap: var(--ry-s3); align-items: center; font-size: var(--ry-fs-data); }
+.allocationName { display: inline-flex; align-items: center; gap: var(--ry-s2); color: var(--hero-t-muted); white-space: nowrap; }
+.allocationDot { width: 7px; height: 7px; border-radius: 50%; background: var(--tone); }
+.allocationTrack { height: 6px; border-radius: var(--ry-r-focus-sm); background: var(--hero-t-hover); overflow: hidden; }
+.allocationBar { display: block; height: 100%; border-radius: var(--ry-r-focus-sm); background: var(--tone); }
+.allocationShare { font-family: var(--ry-font-mono); text-align: right; font-variant-numeric: tabular-nums; }
+.toneBrand { --tone: var(--ry-c1); }
+.toneSteel { --tone: var(--ry-c2); }
+.toneHoney { --tone: var(--ry-c3); }
+.toneSlate { --tone: var(--ry-c5); }
+.rewardRows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; border: 1px solid var(--hero-t-border); border-radius: var(--ry-r-btn); background: var(--hero-t-bg); overflow: hidden; }
+.rewardRows li { display: grid; grid-template-columns: minmax(72px, auto) minmax(0, 1fr) auto; gap: var(--ry-s3); align-items: center; padding: 9px 14px; }
+.rewardRows li + li { border-top: 1px solid var(--hero-t-border); }
+.rewardFigure { font-family: var(--ry-font-mono); font-size: var(--ry-fs-title); font-weight: 700; letter-spacing: -.03em; line-height: 1; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rewardRows li:first-child .rewardFigure { color: var(--hero-t-brand-fg); }
+.rewardText { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.rewardText span:first-child { font-size: var(--ry-fs-data); font-weight: 600; }
+.rewardText span:last-child { font-size: var(--ry-fs-label-sm); color: var(--hero-t-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rewardCaret { color: var(--hero-t-dim); }
+
+/* ── the rail ────────────────────────────────────────────────────────────── */
+.rail { display: flex; flex-direction: column; gap: clamp(28px, 4.5vh, 56px); align-self: center; padding-left: clamp(16px, 2vw, 32px); border-left: 1px solid color-mix(in srgb, var(--landing-ink) 10%, transparent); }
+.railItem { display: flex; flex-direction: column; gap: var(--ry-s3); max-width: 96px; font-family: var(--ry-font-mono); font-size: var(--ry-fs-label-sm); font-weight: 500; letter-spacing: .2em; text-transform: uppercase; line-height: 1.5; color: var(--ry-unknown); }
+.railItem span { display: block; }
+.railMark { display: block; width: 26px; height: 20px; }
+.railIcon { color: var(--ry-iris); }
+
+/* ── the strip ───────────────────────────────────────────────────────────── */
+.stripWrap {
+  position: relative; z-index: 1; display: flex; align-items: center; gap: var(--ry-s6);
+  width: 100%; max-width: 1880px; margin: clamp(8px, 2vh, 32px) auto 0; padding: 0 clamp(24px, 3.2vw, 64px) clamp(32px, 4vh, 56px); box-sizing: border-box;
+}
+.strip { flex: 1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0; padding: 0; list-style: none; }
+.strip li { min-width: 0; }
+.strip li + li { border-left: 1px solid color-mix(in srgb, var(--landing-ink) 10%, transparent); }
+.stripItem { display: flex; gap: var(--ry-s4); align-items: center; padding: 14px 22px; color: inherit; text-decoration: none; border-radius: var(--ry-r-card); transition: background-color 160ms ease; }
+.stripItem:hover { background: color-mix(in srgb, var(--landing-ink) 4%, transparent); }
+.stripItem:focus-visible { outline: none; box-shadow: var(--ry-focus); }
+.stripGlyph { flex: none; display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; border: 1px solid color-mix(in srgb, var(--ry-iris) 45%, transparent); color: var(--ry-iris); }
+.stripText { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.stripTitle { display: inline-flex; align-items: center; gap: var(--ry-s2); flex-wrap: wrap; font-size: var(--ry-fs-app); font-weight: 600; letter-spacing: -.01em; }
+.stripStatus { display: inline-flex; align-items: center; padding: 2px 7px; border: 1px dashed var(--ry-st-building-bd); border-radius: var(--ry-r-focus-sm); font-family: var(--ry-font-mono); font-size: var(--ry-fs-label-sm); font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--ry-unknown); }
+.stripBody { font-size: var(--ry-fs-dense); line-height: 1.45; color: var(--ry-unknown); }
+.motto { flex: none; display: flex; flex-direction: column; gap: var(--ry-s2); max-width: 128px; margin: 0; font-family: var(--ry-font-mono); font-size: var(--ry-fs-label-sm); letter-spacing: .2em; text-transform: uppercase; line-height: 1.6; color: var(--ry-unknown); }
+.mottoLine { display: block; width: 22px; height: 2px; background: var(--ry-iris); }
+
+/* ── motion: one entrance, then the recession under the scroll ───────────── */
+/* The entrances move `translate`, never `transform`: the device and the cards
+   keep their turn in `transform`, and a finished animation with `both` would
+   otherwise hold its own transform over it for good. */
+@keyframes heroRise { from { opacity: 0; translate: 0 24px; } to { opacity: 1; translate: 0 0; } }
+@keyframes heroDevice { from { opacity: 0; translate: 0 28px; } to { opacity: 1; translate: 0 0; } }
+.copy > * { animation: heroRise 500ms cubic-bezier(.2, .7, .3, 1) both; }
+.copy > :nth-child(2) { animation-delay: 70ms; }
+.copy > :nth-child(3) { animation-delay: 140ms; }
+.copy > :nth-child(4) { animation-delay: 210ms; }
+.copy > :nth-child(5) { animation-delay: 280ms; }
+.device { animation: heroDevice 800ms cubic-bezier(.2, .7, .3, 1) 120ms both; }
+.card { animation: heroRise 560ms cubic-bezier(.2, .7, .3, 1) both; }
+.portfolioCard { animation-delay: 620ms; }
+.rewardsCard { animation-delay: 740ms; }
+.rail { animation: heroRise 500ms cubic-bezier(.2, .7, .3, 1) 520ms both; }
+.stripWrap { animation: heroRise 500ms cubic-bezier(.2, .7, .3, 1) 700ms both; }
+/* As the reader scrolls on, the scene settles and dims while the universe
+   rises over it — driven by the scroll itself, on the compositor. */
+@keyframes heroRecede { from { scale: 1; opacity: 1; } to { scale: .97; opacity: .45; } }
+@supports (animation-timeline: view()) {
+  @media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+    .scene { animation: heroRecede linear both; animation-timeline: view(); animation-range: cover 47% cover 100%; transform-origin: 50% 100%; }
+  }
+}
+
+/* ── narrower screens ────────────────────────────────────────────────────── */
+@media (max-width: 1399px) {
+  .rail { display: none; }
+  .scene { grid-template-columns: minmax(300px, 38%) minmax(0, 1fr); }
+}
+@media (max-width: 1023px) {
+  .hero { min-height: 0; }
+  .scene { grid-template-columns: 1fr; row-gap: var(--ry-s7); padding-top: var(--ry-s7); }
+  .h1 { font-size: min(var(--ry-fs-display), 9.5cqw); }
+  .h1 span { white-space: normal; }
+  .visual { padding-bottom: 0; perspective: none; }
+  .device, .visual:hover .device { transform: none; }
+  .card { position: static; width: auto; transform: none; margin-top: var(--ry-s5); }
+  .visual { display: grid; grid-template-columns: 1fr 1fr; column-gap: var(--ry-s4); }
+  .device { grid-column: 1 / -1; }
+  .floorLight { display: none; }
+  .stripWrap { flex-direction: column; align-items: stretch; gap: var(--ry-s4); }
+  .strip { grid-template-columns: 1fr 1fr; gap: var(--ry-s2); }
+  .strip li + li { border-left: 0; }
+  .stripItem { padding: 12px 8px; }
+  .motto { max-width: none; flex-direction: row; align-items: center; gap: var(--ry-s3); }
+}
+@media (max-width: 640px) {
+  .visual { grid-template-columns: 1fr; }
+  .card { margin-top: var(--ry-s4); }
+  .strip { grid-template-columns: 1fr; }
+  .actions { align-self: stretch; }
+  .primary { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero *, .hero *::before, .hero *::after { animation: none !important; transition: none !important; }
+}

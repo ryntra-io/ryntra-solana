@@ -1,0 +1,45 @@
+{
+  "name": "@ryntra/solana-evidence-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local stdio MCP server for the read-only Ryntra Solana evidence tools.",
+  "keywords": [
+    "ryntra",
+    "solana",
+    "token-extensions",
+    "mcp",
+    "model-context-protocol",
+    "read-only"
+  ],
+  "license": "Apache-2.0",
+  "author": "Dmytro Plavutskyi",
+  "homepage": "https://ryntra.io/solana",
+  "bugs": {
+    "url": "https://github.com/ryntra-io/ryntra-solana-evidence/issues"
+  },
+  "engines": {
+    "node": ">=22.18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ryntra-io/ryntra-solana-evidence.git",
+    "directory": "packages/solana-evidence-mcp"
+  },
+  "exports": {
+    ".": "./src/server.ts"
+  },
+  "types": "./src/server.ts",
+  "sideEffects": false,
+  "dependencies": {
+    "@modelcontextprotocol/server": "2.0.0",
+    "@ryntra/solana-evidence-sdk": "file:../solana-evidence-sdk",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/client": "2.0.0"
+  }
+}

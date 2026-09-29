@@ -1,0 +1,154 @@
+/*
+ * The Asset Passport.
+ *
+ * Two of the three prices measure different things, so they are laid out as
+ * three equal cards rather than one headline with two footnotes — an
+ * arrangement that would tell the reader which number to trust, which is
+ * exactly the judgement this page refuses to make for them.
+ *
+ * Every fact carries a source line under it in the same rhythm, because the
+ * canon's rule is that a Passport is facts and evidence rather than a score.
+ */
+
+.pp section + section {
+  padding-top: 20px;
+  border-top: 1px solid var(--ry-border);
+}
+
+/* Two links now — back, and out to the watchlist — so the row needs to be a
+   row rather than one anchor sitting on its own. */
+.pp-back {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+/* Both links sat at 22px against the 44px floor, measured at 375px. `← Radar`
+   had been there since RYN-TM-002 and nothing saw it, because a target size is
+   rendered geometry and no source-level gate has an opinion about it. */
+@media (width <= 640px) {
+  .pp-back a {
+    align-items: center;
+    display: inline-flex;
+    min-height: 44px;
+  }
+}
+
+.pp-back a {
+  font-size: 14px;
+  color: var(--ry-muted);
+  text-decoration: none;
+}
+
+.pp-back a:hover {
+  color: var(--ry-text);
+}
+
+.pp-name {
+  font-weight: 400;
+  color: var(--ry-muted);
+}
+
+/* Equal columns: no price is the headline. */
+.pp-prices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin: 16px 0 0;
+}
+
+.pp-price {
+  display: grid;
+  gap: 6px;
+  padding: 16px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+}
+
+.pp-price-label {
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ry-muted);
+}
+
+.pp-price-value {
+  font-family: ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+/* The basis line is the point of the card, so it is not shrunk away. */
+.pp-basis {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ry-muted);
+}
+
+.pp-explain {
+  margin: 16px 0 0;
+  max-width: 78ch;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ry-muted);
+}
+
+.pp-mono {
+  font-family: ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+}
+
+.pp-addr {
+  word-break: break-all;
+}
+
+.pp-facts {
+  display: grid;
+  gap: 12px;
+  margin: 16px 0 0;
+}
+
+.pp-fact {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--ry-border);
+}
+
+.pp-fact dt {
+  font-size: 14px;
+  color: var(--ry-muted);
+}
+
+.pp-fact dd {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ry-text);
+}
+
+/* The source rides with the fact rather than being collected in a footnote,
+   because a footnote is where a reader stops checking. */
+.pp-source {
+  display: block;
+  margin-top: 4px;
+  font-family: ui-monospace, monospace;
+  /* 14px, not 12: 12px is reserved for uppercase micro-labels in this shell,
+     and the source line is the evidence itself. On a page whose whole claim is
+     that every fact carries its provenance, the provenance must not be the
+     smallest thing on it. */
+  font-size: 14px;
+  color: var(--ry-muted);
+}
+
+@media (max-width: 760px) {
+  .pp-fact {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+  }
+}

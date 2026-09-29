@@ -1,0 +1,245 @@
+/* AdminShellV2 — internal control center on Brand & UI v2.1 tokens.
+   No glass, no chamfer, no neon. 14px minimum. Iris is the active accent.
+   Desktop: a fixed sidebar column. Phone: a drawer behind a 44px menu button,
+   so the first screen after the bot's link is the page, not the menu. */
+
+.root {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: 228px minmax(0, 1fr);
+  grid-template-rows: 56px minmax(0, 1fr);
+  background: var(--ry-bg);
+  color: var(--ry-text);
+  font-size: 14px;
+}
+
+.topbar {
+  grid-column: 1 / -1;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--ry-border);
+  background: var(--ry-sidebar);
+}
+
+.menuButton {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin-left: -8px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ry-text);
+  cursor: pointer;
+}
+
+.menuButton:hover {
+  background: var(--ry-hover);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 11px 0;
+  font-weight: 700;
+  line-height: 22px;
+  letter-spacing: 0.01em;
+  color: var(--ry-text);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.brandMark {
+  font-style: normal;
+  color: var(--ry-iris);
+}
+
+.env {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ry-muted);
+  border: 1px solid var(--ry-border);
+  border-radius: 999px;
+  padding: 4px 9px;
+  white-space: nowrap;
+}
+
+.section {
+  display: none;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ry-muted);
+}
+
+.topbarSpacer {
+  flex: 1;
+}
+
+.logout {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 12px;
+  color: var(--ry-muted);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.logout:hover {
+  color: var(--ry-text);
+}
+
+.backdrop {
+  display: none;
+  position: fixed;
+  inset: 56px 0 0 0;
+  z-index: 20;
+  border: 0;
+  padding: 0;
+  background: var(--ry-midnight, #0a2540);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease;
+}
+
+.sidebar {
+  border-right: 1px solid var(--ry-border);
+  background: var(--ry-sidebar);
+  padding: 16px 12px 24px;
+  overflow-y: auto;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 18px;
+}
+
+.groupLabel {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ry-muted);
+  padding: 4px 10px 8px;
+}
+
+.link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 10px;
+  border-radius: 8px;
+  color: var(--ry-text);
+  text-decoration: none;
+}
+
+.link:hover {
+  background: var(--ry-hover);
+}
+
+.linkActive {
+  background: color-mix(in srgb, var(--ry-iris) 16%, transparent);
+  color: var(--ry-text);
+  box-shadow: inset 3px 0 0 var(--ry-iris);
+}
+
+.later {
+  margin-left: auto;
+  font-size: 14px;
+  color: var(--ry-muted);
+}
+
+.canvas {
+  min-width: 0;
+  padding: 24px 28px 48px;
+  overflow: auto;
+}
+
+.canvasInner {
+  max-width: 1440px;
+}
+
+.root :where(a, button, input, select, textarea, summary):focus-visible {
+  outline: 3px solid var(--ry-iris);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+@media (max-width: 900px) {
+  .root {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 56px minmax(0, 1fr);
+  }
+
+  .topbar {
+    padding: 0 14px;
+    gap: 10px;
+  }
+
+  .menuButton {
+    display: inline-flex;
+  }
+
+  .section {
+    display: block;
+  }
+
+  .env {
+    display: none;
+  }
+
+  .backdrop {
+    display: block;
+  }
+
+  .rootOpen .backdrop {
+    opacity: 0.55;
+    pointer-events: auto;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 56px;
+    bottom: 0;
+    left: 0;
+    z-index: 25;
+    width: min(320px, 86vw);
+    border-right: 1px solid var(--ry-border);
+    box-shadow: 0 12px 32px var(--shadow-ink, rgba(0, 0, 0, 0.5));
+    transform: translateX(-104%);
+    transition: transform 0.2s ease;
+    padding: 12px 12px 32px;
+  }
+
+  .rootOpen .sidebar {
+    transform: none;
+  }
+
+  .canvas {
+    padding: 16px 14px 40px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .link,
+  .logout,
+  .sidebar,
+  .backdrop {
+    transition: none;
+  }
+}

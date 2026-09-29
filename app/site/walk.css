@@ -1,0 +1,383 @@
+/* ============================================================================
+   Product walkthrough — the signature stack
+   ============================================================================
+
+   One rule decides every number below: motion explains sequence, it does not
+   decorate a surface. A card comes forward because it is the step being read;
+   the one before it retreats because it is finished; the one after is visible
+   underneath because it is what happens next. Nothing here moves on its own.
+
+   Every card lives in the same grid cell, so the stage is as tall as its
+   tallest step. That is not a layout convenience — it is why switching steps
+   cannot shift the page under a reader's thumb on a phone.
+   ========================================================================== */
+
+.rx-walk {
+  margin: 0;
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+  background: linear-gradient(180deg, var(--raised), var(--deep) 60%);
+  box-shadow: 0 26px 60px -34px rgba(0, 0, 0, 0.85);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+/* The same hairline crown the proof frame uses, so the two read as one system. */
+.rx-walk::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(49, 213, 232, 0.5), transparent);
+}
+
+.rx-walk-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--hairline);
+  background: rgba(255, 255, 255, 0.02);
+  font-family: var(--tech);
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.rx-walk-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--cyan);
+  flex: none;
+}
+
+.rx-walk-title { color: var(--fg-dim); }
+
+/* The frame states what it is. A walkthrough that looks like a live session and
+   is not one is the single most expensive lie a product page can tell. */
+.rx-walk-label {
+  margin-inline-start: auto;
+  color: var(--amber);
+  border: 1px solid rgba(240, 166, 41, 0.36);
+  border-radius: 2px;
+  padding: 2px 7px;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------- controls -- */
+
+.rx-walk-steps {
+  display: none;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.rx-walk[data-enhanced="true"] .rx-walk-steps {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.rx-walk-step {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-inline-end: 1px solid var(--hairline);
+  padding: 11px 8px;
+  display: grid;
+  gap: 3px;
+  justify-items: start;
+  text-align: start;
+  cursor: pointer;
+  color: var(--fg-muted);
+  font-family: var(--tech);
+  font-size: 10px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  transition: background-color 0.22s ease, color 0.22s ease, box-shadow 0.3s var(--rx-ease);
+  /* A grid child defaults to `min-width: auto`, so the button stops shrinking
+     at its longest word and the label spills into the tab beside it. At 320px
+     that put `Understand` eleven pixels inside `Plan`. Both properties are
+     needed: one lets the column shrink, the other contains what is left. */
+  min-width: 0;
+  overflow: hidden;
+}
+
+.rx-walk-step:last-child { border-inline-end: 0; }
+.rx-walk-step-n { color: var(--fg-muted); font-size: 9.5px; }
+.rx-walk-step-name { font-size: 10.5px; max-width: 100%; overflow-wrap: anywhere; }
+
+.rx-walk-step[aria-selected="true"] {
+  color: var(--fg);
+  background: rgba(49, 213, 232, 0.07);
+  box-shadow: inset 0 -2px 0 var(--cyan);
+}
+
+.rx-walk-step[aria-selected="true"] .rx-walk-step-n { color: var(--cyan); }
+
+/* Hover is a fine-pointer affordance only. On a touchscreen it either does
+   nothing or sticks after a tap, and neither is worth the rule. */
+@media (hover: hover) and (pointer: fine) {
+  .rx-walk-step:hover { color: var(--fg-dim); background: rgba(255, 255, 255, 0.035); }
+}
+
+.rx-walk-step:active { transform: scale(0.985); }
+
+/* ---------------------------------------------------------------- stack -- */
+
+.rx-walk-stage {
+  display: grid;
+  gap: 12px;
+  padding: 16px 15px;
+  flex: 1;
+}
+
+/* Progressive enhancement is additive: without JavaScript all five cards are
+   a readable linear explanation. Hydration turns them into one stable stack. */
+.rx-walk[data-enhanced="true"] .rx-walk-stage {
+  grid-template-areas: "stack";
+  perspective: 1100px;
+}
+
+.rx-walk-card {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  border: 1px solid var(--hairline);
+  border-radius: 5px;
+  background: var(--deep);
+  padding: 15px 15px 14px;
+  transform-origin: 50% 0%;
+  opacity: 1;
+  transform: none;
+}
+
+.rx-walk[data-enhanced="true"] .rx-walk-card { grid-area: stack; }
+
+/* Pointer-selected chapters get one short handoff. Keyboard selection is
+   immediate, so a key press never starts a decorative 3D sequence. */
+.rx-walk[data-enhanced="true"][data-input="pointer"] .rx-walk-card {
+  transition: opacity 220ms var(--rx-ease), transform 220ms var(--rx-ease);
+}
+
+/* The card being read. */
+.rx-walk[data-enhanced="true"] .rx-walk-card[data-pos="active"] {
+  opacity: 1;
+  transform: none;
+  z-index: 3;
+  border-color: var(--hairline-strong);
+  box-shadow: 0 18px 40px -28px rgba(0, 0, 0, 0.9);
+}
+
+/* Finished: lifted and dimmed, still there so the sequence stays legible. */
+.rx-walk[data-enhanced="true"] .rx-walk-card[data-pos="prev"] {
+  opacity: 0.35;
+  transform: translate3d(0, -10px, 0) scale(0.985);
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* What happens next, visible underneath. */
+.rx-walk[data-enhanced="true"] .rx-walk-card[data-pos="next"] {
+  opacity: 0.18;
+  transform: translate3d(0, 18px, 0) scale(0.975) rotateX(2deg);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.rx-walk[data-enhanced="true"] .rx-walk-card[data-pos="far"] {
+  opacity: 0;
+  transform: translate3d(0, 26px, 0) scale(0.96);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.rx-walk-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.rx-walk-card-name {
+  font-family: var(--display);
+  font-size: clamp(1rem, 1.3vw, 1.15rem);
+  letter-spacing: -0.026em;
+  font-weight: 600;
+  margin: 0;
+  color: var(--fg);
+}
+
+.rx-walk-lead { margin: 0; font-size: 0.9rem; line-height: 1.5; color: var(--fg-dim); }
+
+.rx-walk-facts { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; }
+
+.rx-walk-fact {
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr);
+  gap: 10px;
+  align-items: baseline;
+  font-size: 0.83rem;
+  line-height: 1.5;
+  color: var(--fg-dim);
+  opacity: 1;
+  transform: none;
+}
+
+/*
+ * The epistemic role of the line, spelled out.
+ *
+ * Colour carries it as well, but never alone: `KNOWN` and `UNKNOWN` have to
+ * survive a greyscale screenshot, a screen reader and a colour-blind reader,
+ * and a green dot survives none of the three.
+ */
+.rx-walk-kind {
+  font-family: var(--tech);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  border-inline-start: 2px solid var(--hairline-strong);
+  padding-inline-start: 8px;
+}
+
+.rx-walk-fact[data-kind="KNOWN"] .rx-walk-kind,
+.rx-walk-fact[data-kind="CHECKED"] .rx-walk-kind,
+.rx-walk-fact[data-kind="COMPARED"] .rx-walk-kind { color: var(--mint); border-color: rgba(88, 230, 169, 0.55); }
+
+.rx-walk-fact[data-kind="UNKNOWN"] .rx-walk-kind,
+.rx-walk-fact[data-kind="SHOWN"] .rx-walk-kind { color: var(--amber); border-color: rgba(240, 166, 41, 0.55); }
+
+.rx-walk-fact[data-kind="YOU SET"] .rx-walk-kind,
+.rx-walk-fact[data-kind="YOURS"] .rx-walk-kind,
+.rx-walk-fact[data-kind="EXACT"] .rx-walk-kind,
+.rx-walk-fact[data-kind="RECORDED"] .rx-walk-kind,
+.rx-walk-fact[data-kind="CARRIED"] .rx-walk-kind { color: var(--violet); border-color: rgba(138, 98, 244, 0.55); }
+
+.rx-walk-fact[data-kind="NEVER"] .rx-walk-kind { color: var(--red); border-color: rgba(224, 93, 111, 0.6); }
+
+.rx-walk-scope {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  line-height: 1.55;
+  color: var(--fg-muted);
+  border-top: 1px solid var(--hairline);
+  padding-top: 10px;
+  overflow-wrap: anywhere;
+}
+
+.rx-walk-scope span { display: block; color: var(--fg-dim); margin-bottom: 3px; }
+
+/* ------------------------------------------------------------------ foot -- */
+
+.rx-walk-foot {
+  display: none;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 15px;
+  border-top: 1px solid var(--hairline);
+  font-family: var(--tech);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+.rx-walk[data-enhanced="true"] .rx-walk-foot { display: flex; }
+
+.rx-walk-next {
+  appearance: none;
+  background: transparent;
+  border: 1px solid var(--hairline-strong);
+  border-radius: 3px;
+  color: var(--fg);
+  font-family: var(--tech);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 7px 11px;
+  margin-inline-start: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .rx-walk-next:hover { border-color: var(--fg-dim); background: rgba(255, 255, 255, 0.04); }
+}
+
+.rx-walk-next:active { transform: scale(0.975); }
+
+.rx-walk-note {
+  margin: 0;
+  padding: 0 15px 14px;
+  font-size: 0.73rem;
+  line-height: 1.55;
+  color: var(--fg-muted);
+}
+
+/* The one line that changes with the step exists only after the controls do. */
+.rx-walk-active-note { display: none; color: var(--fg-dim); }
+.rx-walk[data-enhanced="true"] .rx-walk-active-note { display: inline; }
+
+/* ----------------------------------------------------------- responsive -- */
+
+@media (max-width: 720px) {
+  /* No 3D on a phone. The tilt buys depth on a large screen and costs
+     legibility on a small one, and depth is not what a reader came for. */
+  .rx-walk-stage { perspective: none; padding: 13px 12px; }
+
+  .rx-walk[data-enhanced="true"] .rx-walk-card[data-pos="prev"] { transform: translate3d(0, -6px, 0) scale(0.99); }
+  .rx-walk[data-enhanced="true"] .rx-walk-card[data-pos="next"] { transform: translate3d(0, 10px, 0) scale(0.985); }
+  .rx-walk[data-enhanced="true"] .rx-walk-card[data-pos="far"] { transform: translate3d(0, 14px, 0) scale(0.98); }
+
+  .rx-walk-steps { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .rx-walk-step { padding: 9px 5px; }
+  /* Zero tracking at this width: with any letter-spacing, UNDERSTAND broke
+     mid-word into "UNDERSTAN D" on a 375px screen. */
+  .rx-walk-step-name { font-size: 8.5px; letter-spacing: 0; }
+}
+
+@media (max-width: 420px) {
+  /* Five labels across 320px. The name wraps to a second line rather than
+     being cut, because a step called `Underst…` is worse than a taller tab. */
+  .rx-walk-step { padding: 8px 4px; }
+  .rx-walk-step-name { font-size: 9.5px; letter-spacing: 0.01em; line-height: 1.2; }
+
+  .rx-walk-fact { grid-template-columns: minmax(0, 1fr); gap: 3px; }
+  .rx-walk-kind { justify-self: start; }
+  .rx-walk-foot { flex-wrap: wrap; }
+  .rx-walk-next { margin-inline-start: 0; }
+}
+
+/* ------------------------------------------------------- reduced motion -- */
+
+/*
+ * Reduced motion is not a blank page. Every step stays reachable, the state
+ * stays visible, and only the movement goes: a short crossfade, no transform,
+ * no stagger.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .rx-walk[data-enhanced="true"] .rx-walk-card,
+  .rx-walk[data-enhanced="true"] .rx-walk-card[data-pos="prev"] {
+    transition: opacity 160ms linear;
+    transform: none !important;
+  }
+
+  .rx-walk[data-enhanced="true"] .rx-walk-card[data-pos="next"],
+  .rx-walk[data-enhanced="true"] .rx-walk-card[data-pos="far"] { opacity: 0; }
+
+  .rx-walk-fact {
+    transition: none;
+    transform: none;
+    opacity: 1;
+  }
+
+  .rx-walk-step:active,
+  .rx-walk-next:active { transform: none; }
+}

@@ -1,0 +1,452 @@
+/* Tab 2 — the console over the aggregator's API. Ryntra tokens only. */
+
+.layout {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: var(--ry-s4);
+  padding: var(--ry-s4);
+  flex: 1;
+  align-items: start;
+}
+
+.list {
+  position: sticky;
+  top: 72px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ry-s3);
+}
+
+.group {
+  /* The site sheet gives every bare section 78px of vertical padding; this one is a list. */
+  padding: 0;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-card);
+  overflow: hidden;
+}
+
+.groupTitle {
+  margin: 0;
+  padding: 8px 12px 6px;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.item {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ry-s2);
+  appearance: none;
+  border: 0;
+  border-top: 1px solid var(--ry-border);
+  background: transparent;
+  color: var(--ry-text);
+  font: inherit;
+  font-size: var(--ry-fs-data);
+  text-align: left;
+  padding: 9px 12px;
+  cursor: pointer;
+}
+
+.item:hover {
+  background: var(--ry-hover);
+}
+
+.itemOn,
+.itemOn:hover {
+  background: var(--ry-brand-soft);
+  box-shadow: inset 3px 0 0 var(--ry-accent);
+}
+
+.item:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--ry-accent);
+}
+
+.lock {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+  font-family: var(--ry-font-mono);
+  white-space: nowrap;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ry-s4);
+  min-width: 0;
+}
+
+.card {
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-card);
+  padding: var(--ry-s4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ry-s3);
+  min-width: 0;
+}
+
+.cardHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ry-s2) var(--ry-s4);
+}
+
+.cardTitle {
+  margin: 0;
+  font-size: var(--ry-fs-title);
+  font-weight: 600;
+}
+
+.what {
+  margin: 0;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-body);
+  line-height: var(--ry-lh-body);
+}
+
+.sdk {
+  margin: 0;
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label);
+  color: var(--ry-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--ry-s3);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 140px;
+  flex: 1 1 160px;
+}
+
+.field label {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+}
+
+.field input,
+.field select {
+  font: inherit;
+  font-size: var(--ry-fs-data);
+  color: var(--ry-text);
+  background: var(--ry-elevated);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  padding: 8px 10px;
+  min-height: 38px;
+}
+
+.field input:focus-visible,
+.field select:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+}
+
+.mono {
+  font-family: var(--ry-font-mono);
+}
+
+.run {
+  appearance: none;
+  border: 0;
+  background: var(--ry-accent);
+  color: var(--ry-accent-fg);
+  font: inherit;
+  font-size: var(--ry-fs-data);
+  font-weight: 600;
+  padding: 9px 16px;
+  min-height: 38px;
+  border-radius: var(--ry-r-btn);
+  cursor: pointer;
+}
+
+.run:hover {
+  filter: brightness(1.06);
+}
+
+.run:disabled {
+  opacity: 0.55;
+  cursor: progress;
+}
+
+.run:focus-visible,
+.secondary:focus-visible,
+.pick:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+}
+
+.secondary {
+  appearance: none;
+  border: 1px solid var(--ry-border);
+  background: var(--ry-elevated);
+  color: var(--ry-text);
+  font: inherit;
+  font-size: var(--ry-fs-data);
+  padding: 8px 14px;
+  min-height: 38px;
+  border-radius: var(--ry-r-btn);
+  cursor: pointer;
+}
+
+.secondary:hover {
+  background: var(--ry-hover);
+}
+
+.secondary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.summary {
+  margin: 0;
+  font-size: var(--ry-fs-body);
+  line-height: var(--ry-lh-body);
+}
+
+.error {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--ry-r-btn-sm);
+  background: var(--ry-risk-soft);
+  color: var(--ry-risk);
+  font-size: var(--ry-fs-data);
+  overflow-wrap: anywhere;
+}
+
+.rows {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--ry-s2) var(--ry-s4);
+  margin: 0;
+}
+
+.rows div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.rows dt {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+}
+
+.rows dd {
+  margin: 0;
+  font-size: var(--ry-fs-data);
+  overflow-wrap: anywhere;
+}
+
+.tableTitle {
+  margin: 0;
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.tableWrap {
+  overflow-x: auto;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--ry-fs-data);
+}
+
+.table th,
+.table td {
+  text-align: left;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--ry-border);
+  vertical-align: top;
+}
+
+.table th {
+  color: var(--ry-muted);
+  font-weight: 500;
+  font-size: var(--ry-fs-label);
+  white-space: nowrap;
+}
+
+.table tr:last-child td {
+  border-bottom: 0;
+}
+
+.table td.num {
+  font-family: var(--ry-font-mono);
+  white-space: nowrap;
+}
+
+.pick {
+  appearance: none;
+  border: 1px solid var(--ry-border);
+  background: transparent;
+  color: var(--ry-accent);
+  font: inherit;
+  font-size: var(--ry-fs-label);
+  padding: 3px 8px;
+  border-radius: var(--ry-r-pill);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.pick:hover {
+  background: var(--ry-brand-soft);
+}
+
+.raw summary {
+  cursor: pointer;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+}
+
+.raw pre {
+  margin: var(--ry-s2) 0 0;
+  max-height: 360px;
+  overflow: auto;
+  padding: var(--ry-s3);
+  border-radius: var(--ry-r-btn-sm);
+  background: var(--ry-deep);
+  border: 1px solid var(--ry-border);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label);
+  line-height: 1.45;
+  white-space: pre;
+}
+
+.live {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--ry-s3);
+}
+
+.stat {
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  padding: 10px 12px;
+  background: var(--ry-elevated);
+}
+
+.stat span {
+  display: block;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+}
+
+.stat strong {
+  display: block;
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-data-lg);
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.pulse {
+  color: var(--ry-pnl-pos);
+}
+
+.steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ry-s3);
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  gap: var(--ry-s3);
+  align-items: start;
+  padding: var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  background: var(--ry-elevated);
+}
+
+.stepIndex {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label);
+  background: var(--ry-card);
+  border: 1px solid var(--ry-border);
+}
+
+.stepDone .stepIndex {
+  background: var(--ry-pnl-pos);
+  color: var(--ry-bg);
+  border-color: transparent;
+}
+
+.stepBody {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stepTitle {
+  margin: 0;
+  font-weight: 600;
+  font-size: var(--ry-fs-body);
+}
+
+.stepOut {
+  margin: 0;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-data);
+  overflow-wrap: anywhere;
+}
+
+.stepOut strong {
+  color: var(--ry-text);
+}
+
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .list {
+    position: static;
+  }
+
+  .step {
+    grid-template-columns: 28px minmax(0, 1fr);
+  }
+
+  .step > .secondary,
+  .step > .run {
+    grid-column: 2;
+    justify-self: start;
+  }
+}

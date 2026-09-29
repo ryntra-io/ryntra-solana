@@ -1,0 +1,704 @@
+/*
+ * The public chrome, on the frozen Quiet Intelligence system.
+ *
+ * Every value is a token. This file owns the identity lockup, the sticky bar
+ * and the footer — the three things every migrated public surface shares — so a
+ * page joining the migration inherits them instead of restating them, which is
+ * how the old site ended up with a header that differed subtly between routes.
+ */
+
+/*
+ * 1380, not 1140.
+ *
+ * The founder's design handoff sets every scene in a 1380px container,
+ * and the public landing now does too. A 1140px bar over a 1380px page puts the
+ * lockup 120px inside the content it sits above — visible on every screenshot
+ * as a header that does not line up with the page under it. The chrome follows
+ * the page rather than the page following the chrome, and it moves for all
+ * migrated surfaces at once so no route gets its own width.
+ */
+.wrap {
+  max-width: 1380px;
+  margin: 0 auto;
+  padding-inline: 26px;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* The gradient the marks paint with, mounted once and referenced by id. */
+.defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+/* ── identity ─────────────────────────────────────────────────────────────── */
+
+.lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s3);
+}
+
+.mark {
+  display: block;
+  flex: none;
+}
+
+.wordmark {
+  font-family: var(--ry-font-display);
+  font-weight: 700;
+  font-size: var(--ry-fs-h3);
+  letter-spacing: 0.14em;
+  color: var(--ry-text);
+  line-height: 1;
+}
+
+.wordmarkSm {
+  font-size: var(--ry-fs-app);
+}
+
+/* ── the bar ──────────────────────────────────────────────────────────────── */
+
+/* It takes the ground of whatever is under it, so no section boundary shows a
+   seam. `background-color` animates; the layout never does. */
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--ry-bg);
+  border-bottom: 1px solid var(--ry-border);
+  transition: background-color 350ms ease, border-color 350ms ease, color 350ms ease;
+}
+
+.nav[data-ry-ground="stone"] {
+  background: var(--ry-stone);
+}
+
+.navInner {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s6);
+  min-height: 72px;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  text-decoration: none;
+}
+
+.navLinks {
+  display: flex;
+  gap: var(--ry-s2);
+  margin-inline-start: auto;
+  align-items: center;
+}
+
+.navDesktop {
+  display: flex;
+}
+
+.navCta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding-inline: var(--ry-s4);
+  border-radius: var(--ry-r-btn-sm);
+  font-size: var(--ry-fs-app);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.navCtaSolid {
+  background: var(--ry-iris-deep);
+  color: var(--ry-on-iris);
+}
+
+.navCtaSolid:hover {
+  background: var(--ry-iris);
+  color: var(--ry-on-iris);
+}
+
+.langButton,
+.themeToggle,
+.menuButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  min-height: 44px;
+  padding-inline: var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  background: transparent;
+  color: var(--ry-muted);
+  font: inherit;
+  font-size: var(--ry-fs-dense);
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+
+.themeToggle:hover,
+.langButton:hover,
+.menuButton:hover {
+  color: var(--ry-text);
+  border-color: var(--ry-border-strong);
+}
+.themeToggle, .langButton { border-color: transparent; letter-spacing: 0; }
+.themeToggle:disabled { opacity: 0.5; cursor: wait; }
+.themeToggle:hover, .langButton:hover, .langButton[aria-expanded="true"] { background: var(--ry-hover); border-color: transparent; color: var(--ry-text); }
+.themeToggle:focus-visible, .langButton:focus-visible, .menuButton:focus-visible { outline: none; box-shadow: var(--ry-focus); }
+.menuButton { justify-content: center; width: 44px; padding: 0; border-color: transparent; }
+.themeLabel { display: inline; }
+
+/* ── the language menu ────────────────────────────────────────────────────── */
+
+/* The bar shows the current language's code; the list, every public language
+   by its own name, the current one checked. It hangs from the button's right
+   edge so it never leaves the narrow bar. */
+.langMenu { position: relative; }
+.langCode { font-weight: 600; letter-spacing: 0.04em; }
+.langCaret { transition: transform 160ms ease; }
+.langButton[aria-expanded="true"] .langCaret { transform: rotate(180deg); }
+.langList {
+  position: absolute; top: calc(100% + 6px); right: 0; z-index: 30;
+  display: grid; gap: 2px; min-width: 196px; padding: 6px;
+  border: 1px solid var(--ry-border); border-radius: var(--ry-r-card);
+  background: var(--ry-elevated); box-shadow: var(--ry-shadow-elevated);
+}
+.langItem {
+  display: grid; grid-template-columns: 30px 1fr auto; align-items: center; gap: var(--ry-s2);
+  min-height: 40px; padding: 0 10px; border: 0; border-radius: var(--ry-r-btn-sm);
+  background: transparent; color: var(--ry-text); font: inherit; font-size: var(--ry-fs-app); text-align: left; cursor: pointer;
+}
+.langItem:hover, .langItem:focus-visible { background: var(--ry-hover); outline: none; }
+.langItem:focus-visible { box-shadow: var(--ry-focus); }
+.langItemCode { font-family: var(--ry-font-mono); font-size: var(--ry-fs-dense); letter-spacing: 0.06em; color: var(--ry-muted); }
+.langItem[aria-checked="true"] .langItemCode { color: var(--ry-text); }
+.langItem[aria-checked="true"] .langItemName { font-weight: 600; }
+.langCheck { color: var(--ry-iris); }
+
+.navMobileTools {
+  display: none;
+  margin-inline-start: auto;
+  align-items: center;
+  gap: var(--ry-s2);
+}
+
+.mobileSheet {
+  border-top: 1px solid var(--ry-border);
+  background: var(--ry-bg);
+  padding-block: var(--ry-s4);
+}
+
+.mobileNav {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--ry-s2);
+}
+
+.mobileLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--ry-text);
+  text-decoration: none;
+  font-size: var(--ry-fs-app);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+}
+
+.ecoMenuStack {
+  display: flex;
+  flex-direction: column;
+}
+
+.ecoMenuInline {
+  padding-inline-start: var(--ry-s4);
+}
+
+.ecoMenuMeta,
+.ecoMenuCta {
+  grid-column: 1 / -1;
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+}
+
+.ecoMenuCta {
+  color: var(--ry-iris);
+}
+
+.ecoMenuItem {
+  grid-template-columns: 1fr;
+  row-gap: 4px;
+}
+
+@media (max-width: 620px) {
+  .navDesktop {
+    display: none;
+  }
+
+  .navMobileTools {
+    display: flex;
+  }
+}
+
+.navLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding-inline: var(--ry-s3);
+  border-radius: var(--ry-r-btn-sm);
+  color: var(--ry-muted);
+  text-decoration: none;
+  font-size: var(--ry-fs-app);
+  font-weight: 500;
+  transition: color 140ms ease;
+}
+
+.navLink:hover {
+  color: var(--ry-text);
+}
+
+.navLink:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+}
+
+/* ── the site's bar ───────────────────────────────────────────────────────── */
+
+/* The one menu across the middle of every bar, the switches and the one
+   button on the right. The site's bar keeps the theme's ground and ink; the
+   landing's (below) lets its ground through and draws the menu in mist. */
+.menuLinks { margin-inline: auto; gap: var(--ry-s1); }
+.navLink[aria-current] { color: var(--ry-text); }
+.navTools { display: flex; align-items: center; gap: var(--ry-s2); }
+.navTools .openApp { margin-inline-start: var(--ry-s2); }
+/* Five words, two switches and the button share one row with the mark down
+   to about 1200px in Ukrainian (measured: the menu is 613px wide, the tools
+   357px) — the label leaves the theme switch first, then the menu folds into
+   the sheet and the switches stand in the bar. */
+@media (max-width: 1240px) {
+  .navSite .themeLabel { display: none; }
+  .navSite .themeToggle { justify-content: center; width: 44px; padding: 0; }
+}
+@media (max-width: 1160px) {
+  .navSite .navDesktop { display: none; }
+  .navSite .navMobileTools { display: flex; }
+}
+/* In the sheet the button stands under the menu at its own width. */
+.openAppSheet { align-self: flex-start; margin-top: var(--ry-s3); }
+
+/* ── the footer ───────────────────────────────────────────────────────────── */
+
+.footer {
+  border-top: 1px solid var(--ry-border);
+  background: var(--ry-bg);
+}
+
+/* The one footer: the wordmark, the product's ways in, the two accounts,
+   and the legal pair under a hairline. On the landing no band and no line of
+   its own — the last block's ground runs under it — and the hairline is
+   drawn on the landing's ink so it holds on either ground. */
+.footerLanding { border-top: 0; background: transparent; }
+.footerLanding .landingLegal { border-top-color: color-mix(in srgb, var(--landing-ink, var(--ry-text)) 8%, transparent); }
+.landingInner {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--ry-s6); flex-wrap: wrap;
+  padding-block: var(--ry-s6) var(--ry-s5);
+}
+.landingLogo { display: block; height: 30px; width: auto; }
+.landingNav { flex: 1 1 auto; display: flex; justify-content: center; }
+.landingList, .landingSocial { display: flex; align-items: center; flex-wrap: wrap; gap: var(--ry-s2) var(--ry-s6); margin: 0; padding: 0; list-style: none; }
+.landingSocial { gap: var(--ry-s2) var(--ry-s5); }
+.landingLegal {
+  display: flex; align-items: center; flex-wrap: wrap; gap: var(--ry-s2) var(--ry-s5);
+  padding-block: var(--ry-s4) var(--ry-s6); border-top: 1px solid var(--ry-border);
+  font-size: var(--ry-fs-dense); color: var(--ry-text-muted);
+}
+/* On a phone the year takes its own line, so the legal links stay together on the next. */
+@media (max-width: 480px) { .landingLegal > span { flex-basis: 100%; } }
+.landingLegalLink { color: var(--ry-text-muted); text-decoration: none; }
+.landingLegalLink:hover { color: var(--ry-text); }
+.landingLegalLink:focus-visible { outline: none; border-radius: var(--ry-r-focus-sm); box-shadow: var(--ry-focus); }
+@media (max-width: 900px) {
+  .landingInner { flex-direction: column; align-items: flex-start; gap: var(--ry-s5); }
+  .landingNav { justify-content: flex-start; }
+  .landingList { gap: var(--ry-s2) var(--ry-s5); }
+}
+
+/* The landing's bar: the ground shows through it, so the render flows under
+   the bar as the page scrolls; the menu is drawn in the landing's ink over
+   it. With the switches beside the button it holds one row as the site's
+   bar does, and folds at the same widths. */
+.navLanding {
+  background: color-mix(in srgb, var(--landing-ground, var(--ry-bg)) 78%, transparent);
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  border-bottom-color: color-mix(in srgb, var(--landing-ink, var(--ry-text)) 8%, transparent);
+}
+.navLanding .menuLinks .navLink { color: color-mix(in srgb, var(--landing-ink, var(--ry-text)) 74%, transparent); }
+.navLanding .menuLinks .navLink:hover, .navLanding .menuLinks .navLink[aria-current] { color: var(--landing-ink, var(--ry-text)); }
+/* The one button: on the bar's right, in the landing's bar beside the menu
+   button a step shorter, at the foot of the sheet on every other page. */
+.openApp {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--ry-s2); height: 40px; padding: 0 18px;
+  border-radius: var(--ry-r-btn-sm); border: 1px solid var(--ry-brand-edge); background: var(--ry-gradient); color: var(--ry-on-iris);
+  font-size: var(--ry-fs-dense); font-weight: 600; line-height: 1; text-decoration: none; white-space: nowrap;
+  box-shadow: var(--ry-brand-glow);
+  transition: transform 160ms cubic-bezier(.16, 1, .3, 1), box-shadow 160ms ease, background-color 160ms ease;
+}
+.openApp:hover { background: var(--ry-gradient-hover); box-shadow: var(--ry-brand-glow-strong); transform: translateY(-1px); }
+.openApp:active { transform: translateY(0); }
+.openApp:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--ry-bg), var(--ry-focus); }
+/* Quiet where the page below has its own one orange action (the landing's Open App, the reviewer page's Verify a receipt): outlined, the brand kept to the line (RYN-FIRST-SCREEN-001). */
+.openAppQuiet {
+  background: transparent;
+  border-color: var(--ry-border-strong);
+  color: var(--ry-text);
+  box-shadow: none;
+}
+
+.openAppQuiet:hover {
+  background: var(--ry-hover);
+  border-color: var(--ry-brand-line);
+  box-shadow: none;
+}
+.openAppBar { height: 36px; padding: 0 14px; margin-right: var(--ry-s2); }
+.navLanding .mobileSheet { background: color-mix(in srgb, var(--landing-ground, var(--ry-bg)) 92%, transparent); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-top-color: color-mix(in srgb, var(--landing-ink, var(--ry-text)) 8%, transparent); }
+@media (max-width: 1240px) {
+  .navLanding .themeLabel { display: none; }
+  .navLanding .themeToggle { justify-content: center; width: 44px; padding: 0; }
+}
+@media (max-width: 1160px) {
+  .navLanding .navDesktop { display: none; }
+  .navLanding .navMobileTools { display: flex; }
+}
+
+.footerCompact .footerInner { padding-block: 40px 48px; }
+.footerCompact .footerTagline { font-size: var(--ry-fs-dense); margin-top: 10px; }
+@media (max-width: 700px) {
+  .footerCompact .footerList { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 28px; }
+}
+
+/* Four columns beside the mark, not one row under it. The mark holds the left
+   edge so the columns start where the page's content column starts, and the
+   whole block sits on the page ground — a footer that paints its own panel
+   reads as a second page rather than as the end of this one. */
+.footerInner {
+  padding-block: var(--ry-s8) var(--ry-s8);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ry-s7);
+  flex-wrap: wrap;
+}
+
+.footerBrand {
+  flex: none;
+  max-width: 300px;
+  /* Optically aligns the mark with the first column label rather than with the
+     label's box, which sits 4px higher than the cap height suggests. */
+  padding-top: 2px;
+}
+
+.footerLogoLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+.footerLogoLink:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+  border-radius: var(--ry-r-focus-md);
+}
+
+/* One wordmark per theme: the white lettering lives on the dark ground, the
+   black lettering on mineral paper. Both are in the DOM so the swap is pure
+   CSS and cannot flash. The header and the footer share the pair; only the
+   size differs. */
+.footerLogo {
+  display: block;
+  height: 36px;
+  width: auto;
+}
+
+/* The flat lockup of 2026-09-13 sets YNTRA at 55% of the R's height: 30px
+   puts the letters at 16.5px beside the 16px links, the R a step above. */
+.brandLogo {
+  display: block;
+  height: 30px;
+  width: auto;
+}
+
+.logoLight {
+  display: none;
+}
+
+:global([data-theme="light"]) .logoDark,
+:global([data-ry-theme="light"]) .logoDark {
+  display: none;
+}
+
+:global([data-theme="light"]) .logoLight,
+:global([data-ry-theme="light"]) .logoLight {
+  display: block;
+}
+
+.footerTagline {
+  margin: var(--ry-s4) 0 0;
+  max-width: 30ch;
+  font-size: var(--ry-fs-app);
+  line-height: 1.55;
+  color: var(--ry-muted);
+}
+
+.footerCols {
+  max-width: 620px;
+}
+
+.footerList {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0 var(--ry-s5);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.footerLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s1);
+  min-height: 44px;
+  color: var(--ry-muted);
+  text-decoration: none;
+  font-size: var(--ry-fs-app);
+}
+
+.footerLink:hover {
+  color: var(--ry-aurora);
+}
+
+.footerLink:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+}
+
+/* ── responsive ───────────────────────────────────────────────────────────── */
+
+/* The landing's two in-page anchors are scroll shortcuts; the CTA and the
+   destinations are not. On a phone the shortcuts go and the rest stays, rather
+   than the whole bar running off the right edge and taking the CTA with it. */
+@media (max-width: 720px) {
+  .navAnchor {
+    display: none;
+  }
+
+  .navInner {
+    gap: var(--ry-s4);
+  }
+}
+
+/* Four columns need about 700px before the labels start wrapping mid-word.
+   Below that they go to two, which keeps a 44px row per link instead of
+   squeezing four columns into a phone. */
+@media (max-width: 860px) {
+  .footerInner {
+    gap: var(--ry-s6);
+  }
+
+  .footerCols {
+    gap: var(--ry-s5) var(--ry-s6);
+  }
+}
+
+@media (max-width: 700px) {
+  .footerCols { width: 100%; }
+  .footerList { justify-content: flex-start; }
+}
+
+@media (max-width: 560px) {
+  .wrap {
+    padding-inline: var(--ry-s5);
+  }
+
+  .footerInner {
+    justify-content: flex-start;
+  }
+}
+
+/* The site bar carries destinations rather than anchors, so the 720px rule
+   above — which hides `.navAnchor` — never applied to it, and below about
+   480px brand plus two links plus the CTA stop fitting one row. Measured on the
+   Workspace Map at 375px: 459px of content in a 375px viewport, with `Request
+   beta` the part that ran off the right edge. It wraps to a second row rather
+   than collapsing into a disclosure: two destinations and one action are not a
+   menu, and a hamburger over three items hides more than it saves. */
+@media (max-width: 480px) {
+  .navInner {
+    flex-wrap: nowrap;
+    gap: 8px;
+    min-height: 64px;
+    padding-block: 8px;
+  }
+  .navMobileTools { gap: 2px; }
+  .themeLabel { display: none; }
+  .themeToggle { justify-content: center; width: 44px; padding: 0; }
+  .nav .brandLogo { width: 116px; max-width: 100%; height: auto; }
+
+  /* `.navInner` wrapped and `.navLinks` did not, so the row that was supposed
+     to relieve the overflow simply carried it: measured at 375px, `Request
+     beta` ended at 445 and `Open Ryntra` at 552 — the product entry was
+     entirely off the right edge of a phone, and the shell clips, so nothing
+     scrolled to reveal it. The container wrapping is only half the rule.
+
+     This is the interim, not the answer. Landing Brief §72 asks for one compact
+     menu behind a trigger rather than a bar that grows rows; that is its own
+     packet and this is what stops a phone losing the way into the product in
+     the meantime. */
+  .navLinks {
+    margin-inline-start: 0;
+    width: 100%;
+    flex-wrap: wrap;
+    row-gap: var(--ry-s2);
+  }
+}
+
+/* The first control a keyboard reaches. Off-screen until focused, then a real
+   button at the top-left of the bar. */
+.skip {
+  position: absolute;
+  inset-inline-start: var(--ry-s4);
+  top: var(--ry-s3);
+  z-index: 30;
+  transform: translateY(-200%);
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding-inline: var(--ry-s4);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-iris-deep);
+  color: var(--ry-on-iris);
+  font-size: var(--ry-fs-dense);
+  text-decoration: none;
+  transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.skip:focus-visible {
+  transform: translateY(0);
+  outline: none;
+  box-shadow: var(--ry-focus);
+}
+
+/* ── Ecosystems menu ────────────────────────────────────────────────────────
+   A compact dropdown, not a hover panel: it opens on click, closes on Escape
+   and on a pointer outside, and returns focus to its trigger. The anchor it
+   replaces still exists on mobile, where a menu inside a menu helps nobody. */
+.ecoMenuWrap { position: relative; }
+
+.ecoMenuTrigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+}
+
+.ecoMenuCaret {
+  width: 5px;
+  height: 5px;
+  border-right: 1px solid currentColor;
+  border-bottom: 1px solid currentColor;
+  transform: rotate(45deg) translate(-1px, -1px);
+}
+
+.ecoMenu {
+  position: absolute;
+  top: calc(100% + var(--ry-s3));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  min-width: 320px;
+  max-width: 420px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+  box-shadow: var(--ry-shadow-elevated);
+  padding: var(--ry-s2);
+}
+
+.ecoMenu[hidden] { display: none; }
+
+.ecoMenuList { list-style: none; margin: 0; padding: 0; }
+
+.ecoMenuItem {
+  display: grid;
+  grid-template-columns: 1fr;
+  row-gap: 4px;
+  padding: var(--ry-s2) var(--ry-s3);
+  border-radius: var(--ry-r-btn-sm);
+  text-decoration: none;
+  color: var(--ry-text);
+}
+
+.ecoMenuItem:hover { background: var(--ry-elevated); }
+.ecoMenuItem:focus-visible { outline: 2px solid var(--ry-focus); outline-offset: -2px; }
+
+.ecoMenuNum {
+  grid-row: span 2;
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+}
+
+.ecoMenuLabel { font-size: var(--ry-fs-app); font-weight: 500; }
+
+.ecoMenuTags {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+  letter-spacing: 0.06em;
+  color: var(--ry-muted);
+}
+
+/* One control is enough on a narrow bar; the section anchor still works. */
+@media (max-width: 860px) {
+  .ecoMenuWrap { display: none; }
+}
+
+/* The narrow-bar twin of the menu: shown only where the menu is not. */
+.ecoAnchorNarrow { display: none; }
+@media (max-width: 860px) { .ecoAnchorNarrow { display: inline-flex; } }
+
+/* The flagship mark in the bar. A word, not a colour: the label has to survive
+   a monochrome render and a screen reader. */
+.navFlag {
+  margin-left: 6px;
+  padding: 2px 6px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label-sm);
+  letter-spacing: 0.14em;
+  vertical-align: middle;
+  opacity: 0.75;
+}

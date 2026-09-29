@@ -1,0 +1,445 @@
+/* Ryntra Home — Research, the Changes Radar.
+ *
+ * Authored directly on the frozen `--rt-*` projection, so this surface joins
+ * `MIGRATED_SURFACES` on the commit that creates it.
+ *
+ * The page answers one question per row — *what changed, measured against
+ * what, on whose evidence* — and answers it with a state chip, a pair of
+ * values and a link. The sentence that explains a section lives behind the
+ * shell's `InfoControl`; nothing here prints its own documentation.
+ *
+ * Every grid column is `minmax(0, 1fr)` rather than the implicit `auto`, which
+ * is what stops a long instrument key from pushing a row wider than the shell
+ * at 375px. The Portfolio surface learned that on a phone viewport and this one
+ * inherits the lesson rather than rediscovering it. */
+
+.surface {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--rt-space-lg);
+  width: min(100%, var(--rt-maxw));
+  margin-inline: auto;
+  color: var(--rt-ink-high);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--rt-space-sm);
+}
+
+.head h1 {
+  margin: 0;
+  font-family: var(--ry-font-display);
+  font-size: var(--ry-fs-h2);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.eyebrow {
+  margin: 0 0 var(--rt-space-2xs);
+  color: var(--rt-ink-mid);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.headMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rt-space-xs);
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  padding-inline: var(--rt-space-sm);
+  border: 1px solid var(--rt-hairline-strong);
+  border-radius: var(--rt-radius-sm);
+  color: var(--rt-ink-high);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.link:hover { border-color: var(--rt-action-blue); color: var(--rt-action-blue-fg); }
+
+/* ── the view rail ──────────────────────────────────────────────────────── */
+
+/* Six views, and the count on each is the point: a reader picks Conflicts
+   because it says 2, not because they wondered whether there were any. */
+.views {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rt-space-2xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.view {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rt-space-2xs);
+  min-height: 44px;
+  padding-inline: var(--rt-space-sm);
+  border: 1px solid var(--rt-hairline);
+  border-radius: var(--rt-radius-pill);
+  background: var(--rt-panel);
+  color: var(--rt-ink-mid);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.view:hover { border-color: var(--rt-hairline-strong); color: var(--rt-ink-high); }
+
+/* The selected view is filled rather than tinted.
+ *
+ * Measured on the page in Dark: iris text on the 14% iris tint is 4.14:1 at
+ * 14px/600, under the 4.5:1 floor. The tint was doing two jobs badly — marking
+ * selection and carrying text — so selection moved to the solid fill, where the
+ * on-iris ink measures 4.84:1 in both themes. */
+.viewActive {
+  border-color: var(--rt-action-blue);
+  background: var(--rt-action-blue);
+  color: var(--rt-action-blue-ink);
+}
+
+.viewActive:hover { color: var(--rt-action-blue-ink); }
+
+.viewCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 20px;
+  padding-inline: 6px;
+  border-radius: var(--rt-radius-pill);
+  background: var(--rt-hairline);
+  /* Measured on the page: `--rt-ink-mid` on this fill is 4.0:1 at 12px/600,
+     under the 4.5:1 floor for text this size. The count is the reason a reader
+     opens a view, so it takes the high ink rather than a larger size. */
+  color: var(--rt-ink-high);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+}
+
+/* Inverted inside the filled pill, so the count stays a separate thing rather
+   than dissolving into the fill it sits on. */
+.viewActive .viewCount {
+  background: var(--rt-action-blue-ink);
+  color: var(--rt-action-blue);
+}
+
+/* ── change rows ────────────────────────────────────────────────────────── */
+
+.changes {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--rt-space-2xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.change {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--rt-space-xs);
+  padding: var(--rt-space-xs) var(--rt-space-sm);
+  border: 1px solid var(--rt-hairline);
+  border-radius: var(--rt-radius-sm);
+  background: var(--rt-panel);
+}
+
+.changeBody {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.changeTitle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rt-space-2xs);
+  font-size: var(--ry-fs-app);
+  font-weight: 600;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.changeMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rt-space-2xs);
+  color: var(--rt-ink-mid);
+  font-size: var(--ry-fs-dense);
+  line-height: 1.4;
+}
+
+.changeMeta b {
+  color: var(--rt-ink-high);
+  font-family: var(--ry-font-mono);
+  font-weight: 500;
+}
+
+.changeMeta time { font-variant-numeric: tabular-nums; }
+
+/* An arrow between two readings, so a move reads as a move rather than as two
+   numbers that happen to be adjacent. */
+.move {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-data);
+}
+
+.moveFrom { color: var(--rt-ink-mid); }
+.moveTo { color: var(--rt-ink-high); font-weight: 600; }
+.moveArrow { color: var(--rt-ink-mid); flex: none; }
+
+.unknownValue {
+  color: var(--rt-ink-mid);
+  font-family: var(--ry-font-mono);
+}
+
+/* Why a row is unknown, on the row. A dash with no reason beside it is exactly
+   the state this product refuses on every other surface. */
+.changeReason {
+  color: var(--rt-ink-mid);
+  font-size: var(--ry-fs-dense);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+/* ── conflicts ─────────────────────────────────────────────────────────── */
+
+/* Every disagreeing value keeps its own row and its own source. There is
+   deliberately no reconciled figure and no "best" value: a single number here
+   would be one nobody reported. */
+/* Sized to the comparison, not to the row. Full-width bars for two short
+   numbers read as a chart of nothing; measured on the page and capped. */
+.conflict {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+  width: min(100%, 340px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.conflictRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--rt-space-xs);
+  padding: var(--rt-space-2xs) var(--rt-space-xs);
+  border: 1px solid var(--rt-review-amber);
+  border-radius: var(--rt-radius-sm);
+  background: var(--rt-review-amber-soft);
+  color: var(--rt-review-amber-fg);
+  font-size: var(--ry-fs-dense);
+}
+
+.conflictValue {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-data);
+  font-weight: 600;
+}
+
+/* ── rules ─────────────────────────────────────────────────────────────── */
+
+.rules {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--rt-space-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rule {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--rt-space-xs);
+  padding: var(--rt-space-sm);
+  border: 1px solid var(--rt-hairline);
+  border-radius: var(--rt-radius-sm);
+  background: var(--rt-panel);
+}
+
+.ruleHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rt-space-xs);
+}
+
+.ruleName {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rt-space-2xs);
+  font-size: var(--ry-fs-app);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* A cron expression is a literal, and drawn as running text its asterisks read
+   as three floating footnote marks. Boxed, it reads as the schedule it is. */
+.cron {
+  /* Sized to the expression. Stretched across a fact tile it reads as an empty
+     input field, which is what it looked like before this line. */
+  justify-self: start;
+  width: fit-content;
+  padding: 2px 8px;
+  border: 1px solid var(--rt-hairline-strong);
+  border-radius: var(--rt-radius-sm);
+  background: var(--rt-raised);
+  color: var(--rt-ink-high);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 168px), 1fr));
+  gap: var(--rt-space-xs);
+  margin: 0;
+}
+
+.fact {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--rt-space-xs);
+  border: 1px solid var(--rt-hairline);
+  border-radius: var(--rt-radius-sm);
+  background: var(--rt-raised);
+}
+
+.factKey {
+  color: var(--rt-ink-mid);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.factValue {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-data);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.factUnknown {
+  color: var(--rt-ink-mid);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-data);
+}
+
+/* ── shared text ────────────────────────────────────────────────────────── */
+
+.note {
+  display: grid;
+  gap: var(--rt-space-2xs);
+  margin: 0;
+  color: var(--rt-ink-mid);
+  font-size: var(--ry-fs-dense);
+  line-height: 1.5;
+}
+
+.note li { margin-inline-start: var(--rt-space-md); }
+
+.empty {
+  display: flex;
+  align-items: center;
+  gap: var(--rt-space-xs);
+  color: var(--rt-ink-mid);
+  font-size: var(--ry-fs-dense);
+  line-height: 1.5;
+}
+
+.empty svg { flex: none; color: var(--rt-ink-mid); }
+
+/* Green only for a view that was answered and came back quiet. An unanswerable
+   view keeps the neutral mark, because unknown is never drawn as fine. */
+.empty[data-tone="CALM"] svg { color: var(--rt-reconciled-green-fg); }
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rt-space-xs);
+}
+
+.rows {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--rt-space-xs);
+  padding: var(--rt-space-2xs) var(--rt-space-xs);
+  border: 1px solid var(--rt-hairline);
+  border-radius: var(--rt-radius-sm);
+  background: var(--rt-panel);
+  font-size: var(--ry-fs-dense);
+}
+
+.rowName {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rt-space-2xs);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* ── loading ────────────────────────────────────────────────────────────── */
+
+/* Reserved geometry, not a spinner. Nothing moves when the read returns and no
+   previous row is left on screen pretending to be current. */
+.skeleton {
+  border-radius: var(--rt-radius-sm);
+  background: var(--rt-hairline);
+}
+
+.skeletonRow { height: 52px; }
+.skeletonLine { height: 14px; }
+.skeletonPill { height: 44px; width: 120px; border-radius: var(--rt-radius-pill); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton { animation: pulse 1.6s var(--rt-ease) infinite; }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 0.85; }
+}

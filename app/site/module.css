@@ -1,0 +1,317 @@
+/* ============================================================================
+   Ryntra public site — the module plate
+   ============================================================================
+
+   The complaint this file answers: a page of open sections reads as text, then
+   more text. Nothing holds a block, so nothing separates one argument from the
+   next, and the eye never registers that it has arrived somewhere new.
+
+   So every section becomes an instrument module: a chamfered plate with a
+   header strip carrying its index, its subject and its state, corner ticks at
+   the cut edges, and content inside. The plates repeat, which is what makes
+   them read as one system rather than as a page of unrelated cards — the
+   variety lives in what each one contains.
+
+   The section head is two columns, always. A heading alone on the left with an
+   empty right half is the exact lopsided shape that makes a premium layout
+   collapse into a blog post.
+   ========================================================================== */
+
+.rx-mod {
+  position: relative;
+  border: 1px solid var(--hairline-strong);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.022), transparent 42%),
+    var(--deep);
+  clip-path: polygon(0 0, calc(100% - 26px) 0, 100% 26px, 100% 100%, 26px 100%, 0 calc(100% - 26px));
+  overflow: hidden;
+  isolation: isolate;
+  transition: border-color 0.4s var(--rx-ease, ease), background-color 0.4s var(--rx-ease, ease);
+}
+
+
+/* A single light sweeps the plate once when the pointer arrives. It is the
+   same gesture the buttons use, at plate scale — one system, one behaviour. */
+.rx-mod::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(115deg, transparent 38%, rgba(34, 211, 238, 0.075) 50%, transparent 62%);
+  transform: translateX(-40%);
+  transition: transform 1.05s var(--rx-ease, ease), opacity 0.4s ease;
+}
+
+/* Corner ticks at the two cut edges. Instrumentation, drawn once. */
+.rx-mod-tick {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0.55;
+}
+.rx-mod-tick--tr { top: 0; inset-inline-end: 0; border-top: 1px solid var(--cyan); }
+.rx-mod-tick--bl { bottom: 0; inset-inline-start: 0; border-bottom: 1px solid var(--cyan); }
+
+/* ------------------------------------------------------------ header bar -- */
+
+.rx-mod-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px 18px;
+  flex-wrap: wrap;
+  padding: 12px clamp(18px, 2.2vw, 30px);
+  border-bottom: 1px solid var(--hairline);
+  background: rgba(255, 255, 255, 0.018);
+  font-family: var(--tech);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+.rx-mod-n {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--cyan);
+}
+.rx-mod-n::before {
+  content: "";
+  width: 7px; height: 7px;
+  background: currentColor;
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+}
+.rx-mod-subject { color: var(--fg-dim); }
+.rx-mod-meta { margin-inline-start: auto; color: var(--fg-muted); letter-spacing: 0.1em; }
+
+.rx-mod-body { padding: clamp(26px, 3.2vw, 48px) clamp(18px, 2.2vw, 34px); }
+
+/* ------------------------------------------------------- two-column head -- */
+
+/*
+ * The statement sits left at display size; the qualifying paragraph sits right,
+ * bottom-aligned to the statement's baseline block. Both halves are occupied,
+ * which is the whole difference between an editorial spread and a text page.
+ */
+.rx-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+  gap: clamp(16px, 2vw, 34px) clamp(28px, 4vw, 72px);
+  align-items: end;
+  margin-bottom: clamp(28px, 3.4vw, 52px);
+}
+.rx-head > .rx-h2 { grid-column: 1; margin: 0; }
+.rx-head > .rx-lead { grid-column: 2; margin: 0; max-width: 46ch; }
+/* A head with no lead spans the full width rather than leaving a hole. */
+.rx-head > .rx-h2:only-child { grid-column: 1 / -1; max-width: 22ch; }
+
+/* The old inline index row is replaced by the module bar. */
+.rx-head > .rx-index { display: none; }
+
+/* --------------------------------------------------------------- spacing -- */
+
+/* Sections are closer together because each one is now visibly bounded; the
+   plate does the separating that whitespace used to have to do alone. */
+.rx-section { padding-block: clamp(34px, 4.2vw, 64px); }
+.rx-section--tight { padding-block: clamp(26px, 3vw, 44px); }
+.rx-section + .rx-section { border-top: 0; }
+
+/* ----------------------------------------------------- the lifecycle rail -- */
+
+/*
+ * A banner that is also the argument: the eight stages in order, with the ones
+ * actually proven lit and the rest left dim. It is a focusable scroll region,
+ * so the stages that do not fit are reachable by keyboard as well as by touch.
+ */
+.rx-banner {
+  position: relative;
+  border-block: 1px solid var(--hairline);
+  background: linear-gradient(90deg, rgba(34, 211, 238, 0.05), transparent 40%, rgba(138, 98, 244, 0.05));
+  overflow: hidden;
+  padding-block: 15px;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+}
+
+/*
+ * The band drifts again — by founder direction (2026-08-09), reversing the
+ * RYN-SITE-002 static band. The guards that made the old marquee acceptable
+ * all return with it: it is slow, it pauses under the pointer and under
+ * keyboard focus, the duplicate pass that hides the seam is aria-hidden so the
+ * list is announced once, and under prefers-reduced-motion the belt stops and
+ * the band becomes the static scrollable strip it was before.
+ */
+.rx-banner-belt {
+  display: flex;
+  width: max-content;
+  animation: rx-marquee 58s linear infinite;
+}
+.rx-banner[data-flow="reverse"] .rx-banner-belt { animation-direction: reverse; }
+
+.rx-banner:hover .rx-banner-belt,
+.rx-banner:focus-visible .rx-banner-belt,
+.rx-banner:focus-within .rx-banner-belt { animation-play-state: paused; }
+
+@keyframes rx-marquee {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+
+.rx-banner-track {
+  display: flex;
+  width: max-content;
+  gap: 0;
+}
+
+.rx-banner-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding-inline: 26px;
+  font-family: var(--tech);
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  white-space: nowrap;
+}
+.rx-banner-item::after {
+  content: "→";
+  color: var(--hairline-strong);
+  font-size: 13px;
+}
+.rx-banner-item[data-proven="true"] { color: var(--mint); }
+.rx-banner-item[data-actor="human"] { color: var(--violet); }
+.rx-banner-item b {
+  font-weight: 600;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--fg-muted);
+  border: 1px solid var(--hairline);
+  padding: 2px 7px;
+}
+.rx-banner-item[data-proven="true"] b { color: var(--mint); border-color: rgba(88, 230, 169, 0.4); }
+.rx-banner-item[data-actor="human"] b { color: var(--violet); border-color: rgba(138, 98, 244, 0.4); }
+
+/* It takes focus now, so it has to show it. */
+.rx-banner:focus-visible { outline: 2px solid var(--cyan); outline-offset: -2px; }
+
+
+/* --------------------------------------------------------- paper variant -- */
+
+.rx-paper .rx-mod {
+  background: linear-gradient(180deg, rgba(10, 16, 32, 0.02), transparent 42%), #f7f5f0;
+  border-color: var(--paper-line);
+}
+.rx-paper .rx-mod::after { background: linear-gradient(115deg, transparent 38%, rgba(15, 94, 119, 0.06) 50%, transparent 62%); }
+.rx-paper .rx-mod-bar { background: rgba(10, 16, 32, 0.03); border-bottom-color: var(--paper-line); color: var(--paper-muted); }
+.rx-paper .rx-mod-n { color: #0f5e77; }
+.rx-paper .rx-mod-subject { color: var(--paper-ink); }
+.rx-paper .rx-mod-tick--tr,
+.rx-paper .rx-mod-tick--bl { border-color: #0f5e77; }
+
+@media (hover: hover) and (pointer: fine) {
+  .rx-mod:hover { border-color: rgba(34, 211, 238, 0.34); }
+  .rx-mod:hover::after { opacity: 1; transform: translateX(40%); }
+  .rx-paper .rx-mod:hover { border-color: rgba(15, 94, 119, 0.4); }
+}
+
+/* Inner grids sit flush inside the plate rather than drawing a second border. */
+.rx-mod-body > .rx-cols,
+.rx-mod-body > .rx-story { border-block: 0; }
+.rx-mod-body > .rx-split,
+.rx-mod-body > .rx-audience,
+.rx-mod-body > .rx-close,
+.rx-mod-body > .rx-axes,
+.rx-mod-body > .rx-stages { border: 0; }
+
+@media (max-width: 900px) {
+  .rx-head { grid-template-columns: minmax(0, 1fr); align-items: start; }
+  .rx-head > .rx-h2,
+  .rx-head > .rx-lead { grid-column: 1; }
+  .rx-head > .rx-h2:only-child { max-width: none; }
+  .rx-mod { clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px)); }
+  .rx-mod-tick { width: 18px; height: 18px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rx-mod::after { display: none; }
+
+  /* The band goes back to the static, scrollable strip: no belt animation, no
+     duplicate pass, and the overflow is reachable by keyboard and touch. */
+  .rx-banner { overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+  .rx-banner-belt { animation: none; }
+  .rx-banner-track[aria-hidden="true"] { display: none; }
+}
+
+/* --------------------------------------------------------- the statement -- */
+
+/*
+ * A payoff line is the one place a page earns a large setting — and the one
+ * place a lone paragraph at half width looks most like an accident. So a
+ * statement is a composition: the line itself on the left at display size, and
+ * a short technical annotation on the right that carries the detail the line
+ * deliberately leaves out. Both halves occupied, and the reader gets the claim
+ * and its mechanics in one glance.
+ */
+.rx-statement {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.66fr);
+  gap: 20px clamp(28px, 4vw, 64px);
+  align-items: end;
+  margin-top: clamp(26px, 3vw, 44px);
+  padding-top: clamp(22px, 2.6vw, 34px);
+  border-top: 1px solid var(--hairline);
+}
+
+.rx-statement-line {
+  margin: 0;
+  font-family: var(--display);
+  font-size: clamp(1.3rem, 2.1vw, 1.95rem);
+  line-height: 1.14;
+  letter-spacing: -0.036em;
+  font-weight: 400;
+  color: var(--fg);
+  max-width: 20ch;
+}
+
+.rx-statement-note {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.6;
+  color: var(--fg-muted);
+  max-width: 52ch;
+}
+.rx-statement-note strong { color: var(--fg-dim); font-weight: 500; }
+
+/* The object chain, set as the technical annotation it is. */
+.rx-statement-chain {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 7px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--tech);
+  font-size: 10px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+.rx-statement-chain li { display: inline-flex; align-items: center; gap: 7px; }
+.rx-statement-chain li:not(:last-child)::after { content: "→"; color: var(--hairline-strong); }
+
+.rx-paper .rx-statement { border-top-color: var(--paper-line); }
+.rx-paper .rx-statement-line { color: var(--paper-ink); }
+.rx-paper .rx-statement-note { color: var(--paper-muted); }
+.rx-paper .rx-statement-note strong { color: var(--paper-ink); }
+.rx-paper .rx-statement-chain { color: var(--paper-muted); }
+
+@media (max-width: 900px) {
+  .rx-statement { grid-template-columns: minmax(0, 1fr); align-items: start; }
+  .rx-statement-line { max-width: none; }
+}

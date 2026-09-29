@@ -1,0 +1,21 @@
+/*
+ * The security page's two arrangements of its own; everything else is the
+ * public pages' shared furniture (`app/site/info/info.module.css`).
+ *
+ * What Ryntra cannot do and what it can stand side by side from a laptop's
+ * width, one under the other on a phone, `cannot` first in both.
+ */
+.sec-bounds {
+  display: grid;
+  gap: var(--ry-s4);
+}
+@media (min-width: 900px) {
+  .sec-bounds {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    /* One height for both: the shorter «can» stops half-way otherwise and reads as unfinished. */
+    align-items: stretch;
+  }
+}
+.sec-report {
+  margin: var(--ry-s5) 0 0;
+}

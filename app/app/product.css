@@ -1,0 +1,105 @@
+.ry-product {
+  color: var(--ry-text);
+  --rw-panel-min-height: auto;
+}
+.ry-product-account { display: flex; align-items: center; gap: 8px; }
+.ry-account-link { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; min-width: 44px; padding: 8px 12px; border-radius: 12px; color: var(--ry-text); text-decoration: none; }
+.ry-account-link:hover { background: var(--ry-hover); }
+/* The wordmark at a size the bar can carry: the lockup is 1em tall, and at
+   the shell's 15px it measured 70 × 15 on the Owner's 2560px screen — a mark
+   nobody could see (Owner, 2026-09-12). The flat lockup of 2026-09-13 sets
+   YNTRA at 55% of the R's height, so the R stands 32px in the 64px bar and
+   the letters read at 17px beside the 44px controls. */
+.ry-product .rs-brand .ryntra-brand { font-size: var(--ry-fs-h2); }
+.ry-product .rs-page, .ry-product .so-head { margin-bottom: 24px; }
+.ry-product .rs-page h1, .ry-product .so-title { font-family: var(--ry-font-sans); font-size: clamp(1.5rem, 2.5vw, 2rem); line-height: 1.2; letter-spacing: -0.02em; }
+.ry-product .rw-btn, .ry-product button:not(.rs-panel-grip):not(.rs-menu-backdrop) { min-height: 44px; }
+.ry-product .rs-canvas { padding-bottom: 32px; }
+.ry-product .rs-canvas > * { min-width: 0; }
+/* Secondary is the default control: surface, a subtle border, primary ink;
+   hover lightens the surface and the border (Brand Canon v1.0 §5). */
+.ry-product .rw-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 10px 16px; border: 1px solid var(--ry-border); border-radius: var(--ry-r-btn); background: var(--ry-card); color: var(--ry-text); font: inherit; font-weight: 500; text-decoration: none; cursor: pointer; transition: background-color var(--rt-duration-fast) var(--rt-ease), border-color var(--rt-duration-fast) var(--rt-ease), color var(--rt-duration-fast) var(--rt-ease), transform var(--rt-duration-fast) var(--rt-ease), box-shadow var(--rt-duration-fast) var(--rt-ease); }
+.ry-product .rw-btn:hover { background: var(--ry-hover); border-color: var(--ry-border-strong); }
+.ry-product .rw-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+/* `data-variant="primary"` is the spelling the account sheet, Settings and
+   the older desks use; the shell sheet honours it beside the modifier class
+   and so does the product, or a primary control reads as a secondary one.
+   The primary action is the one orange ramp with white on it, a highlight
+   edge and the only glow — 8–16px, a 1px lift on hover, back on press. */
+.ry-product .rw-btn--primary, .ry-product .rw-btn[data-variant="primary"], .ry-product .btn-primary { background: var(--ry-gradient); color: var(--ry-on-iris); border-color: var(--ry-brand-edge); font-weight: 600; box-shadow: var(--ry-brand-glow); }
+.ry-product .rw-btn--primary:hover, .ry-product .rw-btn[data-variant="primary"]:hover, .ry-product .btn-primary:hover { filter: none; background: var(--ry-gradient-hover); border-color: var(--ry-brand-edge); transform: translateY(-1px); box-shadow: var(--ry-brand-glow-strong); }
+.ry-product .rw-btn--primary:active, .ry-product .rw-btn[data-variant="primary"]:active, .ry-product .btn-primary:active { transform: translateY(0); box-shadow: var(--ry-brand-glow); }
+.ry-product .rw-btn--primary:disabled, .ry-product .rw-btn[data-variant="primary"]:disabled, .ry-product .btn-primary:disabled { transform: none; box-shadow: none; }
+/* The bordered ghost is the outline secondary: transparent, a subtle border,
+   primary ink; hover is a surface fill, never orange. */
+.ry-product .btn-ghost { background: transparent; border-color: var(--ry-border); color: var(--ry-text); }
+.ry-product .btn-ghost:hover { background: var(--ry-hover); border-color: var(--ry-border-strong); color: var(--ry-text); }
+/* Every control shares one focus: an orange border and a small controlled
+   ring, never a large light around the field (Brand Canon v1.0 §9). */
+.ry-product :is(input, select, textarea, button, a, [role="button"], [tabindex]):focus-visible { outline: none; box-shadow: var(--ry-focus); border-color: var(--ry-iris); }
+.ry-product :is(input, select, textarea)::placeholder { color: var(--ry-text-muted); opacity: 1; }
+.ry-product :is(input, select, textarea) { color-scheme: inherit; }
+/* A native select's list is painted by the browser from the control's own
+   colours: left transparent, Chrome painted it white over the dark cabinet
+   (the Owner, Spot, 2026-09-14). The control and its options carry the
+   surface and ink explicitly, in both themes. */
+.ry-product select { background-color: var(--ry-card); color: var(--ry-text); }
+.ry-product select option { background-color: var(--ry-card); color: var(--ry-text); }
+/* Numbers do not jump: every figure in the product is tabular. */
+.ry-product { font-variant-numeric: tabular-nums; }
+.ry-product .ry-empty { padding: 32px 0; color: var(--ry-muted); }
+.ry-product .ry-empty p { margin: 0 0 16px; }
+.ry-product .ry-inline-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+.ry-product .ry-section-title { margin: 0 0 20px; font-size: 1.25rem; line-height: 1.3; }
+.ry-product .ry-muted { color: var(--ry-muted); }
+.ry-product .ry-account-settings { display: grid; gap: 32px; max-width: 800px; width: 100%; }
+.ry-product .ry-settings-section { padding: 24px 0; border-bottom: 1px solid var(--ry-border); }
+.ry-product .ry-settings-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin: 16px 0; }
+.ry-product .ry-settings-options { display: flex; gap: 8px; }
+.ry-product .ry-settings-option { border: 1px solid var(--ry-border); background: transparent; color: var(--ry-text); border-radius: var(--ry-r-btn); min-width: 80px; padding: 8px 14px; cursor: pointer; transition: background-color var(--rt-duration-fast) var(--rt-ease), border-color var(--rt-duration-fast) var(--rt-ease); }
+.ry-product .ry-settings-option:hover { background: var(--ry-hover); }
+.ry-product .ry-settings-option[aria-pressed="true"] { background: var(--ry-brand-soft); border-color: var(--ry-iris); color: var(--ry-accent-fg); font-weight: 600; }
+.ry-product .ry-action-link { display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; color: var(--ry-text); text-underline-offset: 4px; }
+.ry-product main button, .ry-product main a { min-width: 44px; }
+.ry-product .rs-nav a { min-height: 44px; }
+.ry-product .ry-plan-list { list-style: none; margin: 0 0 20px; padding: 0; }
+.ry-product .ry-plan-list li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; padding: 16px 0; border-bottom: 1px solid var(--ry-border); }
+.ry-product .ry-plans-page { max-width: 1000px; }
+.ry-product .ry-plans-page>h1 { margin-bottom: 32px; }
+.ry-money-flow { width: 100%; max-width: 580px; margin: 8px auto 0; }
+.ry-money-flow .rw-grid { display: flex; flex-direction: column; gap: 24px; }
+.ry-money-flow .rw { min-height: 0; height: auto; width: 100%; }
+.ry-money-flow .rw-b { overflow: visible; min-height: 0; }
+.ry-money-flow .rw-h { min-height: 52px; height: auto; }
+.ry-money-recent { width: 100%; }
+.ry-money-recent header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.ry-money-recent h2 { font-size: 1rem; margin: 0; }
+.ry-money-recent ul { list-style: none; margin: 8px 0 0; padding: 0; }
+.ry-money-recent a { min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 16px; color: var(--ry-muted); text-decoration: none; }
+.ry-money-recent li { border-bottom: 1px solid var(--ry-border); }
+.ry-money-recent time { font-size: 0.875rem; }
+.ry-swap-details { width: 100%; }
+.ry-swap-details nav { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+/* The row says what it is before it says the two tickers. Without the label the
+   card ended on two loose words; without the underline they were muted text
+   that happened to be clickable. */
+.ry-swap-details nav > span { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ry-muted); }
+.ry-swap-details a { min-height: 44px; display: inline-flex; align-items: center; color: var(--ry-text); text-decoration: underline; text-underline-offset: 4px; text-decoration-color: var(--ry-border-strong); }
+.ry-swap-details a:hover, .ry-swap-details a:focus-visible { text-decoration-color: currentColor; }
+.ry-swap-details dl { margin: 12px 0 0; }
+.ry-swap-details dl>div { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--ry-border); }
+.ry-swap-details dt { color: var(--ry-muted); }
+.ry-swap-details dd { margin: 0; max-width: 60%; text-align: right; overflow-wrap: anywhere; }
+@media (max-width: 640px) {
+  .ry-account-link { padding: 8px; }
+  .ry-account-link span { display: none; }
+  .ry-product-account { gap: 4px; }
+  .ry-product .rs-page, .ry-product .so-head { margin-bottom: 20px; }
+}
+
+.ry-product .rw-grid { grid-auto-rows: auto; flex: initial; }
+.ry-product .rw-grid > .rw { grid-row: auto; min-height: 0; }
+.ry-product .rw-b { overflow: visible; }
+.ry-product .rw[data-scroll="true"] .rw-b { overflow: visible; }
+
+.ry-product .ry-settings-option:disabled { opacity: 0.5; cursor: wait; }

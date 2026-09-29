@@ -1,0 +1,357 @@
+/*
+ * Solana Hub surface styles.
+ *
+ * Deliberately small, and smaller than Stellar's was at birth: everything
+ * structural — the shell, the rail, the canvas, the panel family, the dense
+ * table, the buttons, the empty states — is the shared workspace system in
+ * `app/shell/`, and the hub-generic chrome (`sh-mode`, `sh-map-*`, `sh-state`)
+ * moved to `app/shell/hub.css` the day this file was written. What remains is
+ * only the Solana skin: the page head, the environment words, the provenance
+ * chip, and the find/share furniture of the passport surface.
+ *
+ * Every custom property named here is defined in the token layer. An undefined
+ * one does not fall back — CSS drops the whole declaration — and the sweep in
+ * `app/stellar/workspace/hub/hub.test.mjs` fails the suite on any new
+ * unresolved name, so this file stays inside the proven vocabulary:
+ * `--border`, `--border-strong`, `--text`, `--text-dim`, `--text-faint`,
+ * `--accent`, `--warning`, `--radius-sm`, `--font`, `--mono`, `--fs-13`.
+ */
+
+/* --------------------------------------------------------------- page head -- */
+
+.so-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+/* 22px/700 is the documented workspace page-title step —
+   `docs/design/workspace-system.md` §5. */
+.so-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.so-maturity {
+  margin-inline-start: auto;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+/* Cyan for a mainnet read, because that is evidence. A surface that asks for a
+   signature gets weight and a firm border, never a borrowed semantic colour —
+   and the mode selector comes second so it wins over the environment rule
+   above it without either fact being folded into the other. */
+.so-maturity[data-env="MAINNET"] {
+  border-color: color-mix(in srgb, var(--accent) 34%, transparent);
+  color: var(--accent);
+}
+
+.so-maturity[data-mode="USER_SIGNED"] {
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+/* The shell's own statement of the same fact, beside the depth control. */
+.so-env-context {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.so-env-context b {
+  font-weight: 700;
+  color: var(--text-dim);
+}
+
+/* -------------------------------------------------------------- provenance -- */
+
+/*
+ * What kind of claim a field is. Six values; cyan only for a fact read from
+ * the chain this session, amber for what needs a second look — an issuer's
+ * own statement, two sources disagreeing, bytes this version cannot decode.
+ * No green: green is a reconciled fact, and a read is not one.
+ */
+.so-prov {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+.so-prov[data-prov="ONCHAIN_VERIFIED"] {
+  border-color: color-mix(in srgb, var(--accent) 36%, transparent);
+  color: var(--accent);
+}
+
+.so-prov[data-prov="DECLARED"],
+.so-prov[data-prov="CONFLICTING"],
+.so-prov[data-prov="UNSUPPORTED"] {
+  border-color: color-mix(in srgb, var(--warning) 34%, transparent);
+  color: var(--warning);
+}
+
+/* `DERIVED` and `UNKNOWN` keep the muted default: computed by us, or honestly
+   unanswered — neither is a warning and neither is chain-read evidence. */
+
+/* ------------------------------------------------------------------- powers -- */
+
+/* A power the issuer holds is amber whichever way it points; its absence is a
+   plain fact, not a success to celebrate. */
+.so-power {
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.so-power[data-held="yes"] {
+  color: var(--warning);
+}
+
+.so-power[data-held="no"] {
+  color: var(--text-dim);
+}
+
+/* ------------------------------------------------------------------ find -- */
+
+/* The mint field and its one action, on a line. The field grows and the
+   button does not, because a 44-character base58 address is what has to fit. */
+.so-find {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.so-find .rw-field {
+  flex: 1 1 24rem;
+  min-width: 0;
+}
+
+/* The shared input right-aligns its text, which is correct for an amount and
+   wrong for an address: the head slides off the left while the tail sits
+   under the cursor. */
+.so-find .rw-input input {
+  text-align: start;
+}
+
+/* ------------------------------------------------------------------- text -- */
+
+.so-mint {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.so-note {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+
+.so-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+.so-open:hover {
+  color: var(--accent);
+}
+
+/* ------------------------------------------------------------------ share -- */
+
+/*
+ * The shareable deep link, stated as a row rather than hidden in the address
+ * bar. It is selectable text, not a button: a copy control would need script
+ * for a thing the browser already does, and the sentence beside it says what
+ * opening the link actually does — re-reads the chain, never replays a cache.
+ */
+.so-share {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 10px;
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.so-share dt {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.so-share dd {
+  margin: 0;
+  min-width: 0;
+}
+
+/* ----------------------------------------------------------------- legend -- */
+
+/* The state legend on the Hub Map: a term and its meaning on one line each. */
+.so-legend {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+  gap: 10px 20px;
+  margin: 0;
+}
+
+.so-legend > div {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.so-legend dt {
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.so-legend dd {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+
+/* -------------------------------------------------------------- map chips -- */
+
+/* Module maturity on a Hub Map card. Cyan is a page that exists and reads;
+   amber is work in flight or a named blocker; green is reserved for
+   OWNER_CANARY_VERIFIED — one owner-signed mainnet action of that family, run,
+   reconciled and receipted — and no Solana module wears it yet. */
+.so-mat {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+.so-mat[data-maturity="AVAILABLE"] {
+  border-color: color-mix(in srgb, var(--accent) 36%, transparent);
+  color: var(--accent);
+}
+
+.so-mat[data-maturity="IN_BUILD"],
+.so-mat[data-maturity="GATED"] {
+  border-color: color-mix(in srgb, var(--warning) 34%, transparent);
+  color: var(--warning);
+}
+
+.so-mat[data-maturity="OWNER_CANARY_VERIFIED"] {
+  border-color: color-mix(in srgb, var(--success) 40%, transparent);
+  color: var(--success);
+}
+
+/* The Solana map's environment chip reuses `sh-map-env`; the signing mode is
+   the one value this hub states for itself, and it dims rather than colours —
+   an action that has not run yet has nothing to be cyan about. */
+.sh-map-env[data-mode="USER_SIGNED"] {
+  color: var(--text-dim);
+}
+
+/* ---------------------------------------------------- connection panel -----
+   The mainnet environment lock (canon §9.4) as it appears on the connection
+   panel: one plate, stated the same way everywhere, in the workspace's own
+   mono so it reads as a machine fact rather than as reassurance. It carries no
+   semantic colour — `real funds` is a statement of where you are, and painting
+   it green or amber would make it a verdict about whether that is fine. */
+.so-conn-plate {
+  margin: 0;
+  padding: 6px 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.so-conn-holdings {
+  display: grid;
+  gap: var(--ry-s2);
+  margin: 0;
+}
+
+/* The amount is the link, because the amount is what a person is looking at
+   when they decide they want to see the mint behind it. */
+.so-conn-token {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+
+.so-conn-token:hover {
+  border-bottom-color: var(--border-strong);
+}
+
+/* Provider health (canon §23), and it is its own family rather than a borrowed
+   maturity chip: how finished a capability is and whether its data source is
+   answering are different questions, and one chip vocabulary answering both is
+   the exact drift the shared status chip exists to stop. Healthy is neutral —
+   an endpoint doing its job is not an achievement to paint green. */
+.so-health {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--text);
+}
+
+.so-health[data-state="UNKNOWN"] {
+  color: var(--text-faint);
+}
+
+.so-health[data-state="DEGRADED"] {
+  border-color: color-mix(in srgb, var(--warning) 34%, transparent);
+  color: var(--warning);
+}
+
+.so-health[data-state="UNAVAILABLE"] {
+  border-color: color-mix(in srgb, var(--danger) 40%, transparent);
+  color: var(--danger);
+}

@@ -1,0 +1,14 @@
+{
+  "package": "packages/ryntra-api-client",
+  "commit": "6ea8ed68",
+  "contractVersion": "1.19.0",
+  "contractMajor": 1,
+  "pinnedAt": "2026-09-27",
+  "files": {
+    "types.ts": "fb4ab80b0d36f47c72b2ad2409e6a0362ddece50",
+    "client.ts": "6cb4bb41e5e6469ad76a057cf016dd2b8e6ded15"
+  },
+  "packageConstant": "1.18.0",
+  "lag": "At 6ea8ed68 the package carries 1.19.0 — RuleKind «payments», RulePayments, RulePaymentEvent, the occurrence's amountUsd and events, capabilities.rules.payments — while its API_CONTRACT_VERSION still reads 1.18.0; the server and production say 1.19.0. Request 38 to line A; drop this field when a package that names itself 1.19.0 is pinned.",
+  "note": "Copies taken by content with `git show <commit>:packages/ryntra-api-client/src/<file>`; never edited here — take a new commit instead. The hashes are git blob ids of the LF content; pin.test.mjs checks them."
+}

@@ -1,0 +1,11 @@
+/*
+ * Global rules the lab needs outside a CSS module: the aggregator's root
+ * element is rendered by their provider with the lab's `rootClassName`, and
+ * a CSS module cannot address it without a local class. Their default face
+ * (Inter, loaded by the segment layout through next/font) is mapped onto
+ * their font token here; nothing else is restyled on the first two tabs.
+ */
+
+.agg-root.ryntra-agg-lab {
+  --agg-font-family-sans: var(--font-agg-inter), ui-sans-serif, system-ui, sans-serif;
+}

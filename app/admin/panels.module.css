@@ -1,0 +1,501 @@
+/* ============================================================
+   Ryntra Admin — RYN-ADMIN-006 additions.
+
+   Chips, attention list, definitions disclosure, provider board, timeline,
+   filters and pager. Tokens come from app/globals.css and tokens.css; no
+   colour literal outside the projection, no wall of text at rest.
+   ============================================================ */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--panel-3);
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.chipOk {
+  color: var(--success);
+  background: var(--success-soft);
+  border-color: color-mix(in srgb, var(--success) 34%, transparent);
+}
+
+.chipWarn {
+  color: var(--warning);
+  background: color-mix(in srgb, var(--warning) 14%, transparent);
+  border-color: color-mix(in srgb, var(--warning) 40%, transparent);
+}
+
+.chipRisk {
+  color: var(--admin-danger-text, var(--danger));
+  background: var(--danger-soft);
+  border-color: color-mix(in srgb, var(--danger) 42%, transparent);
+}
+
+.chipMuted {
+  color: var(--text-faint);
+}
+
+.chipDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* ── Attention list ──────────────────────────────────────── */
+
+.attention {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.attentionLink {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--panel-2);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.attentionLink:hover {
+  border-color: var(--accent-line);
+}
+
+.attentionLabel {
+  flex: 1;
+  min-width: 0;
+}
+
+.attentionValue {
+  font-family: var(--mono);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.attentionArrow {
+  color: var(--text-faint);
+}
+
+.allClear {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 8px 12px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text-dim);
+}
+
+/* ── Definitions ─────────────────────────────────────────── */
+
+.defs {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.defsSummary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 4px;
+  cursor: pointer;
+  color: var(--text-faint);
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+  list-style: none;
+}
+
+.defsSummary::-webkit-details-marker {
+  display: none;
+}
+
+.defsList {
+  display: grid;
+  gap: 10px;
+  margin: 10px 0 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--panel-2);
+}
+
+.defsItem dt {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.defsItem dd {
+  margin: 2px 0 0;
+  display: grid;
+  gap: 2px;
+}
+
+.defsUnit {
+  font-weight: 500;
+  color: var(--text-faint);
+}
+
+.defsMeta {
+  color: var(--text-faint);
+  line-height: 1.5;
+}
+
+.statSuffix {
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text-faint);
+}
+
+/* ── Card meta line ──────────────────────────────────────── */
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  font-size: 13px;
+  color: var(--text-faint);
+}
+
+.metaStrong {
+  color: var(--text-dim);
+}
+
+/* ── Sparkline legend ────────────────────────────────────── */
+
+.sparkRow {
+  display: grid;
+  gap: 6px;
+}
+
+.sparkLegend {
+  display: flex;
+  gap: 14px;
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+.sparkSwatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  margin-right: 6px;
+  vertical-align: -1px;
+}
+
+.sparkPrimary {
+  background: var(--accent);
+}
+
+.sparkSecondary {
+  background: var(--success);
+}
+
+.sparkBarPair {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  width: 100%;
+  height: 100%;
+}
+
+.sparkFillSecondary {
+  display: block;
+  width: 100%;
+  min-height: 2px;
+  border-radius: 4px 4px 0 0;
+  background: var(--success);
+  opacity: 0.85;
+}
+
+/* ── Filters, pager ──────────────────────────────────────── */
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.filters .selectNarrow {
+  width: auto;
+  min-width: 160px;
+}
+
+.filterChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.filterChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: var(--panel-3);
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.filterChip[aria-pressed="true"] {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.filterCount {
+  font-family: var(--mono);
+  color: var(--text-faint);
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: var(--text-faint);
+}
+
+.pagerRange {
+  font-family: var(--mono);
+  color: var(--text-dim);
+}
+
+/* ── Rows and cells ──────────────────────────────────────── */
+
+.rowButton {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 4px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+  text-align: start;
+}
+
+.rowButton:hover {
+  color: var(--accent);
+}
+
+.subtle {
+  color: var(--text-faint);
+  font-size: 12px;
+}
+
+.cellStatus {
+  color: var(--text-faint);
+  font-style: normal;
+}
+
+@media (max-width: 760px) {
+  .colWide {
+    display: none;
+  }
+}
+
+/* ── Timeline ────────────────────────────────────────────── */
+
+.timeline {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.timelineItem {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  min-height: 40px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.timelineItem:last-child {
+  border-bottom: 0;
+}
+
+.timelineAt {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+.timelineName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Provider board ──────────────────────────────────────── */
+
+.board {
+  display: grid;
+  gap: 8px;
+}
+
+.boardRow {
+  display: grid;
+  grid-template-columns: minmax(160px, 1.2fr) auto minmax(140px, 1fr) auto auto;
+  gap: 10px 14px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--panel-2);
+}
+
+.boardName {
+  font-weight: 650;
+}
+
+.boardCapability {
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+.boardDetail {
+  grid-column: 1 / -1;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.boardFacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  grid-column: 1 / -1;
+}
+
+.boardMono {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .boardRow {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .boardCapability,
+  .boardMono {
+    grid-column: 1 / -1;
+  }
+
+  .timelineItem {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .timelineAt {
+    grid-column: 1 / -1;
+  }
+
+  .timelineName {
+    white-space: normal;
+  }
+}
+
+/* ── Composed empty state ────────────────────────────────── */
+
+.emptyLine {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  min-height: 44px;
+  color: var(--text-dim);
+}
+
+.kv {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px 16px;
+  margin: 0;
+}
+
+.kv dt {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.kv dd {
+  margin: 2px 0 0;
+  font-size: 14px;
+}
+
+.kvMono {
+  font-family: var(--mono);
+  font-size: 13px;
+}
+
+.inlineActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.grow {
+  flex: 1;
+  min-width: 160px;
+}
+
+/* One provider under another in the evidence panel (RYN-DDXYZ-RISK-001): its own head, stats and family table, separated by a rule. */
+.subsection {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ry-s3);
+  min-width: 0;
+  padding-top: var(--ry-s3);
+  border-top: 1px solid var(--ry-border);
+}
+
+.subsection > * {
+  min-width: 0;
+}
+
+.subsection:first-of-type {
+  padding-top: 0;
+  border-top: 0;
+}

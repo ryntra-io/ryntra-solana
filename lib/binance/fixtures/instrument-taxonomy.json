@@ -1,0 +1,197 @@
+{
+  "capturedAt": "2026-08-23T12:23Z",
+  "note": "Instrument taxonomy captured from the three public Binance exchangeInfo endpoints. Tallies are computed over the full response; only a few representative symbols are stored verbatim.",
+  "spot": {
+    "endpoint": "GET https://api.binance.com/api/v3/exchangeInfo",
+    "symbolCount": 3681,
+    "statusTally": {
+      "TRADING": 1354,
+      "BREAK": 2327
+    },
+    "nonGroupPermissionTally": {
+      "SPOT": 3641,
+      "MARGIN": 796,
+      "MARGIN_001": 114,
+      "LEVERAGED": 40,
+      "MARGIN_002": 5
+    },
+    "tradeGroupPermissionCount": 261,
+    "rateLimits": [
+      {
+        "rateLimitType": "REQUEST_WEIGHT",
+        "interval": "MINUTE",
+        "intervalNum": 1,
+        "limit": 6000
+      },
+      {
+        "rateLimitType": "ORDERS",
+        "interval": "SECOND",
+        "intervalNum": 10,
+        "limit": 100
+      },
+      {
+        "rateLimitType": "ORDERS",
+        "interval": "DAY",
+        "intervalNum": 1,
+        "limit": 200000
+      },
+      {
+        "rateLimitType": "RAW_REQUESTS",
+        "interval": "MINUTE",
+        "intervalNum": 5,
+        "limit": 300000
+      }
+    ],
+    "samples": [
+      {
+        "symbol": "BTCUSDT",
+        "status": "TRADING",
+        "baseAsset": "BTC",
+        "quoteAsset": "USDT",
+        "isSpotTradingAllowed": true,
+        "isMarginTradingAllowed": true,
+        "permissionSets": [
+          [
+            "SPOT",
+            "MARGIN"
+          ]
+        ]
+      },
+      {
+        "symbol": "ETHUSDT",
+        "status": "TRADING",
+        "baseAsset": "ETH",
+        "quoteAsset": "USDT",
+        "isSpotTradingAllowed": true,
+        "isMarginTradingAllowed": true,
+        "permissionSets": [
+          [
+            "SPOT",
+            "MARGIN"
+          ]
+        ]
+      }
+    ]
+  },
+  "usdmFutures": {
+    "endpoint": "GET https://fapi.binance.com/fapi/v1/exchangeInfo",
+    "symbolCount": 872,
+    "contractTypeTally": {
+      "PERPETUAL": 698,
+      "TRADIFI_PERPETUAL": 170,
+      "CURRENT_QUARTER": 2,
+      "NEXT_QUARTER": 2
+    },
+    "tradifiUnderlyingTally": {
+      "COMMODITY|TradFi": 8,
+      "EQUITY|TradFi": 137,
+      "EQUITY|TradFi+ETF": 1,
+      "PREMARKET|Pre-IPO+TradFi": 2,
+      "KR_EQUITY|TradFi": 8,
+      "HK_EQUITY|TradFi": 12,
+      "CN_EQUITY|TradFi": 2
+    },
+    "rateLimits": [
+      {
+        "rateLimitType": "REQUEST_WEIGHT",
+        "interval": "MINUTE",
+        "intervalNum": 1,
+        "limit": 2400
+      },
+      {
+        "rateLimitType": "ORDERS",
+        "interval": "MINUTE",
+        "intervalNum": 1,
+        "limit": 1200
+      },
+      {
+        "rateLimitType": "ORDERS",
+        "interval": "SECOND",
+        "intervalNum": 10,
+        "limit": 300
+      }
+    ],
+    "samples": [
+      {
+        "symbol": "BTCUSDT",
+        "status": "TRADING",
+        "baseAsset": "BTC",
+        "quoteAsset": "USDT",
+        "contractType": "PERPETUAL",
+        "pair": "BTCUSDT",
+        "marginAsset": "USDT",
+        "underlyingType": "COIN",
+        "underlyingSubType": [
+          "PoW"
+        ],
+        "deliveryDate": 4133404800000
+      },
+      {
+        "symbol": "TSLAUSDT",
+        "status": "TRADING",
+        "baseAsset": "TSLA",
+        "quoteAsset": "USDT",
+        "contractType": "TRADIFI_PERPETUAL",
+        "pair": "TSLAUSDT",
+        "marginAsset": "USDT",
+        "underlyingType": "EQUITY",
+        "underlyingSubType": [
+          "TradFi"
+        ],
+        "deliveryDate": 4133404800000
+      },
+      {
+        "symbol": "XAUUSDT",
+        "status": "TRADING",
+        "baseAsset": "XAU",
+        "quoteAsset": "USDT",
+        "contractType": "TRADIFI_PERPETUAL",
+        "pair": "XAUUSDT",
+        "marginAsset": "USDT",
+        "underlyingType": "COMMODITY",
+        "underlyingSubType": [
+          "TradFi"
+        ],
+        "deliveryDate": 4133404800000
+      }
+    ]
+  },
+  "coinmFutures": {
+    "endpoint": "GET https://dapi.binance.com/dapi/v1/exchangeInfo",
+    "symbolCount": 30,
+    "contractTypeTally": {
+      "PERPETUAL": 20,
+      "CURRENT_QUARTER": 5,
+      "NEXT_QUARTER": 5
+    },
+    "rateLimits": [
+      {
+        "rateLimitType": "REQUEST_WEIGHT",
+        "interval": "MINUTE",
+        "intervalNum": 1,
+        "limit": 2400
+      },
+      {
+        "rateLimitType": "ORDERS",
+        "interval": "MINUTE",
+        "intervalNum": 1,
+        "limit": 1200
+      }
+    ],
+    "samples": [
+      {
+        "symbol": "BTCUSD_PERP",
+        "baseAsset": "BTC",
+        "quoteAsset": "USD",
+        "contractType": "PERPETUAL",
+        "pair": "BTCUSD",
+        "marginAsset": "BTC",
+        "underlyingType": "COIN",
+        "underlyingSubType": [
+          "PoW"
+        ],
+        "deliveryDate": 4133404800000
+      }
+    ]
+  }
+}

@@ -1,0 +1,233 @@
+.page {
+  display: grid;
+  gap: var(--ry-s5);
+  width: 100%;
+  min-width: 0;
+}
+
+.head {
+  display: grid;
+  gap: var(--ry-s2);
+}
+
+.head h1 {
+  margin: 0;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-page);
+  line-height: var(--ry-lh-tight);
+  letter-spacing: var(--ry-ls-head);
+  color: var(--ry-text);
+}
+
+.lead {
+  margin: 0;
+  max-width: 62ch;
+  font-size: var(--ry-fs-copy);
+  line-height: 1.55;
+  color: var(--ry-muted);
+}
+
+.section {
+  display: grid;
+  gap: var(--ry-s3);
+}
+
+.section h2 {
+  margin: 0;
+  font-size: var(--ry-fs-section);
+  font-weight: 600;
+  letter-spacing: var(--ry-ls-head);
+  color: var(--ry-text);
+}
+
+.cards {
+  display: grid;
+  gap: var(--ry-s3);
+}
+
+.card {
+  display: grid;
+  gap: var(--ry-s2);
+  padding: var(--ry-s4);
+  background: var(--ry-card);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  box-shadow: var(--ry-shadow-sm);
+  min-width: 0;
+}
+
+.card[data-tone="attention"] {
+  border-color: color-mix(in srgb, var(--ry-accent) 32%, var(--ry-border));
+}
+
+.card[data-unread="true"] {
+  border-color: color-mix(in srgb, var(--ry-accent) 22%, var(--ry-border));
+}
+
+.cardTop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ry-s2);
+}
+
+.label {
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.paper {
+  display: inline-flex;
+  padding: 2px 8px;
+  border-radius: var(--ry-r-pill);
+  border: 1px solid var(--ry-border-strong);
+  font-size: var(--ry-fs-label);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ry-muted);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  color: var(--ry-text);
+  line-height: 1.4;
+}
+
+.reason {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+  line-height: 1.5;
+}
+
+.meta {
+  margin: 0;
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+}
+
+.meta a {
+  color: inherit;
+}
+
+.page :global(.rw-btn) {
+  justify-self: start;
+}
+
+/* A note's actions: one row that wraps, its own first. */
+.noteActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ry-s2);
+}
+
+.noteActions:empty {
+  display: none;
+}
+
+.ghost,
+.ghostLink {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-pill);
+  background: transparent;
+  color: var(--ry-text);
+  font-size: var(--ry-fs-dense);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.empty {
+  margin: 0;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-copy);
+}
+
+.gate {
+  display: grid;
+  gap: var(--ry-s3);
+  justify-items: start;
+  max-width: 42rem;
+  padding: var(--ry-s5);
+  background: var(--ry-card);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border-radius: var(--ry-r-pill);
+  border: 1px solid var(--ry-border-strong);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  color: var(--ry-muted);
+}
+
+.status[data-status="needs_attention"] {
+  color: var(--ry-accent);
+  border-color: color-mix(in srgb, var(--ry-accent) 45%, var(--ry-border));
+}
+
+.status[data-status="watching"] {
+  color: var(--ry-verified);
+}
+
+.status[data-status="unavailable"] {
+  color: var(--ry-caution);
+}
+
+.prefs {
+  display: grid;
+  gap: var(--ry-s3);
+  padding: var(--ry-s4);
+  background: var(--ry-card);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+}
+
+.prefRow,
+.quietForm,
+.devices li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ry-s2) var(--ry-s3);
+}
+
+.devices {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--ry-s2);
+}
+
+.time {
+  min-height: 40px;
+  padding: 0 var(--ry-s2);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-elevated);
+  color: var(--ry-text);
+  font: inherit;
+}
+
+@media (max-width: 430px) {
+  .page {
+    padding-bottom: 72px;
+  }
+
+  .card,
+  .prefs {
+    padding: var(--ry-s3);
+  }
+}

@@ -1,0 +1,453 @@
+{
+  "total": 41,
+  "pages": 9,
+  "current_page": 1,
+  "page_size": 5,
+  "data": [
+    {
+      "address": "FCn5zw4gAcfRpQgst5ThFuzBGXbbJ6RocVErgC4vJ9j1",
+      "name": "NVDAx-SOL",
+      "token_x": {
+        "address": "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh",
+        "name": "NVIDIA xStock",
+        "symbol": "NVDAx",
+        "decimals": 8,
+        "is_verified": true,
+        "holders": 95685,
+        "freeze_authority_disabled": false,
+        "total_supply": 321822.7626200365,
+        "price": 223.85094827845964,
+        "market_cap": 72040330.59008878
+      },
+      "token_y": {
+        "address": "So11111111111111111111111111111111111111112",
+        "name": "Wrapped SOL",
+        "symbol": "SOL",
+        "decimals": 9,
+        "is_verified": true,
+        "holders": 3820662,
+        "freeze_authority_disabled": true,
+        "total_supply": 634453669.584626,
+        "price": 112.85721942177028,
+        "market_cap": 66296570171.68076
+      },
+      "reserve_x": "FNaEXnGP3hUrcJSBXBKzzDRJmitNnVwwQ6pQx6LhAumF",
+      "reserve_y": "HZgAwbRXeUSEjZL5nERN5mDeXTKiu6ZgbDMy4MoEHcd9",
+      "token_x_amount": 165.44372661581832,
+      "token_y_amount": 196.267428649,
+      "created_at": 1752076751000,
+      "reward_mint_x": "11111111111111111111111111111111",
+      "reward_mint_y": "11111111111111111111111111111111",
+      "pool_config": {
+        "bin_step": 20,
+        "base_fee_pct": 0.2,
+        "max_fee_pct": 0,
+        "protocol_fee_pct": 5,
+        "collect_fee_mode": 0
+      },
+      "dynamic_fee_pct": 0,
+      "tvl": 59251.61773532207,
+      "current_price": 1.9911714707170631,
+      "apr": 0.8237199870449796,
+      "apy": 1897.0628993258567,
+      "has_farm": false,
+      "farm_apr": 0,
+      "farm_apy": 0,
+      "volume": {
+        "30m": 8104.085137272042,
+        "1h": 12469.416299390334,
+        "2h": 27577.94944612884,
+        "4h": 47132.82385184562,
+        "12h": 153899.53543202553,
+        "24h": 270149.32161011756
+      },
+      "fees": {
+        "30m": 14.647725860037148,
+        "1h": 22.535041473988343,
+        "2h": 49.75187124100291,
+        "4h": 85.03705041121133,
+        "12h": 278.0877944100677,
+        "24h": 488.06741793333583
+      },
+      "protocol_fees": {
+        "30m": 1.6227119103045726,
+        "1h": 2.4885766254004063,
+        "2h": 5.51225556677503,
+        "4h": 9.374690794509,
+        "12h": 30.5940934158066,
+        "24h": 53.65274912170314
+      },
+      "fee_tvl_ratio": {
+        "30m": 0.024721225208514604,
+        "1h": 0.03803278684246688,
+        "2h": 0.08396711033822793,
+        "4h": 0.14351852938610588,
+        "12h": 0.4693336739804985,
+        "24h": 0.8237199870449796
+      },
+      "cumulative_metrics": {
+        "volume": 3209792.158585854,
+        "fees": 6052.793889532166
+      },
+      "is_blacklisted": false,
+      "launchpad": "",
+      "tags": []
+    },
+    {
+      "address": "F4inHs4RQARpASmvLpj45QjGLdkukeGQrtQ22pimVy2a",
+      "name": "NVDAx-USDC",
+      "token_x": {
+        "address": "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh",
+        "name": "NVIDIA xStock",
+        "symbol": "NVDAx",
+        "decimals": 8,
+        "is_verified": true,
+        "holders": 95685,
+        "freeze_authority_disabled": false,
+        "total_supply": 321822.7626200365,
+        "price": 223.87915400716824,
+        "market_cap": 72049407.8356235
+      },
+      "token_y": {
+        "address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "decimals": 6,
+        "is_verified": true,
+        "holders": 5248202,
+        "freeze_authority_disabled": false,
+        "total_supply": 7927233665.658237,
+        "price": 0.9997737022359922,
+        "market_cap": 7925439750.404931
+      },
+      "reserve_x": "86FWMceL1zy5agA4HxyDAZxRHR86Ky7D6AhDL8VXtvsY",
+      "reserve_y": "GZj4nNXEZ67eEvbvKzkRc8aSrS2EGH2mu2hmUA3UTeBr",
+      "token_x_amount": 7.855253236629422,
+      "token_y_amount": 5066.425695999999,
+      "created_at": 1765545913000,
+      "reward_mint_x": "11111111111111111111111111111111",
+      "reward_mint_y": "11111111111111111111111111111111",
+      "pool_config": {
+        "bin_step": 25,
+        "base_fee_pct": 0.25,
+        "max_fee_pct": 0,
+        "protocol_fee_pct": 5,
+        "collect_fee_mode": 0
+      },
+      "dynamic_fee_pct": 0,
+      "tvl": 6821.195944791801,
+      "current_price": 223.62325503812903,
+      "apr": 0.029090029726411223,
+      "apy": 11.200330483891952,
+      "has_farm": false,
+      "farm_apr": 0,
+      "farm_apy": 0,
+      "volume": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 4.139417965656206,
+        "4h": 6.999705053156989,
+        "12h": 592.7336956713042,
+        "24h": 880.4030472890461
+      },
+      "fees": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0.009326562278881428,
+        "4h": 0.015764605179273843,
+        "12h": 1.3357873673435758,
+        "24h": 1.9842879280366916
+      },
+      "protocol_fees": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0.001035729296967685,
+        "4h": 0.001750570979176419,
+        "12h": 0.1484092071331782,
+        "24h": 0.22044938354096516
+      },
+      "fee_tvl_ratio": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0.00013672913598095,
+        "4h": 0.00023111204115622305,
+        "12h": 0.019582891008482053,
+        "24h": 0.02909002972641122
+      },
+      "cumulative_metrics": {
+        "volume": 97028.80246622088,
+        "fees": 203.7527094681526
+      },
+      "is_blacklisted": false,
+      "launchpad": "",
+      "tags": []
+    },
+    {
+      "address": "8is7SBzMYLUTUtVU5H4QEPkgeQP7WaM7rQ6QPxXTa4PB",
+      "name": "NVDAx-TSLAx",
+      "token_x": {
+        "address": "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh",
+        "name": "NVIDIA xStock",
+        "symbol": "NVDAx",
+        "decimals": 8,
+        "is_verified": true,
+        "holders": 95685,
+        "freeze_authority_disabled": false,
+        "total_supply": 321822.7626200365,
+        "price": 223.87915400716824,
+        "market_cap": 72049407.8356235
+      },
+      "token_y": {
+        "address": "XsDoVfqeBukxuZHWhdvWHBhgEHjGNst4MLodqsJHzoB",
+        "name": "Tesla xStock",
+        "symbol": "TSLAx",
+        "decimals": 8,
+        "is_verified": true,
+        "holders": 38969,
+        "freeze_authority_disabled": false,
+        "total_supply": 229636.80962332,
+        "price": 368.978262316641,
+        "market_cap": 84730990.97874992
+      },
+      "reserve_x": "9rgaUgSjXtWagASX9XyCR9xAvzj5Ezmpiv8eA5j59z65",
+      "reserve_y": "5fXXeUytYKkn2pyy6qskKxdgjsmbMvjgv4sRnyLBam4f",
+      "token_x_amount": 13.981124290275424,
+      "token_y_amount": 8.01242703,
+      "created_at": 1780545494000,
+      "reward_mint_x": "11111111111111111111111111111111",
+      "reward_mint_y": "11111111111111111111111111111111",
+      "pool_config": {
+        "bin_step": 10,
+        "base_fee_pct": 0.1,
+        "max_fee_pct": 0,
+        "protocol_fee_pct": 10,
+        "collect_fee_mode": 0
+      },
+      "dynamic_fee_pct": 0,
+      "tvl": 6081.597033924345,
+      "current_price": 0.6074706504522336,
+      "apr": 0.011425479582018613,
+      "apy": 4.258230193185009,
+      "has_farm": false,
+      "farm_apr": 0,
+      "farm_apy": 0,
+      "volume": {
+        "30m": 32.743719746313104,
+        "1h": 44.409813869894045,
+        "2h": 99.83712769205609,
+        "4h": 184.8789939071023,
+        "12h": 472.0032343811222,
+        "24h": 769.5911171712071
+      },
+      "fees": {
+        "30m": 0.02947354283702513,
+        "1h": 0.03997641364729154,
+        "2h": 0.090367759648525,
+        "4h": 0.16708800871347654,
+        "12h": 0.4261586241806833,
+        "24h": 0.6948516273716755
+      },
+      "protocol_fees": {
+        "30m": 0.0032722798869541173,
+        "1h": 0.004435584189808721,
+        "2h": 0.010031642837453236,
+        "4h": 0.01854195490369647,
+        "12h": 0.047291609789791585,
+        "24h": 0.07635588127634392
+      },
+      "fee_tvl_ratio": {
+        "30m": 0.000484634918634298,
+        "1h": 0.0006573341414154084,
+        "2h": 0.0014859215292370716,
+        "4h": 0.002747436368793045,
+        "12h": 0.00700734727742543,
+        "24h": 0.011425479582018613
+      },
+      "cumulative_metrics": {
+        "volume": 30734.4817434103,
+        "fees": 29.231155372114262
+      },
+      "is_blacklisted": false,
+      "launchpad": "",
+      "tags": []
+    },
+    {
+      "address": "4E7ijrsUamHhvAybeTvdMjYnQkTzyixaf6tc4dMWx6oK",
+      "name": "NVDAx-TaoTeChing",
+      "token_x": {
+        "address": "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh",
+        "name": "NVIDIA xStock",
+        "symbol": "NVDAx",
+        "decimals": 8,
+        "is_verified": true,
+        "holders": 95736,
+        "freeze_authority_disabled": false,
+        "total_supply": 321822.7626200365,
+        "price": 223.28916051197896,
+        "market_cap": 71859534.49907383
+      },
+      "token_y": {
+        "address": "6oxWqT3Pkt97NEVDvthztC59vTGxSwSmsTL6eFFLoBGu",
+        "name": "Tao Te Ching",
+        "symbol": "TaoTeChing",
+        "decimals": 6,
+        "is_verified": false,
+        "holders": 36,
+        "freeze_authority_disabled": true,
+        "total_supply": 958099188.078429,
+        "price": 0.00000791932535922975,
+        "market_cap": 7587.499196806936
+      },
+      "reserve_x": "7GwyYAPmJVax9VLBMy1spqpBpi37E1PwciMjQsJE5gZq",
+      "reserve_y": "3vFwS5AvZSd1RKym2E7PcZiq8HcoMNPAc4egVwooXSSX",
+      "token_x_amount": 0.37390109909526936,
+      "token_y_amount": 14855719.32765,
+      "created_at": 1762233839000,
+      "reward_mint_x": "11111111111111111111111111111111",
+      "reward_mint_y": "11111111111111111111111111111111",
+      "pool_config": {
+        "bin_step": 200,
+        "base_fee_pct": 5,
+        "max_fee_pct": 0,
+        "protocol_fee_pct": 5,
+        "collect_fee_mode": 0
+      },
+      "dynamic_fee_pct": 0,
+      "tvl": 201.1582267252333,
+      "current_price": 28864954.42740249,
+      "apr": 0,
+      "apy": 0,
+      "has_farm": false,
+      "farm_apr": 0,
+      "farm_apy": 0,
+      "volume": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 0,
+        "24h": 0
+      },
+      "fees": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 0,
+        "24h": 0
+      },
+      "protocol_fees": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 0,
+        "24h": 0
+      },
+      "fee_tvl_ratio": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 0,
+        "24h": 0
+      },
+      "cumulative_metrics": {
+        "volume": 1013.8519753789212,
+        "fees": 66.87172622181308
+      },
+      "is_blacklisted": false,
+      "launchpad": "",
+      "tags": []
+    },
+    {
+      "address": "AiZmXxn6FKnEWGL6kbeTQ7uJSZNQDG8XUtTFfozyjd6G",
+      "name": "AVEN-NVDAx",
+      "token_x": {
+        "address": "gCMY7ydkBAfAdG3FQsMacdXFU3e5UPBuchxRm4JAVEN",
+        "name": "AVENOR",
+        "symbol": "AVEN",
+        "decimals": 9,
+        "is_verified": false,
+        "holders": 114,
+        "freeze_authority_disabled": true,
+        "total_supply": 999999999.4661096,
+        "price": 0.0002481375686665883,
+        "market_cap": 248137.56853411003
+      },
+      "token_y": {
+        "address": "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh",
+        "name": "NVIDIA xStock",
+        "symbol": "NVDAx",
+        "decimals": 8,
+        "is_verified": true,
+        "holders": 95685,
+        "freeze_authority_disabled": false,
+        "total_supply": 321822.7626200365,
+        "price": 223.89572199619343,
+        "market_cap": 72054739.79162264
+      },
+      "reserve_x": "58cWQnh4mJH6UKagPhzA949DDfNWiG23X84X3YcCz4iB",
+      "reserve_y": "8niejRuVbeGi1saqHUA1ZrweDsN2h7DCf8gWyjGbfGz2",
+      "token_x_amount": 52357.69893167201,
+      "token_y_amount": 0.028305791942869647,
+      "created_at": 1787506167000,
+      "reward_mint_x": "11111111111111111111111111111111",
+      "reward_mint_y": "11111111111111111111111111111111",
+      "pool_config": {
+        "bin_step": 100,
+        "base_fee_pct": 0.6,
+        "max_fee_pct": 0,
+        "protocol_fee_pct": 10,
+        "collect_fee_mode": 0
+      },
+      "dynamic_fee_pct": 0,
+      "tvl": 19.32945783760515,
+      "current_price": 0.000001115957811149776,
+      "apr": 0.042013748125463,
+      "apy": 16.56955827689359,
+      "has_farm": false,
+      "farm_apr": 0,
+      "farm_apy": 0,
+      "volume": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 0.5967387855977193,
+        "24h": 1.499570688403812
+      },
+      "fees": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 0.003241820867147032,
+        "24h": 0.008121029729908994
+      },
+      "protocol_fees": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 0.000360202318074822,
+        "24h": 0.0008993814576895342
+      },
+      "fee_tvl_ratio": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 0.016771400907272846,
+        "24h": 0.04201374812546299
+      },
+      "cumulative_metrics": {
+        "volume": 71.33263377333496,
+        "fees": 0.3931516970582867
+      },
+      "is_blacklisted": false,
+      "launchpad": "",
+      "tags": []
+    }
+  ]
+}

@@ -1,0 +1,318 @@
+/* The Risk & due diligence card — the second sensor's card, in the same
+   grammar as the analysis card and visibly not the same thing: a ledger of
+   facts (label · reading · one line of meaning) instead of a strip of
+   figures, an accent that marks a fact standing rather than a figure
+   moving, and a state in the head that counts facts and never says safe.
+   The accent lives in the figure, a tint and a dot — tone and border, as
+   every card here separates itself; never a coloured bar on an edge. */
+
+.card {
+  --risk-accent: var(--ry-caution);
+}
+
+/* The compact state: a pill in the head. `none` is neutral, never green;
+   `flags` is the product's caution; `muted` is a check that did not answer. */
+.state {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s1);
+  max-width: 100%;
+  min-height: 24px;
+  padding: 0 var(--ry-s2);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-pill);
+  background: color-mix(in srgb, var(--ry-elevated) 70%, transparent);
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.state[data-tone="none"] {
+  color: var(--ry-text);
+}
+
+.state[data-tone="flags"] {
+  border-color: color-mix(in srgb, var(--risk-accent) 45%, var(--ry-border));
+  background: color-mix(in srgb, var(--risk-accent) 12%, transparent);
+  color: var(--ry-text);
+}
+
+.state[data-tone="flags"]::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--risk-accent);
+  flex: 0 0 auto;
+}
+
+/* The ledger: one row per fact. A row whose fact stands carries the accent
+   on its figure, a faint tint and the same dot as the state pill, so the eye
+   lands on it before reading. */
+.rows {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  overflow: hidden;
+  transition: opacity 160ms ease;
+}
+
+.rows[data-dim="true"] {
+  opacity: 0.55;
+}
+
+.rows > div {
+  display: grid;
+  grid-template-columns: minmax(140px, 0.9fr) minmax(0, 2fr);
+  gap: var(--ry-s2) var(--ry-s4);
+  align-items: baseline;
+  min-width: 0;
+  padding: var(--ry-s3) var(--ry-s3);
+  background: color-mix(in srgb, var(--ry-elevated) 35%, transparent);
+}
+
+.rows > div + div {
+  border-top: 1px solid var(--ry-border);
+}
+
+.rows > div[data-flag="true"] {
+  background: color-mix(in srgb, var(--risk-accent) 7%, transparent);
+}
+
+.rows > div[data-flag="true"] dt::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--risk-accent);
+  flex: 0 0 auto;
+}
+
+.rows dt {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s1);
+  min-width: 0;
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.rows dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--ry-s1) var(--ry-s2);
+  margin: 0;
+  min-width: 0;
+}
+
+.rows dd[data-absent="true"] .figure {
+  color: var(--ry-muted);
+}
+
+.figure {
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--ry-fs-data-m);
+  font-weight: 600;
+  line-height: var(--ry-lh-tight);
+  color: var(--ry-text);
+  overflow-wrap: anywhere;
+}
+
+.rows > div[data-flag="true"] .figure {
+  color: var(--risk-accent);
+}
+
+.note {
+  font-size: var(--ry-fs-label);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+  overflow-wrap: anywhere;
+}
+
+/* The early-holder line: one sentence of labelled shares with its caveat. */
+.launch {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--ry-s1) var(--ry-s2);
+  margin: 0;
+  font-size: var(--ry-fs-label);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-text);
+}
+
+.launchTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s1);
+  font-weight: 600;
+}
+
+.launchNote {
+  color: var(--ry-muted);
+}
+
+@media (max-width: 720px) {
+  .rows > div {
+    grid-template-columns: 1fr;
+    gap: var(--ry-s1);
+  }
+
+  .state {
+    max-width: 60vw;
+  }
+}
+
+/* The recipient check in Send: one line with a dot for its tone, the details
+   one press away. `none` is neutral (never green), `flags` the product's
+   caution, `stop` the one word that outranks the others, `muted` a check
+   that could not be completed. */
+.recipient {
+  display: grid;
+  gap: var(--ry-s2);
+  padding: var(--ry-s2) var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  background: color-mix(in srgb, var(--ry-elevated) 40%, transparent);
+  font-size: var(--ry-fs-label);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-text);
+}
+
+.recipient[data-tone="flags"] {
+  border-color: color-mix(in srgb, var(--ry-caution) 45%, var(--ry-border));
+}
+
+.recipient[data-tone="stop"] {
+  border-color: color-mix(in srgb, var(--ry-risk) 55%, var(--ry-border));
+}
+
+.recipientHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ry-s1) var(--ry-s2);
+  min-width: 0;
+}
+
+.dot {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ry-muted);
+}
+
+.dot[data-tone="none"] {
+  background: var(--ry-text);
+  opacity: 0.55;
+}
+
+.dot[data-tone="flags"] {
+  background: var(--ry-caution);
+}
+
+.dot[data-tone="stop"] {
+  background: var(--ry-risk);
+}
+
+.recipientTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s1);
+  font-weight: 600;
+}
+
+.recipientLine {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--ry-text);
+}
+
+.recipientMore {
+  appearance: none;
+  min-height: 28px;
+  padding: 0 var(--ry-s2);
+  border: 0;
+  border-radius: var(--ry-r-btn-sm);
+  background: transparent;
+  color: var(--ry-muted);
+  font: inherit;
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.recipientMore:hover {
+  color: var(--ry-text);
+  background: var(--ry-hover);
+}
+
+.recipientMore:focus-visible {
+  outline: 2px solid var(--ry-focus);
+  outline-offset: 1px;
+}
+
+.recipientDetails {
+  display: grid;
+  gap: var(--ry-s2);
+  margin: 0;
+  padding-top: var(--ry-s2);
+  border-top: 1px solid var(--ry-border);
+}
+
+.recipientDetails > div {
+  display: grid;
+  gap: 2px;
+}
+
+.recipientDetails dt {
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ry-muted);
+}
+
+.recipientDetails dd {
+  margin: 0;
+  color: var(--ry-text);
+}
+
+.recipientDetails a {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--ry-text);
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--ry-text) 25%, transparent);
+}
+
+.recipientFoot {
+  margin: 0;
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+}
+
+/* What moved since this browser last looked — one line in the product's
+   caution tone, bordered as the state pill is. */
+.changed {
+  margin: 0;
+  padding: var(--ry-s2) var(--ry-s3);
+  border: 1px solid color-mix(in srgb, var(--risk-accent) 45%, var(--ry-border));
+  border-radius: var(--ry-r-btn-sm);
+  background: color-mix(in srgb, var(--risk-accent) 8%, transparent);
+  font-size: var(--ry-fs-label);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-text);
+}

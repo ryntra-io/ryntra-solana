@@ -1,0 +1,423 @@
+/*
+ * The Stellar page's own shapes, on the frozen system.
+ *
+ * Twenty-seven class names on this page lived in the legacy `app/site/site.css`
+ * — the lifecycle flow panel, the capability cards, the split faces, the column
+ * grids and the evidence ledger. The page stopped loading that sheet when it
+ * left the legacy chrome, so they are ported here rather than the page being
+ * rewritten: markup untouched, facts untouched, every registry binding intact.
+ *
+ * It is a translation into Quiet Intelligence, not a copy of v1:
+ *
+ *   Cyan was the v1 evidence accent and does not exist in this palette; the
+ *   accent is Iris, and it is theme-switched, so the same class works on a Mist
+ *   band without a second `--paper` variant.
+ *
+ *   Authorization violet was a v1 role. The human act keeps its own colour —
+ *   the point of that dot is that a person did something no machine may do —
+ *   and takes Iris, while completed machine stages take Verified green. Green
+ *   stays what the brandbook says it is: checks passed, never a safety claim.
+ *
+ *   Every 11px label becomes 14px. The frozen ramp's floor is 14, and 13px
+ *   exists only inside dense Pro tables; a public page has none.
+ */
+
+/* ── long identifiers ─────────────────────────────────────────────────────── */
+
+/* Hashes and receipt ids wrap rather than widen the page. This is the single
+   rule that keeps 390px free of sideways scroll. */
+.rx-hash {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  color: var(--ry-muted);
+}
+
+/* The paper variant is gone: `--ry-accent` already resolves per theme, so one
+   class covers both grounds. The name is kept because the markup still says it. */
+.rx-link--paper {
+  color: var(--ry-accent);
+  border-bottom-color: transparent;
+}
+
+.rx-link--paper:hover {
+  border-bottom-color: currentColor;
+}
+
+/* ── the lifecycle flow ───────────────────────────────────────────────────── */
+
+/*
+ * The hero's right side is the product, not an illustration of it: the stages
+ * of one recorded run, with its real transaction and its real receipt.
+ */
+.rx-flow {
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-landing);
+  background: var(--ry-card);
+  overflow: hidden;
+}
+
+.rx-flow-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--ry-s3);
+  padding: var(--ry-s3) var(--ry-s4);
+  border-bottom: 1px solid var(--ry-border);
+  background: var(--ry-sidebar);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ry-muted);
+}
+
+.rx-flow-list {
+  list-style: none;
+  margin: 0;
+  padding: var(--ry-s2) 0;
+}
+
+.rx-flow-step {
+  position: relative;
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: var(--ry-s3);
+  padding: var(--ry-s3) var(--ry-s4);
+}
+
+/* The spine joining the stage markers. */
+.rx-flow-step::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 28px;
+  top: 26px;
+  bottom: -11px;
+  width: 1px;
+  background: var(--ry-border);
+}
+
+.rx-flow-step:last-child::before {
+  display: none;
+}
+
+.rx-flow-dot {
+  position: relative;
+  z-index: 1;
+  width: 11px;
+  height: 11px;
+  margin-top: 5px;
+  margin-inline-start: 7px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ry-border-strong);
+  background: var(--ry-card);
+  transition: border-color 220ms ease, background-color 220ms ease;
+}
+
+.rx-flow-step[data-done="true"] .rx-flow-dot {
+  border-color: var(--ry-verified);
+  background: var(--ry-verified);
+}
+
+/* Authorization is the human act, and it keeps its own colour. */
+.rx-flow-step[data-actor="human"][data-done="true"] .rx-flow-dot {
+  border-color: var(--ry-accent);
+  background: var(--ry-accent);
+}
+
+.rx-flow-name {
+  display: block;
+  font-size: var(--ry-fs-app);
+  color: var(--ry-text);
+}
+
+/* Block, not inline: as inline spans the stage name and its identifier ran
+   together into "Intent createdint_58e9…" with no gap anywhere to break. */
+.rx-flow-detail {
+  display: block;
+  margin-top: 2px;
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+  line-height: 1.5;
+  color: var(--ry-muted);
+  overflow-wrap: anywhere;
+}
+
+.rx-flow-mark {
+  padding-top: 5px;
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ry-muted);
+  white-space: nowrap;
+}
+
+.rx-flow-step[data-done="true"] .rx-flow-mark {
+  color: var(--ry-verified);
+}
+
+.rx-flow-step[data-actor="human"][data-done="true"] .rx-flow-mark {
+  color: var(--ry-accent);
+}
+
+/* ── column grids ─────────────────────────────────────────────────────────── */
+
+/* A 1px gap over a rule colour makes the cells read as one plate rather than as
+   separate boxes. */
+.rx-cols {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--ry-border);
+  border-block: 1px solid var(--ry-border);
+}
+
+.rx-col {
+  display: grid;
+  gap: var(--ry-s3);
+  align-content: start;
+  padding: var(--ry-s6) var(--ry-s5);
+  background: var(--ry-bg);
+}
+
+.rx-col p {
+  margin: 0;
+  color: var(--ry-muted);
+}
+
+.rx-col-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ry-accent);
+}
+
+.rx-col-tag svg {
+  flex: none;
+}
+
+/*
+ * The quad variant: four standalone blocks instead of a shared grid — a
+ * four-item set in a three-track grid leaves two empty cells, which is exactly
+ * the void it replaces.
+ */
+.rx-cols--quad {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--ry-s3);
+  background: none;
+  border-block: 0;
+}
+
+.rx-cols--quad .rx-col {
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-landing);
+  background: var(--ry-card);
+  padding: var(--ry-s5) var(--ry-s4);
+  transition:
+    background-color 220ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.rx-cols--quad .rx-col:hover {
+  background: var(--ry-elevated);
+  border-color: var(--ry-border-strong);
+}
+
+/* ── capability cards ─────────────────────────────────────────────────────── */
+
+/*
+ * One card, one capability, one badge. A wrapping flex row lets the final line
+ * use the available width instead of leaving empty grid cells after a
+ * deliberately short public list.
+ */
+.rx-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1px;
+  background: var(--ry-border);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-landing);
+  overflow: hidden;
+}
+
+.rx-card {
+  flex: 1 1 320px;
+  min-width: 0;
+  display: grid;
+  gap: var(--ry-s2);
+  align-content: start;
+  padding: var(--ry-s5);
+  background: var(--ry-card);
+  transition: background-color 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.rx-card:hover {
+  background: var(--ry-elevated);
+}
+
+.rx-card-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--ry-s3);
+}
+
+.rx-card-title {
+  margin: 0;
+  font-family: var(--ry-font-display);
+  font-weight: 600;
+  font-size: var(--ry-fs-h3);
+  line-height: var(--ry-lh-head);
+  letter-spacing: var(--ry-ls-head);
+  color: var(--ry-text);
+}
+
+.rx-card-body {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+}
+
+/* Exact scope, in the data typeface, because it is data. */
+.rx-card-scope {
+  margin: 0;
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+  letter-spacing: 0.02em;
+  line-height: 1.5;
+  color: var(--ry-accent);
+  overflow-wrap: anywhere;
+}
+
+/* The stated boundary of the claim, verbatim from the registry. Quieter than
+   the promise above it, and never hidden behind an interaction — a limitation a
+   reader has to hover to find is decoration. */
+.rx-card-limit {
+  margin: 0;
+  padding-top: var(--ry-s3);
+  border-top: 1px solid var(--ry-border);
+  font-size: var(--ry-fs-dense);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+}
+
+/* Not-yet-shipped rows read quieter than shipped ones, on purpose. */
+.rx-cards--quiet .rx-card-title {
+  font-weight: 500;
+  color: var(--ry-muted);
+}
+
+.rx-cards--quiet .rx-card-scope {
+  color: var(--ry-muted);
+}
+
+/* ── split faces ──────────────────────────────────────────────────────────── */
+
+.rx-split {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--ry-border);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-landing);
+  overflow: hidden;
+}
+
+.rx-face {
+  display: grid;
+  gap: var(--ry-s4);
+  align-content: start;
+  padding: var(--ry-s6);
+  background: var(--ry-card);
+}
+
+.rx-face-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--ry-s3);
+}
+
+.rx-face ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--ry-s2);
+}
+
+.rx-face li {
+  position: relative;
+  padding-inline-start: var(--ry-s4);
+  font-size: var(--ry-fs-app);
+  color: var(--ry-muted);
+}
+
+.rx-face li::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0.62em;
+  width: 7px;
+  height: 1px;
+  background: var(--ry-border-strong);
+}
+
+/* ── the evidence ledger ──────────────────────────────────────────────────── */
+
+/* Deliberately a document, not a card: a rule above, a rule below, rows that
+   align on a shared column. It sits inside a `paper` section, where the tokens
+   have already resolved light. */
+.rx-ledger {
+  border: 1px solid var(--ry-border);
+  background: var(--ry-card);
+}
+
+.rx-close-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s3);
+}
+
+/* The dimmed half of a two-tone page heading. */
+.rx-h1-dim {
+  color: var(--ry-muted);
+}
+
+@media (max-width: 1080px) {
+  .rx-cols--quad {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 860px) {
+  .rx-cols,
+  .rx-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rx-cols--quad {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rx-flow-step {
+    grid-template-columns: 26px minmax(0, 1fr);
+  }
+
+  .rx-flow-mark {
+    grid-column: 2;
+    padding-top: 0;
+  }
+}

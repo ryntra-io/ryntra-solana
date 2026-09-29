@@ -1,0 +1,22 @@
+# dependencies
+node_modules/
+
+# the web app's build
+/.next/
+/out/
+next-env.d.ts
+*.tsbuildinfo
+
+# environment — secrets never enter this repository
+.env
+.env.*
+
+# the phone app's generated native projects and builds
+/apps/mobile/android/
+/apps/mobile/ios/
+/apps/mobile/dist/
+/apps/mobile/.expo/
+/apps/mobile/expo-env.d.ts
+
+# misc
+.DS_Store

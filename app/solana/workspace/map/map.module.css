@@ -1,0 +1,188 @@
+/* The Solana Hub Map.
+
+   What this replaces: sixteen stacked cards, each printing a purpose, a
+   detail paragraph and an Exists / Missing / Gate / Last verified table, all
+   at rest. Eleven paragraphs of registry prose were the first thing a person
+   met on the page — an architecture document rendered as a product screen.
+
+   The registry honesty is not reduced by one word. Every sentence is still
+   here, one click deep, which is where PRODUCT.md has always said proof
+   belongs. At rest the page is what a map should be: names, states, and the
+   way in.
+
+   These rules are Solana's own rather than the shared `sh-map-*` chrome,
+   because Stellar still renders the older card and changing its
+   screens is not this task. */
+
+.lead {
+  margin: 0 0 var(--rt-space-lg);
+  color: var(--text-dim);
+  font-size: var(--fs-13);
+  line-height: 1.5;
+}
+
+.group {
+  margin: 0 0 var(--rt-space-xl);
+}
+
+.title {
+  margin: 0 0 var(--rt-space-sm);
+  color: var(--text-dim);
+  font-size: var(--fs-12);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+  /* `start`, not `stretch`: stretching made one opened disclosure drag every
+     tile in its row to the same height, leaving four tall boxes of empty
+     paper beside the one a person actually opened. The tiles line up at rest
+     through their own min-height instead, so an open tile grows alone. */
+  align-items: start;
+  gap: var(--rt-space-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tile {
+  /* A column rather than a grid with declared rows: a tile has two children
+     or three depending on whether the module has a page, and a fixed row
+     template cannot place both shapes. */
+  display: flex;
+  flex-direction: column;
+  gap: var(--rt-space-sm);
+  min-height: 8.5rem;
+  padding: var(--rt-space-md);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--panel-2);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rt-space-xs);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.name {
+  color: var(--text);
+  font-size: var(--fs-14);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* ---------------------------------------------------------------- the way in */
+
+.open {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rt-space-2xs);
+  align-self: flex-start;
+  color: var(--accent);
+  font-size: var(--fs-13);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.open:hover {
+  text-decoration: underline;
+}
+
+.open:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: var(--radius-xs);
+}
+
+/* ------------------------------------------------------------- one click deep */
+
+.more {
+  /* The disclosure sits on the floor of the tile, so a row of tiles with and
+     without an `Open` link still lines its footers up. Ragged tile heights in
+     one row read as a broken grid rather than as different modules. */
+  margin-top: auto;
+  border-top: 1px solid var(--border);
+  padding-top: var(--rt-space-sm);
+}
+
+.summary {
+  color: var(--text-dim);
+  font-size: var(--fs-12);
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+
+.summary::-webkit-details-marker {
+  display: none;
+}
+
+.summary::before {
+  content: "+";
+  display: inline-block;
+  width: 1em;
+  color: var(--text-faint);
+  font-family: var(--mono);
+}
+
+.more[open] .summary::before {
+  content: "−";
+}
+
+.summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: var(--radius-xs);
+}
+
+.body {
+  display: grid;
+  gap: var(--rt-space-sm);
+  padding-top: var(--rt-space-sm);
+}
+
+.purpose {
+  margin: 0;
+  color: var(--text);
+  font-size: var(--fs-13);
+  line-height: 1.55;
+}
+
+.detail {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: var(--fs-12);
+  line-height: 1.6;
+}
+
+.facts {
+  display: grid;
+  gap: var(--rt-space-xs);
+  margin: 0;
+}
+
+.fact {
+  display: grid;
+  gap: 2px;
+}
+
+.facts dt {
+  color: var(--text-faint);
+  font-size: var(--fs-12);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.facts dd {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: var(--fs-12);
+  line-height: 1.55;
+}

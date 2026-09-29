@@ -1,0 +1,193 @@
+/*
+ * Markets.
+ *
+ * Two questions, side by side, because they are the two a person actually has
+ * on a market surface and they are different questions. On the left: what can
+ * the issuer of this token still do to a balance you hold — the only market
+ * fact this product exists to put first. On the right: what it costs today, and
+ * the one control that trades it.
+ *
+ * There is no chart, no depth and no book here. Ryntra reads none of those from
+ * anywhere, and drawing a shape for data that does not exist is the defect this
+ * file was written to avoid, not a gap in it.
+ */
+
+/* ── The price column ────────────────────────────────────────────────────── */
+
+.trade {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+}
+
+.tradeCta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  border: 1px solid transparent;
+  border-radius: var(--ry-r-btn, 12px);
+  background: var(--ry-iris);
+  color: var(--ry-on-iris);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-app, 0.9375rem);
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 120ms ease;
+}
+
+.tradeCta:hover {
+  background: var(--ry-iris-deep);
+}
+
+.prices {
+  display: grid;
+  gap: 1px;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  list-style: none;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn, 12px);
+  background: var(--ry-border);
+}
+
+.price {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 12px;
+  min-height: 52px;
+  padding: 8px 14px;
+  background: var(--ry-card);
+  color: var(--ry-text);
+  text-decoration: none;
+  transition: background 120ms ease;
+}
+
+.price:hover {
+  background: var(--ry-hover);
+}
+
+.priceCode {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-app, 0.9375rem);
+  font-weight: 600;
+}
+
+/* The pair a press on this row would open, so the row states its own
+   consequence rather than being a link whose destination is a surprise. */
+.pricePair {
+  grid-column: 1;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense, 0.8125rem);
+  color: var(--ry-muted);
+}
+
+.priceValue {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+  align-self: center;
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-app, 0.9375rem);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+}
+
+/* No price is not a zero, and it never renders as one. */
+.priceValue[data-known="no"] {
+  color: var(--ry-muted);
+}
+
+/* ── The risk table ──────────────────────────────────────────────────────── */
+
+/*
+ * Row height, set here rather than left at the table default.
+ *
+ * The shared `.rw-table` row is 40px, which is right for a journal of a hundred
+ * lines and wrong for a market list of six: measured on the rendered page the
+ * panel came out 65% full, with the six rows huddled under a header and a third
+ * of the panel empty beneath them. Six rows are the whole table, so they take
+ * the panel — and a 64px row is also a comfortable target for the two links
+ * each one carries.
+ */
+.riskTable :global(.rw-table td),
+.riskTable :global(.rw-table tbody th) {
+  height: 64px;
+}
+
+.token {
+  display: grid;
+  gap: 2px;
+}
+
+.tokenCode {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-app, 0.9375rem);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.tokenProgram {
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense, 0.8125rem);
+  font-weight: 400;
+  color: var(--ry-muted);
+}
+
+.rowActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+/* ── Your trades ─────────────────────────────────────────────────────────── */
+
+.empty {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 12px;
+  margin-block: auto;
+  padding: 24px;
+  text-align: center;
+}
+
+.emptyLead {
+  margin: 0;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-app, 0.9375rem);
+  color: var(--ry-muted);
+}
+
+.state {
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense, 0.8125rem);
+  white-space: nowrap;
+}
+
+.state[data-outcome="DONE"] {
+  background: color-mix(in srgb, var(--ry-verified) 14%, transparent);
+  color: var(--ry-verified);
+}
+
+.state[data-outcome="IN_FLIGHT"],
+.state[data-outcome="NEEDS_YOU"] {
+  background: color-mix(in srgb, var(--ry-iris) 14%, transparent);
+  color: var(--ry-iris);
+}
+
+.state[data-outcome="FAILED"] {
+  background: color-mix(in srgb, var(--ry-risk) 14%, transparent);
+  color: var(--ry-risk);
+}
+
+@media (max-width: 900px) {
+  .price {
+    min-height: 48px;
+  }
+}

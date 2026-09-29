@@ -1,0 +1,505 @@
+/* ============================================================
+   Admin · Аналітика бізнесу.
+
+   Щільна панель власника: угорі вибір вікна і режиму, далі
+   «останні події», групи KPI, три графіки, провайдери й воронка,
+   стрічка активності. Токени — з app/globals.css через admin.module.css;
+   тут лише локальна геометрія.
+   ============================================================ */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px 16px;
+  flex-wrap: wrap;
+  margin: 0 0 16px;
+}
+
+.toolbarSpacer {
+  flex: 1 1 auto;
+}
+
+.segment {
+  display: inline-flex;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--panel-2);
+}
+
+.segmentButton {
+  min-height: 34px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-faint);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.segmentButton:hover {
+  color: var(--text);
+}
+
+.segmentButton[aria-pressed="true"] {
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: var(--shadow);
+}
+
+.stamp {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+/* ── Останні події ─────────────────────────────────────────── */
+
+.pulse {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 9px;
+  margin: 0 0 16px;
+}
+
+.pulseItem {
+  display: grid;
+  gap: 4px;
+  padding: 10px 13px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+  min-width: 0;
+}
+
+.pulseLabel {
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.pulseValue {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.pulseValueMuted {
+  color: var(--text-faint);
+  font-weight: 600;
+}
+
+.pulseWallet {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-dim);
+}
+
+.pulseLive {
+  color: var(--success);
+}
+
+/* ── KPI ───────────────────────────────────────────────────── */
+
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.kpiCard {
+  grid-column: span 6;
+}
+
+.kpiLead {
+  grid-column: span 12;
+}
+
+/* A tile that is not measured says so in one line rather than wrapping the
+   words over the label. */
+.kpiCard [data-status="not_collected"] b,
+.kpiCard [data-status="unavailable"] b,
+.kpiCard [data-status="insufficient"] b {
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.kpiNote {
+  font-size: 12px;
+  color: var(--text-faint);
+  margin: 0;
+}
+
+.headline {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 9px;
+}
+
+/* ── Графіки ───────────────────────────────────────────────── */
+
+.chartCard {
+  grid-column: span 4;
+}
+
+.chart {
+  display: grid;
+  gap: 6px;
+}
+
+.bars {
+  display: flex;
+  gap: 3px;
+  align-items: flex-end;
+  height: 96px;
+}
+
+.bar {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  height: 100%;
+  min-width: 0;
+}
+
+.barPair {
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  width: 100%;
+  height: 100%;
+}
+
+.barFill {
+  display: block;
+  width: 100%;
+  min-height: 2px;
+  border-radius: 4px 4px 0 0;
+  background: linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent) 45%, transparent));
+}
+
+.barFillSecondary {
+  display: block;
+  width: 100%;
+  min-height: 2px;
+  border-radius: 4px 4px 0 0;
+  background: var(--success);
+  opacity: 0.85;
+}
+
+.barFillMoney {
+  display: block;
+  width: 100%;
+  min-height: 2px;
+  border-radius: 4px 4px 0 0;
+  background: linear-gradient(180deg, var(--success), color-mix(in srgb, var(--success) 40%, transparent));
+}
+
+.barEmpty {
+  background: var(--border);
+  opacity: 0.6;
+}
+
+.axis {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.chartPeak {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+/* ── Воронка ───────────────────────────────────────────────── */
+
+.funnel {
+  display: grid;
+  gap: 8px;
+}
+
+.funnelRow {
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr) 72px;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.funnelName {
+  color: var(--text-dim);
+}
+
+.funnelTrack {
+  height: 22px;
+  border-radius: 6px;
+  background: var(--panel-2);
+  overflow: hidden;
+}
+
+.funnelFill {
+  height: 100%;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 55%, transparent));
+  min-width: 2px;
+}
+
+.funnelFillMuted {
+  background: var(--border);
+  opacity: 0.6;
+}
+
+.funnelValue {
+  font-family: var(--mono);
+  font-weight: 700;
+  text-align: end;
+}
+
+.funnelValueMuted {
+  color: var(--text-faint);
+  font-weight: 500;
+  font-size: 12px;
+}
+
+/* ── Стрічка ───────────────────────────────────────────────── */
+
+.feedCard {
+  grid-column: span 12;
+}
+
+.feed {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.feedRow {
+  border-bottom: 1px solid var(--border);
+}
+
+.feedRow:last-child {
+  border-bottom: 0;
+}
+
+.feedSummary {
+  display: grid;
+  grid-template-columns: 96px 184px 118px minmax(0, 1fr) 96px 88px 110px;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.feedSummary::-webkit-details-marker {
+  display: none;
+}
+
+.feedSummary:hover {
+  background: var(--panel-2);
+}
+
+.feedAt {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+.feedKind {
+  font-weight: 650;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.feedWallet {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.feedRoute {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-dim);
+}
+
+.feedValue {
+  font-family: var(--mono);
+  text-align: end;
+  white-space: nowrap;
+}
+
+.feedProvider {
+  font-size: 12px;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+.feedStatus {
+  justify-self: end;
+}
+
+.feedDetail {
+  display: grid;
+  gap: 8px;
+  padding: 8px 12px 14px;
+  background: var(--panel-2);
+  font-size: 13px;
+}
+
+.feedDetailRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  align-items: center;
+}
+
+.feedDetailKey {
+  color: var(--text-faint);
+  min-width: 96px;
+}
+
+.internalTag {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--border-strong);
+  color: var(--text-faint);
+}
+
+/* ── Внутрішні гаманці ─────────────────────────────────────── */
+
+.walletsBody {
+  display: grid;
+  gap: 12px;
+  padding-top: 8px;
+}
+
+.walletList {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.walletItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  min-height: 36px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.walletItem:last-child {
+  border-bottom: 0;
+}
+
+.walletForm {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: end;
+}
+
+/* ── Джерела трафіку (історичний блок) ─────────────────────── */
+
+.sources {
+  margin-top: 16px;
+}
+
+.sourcesSummary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  cursor: pointer;
+  color: var(--text-faint);
+  font-size: 13px;
+  font-weight: 600;
+  list-style: none;
+}
+
+.sourcesSummary::-webkit-details-marker {
+  display: none;
+}
+
+.sourcesBody {
+  margin-top: 12px;
+}
+
+@media (max-width: 1100px) {
+  .chartCard {
+    grid-column: span 12;
+  }
+  .feedSummary {
+    grid-template-columns: 84px 160px 110px minmax(0, 1fr) 90px;
+  }
+  .feedProvider,
+  .feedStatus {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .kpiCard {
+    grid-column: span 12;
+  }
+  .feedSummary {
+    grid-template-columns: 72px minmax(0, 1fr) auto;
+    row-gap: 2px;
+  }
+  .feedWallet,
+  .feedRoute {
+    grid-column: 2 / span 2;
+  }
+  .feedRoute {
+    white-space: normal;
+  }
+  .funnelRow {
+    grid-template-columns: 120px minmax(0, 1fr) 60px;
+  }
+  .walletForm {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Operations panel: a signature or an operation id is one long token; it wraps inside its cell rather than over the next one. */
+.opsMono {
+  font-family: var(--mono);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}

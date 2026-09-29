@@ -1,0 +1,55 @@
+/* ============================================================================
+   Ryntra brand lockup — the one header/footer identity on every surface.
+
+   The wordmark [R]YNTRA as the Owner's raster, one master per ground. No page
+   draws its own logo; this file and `ryntra-brand.tsx` are the only place the
+   lockup is styled, so a surface cannot drift to a local variant without
+   failing `app/brand/brand.test.mjs`.
+   ========================================================================== */
+
+.ryntra-brand {
+  display: inline-flex;
+  align-items: center;
+  /* The mark is the R, so the gap is an optical letter-gap, not a logo-to-word
+     space. BRAND.md §2: "Y uses the tight optical gap approved by the owner." */
+  gap: 0.04em;
+  color: var(--fg, #f5f7fa);
+  line-height: 1;
+}
+
+.ryntra-brand-mark {
+  flex: none;
+  display: block;
+}
+
+.ryntra-brand-lockup {
+  display: block;
+  height: 1em;
+  width: auto;
+  flex: none;
+}
+
+/* Dark is the default ground; an explicit light theme swaps the pair. */
+.ryntra-brand-lockup-light { display: none; }
+
+[data-theme="light"] .ryntra-brand-lockup-dark,
+[data-ry-theme="light"] .ryntra-brand-lockup-dark { display: none; }
+
+[data-theme="light"] .ryntra-brand-lockup-light,
+[data-ry-theme="light"] .ryntra-brand-lockup-light { display: block; }
+
+/* The mark answers a hover on the whole lockup, not the other way round. */
+a .ryntra-brand .ryntra-brand-mark,
+.ryntra-brand .ryntra-brand-mark {
+  transition: filter 0.3s ease, transform 0.3s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  a:hover .ryntra-brand .ryntra-brand-mark {
+    filter: drop-shadow(0 0 6px rgba(255, 104, 28, 0.35));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ryntra-brand .ryntra-brand-mark { transition: none; }
+}

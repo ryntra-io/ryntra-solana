@@ -1,0 +1,355 @@
+/* ============================================================================
+   Ryntra public site — motion and pointer
+   ============================================================================
+
+   The rule this file is written against: motion explains, it does not decorate.
+   A block enters from the side it belongs on, a control leans toward the hand
+   reaching for it, the circuit rail fills with how far the reader has come, and
+   the hero spine carries a pulse only because that lifecycle actually ran.
+   Nothing hijacks the scroll and nothing loops in the corner of the eye.
+
+   Reveals are transform and opacity only, so a block animating in can never
+   reflow the page or summon a scrollbar mid-flight. Everything here is skipped
+   whole when the reader has asked for reduced motion.
+   ========================================================================== */
+
+:root {
+  /* Expo-out: fast departure, long settle. The curve that reads as authored
+     rather than as a linear slide. */
+  --rx-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --rx-dur: 0.82s;
+}
+
+/* -------------------------------------------------------------- reveals -- */
+
+/* The hidden start state exists only once the observer is genuinely running,
+   so a blocked or failed script leaves a readable page rather than a blank one. */
+html.rxm .rx [data-rx-reveal] {
+  opacity: 0;
+  transition:
+    opacity var(--rx-dur) var(--rx-ease) var(--rx-delay, 0ms),
+    transform var(--rx-dur) var(--rx-ease) var(--rx-delay, 0ms);
+}
+
+html.rxm .rx [data-rx-reveal="up"] { transform: translate3d(0, 36px, 0); }
+html.rxm .rx [data-rx-reveal="left"] { transform: translate3d(-52px, 0, 0); }
+html.rxm .rx [data-rx-reveal="right"] { transform: translate3d(52px, 0, 0); }
+html.rxm .rx [data-rx-reveal="scale"] { transform: scale(0.955) translate3d(0, 26px, 0); }
+
+/* A panel hinging open from its top edge — for blocks that read as a physical
+   surface being laid down: the receipt, the proof tables, the circuit. */
+html.rxm .rx [data-rx-reveal="tilt"] {
+  transform: perspective(1100px) rotateX(10deg) translate3d(0, 46px, 0);
+  transform-origin: top center;
+}
+
+/* A shear that settles, for editorial rows where a straight fade is inert. */
+html.rxm .rx [data-rx-reveal="shear"] { transform: translate3d(0, 34px, 0) skewY(2.2deg); }
+
+html.rxm .rx [data-rx-reveal][data-rx-in="true"] {
+  opacity: 1;
+  transform: none;
+}
+
+/* -------------------------------------------------------------- pointer -- */
+
+/*
+ * The trailing ring. The native cursor stays visible underneath: a site that
+ * hides it has replaced a working control with a decoration, and every misclick
+ * after that belongs to the design.
+ *
+ * `difference` blending means one ring works on the operational navy and on the
+ * paper surfaces without a second rule per section.
+ */
+/* The ring exists on every device and is shown only where a precise pointer
+   does. Making existence a CSS decision means a latched JavaScript measurement
+   can never leave a desktop without it. */
+.rx-cursor { display: none; }
+
+@media (hover: hover) and (pointer: fine) {
+  .rx-cursor { display: block; }
+}
+
+.rx-cursor {
+  position: fixed;
+  top: 0;
+  inset-inline-start: 0;
+  z-index: 200;
+  width: 74px;
+  height: 74px;
+  pointer-events: none;
+  mix-blend-mode: difference;
+}
+
+.rx-cursor::after {
+  content: "";
+  position: absolute;
+  inset-inline-start: 50%;
+  top: 50%;
+  width: 30px;
+  height: 30px;
+  margin: -15px 0 0 -15px;
+  border: 1px solid #ff5a1f;
+  border-radius: 50%;
+  transition: transform 0.28s var(--rx-ease), border-color 0.28s ease, background-color 0.28s ease;
+}
+
+.rx-cursor[data-locked="true"]::after {
+  transform: scale(1.7333);
+  border-color: #c9b08f;
+  background: rgba(88, 230, 169, 0.08);
+}
+
+/* The precise centre point. A ring alone drifts; the point is what makes the
+   treatment read as an instrument rather than as a blob. */
+.rx-cursor::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 50%;
+  top: 50%;
+  width: 3px;
+  height: 3px;
+  margin: -1.5px 0 0 -1.5px;
+  border-radius: 50%;
+  background: #ff5a1f;
+  transition: opacity 0.2s ease;
+}
+.rx-cursor[data-locked="true"]::before { opacity: 0; }
+
+/*
+ * Contextual verb. It appears only where a surface declares one, so the label
+ * always says something the element itself does not: INSPECT over a receipt,
+ * OPEN over an outbound link, COPY over a hash.
+ */
+.rx-cursor-label {
+  position: absolute;
+  inset-inline-start: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(0.86);
+  font-family: var(--font-jbmono), ui-monospace, monospace;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  white-space: nowrap;
+  color: #c9b08f;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.28s var(--rx-ease);
+}
+.rx-cursor[data-labelled="true"]::after { transform: scale(2.4667); }
+.rx-cursor[data-labelled="true"] .rx-cursor-label { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+.rx-cursor[data-labelled="true"]::before { opacity: 0; }
+
+/* The circuit rail: the reader's own progress through the argument, drawn in
+   the same colours the lifecycle uses. */
+.rx-rail-progress {
+  position: fixed;
+  top: 0;
+  inset-inline-start: 0;
+  z-index: 70;
+  width: 2px;
+  height: 100vh;
+  transform: scaleY(0);
+  transform-origin: top center;
+  background: linear-gradient(180deg, #ff5a1f, #c9b08f 55%, #d98f6b);
+  pointer-events: none;
+  opacity: 0.85;
+}
+
+/* --------------------------------------------------------- micro-motion -- */
+
+/*
+ * Controls. A sheen crosses the primary button once per hover — one pass, not a
+ * loop. The magnetic lean is applied inline by the motion module, so the
+ * transform property here is deliberately left to it.
+ */
+.rx-btn {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  transition:
+    background-color 0.22s ease,
+    border-color 0.22s ease,
+    color 0.22s ease,
+    box-shadow 0.3s var(--rx-ease),
+    transform 0.32s var(--rx-ease);
+}
+
+.rx-btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  transform: translateX(-120%) skewX(-18deg);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.26), transparent);
+  transition: transform 0.62s var(--rx-ease);
+}
+.rx-btn svg { transition: transform 0.3s var(--rx-ease); }
+
+/* Links draw their underline rather than switching it on. */
+.rx-link { position: relative; border-bottom-color: transparent; }
+.rx-link::after {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  bottom: 0;
+  width: 100%;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.42s var(--rx-ease);
+}
+.rx-link svg { transition: transform 0.3s var(--rx-ease); }
+
+/* Surfaces answer the pointer with a rule and a tint, never a shadow bloom —
+   this system is built out of hairlines, so it brightens its hairlines. */
+.rx-col,
+.rx-face,
+.rx-audience > div,
+.rx-close > div,
+.rx-axis,
+.rx-chapter {
+  transition: background-color 0.34s var(--rx-ease), box-shadow 0.34s var(--rx-ease);
+}
+.rx-table tbody tr { transition: background-color 0.28s ease; }
+
+.rx-ledger-row { transition: background-color 0.28s ease; }
+
+.rx-navitem { transition: background-color 0.2s ease, transform 0.28s var(--rx-ease); }
+
+.rx-stage { transition: background-color 0.24s ease, color 0.24s ease, box-shadow 0.3s var(--rx-ease); }
+
+
+@media (hover: hover) and (pointer: fine) {
+  .rx-btn:hover::after { transform: translateX(120%) skewX(-18deg); }
+  .rx-btn--primary:hover { box-shadow: 0 10px 34px rgba(255, 90, 31, 0.22); }
+  .rx-btn--ghost:hover {
+    border-color: #ff5a1f;
+    box-shadow: inset 0 0 0 1px rgba(255, 90, 31, 0.32), 0 8px 26px rgba(0, 0, 0, 0.38);
+  }
+  .rx-btn:hover svg { transform: translate(3px, -3px); }
+  .rx-link:hover::after { transform: scaleX(1); }
+  .rx-link:hover svg { transform: translate(2px, -2px); }
+  .rx-col:hover,
+  .rx-face:hover,
+  .rx-audience > div:hover,
+  .rx-close > div:hover,
+  .rx-axis:hover {
+    background: var(--raised);
+    box-shadow: inset 0 1px 0 rgba(255, 90, 31, 0.26);
+  }
+  .rx-chapter:hover { background: #0a1120; }
+  .rx-table tbody tr:hover { background: rgba(255, 90, 31, 0.045); }
+  .rx-paper .rx-table tbody tr:hover { background: rgba(10, 16, 32, 0.045); }
+  .rx-ledger-row:hover { background: rgba(10, 16, 32, 0.035); }
+  .rx-navitem:hover { transform: translateX(4px); }
+}
+
+/* -------------------------------------------------------- circuit pulse -- */
+
+/*
+ * One point of light travels down the hero spine. It is the only looping
+ * animation on the site, it is one pixel wide, and it is the literal claim the
+ * panel is making: this lifecycle ran, end to end.
+ */
+.rx-flow-list { position: relative; }
+.rx-flow-list::after {
+  content: "";
+  position: absolute;
+  inset-inline-start: 28px;
+  top: 0;
+  width: 1px;
+  height: 44px;
+  background: linear-gradient(180deg, transparent, #c9b08f, transparent);
+  animation: rx-pulse 4.6s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes rx-pulse {
+  0% { transform: translateY(0); opacity: 0; }
+  10% { opacity: 0.9; }
+  86% { opacity: 0.9; }
+  100% { transform: translateY(var(--rx-spine, 400px)); opacity: 0; }
+}
+
+/* ------------------------------------------------------------- headline -- */
+
+/*
+ * The engineered face, set the way a technical grotesk has to be set to read as
+ * instrumentation rather than as a gaming logo: heavy weight, tight tracking at
+ * display sizes, wide tracking on the wordmark.
+ */
+.rx-h1, .rx-h2 { font-weight: 400; }
+.rx-h3 { font-weight: 600; }
+
+@media (prefers-reduced-motion: reduce) {
+  .rx-flow-list::after { display: none; }
+  .rx-btn::after,
+  .rx-link::after { display: none; }
+  html.rxm .rx [data-rx-reveal] { opacity: 1; transform: none; }
+}
+
+/* ============================================================ split seam ==
+   The dark operational surface opening into the warm evidence record.
+
+   This is the site's signature moment and it is a structural cut, not a colour
+   change: the paper section is clipped on a shallow diagonal and pulled up
+   under the dark one, so the dark surface reads as separating to reveal the
+   record underneath. A single lit seam runs along the cut.
+   ========================================================================= */
+
+/* `.rx-section` also sets padding-block, at the same specificity and possibly
+   later in the bundle, so the seam has to out-rank it explicitly rather than
+   hope the import order stays put. */
+.rx-section.rx-paper {
+  --rx-cut: clamp(26px, 4vw, 58px);
+  margin-top: calc(var(--rx-cut) * -1);
+  padding-top: calc(clamp(72px, 9vw, 140px) + var(--rx-cut));
+  clip-path: polygon(0 var(--rx-cut), 100% 0, 100% 100%, 0 100%);
+  border-top: 0;
+  position: relative;
+}
+
+/* The seam itself: one hairline along the cut, in the evidence colour, so the
+   eye reads an opening rather than an accident of layout. */
+.rx-section.rx-paper::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: var(--rx-cut);
+  pointer-events: none;
+  background: linear-gradient(
+    to top right,
+    transparent calc(50% - 0.6px),
+    rgba(255, 90, 31, 0.55) 50%,
+    transparent calc(50% + 0.6px)
+  );
+}
+
+/* The section that follows a paper block gets the mirrored cut, so the record
+   closes again and the operational surface resumes. */
+.rx-section.rx-paper + .rx-section:not(.rx-paper) {
+  margin-top: calc(var(--rx-cut, 40px) * -1);
+  padding-top: calc(clamp(72px, 9vw, 140px) + var(--rx-cut, 40px));
+  clip-path: polygon(0 0, 100% var(--rx-cut, 40px), 100% 100%, 0 100%);
+  border-top: 0;
+}
+
+/* ------------------------------------------------------ the section route */
+
+/*
+ * The technical route between sections: a node on each section index and a
+ * short trace leaving it. It is the Decision Circuit at editorial scale — the
+ * numbers are connected rather than merely numbered.
+ */
+.rx-index::before {
+  content: "";
+  flex: none;
+  width: 7px;
+  height: 7px;
+  background: var(--cyan);
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  opacity: 0.9;
+}
+.rx-paper .rx-index::before { background: #0f5e77; }
