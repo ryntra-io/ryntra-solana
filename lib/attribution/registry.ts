@@ -25,9 +25,12 @@
  * ## Roles, and how a counter treats them
  *
  * - **Fee** — where a person's Ryntra fee lands, inside the same transaction
- *   as the trade. One wallet per product (swap, memes, stocks, bots, API), and
- *   the Jupiter referral account the swap lane has carried since 2026-09-10.
- *   A counter adds what arrives here as fees.
+ *   as the trade: Ryntra's fee wallet on Solana — one wallet for every product
+ *   (swap, memes, stocks, bots, API) since 2026-10-05; a product
+ *   that needs its own figures on a public counter gets a wallet of its own
+ *   later, as a new row — and the Jupiter referral account the swap lane has
+ *   carried since 2026-09-10. A counter adds what arrives here as fees; which
+ *   product a fee came from is the operation's, read from the history.
  * - **Payout** — what Ryntra gives back: cashback, friends, integrators. A
  *   counter treats what leaves here as the supply side's share, never as
  *   revenue. Until each kind is paid from its own wallet, the rewards wallet
@@ -124,8 +127,11 @@ export type RegistryStatus = "AWAITING_ADDRESS" | "LISTED" | "RETIRED";
 const USDC = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 const WSOL = "So11111111111111111111111111111111111111112";
 
-/** The five products whose fee each lands in its own wallet. */
+/** The products whose fee lands in a Solana fee wallet — today all in one. */
 export const FEE_WALLET_PRODUCTS = ["swap", "memes", "stocks", "bots", "api"] as const satisfies readonly Product[];
+
+/** Ryntra's fee wallet on Solana, since 2026-10-05. A public receiving address; its key is held outside this repository. */
+export const SOLANA_FEE_WALLET = "5sWCoxARMPyGdqTu9ru6z69REZ1ZZLojcb1rfABDP2Ne";
 
 function place(id: string, role: RegistryRole, kind: RegistryKind, products: readonly Product[], countedAs: RegistryCount, network: RegistryNetwork = "solana"): RegistryEntry {
   return { id, network, products, role, kind, parent: null, mint: null, address: null, end: null, countedAs };
@@ -176,7 +182,18 @@ export const ATTRIBUTION_REGISTRY: readonly RegistryEntry[] = Object.freeze([
     end: null,
     countedAs: "FEES",
   },
-  ...FEE_WALLET_PRODUCTS.map((product) => ({ ...place(`solana-fee-${product}`, "FEE", "FEE_WALLET", [product], "FEES") })),
+  {
+    id: "solana-fee-wallet",
+    network: "solana",
+    products: FEE_WALLET_PRODUCTS,
+    role: "FEE",
+    kind: "FEE_WALLET",
+    parent: null,
+    mint: null,
+    address: SOLANA_FEE_WALLET,
+    end: null,
+    countedAs: "FEES",
+  },
   place("relay-app-fee", "FEE", "RELAY_APP_FEE_RECIPIENT", ["bridge"], "FEES", "relay"),
   place("solana-payout-cashback", "PAYOUT_CASHBACK", "PAYOUT_WALLET", EVERY_FEE_PRODUCT, "SUPPLY_SIDE"),
   place("solana-payout-friends", "PAYOUT_FRIENDS", "PAYOUT_WALLET", EVERY_FEE_PRODUCT, "SUPPLY_SIDE"),
@@ -238,9 +255,9 @@ export function validateRegistry(rows: readonly RegistryEntry[] = ATTRIBUTION_RE
     if (row.kind === "JUPITER_REFERRAL_TOKEN_ACCOUNT" && (row.parent === null || row.mint === null)) problems.push(`${row.id}: a referral token account names its account and its mint`);
   }
   for (const row of rows) if (row.parent !== null && !rows.some((other) => other.id === row.parent)) problems.push(`${row.id}: its parent ${row.parent} is not registered`);
-  /* One fee wallet per product, one payout wallet per kind, one treasury. */
+  /* One open fee wallet for each product (one wallet may serve several), one payout wallet per kind, one treasury. */
   for (const product of FEE_WALLET_PRODUCTS) {
-    const count = rows.filter((row) => row.kind === "FEE_WALLET" && row.network === "solana" && row.end === null && row.products.length === 1 && row.products[0] === product).length;
+    const count = rows.filter((row) => row.kind === "FEE_WALLET" && row.network === "solana" && row.end === null && row.products.includes(product)).length;
     if (count !== 1) problems.push(`fee wallet for ${product}: ${count} rows, one expected`);
   }
   for (const role of ["PAYOUT_CASHBACK", "PAYOUT_FRIENDS", "PAYOUT_INTEGRATORS", "TREASURY"] as const) {
@@ -295,9 +312,9 @@ export function solanaFeeOwners(rows: readonly RegistryEntry[] = ATTRIBUTION_REG
   return owners;
 }
 
-/** The product's own fee wallet address on a network, or null while it has none there. */
+/** The open fee wallet a product's fee lands in on a network, or null while it has none there. */
 export function feeWalletOf(product: Product, network: RegistryNetwork = "solana", rows: readonly RegistryEntry[] = ATTRIBUTION_REGISTRY): string | null {
-  const row = rows.find((entry) => entry.kind === "FEE_WALLET" && entry.network === network && entry.end === null && entry.products.length === 1 && entry.products[0] === product);
+  const row = rows.find((entry) => entry.kind === "FEE_WALLET" && entry.network === network && entry.end === null && entry.products.includes(product));
   return row?.address ?? null;
 }
 

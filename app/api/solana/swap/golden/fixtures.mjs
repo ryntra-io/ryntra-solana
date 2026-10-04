@@ -93,6 +93,8 @@ export const ENV_BASE = Object.freeze({
   RYNTRA_SOLANA_RPC_MAINNET: RPC_PRIMARY,
   RYNTRA_SOLANA_RPC_MAINNET_FALLBACK: RPC_INDEPENDENT,
   RYNTRA_JUPITER_REFERRAL_ACCOUNT: REFERRAL_ACCOUNT,
+  /* The transcripts are the /order lane's, recorded before fee policy v2: the operator's switch keeps them on it. The /build lane has its own tests. */
+  RYNTRA_FEE_POLICY: "as-now",
   RYNTRA_REWARDS_ACTIVATION_AT: "2026-09-01T00:00:00Z",
 });
 

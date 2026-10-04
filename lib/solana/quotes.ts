@@ -10,13 +10,15 @@
  * (`executeJupiterOrder`). The execute client never retries: once the POST may
  * have left the process, every failure is reported as possibly submitted and
  * the caller recovers by signature through an independent chain read — never
- * by calling `/execute` again. `/build` stays typed with no caller.
+ * by calling `/execute` again. `/build` — the router lane fee policy v2 takes
+ * for most flows — lives in `jupiter-build.ts` and returns the same order
+ * shape with `path: "BUILD_SUBMIT"`: bytes this deployment assembled from
+ * Jupiter's instructions, never sent to `/execute`.
  */
 
 import {
   serviceFeeNotApplied,
   serviceFeeQuoted,
-  serviceFeeRateFor,
   serviceFeeUnconfigured,
   type RyntraServiceFee,
 } from "../swap/service-fee.ts";
@@ -26,7 +28,7 @@ import { JUPITER_ORDER_RETRY_WAIT_MAX_MS, jupiterRetryWaitMs, noteJupiterRespons
 
 export const JUPITER_SWAP_V2_BASE_URL = "https://api.jup.ag/swap/v2";
 const MAX_JUPITER_ORDER_BYTES = 512 * 1024;
-const MAX_ROUTE_HOPS = 32;
+export const MAX_ROUTE_HOPS = 32;
 const MAX_PROVIDER_TEXT = 256;
 
 /**
@@ -191,38 +193,6 @@ export type JupiterOrderRequest = Readonly<{
   excludeRouters?: readonly string[];
 }>;
 
-/** Typed for the later allowlist path only. There is deliberately no fetch function for `/build`. */
-export type JupiterBuildRequest = Readonly<{
-  inputMint: string;
-  outputMint: string;
-  amountRaw: string;
-  taker: string;
-  payer?: string;
-  slippageBps?: number;
-  platformFeeBasisPoints?: number;
-  referralAccount?: string;
-  excludedRouters?: readonly string[];
-}>;
-
-export type JupiterInstruction = Readonly<{
-  programId: string;
-  accounts: readonly Readonly<{ pubkey: string; isWritable: boolean; isSigner: boolean }>[];
-  data: string;
-}>;
-
-export type JupiterBuildResponse = Readonly<{
-  inputMint: string;
-  outputMint: string;
-  inAmountRaw: string;
-  outAmountRaw: string;
-  minReceivedRaw: string;
-  swapInstructions: readonly JupiterInstruction[];
-  setupInstructions: readonly JupiterInstruction[];
-  cleanupInstruction: JupiterInstruction | null;
-  addressLookupTables: Readonly<Record<string, readonly string[]>>;
-  lastValidBlockHeight: string;
-}>;
-
 export type JupiterRouteHop = Readonly<{
   ammKey: string;
   label: string;
@@ -237,7 +207,8 @@ export type JupiterOrderQuote = Readonly<{
   schema: "ryntra.solana.jupiter-order-quote";
   schemaVersion: "1.0.0";
   provider: "jupiter";
-  path: "ORDER_EXECUTE";
+  /** `/order` priced and built it and `/execute` lands it; or `/build` gave the instructions and this deployment assembled and sends the bytes. */
+  path: JupiterSwapPath;
   access: JupiterSwapAccess;
   tier: JupiterTier;
   execution: "NOT_EXECUTED";
@@ -276,6 +247,12 @@ export type JupiterOrderQuote = Readonly<{
    * separately from the interpretation of it.
    */
   providerReferralAccount: string | null;
+  /**
+   * `/build` only: the fee wallet and the canonical token account the fee is
+   * paid into, named in the bytes. Absent — not null — on `/order`, so a
+   * Review sealed before this field existed hashes as it always did.
+   */
+  ryntraFeeAccount?: Readonly<{ owner: string; account: string }>;
   signatureFeeLamports: string;
   signatureFeePayer: string | null;
   priorityFeeLamports: string;
@@ -296,6 +273,9 @@ export type JupiterOrderQuote = Readonly<{
   observedAt: string;
   source: EvidenceSource;
 }>;
+
+export const JUPITER_SWAP_PATHS = ["ORDER_EXECUTE", "BUILD_SUBMIT"] as const;
+export type JupiterSwapPath = (typeof JUPITER_SWAP_PATHS)[number];
 
 export type JupiterOrderFailure = Readonly<{
   ok: false;
@@ -324,25 +304,25 @@ export type JupiterOrderFailure = Readonly<{
 
 export type JupiterOrderResult = Readonly<{ ok: true; order: JupiterOrderQuote }> | JupiterOrderFailure;
 
-const NO_ROUTE_CODES = new Set([
+export const NO_ROUTE_CODES: ReadonlySet<string> = new Set([
   "COULD_NOT_FIND_ANY_ROUTE",
   "NO_ROUTES_FOUND",
   "ROUTE_PLAN_DOES_NOT_CONSUME_ALL_THE_AMOUNT",
 ]);
 
-function asText(value: unknown, field: string, maxLength = MAX_PROVIDER_TEXT): string {
+export function asText(value: unknown, field: string, maxLength = MAX_PROVIDER_TEXT): string {
   if (typeof value !== "string" || value.length === 0 || value.length > maxLength) {
     throw new Error(`${field} is missing or outside its text bound.`);
   }
   return value;
 }
 
-function asOptionalText(value: unknown, field: string, maxLength = MAX_PROVIDER_TEXT): string | null {
+export function asOptionalText(value: unknown, field: string, maxLength = MAX_PROVIDER_TEXT): string | null {
   if (value === null || value === undefined) return null;
   return asText(value, field, maxLength);
 }
 
-function asAmount(value: unknown, field: string): string {
+export function asAmount(value: unknown, field: string): string {
   if (typeof value !== "string" || !/^[0-9]+$/.test(value)) {
     throw new Error(`${field} is not a raw unsigned amount string.`);
   }
@@ -354,7 +334,7 @@ function asIntegerAmount(value: unknown, field: string): string {
   return asAmount(value, field);
 }
 
-function asInteger(value: unknown, field: string, maximum = Number.MAX_SAFE_INTEGER): number {
+export function asInteger(value: unknown, field: string, maximum = Number.MAX_SAFE_INTEGER): number {
   if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 0 || value > maximum) {
     throw new Error(`${field} is not a bounded non-negative integer.`);
   }
@@ -366,14 +346,14 @@ function asBoolean(value: unknown, field: string): boolean {
   return value;
 }
 
-function asNumericText(value: unknown, field: string): string | null {
+export function asNumericText(value: unknown, field: string): string | null {
   if (value === null || value === undefined) return null;
   if (typeof value === "number" && Number.isFinite(value)) return String(value);
   if (typeof value === "string" && value.length > 0 && value.length <= 128) return value;
   throw new Error(`${field} is not a bounded numeric value.`);
 }
 
-function asObject(value: unknown, field: string): Record<string, unknown> {
+export function asObject(value: unknown, field: string): Record<string, unknown> {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     throw new Error(`${field} is not an object.`);
   }
@@ -464,7 +444,7 @@ function readJupiterServiceFee(
         providerReferralAccount,
         fee: serviceFeeNotApplied(
           "JUPITER_REFERRAL",
-          `Jupiter's minimum referral fee is ${JUPITER_REFERRAL_FEE_MIN_BPS} bps and Ryntra's rate for it is ${serviceFeeRateFor("JUPITER_REFERRAL")} bps, so no fee is requested on this route. The swap still executes.`,
+          `Jupiter's minimum referral fee is ${JUPITER_REFERRAL_FEE_MIN_BPS} bps and Ryntra's rate for this flow is lower, so no fee is requested on this route. The swap still executes.`,
         ),
       };
     }
@@ -479,6 +459,7 @@ function readJupiterServiceFee(
       fee: serviceFeeNotApplied(
         "JUPITER_REFERRAL",
         `Jupiter did not apply the referral account on this order; the referral token account for ${stated.totalFeeMint} is most likely not initialised. The swap still executes.`,
+        requested.feeBps,
       ),
     };
   }
@@ -488,6 +469,7 @@ function readJupiterServiceFee(
       fee: serviceFeeNotApplied(
         "JUPITER_REFERRAL",
         `Jupiter charged ${stated.totalFeeBasisPoints} bps against the ${requested.feeBps} bps requested, which is its documented fallback to its own platform fee.`,
+        requested.feeBps,
       ),
     };
   }
@@ -499,6 +481,7 @@ function readJupiterServiceFee(
       asset: stated.totalFeeMint,
       amountRaw: whollyOurs ? stated.platformFeeAmountRaw : null,
       providerRetainedPercent: JUPITER_REFERRAL_PROVIDER_SHARE_PERCENT,
+      requestedBasisPoints: requested.feeBps,
     }),
   };
 }
@@ -727,7 +710,7 @@ export function assessJupiterOrderFreshness(
   return current < expiry ? "FRESH" : "EXPIRED";
 }
 
-class JupiterResponseReadError extends Error {}
+export class JupiterResponseReadError extends Error {}
 
 function parseJupiterJson(text: string): unknown {
   try {
@@ -737,7 +720,7 @@ function parseJupiterJson(text: string): unknown {
   }
 }
 
-async function readBoundedJson(response: Response): Promise<unknown> {
+export async function readBoundedJson(response: Response): Promise<unknown> {
   const declared = response.headers.get("content-length");
   if (declared !== null) {
     const bytes = Number(declared);

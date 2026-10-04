@@ -4,7 +4,7 @@ import { z } from "zod";
 
 import { canonicalJson } from "../guard/canonical-json.ts";
 import { ServiceFeeSchema } from "../swap/service-fee.ts";
-import { assessJupiterOrderFreshness, type JupiterOrderQuote } from "./quotes.ts";
+import { JUPITER_SWAP_PATHS, assessJupiterOrderFreshness, type JupiterOrderQuote } from "./quotes.ts";
 
 const QUOTE_HASH_DOMAIN = "ryntra.solana.swap-quote-review.v1";
 const REVIEW_HASH_DOMAIN = "ryntra.solana.swap-review-bundle.v1";
@@ -25,7 +25,7 @@ const QuoteSnapshotSchema = z
     schema: z.literal("ryntra.solana.jupiter-order-quote"),
     schemaVersion: z.literal("1.0.0"),
     provider: z.literal("jupiter"),
-    path: z.literal("ORDER_EXECUTE"),
+    path: z.enum(JUPITER_SWAP_PATHS),
     access: z.enum(["production", "degraded"]),
     tier: z.enum(["pro", "lite"]),
     execution: z.literal("NOT_EXECUTED"),
@@ -54,6 +54,8 @@ const QuoteSnapshotSchema = z
     ryntraFee: ServiceFeeSchema,
     /** What Jupiter echoed back; the field that decides whether the fee exists. */
     providerReferralAccount: z.string().min(32).max(44).nullable(),
+    /* `/build` only, and absent rather than null otherwise: a Review sealed before it existed hashes as it did. */
+    ryntraFeeAccount: z.object({ owner: z.string().min(32).max(44), account: z.string().min(32).max(44) }).strict().optional(),
     signatureFeeLamports: RawAmount,
     signatureFeePayer: z.string().min(32).max(44).nullable(),
     priorityFeeLamports: RawAmount,
@@ -140,6 +142,7 @@ function snapshot(order: JupiterOrderQuote): z.infer<typeof QuoteSnapshotSchema>
     providerFee: order.providerFee,
     ryntraFee: order.ryntraFee,
     providerReferralAccount: order.providerReferralAccount,
+    ...(order.ryntraFeeAccount ? { ryntraFeeAccount: { owner: order.ryntraFeeAccount.owner, account: order.ryntraFeeAccount.account } } : {}),
     signatureFeeLamports: order.signatureFeeLamports,
     signatureFeePayer: order.signatureFeePayer,
     priorityFeeLamports: order.priorityFeeLamports,

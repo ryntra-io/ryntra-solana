@@ -72,6 +72,7 @@ import {
   type SwapOwnerLockRecord,
 } from "../../solana/swap-owner-lock.ts";
 import { buildSwapPolicyIntent, evaluateSwapPolicy } from "../../solana/swap-policy.ts";
+import { proveBuildFee } from "../../solana/build-fee-proof.ts";
 import { buildSwapQuoteReview } from "../../solana/swap-review.ts";
 import { inspectJupiterSwapTransaction } from "../../solana/swap-transaction-check.ts";
 import type { SolanaAssetPassport } from "../../solana/types.ts";
@@ -121,6 +122,22 @@ export function storeOf(context: { store: GuardStore | null }): GuardStore {
 export function handleOf(context: { handle: SolanaRpcHandle | null }): SolanaRpcHandle {
   context.handle ??= createSolanaRpcHandle({ network: "mainnet" });
   return context.handle;
+}
+
+/**
+ * What the simulation shows the person receiving of the output, raw: the
+ * token delta of the output mint, or — for SOL, which may arrive unwrapped —
+ * the SOL position's change plus the network fee and the rent it keeps, which
+ * the same lamports paid. Null when the proof does not carry it.
+ */
+export function takerOutputOf(
+  proof: Readonly<{ ownerTokenDeltas: readonly Readonly<{ mint: string; rawDelta: string }>[]; takerLamportDelta: string; feeLamports: string; durableRentLamports?: string }>,
+  outputMint: string,
+): string | null {
+  const token = BigInt(proof.ownerTokenDeltas.find((row) => row.mint === outputMint)?.rawDelta ?? "0");
+  if (outputMint !== "So11111111111111111111111111111111111111112") return token > 0n ? token.toString() : null;
+  const received = BigInt(proof.takerLamportDelta) + token + BigInt(proof.feeLamports) + BigInt(proof.durableRentLamports ?? "0");
+  return received > 0n ? received.toString() : null;
 }
 
 const refuse = (status: number, code: string, message: string, extra?: object): StepResult<SwapRefusal> => ({
@@ -326,6 +343,18 @@ const effectFirewall: PipelineStep<SwapReviewGuardContext, SwapRefusal> = {
           : null;
       if (ownerEffects && !ownerEffects.ok) {
         return refuse(409, `SIMULATION_EFFECT_${ownerEffects.code}`, `${ownerEffects.reason} Ask for a fresh order; do not sign.`);
+      }
+      /* Bytes this deployment assembled from `/build` pay Ryntra's fee into its fee account, and the simulation of those exact bytes must say so — the amount the Review states, on the input side. */
+      if (err === null && order.path === "BUILD_SUBMIT" && order.ryntraFeeAccount) {
+        const feeProof = proveBuildFee({
+          staticAccounts: inspection.staticAccounts,
+          feeAccount: order.ryntraFeeAccount.account,
+          expectedRaw: order.ryntraFee.amountRaw,
+          innerInstructions: response.value.innerInstructions,
+          bps: order.ryntraFee.basisPoints,
+          takerOutputRaw: ownerEffects?.ok ? takerOutputOf(ownerEffects.proof, order.outputMint) : null,
+        });
+        if (!feeProof.ok) return refuse(409, `SIMULATION_EFFECT_${feeProof.code}`, `${feeProof.reason} Ask for a fresh order; do not sign.`);
       }
       /* The Review states the rent the chain proved, not the venue's estimate:
          what stays in the accounts opened for the taker, to the lamport, and
@@ -802,6 +831,18 @@ const adoptedBytesReproved: PipelineStep<SwapSignedGuardContext, SwapRefusal> = 
       });
       if (!effects.ok) {
         return refuseBeforeSubmit(409, `ADOPTED_EFFECT_${effects.code}`, `${effects.reason} Nothing was sent.`);
+      }
+      /* The wallet's change of `/build` bytes still pays the reviewed fee, and no more, into the reviewed account. */
+      if (quote.path === "BUILD_SUBMIT" && quote.ryntraFeeAccount) {
+        const feeProof = proveBuildFee({
+          staticAccounts: signedInspection.staticAccounts,
+          feeAccount: quote.ryntraFeeAccount.account,
+          expectedRaw: quote.ryntraFee.amountRaw,
+          innerInstructions: response.value.innerInstructions,
+          bps: quote.ryntraFee.basisPoints,
+          takerOutputRaw: takerOutputOf(effects.proof, quote.outputMint),
+        });
+        if (!feeProof.ok) return refuseBeforeSubmit(409, `ADOPTED_EFFECT_${feeProof.code}`, `${feeProof.reason} Nothing was sent.`);
       }
     } catch (cause) {
       return refuseBeforeSubmit(503, "ADOPTED_SIMULATION_UNAVAILABLE", `The bytes your wallet returned could not be simulated: ${cause instanceof Error ? cause.message : String(cause)}`);

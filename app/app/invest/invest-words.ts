@@ -149,6 +149,8 @@ export const INVEST_WORDS = {
   atLeast: bi("at least", "щонайменше"),
   /* The token's own fee on the transfer, inside «Усі витрати»: «з них комісія емітента 1% ≈ $0,10». */
   issuerFeeOfWhich: bi("of which the issuer's fee", "з них комісія емітента"),
+  /* Ryntra's own fee inside «Усі витрати», beside the issuer's: «з них комісія Ryntra 0,25% · 0,0125 USDC». */
+  ryntraFeeOfWhich: bi("of which the Ryntra fee", "з них комісія Ryntra"),
   priceHolds: bi("The price holds for", "Ціна діє ще"),
   seconds: bi("s", "с"),
   priceExpired: bi("The price has expired", "Ціна застаріла"),

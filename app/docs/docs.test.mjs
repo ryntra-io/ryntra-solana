@@ -15,6 +15,7 @@ import { PRODUCT_ROUTES } from "../shell/product-routes.ts";
 import { MENU_DESTINATIONS, MENU_ROWS, MENU_SECTION_IDS, PRODUCT_PAGE_IDS, drawn } from "../shell/domains.ts";
 import { CUSTOMER_REDIRECTS } from "../../lib/product/customer-routing.ts";
 import { RYNTRA_SERVICE_FEE_POLICY } from "../../lib/swap/service-fee.ts";
+import { FEE_POLICY_V2 } from "../../lib/core/fee-policy.ts";
 import { REWARD_MINIMUM_CLAIM_USD_MICROS, REWARD_RATE_BPS, USD_MICROS_PER_USD } from "../../lib/rewards/model.ts";
 import { POINTS_POLICY_V1 } from "../../lib/points/policy.ts";
 
@@ -189,7 +190,10 @@ test("the documentation speaks only of what is built, and the page count follows
 });
 
 test("every figure the documentation states is the one the product computes with", () => {
-  assert.equal(FEES.swap, `${RYNTRA_SERVICE_FEE_POLICY.JUPITER_REFERRAL / 100}%`);
+  /* Fee policy v2: a token swap from a major's rate to a new token's, a company from xStocks' to Ondo's. */
+  assert.equal(FEES.swap, `${FEE_POLICY_V2.MAJOR.bps / 100}–${FEE_POLICY_V2.MEME.bps / 100}%`);
+  assert.equal(FEES.company, `${FEE_POLICY_V2.XSTOCK.bps / 100}–${FEE_POLICY_V2.ONDO.bps / 100}%`);
+  assert.equal(FEES.flow("STABLE"), "0%");
   assert.equal(FEES.bridge, `${RYNTRA_SERVICE_FEE_POLICY.RELAY_APP_FEE / 100}%`);
   assert.equal(REWARDS.cashbackPercent, REWARD_RATE_BPS.CASHBACK / 100);
   assert.equal(REWARDS.referralL1Percent, REWARD_RATE_BPS.REFERRAL_L1 / 100);
@@ -200,7 +204,8 @@ test("every figure the documentation states is the one the product computes with
   assert.equal(POINTS.tiers.length, POINTS_POLICY_V1.volumeTiers.length);
 
   const fees = textOf(docPageBySlug("reference/fees"), "en");
-  assert.ok(fees.includes(FEES.swap.toLowerCase()) && fees.includes(FEES.bridge.toLowerCase()), "the fees page states both service fees");
+  for (const flow of ["MEME", "TRENDING", "MAJOR", "XSTOCK", "ONDO", "PRESTOCK"]) assert.ok(fees.includes(FEES.flow(flow)), `the fees page states the ${flow} rate`);
+  assert.ok(fees.includes(FEES.bridge.toLowerCase()), "the fees page states the bridge fee");
   const rewards = textOf(docPageBySlug("money/rewards"), "en");
   for (const share of [REWARDS.cashbackPercent, REWARDS.referralL1Percent, REWARDS.referralL2Percent]) {
     assert.ok(rewards.includes(`${share}%`), `the rewards page states the ${share}% share`);

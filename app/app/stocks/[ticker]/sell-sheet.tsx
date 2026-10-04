@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowUpRight, CheckCircle, Warning, X, XCircle } from "@phosphor-icons/react";
+import { ryntraFeeOfWhich } from "./ryntra-fee-line";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
@@ -298,6 +299,7 @@ function SellFlow({ asset, locale, titleId, onBusy, onClose, onConnect }: Readon
   const outUsdc = check?.get.amount ?? null;
   const costs = amount ? (check?.costs ?? null) : null;
   /* «з них комісія емітента 3% ≈ $0,03» — the share of the sale the mint withholds on the transfer, at the rate the chain states. */
+  const ryntraFeeLine = ryntraFeeOfWhich(prepared?.order ?? quoted?.order ?? null, word("ryntraFeeOfWhich"), numbers);
   const issuerFee = costs?.issuerFee ? `${word("issuerFeeOfWhich")} ${new Intl.NumberFormat(numbers, { maximumFractionDigits: 2 }).format(costs.issuerFee.basisPoints / 100)}% ${approxUsd(costs.issuerFee.usd, numbers).replace(" ", " ")}` : null;
   /* The server answered the quote without its lines (the company could not be read): nothing is counted here in their place. */
   const uncounted = Boolean(amount) && quoted !== null && outUsdc === null;
@@ -428,6 +430,7 @@ function SellFlow({ asset, locale, titleId, onBusy, onClose, onConnect }: Readon
             <dd translate="no">
               {costs ? approxUsd(costs.usd, numbers) : "—"}
               {issuerFee ? <span data-issuer-fee>{issuerFee}</span> : null}
+              {ryntraFeeLine ? <span data-ryntra-fee>{ryntraFeeLine}</span> : null}
             </dd>
             {reserve ? <dd data-reserve>{reserveLine(locale, reserve)}</dd> : null}
           </div>

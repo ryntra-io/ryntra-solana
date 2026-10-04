@@ -196,7 +196,13 @@ const venueOrder: PipelineStep<SwapPrepareContext, SwapRefusal> = {
     const planSlippageBps = planRecord ? projectTradingPlan(planRecord, Date.now()).current.rules.execution.maxSlippageBps : undefined;
     const config = resolveServiceFeeConfig();
     const referral = (await verifiedJupiterReferral(config)).referral;
-    const venue = createJupiterSwapVenue({ endpoint: need(context.endpoint, "endpoint"), referral, config });
+    /* Fee policy v2 picks the lane and the fee per flow; the phone stays on `/order` until its client reads 1.24.0. */
+    const venue = createJupiterSwapVenue({
+      endpoint: need(context.endpoint, "endpoint"),
+      referral,
+      config,
+      lanes: { carrier: context.carrier.carrier, handle: handleOf(context) },
+    });
     const account = { kind: "WALLET", network: "solana", address: input.taker } as const;
     const intent: TradeIntent = {
       network: "solana",

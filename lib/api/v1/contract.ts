@@ -572,6 +572,22 @@
  * USDT, PYUSD, USDS) are in `totalUsd` and outside the caps; only a token the
  * catalogue verifies counts in the total. `capabilities.positions` names the
  * route and the caps. A client that does not call the route needs no release.
+ *
+ * **1.24.0 — Fee policy v2.** Additive. A swap's Ryntra fee is its flow's —
+ * memes and new tokens 1.00 %, verified tokens 0.50 %, majors 0.10 %, dollar to
+ * dollar 0, xStocks 0.25 %, Ondo 0.50 %, PreStocks and anything the table does
+ * not name as before. On the web most flows take Jupiter's `/build`: the order
+ * says `path: "BUILD_SUBMIT"`, its fee says `mechanism: "JUPITER_PLATFORM_FEE"`
+ * and `accrual: "FEE_WALLET_TOKEN_ACCOUNT"` — paid whole into Ryntra's fee
+ * wallet in the same transaction, `providerRetainedPercent: 0` — and the order
+ * names `ryntraFeeAccount` (`owner`, the fee wallet, and `account`, its
+ * token account for the fee mint). On the input side `ryntraFee.amountRaw` is
+ * the exact fee before the signature. Such an order is sent once through
+ * Ryntra's own RPC by the same `execute` route; its outcome receipt pins the
+ * action `action:jupiter-swap/build-own-rpc-submit@1`. A `/order` order is unchanged, except that its referral
+ * rate is now the flow's. The native carrier stays on `/order` until the client
+ * reads this version: a client that sums a fee by mechanism adds the new one
+ * beside `JUPITER_REFERRAL` — the fee is already inside Jupiter's total.
  */
 
 import {
@@ -608,7 +624,7 @@ import { STOCK_ISSUER_IDS } from "../../stocks/representations.ts";
 import { z } from "zod";
 
 export const API_MAJOR = 1;
-export const API_CONTRACT_VERSION = "1.23.0";
+export const API_CONTRACT_VERSION = "1.24.0";
 export const API_HEADER = "X-Ryntra-API";
 export const API_VERSION_HEADER = "X-Ryntra-API-Version";
 export const NETWORK = "solana:mainnet";
@@ -4234,7 +4250,7 @@ export const SWAP_SERVICE_FEE_STATES_V1 = ["NONE", "UNCONFIGURED", "NOT_APPLIED"
  */
 export const SwapServiceFeeSchema = z
   .object({
-    mechanism: z.enum(["JUPITER_REFERRAL", "RELAY_APP_FEE", "MAYAN_REFERRER", "NONE"]),
+    mechanism: z.enum(["JUPITER_REFERRAL", "JUPITER_PLATFORM_FEE", "RELAY_APP_FEE", "MAYAN_REFERRER", "NONE"]),
     state: z.enum(SWAP_SERVICE_FEE_STATES_V1),
     basisPoints: z.number().int().min(0).max(10_000),
     requestedBasisPoints: z.number().int().min(0).max(10_000),
@@ -4243,7 +4259,7 @@ export const SwapServiceFeeSchema = z
     decimals: z.number().int().min(0).max(24).nullable(),
     amountRaw: SwapDigits.nullable(),
     usd: z.number().finite().nullable(),
-    accrual: z.enum(["JUPITER_REFERRAL_TOKEN_ACCOUNT", "RELAY_APP_BALANCE_USDC", "MAYAN_ONCHAIN_REFERRER", "NONE"]),
+    accrual: z.enum(["JUPITER_REFERRAL_TOKEN_ACCOUNT", "FEE_WALLET_TOKEN_ACCOUNT", "RELAY_APP_BALANCE_USDC", "MAYAN_ONCHAIN_REFERRER", "NONE"]),
     providerRetainedPercent: z.number().int().min(0).max(100).nullable(),
     settlement: z
       .object({
@@ -4282,7 +4298,8 @@ export type SwapJupiterRouteHop = z.infer<typeof SwapJupiterRouteHopSchema>;
 const SwapJupiterOrderShape = {
   schemaVersion: z.literal("1.0.0"),
   provider: z.literal("jupiter"),
-  path: z.literal("ORDER_EXECUTE"),
+  /** 1.24.0: `BUILD_SUBMIT` — Jupiter's `/build` instructions, assembled and sent by Ryntra. */
+  path: z.enum(["ORDER_EXECUTE", "BUILD_SUBMIT"]),
   access: z.enum(["production", "degraded"]),
   tier: z.enum(["pro", "lite"]),
   swapType: z.string().min(1).max(64),
@@ -4311,6 +4328,8 @@ const SwapJupiterOrderShape = {
   ryntraFee: SwapServiceFeeSchema,
   /** The referral account Jupiter echoed back — the field that decides whether the fee exists. */
   providerReferralAccount: z.string().min(1).max(44).nullable(),
+  /** 1.24.0, `BUILD_SUBMIT` only: the fee wallet and its token account the fee is paid into. */
+  ryntraFeeAccount: z.object({ owner: Address, account: Address }).strict().optional(),
   signatureFeeLamports: RawAmount,
   signatureFeePayer: z.string().min(1).max(44).nullable(),
   priorityFeeLamports: RawAmount,
@@ -4368,7 +4387,7 @@ const SwapReviewQuoteSchema = z
     schema: z.literal("ryntra.solana.jupiter-order-quote"),
     schemaVersion: z.literal("1.0.0"),
     provider: z.literal("jupiter"),
-    path: z.literal("ORDER_EXECUTE"),
+    path: z.enum(["ORDER_EXECUTE", "BUILD_SUBMIT"]),
     access: z.enum(["production", "degraded"]),
     tier: z.enum(["pro", "lite"]),
     execution: z.literal("NOT_EXECUTED"),
@@ -4393,6 +4412,7 @@ const SwapReviewQuoteSchema = z
     providerFee: SwapReviewFeeSchema,
     ryntraFee: SwapServiceFeeSchema,
     providerReferralAccount: z.string().min(32).max(44).nullable(),
+    ryntraFeeAccount: z.object({ owner: z.string().min(32).max(44), account: z.string().min(32).max(44) }).strict().optional(),
     signatureFeeLamports: SwapDigits,
     signatureFeePayer: z.string().min(32).max(44).nullable(),
     priorityFeeLamports: SwapDigits,

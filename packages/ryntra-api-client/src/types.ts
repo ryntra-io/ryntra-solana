@@ -26,7 +26,7 @@
  */
 
 export const API_MAJOR = 1 as const;
-export const API_CONTRACT_VERSION = "1.23.0" as const;
+export const API_CONTRACT_VERSION = "1.24.0" as const;
 export const API_HEADER = "X-Ryntra-API" as const;
 export const API_VERSION_HEADER = "X-Ryntra-API-Version" as const;
 export const NETWORK = "solana:mainnet" as const;
@@ -1950,7 +1950,7 @@ export type SwapOrderRequest = Readonly<{
 }>;
 
 export type SwapServiceFee = Readonly<{
-  mechanism: "JUPITER_REFERRAL" | "RELAY_APP_FEE" | "MAYAN_REFERRER" | "NONE";
+  mechanism: "JUPITER_REFERRAL" | "JUPITER_PLATFORM_FEE" | "RELAY_APP_FEE" | "MAYAN_REFERRER" | "NONE";
   state: SwapServiceFeeState;
   basisPoints: number;
   requestedBasisPoints: number;
@@ -1959,7 +1959,7 @@ export type SwapServiceFee = Readonly<{
   decimals: number | null;
   amountRaw: string | null;
   usd: number | null;
-  accrual: "JUPITER_REFERRAL_TOKEN_ACCOUNT" | "RELAY_APP_BALANCE_USDC" | "MAYAN_ONCHAIN_REFERRER" | "NONE";
+  accrual: "JUPITER_REFERRAL_TOKEN_ACCOUNT" | "FEE_WALLET_TOKEN_ACCOUNT" | "RELAY_APP_BALANCE_USDC" | "MAYAN_ONCHAIN_REFERRER" | "NONE";
   providerRetainedPercent: number | null;
   settlement: Readonly<{
     userPaidRaw: string | null;
@@ -1991,7 +1991,7 @@ export type SwapJupiterQuote = Readonly<{
   transactionBase64: null;
   schemaVersion: "1.0.0";
   provider: "jupiter";
-  path: "ORDER_EXECUTE";
+  path: "ORDER_EXECUTE" | "BUILD_SUBMIT";
   access: "production" | "degraded";
   tier: "pro" | "lite";
   swapType: string;
@@ -2014,6 +2014,8 @@ export type SwapJupiterQuote = Readonly<{
   providerFee: Readonly<{ basisPoints: null; mint: null; amountRaw: null }>;
   ryntraFee: SwapServiceFee;
   providerReferralAccount: string | null;
+  /** 1.24.0, `BUILD_SUBMIT` only: the fee wallet and its token account the fee is paid into. */
+  ryntraFeeAccount?: Readonly<{ owner: string; account: string }>;
   signatureFeeLamports: string;
   signatureFeePayer: string | null;
   priorityFeeLamports: string;
@@ -2041,7 +2043,7 @@ export type SwapJupiterOrder = Readonly<{
   lastValidBlockHeight: string;
   schemaVersion: "1.0.0";
   provider: "jupiter";
-  path: "ORDER_EXECUTE";
+  path: "ORDER_EXECUTE" | "BUILD_SUBMIT";
   access: "production" | "degraded";
   tier: "pro" | "lite";
   swapType: string;
@@ -2064,6 +2066,8 @@ export type SwapJupiterOrder = Readonly<{
   providerFee: Readonly<{ basisPoints: null; mint: null; amountRaw: null }>;
   ryntraFee: SwapServiceFee;
   providerReferralAccount: string | null;
+  /** 1.24.0, `BUILD_SUBMIT` only: the fee wallet and its token account the fee is paid into. */
+  ryntraFeeAccount?: Readonly<{ owner: string; account: string }>;
   signatureFeeLamports: string;
   signatureFeePayer: string | null;
   priorityFeeLamports: string;
@@ -2095,7 +2099,7 @@ export type SwapReview = Readonly<{
     schema: "ryntra.solana.jupiter-order-quote";
     schemaVersion: "1.0.0";
     provider: "jupiter";
-    path: "ORDER_EXECUTE";
+    path: "ORDER_EXECUTE" | "BUILD_SUBMIT";
     access: "production" | "degraded";
     tier: "pro" | "lite";
     execution: "NOT_EXECUTED";
@@ -2120,6 +2124,8 @@ export type SwapReview = Readonly<{
     providerFee: Readonly<{ basisPoints: number | null; mint: string | null; amountRaw: string | null }>;
     ryntraFee: SwapServiceFee;
     providerReferralAccount: string | null;
+    /** 1.24.0, `BUILD_SUBMIT` only: the fee wallet and its token account the fee is paid into. */
+    ryntraFeeAccount?: Readonly<{ owner: string; account: string }>;
     signatureFeeLamports: string;
     signatureFeePayer: string | null;
     priorityFeeLamports: string;

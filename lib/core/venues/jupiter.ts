@@ -1,12 +1,13 @@
 /**
  * Jupiter as a trade venue of the core — the first adapter on the pipeline.
  *
- * It wraps the swap lane that runs on production (`lib/solana/quotes.ts`) and
- * changes none of it: the same taker order from Swap API v2 `/order`, the same
- * Ryntra fee through the referral account, the same single ask more after a
- * refusal for rate, the same one-shot managed `/execute`. Jupiter's `/order`
- * answers with the price and the built transaction at once, so `build` hands
- * back the bytes the quote already carries — nothing is fetched twice.
+ * It carries both Jupiter lanes of fee policy v2 (`../fee-policy.ts`): Swap
+ * API v2 `/order` with the referral fee and the one-shot managed `/execute`,
+ * and `/build`, whose bytes this deployment assembles with Ryntra's fee paid
+ * into its own fee wallet and sends once through its own RPC. Which lane, and
+ * which fee, is decided per flow in `../solana-swap/fee-route.server.ts`; the
+ * venue answers with the price and the built transaction at once, so `build`
+ * hands back the bytes the quote already carries — nothing is fetched twice.
  *
  * A refusal is not a quote: `quote` throws `JupiterOrderRefusal` carrying the
  * venue's own answer untouched, and the pipeline step decides what the person
@@ -14,6 +15,7 @@
  */
 
 import { askOnceMoreAfterRate } from "../../solana/jupiter-ask-again.ts";
+import type { SolanaRpcHandle } from "../../solana/rpc.ts";
 import { JUPITER_ORDER_RETRY_WAIT_MAX_MS } from "../../solana/jupiter-budget.ts";
 import {
   executeJupiterOrder,
@@ -26,6 +28,8 @@ import {
 } from "../../solana/quotes.ts";
 import type { ServiceFeeConfig } from "../../swap/service-fee.ts";
 import { findCapability, resolveFeeIdentity } from "../capabilities.ts";
+import type { FeeFlow } from "../fee-policy.ts";
+import { chooseExecutableOrder, type FeePolicyCarrier } from "../solana-swap/fee-route.server.ts";
 import type { Attribution, FeeIdentity, Product, Quote, TradeIntent, TradeVenue, TradingAccount, UnsignedTx } from "../contracts.ts";
 
 /** The venue refused to price or build; its answer is carried as it came. */
@@ -75,11 +79,33 @@ export function createJupiterSwapVenue(args: Readonly<{
   referral: JupiterReferral | null;
   /** The configured addresses, for `identity`. */
   config: ServiceFeeConfig;
+  /**
+   * Fee policy v2's lane choice for the person's own order: who carries the
+   * request and the RPC that sizes and checks `/build`'s bytes. Absent, the
+   * venue asks `/order` with `referral` as production did before the policy.
+   */
+  lanes?: Readonly<{ carrier: FeePolicyCarrier; handle: SolanaRpcHandle; onChoice?: (choice: Readonly<{ flow: FeeFlow; lane: "BUILD" | "ORDER" }>) => void }>;
 }>): JupiterSwapVenue {
-  const { endpoint, referral, config } = args;
+  const { endpoint, referral, config, lanes } = args;
   return {
     venue: "jupiter",
     async quote(intent: TradeIntent): Promise<JupiterQuote> {
+      if (lanes) {
+        const choice = await chooseExecutableOrder({
+          inputMint: intent.inputAsset,
+          outputMint: intent.outputAsset,
+          amountRaw: intent.amountRaw,
+          taker: intent.account.address,
+          ...(intent.slippageBps !== undefined ? { slippageBps: intent.slippageBps } : {}),
+          carrier: lanes.carrier,
+          endpoint,
+          handle: lanes.handle,
+          config,
+        });
+        if (!choice.ok) throw new JupiterOrderRefusal(choice.failure);
+        lanes.onChoice?.({ flow: choice.flow, lane: choice.lane });
+        return quoteFromJupiterOrder(intent, choice.order);
+      }
       const result = await askOnceMoreAfterRate(
         () =>
           fetchJupiterExecutableOrder(
@@ -103,6 +129,8 @@ export function createJupiterSwapVenue(args: Readonly<{
       return { network: "solana", wireBase64: quote.native.transactionBase64, validUntil: quote.native.lastValidBlockHeight };
     },
     execute(signedTransactionBase64: string, requestId: string): Promise<JupiterExecuteResult> {
+      /* `/build`'s bytes were assembled here and are not `/order`'s: `/execute` would refuse them, and they go out through the deployment's own RPC. */
+      if (requestId.startsWith("build:")) throw new Error("A /build order is sent through the deployment's own RPC, never through /execute.");
       return executeJupiterOrder({ signedTransactionBase64, requestId }, endpoint);
     },
     identity(product: Product): FeeIdentity {

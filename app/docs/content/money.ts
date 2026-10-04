@@ -188,13 +188,13 @@ export const REWARDS_PAGE: DocPage = {
       ),
       facts(
         [
-          ["Eligible operations", `Purchases, Swap and Spot (${FEES.swap} fee), Bridge (${FEES.bridge} fee)`],
+          ["Eligible operations", `Purchases (${FEES.company} fee), Swap and Spot (${FEES.swap} fee), Bridge (${FEES.bridge} fee)`],
           ["Paid in", "USDC on Solana, to the wallet you are signed in with"],
           ["Claim from", `$${REWARDS.claimFloorUsd.toFixed(2)} USDC`],
           ["Timing", "A reward reads Pending until the operation has settled and its fee is confirmed, then Available"],
         ],
         [
-          ["Що зараховується", `Купівлі, Обмін і Спот (комісія ${FEES_UK.swap}), Міст (комісія ${FEES_UK.bridge})`],
+          ["Що зараховується", `Купівлі (комісія ${FEES_UK.company}), Обмін і Спот (комісія ${FEES_UK.swap}), Міст (комісія ${FEES_UK.bridge})`],
           ["Виплата", "USDC на Solana — на гаманець, яким виконано вхід"],
           ["Виплата від", `$${REWARDS.claimFloorUsd.toFixed(2).replace(".", ",")} USDC`],
           ["Час", "Винагорода читається як «Очікує», поки операція не завершена й комісія не підтверджена, потім — «Доступно»"],

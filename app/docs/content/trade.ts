@@ -30,14 +30,14 @@ export const SWAP: DocPage = {
         [
           ["Assets", "Any Solana token with a market; verified tokens are marked"],
           ["Quote", "Live, from the aggregated Solana liquidity; refreshes while you look"],
-          ["Ryntra service fee", `${FEES.swap} of the amount, included in the quote you see`],
+          ["Ryntra service fee", `${FEES.swap} of the amount by the token — none from dollar to dollar — with its amount in the quote you see`],
           ["Your net cost", `${FEES.swapNetOfCashback} after the ${REWARDS.cashbackPercent}% cashback in Rewards`],
           ["Signature", "Your wallet's, for the exact transaction you reviewed"],
         ],
         [
           ["Активи", "Будь-який токен Solana, що має ринок; перевірені токени позначено"],
           ["Котирування", "Живе, з агрегованої ліквідності Solana; оновлюється, поки ти дивишся"],
-          ["Комісія Ryntra", `${FEES_UK.swap} від суми, уже в котируванні, яке ти бачиш`],
+          ["Комісія Ryntra", `${FEES_UK.swap} від суми залежно від токена — між доларами немає — із сумою в котируванні, яке ти бачиш`],
           ["Твоя чиста вартість", `${FEES_UK.swapNetOfCashback} після кешбеку ${REWARDS.cashbackPercent}% у Винагородах`],
           ["Підпис", "Твого гаманця — рівно на ту транзакцію, що була в «Перевірці»"],
         ],
@@ -166,14 +166,14 @@ export const SPOT: DocPage = {
         [
           ["Categories", "All · Crypto · Memes · Stocks/RWA · Watchlist"],
           ["Pay or receive in", "USDC or SOL, switched on the ticket"],
-          ["Ryntra service fee", `${FEES.spot} of the amount, included in the quote`],
+          ["Ryntra service fee", `${FEES.spot} of the amount by the token, with its amount in the quote`],
           ["Execution", "Aggregated Solana liquidity; the same engine as Swap"],
           ["Hours", "Around the clock — Solana markets do not close"],
         ],
         [
           ["Категорії", "Усі · Крипта · Меми · Акції/RWA · Обране"],
           ["Оплата чи отримання", "USDC або SOL, перемикач на квитку"],
-          ["Комісія Ryntra", `${FEES_UK.spot} від суми, уже в котируванні`],
+          ["Комісія Ryntra", `${FEES_UK.spot} від суми залежно від токена, із сумою в котируванні`],
           ["Виконання", "Агрегована ліквідність Solana; той самий рушій, що й Обмін"],
           ["Години", "Цілодобово — ринки Solana не зачиняються"],
         ],

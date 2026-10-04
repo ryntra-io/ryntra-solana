@@ -28,7 +28,7 @@ import {
 import { assessSwapWalletAdoption } from "@/lib/solana/swap-adoption";
 import { inspectJupiterSwapTransaction } from "@/lib/solana/swap-transaction-check";
 import { signTransaction } from "@/lib/solana/wallet.client";
-import { serviceFeeText, type RyntraServiceFee } from "@/lib/swap/service-fee";
+import { serviceFeeReviewText, serviceFeeText, type RyntraServiceFee } from "@/lib/swap/service-fee";
 import { FEATURED_MINTS } from "../assets/featured.ts";
 import { useSolanaConnection } from "../connection.tsx";
 import { useSolanaI18n } from "../i18n/provider.tsx";
@@ -1489,12 +1489,20 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
   const accountReserveSol = prepared
     ? (Number(BigInt(prepared.order.rentFeeLamports)) / 1e9).toFixed(6)
     : "0";
-  /* The rate, plus the amount when the provider states one. Jupiter states a
-     rate and no amount, so this is usually just `0.50%` — and saying only what
-     the provider said is the point. A route with no fee reads `0.00%`, not a
-     blank. */
+  /* The rate and the amount: exact where the fee is known before the swap
+     (`/build` takes it from what the person typed), else `≈` a share of the
+     side it is taken from — the settled card then states the chain's figure.
+     A route with no fee reads `0.00%`, not a blank. */
   const reviewServiceFee = prepared ? ryntraServiceFee(prepared.order) : null;
-  const reviewServiceFeeText = reviewServiceFee ? serviceFeeText(reviewServiceFee, "0.00%") : "0.00%";
+  const reviewServiceFeeText =
+    prepared && reviewServiceFee
+      ? serviceFeeReviewText(
+          reviewServiceFee,
+          { inputMint: prepared.order.inputMint, outputMint: prepared.order.outputMint, inputRaw: prepared.order.inAmountRaw, quotedOutputRaw: prepared.order.outAmountRaw },
+          { [sellMint]: { decimals: sellDecimalsKnown, code: sell.code }, [buyMint]: { decimals: buyDecimalsKnown, code: buy.code } },
+          { none: "0.00%", usd: { input: Number(prepared.order.inUsdValue) || null, output: Number(prepared.order.outUsdValue) || null } },
+        )
+      : "0.00%";
   const reviewHeading = preparedReadiness?.ready ? text("Ready to sign") : text("Review needs refreshing");
   const reviewWarnings = prepared
     ? prepared.policy.verdict.findings.filter((finding) => finding.outcome === "REVIEW")
@@ -1647,6 +1655,16 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
        than an unknown. The day that stops being true, the field arrives and
        this row changes with it. */
     ryntraFee: priced ? ryntraServiceFee(contextOrder) : null,
+    feeQuote: priced
+      ? {
+          inputMint: contextOrder.inputMint,
+          outputMint: contextOrder.outputMint,
+          inputRaw: contextOrder.inAmountRaw,
+          quotedOutputRaw: contextOrder.outAmountRaw,
+          sides: { [sellMint]: { decimals: sellDecimalsKnown, code: sell.code }, [buyMint]: { decimals: buyDecimalsKnown, code: buy.code } },
+          usd: { input: Number(contextOrder.inUsdValue) || null, output: Number(contextOrder.outUsdValue) || null },
+        }
+      : null,
     networkFeeSol: priced
       ? (
           Number(
@@ -1724,7 +1742,7 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
                       </div>
                     ) : null}
                     <div>
-                      <dt>{text("Ryntra service fee")}</dt>
+                      <dt>{text("Ryntra fee")}</dt>
                       <dd translate="no">{settledFee ? serviceFeeText(settledFee, text("None")) : text("None")}</dd>
                     </div>
                   </dl>
@@ -1910,15 +1928,6 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
                   {text("You receive at least")}
                   <b translate="no">{displayAmount(prepared.order.minReceivedRaw, buyDecimals)} {buy.code}</b>
                 </span>
-                {/* Ryntra's own fee, in the Review, beside the two figures a
-                    person is deciding on. It is deliberately not folded into the
-                    network fee or the price: a service fee is what this company
-                    charges, and the one place it must never be is implicit.
-                    A route that carries none prints a zero rather than nothing. */}
-                <span>
-                  {text("Ryntra service fee")}
-                  <b translate="no">{reviewServiceFeeText}</b>
-                </span>
                 <span>
                   {text("Network fee estimate")}
                   <b translate="no">{estimatedNetworkFeeSol} SOL</b>
@@ -1929,6 +1938,16 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
                     <b translate="no">{accountReserveSol} SOL</b>
                   </span>
                 ) : null}
+                {/* Ryntra's own fee, in the Review, beside the figures a person
+                    is deciding on, on a row of its own: the rate and the amount
+                    stay one figure. It is deliberately not folded into the
+                    network fee or the price: a service fee is what this company
+                    charges, and the one place it must never be is implicit.
+                    A route that carries none prints a zero rather than nothing. */}
+                <span data-wide="true">
+                  {text("Ryntra fee")}
+                  <b translate="no">{reviewServiceFeeText}</b>
+                </span>
               </div>
               {reviewServiceFee?.mechanism === "JUPITER_REFERRAL" && reviewServiceFee.basisPoints > 0 ? (
                 <p className={styles.feeNote}>{text("Includes Jupiter's share. Already included in the quote.")}</p>

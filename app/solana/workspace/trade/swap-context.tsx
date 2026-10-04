@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { displayAmount } from "@/lib/solana/amounts";
-import { additionalJupiterFeeBps, serviceFeeText, type RyntraServiceFee } from "@/lib/swap/service-fee";
+import { additionalJupiterFeeBps, serviceFeeReviewText, serviceFeeText, type RyntraServiceFee } from "@/lib/swap/service-fee";
 import { useSolanaI18n } from "../i18n/provider";
 export type SwapSide = Readonly<{
   mint: string;
@@ -34,6 +34,8 @@ export type SwapFacts = Readonly<{
    * actually arrives.
    */
   ryntraFee: RyntraServiceFee | null;
+  /** The quote the fee is a share of, and the scale of both sides — so «Комісія Ryntra» states an amount, not only a rate. Null before there is a quote. */
+  feeQuote: Readonly<{ inputMint: string; outputMint: string; inputRaw: string; quotedOutputRaw: string; sides: Readonly<Record<string, Readonly<{ decimals: number | null; code: string | null }>>>; usd: Readonly<{ input: number | null; output: number | null }> }> | null;
   networkFeeSol: string | null;
   accountReserveSol: string | null;
   provider: string | null;
@@ -80,7 +82,7 @@ export function SwapContext({sell,buy,buyDecimals,facts}:{sell:SwapSide;buy:Swap
  {facts.accountReserveSol!==null?<div><dt>{uk?"Резерв для рахунку":"Account reserve"}</dt><dd>{facts.accountReserveSol} SOL</dd></div>:null}
  {additionalFee!==null && additionalFee>0?<div><dt>{uk?"Додаткова комісія Jupiter":"Additional Jupiter fee"}</dt><dd>{(additionalFee/100).toFixed(2)}%</dd></div>:null}
  {/* The referral fee is part of Jupiter's total, not an additional charge. */}
- {facts.ryntraFee!==null?<div><dt>{uk?"Комісія Ryntra":"Ryntra service fee"}</dt><dd>{serviceFeeText(facts.ryntraFee,uk?"Немає":"None")}</dd></div>:null}
+ {facts.ryntraFee!==null?<div><dt>{uk?"Комісія Ryntra":"Ryntra fee"}</dt><dd translate="no">{facts.feeQuote?serviceFeeReviewText(facts.ryntraFee,facts.feeQuote,facts.feeQuote.sides,{none:uk?"Немає":"None",usd:facts.feeQuote.usd}):serviceFeeText(facts.ryntraFee,uk?"Немає":"None")}</dd></div>:null}
  {provider?<div><dt>{uk?"Виконавець":"Provider"}</dt><dd>{provider}</dd></div>:null}
  {facts.route.length>0?<div><dt>{uk?"Маршрут":"Route"}</dt><dd>{facts.route.map(x=>x.label).join(" → ")}</dd></div>:null}
  </dl>:null}

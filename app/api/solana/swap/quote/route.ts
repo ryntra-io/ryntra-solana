@@ -23,6 +23,8 @@ import { serverSendPolicy } from "@/lib/solana/send-safety";
 import { buildSwapQuoteReview } from "@/lib/solana/swap-review";
 import type { SolanaAssetPassport } from "@/lib/solana/types";
 import { awaitCheckContext, readCheckContext, swapCheckOf } from "@/lib/stocks/check.server";
+import { chooseQuote } from "@/lib/core/solana-swap/fee-route.server";
+import { mutationOriginAllowed } from "@/lib/security";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -122,11 +124,17 @@ export async function POST(request: Request) {
     decimals[mint] = passport.passport.identity.decimals.value;
   }
 
-  const referral = (await verifiedJupiterReferral(resolveServiceFeeConfig())).referral;
-  /* A quote moves nothing: refused for rate alone, it is asked once more after the provider's own short pause (DECISIONS 2026-09-15) — the sum the person typed is priced, not answered «Забагато запитів». */
-  const result = await askOnceMoreAfterRate(() =>
-    fetchJupiterOrder({ inputMint: input.inputMint, outputMint: input.outputMint, amountRaw: input.amountRaw, referral }, selection),
-  );
+  const config = resolveServiceFeeConfig();
+  /* Fee policy v2 prices the lane the web's Review will be built on; the phone and any other caller keep `/order` as before until the mobile line reads 1.24.0. A quote moves nothing: refused for rate alone, it is asked once more after the provider's own short pause (DECISIONS 2026-09-15). */
+  const fromSite = mutationOriginAllowed(request.url, request.headers.get("origin"), request.headers.get("sec-fetch-site"));
+  const result = fromSite
+    ? await chooseQuote({ inputMint: input.inputMint, outputMint: input.outputMint, amountRaw: input.amountRaw, selection, handle, config }).then((choice) =>
+        choice.ok ? ({ ok: true, order: choice.order } as const) : choice.failure,
+      )
+    : await askOnceMoreAfterRate(async () => {
+        const referral = (await verifiedJupiterReferral(config)).referral;
+        return fetchJupiterOrder({ inputMint: input.inputMint, outputMint: input.outputMint, amountRaw: input.amountRaw, referral }, selection);
+      });
   if (!result.ok) {
     const status = result.code === "NO_ROUTE" ? 409 : result.code === "RATE_LIMITED" ? 429 : 502;
     return failure(status, `QUOTE_${result.code}`, result.reason, rate, {

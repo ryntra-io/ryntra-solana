@@ -20,6 +20,8 @@ import { verifiedJupiterReferral } from "../solana/referral-account.server.ts";
 import type { JupiterReferral } from "../solana/quotes.ts";
 import { SOLANA_MAINNET_USDC_MINT } from "../solana/send-kinds.ts";
 import { resolveServiceFeeConfig } from "../swap/service-fee.server.ts";
+import { chooseQuote } from "../core/solana-swap/fee-route.server.ts";
+import { createSolanaRpcHandle } from "../solana/rpc.ts";
 import type { Lifecycle, TransferFee, UnitBasis } from "./instrument.ts";
 import { findStockRow, type StockRow } from "./universe.server.ts";
 import { deviationPct, perShareExecutable, scaledAmountString, STOCK_QUOTE_PRESETS_USD } from "./units.ts";
@@ -109,6 +111,8 @@ export async function quoteStock(
     sleep?: (ms: number) => Promise<void>;
     findRow?: typeof findStockRow;
     referral?: () => Promise<JupiterReferral | null>;
+    /** Fee policy v2's lane for the web, so the figure is the web Review's; absent, `/order` as before (the phone, until it reads 1.24.0). */
+    feePolicy?: "v2";
   }> = {},
 ): Promise<{ ok: true; quote: StockQuote } | StockQuoteFailure> {
   if (!Number.isFinite(input.usd) || input.usd < 1 || input.usd > STOCK_QUOTE_MAX_USD) {
@@ -127,7 +131,7 @@ export async function quoteStock(
   if (input.side === "BUY" && row.lifecycle?.tradable === false) {
     return { ok: false, code: "LIFECYCLE", reason: row.lifecycle.note ?? "The issuer does not offer this token for purchase now." };
   }
-  const key = `${row.representation.mint}:${input.side}:${input.usd}`;
+  const key = `${row.representation.mint}:${input.side}:${input.usd}:${deps.feePolicy ?? "as-now"}`;
   const now = (deps.now ?? (() => new Date()))();
   const hit = cache.get(key);
   if (hit && now.getTime() - hit.at < QUOTE_TTL_MS) return { ok: true, quote: hit.value };
@@ -151,8 +155,14 @@ export async function quoteStock(
     request = { inputMint: mint, outputMint: SOLANA_MAINNET_USDC_MINT, amountRaw: raw.toString() };
   }
 
-  const referral = deps.referral ? await deps.referral() : (await verifiedJupiterReferral(resolveServiceFeeConfig())).referral;
-  const askOrder = deps.order ?? fetchJupiterOrder;
+  const v2 = deps.feePolicy === "v2" && !deps.order;
+  const referral = v2 ? null : deps.referral ? await deps.referral() : (await verifiedJupiterReferral(resolveServiceFeeConfig())).referral;
+  const askOrder: typeof fetchJupiterOrder = v2
+    ? async (asked, selection) => {
+        const choice = await chooseQuote({ inputMint: asked.inputMint, outputMint: asked.outputMint, amountRaw: asked.amountRaw, selection: selection ?? resolveJupiterSwapEndpoint(), handle: createSolanaRpcHandle({ network: "mainnet" }), config: resolveServiceFeeConfig() });
+        return choice.ok ? { ok: true, order: choice.order } : { ...choice.failure, code: choice.failure.code === "BUILD_FAILED" ? "HTTP_ERROR" : choice.failure.code } as JupiterOrderResult;
+      }
+    : (deps.order ?? fetchJupiterOrder);
   let result: JupiterOrderResult = await askOrder({ ...request, referral }, resolveJupiterSwapEndpoint());
   /* A quote moves nothing and has no taker, so a refusal for rate alone may
      be asked once more — only when the provider's own pause is short enough

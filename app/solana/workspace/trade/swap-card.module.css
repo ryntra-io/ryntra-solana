@@ -309,6 +309,11 @@
   text-align: right;
 }
 
+/* Ryntra's fee, whose rate and amount are one figure, takes the whole row. */
+.exactReviewGrid > span[data-wide] {
+  grid-column: 1 / -1;
+}
+
 .reviewWarnings {
   display: grid;
   gap: 6px;

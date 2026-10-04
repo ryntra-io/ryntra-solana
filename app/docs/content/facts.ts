@@ -20,6 +20,7 @@ import { RULE_REMINDER_HOURS } from "../../../lib/autoinvest/schedule.ts";
 import { POINTS_POLICY_V1 } from "../../../lib/points/policy.ts";
 import { REWARD_MINIMUM_CLAIM_USD_MICROS, REWARD_RATE_BPS, USD_MICROS_PER_USD } from "../../../lib/rewards/model.ts";
 import { RYNTRA_SERVICE_FEE_POLICY } from "../../../lib/swap/service-fee.ts";
+import { FEE_POLICY_V2, type FeeFlow } from "../../../lib/core/fee-policy.ts";
 
 /**
  * The figures the documentation states, read from the code that charges,
@@ -32,13 +33,29 @@ const bpsToPercent = (bps: number): string => {
   return `${Number.isInteger(value) ? value.toFixed(0) : value.toFixed(2).replace(/0$/, "")}%`;
 };
 
-/** Ryntra's service fee on each lane, as the product quotes it. */
+/** A range of rates, «0.1–1%», from the lowest and the highest of the flows named. */
+const rangeOf = (flows: readonly FeeFlow[], scale = 1): string => {
+  const rates = flows.map((flow) => FEE_POLICY_V2[flow].bps * scale).filter((bps) => bps > 0);
+  const low = Math.min(...rates);
+  const high = Math.max(...rates);
+  return low === high ? bpsToPercent(low) : `${bpsToPercent(low).replace("%", "")}–${bpsToPercent(high)}`;
+};
+const TOKEN_FLOWS: readonly FeeFlow[] = ["MEME", "TRENDING", "MAJOR"];
+const COMPANY_FLOWS: readonly FeeFlow[] = ["XSTOCK", "ONDO", "PRESTOCK"];
+const NET_OF_CASHBACK = (10_000 - REWARD_RATE_BPS.CASHBACK) / 10_000;
+
+/** Ryntra's service fee on each lane, as the product quotes it — fee policy v2, by the trade's flow. */
 export const FEES = {
-  swap: bpsToPercent(RYNTRA_SERVICE_FEE_POLICY.JUPITER_REFERRAL),
-  spot: bpsToPercent(RYNTRA_SERVICE_FEE_POLICY.JUPITER_REFERRAL),
+  /** A token swap: from a major's rate to a new token's. */
+  swap: rangeOf(TOKEN_FLOWS),
+  spot: rangeOf(TOKEN_FLOWS),
+  /** A company: xStocks to Ondo and pre-IPO. */
+  company: rangeOf(COMPANY_FLOWS),
   bridge: bpsToPercent(RYNTRA_SERVICE_FEE_POLICY.RELAY_APP_FEE),
   /** The trader's share of the collected fee returned as cashback, applied to the swap lane. */
-  swapNetOfCashback: bpsToPercent(RYNTRA_SERVICE_FEE_POLICY.JUPITER_REFERRAL * (10_000 - REWARD_RATE_BPS.CASHBACK) / 10_000),
+  swapNetOfCashback: rangeOf(TOKEN_FLOWS, NET_OF_CASHBACK),
+  /** One flow's rate, «1%». */
+  flow: (flow: FeeFlow): string => (FEE_POLICY_V2[flow].bps === 0 ? "0%" : bpsToPercent(FEE_POLICY_V2[flow].bps)),
 } as const;
 
 /** A figure as Ukrainian writes it — a comma for the decimal point, «0,5%», as the app's own Ukrainian does («100,06%»). */
@@ -48,8 +65,10 @@ export const ukDecimal = (text: string): string => text.replace(/(\d)\.(\d)/g, "
 export const FEES_UK = {
   swap: ukDecimal(FEES.swap),
   spot: ukDecimal(FEES.spot),
+  company: ukDecimal(FEES.company),
   bridge: ukDecimal(FEES.bridge),
   swapNetOfCashback: ukDecimal(FEES.swapNetOfCashback),
+  flow: (flow: FeeFlow): string => ukDecimal(FEES.flow(flow)),
 } as const;
 
 /** A purchase in Simple: the least it can be, the sum the sheet opens on, and the shares of the wallet's USDC one press chooses. */

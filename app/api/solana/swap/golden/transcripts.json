@@ -7724,7 +7724,7 @@
       "id": "swap:golden-order-0001",
       "createdAt": "2026-10-01T12:00:00.000Z",
       "registry": {
-       "registryDigest": "0xd8e0b494dc7783fad9f5d75136cc1699e2abae9b412b9c1682440fa1e1968098",
+       "registryDigest": "0x505ff36d6503c0ec0bc68d99be7b11ceb7fbee6dfe3faa0cd6e1c213fad98b94",
        "refs": [
         {
          "ref": "action:jupiter-swap/order-execute@1",
@@ -7736,18 +7736,18 @@
         }
        ]
       },
-      "contentHash": "0xd4a121a80c31cb34c8ce911e8a05b95e3282d48e3689752446733413b2c5b0fa",
+      "contentHash": "0x410ef633eb41fa8808a63afda0dc766748758c1231424cc8809058c9bf2dde5f",
       "issuer": {
        "status": "SIGNED",
        "algorithm": "Ed25519",
        "keyId": "ryntra-issuer-e55d72c9bfe4ae41",
        "publicKey": "MCowBQYDK2VwAyEAXsjIwPY/rspBCLc7FAoPSaGaZONLYDuoC7Y2/gbTe2o=",
-       "signature": "GrMhOh+NTg7EQYjydD7Zs/zhDWnp5PuZuE4vIOcmGrq/PyVwegmZuOipbgDHJqQFgmsD8DV9FY/5fbfzzl8sBg==",
+       "signature": "UjYyRBBTDZVsSUQjX7Kajdm6zgzqF5ig1WIKTL26JoL++Dt7S6Mx9G7qF9ByguY9ZN450sMvftLOlQhBoNRcDA==",
        "signedAt": "2026-10-01T12:00:00.000Z"
       },
       "integrity": {
        "algorithm": "SHA-256",
-       "hash": "0xb96d6a0e2458910af16ad77bf0326ece9579aa91d5419d04cffcbce0a598905f"
+       "hash": "0xe6444e19c760883bd1cdae0020a721cfa1886104745732bd79dd139bc9ab7f93"
       },
       "kind": "OUTCOME_RECEIPT",
       "maturity": "OBSERVED",
@@ -7879,7 +7879,7 @@
       }
      }
     },
-    "bodyBytesSha256": "71009cfa78421fff4db5b9f8dd34a565ad90a2404e59686f282a4042245d40b4",
+    "bodyBytesSha256": "3a92b11389fd8895ba4bef8877fc0762b1ba6bf6ce089dde89e4ea39322d6a6e",
     "calls": [
      {
       "kind": "http",
@@ -8082,7 +8082,7 @@
      "state": "RECEIPTED",
      "reservedAt": "2026-10-01T12:00:00.000Z",
      "updatedAt": "2026-10-01T12:00:00.000Z",
-     "receiptHash": "0xd4a121a80c31cb34c8ce911e8a05b95e3282d48e3689752446733413b2c5b0fa"
+     "receiptHash": "0x410ef633eb41fa8808a63afda0dc766748758c1231424cc8809058c9bf2dde5f"
     }
    },
    "solanaSwapOwnerLocks": {
@@ -8098,13 +8098,13 @@
      "state": "RECEIPTED",
      "signature": "63mP5kDsXN4G5UXVVenvAYNVyXdPawEhLdcj77BTfJP2yS7o6RwoUde9Y2YbtgCZj1HqABN6WJYCDwZCKhXhC4Cd",
      "submissionLane": "JUPITER_EXECUTE",
-     "receiptHash": "0xd4a121a80c31cb34c8ce911e8a05b95e3282d48e3689752446733413b2c5b0fa",
+     "receiptHash": "0x410ef633eb41fa8808a63afda0dc766748758c1231424cc8809058c9bf2dde5f",
      "receipt": {
       "schemaVersion": "2.0.0",
       "id": "swap:golden-order-0001",
       "createdAt": "2026-10-01T12:00:00.000Z",
       "registry": {
-       "registryDigest": "0xd8e0b494dc7783fad9f5d75136cc1699e2abae9b412b9c1682440fa1e1968098",
+       "registryDigest": "0x505ff36d6503c0ec0bc68d99be7b11ceb7fbee6dfe3faa0cd6e1c213fad98b94",
        "refs": [
         {
          "ref": "action:jupiter-swap/order-execute@1",
@@ -8116,18 +8116,18 @@
         }
        ]
       },
-      "contentHash": "0xd4a121a80c31cb34c8ce911e8a05b95e3282d48e3689752446733413b2c5b0fa",
+      "contentHash": "0x410ef633eb41fa8808a63afda0dc766748758c1231424cc8809058c9bf2dde5f",
       "issuer": {
        "status": "SIGNED",
        "algorithm": "Ed25519",
        "keyId": "ryntra-issuer-e55d72c9bfe4ae41",
        "publicKey": "MCowBQYDK2VwAyEAXsjIwPY/rspBCLc7FAoPSaGaZONLYDuoC7Y2/gbTe2o=",
-       "signature": "GrMhOh+NTg7EQYjydD7Zs/zhDWnp5PuZuE4vIOcmGrq/PyVwegmZuOipbgDHJqQFgmsD8DV9FY/5fbfzzl8sBg==",
+       "signature": "UjYyRBBTDZVsSUQjX7Kajdm6zgzqF5ig1WIKTL26JoL++Dt7S6Mx9G7qF9ByguY9ZN450sMvftLOlQhBoNRcDA==",
        "signedAt": "2026-10-01T12:00:00.000Z"
       },
       "integrity": {
        "algorithm": "SHA-256",
-       "hash": "0xb96d6a0e2458910af16ad77bf0326ece9579aa91d5419d04cffcbce0a598905f"
+       "hash": "0xe6444e19c760883bd1cdae0020a721cfa1886104745732bd79dd139bc9ab7f93"
       },
       "kind": "OUTCOME_RECEIPT",
       "maturity": "OBSERVED",
@@ -8493,7 +8493,7 @@
      },
      "destination": null,
      "signature": "63mP5kDsXN4G5UXVVenvAYNVyXdPawEhLdcj77BTfJP2yS7o6RwoUde9Y2YbtgCZj1HqABN6WJYCDwZCKhXhC4Cd",
-     "receiptHash": "0xd4a121a80c31cb34c8ce911e8a05b95e3282d48e3689752446733413b2c5b0fa",
+     "receiptHash": "0x410ef633eb41fa8808a63afda0dc766748758c1231424cc8809058c9bf2dde5f",
      "sourceTx": null,
      "destinationTx": null,
      "fee": {
@@ -8690,7 +8690,7 @@
       "id": "swap:golden-order-0001",
       "createdAt": "2026-10-01T12:00:00.000Z",
       "registry": {
-       "registryDigest": "0xd8e0b494dc7783fad9f5d75136cc1699e2abae9b412b9c1682440fa1e1968098",
+       "registryDigest": "0x505ff36d6503c0ec0bc68d99be7b11ceb7fbee6dfe3faa0cd6e1c213fad98b94",
        "refs": [
         {
          "ref": "action:jupiter-swap/order-execute@1",
@@ -8702,18 +8702,18 @@
         }
        ]
       },
-      "contentHash": "0x61c2d30596182bde74faea4e895f989eee471d9439e99483d77113a1eccfb44f",
+      "contentHash": "0x79cbb2b4b99b3722b4ea9b53e64bfc8805c1c285c0d1862ddce0ef207d403b18",
       "issuer": {
        "status": "SIGNED",
        "algorithm": "Ed25519",
        "keyId": "ryntra-issuer-e55d72c9bfe4ae41",
        "publicKey": "MCowBQYDK2VwAyEAXsjIwPY/rspBCLc7FAoPSaGaZONLYDuoC7Y2/gbTe2o=",
-       "signature": "xiESwLVRl1NNg3Z6HAt4oyGW23mzZ6y7sw9Zpd2rBiqtifGe323qtUJdnfoFAHF/CC0zwG8qduvb0Ihg+38vAw==",
+       "signature": "tLyhc5DvaYWHZ0/5s2Kp6odelvHjecibXgfR9z4phAWVKHrnzq7AlqERH1JV4h7zdJM6rJgvlWhuCzkiQ+aEAA==",
        "signedAt": "2026-10-01T12:00:00.000Z"
       },
       "integrity": {
        "algorithm": "SHA-256",
-       "hash": "0x40199851e5fc88abded02114d02edf6abdaa54bce1f6a3bd3866176c25057116"
+       "hash": "0xf194dba6898dee684a5379ce8b3d79c00ec18a70bfed63c0cf99f2dbadfa138d"
       },
       "kind": "OUTCOME_RECEIPT",
       "maturity": "OBSERVED",
@@ -8845,7 +8845,7 @@
       }
      }
     },
-    "bodyBytesSha256": "76213f934cc1a4257abcc057e846a9accb125c350dbf7c9ca6dbfb11164ef644",
+    "bodyBytesSha256": "61d9d5c9f985f8b5afc31a06bb700163c65f7269a487d5c3d782058fd7925c02",
     "calls": [
      {
       "kind": "http",
@@ -9048,7 +9048,7 @@
      "state": "RECEIPTED",
      "reservedAt": "2026-10-01T12:00:00.000Z",
      "updatedAt": "2026-10-01T12:00:00.000Z",
-     "receiptHash": "0x61c2d30596182bde74faea4e895f989eee471d9439e99483d77113a1eccfb44f"
+     "receiptHash": "0x79cbb2b4b99b3722b4ea9b53e64bfc8805c1c285c0d1862ddce0ef207d403b18"
     }
    },
    "solanaSwapOwnerLocks": {
@@ -9064,9 +9064,9 @@
      "state": "RECEIPTED",
      "signature": "63mP5kDsXN4G5UXVVenvAYNVyXdPawEhLdcj77BTfJP2yS7o6RwoUde9Y2YbtgCZj1HqABN6WJYCDwZCKhXhC4Cd",
      "submissionLane": "JUPITER_EXECUTE",
-     "receiptHash": "0x61c2d30596182bde74faea4e895f989eee471d9439e99483d77113a1eccfb44f",
+     "receiptHash": "0x79cbb2b4b99b3722b4ea9b53e64bfc8805c1c285c0d1862ddce0ef207d403b18",
      "receipt": {
-      "sha256": "ea251b09e90f8a8f5dce3a664eb21f8cc946123760460294f37f53b85c58a8a9"
+      "sha256": "eb06d5b35816aec58b2498ff0614abfd3dfa93bc69247630094c256bb84d3f53"
      },
      "bundle": {
       "sha256": "77ce1e19c7b9b07ac4ce6cc3dc658f8fde3f3e4aba28a7eb5317ddf52ddd91b6"
@@ -9102,7 +9102,7 @@
      },
      "destination": null,
      "signature": "63mP5kDsXN4G5UXVVenvAYNVyXdPawEhLdcj77BTfJP2yS7o6RwoUde9Y2YbtgCZj1HqABN6WJYCDwZCKhXhC4Cd",
-     "receiptHash": "0x61c2d30596182bde74faea4e895f989eee471d9439e99483d77113a1eccfb44f",
+     "receiptHash": "0x79cbb2b4b99b3722b4ea9b53e64bfc8805c1c285c0d1862ddce0ef207d403b18",
      "sourceTx": null,
      "destinationTx": null,
      "fee": {
@@ -9913,7 +9913,7 @@
       "id": "swap:golden-order-0001",
       "createdAt": "2026-10-01T12:00:00.000Z",
       "registry": {
-       "registryDigest": "0xd8e0b494dc7783fad9f5d75136cc1699e2abae9b412b9c1682440fa1e1968098",
+       "registryDigest": "0x505ff36d6503c0ec0bc68d99be7b11ceb7fbee6dfe3faa0cd6e1c213fad98b94",
        "refs": [
         {
          "ref": "action:jupiter-swap/order-execute@1",
@@ -9925,18 +9925,18 @@
         }
        ]
       },
-      "contentHash": "0xd4a121a80c31cb34c8ce911e8a05b95e3282d48e3689752446733413b2c5b0fa",
+      "contentHash": "0x410ef633eb41fa8808a63afda0dc766748758c1231424cc8809058c9bf2dde5f",
       "issuer": {
        "status": "SIGNED",
        "algorithm": "Ed25519",
        "keyId": "ryntra-issuer-e55d72c9bfe4ae41",
        "publicKey": "MCowBQYDK2VwAyEAXsjIwPY/rspBCLc7FAoPSaGaZONLYDuoC7Y2/gbTe2o=",
-       "signature": "GrMhOh+NTg7EQYjydD7Zs/zhDWnp5PuZuE4vIOcmGrq/PyVwegmZuOipbgDHJqQFgmsD8DV9FY/5fbfzzl8sBg==",
+       "signature": "UjYyRBBTDZVsSUQjX7Kajdm6zgzqF5ig1WIKTL26JoL++Dt7S6Mx9G7qF9ByguY9ZN450sMvftLOlQhBoNRcDA==",
        "signedAt": "2026-10-01T12:00:00.000Z"
       },
       "integrity": {
        "algorithm": "SHA-256",
-       "hash": "0xb96d6a0e2458910af16ad77bf0326ece9579aa91d5419d04cffcbce0a598905f"
+       "hash": "0xe6444e19c760883bd1cdae0020a721cfa1886104745732bd79dd139bc9ab7f93"
       },
       "kind": "OUTCOME_RECEIPT",
       "maturity": "OBSERVED",
@@ -10068,7 +10068,7 @@
       }
      }
     },
-    "bodyBytesSha256": "71009cfa78421fff4db5b9f8dd34a565ad90a2404e59686f282a4042245d40b4",
+    "bodyBytesSha256": "3a92b11389fd8895ba4bef8877fc0762b1ba6bf6ce089dde89e4ea39322d6a6e",
     "calls": [
      {
       "kind": "http",
@@ -10297,7 +10297,7 @@
      "state": "RECEIPTED",
      "reservedAt": "2026-10-01T12:00:00.000Z",
      "updatedAt": "2026-10-01T12:00:00.000Z",
-     "receiptHash": "0xd4a121a80c31cb34c8ce911e8a05b95e3282d48e3689752446733413b2c5b0fa"
+     "receiptHash": "0x410ef633eb41fa8808a63afda0dc766748758c1231424cc8809058c9bf2dde5f"
     }
    },
    "solanaSwapOwnerLocks": {
@@ -10313,9 +10313,9 @@
      "state": "RECEIPTED",
      "signature": "63mP5kDsXN4G5UXVVenvAYNVyXdPawEhLdcj77BTfJP2yS7o6RwoUde9Y2YbtgCZj1HqABN6WJYCDwZCKhXhC4Cd",
      "submissionLane": "JUPITER_EXECUTE",
-     "receiptHash": "0xd4a121a80c31cb34c8ce911e8a05b95e3282d48e3689752446733413b2c5b0fa",
+     "receiptHash": "0x410ef633eb41fa8808a63afda0dc766748758c1231424cc8809058c9bf2dde5f",
      "receipt": {
-      "sha256": "db8967a4b572d0345d7a89f43db68556bbb57ce91b9da638bb2336529bd77216"
+      "sha256": "250d64a927f1f83d74ac08a9525bb014bd715caf396380839d5db1ef35ba6954"
      },
      "bundle": {
       "sha256": "77ce1e19c7b9b07ac4ce6cc3dc658f8fde3f3e4aba28a7eb5317ddf52ddd91b6"
@@ -10351,7 +10351,7 @@
      },
      "destination": null,
      "signature": "63mP5kDsXN4G5UXVVenvAYNVyXdPawEhLdcj77BTfJP2yS7o6RwoUde9Y2YbtgCZj1HqABN6WJYCDwZCKhXhC4Cd",
-     "receiptHash": "0xd4a121a80c31cb34c8ce911e8a05b95e3282d48e3689752446733413b2c5b0fa",
+     "receiptHash": "0x410ef633eb41fa8808a63afda0dc766748758c1231424cc8809058c9bf2dde5f",
      "sourceTx": null,
      "destinationTx": null,
      "fee": {
@@ -11033,7 +11033,7 @@
       "id": "swap:golden-order-0001",
       "createdAt": "2026-10-01T12:00:01.500Z",
       "registry": {
-       "registryDigest": "0xd8e0b494dc7783fad9f5d75136cc1699e2abae9b412b9c1682440fa1e1968098",
+       "registryDigest": "0x505ff36d6503c0ec0bc68d99be7b11ceb7fbee6dfe3faa0cd6e1c213fad98b94",
        "refs": [
         {
          "ref": "action:jupiter-swap/order-own-rpc-submit@1",
@@ -11045,18 +11045,18 @@
         }
        ]
       },
-      "contentHash": "0x72a486bd929b675b494ee5a4c28626a10d5fa024b4b5b5c4ff949ce5c4c9360f",
+      "contentHash": "0x2cbe1cf475a71ee7962538d0b8c3234cf0784a00197e46b4cc296a75c5eafa80",
       "issuer": {
        "status": "SIGNED",
        "algorithm": "Ed25519",
        "keyId": "ryntra-issuer-e55d72c9bfe4ae41",
        "publicKey": "MCowBQYDK2VwAyEAXsjIwPY/rspBCLc7FAoPSaGaZONLYDuoC7Y2/gbTe2o=",
-       "signature": "I6JTdxkjoJUsuTyW53nDIwZkOELyaCUPKEryNu2Rc/K7LDwKGLg6eF12lIuL7RiyFQReLQe4/ZEP259+3DsEAg==",
+       "signature": "eeRxuNTV3eh8YVi3fuptEa0d2pGOl6BIRgaRtEIWWg0LONH0kBcmNeZIn0S28H0/1NTr/2CzbMmJmi2KdElVBQ==",
        "signedAt": "2026-10-01T12:00:01.500Z"
       },
       "integrity": {
        "algorithm": "SHA-256",
-       "hash": "0x4a49e1d9ee861ddf9d7864af3a34725a217d30689ebec34926971dc52bb2416d"
+       "hash": "0x24288d27918a4fe56f73b8a96625554b3ba7354620780a5f8aaa68578fdfea89"
       },
       "kind": "OUTCOME_RECEIPT",
       "maturity": "OBSERVED",
@@ -11183,7 +11183,7 @@
       }
      }
     },
-    "bodyBytesSha256": "065ccfdcb6a0cb4aeb7d31d714dfa6ea127f95fb8af7955cd4c6ad50d2113cd4",
+    "bodyBytesSha256": "bf6ef2192391e5a17d4e906194e5955dbbbb48cfdd834fceddb669d64aae31b6",
     "calls": [
      {
       "kind": "rpc",
@@ -11430,7 +11430,7 @@
      "state": "RECEIPTED",
      "reservedAt": "2026-10-01T12:00:00.000Z",
      "updatedAt": "2026-10-01T12:00:01.500Z",
-     "receiptHash": "0x72a486bd929b675b494ee5a4c28626a10d5fa024b4b5b5c4ff949ce5c4c9360f"
+     "receiptHash": "0x2cbe1cf475a71ee7962538d0b8c3234cf0784a00197e46b4cc296a75c5eafa80"
     }
    },
    "solanaSwapOwnerLocks": {
@@ -11446,13 +11446,13 @@
      "state": "RECEIPTED",
      "signature": "2s9HMBTGDa2Fu8MZ4gHej3bkjmNzeujoEKd6w395mQophg2SHcdjM8GRjRGFP4noCFoSXyVq3rNoUdSwrCKek4h3",
      "submissionLane": "ADOPTED_RPC",
-     "receiptHash": "0x72a486bd929b675b494ee5a4c28626a10d5fa024b4b5b5c4ff949ce5c4c9360f",
+     "receiptHash": "0x2cbe1cf475a71ee7962538d0b8c3234cf0784a00197e46b4cc296a75c5eafa80",
      "receipt": {
       "schemaVersion": "2.0.0",
       "id": "swap:golden-order-0001",
       "createdAt": "2026-10-01T12:00:01.500Z",
       "registry": {
-       "registryDigest": "0xd8e0b494dc7783fad9f5d75136cc1699e2abae9b412b9c1682440fa1e1968098",
+       "registryDigest": "0x505ff36d6503c0ec0bc68d99be7b11ceb7fbee6dfe3faa0cd6e1c213fad98b94",
        "refs": [
         {
          "ref": "action:jupiter-swap/order-own-rpc-submit@1",
@@ -11464,18 +11464,18 @@
         }
        ]
       },
-      "contentHash": "0x72a486bd929b675b494ee5a4c28626a10d5fa024b4b5b5c4ff949ce5c4c9360f",
+      "contentHash": "0x2cbe1cf475a71ee7962538d0b8c3234cf0784a00197e46b4cc296a75c5eafa80",
       "issuer": {
        "status": "SIGNED",
        "algorithm": "Ed25519",
        "keyId": "ryntra-issuer-e55d72c9bfe4ae41",
        "publicKey": "MCowBQYDK2VwAyEAXsjIwPY/rspBCLc7FAoPSaGaZONLYDuoC7Y2/gbTe2o=",
-       "signature": "I6JTdxkjoJUsuTyW53nDIwZkOELyaCUPKEryNu2Rc/K7LDwKGLg6eF12lIuL7RiyFQReLQe4/ZEP259+3DsEAg==",
+       "signature": "eeRxuNTV3eh8YVi3fuptEa0d2pGOl6BIRgaRtEIWWg0LONH0kBcmNeZIn0S28H0/1NTr/2CzbMmJmi2KdElVBQ==",
        "signedAt": "2026-10-01T12:00:01.500Z"
       },
       "integrity": {
        "algorithm": "SHA-256",
-       "hash": "0x4a49e1d9ee861ddf9d7864af3a34725a217d30689ebec34926971dc52bb2416d"
+       "hash": "0x24288d27918a4fe56f73b8a96625554b3ba7354620780a5f8aaa68578fdfea89"
       },
       "kind": "OUTCOME_RECEIPT",
       "maturity": "OBSERVED",
@@ -11836,7 +11836,7 @@
      },
      "destination": null,
      "signature": "2s9HMBTGDa2Fu8MZ4gHej3bkjmNzeujoEKd6w395mQophg2SHcdjM8GRjRGFP4noCFoSXyVq3rNoUdSwrCKek4h3",
-     "receiptHash": "0x72a486bd929b675b494ee5a4c28626a10d5fa024b4b5b5c4ff949ce5c4c9360f",
+     "receiptHash": "0x2cbe1cf475a71ee7962538d0b8c3234cf0784a00197e46b4cc296a75c5eafa80",
      "sourceTx": null,
      "destinationTx": null,
      "fee": {
@@ -12151,7 +12151,7 @@
       "id": "swap:golden-order-0001",
       "createdAt": "2026-10-01T12:00:00.000Z",
       "registry": {
-       "registryDigest": "0xd8e0b494dc7783fad9f5d75136cc1699e2abae9b412b9c1682440fa1e1968098",
+       "registryDigest": "0x505ff36d6503c0ec0bc68d99be7b11ceb7fbee6dfe3faa0cd6e1c213fad98b94",
        "refs": [
         {
          "ref": "action:jupiter-swap/order-execute@1",
@@ -12163,18 +12163,18 @@
         }
        ]
       },
-      "contentHash": "0x23d29e7f5c41f8cbc65f9095eb894359d853b99c77586983c0c7a3c2580b0b89",
+      "contentHash": "0xfb26244b8a236ee6786e04c012f8282ec4937f5ed5e7cf1e02af746628d602c6",
       "issuer": {
        "status": "SIGNED",
        "algorithm": "Ed25519",
        "keyId": "ryntra-issuer-e55d72c9bfe4ae41",
        "publicKey": "MCowBQYDK2VwAyEAXsjIwPY/rspBCLc7FAoPSaGaZONLYDuoC7Y2/gbTe2o=",
-       "signature": "NzHZ3h9UVEXolSxiueoRMOsNBae7+AixvvLcgKwL8MJJT5nHuKLUUCJMaKWSES3tE3KBbs4G36fkq9Lh/uhcBA==",
+       "signature": "xiLRb+DkVTCIs2THVz0eYI26zaGjR0guyz1Td08znyl/waCPMGqmPaEonmr2twSkVf6E/BwwQAbwyKCd4z99Ag==",
        "signedAt": "2026-10-01T12:00:00.000Z"
       },
       "integrity": {
        "algorithm": "SHA-256",
-       "hash": "0x94d798819c321e8962dbacf0848cd380c63fdb17703676c42b38c8c8e0845732"
+       "hash": "0xa60199f7369d13b5ac42d294a1abd12791cb89f80ab27cfdb9d92c3d406db671"
       },
       "kind": "OUTCOME_RECEIPT",
       "maturity": "OBSERVED",
@@ -12228,7 +12228,7 @@
       ]
      }
     },
-    "bodyBytesSha256": "4e84864151fc49c37dc4191b7e0a9ca7e74500d9ef9b8baeed68adc587bab391",
+    "bodyBytesSha256": "6a2edbc6048229d7bb807d48b5e5334274728f69c546b3d5e77677922598c984",
     "calls": [
      {
       "kind": "rpc",
@@ -12419,7 +12419,7 @@
      "state": "RECEIPTED",
      "reservedAt": "2026-10-01T12:00:00.000Z",
      "updatedAt": "2026-10-01T12:00:00.000Z",
-     "receiptHash": "0x23d29e7f5c41f8cbc65f9095eb894359d853b99c77586983c0c7a3c2580b0b89"
+     "receiptHash": "0xfb26244b8a236ee6786e04c012f8282ec4937f5ed5e7cf1e02af746628d602c6"
     }
    },
    "solanaSwapOwnerLocks": {
@@ -12435,13 +12435,13 @@
      "state": "RECEIPTED",
      "signature": "63mP5kDsXN4G5UXVVenvAYNVyXdPawEhLdcj77BTfJP2yS7o6RwoUde9Y2YbtgCZj1HqABN6WJYCDwZCKhXhC4Cd",
      "submissionLane": "JUPITER_EXECUTE",
-     "receiptHash": "0x23d29e7f5c41f8cbc65f9095eb894359d853b99c77586983c0c7a3c2580b0b89",
+     "receiptHash": "0xfb26244b8a236ee6786e04c012f8282ec4937f5ed5e7cf1e02af746628d602c6",
      "receipt": {
       "schemaVersion": "2.0.0",
       "id": "swap:golden-order-0001",
       "createdAt": "2026-10-01T12:00:00.000Z",
       "registry": {
-       "registryDigest": "0xd8e0b494dc7783fad9f5d75136cc1699e2abae9b412b9c1682440fa1e1968098",
+       "registryDigest": "0x505ff36d6503c0ec0bc68d99be7b11ceb7fbee6dfe3faa0cd6e1c213fad98b94",
        "refs": [
         {
          "ref": "action:jupiter-swap/order-execute@1",
@@ -12453,18 +12453,18 @@
         }
        ]
       },
-      "contentHash": "0x23d29e7f5c41f8cbc65f9095eb894359d853b99c77586983c0c7a3c2580b0b89",
+      "contentHash": "0xfb26244b8a236ee6786e04c012f8282ec4937f5ed5e7cf1e02af746628d602c6",
       "issuer": {
        "status": "SIGNED",
        "algorithm": "Ed25519",
        "keyId": "ryntra-issuer-e55d72c9bfe4ae41",
        "publicKey": "MCowBQYDK2VwAyEAXsjIwPY/rspBCLc7FAoPSaGaZONLYDuoC7Y2/gbTe2o=",
-       "signature": "NzHZ3h9UVEXolSxiueoRMOsNBae7+AixvvLcgKwL8MJJT5nHuKLUUCJMaKWSES3tE3KBbs4G36fkq9Lh/uhcBA==",
+       "signature": "xiLRb+DkVTCIs2THVz0eYI26zaGjR0guyz1Td08znyl/waCPMGqmPaEonmr2twSkVf6E/BwwQAbwyKCd4z99Ag==",
        "signedAt": "2026-10-01T12:00:00.000Z"
       },
       "integrity": {
        "algorithm": "SHA-256",
-       "hash": "0x94d798819c321e8962dbacf0848cd380c63fdb17703676c42b38c8c8e0845732"
+       "hash": "0xa60199f7369d13b5ac42d294a1abd12791cb89f80ab27cfdb9d92c3d406db671"
       },
       "kind": "OUTCOME_RECEIPT",
       "maturity": "OBSERVED",
@@ -12825,7 +12825,7 @@
      },
      "destination": null,
      "signature": "63mP5kDsXN4G5UXVVenvAYNVyXdPawEhLdcj77BTfJP2yS7o6RwoUde9Y2YbtgCZj1HqABN6WJYCDwZCKhXhC4Cd",
-     "receiptHash": "0x23d29e7f5c41f8cbc65f9095eb894359d853b99c77586983c0c7a3c2580b0b89",
+     "receiptHash": "0xfb26244b8a236ee6786e04c012f8282ec4937f5ed5e7cf1e02af746628d602c6",
      "sourceTx": null,
      "destinationTx": null,
      "fee": {
@@ -13022,7 +13022,7 @@
       "id": "swap:golden-order-0001",
       "createdAt": "2026-10-01T12:00:00.000Z",
       "registry": {
-       "registryDigest": "0xd8e0b494dc7783fad9f5d75136cc1699e2abae9b412b9c1682440fa1e1968098",
+       "registryDigest": "0x505ff36d6503c0ec0bc68d99be7b11ceb7fbee6dfe3faa0cd6e1c213fad98b94",
        "refs": [
         {
          "ref": "action:jupiter-swap/order-execute@1",
@@ -13034,18 +13034,18 @@
         }
        ]
       },
-      "contentHash": "0xd4a121a80c31cb34c8ce911e8a05b95e3282d48e3689752446733413b2c5b0fa",
+      "contentHash": "0x410ef633eb41fa8808a63afda0dc766748758c1231424cc8809058c9bf2dde5f",
       "issuer": {
        "status": "SIGNED",
        "algorithm": "Ed25519",
        "keyId": "ryntra-issuer-e55d72c9bfe4ae41",
        "publicKey": "MCowBQYDK2VwAyEAXsjIwPY/rspBCLc7FAoPSaGaZONLYDuoC7Y2/gbTe2o=",
-       "signature": "GrMhOh+NTg7EQYjydD7Zs/zhDWnp5PuZuE4vIOcmGrq/PyVwegmZuOipbgDHJqQFgmsD8DV9FY/5fbfzzl8sBg==",
+       "signature": "UjYyRBBTDZVsSUQjX7Kajdm6zgzqF5ig1WIKTL26JoL++Dt7S6Mx9G7qF9ByguY9ZN450sMvftLOlQhBoNRcDA==",
        "signedAt": "2026-10-01T12:00:00.000Z"
       },
       "integrity": {
        "algorithm": "SHA-256",
-       "hash": "0xb96d6a0e2458910af16ad77bf0326ece9579aa91d5419d04cffcbce0a598905f"
+       "hash": "0xe6444e19c760883bd1cdae0020a721cfa1886104745732bd79dd139bc9ab7f93"
       },
       "kind": "OUTCOME_RECEIPT",
       "maturity": "OBSERVED",
@@ -13177,7 +13177,7 @@
       }
      }
     },
-    "bodyBytesSha256": "71009cfa78421fff4db5b9f8dd34a565ad90a2404e59686f282a4042245d40b4",
+    "bodyBytesSha256": "3a92b11389fd8895ba4bef8877fc0762b1ba6bf6ce089dde89e4ea39322d6a6e",
     "calls": [
      {
       "kind": "http",
@@ -13242,13 +13242,13 @@
     "body": {
      "state": "ALREADY_RECEIPTED",
      "signature": "63mP5kDsXN4G5UXVVenvAYNVyXdPawEhLdcj77BTfJP2yS7o6RwoUde9Y2YbtgCZj1HqABN6WJYCDwZCKhXhC4Cd",
-     "receiptHash": "0xd4a121a80c31cb34c8ce911e8a05b95e3282d48e3689752446733413b2c5b0fa",
+     "receiptHash": "0x410ef633eb41fa8808a63afda0dc766748758c1231424cc8809058c9bf2dde5f",
      "receipt": {
       "schemaVersion": "2.0.0",
       "id": "swap:golden-order-0001",
       "createdAt": "2026-10-01T12:00:00.000Z",
       "registry": {
-       "registryDigest": "0xd8e0b494dc7783fad9f5d75136cc1699e2abae9b412b9c1682440fa1e1968098",
+       "registryDigest": "0x505ff36d6503c0ec0bc68d99be7b11ceb7fbee6dfe3faa0cd6e1c213fad98b94",
        "refs": [
         {
          "ref": "action:jupiter-swap/order-execute@1",
@@ -13260,18 +13260,18 @@
         }
        ]
       },
-      "contentHash": "0xd4a121a80c31cb34c8ce911e8a05b95e3282d48e3689752446733413b2c5b0fa",
+      "contentHash": "0x410ef633eb41fa8808a63afda0dc766748758c1231424cc8809058c9bf2dde5f",
       "issuer": {
        "status": "SIGNED",
        "algorithm": "Ed25519",
        "keyId": "ryntra-issuer-e55d72c9bfe4ae41",
        "publicKey": "MCowBQYDK2VwAyEAXsjIwPY/rspBCLc7FAoPSaGaZONLYDuoC7Y2/gbTe2o=",
-       "signature": "GrMhOh+NTg7EQYjydD7Zs/zhDWnp5PuZuE4vIOcmGrq/PyVwegmZuOipbgDHJqQFgmsD8DV9FY/5fbfzzl8sBg==",
+       "signature": "UjYyRBBTDZVsSUQjX7Kajdm6zgzqF5ig1WIKTL26JoL++Dt7S6Mx9G7qF9ByguY9ZN450sMvftLOlQhBoNRcDA==",
        "signedAt": "2026-10-01T12:00:00.000Z"
       },
       "integrity": {
        "algorithm": "SHA-256",
-       "hash": "0xb96d6a0e2458910af16ad77bf0326ece9579aa91d5419d04cffcbce0a598905f"
+       "hash": "0xe6444e19c760883bd1cdae0020a721cfa1886104745732bd79dd139bc9ab7f93"
       },
       "kind": "OUTCOME_RECEIPT",
       "maturity": "OBSERVED",
@@ -13447,7 +13447,7 @@
       }
      }
     },
-    "bodyBytesSha256": "b6e1be734e723740fdd2951d9f8c1e937aa66fc39e6dbd5dca166d19866aa832",
+    "bodyBytesSha256": "4e6c0d77c01ce2f589a310df3a4c9b3ed4c200e3598325fc35b844fe6d82fffd",
     "calls": []
    }
   ],
@@ -13611,7 +13611,7 @@
      "state": "RECEIPTED",
      "reservedAt": "2026-10-01T12:00:00.000Z",
      "updatedAt": "2026-10-01T12:00:00.000Z",
-     "receiptHash": "0xd4a121a80c31cb34c8ce911e8a05b95e3282d48e3689752446733413b2c5b0fa"
+     "receiptHash": "0x410ef633eb41fa8808a63afda0dc766748758c1231424cc8809058c9bf2dde5f"
     }
    },
    "solanaSwapOwnerLocks": {
@@ -13627,9 +13627,9 @@
      "state": "RECEIPTED",
      "signature": "63mP5kDsXN4G5UXVVenvAYNVyXdPawEhLdcj77BTfJP2yS7o6RwoUde9Y2YbtgCZj1HqABN6WJYCDwZCKhXhC4Cd",
      "submissionLane": "JUPITER_EXECUTE",
-     "receiptHash": "0xd4a121a80c31cb34c8ce911e8a05b95e3282d48e3689752446733413b2c5b0fa",
+     "receiptHash": "0x410ef633eb41fa8808a63afda0dc766748758c1231424cc8809058c9bf2dde5f",
      "receipt": {
-      "sha256": "db8967a4b572d0345d7a89f43db68556bbb57ce91b9da638bb2336529bd77216"
+      "sha256": "250d64a927f1f83d74ac08a9525bb014bd715caf396380839d5db1ef35ba6954"
      },
      "bundle": {
       "sha256": "77ce1e19c7b9b07ac4ce6cc3dc658f8fde3f3e4aba28a7eb5317ddf52ddd91b6"
@@ -13665,7 +13665,7 @@
      },
      "destination": null,
      "signature": "63mP5kDsXN4G5UXVVenvAYNVyXdPawEhLdcj77BTfJP2yS7o6RwoUde9Y2YbtgCZj1HqABN6WJYCDwZCKhXhC4Cd",
-     "receiptHash": "0xd4a121a80c31cb34c8ce911e8a05b95e3282d48e3689752446733413b2c5b0fa",
+     "receiptHash": "0x410ef633eb41fa8808a63afda0dc766748758c1231424cc8809058c9bf2dde5f",
      "sourceTx": null,
      "destinationTx": null,
      "fee": {

@@ -178,7 +178,7 @@ function settleCollectedServiceFee(
      rounded **up** so that the figure recorded as Ryntra's is never the
      optimistic one. */
   const retained = quoted.providerRetainedPercent;
-  const provider = retained === null ? null : (gross * BigInt(retained) + 99n) / 100n;
+  const provider = retained === null || retained === 0 ? (retained === 0 ? 0n : null) : (gross * BigInt(retained) + 99n) / 100n;
   const ryntra = provider === null ? null : gross - provider;
   return settleServiceFee(quoted, {
     collected,
@@ -191,10 +191,14 @@ function settleCollectedServiceFee(
       asset: quoted.asset,
       symbol: quoted.symbol,
       decimals: quoted.decimals,
-      basis: provider === null ? "OBSERVED" : "RYNTRA_OBSERVED_SPLIT_DOCUMENTED",
+      basis: provider === null || retained === 0 ? "OBSERVED" : "RYNTRA_OBSERVED_SPLIT_DOCUMENTED",
       operationRef,
     },
-    note: collected ? null : "Jupiter took no fee into the referral account for this swap; the referral token account for the fee mint was most likely not initialised.",
+    note: collected
+      ? null
+      : quoted.mechanism === "JUPITER_PLATFORM_FEE"
+        ? "The chain shows no fee arriving in Ryntra's fee wallet for this swap."
+        : "Jupiter took no fee into the referral account for this swap; the referral token account for the fee mint was most likely not initialised.",
   });
 }
 
@@ -222,8 +226,10 @@ export function buildSwapReceiptFacts(input: BuildSwapReceiptFactsInput): SwapRe
   const expectedBaseFeeLamports = quote.signatureFeeLamports;
   const expectedPriorityFeeLamports = quote.priorityFeeLamports;
   const deviations: SwapReceiptFacts["reconciliation"]["deviations"] = [];
+  /* `/build` has no provider execution report: this deployment sent the bytes, and the chain's read is the whole of the evidence. */
+  const ownLane = quote.path === "BUILD_SUBMIT";
   if (provider === null) {
-    deviations.push("PROVIDER_EVIDENCE_UNAVAILABLE");
+    if (!ownLane) deviations.push("PROVIDER_EVIDENCE_UNAVAILABLE");
   } else {
     if (provider.requestId !== quote.requestId) deviations.push("PROVIDER_REQUEST_MISMATCH");
     if (provider.signature !== observation.signature) deviations.push("PROVIDER_SIGNATURE_MISMATCH");
@@ -239,7 +245,7 @@ export function buildSwapReceiptFacts(input: BuildSwapReceiptFactsInput): SwapRe
 
   if (
     input.reconciliation === "MATCHED" &&
-    (provider?.status !== "Success" || deviations.length > 0)
+    ((ownLane ? provider !== null : provider?.status !== "Success") || deviations.length > 0)
   ) {
     throw new Error("A provider or chain deviation cannot reconcile as MATCHED.");
   }

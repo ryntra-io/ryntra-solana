@@ -131,9 +131,15 @@ const signedGuard = SOLANA_SWAP_SIGNED_GUARD.map(
 
 /* ---------------------------------------------------------------- submit */
 
+/** The lane the signed bytes go out by: `/build`'s and a wallet's guarded change both through this deployment's own RPC, `/order`'s through `/execute`. */
+export function submissionLaneOf(context: Pick<SwapSettleContext, "bundle" | "adoptedLane">): "JUPITER_EXECUTE" | "ADOPTED_RPC" | "BUILD_OWN_RPC" {
+  if (context.bundle.review.quote.path === "BUILD_SUBMIT") return "BUILD_OWN_RPC";
+  return context.adoptedLane ? "ADOPTED_RPC" : "JUPITER_EXECUTE";
+}
+
 /**
  * Exactly one send, behind the send-attempt boundary and with the owner lock
- * crossed into submit-unknown first. Adopted bytes cannot go to the venue's
+ * crossed into submit-unknown first. Adopted bytes and `/build`'s cannot go to the venue's
  * execute lane — it accepts only the transaction it built — so they go once
  * through this deployment's own RPC.
  */
@@ -141,8 +147,9 @@ const submitOnce: PipelineStep<SwapSettleContext, SwapSettleStop> = {
   stage: "submit",
   name: "submit-once",
   async run(context) {
-    const { bundle, proof, adoptedLane, signedTransactionBase64 } = context;
+    const { bundle, proof, signedTransactionBase64 } = context;
     const quote = bundle.review.quote;
+    const lane = submissionLaneOf(context);
     const store = need(context.store, "store");
     const signature = need(context.signature, "signature");
     const network = createSolanaNetwork({ submitHandle: need(context.submitHandle, "submitHandle"), readHandle: need(context.independent, "independent") });
@@ -159,7 +166,7 @@ const submitOnce: PipelineStep<SwapSettleContext, SwapSettleStop> = {
           store,
           owner: bundle.taker,
           signature,
-          submissionLane: adoptedLane ? "ADOPTED_RPC" : "JUPITER_EXECUTE",
+          submissionLane: lane,
           at: new Date().toISOString(),
         });
         if (!ownerSubmitted.ok) throw new Error(`The owner swap lock could not cross submit-unknown: ${ownerSubmitted.reason}`);
@@ -178,7 +185,7 @@ const submitOnce: PipelineStep<SwapSettleContext, SwapSettleStop> = {
           providerRef: quote.requestId,
           now: new Date().toISOString(),
         });
-        if (adoptedLane) {
+        if (lane !== "JUPITER_EXECUTE") {
           const submission = await network.submit({ network: "solana", wireBase64: signedTransactionBase64, signature }, "fast");
           return submission.state === "SENT"
             ? ({ kind: "EXECUTED", report: null, broadcastFailure: null } as const)
@@ -216,7 +223,8 @@ const chainStatus: PipelineStep<SwapSettleContext, SwapSettleStop> = {
   name: "chain-status",
   async run(context) {
     const { report, broadcastFailure } = need(context.outcome, "outcome");
-    const { adoptedLane } = context;
+    /* Bytes this deployment broadcast itself — `/build`'s, or a wallet's guarded change — wait for their own landing. */
+    const ownBroadcast = submissionLaneOf(context) !== "JUPITER_EXECUTE";
     const network = need(context.network, "network");
     const store = need(context.store, "store");
     const signature = need(context.signature, "signature");
@@ -238,8 +246,8 @@ const chainStatus: PipelineStep<SwapSettleContext, SwapSettleStop> = {
      * independent operator rather than the one that took the bytes.
      */
     const venueFailed = report?.ok === true && report.report.status === "Failed";
-    if (!seen && ((adoptedLane && delivered) || venueFailed)) {
-      const deadline = Date.now() + (adoptedLane ? ADOPTED_CONFIRM_DEADLINE_MS : VENUE_FAILED_SEEN_DEADLINE_MS);
+    if (!seen && ((ownBroadcast && delivered) || venueFailed)) {
+      const deadline = Date.now() + (ownBroadcast ? ADOPTED_CONFIRM_DEADLINE_MS : VENUE_FAILED_SEEN_DEADLINE_MS);
       while (!seen && Date.now() < deadline) {
         await new Promise((resolve) => setTimeout(resolve, ADOPTED_CONFIRM_INTERVAL_MS));
         settlement = await network.observe(signature);
@@ -394,15 +402,23 @@ const receiptFacts: PipelineStep<SwapSettleContext, SwapSettleStop> = {
       }
     } else {
       const withinReview =
-        adoptedLane !== null &&
+        (adoptedLane !== null || quote.path === "BUILD_SUBMIT") &&
         observed.observation.actualInputRaw === quote.inputRaw &&
         BigInt(observed.observation.actualOutputRaw) >= BigInt(quote.minimumOutputRaw);
+      /* `/build` sent no provider report by design: a landing that equals the Review to the unit is MATCHED on the chain's word alone. */
+      const exact =
+        quote.path === "BUILD_SUBMIT" &&
+        adoptedLane === null &&
+        withinReview &&
+        observed.observation.actualOutputRaw === quote.quotedOutputRaw &&
+        observed.observation.baseFeeLamports === quote.signatureFeeLamports &&
+        observed.observation.priorityFeeLamports === quote.priorityFeeLamports;
       try {
         facts = buildSwapReceiptFacts({
           review: bundle.review,
           provider: null,
           observation: { ...observed.observation, programs: [...observed.observation.programs] },
-          reconciliation: withinReview ? "DEVIATION_RECORDED" : "RECOVERY",
+          reconciliation: exact ? "MATCHED" : withinReview ? "DEVIATION_RECORDED" : "RECOVERY",
         });
       } catch (cause) {
         factsRefusal = cause instanceof Error ? cause.message : String(cause);
@@ -440,7 +456,7 @@ const receiptMinted: PipelineStep<SwapSettleContext, SwapSettleStop> = {
   stage: "receipt",
   name: "receipt-minted",
   async run(context) {
-    const { bundle, proof, adoptedLane, finality } = context;
+    const { bundle, proof, finality } = context;
     const quote = bundle.review.quote;
     const facts = need(context.facts, "facts");
     const store = need(context.store, "store");
@@ -465,7 +481,7 @@ const receiptMinted: PipelineStep<SwapSettleContext, SwapSettleStop> = {
       id: `swap:${quote.requestId}`,
       actionPassportHash: proof.digest,
       facts,
-      submissionLane: adoptedLane ? "ADOPTED_RPC" : "JUPITER_EXECUTE",
+      submissionLane: submissionLaneOf(context),
     });
     if (!minted.ok) {
       await transitionSendAttempt({ store, network: "mainnet", signature, to: "RECOVERY_REQUIRED", at });

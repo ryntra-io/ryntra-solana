@@ -43,7 +43,7 @@ export type RecordRewardsOutcome =
 
 /** Only fees a mechanism actually collected can produce a reward. */
 function eligibleMechanism(fee: RyntraServiceFee): boolean {
-  return fee.mechanism === "JUPITER_REFERRAL" || fee.mechanism === "RELAY_APP_FEE";
+  return fee.mechanism === "JUPITER_REFERRAL" || fee.mechanism === "JUPITER_PLATFORM_FEE" || fee.mechanism === "RELAY_APP_FEE";
 }
 
 async function recordRewardsCore(

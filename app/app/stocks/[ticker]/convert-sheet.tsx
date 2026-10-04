@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowUpRight, CheckCircle, Warning, X, XCircle } from "@phosphor-icons/react";
+import { ryntraFeeOfWhich } from "./ryntra-fee-line";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
@@ -234,6 +235,7 @@ function ConvertFlow({
           issuerFeeBasisPoints: issuerFeeBps,
         })
       : null;
+  const ryntraFeeLine = ryntraFeeOfWhich(prepared?.order ?? quoted?.order ?? null, word("ryntraFeeOfWhich"), numbers);
   const issuerFee = estimate?.issuerFeeUsd != null && issuerFeeBps !== null && issuerFeeBps > 0 ? `${word("issuerFeeOfWhich")} ${new Intl.NumberFormat(numbers, { maximumFractionDigits: 2 }).format(issuerFeeBps / 100)}% ${approxUsd(estimate.issuerFeeUsd, numbers).replace(" ", " ")}` : null;
 
   /* The rate against the company's price on the exchange: what one token brings, and how far below or above the listed share that is — the swap's price, shown honestly. */
@@ -403,6 +405,7 @@ function ConvertFlow({
             <dd translate="no">
               {estimate ? approxUsd(estimate.totalUsd, numbers) : "—"}
               {issuerFee ? <span data-issuer-fee>{issuerFee}</span> : null}
+              {ryntraFeeLine ? <span data-ryntra-fee>{ryntraFeeLine}</span> : null}
             </dd>
             {/* The account the swap opens for the new token: its own line, never a cost — it stays in the wallet. */}
             {estimate?.accountUsd ? <dd data-reserve>{reserveLine(locale, approxUsd(estimate.accountUsd, numbers))}</dd> : null}

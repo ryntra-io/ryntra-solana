@@ -109,11 +109,15 @@ function tokenDeltaFor(args: {
 export function serviceFeeReadFor(
   quote: Readonly<{
     providerReferralAccount: string | null;
+    /** `/build` only: the fee wallet the bytes pay into. */
+    ryntraFeeAccount?: Readonly<{ owner: string; account: string }>;
     ryntraFee: Readonly<{ state: string; asset: string | null }>;
   }>,
 ): Readonly<{ referralAccount: string; feeMint: string }> | null {
-  if (quote.ryntraFee.state !== "QUOTED") return null;
-  if (!quote.providerReferralAccount || !quote.ryntraFee.asset) return null;
+  if (quote.ryntraFee.state !== "QUOTED" || !quote.ryntraFee.asset) return null;
+  /* On `/build` the fee wallet is the owner the fee lands under, read exactly as a referral account is. */
+  if (quote.ryntraFeeAccount) return { referralAccount: quote.ryntraFeeAccount.owner, feeMint: quote.ryntraFee.asset };
+  if (!quote.providerReferralAccount) return null;
   return { referralAccount: quote.providerReferralAccount, feeMint: quote.ryntraFee.asset };
 }
 

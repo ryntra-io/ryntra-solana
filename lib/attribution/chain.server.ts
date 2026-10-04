@@ -66,7 +66,16 @@ import {
 export const ARCHIVE_ENDPOINT_ENV = "RYNTRA_SOLANA_RPC_MAINNET_ARCHIVE";
 const DEFAULT_ARCHIVE_ENDPOINT = "https://api.mainnet-beta.solana.com";
 
-export const MAX_TRANSACTIONS_PER_READ = 500;
+export const MAX_TRANSACTIONS_PER_READ = 300;
+
+/**
+ * From the read's start, how long the fee identities' accounts and signature
+ * history may take. Past it the read answers that it could not finish —
+ * never a partial history, which would count a part of the fees as all of
+ * them — and the next read asks again. The transactions keep their own
+ * deadline below, measured from the same start.
+ */
+export const HISTORY_DEADLINE_MS = 25_000;
 /** Transactions asked at once: a public operator answers a handful in parallel without a rate limit. */
 export const TRANSACTION_CONCURRENCY = 4;
 /**
@@ -447,6 +456,8 @@ type ReadDeps = Readonly<{
   deadlineMs?: number;
   /** From the read's start, how long a transaction already asked for is waited for. */
   hardStopMs?: number;
+  /** From the read's start, how long the accounts and the signature history may take. */
+  historyDeadlineMs?: number;
 }>;
 
 /** The fee identities one read covers: the referral account, then the registry's fee wallets. */
@@ -487,13 +498,22 @@ async function readAttributionOnce(deps: ReadDeps = {}): Promise<AttributionRead
   let accounts: ReferralTokenAccount[];
   let history: Map<string, SignatureInfo>;
   let scopedOwners: readonly FeeIdentityOwner[] = owners;
-  try {
-    accounts = [];
+  const readHistory = async () => {
+    const found: ReferralTokenAccount[] = [];
     for (const owner of owners) {
       /* Anyone can open token accounts a published wallet owns: a fee wallet is read by its canonical fee accounts only. */
-      accounts.push(...(owner.kind === "FEE_WALLET" ? await readFeeWalletAccounts(owner.address, endpoints, used) : await readReferralTokenAccounts(owner.address, endpoints, used)));
+      found.push(...(owner.kind === "FEE_WALLET" ? await readFeeWalletAccounts(owner.address, endpoints, used) : await readReferralTokenAccounts(owner.address, endpoints, used)));
     }
-    history = await readSignatureHistory(accounts.map((account) => account.address), endpoints, used);
+    return { found, signatures: await readSignatureHistory(found.map((account) => account.address), endpoints, used) };
+  };
+  try {
+    const outOfTime = Symbol("out of time");
+    const read = await within(readHistory(), Math.max(0, started + (deps.historyDeadlineMs ?? HISTORY_DEADLINE_MS) - Date.now()), outOfTime);
+    if (read === outOfTime) {
+      return { ok: false, code: "UNREACHABLE", reason: "The fee identities' history was not read within its time; nothing is counted from a part of it, and the next read asks again." };
+    }
+    accounts = read.found;
+    history = read.signatures;
     /* A fee wallet counts its canonical fee accounts only, in every transaction. */
     scopedOwners = owners.map((owner) => (owner.kind === "FEE_WALLET" ? { ...owner, accounts: accounts.filter((account) => account.owner === owner.address).map((account) => account.address) } : owner));
   } catch (failure) {

@@ -13,7 +13,7 @@ import { classifySpotFill } from "@/lib/solana/fill-outcome";
 import { WRAPPED_SOL_MINT } from "@/lib/solana/send-kinds";
 import { downloadReceipt } from "@/lib/solana/send-receipt-vault.client";
 import { swapFailureCopy } from "@/lib/solana/swap-failure-copy";
-import { additionalJupiterFeeBps, serviceFeeText, type RyntraServiceFee } from "@/lib/swap/service-fee";
+import { additionalJupiterFeeBps, serviceFeeReviewText, serviceFeeText, type RyntraServiceFee } from "@/lib/swap/service-fee";
 import { spotFillAmounts, spotTicketAction } from "@/lib/spot/ticket-state";
 import { tradingAvailability, type SpotMarket } from "@/lib/spot/markets";
 
@@ -249,6 +249,16 @@ export function OrderTicket({
   const impactTone = impact !== null ? (impact >= 3 ? "risk" : impact >= 1 ? "caution" : undefined) : undefined;
   const serviceFee = order ? ryntraServiceFee(order) : null;
   const additionalFee = order ? additionalJupiterFeeBps(order.totalFeeBasisPoints, serviceFee) : null;
+  /* «Комісія Ryntra» with its amount: exact where `/build` takes it from what was typed, else ≈ a share of its side; the settled ticket states the chain's. */
+  const serviceFeeLine = (none: string, joiner: "dot" | "parentheses" = "dot"): string =>
+    order && serviceFee
+      ? serviceFeeReviewText(
+          serviceFee,
+          { inputMint: order.inputMint, outputMint: order.outputMint, inputRaw: order.inAmountRaw, quotedOutputRaw: order.outAmountRaw },
+          { [order.inputMint]: { decimals: inputDecimals, code: inputSymbol || null }, [order.outputMint]: { decimals: outputDecimals, code: outputSymbol || null } },
+          { none, joiner, usd: { input: Number(order.inUsdValue) || null, output: Number(order.outUsdValue) || null } },
+        )
+      : none;
   const networkFeeSol = prepared
     ? (Number(BigInt(prepared.order.signatureFeeLamports) + BigInt(prepared.order.priorityFeeLamports)) / 1e9).toFixed(6)
     : null;
@@ -381,7 +391,7 @@ export function OrderTicket({
                   </div>
                 ) : null}
                 <div>
-                  <dt>{text("Ryntra service fee")}</dt>
+                  <dt>{text("Ryntra fee")}</dt>
                   <dd>{settledFee ? serviceFeeText(settledFee, text("None")) : text("None")}</dd>
                 </div>
               </dl>
@@ -553,8 +563,8 @@ export function OrderTicket({
                 </div>
               ) : null}
               <div>
-                <dt>{text("Ryntra service fee")}</dt>
-                <dd>{serviceFee ? serviceFeeText(serviceFee, text("None")) : "—"}</dd>
+                <dt>{text("Ryntra fee")}</dt>
+                <dd translate="no">{serviceFee ? serviceFeeLine(text("None")) : "—"}</dd>
               </div>
               {additionalFee !== null && additionalFee > 0 ? (
                 <div><dt>{text("Additional Jupiter fee")}</dt><dd>{(additionalFee / 100).toFixed(2)}%</dd></div>
@@ -638,7 +648,7 @@ export function OrderTicket({
                 <dd translate="no">{[
                   networkFeeSol !== null ? `${text("network")} ${networkFeeSol} SOL` : null,
                   accountReserveSol !== null ? `${text("account reserve")} ${accountReserveSol} SOL` : null,
-                  serviceFee ? `Ryntra ${serviceFeeText(serviceFee, text("None"))}` : null,
+                  serviceFee ? `Ryntra ${serviceFeeLine(text("None"), "parentheses")}` : null,
                   additionalFee !== null && additionalFee > 0 ? `Jupiter ${(additionalFee / 100).toFixed(2)}%` : null,
                   impact !== null && impact > 0 ? `${text("impact")} ${impact.toFixed(2)}%` : null,
                   `${text("slippage up to")} ${(prepared.order.slippageBps / 100).toFixed(2)}%`,

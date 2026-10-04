@@ -15,6 +15,8 @@ export const JUPITER_SWAP_ADAPTER_REF = "adapter:jupiter-swap@1";
 export const JUPITER_SWAP_ACTION_REF = "action:jupiter-swap/order-execute@1";
 export const JUPITER_SWAP_ADOPTED_RPC_ACTION_REF = "action:jupiter-swap/order-own-rpc-submit@1";
 export const JUPITER_SWAP_UNKNOWN_SUBMISSION_ACTION_REF = "action:jupiter-swap/order-submission-unresolved@1";
+/** Fee policy v2: Jupiter's `/build` instructions, assembled by Ryntra, wallet-signed, sent once through Ryntra's own RPC. */
+export const JUPITER_SWAP_BUILD_ACTION_REF = "action:jupiter-swap/build-own-rpc-submit@1";
 
 export const JUPITER_SWAP_DEFINITIONS = [
   {
@@ -38,6 +40,15 @@ export const JUPITER_SWAP_DEFINITIONS = [
     kind: "ACTION_SCHEMA",
     ref: JUPITER_SWAP_ADOPTED_RPC_ACTION_REF,
     displayName: "Jupiter order + wallet-signed own-RPC submit",
+    adapterRef: JUPITER_SWAP_ADAPTER_REF,
+    canonicalClass: "VALUE_TRANSFER",
+    budget: "OPTIONAL",
+    status: "ALLOWED",
+  },
+  {
+    kind: "ACTION_SCHEMA",
+    ref: JUPITER_SWAP_BUILD_ACTION_REF,
+    displayName: "Jupiter build + wallet-signed own-RPC submit",
     adapterRef: JUPITER_SWAP_ADAPTER_REF,
     canonicalClass: "VALUE_TRANSFER",
     budget: "OPTIONAL",

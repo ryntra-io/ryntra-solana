@@ -12,9 +12,10 @@
  *   the same environment switch the routes already obey, read here, never a
  *   second switch.
  * - **fee** — the Ryntra fee and the mechanism the venue carries it by. A live
- *   rate is read from the fee policy (`lib/swap/service-fee.ts`), never copied
- *   here: one number, one place. A planned row has no rate yet — `NOT_SET` —
- *   and opens only with one.
+ *   rate is read from the fee policy — v2 per flow (`./fee-policy.ts`) on the
+ *   Jupiter swap, `lib/swap/service-fee.ts` elsewhere — never copied here:
+ *   one number, one place. A planned row has no rate yet — `NOT_SET` — and
+ *   opens only with one.
  * - **attribution** — how an outside counter knows the flow is Ryntra's: the
  *   kind of identity and where its address is configured. This registry holds
  *   no address: a referral account or a Relay recipient is a deployment fact
@@ -33,6 +34,7 @@ import { feeWalletOf } from "../attribution/registry.ts";
 import { SOLANA_LANE_STATE_ENV, resolveSolanaLaneState, type SolanaLane } from "../solana/lane-state.ts";
 import { SERVICE_FEE_ENV } from "../swap/service-fee.server.ts";
 import { RYNTRA_SERVICE_FEE_POLICY, type ServiceFeeConfig, type ServiceFeeMechanism } from "../swap/service-fee.ts";
+import { FEE_POLICY_V2, type FeeFlow } from "./fee-policy.ts";
 import {
   CAPABILITY_IDS,
   NETWORK_IDS,
@@ -56,7 +58,9 @@ export type IntentPipelineId = (typeof INTENT_PIPELINES)[number];
 
 export type CapabilityFee =
   /** Charged through the venue's own mechanism, at the policy's rate. */
-  | Readonly<{ kind: "MECHANISM"; mechanism: Exclude<ServiceFeeMechanism, "NONE"> }>
+  | Readonly<{ kind: "MECHANISM"; mechanism: Exclude<ServiceFeeMechanism, "NONE" | "JUPITER_PLATFORM_FEE"> }>
+  /** Fee policy v2: the rate is the trade's flow's, carried by whichever of the venue's mechanisms its lane takes. */
+  | Readonly<{ kind: "POLICY"; policy: "fee-policy-v2"; mechanisms: readonly Exclude<ServiceFeeMechanism, "NONE">[] }>
   /** The route has no mechanism for an integrator fee; a true zero. */
   | Readonly<{ kind: "NONE"; reason: string }>
   /** Planned: the rate is set before the row opens, never guessed here. */
@@ -98,14 +102,15 @@ export const CAPABILITY_REGISTRY: readonly CapabilityRow[] = Object.freeze([
     capability: "swap",
     state: "LIVE",
     lane: "SWAP",
-    fee: { kind: "MECHANISM", mechanism: "JUPITER_REFERRAL" },
+    /* `/build` pays the fee wallet; `/order` (Ondo, PreStocks, where it pays more, the phone) the referral account — both read by the attribution registry. */
+    fee: { kind: "POLICY", policy: "fee-policy-v2", mechanisms: ["JUPITER_PLATFORM_FEE", "JUPITER_REFERRAL"] },
     attribution: {
-      kind: "JUPITER_REFERRAL_ACCOUNT",
-      configKey: SERVICE_FEE_ENV.jupiterReferralAccount,
+      kind: "FEE_WALLET",
+      configKey: null,
       products: ["swap", "memes", "stocks"],
     },
     pipeline: "solana-swap",
-    note: "Swap, Spot and the company page: one order, one review, one wallet signature, one receipt.",
+    note: "Swap, Spot and the company page: one order, one review, one wallet signature, one receipt; the fee per flow.",
   },
   {
     network: "solana",
@@ -223,6 +228,13 @@ const CapabilityRowSchema = z
     lane: z.enum(Object.keys(SOLANA_LANE_STATE_ENV) as [SolanaLane, ...SolanaLane[]]).nullable(),
     fee: z.discriminatedUnion("kind", [
       z.object({ kind: z.literal("MECHANISM"), mechanism: z.enum(["JUPITER_REFERRAL", "RELAY_APP_FEE", "MAYAN_REFERRER"]) }).strict(),
+      z
+        .object({
+          kind: z.literal("POLICY"),
+          policy: z.literal("fee-policy-v2"),
+          mechanisms: z.array(z.enum(["JUPITER_REFERRAL", "JUPITER_PLATFORM_FEE", "RELAY_APP_FEE", "MAYAN_REFERRER"])).min(1),
+        })
+        .strict(),
       z.object({ kind: z.literal("NONE"), reason: z.string().min(1) }).strict(),
       z.object({ kind: z.literal("NOT_SET") }).strict(),
     ]),
@@ -244,7 +256,7 @@ const CapabilityRowSchema = z
     if (row.state === "LIVE" && row.fee.kind === "NOT_SET") {
       context.addIssue({ code: "custom", path: ["fee"], message: "A live row needs its fee or the reason it has none." });
     }
-    if (row.state !== "LIVE" && row.fee.kind === "MECHANISM") {
+    if (row.state !== "LIVE" && (row.fee.kind === "MECHANISM" || row.fee.kind === "POLICY")) {
       context.addIssue({ code: "custom", path: ["fee"], message: "Only a live row charges a fee." });
     }
     /* A live row is stoppable by an operator, and its fee is attributable. */
@@ -252,6 +264,10 @@ const CapabilityRowSchema = z
       context.addIssue({ code: "custom", path: ["lane"], message: "A live row needs its operator stop." });
     }
     if (row.fee.kind === "MECHANISM" && (row.attribution === null || row.attribution.configKey === null)) {
+      context.addIssue({ code: "custom", path: ["attribution"], message: "A charged fee needs a configured identity." });
+    }
+    /* A fee wallet's address is a row of the public attribution registry, not a deployment key. */
+    if (row.fee.kind === "POLICY" && (row.attribution === null || (row.attribution.kind !== "FEE_WALLET" && row.attribution.configKey === null))) {
       context.addIssue({ code: "custom", path: ["attribution"], message: "A charged fee needs a configured identity." });
     }
     /* Only live code runs through a pipeline. */
@@ -303,10 +319,11 @@ export function openVenues(
   );
 }
 
-/** The Ryntra rate a row charges, in basis points; null while it is not set. */
-export function capabilityFeeBps(row: CapabilityRow): number | null {
+/** The Ryntra rate a row charges, in basis points — on a policy row, the flow's; null while it is not set. */
+export function capabilityFeeBps(row: CapabilityRow, flow: FeeFlow = "AS_NOW"): number | null {
   if (row.fee.kind === "NONE") return 0;
   if (row.fee.kind === "NOT_SET") return null;
+  if (row.fee.kind === "POLICY") return FEE_POLICY_V2[flow].bps;
   return RYNTRA_SERVICE_FEE_POLICY[row.fee.mechanism];
 }
 

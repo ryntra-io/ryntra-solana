@@ -91,7 +91,11 @@ test("both sheets stand above a phone's keyboard, their one action in sight", ()
 
 test("the swap's quote and its signable order are asked once more after the provider's own pause; /execute never", () => {
   /* A quote — a read — waits at most 2.5 s (the rule of 2026-09-15). */
-  assert.match(QUOTE_ROUTE, /askOnceMoreAfterRate\(\(\) =>\s*fetchJupiterOrder\(\{[^}]*\}, selection\),\s*\);/);
+  /* Since fee policy v2 the web's quote is the lane choice's, whose every ask is asked once more the same way; the phone's is the route's own. */
+  assert.match(QUOTE_ROUTE, /askOnceMoreAfterRate\(async \(\) => \{[\s\S]*?fetchJupiterOrder\(\{[^}]*\}, selection\);/);
+  const LANES = source("../../../lib/core/solana-swap/fee-route.server.ts");
+  assert.match(LANES, /askOnceMoreAfterRate\(\(\) => fetchQuote\(\{ inputMint, outputMint, amountRaw, referral \}, selection\)\)/);
+  assert.match(LANES, /askOnceMoreAfterRate\(\(\) => \(deps\.fetchBuild \?\? fetchJupiterBuild\)\(/);
   /* A person's order waits for the window itself, up to its ten seconds: a $1 purchase on production was refused with the reset 4 s away (2026-09-28). */
   assert.match(ORDER_ROUTE, /askOnceMoreAfterRate\(\s*\(\) =>\s*fetchJupiterExecutableOrder\(/);
   assert.match(ORDER_ROUTE, /\{ maxWaitMs: JUPITER_ORDER_RETRY_WAIT_MAX_MS \},\s*\);/);

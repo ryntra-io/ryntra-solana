@@ -32,7 +32,7 @@ export const OVERVIEW: DocPage = {
           ["Your money", "In your own wallet — Ryntra never holds it"],
           ["A purchase", "From $1, in dollars"],
           ["Companies", "Listed companies and funds by xStocks and Backpack; private companies by PreStocks"],
-          ["Service fee", `${FEES.swap} of a purchase or a swap, ${FEES.bridge} of a bridge — shown before you sign`],
+          ["Service fee", `${FEES.swap} of a swap by the token, ${FEES.company} of a company, ${FEES.bridge} of a bridge — shown with its amount before you sign`],
           ["Account", "Your wallet; no email, no password"],
         ],
         [
@@ -40,7 +40,7 @@ export const OVERVIEW: DocPage = {
           ["Твої гроші", "У твоєму гаманці — Ryntra їх не тримає"],
           ["Купівля", "Від $1, у доларах"],
           ["Компанії", "Публічні компанії й фонди від xStocks і Backpack; приватні — від PreStocks"],
-          ["Комісія Ryntra", `${FEES_UK.swap} купівлі чи обміну, ${FEES_UK.bridge} — мосту; видно до підпису`],
+          ["Комісія Ryntra", `${FEES_UK.swap} обміну залежно від токена, ${FEES_UK.company} — компанії, ${FEES_UK.bridge} — мосту; сума видна до підпису`],
           ["Акаунт", "Твій гаманець; без пошти й пароля"],
         ],
       ),

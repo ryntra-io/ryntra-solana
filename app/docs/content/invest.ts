@@ -80,13 +80,13 @@ export const BUY: DocPage = {
     section("costs", "What a purchase costs", "Скільки коштує купівля", [
       list(
         [
-          `All costs is everything the purchase costs beyond what it buys: Ryntra's ${FEES.spot} service fee and any fee inside the route, the price impact and the network fee.`,
+          `All costs is everything the purchase costs beyond what it buys: Ryntra's ${FEES.company} service fee and any fee inside the route, the price impact and the network fee.`,
           "A first purchase of a token also sets aside a small one-time reserve that opens the token's account in your wallet. It stays yours, and the Review states it apart from the costs.",
           "Where $1 has no route for a company, the sheet says that company's own minimum, read from the quote.",
           "A private company's token by PreStocks carries the issuer's fee on every transfer, its rate read from the chain: the Review states it on its own line under All costs, and what arrives is already after it.",
         ],
         [
-          `«Усі витрати» — усе, що купівля коштує понад те, що купує: комісія Ryntra ${FEES_UK.spot} і будь-яка комісія всередині маршруту, вплив на ціну й плата мережі.`,
+          `«Усі витрати» — усе, що купівля коштує понад те, що купує: комісія Ryntra ${FEES_UK.company} і будь-яка комісія всередині маршруту, вплив на ціну й плата мережі.`,
           "Перша купівля токена ще відкладає невеликий разовий резерв, що відкриває рахунок цього токена у твоєму гаманці. Він лишається твоїм, і «Перевірка» називає його окремо від витрат.",
           "Якщо для компанії на $1 маршруту немає, аркуш назве її власний мінімум, прочитаний із котирування.",
           "Токен приватної компанії від PreStocks несе комісію емітента з кожного переказу, її ставку прочитано з ланцюга: «Перевірка» показує її окремим рядком під «Усі витрати», а те, що надійде, — уже без неї.",

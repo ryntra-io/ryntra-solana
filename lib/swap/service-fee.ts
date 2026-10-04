@@ -1,17 +1,25 @@
 /**
  * The Ryntra service fee — one shape, whichever provider carries the swap.
  *
- * The Swap surface takes **25 basis points** (since 2026-09-10, down from 50),
- * and it takes them through the fee mechanism each integrated provider already
- * ships. No fee contract of Ryntra’s own was written, no extra transfer was
- * added, and no route was made worse to earn more.
+ * Since fee policy v2 (2026-10-05, `lib/core/fee-policy.ts`) a swap's rate is
+ * its flow's — memes, verified tokens, majors, dollars, stocks — and it travels
+ * through the fee mechanism each integrated provider already ships. No fee
+ * contract of Ryntra’s own was written, no extra transfer was added, and no
+ * route was made worse to earn more.
  *
- * ## Three mechanisms, and they are not the same thing
+ * ## Four mechanisms, and they are not the same thing
  *
  * A surface that showed one number and implied one pipe would be lying about
- * where the money is. These three differ in what is charged, what it is charged
+ * where the money is. These four differ in what is charged, what it is charged
  * in, and where it ends up:
  *
+ * - **Jupiter platform fee** (`JUPITER_PLATFORM_FEE`) — `platformFeeBps` +
+ *   `feeAccount` on `/build`. Jupiter keeps nothing of it: the fee is part of
+ *   the swap instruction and lands whole in the canonical token account of
+ *   Ryntra's fee wallet for the fee mint, in the same transaction. Taken from
+ *   the input when the input is one of the fee wallet's mints — exactly
+ *   `floor(amount × bps / 10 000)`, known before the signature — else from
+ *   the output.
  * - **Jupiter Referral** (`JUPITER_REFERRAL`) — `referralAccount` +
  *   `referralFee` on `/order`. Jupiter picks the fee mint from its own priority
  *   list (SOL, then stables, then LSTs, then bluechips), takes **20% of the
@@ -59,7 +67,7 @@
 import { z } from "zod";
 
 /** The provider mechanism a route's fee actually travels through. */
-export type ServiceFeeMechanism = "JUPITER_REFERRAL" | "RELAY_APP_FEE" | "MAYAN_REFERRER" | "NONE";
+export type ServiceFeeMechanism = "JUPITER_REFERRAL" | "JUPITER_PLATFORM_FEE" | "RELAY_APP_FEE" | "MAYAN_REFERRER" | "NONE";
 
 /**
  * Ryntra's rate **per mechanism**, in basis points, since 2026-09-11.
@@ -84,16 +92,21 @@ export type ServiceFeeMechanism = "JUPITER_REFERRAL" | "RELAY_APP_FEE" | "MAYAN_
  * configuration mistake produces a quote a provider silently refuses to honour.
  * Nothing may treat a quoted figure as income; `isServiceFeeIncome` is the only
  * predicate allowed to call anything revenue.
+ *
+ * Since fee policy v2 the Jupiter rates are the flow's (`FEE_POLICY_V2`): the
+ * referral rate below is what a flow the table does not name still pays
+ * («as now»), and `/build`'s platform fee has no rate of its own here — each
+ * flow names it.
  */
-export const RYNTRA_SERVICE_FEE_POLICY: Readonly<Record<Exclude<ServiceFeeMechanism, "NONE">, number>> = {
+export const RYNTRA_SERVICE_FEE_POLICY: Readonly<Record<Exclude<ServiceFeeMechanism, "NONE" | "JUPITER_PLATFORM_FEE">, number>> = {
   JUPITER_REFERRAL: 50,
   RELAY_APP_FEE: 25,
   MAYAN_REFERRER: 25,
 };
 
-/** The rate Ryntra asks a mechanism for; zero for no mechanism at all. */
+/** The rate Ryntra asks a mechanism for by default; zero for no mechanism, and for `/build`'s fee, whose rate is always the flow's. */
 export function serviceFeeRateFor(mechanism: ServiceFeeMechanism): number {
-  return mechanism === "NONE" ? 0 : RYNTRA_SERVICE_FEE_POLICY[mechanism];
+  return mechanism === "NONE" || mechanism === "JUPITER_PLATFORM_FEE" ? 0 : RYNTRA_SERVICE_FEE_POLICY[mechanism];
 }
 
 
@@ -101,6 +114,8 @@ export function serviceFeeRateFor(mechanism: ServiceFeeMechanism): number {
 export type ServiceFeeAccrual =
   /** A Jupiter `referralTokenAccount` for the fee mint, on Solana, claimable on chain. */
   | "JUPITER_REFERRAL_TOKEN_ACCOUNT"
+  /** The canonical token account of Ryntra's fee wallet for the fee mint, on Solana, paid in the swap itself. */
+  | "FEE_WALLET_TOKEN_ACCOUNT"
   /** An off-chain USDC balance at Relay, keyed to an EVM claim address. */
   | "RELAY_APP_BALANCE_USDC"
   /** Transferred on chain to the Solana referrer address by the route itself. */
@@ -133,7 +148,12 @@ export type RyntraServiceFee = Readonly<{
   asset: string | null;
   symbol: string | null;
   decimals: number | null;
-  /** Raw base units, **exactly as the provider stated them**. Never computed here. */
+  /**
+   * Raw base units, **exactly as the provider stated them** — or, for `/build`'s
+   * fee on the input side, the program's own exact arithmetic on the amount,
+   * proved against the fee account by the simulation of the very bytes the
+   * wallet signs. Never an estimate.
+   */
   amountRaw: string | null;
   /** The provider's own USD figure, when it states one. Never derived from a price. */
   usd: number | null;
@@ -209,13 +229,13 @@ export function serviceFeeAbsent(note: string): RyntraServiceFee {
 }
 
 /** The mechanism exists; Ryntra has no address configured for it. */
-export function serviceFeeUnconfigured(mechanism: Exclude<ServiceFeeMechanism, "NONE">, note: string): RyntraServiceFee {
-  return { ...ZERO, mechanism, state: "UNCONFIGURED", accrual: accrualFor(mechanism), requestedBasisPoints: serviceFeeRateFor(mechanism), note };
+export function serviceFeeUnconfigured(mechanism: Exclude<ServiceFeeMechanism, "NONE">, note: string, requestedBasisPoints = serviceFeeRateFor(mechanism)): RyntraServiceFee {
+  return { ...ZERO, mechanism, state: "UNCONFIGURED", accrual: accrualFor(mechanism), requestedBasisPoints, note };
 }
 
 /** Asked for, and the provider's answer does not carry it. */
-export function serviceFeeNotApplied(mechanism: Exclude<ServiceFeeMechanism, "NONE">, note: string): RyntraServiceFee {
-  return { ...ZERO, mechanism, state: "NOT_APPLIED", accrual: accrualFor(mechanism), requestedBasisPoints: serviceFeeRateFor(mechanism), note };
+export function serviceFeeNotApplied(mechanism: Exclude<ServiceFeeMechanism, "NONE">, note: string, requestedBasisPoints = serviceFeeRateFor(mechanism)): RyntraServiceFee {
+  return { ...ZERO, mechanism, state: "NOT_APPLIED", accrual: accrualFor(mechanism), requestedBasisPoints, note };
 }
 
 /** The provider states this fee in the quote a person is about to review. */
@@ -229,13 +249,15 @@ export function serviceFeeQuoted(
     amountRaw?: string | null;
     usd?: number | null;
     providerRetainedPercent?: number | null;
+    /** The flow's rate asked for; the mechanism's default when absent. */
+    requestedBasisPoints?: number;
   }>,
 ): RyntraServiceFee {
   return {
     mechanism,
     state: "QUOTED",
     basisPoints: stated.basisPoints,
-    requestedBasisPoints: serviceFeeRateFor(mechanism),
+    requestedBasisPoints: stated.requestedBasisPoints ?? serviceFeeRateFor(mechanism),
     asset: stated.asset ?? null,
     symbol: stated.symbol ?? null,
     decimals: stated.decimals ?? null,
@@ -311,10 +333,11 @@ export function serviceFeeIsCharged(fee: RyntraServiceFee): boolean {
   return fee.basisPoints > 0 && fee.state !== "NOT_APPLIED" && fee.state !== "UNCONFIGURED";
 }
 
-export const SERVICE_FEE_MECHANISMS = ["JUPITER_REFERRAL", "RELAY_APP_FEE", "MAYAN_REFERRER", "NONE"] as const;
+export const SERVICE_FEE_MECHANISMS = ["JUPITER_REFERRAL", "JUPITER_PLATFORM_FEE", "RELAY_APP_FEE", "MAYAN_REFERRER", "NONE"] as const;
 export const SERVICE_FEE_STATES = ["NONE", "UNCONFIGURED", "NOT_APPLIED", "QUOTED", "COLLECTED", "NOT_COLLECTED"] as const;
 export const SERVICE_FEE_ACCRUALS = [
   "JUPITER_REFERRAL_TOKEN_ACCOUNT",
+  "FEE_WALLET_TOKEN_ACCOUNT",
   "RELAY_APP_BALANCE_USDC",
   "MAYAN_ONCHAIN_REFERRER",
   "NONE",
@@ -396,6 +419,66 @@ export function serviceFeeAmountText(fee: RyntraServiceFee): string | null {
   return fee.symbol ? `${amount} ${fee.symbol}` : amount;
 }
 
+/** The mints a dollar figure needs no price for: a dollar is a dollar. */
+const DOLLAR_FEE_MINTS: ReadonlySet<string> = new Set(["EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"]);
+const NBSP = " ";
+
+export type ServiceFeeReviewOptions = Readonly<{
+  /** Shown when nothing is charged. */
+  none?: string;
+  /** A locale for the figures («0,25%» in Ukrainian); absent, the cards' own dot. */
+  numbers?: string;
+  /** The provider's dollar figure of each whole side of the quote, for a dollar anchor beside a fee in a token. */
+  usd?: Readonly<{ input: number | null; output: number | null }>;
+  /** How the amount follows the rate: «0.25% · 0.0025 USDC» on its own row, «0.25% (0.0025 USDC)» inside a list of costs. */
+  joiner?: "dot" | "parentheses";
+}>;
+
+/**
+ * «Комісія Ryntra» before the signature, the one formatter every surface
+ * uses: the rate, and the amount — exact where it is known before the swap
+ * (`/build`'s input side), else `≈` a share of the side the fee is taken
+ * from — with a dollar anchor when the fee is in a token and the quote states
+ * that side's dollar figure. The settled card reads `serviceFeeText`: after
+ * the swap the amount is the chain's.
+ *
+ * No-break spaces keep the figures whole, «0.10% · 0.00001 SOL»: a narrow
+ * cell wraps between the label and the figures, never inside them.
+ *
+ * `sides` names the decimals and the code of the swap's two mints, which the
+ * card already holds; a fee whose own scale is stated uses its own.
+ */
+export function serviceFeeReviewText(
+  fee: RyntraServiceFee,
+  quote: Readonly<{ inputMint: string; outputMint: string; inputRaw: string; quotedOutputRaw: string }>,
+  sides: Readonly<Record<string, Readonly<{ decimals: number | null; code: string | null }>>>,
+  options: ServiceFeeReviewOptions | string = {},
+): string {
+  const { none = "None", numbers, usd, joiner = "dot" } = typeof options === "string" ? { none: options } : options;
+  if (fee.basisPoints === 0) return none;
+  const fixed = (value: number, digits: number) =>
+    numbers ? new Intl.NumberFormat(numbers, { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(value) : value.toFixed(digits);
+  const rate = `${fixed(fee.basisPoints / 100, 2)}%`;
+  const estimate = serviceFeeEstimate(fee, quote);
+  const asset = fee.asset;
+  const decimals = fee.decimals ?? (asset ? sides[asset]?.decimals ?? null : null);
+  const code = fee.symbol ?? (asset ? sides[asset]?.code ?? null : null);
+  /* No amount to size: the provider's own dollar figure where it states one, else the rate alone. */
+  if (!estimate || decimals === null) return fee.usd !== null && fee.usd > 0 ? serviceFeeText(fee, none) : rate;
+  const plain = serviceFeeAmountText({ ...fee, amountRaw: estimate.amountRaw, decimals, symbol: null }) ?? "0";
+  const figure = numbers ? new Intl.NumberFormat(numbers, { maximumFractionDigits: decimals }).format(Number(estimate.amountRaw) / 10 ** decimals) : plain;
+  /* A dollar anchor for a fee in a token — SOL, a token — from the quote's own dollar figure for that side; a fee in dollars is its own anchor. */
+  const sideUsd = asset === quote.inputMint ? usd?.input ?? null : asset === quote.outputMint ? usd?.output ?? null : null;
+  const sideRaw = asset === quote.inputMint ? quote.inputRaw : quote.quotedOutputRaw;
+  const feeUsd =
+    asset && !DOLLAR_FEE_MINTS.has(asset) && sideUsd !== null && sideUsd > 0 && BigInt(sideRaw) > 0n ? (sideUsd * Number(estimate.amountRaw)) / Number(sideRaw) : null;
+  const dollars = feeUsd === null ? null : feeUsd < 0.01 ? `<${NBSP}$${fixed(0.01, 2)}` : `≈${NBSP}$${fixed(feeUsd, 2)}`;
+  const amount = `${estimate.exact ? "" : `≈${NBSP}`}${figure}${code ? `${NBSP}${code}` : ""}`;
+  if (joiner === "parentheses") return `${rate}${NBSP}(${amount}${dollars ? `,${NBSP}${dollars}` : ""})`;
+  /* An ordinary space before the dollar anchor: on a narrow screen it is the one place the figure may wrap. */
+  return `${rate}${NBSP}·${NBSP}${amount}${dollars ? ` (${dollars})` : ""}`;
+}
+
 /**
  * The whole fee as one line: the rate, plus the most specific figure the provider
  * actually stated beside it.
@@ -419,10 +502,30 @@ export function serviceFeeText(fee: RyntraServiceFee, none = "None"): string {
   return `${rate} · ${fee.usd < 0.01 ? "< $0.01" : `≈ $${fee.usd.toFixed(2)}`}`;
 }
 
-/** Jupiter's total already includes the referral fee and Jupiter's retained share. */
+/**
+ * The fee's size before the swap lands. Where the provider stated an amount,
+ * that amount; else a share of the side the fee is taken from — on the input
+ * side the provider's own arithmetic on the amount typed, on the output side
+ * a share of the quoted output, an estimate the receipt replaces with what
+ * the chain shows. Null when the fee's asset is neither side.
+ */
+export function serviceFeeEstimate(
+  fee: Pick<RyntraServiceFee, "basisPoints" | "asset" | "amountRaw">,
+  quote: Readonly<{ inputMint: string; outputMint: string; inputRaw: string; quotedOutputRaw: string }>,
+): Readonly<{ amountRaw: string; exact: boolean }> | null {
+  if (fee.amountRaw !== null) return { amountRaw: fee.amountRaw, exact: true };
+  if (fee.basisPoints <= 0 || fee.basisPoints >= 10_000 || fee.asset === null) return null;
+  const bps = BigInt(fee.basisPoints);
+  if (fee.asset === quote.inputMint) return { amountRaw: ((BigInt(quote.inputRaw) * bps) / 10_000n).toString(), exact: false };
+  /* Jupiter sizes an output-side fee on the route's own output (a simulation, 2026-10-05: 10 bps of 3 313 283 paid 3 312); the quote's output stands in for it. */
+  if (fee.asset === quote.outputMint) return { amountRaw: ((BigInt(quote.quotedOutputRaw) * bps) / 10_000n).toString(), exact: false };
+  return null;
+}
+
+/** Jupiter's total already includes Ryntra's fee — the referral fee with Jupiter's retained share, or `/build`'s platform fee. */
 export function additionalJupiterFeeBps(total: number | null, fee: Pick<RyntraServiceFee, "mechanism" | "basisPoints"> | null): number | null {
   if (total === null || !Number.isFinite(total) || total < 0) return null;
-  const included = fee?.mechanism === "JUPITER_REFERRAL" ? fee.basisPoints : 0;
+  const included = fee?.mechanism === "JUPITER_REFERRAL" || fee?.mechanism === "JUPITER_PLATFORM_FEE" ? fee.basisPoints : 0;
   return Math.max(0, total - included);
 }
 
@@ -430,6 +533,8 @@ export function accrualFor(mechanism: ServiceFeeMechanism): ServiceFeeAccrual {
   switch (mechanism) {
     case "JUPITER_REFERRAL":
       return "JUPITER_REFERRAL_TOKEN_ACCOUNT";
+    case "JUPITER_PLATFORM_FEE":
+      return "FEE_WALLET_TOKEN_ACCOUNT";
     case "RELAY_APP_FEE":
       return "RELAY_APP_BALANCE_USDC";
     case "MAYAN_REFERRER":

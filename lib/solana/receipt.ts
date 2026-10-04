@@ -37,6 +37,7 @@ import {
   JUPITER_SWAP_ACTION_REF,
   JUPITER_SWAP_ADAPTER_REF,
   JUPITER_SWAP_ADOPTED_RPC_ACTION_REF,
+  JUPITER_SWAP_BUILD_ACTION_REF,
   JUPITER_SWAP_UNKNOWN_SUBMISSION_ACTION_REF,
 } from "../agent-control/adapters/jupiter-swap.ts";
 import { AGENT_HASH_DOMAINS_V2, agentCanonicalPreimage, hashAgentPayloadV2 } from "../agent-control/canonical.ts";
@@ -294,6 +295,7 @@ function checkBinding(receipt: SolanaOutcomeReceipt): SolanaReceiptVerification[
     const action = [
       JUPITER_SWAP_ACTION_REF,
       JUPITER_SWAP_ADOPTED_RPC_ACTION_REF,
+      JUPITER_SWAP_BUILD_ACTION_REF,
       JUPITER_SWAP_UNKNOWN_SUBMISSION_ACTION_REF,
     ].find((ref) => refs.includes(ref));
     return {

@@ -9,10 +9,10 @@ moved counts as new. Generated at every update from the development history.
 
 | Since the tag | Files |
 |---|---|
-| New | 1,017 |
-| Changed | 804 |
-| Unchanged | 935 |
-| Lines added / removed | +268,133 / −19,688 |
+| New | 1,027 |
+| Changed | 806 |
+| Unchanged | 933 |
+| Lines added / removed | +271,381 / −19,778 |
 
 ## New since the tag
 
@@ -261,6 +261,7 @@ moved counts as new. Generated at every update from the development history.
 - `app/app/stocks/[ticker]/not-found.tsx`
 - `app/app/stocks/[ticker]/page.tsx`
 - `app/app/stocks/[ticker]/pre-ipo-research.tsx`
+- `app/app/stocks/[ticker]/ryntra-fee-line.ts`
 - `app/app/stocks/[ticker]/sell-sheet.tsx`
 - `app/app/stocks/[ticker]/sheet-keyboard.ts`
 - `app/app/stocks/[ticker]/sum-field.tsx`
@@ -716,8 +717,12 @@ moved counts as new. Generated at every update from the development history.
 - `lib/core/capabilities.ts`
 - `lib/core/contracts.ts`
 - `lib/core/core.test.mjs`
+- `lib/core/fee-policy.test.mjs`
+- `lib/core/fee-policy.ts`
 - `lib/core/networks/solana.ts`
 - `lib/core/pipeline.ts`
+- `lib/core/solana-swap/fee-route.server.ts`
+- `lib/core/solana-swap/fee-route.test.mjs`
 - `lib/core/solana-swap/guard.ts`
 - `lib/core/solana-swap/prepare.ts`
 - `lib/core/solana-swap/refusal.ts`
@@ -868,16 +873,20 @@ moved counts as new. Generated at every update from the development history.
 - `lib/site/structured-data.ts`
 - `lib/site/use-page-path.ts`
 - `lib/solana/action-reconcile.server.ts`
+- `lib/solana/build-fee-proof.ts`
 - `lib/solana/chain-error.ts`
 - `lib/solana/chain-ids.ts`
 - `lib/solana/fill-outcome.test.mjs`
 - `lib/solana/fill-outcome.ts`
+- `lib/solana/fixtures/jupiter-build-sol-usdc.json`
 - `lib/solana/holdings.client.test.mjs`
 - `lib/solana/holdings.client.ts`
 - `lib/solana/jupiter-ask-again.test.mjs`
 - `lib/solana/jupiter-ask-again.ts`
 - `lib/solana/jupiter-budget.test.mjs`
 - `lib/solana/jupiter-budget.ts`
+- `lib/solana/jupiter-build.test.mjs`
+- `lib/solana/jupiter-build.ts`
 - `lib/solana/mint-batch.test.mjs`
 - `lib/solana/mint-batch.ts`
 - `lib/solana/open-in-wallet.ts`
@@ -895,6 +904,7 @@ moved counts as new. Generated at every update from the development history.
 - `lib/solana/swap-carrier.server.ts`
 - `lib/solana/swap-carrier.test.mjs`
 - `lib/solana/swap-carrier.ts`
+- `lib/solana/swap-receipt-build.test.mjs`
 - `lib/solana/transfer-contract.test.mjs`
 - `lib/spot/coin-shelf.test.mjs`
 - `lib/spot/coin-shelf.ts`
@@ -1754,7 +1764,9 @@ moved counts as new. Generated at every update from the development history.
 - `lib/solana/swap-receipt.test.mjs`
 - `lib/solana/swap-receipt.ts`
 - `lib/solana/swap-recovery.ts`
+- `lib/solana/swap-review.ts`
 - `lib/solana/swap-settlement.test.mjs`
+- `lib/solana/swap-submission.ts`
 - `lib/solana/swap-transaction-check.ts`
 - `lib/solana/token-2022-canary.test.mjs`
 - `lib/solana/token-account.test.mjs`
