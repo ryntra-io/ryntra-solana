@@ -1,9 +1,8 @@
 /**
  * Digital Asset Links for the native Android client — pure.
  *
- * `RYN-API-CONTRACT-001`, the mobile line's request 5. A wallet that receives
- * a Mobile Wallet Adapter `authorize` from a native app checks
- * `https://<identity>/.well-known/assetlinks.json` for an `android_app`
+ * A wallet that receives a Mobile Wallet Adapter `authorize` from a native app
+ * checks `https://<identity>/.well-known/assetlinks.json` for an `android_app`
  * statement naming the calling package and the SHA-256 fingerprint of the
  * certificate it is signed with; without one the wallet shows the app as
  * unverified at every connect (seen with the Solana Mobile fakewallet on
@@ -13,9 +12,9 @@
  * What is and is not here, on purpose:
  *
  * - The fingerprints are **public** facts about a certificate (what
- *   `keytool -list -v` prints), never the keystore or its password, which are
- *   the Owner's and are never asked for. Line B provides the package name and
- *   the fingerprints; the Owner sets them in the deployment.
+ *   `keytool -list -v` prints), never the keystore or its password, which stay
+ *   with the release signer and are never asked for. The Android build supplies
+ *   the package name and the fingerprints; the deployment's environment sets them.
  * - **Production trusts the release certificate only.** A debug certificate
  *   enters the list only from its own variable, meant for a preview
  *   deployment; a production deployment that happens to carry it is refused

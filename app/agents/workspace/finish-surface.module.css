@@ -1,6 +1,6 @@
 /*
- * One stylesheet for the three wave-6 surfaces — Operations, Attention and
- * Team.
+ * One stylesheet for the three Agent Control finish surfaces — Operations,
+ * Attention and Team.
  *
  * They share a shape because they answer the same *kind* of question: a short
  * list of rows, each one a fact plus who it belongs to. Three near-identical
@@ -75,7 +75,7 @@
  *
  * The first version left the base background at `--panel-3` mixed 60% with
  * transparent, which on the panel's own surface is very nearly the panel. The
- * `founder` rows overrode it with an accent tint and were visible; the
+ * `owner` rows overrode it with an accent tint and were visible; the
  * `nobody yet` row kept the base and rendered as a stray caption floating
  * beside the text rather than a label in the same family. Looking at it is what
  * caught that — the tint difference is invisible to a contrast probe, which

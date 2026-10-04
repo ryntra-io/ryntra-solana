@@ -1,5 +1,5 @@
 /**
- * Issuer-bound proof of the exact Swap Execution bundle (RYN-SOL-M2).
+ * Issuer-bound proof of the exact Swap Execution bundle.
  *
  * The quote facts are already hash-bound by the Swap Quote Review. This
  * module binds everything execution adds on top of the quote: the exact

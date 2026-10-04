@@ -3,10 +3,9 @@ import { createHash } from "node:crypto";
 /**
  * The typed draft, and the rule that a conversation never saves anything.
  *
- * The founder's instruction for this wave was one sentence: *the conversation
- * NEVER saves anything by itself — typed drafts only through an explicit
- * review/save by the user.* There are two ways to implement that sentence and
- * only one of them survives contact with a later session.
+ * The rule is one sentence: *the conversation NEVER saves anything by itself —
+ * typed drafts only through an explicit review/save by the user.* There are two
+ * ways to implement that sentence and only one of them survives later changes.
  *
  * The tempting one is a save function with an `if (actor === "conversation")`
  * branch. That is a rule somebody has to keep, and this repository has recorded
@@ -22,7 +21,7 @@ import { createHash } from "node:crypto";
  *
  * **A field a model supplied is refused at construction.** `origin` is `USER`
  * or `COMPILED`; there is no third value and `AI_SUPPLIED` throws. That is the
- * canon's *AI never supplies missing facts* expressed where it can actually be
+ * rule *AI never supplies missing facts* expressed where it can actually be
  * enforced, rather than in a paragraph above a form.
  */
 

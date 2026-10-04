@@ -15,14 +15,13 @@ export const revalidate = 0;
    and the lists stream in behind fallbacks of their own shape. */
 export const maxDuration = 60;
 
-/* Markets is offered to the index in both languages (the plan of
-   `RYN-SITE-V5-001`, subtask 4): its own words, its card, its canonical
-   without the tab. */
+/* Markets is offered to the index in both languages: its own words, its
+   card, its canonical without the tab. */
 export async function generateMetadata() {
   return buildAppMarketsMetadata(await solanaServerLocale());
 }
 
-/** Ринки — the second of the five places, the same for every person and every guest (canon v5.3 В28), in tabs (v5.4 В33); `?tab=` opens one. */
+/** Ринки — the second of the five places, the same for every person and every guest, in tabs; `?tab=` opens one. */
 export default async function MarketsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const [locale, params] = await Promise.all([solanaServerLocale(), searchParams]);
   const tab = typeof params.tab === "string" ? params.tab : null;

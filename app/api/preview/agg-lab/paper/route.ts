@@ -8,14 +8,14 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /*
- * The one server-side read of the AGG lab (`RYN-AGG-LAB-001`): the paper
- * accounts of the Owner's AGG app, read with the server key the aggregator
- * documents for partner backends (`x-app-api-key`, scope `read`). It exists
- * so the paper trade the Owner places in the browser is confirmed from the
- * other side — the aggregator's own ledger — and nowhere else. The key comes
- * from the server environment (`AGG_API_KEY`, set in the Vercel project by
- * the Owner) and never leaves this route; a local stand without it answers
- * 503 honestly. Admin session only, like the page.
+ * The one server-side read of the AGG lab: the paper accounts of Ryntra's
+ * AGG app, read with the server key the aggregator documents for partner
+ * backends (`x-app-api-key`, scope `read`). It exists so the paper trade an
+ * admin places in the browser is confirmed from the other side — the
+ * aggregator's own ledger — and nowhere else. The key comes from the server
+ * environment (`AGG_API_KEY`, set in the Vercel project) and never leaves
+ * this route; a local stand without it answers 503 honestly. Admin session
+ * only, like the page.
  */
 
 const AGG_API = "https://api.agg.market";

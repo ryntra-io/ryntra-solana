@@ -32,11 +32,11 @@ const VIEW_KEY = "ryntra.spot.view.v1";
  *
  * Markets on the left, the market in the middle, the order ticket on the
  * right, the wallet's state below: one canvas, one selected asset, one action.
- * Since canon v5.3 (В28) there is one face — the full one: the compact list,
- * the fuller chart and the fills; the components keep their `pro` switch,
- * and this is its one caller. The phone stacks the same panels in the order
- * a person acts. The selected mint lives in the address bar so a market can
- * be shared and reopened.
+ * There is one face — the full one: the compact list, the fuller chart and
+ * the fills; the components keep their `pro` switch, and this is its one
+ * caller. The phone stacks the same panels in the order a person acts. The
+ * selected mint lives in the address bar so a market can be shared and
+ * reopened.
  */
 export function SpotWorkspace({
   initialMint,
@@ -53,10 +53,10 @@ export function SpotWorkspace({
   initialAmount?: string | null;
 }) {
   const { text, locale } = useSolanaI18n();
-  /* Spot is a tool of Markets' «Для досвідчених» (canon v5.3 В28): one
-     version, and its face is the full one — the list beside the chart, the
-     candles with their indicators and drawing, every line of the ticket open.
-     A beginner buys on a company's page; nothing here decides by a mode. */
+  /* Spot is a tool of Markets' «Для досвідчених»: one version, and its face
+     is the full one — the list beside the chart, the candles with their
+     indicators and drawing, every line of the ticket open. A beginner buys on
+     a company's page; nothing here decides by a mode. */
   const depth = "pro";
   const pro = true;
   const { connection } = useSolanaConnection();
@@ -225,7 +225,7 @@ export function SpotWorkspace({
 
       <SpotChart symbol={symbol} candles={candles} timeframe={timeframe} onTimeframe={setTimeframe} pro={pro} />
 
-      {/* The two sensors of the selected token, on request — what the market did (RYN-NANSEN-EVIDENCE-001) and how the token is built (RYN-DDXYZ-RISK-001); a rule of the plan only where a plan can be made — a stock representation. */}
+      {/* The two sensors of the selected token, on request — what the market did and how the token is built; a rule of the plan only where a plan can be made — a stock representation. */}
       <div className={styles.evidence}>
         <EvidenceCard key={selectedMint} mint={selectedMint} locale={locale} planHref={marketValue?.category === "stock" ? `/app/strategies/new?mint=${encodeURIComponent(selectedMint)}` : null} />
         <RiskCard
@@ -235,7 +235,7 @@ export function SpotWorkspace({
           planHref={marketValue?.category === "stock" ? `/app/strategies/new?mint=${encodeURIComponent(selectedMint)}` : null}
           assetKind={marketValue?.category === "stock" ? "issuer-backed" : marketValue?.category === "meme" ? "meme" : marketValue?.category === "crypto" ? "crypto" : "unknown"}
         />
-        {/* The Brief on the selected token, and the Critic on request — the person's own plan, record and the token's structure, before the ticket (RYN-BRIEF-CRITIC-001). Closed until *Ask Ryn* under Asset details is pressed, and then a full-width row of this same area: a second box on the `evidence` grid area drew over the Risk card (RYN-FIRST-SCREEN-001). */}
+        {/* The Brief on the selected token, and the Critic on request — the person's own plan, record and the token's structure, before the ticket. Closed until *Ask Ryntra* under Asset details is pressed, and then a full-width row of this same area: a second box on the `evidence` grid area drew over the Risk card. */}
         <LensPanel key={`lens-${selectedMint}`} subject={symbol ? { kind: "asset", mint: selectedMint, symbol } : { kind: "asset", mint: selectedMint }} locale={locale} trigger="page" frameClassName={styles.lensRow} />
       </div>
 

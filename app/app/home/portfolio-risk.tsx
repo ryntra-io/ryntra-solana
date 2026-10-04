@@ -15,10 +15,9 @@ import { riskFindingLine, riskGapLine, riskMoreWord, riskStateWord, riskWord, ty
 import home from "./home.module.css";
 
 /**
- * «Ризик портфеля» on Home (canon v5 §11; `RYN-PROTECT-SIGNAL-001`, subtask 2):
- * the server's one word for the wallet — «Нормальний», «Увага» with its first
- * reason and one action, or «Не вдалося перевірити» with what could not be
- * read. Nothing here judges.
+ * «Ризик портфеля» on Home: the server's one word for the wallet —
+ * «Нормальний», «Увага» with its first reason and one action, or «Не вдалося
+ * перевірити» with what could not be read. Nothing here judges.
  *
  * Drawn as «Розподіл» is: its name as a quiet label with «?», then the state —
  * an icon, the word in its colour, the reason as a sentence after it — and the

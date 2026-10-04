@@ -158,7 +158,7 @@ import "./rt-bridge.css";
 
 const ICONS: Record<string, ReactNode> = {
   overview: <House size={17} weight="bold" />,
-  /* «Простий»'s first place (canon v5.0 §3). `overview` is the cabinet's old
+  /* «Простий»'s first place. `overview` is the cabinet's old
      Home on other rails; the two never share one. */
   home: <House size={17} weight="bold" />,
   /* «Простий»'s third place is the assistant, drawn with the mark every
@@ -177,7 +177,7 @@ const ICONS: Record<string, ReactNode> = {
   bridge: <Path size={17} weight="bold" />,
   unified: <Stack size={17} weight="bold" />,
   /*
-   * The Product Canon's eleven pages, and the six of them that had no glyph.
+   * The product's eleven pages, and the six of them that had no glyph.
    *
    * The rule the three comments below record — an icon must never be the same
    * mark for two different questions — is what picks each one. Spot is the
@@ -189,7 +189,7 @@ const ICONS: Record<string, ReactNode> = {
    * the phone bar's fifth item, which opens the rail rather than a page.
    */
   /* Spot shares the price line with `markets` deliberately: they are one
-     question in two rails, and the canon retires the Markets name in favour of
+     question in two rails, and the product retires the Markets name in favour of
      this page. The rule forbids one mark for two different questions, not for
      the same question asked twice. */
   spot: <ChartLine size={17} weight="bold" />,
@@ -242,7 +242,7 @@ const ICONS: Record<string, ReactNode> = {
   map: <MapTrifold size={17} weight="bold" />,
   /* The architecture diagram is the graph, and the map is the territory —
      two different questions that had been sharing one answer, which is why
-     canon §47 item 2 could be missing while the map existed. */
+     the required architecture diagram could be missing while the map existed. */
   architecture: <TreeStructure size={17} weight="bold" />,
   /* The Solana Hub's destinations that no earlier workspace named. Markets is
      the price line, not the summary bars reports already own; Trade shares the
@@ -260,7 +260,7 @@ const ICONS: Record<string, ReactNode> = {
      shipped without any, so the rail fell back to one shared square for
      Screener, Scanner and Watchlist — three different questions drawn as the
      same mark, which is the one thing an icon must never do. The distinction
-     the pack's canon draws is what they say: a screener narrows a question a
+     the pack draws is what they say: a screener narrows a question a
      person states, a scanner watches standing conditions and raises events, a
      watchlist answers what happened to this one. */
   screener: <Funnel size={17} weight="bold" />,
@@ -269,7 +269,7 @@ const ICONS: Record<string, ReactNode> = {
   /* Switcher rows. Neutral glyphs on purpose — a workspace row is not a place
      to reproduce someone else's brand mark, and a wrong one reads as a claim
      about who built the page. */
-  /* Ryntra Home's own destinations, added in RYN-HOME-007.
+  /* Ryntra Home's own destinations.
    *
    * They shipped without glyphs and the rail fell back to one shared square
    * for eleven entries — Today, Daily Brief, Adviser, Portfolio, Strategies,
@@ -303,7 +303,7 @@ const ICONS: Record<string, ReactNode> = {
   "workspace-stellar": <Sparkle size={17} weight="bold" />,
   "workspace-solana": <Waveform size={17} weight="bold" />,
   "workspace-agents": <Robot size={17} weight="bold" />,
-  /* The menu you can see (canon v5.4 В30). Markets is where a person goes
+  /* The menu you can see. Markets is where a person goes
      looking, so it is the compass, and no longer shares the price line with
      Spot one row below it; «Автоінвест» repeats; «Поповнити» adds; History is
      the clock, and Rewards the gift that shipped as the fallback square. */
@@ -335,7 +335,7 @@ const ICONS: Record<string, ReactNode> = {
  * The product's readiness words, which take no tone at all.
  *
  * A page that is not finished is not a page that is dangerous. The status-chip
- * canon reserves amber for a verdict, and the inference below would have
+ * rules reserve amber for a verdict, and the inference below would have
  * painted `Building` amber while `Робимо` — the same word in the other locale —
  * stayed neutral, so one language read as a warning and the other did not.
  * Readiness is a maturity, and a maturity has no tone.
@@ -626,7 +626,7 @@ function ViewMenu({
 }) {
   return (
     <div className="rs-view">
-      {/* Appearance is back in this slot, by founder instruction on
+      {/* Appearance is back in this slot since
           2026-08-24, beside the layout it does not change.
 
           It left on 2026-08-19 because the preference had four writers and a
@@ -645,7 +645,7 @@ function ViewMenu({
           calling `setMode`, and choosing the middle value left the visible
           switch reading something else. */}
       {/* Appearance is gone from this menu and from the slot beside it.
-          Founder decision, 2026-08-19: one global theme with one home,
+          The theme is one global preference with one home,
           `Settings → Appearance`. The objection that put it here was real and
           is answered a different way — a preference "two clicks deep in
           Settings" was unfindable because Settings itself was missing from
@@ -682,7 +682,7 @@ function PrimaryNavigation({
    * this slot renders are triggers that open the action console beside the
    * surface you are on.
    *
-   * It exists because the founder opened the workspace and asked where sending
+   * It exists because a person opened the workspace and asked where sending
    * money was: the only entry was a `+ New action` button in a page header,
    * which names a category rather than a verb, and behind it a menu, and behind
    * that a row. Three steps, and not one of them says *Send* until the last.
@@ -855,7 +855,7 @@ function PrimaryNavigation({
           * It had none: `viewExtras` was rendered bare, so the depth switch and
           * the language button were two loose elements at the rail's inline
           * edge with nothing deciding their width or the space between them.
-          * That is what the founder read as unfinished on 2026-09-08, and no
+          * That is what read as unfinished on 2026-09-08, and no
           * amount of styling `.sh-mode` could fix it, because `.rs-view` — the
           * class those rules hang off — only ever existed inside `ViewMenu`,
           * which the product does not render.
@@ -892,7 +892,7 @@ export type ShellStrings = Readonly<{
 /**
  * What the product hands the shell: its registry, the locale to name it in,
  * the one network and the release badge. Nothing about who is looking: the
- * product is one version (canon v5.3 В28), so its first paint is its only
+ * product is one version, so its first paint is its only
  * paint.
  */
 export type ProductChrome = Readonly<{
@@ -942,7 +942,7 @@ function ShellFrame({
   /**
    * The connected wallet, shown beside the account and never merged with it.
    *
-   * Owner decision of 2026-09-04: a Ryntra account and a Solana wallet are two
+   * A Ryntra account and a Solana wallet are two
    * security principals. The account says who you are in the product; the
    * wallet says what you hold and what you can sign. Control asked a person to
    * `Connect wallet` while one was plainly connected, because one slot was
@@ -1050,10 +1050,10 @@ function ShellFrame({
      `shell-copy.tsx` for why that is a context and not four more props. */
   const chrome = useShellCopy();
   /* The product draws one menu for everyone — no depth, no stored preference
-     and no cookie decides it (canon v5.3 В28) — and since canon v5.4 (В30)
-     it is the menu you can see: every section with its caption, nothing
-     behind «Ще» on a desk, the same sections under «Ще» on a phone. The
-     phone's bar is the five places, lit by `navigation`. */
+     and no cookie decides it — and it is the menu you can see: every
+     section with its caption, nothing behind «Ще» on a desk, the same
+     sections under «Ще» on a phone. The phone's bar is the five places,
+     lit by `navigation`. */
   const navigation = product ? productNavigation(product.routes, product.locale) : null;
   const menu = product ? menuNavigation(product.routes, product.locale) : null;
   const workspaceGroups = navGroupsFor?.(prefs.mode) ?? navGroups ?? navigationFor(workspace.id);
@@ -1066,7 +1066,7 @@ function ShellFrame({
    * distinction that stops two rows carrying `aria-current="page"` at once.
    *
    * A caption is a label, not a control: every row is visible without
-   * opening anything (the Owner, 2026-09-24: «усе видно без «Ще»»), so no
+   * opening anything (everything is visible without «Ще»), so no
    * section collapses. No row carries a readiness tag: a `planned` page is not
    * projected at all, and the page states its own status.
    */
@@ -1183,7 +1183,7 @@ function ShellFrame({
 
           {context ? <div className="rs-context">{context}</div> : null}
 
-          {/* The product's search (canon v5.4 В31): a company, a coin or an
+          {/* The product's search: a company, a coin or an
               action, from any page — a field on a desk, a glass on a phone. */}
           {search ? <div className="rs-search">{search}</div> : null}
 
@@ -1305,7 +1305,7 @@ export function RyntraAppShell({
   workspaceId: string;
   /**
    * Render as **the one Ryntra product** rather than as one workspace among
-   * several. Owner decision of 2026-09-04.
+   * several.
    *
    * Passed as the six projected domains, which is deliberately not a boolean:
    * the shell cannot invent a rail, and a caller that has no domains cannot ask
@@ -1322,7 +1322,7 @@ export function RyntraAppShell({
   /**
    * The connected wallet, shown beside the account and never merged with it.
    *
-   * Owner decision of 2026-09-04: a Ryntra account and a Solana wallet are two
+   * A Ryntra account and a Solana wallet are two
    * security principals. The account says who you are in the product; the
    * wallet says what you hold and what you can sign. Control asked a person to
    * `Connect wallet` while one was plainly connected, because one slot was
@@ -1356,7 +1356,7 @@ export function RyntraAppShell({
   actions?: Readonly<Record<string, ActionDefinition>>;
   /** Replaces the default tool cluster. `account` still renders after it. */
   tools?: ReactNode;
-  /** The product's search, drawn in the top bar before the tools (canon v5.4 В31). */
+  /** The product's search, drawn in the top bar before the tools. */
   search?: ReactNode;
   /**
    * The workspace renders its own depth control in `context`, so the View menu
@@ -1407,7 +1407,7 @@ export function RyntraAppShell({
   /* One product, one preference scope. Without this the same person carries a
      Simple on Money and a Pro on Control, because the scope was keyed by the
      route's workspace and the product spans two of them. And one version:
-     the product has no depth to choose (canon v5.3 В28). */
+     the product has no depth to choose. */
   return (
     <ShellStateProvider workspaceId={product ? "ryntra" : workspace.id} oneVersion={Boolean(product)}>
       <WidgetRegistryProvider>

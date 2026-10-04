@@ -1,5 +1,5 @@
 /**
- * The size-aware quote — canon v4.0 §7.5.
+ * The size-aware quote.
  *
  * For a Buy the person's USD amount is quoted through the same Jupiter order
  * path Spot executes on (quote-only, no taker, Ryntra's fee included so the
@@ -44,7 +44,7 @@ export type StockQuote = Readonly<{
    * The least the Review will hold the venue to, after the slippage bound:
    * on a Buy the token leg (raw, and in the same units as `tokenScaled`), on
    * a Sell the USD leg. Expected is what the route prices now; minimum is
-   * what a signature accepts (canon §10.1 Execution).
+   * what a signature accepts.
    */
   minReceivedRaw: string;
   minReceivedScaled: string;
@@ -59,7 +59,7 @@ export type StockQuote = Readonly<{
   /** Executable per unit (`unitBasis`), USD — per underlying share where the unit is a share. */
   executablePerShare: number | null;
   reference: StockRow["reference"];
-  /** Canon §7.5 against the reference above, on the same basis; null when either side is missing. */
+  /** The deviation from the reference above, on the same basis; null when either side is missing. */
   deviationPct: number | null;
   priceImpactPct: string;
   feeBasisPoints: number;
@@ -158,8 +158,8 @@ export async function quoteStock(
      be asked once more — only when the provider's own pause is short enough
      to be worth a wait (`jupiterRetryWaitMs`: at most 2.5 s), and only once.
      A longer reset is answered honestly. The swap's quote and its signable
-     order are asked the same way since 2026-09-28 (`askOnceMoreAfterRate`,
-     RYN-BUY-FLOW-001 subtask 5); `/execute` is never asked twice. */
+     order are asked the same way since 2026-09-28 (`askOnceMoreAfterRate`);
+     `/execute` is never asked twice. */
   if (!result.ok && result.code === "RATE_LIMITED" && typeof result.retryWaitMs === "number") {
     await (deps.sleep ?? ((ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))))(result.retryWaitMs);
     result = await askOrder({ ...request, referral }, resolveJupiterSwapEndpoint());

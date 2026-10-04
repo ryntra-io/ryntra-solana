@@ -3,11 +3,10 @@
 /**
  * Home — the start of Ryntra.
  *
- * Owner decision of 2026-09-04. A person lands here and has four questions in
- * this order: what do I have, is anything moving, what happened lately, and
- * what can I do next. The page answers them in that order and stops. It is not
- * a metrics dashboard, and it does not fill space with cards for capabilities
- * that do not exist yet.
+ * A person lands here and has four questions in this order: what do I have, is
+ * anything moving, what happened lately, and what can I do next. The page
+ * answers them in that order and stops. It is not a metrics dashboard, and it
+ * does not fill space with cards for capabilities that do not exist yet.
  *
  * ## What it refuses to do
  *
@@ -18,8 +17,8 @@
  * wholesale rather than repeating it differently.
  *
  * **Nothing is narrated.** A number, a state, a time — drawn as a value with a
- * chip, never as a sentence about a value. The founder's rule of 2026-09-03,
- * and the reason there is no explanatory paragraph anywhere below.
+ * chip, never as a sentence about a value. That rule is the reason there is
+ * no explanatory paragraph anywhere below.
  *
  * **In motion appears only when something is in motion.** A row reading "0 in
  * motion" is a fact nobody came for, and a resting screen that lists its own
@@ -215,7 +214,7 @@ export function HomeSurface() {
         id="ry-home-recent"
         title={text("Recent")}
         w={12}
-        /* Eleven rows in all, which is the founder's canvas with a foot rather
+        /* Eleven rows in all, which is the intended canvas with a foot rather
            than 596px of dead page under a connected Home. */
         h={7}
         essential

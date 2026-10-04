@@ -224,7 +224,7 @@ export default async function StellarMarketsPage() {
           w={12}
           h={4}
           scroll
-          badge="Owner action"
+          badge="Operator action"
           tone="caution"
           footer={<span>Stated once, quoted everywhere, so no surface invents its own version of the next step.</span>}
         >

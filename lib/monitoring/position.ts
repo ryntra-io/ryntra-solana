@@ -4,16 +4,16 @@ import type { TradingPlanRecord } from "../plans/store.ts";
 import type { SolanaWalletAction } from "../solana/action-ledger.ts";
 
 /**
- * Whether a trading plan is watched (canon v5.0 §11; RYN-FIRST-SCREEN-001,
- * S3): an active plan, for its entry rules; a plan whose buy settled, as a
- * position, for its loss limit — until the position the plan's own results
- * add up to is closed. The results are the ones Results reads: the plan's
- * declared executions and, where no other plan names the mint, the sales of
- * the same mint History holds after the entry (`matchedExitRows`); a partial
- * sale leaves the rest watched. A draft, a cancelled or an expired plan is
- * not watched. `competing` is how many other plans of the wallet name the
- * same mint: with any, a sale cannot be paired, and the position is watched
- * on — a missed warning costs more than a spare one.
+ * Whether a trading plan is watched: an active plan, for its entry rules; a
+ * plan whose buy settled, as a position, for its loss limit — until the
+ * position the plan's own results add up to is closed. The results are the
+ * ones Results reads: the plan's declared executions and, where no other plan
+ * names the mint, the sales of the same mint History holds after the entry
+ * (`matchedExitRows`); a partial sale leaves the rest watched. A draft, a
+ * cancelled or an expired plan is not watched. `competing` is how many other
+ * plans of the wallet name the same mint: with any, a sale cannot be paired,
+ * and the position is watched on — a missed warning costs more than a spare
+ * one.
  */
 export function planIsWatched(record: TradingPlanRecord, status: string, rows: readonly SolanaWalletAction[], competing: number, nowMs: number): boolean {
   if (status === "active") return true;

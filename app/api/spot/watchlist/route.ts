@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
  * The Spot watchlist of one proven wallet.
  *
  * Both verbs need proof for exactly the address in question — the `rw` proof
- * cookie in a browser, or the native bearer session (`RYN-API-CONTRACT-001`)
+ * cookie in a browser, or the native bearer session
  * — the same gate as the receipt archive. A connected wallet proves nothing
  * and anyone can type an address, so without the proof the browser keeps its
  * own copy and the page offers proof of ownership as the way to sync it. A

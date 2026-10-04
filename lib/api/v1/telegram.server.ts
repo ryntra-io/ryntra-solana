@@ -1,12 +1,11 @@
 /**
- * The Telegram channel over the bearer — contract 1.11.0, the mobile line's
- * request 17 (`RYN-API-CONTRACT-002`).
+ * The Telegram channel over the bearer — contract 1.11.0.
  *
- * The same channel Settings connects on ryntra.io (`/api/account/notifications`,
- * `RYN-ACCESS-WALLET-ONLY-001`): an account is the wallet that signed, and
- * Telegram is a place to be told something, never a way in. Settings reaches
- * it through the account's cookie session; a native client holds a wallet
- * bearer instead, so here the account is the one that owns the proven wallet.
+ * The same channel Settings connects on ryntra.io
+ * (`/api/account/notifications`): an account is the wallet that signed, and
+ * Telegram is a place to be told something, never a way in. Settings reaches it
+ * through the account's cookie session; a native client holds a wallet bearer
+ * instead, so here the account is the one that owns the proven wallet.
  *
  * - Reading never creates anything: a wallet no account owns simply has no
  *   channel.

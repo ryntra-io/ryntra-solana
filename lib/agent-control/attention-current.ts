@@ -9,8 +9,8 @@
  * The unreconciled entry is the honest one and the easiest to get wrong. The
  * Golden RWA sample is a real Action Case with no observed outcome, because no
  * execution path exists to produce one. Omitting it would make the queue look
- * complete; inventing an outcome for it would be the exact claim canon v5.2 §24
- * forbids. It appears, and its recovery actor is `NOBODY`, with the record that
+ * complete; inventing an outcome for it would be claiming a result nobody
+ * observed. It appears, and its recovery actor is `NOBODY`, with the record that
  * would change that named.
  */
 
@@ -39,9 +39,8 @@ export function buildAttentionSurface(asOf: string): AttentionSurface {
         what: "The Golden RWA sample action",
       },
     ],
-    /* The quota window is counted in the configured Guard store, which is what
-       `RYN-AGENT-CONTROL-008` shipped and `RYN-HEALTH-001` verified live as
-       DURABLE_MULTI_WRITER. */
+    /* The quota window is counted in the configured Guard store, which a live
+       health check verified as DURABLE_MULTI_WRITER. */
     quota: { durable: true },
     perimeter: mainnetPerimeter({ asOf }),
   });
@@ -50,7 +49,7 @@ export function buildAttentionSurface(asOf: string): AttentionSurface {
     queue,
     checked: Object.freeze([
       Object.freeze({
-        what: "Open founder actions on the Agent Control queue",
+        what: "Open owner actions on the Agent Control queue",
         source: "lib/agent-control/attention.ts — AGENT_CONTROL_OWNER_ACTIONS",
       }),
       Object.freeze({

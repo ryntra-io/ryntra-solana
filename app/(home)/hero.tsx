@@ -9,20 +9,20 @@ import { HeroTerminal } from "./hero-terminal";
 import styles from "./hero.module.css";
 
 /**
- * The hero, drawn in code — the Owner's render's composition, live.
+ * The hero, drawn in code — the finished render's composition, live.
  *
- * On 2026-09-14 the Owner asked whether the hero could stop being a picture
- * and still look the same, and said *«Роби»*. It can, because the render
- * held exactly one thing code cannot draw — its landscape — and everything
- * else was product: the words on the left, the Spot workspace with NVDAx
- * open in a tilted device, the Portfolio and Rewards cards grown out of its
- * lower corners, the rail of three proofs on the right, the strip of four
- * along the foot. All of that is HTML here, in the same places; the
- * landscape became the page's own light (hero-atmosphere.tsx) — the great
- * orange arc, the warm horizon behind the device, the dust — so the top of
- * the site and the blocks below are one fabric, and what the render gave up
- * (crisp type at 2560 px, a real button, selectable words, one set of
- * figures for the whole page) comes back.
+ * On 2026-09-14 the question was whether the hero could stop being a picture
+ * and still look the same. It can, because the render held exactly one thing
+ * code cannot draw — its landscape — and everything else was product: the
+ * words on the left, the Spot workspace with NVDAx open in a tilted device,
+ * the Portfolio and Rewards cards grown out of its lower corners, the rail
+ * of three proofs on the right, the strip of four along the foot. All of
+ * that is HTML here, in the same places; the landscape became the page's own
+ * light (hero-atmosphere.tsx) — the great orange arc, the warm horizon
+ * behind the device, the dust — so the top of the site and the blocks below
+ * are one fabric, and what the render gave up (crisp type at 2560 px, a real
+ * button, selectable words, one set of figures for the whole page) comes
+ * back.
  *
  * What is real. The words are `HOMEPAGE_COPY`; the device's rail is the
  * product's page registry and its labels the Spot catalogue's; the market
@@ -30,8 +30,7 @@ import styles from "./hero.module.css";
  * marked as a snapshot in the note a screen reader gets instead of the
  * device; the strip's statuses come from the route registry, so a page
  * still being built says so; every destination is a real page. The
- * portfolio on the card is the Owner's own small position, not a staged
- * balance.
+ * portfolio on the card is a real small position, not a staged balance.
  *
  * Motion: one staggered entrance, the light breathing on long clocks while
  * the hero is on screen, a small turn of the device toward the pointer on
@@ -39,9 +38,9 @@ import styles from "./hero.module.css";
  * in hero-render.tsx and can be mounted again from there.
  */
 
-/* The four ways in along the hero's foot (canon v5.5): a company from $1 in
-   Markets, the rules in «Автоінвест», the private companies on Markets' own
-   tab, the fee back on Rewards. */
+/* The four ways in along the hero's foot: a company from $1 in Markets, the
+   rules in «Автоінвест», the private companies on Markets' own tab, the fee
+   back on Rewards. */
 const STRIP_HREF: Readonly<Record<HeroStripId, string>> = {
   invest: "/app/markets",
   autoinvest: "/app/autoinvest",

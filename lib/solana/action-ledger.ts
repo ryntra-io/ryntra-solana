@@ -38,8 +38,8 @@ import { SolanaActionOriginSchema, type SolanaActionOrigin } from "./action-orig
  * The lanes speak twenty-eight states between them: `SUBMITTED_UNKNOWN`,
  * `EXPIRED_AFTER_SUBMIT`, `ATTESTED`, `MINT_OBSERVED`, `RECOVERY_REQUIRED`.
  * Every one of them is meaningful to the code and none of them belongs on a
- * screen a customer reads — canon §0.5. They collapse here into the only four
- * distinctions that change what a person does next:
+ * screen a customer reads. They collapse here into the only four distinctions
+ * that change what a person does next:
  *
  * - `IN_FLIGHT` — the money may already have moved and there is no final answer
  *   yet. The one state that must never be rendered as either success or
@@ -55,7 +55,7 @@ import { SolanaActionOriginSchema, type SolanaActionOrigin } from "./action-orig
  *
  * ## Read by address, and where that stops
  *
- * Canon §0.6 splits public from private on proof of ownership, and
+ * The product splits public from private on proof of ownership, and
  * `/api/solana/holdings` is the precedent: a Solana address is public, anyone
  * can read it on an explorer, and gating a public read behind a signature is
  * theatre. Every field stored here is already visible under that same address
@@ -64,7 +64,7 @@ import { SolanaActionOriginSchema, type SolanaActionOrigin } from "./action-orig
  *
  * What is deliberately *not* stored here is everything that would not be
  * public: no note, no label, no counterparty name, nothing the person authored.
- * Those are private wallet-scoped data in canon §0.6's sense and they wait on a
+ * Those are private wallet-scoped data in exactly that sense and they wait on a
  * Solana sign-in that does not exist in this repository yet — the wallet route
  * is EVM SIWE only, and it refuses wallet-only accounts on purpose.
  */
@@ -78,10 +78,10 @@ const BASE58_ADDRESS = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 const HEX_DIGEST = /^0x[0-9a-f]{64}$/;
 const RAW_AMOUNT = /^(0|[1-9][0-9]*)$/;
 
-/* `RECEIVE` joined on 2026-09-07 (RYN-PAY-REQUEST-001): a payment request
-   observed as paid writes one row for the recipient wallet, keyed by the
-   request's reference key. It is the only lane a wallet did not start itself,
-   and it carries public chain facts only — signature, amount, mint. */
+/* `RECEIVE` joined on 2026-09-07: a payment request observed as paid writes
+   one row for the recipient wallet, keyed by the request's reference key. It
+   is the only lane a wallet did not start itself, and it carries public chain
+   facts only — signature, amount, mint. */
 /* The list itself lives in `action-lanes.ts`, which imports nothing, so the
    browser can read the same one instead of a copy. Re-exported here because
    this module has always been where callers look for it. */
@@ -122,10 +122,10 @@ export type SolanaActionMovement = z.output<typeof MovementSchema>;
 /**
  * What Ryntra charged on this operation, and whether it was actually taken.
  *
- * `RYN-MONEY-RECEIPT-PARITY-001`. Until this field existed a row could say what
- * moved and never what it cost, so the two real fills of 2026-09-11 showed a
- * person an amount sent, an amount received, and no answer at all to *what did
- * this cost me* — while the provider was reporting a collected fee for both.
+ * Until this field existed a row could say what moved and never what it cost,
+ * so the two real fills of 2026-09-11 showed a person an amount sent, an amount
+ * received, and no answer at all to *what did this cost me* — while the
+ * provider was reporting a collected fee for both.
  *
  * `collected` is the whole reason this is an object rather than a number. A
  * quoted fee and a taken one are different facts — Relay documents an operation
@@ -148,17 +148,17 @@ const ActionFeeSchema = z
      * The fee asset itself — a mint on Solana, a contract elsewhere — and who
      * ended up with what, in raw units of it.
      *
-     * `RYN-ADMIN-BUSINESS-001`. A row that says what a person paid and not
-     * where it went cannot answer the owner's question, *what did Ryntra make*,
-     * without assuming the provider's cut from a rate; the settlement already
-     * states the split, so it is written down here beside the gross. All three
-     * default to null so every row written before them still parses.
+     * A row that says what a person paid and not where it went cannot answer
+     * the question *what did Ryntra make* without assuming the provider's cut
+     * from a rate; the settlement already states the split, so it is written
+     * down here beside the gross. All three default to null so every row
+     * written before them still parses.
      */
     asset: z.string().min(1).max(64).nullable().default(null),
     providerRaw: z.string().regex(RAW_AMOUNT).nullable().default(null),
     ryntraRaw: z.string().regex(RAW_AMOUNT).nullable().default(null),
     /**
-     * What the provider said about the fee, and why — `RYN-OPERATIONS-LEDGER-001`.
+     * What the provider said about the fee, and why.
      *
      * `collected: false` alone cannot tell *the provider took nothing* from
      * *no fee was ever requested*: the two swaps of 2026-09-10 made while the
@@ -267,8 +267,7 @@ export const SolanaWalletActionSchema = z
     /**
      * The provider's own id for this operation — Jupiter's `requestId` for the
      * swap lane — so a row can be matched to the provider's record without
-     * opening the owner lock it came from. `RYN-OPERATIONS-LEDGER-001`; null
-     * on every row written before it.
+     * opening the owner lock it came from. Null on every row written before it.
      */
     providerRef: z.string().min(1).max(128).nullable().default(null),
     /**
@@ -476,8 +475,8 @@ export type ListSolanaActionsResult = Readonly<{
    * Whether every row this wallet has was readable.
    *
    * A malformed row is dropped rather than guessed at, and the caller is told
-   * so it can say the list may be incomplete. Canon §0.6: where coverage is
-   * partial it is marked honestly, never filled in.
+   * so it can say the list may be incomplete. Where coverage is partial it is
+   * marked honestly, never filled in.
    */
   complete: boolean;
 }>;
@@ -509,9 +508,9 @@ export async function listSolanaWalletActions(
 }
 
 /**
- * Cross-chain swap (`RYN-SOL-MONEY-FLOWS-001F`): one asset in on one network,
- * another out on another, through Mayan. The order record's own vocabulary
- * lives in `lib/mayan/cross-swap-order.ts`; History needs only the four words.
+ * Cross-chain swap: one asset in on one network, another out on another,
+ * through Mayan. The order record's own vocabulary lives in
+ * `lib/mayan/cross-swap-order.ts`; History needs only the four words.
  *
  * `IN_PROGRESS` and `SUBMITTED` are money in motion. `REFUNDED` is `NEEDS_YOU`
  * rather than `FAILED` because the person has something to look at: the refund

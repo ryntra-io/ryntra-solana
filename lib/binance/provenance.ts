@@ -1,11 +1,11 @@
-/* Provenance and freshness for one Binance observation (RYN-BIN-AOS-001, read-only discovery).
+/* Provenance and freshness for one Binance observation (read-only discovery).
 
-   Every value this packet records has to answer three questions before anything may be built on
+   Every value this module records has to answer three questions before anything may be built on
    it: where did it come from, was the caller authenticated, and how old is it. The third one has
    a trap — the age that matters is the age of the VENUE's timestamp, not the age of our request.
    A book fetched a millisecond ago carrying a five-minute-old `lastUpdateId` is five minutes old.
 
-   The transport field exists for a reason specific to this packet. The Binance MCP endpoint
+   The transport field exists for a reason specific to this discovery. The Binance MCP endpoint
    refuses `tools/list` without OAuth, so no market data here was obtained over MCP; it came from
    the public REST endpoints the server's own instructions say its tools wrap. Recording "MCP"
    over a REST read would be a fabricated integration claim, so `assertProvenanceHonest` makes

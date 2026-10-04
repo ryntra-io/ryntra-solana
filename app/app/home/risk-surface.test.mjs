@@ -3,11 +3,10 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 /*
- * RYN-PROTECT-SIGNAL-001, subtask 2 — «Ризик портфеля» on Home (canon v5 §11):
- * the server's one word for the wallet under «Розподіл» on a wide head and
- * under the day's change on a narrow one; the reason and its one action; no
- * rule judged in the browser; never an orange of its own beside the head's
- * one orange action.
+ * «Ризик портфеля» on Home: the server's one word for the wallet under
+ * «Розподіл» on a wide head and under the day's change on a narrow one; the
+ * reason and its one action; no rule judged in the browser; never an orange
+ * of its own beside the head's one orange action.
  */
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8").replace(/\r\n/g, "\n");

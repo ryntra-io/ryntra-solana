@@ -16,7 +16,7 @@ import { citationRef, memorySentence, resultWordsFor } from "./results-words";
 import styles from "./results.module.css";
 
 /**
- * Results — `RYN-RESULTS-MEMORY-001`, canon Part A §11 and §5.3.
+ * Results — plan against outcome.
  *
  * The page a plan returns to, in the order a person asks: how much is open
  * and how much is closed, what each position came to, which plans made no

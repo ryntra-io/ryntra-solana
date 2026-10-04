@@ -1,9 +1,8 @@
 /**
  * The answer — composed deterministically from the tools' own sentences, or
- * verified when a model wrote it (`RYN-AGENT-TEXT-001`; the Owner's rules of
- * 2026-09-22 §5, §6).
+ * verified when a model wrote it.
  *
- * The format is the canon's (§9.2): observation → what it means →
+ * The answer has six sections, in this order: observation → what it means →
  * counter-argument → risks and unknowns → what to check → possible next
  * actions. The deterministic composer fills it from the notes the tools
  * wrote, each with its citations, and says *insufficient data* plainly when
@@ -133,8 +132,7 @@ export function allowedNumbers(packet: AnswerPacket): Set<number> {
 /**
  * The same rule without a conversation: every figure the tools stated and
  * the format's own structural numbers. The Brief and the Critic hold a
- * model to this list exactly as the six-section answer does
- * (`RYN-BRIEF-CRITIC-001`).
+ * model to this list exactly as the six-section answer does.
  */
 export function allowedFromRuns(runs: readonly ToolRun[], extraText = ""): Set<number> {
   const allowed = new Set<number>([1, 2, 3, 4, 5, 6, 7, 10, 24, 30, 100]);

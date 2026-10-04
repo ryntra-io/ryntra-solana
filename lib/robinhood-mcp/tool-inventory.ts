@@ -1,4 +1,4 @@
-/* The documented Robinhood Trading MCP tool surface (RYN-RH-MCP-001).
+/* The documented Robinhood Trading MCP tool surface.
 
    **Documentation-sourced, and the whole file says so.** Robinhood publishes the
    tool tables in its own support article, which answered 200; the MCP endpoint

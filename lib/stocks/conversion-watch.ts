@@ -1,6 +1,5 @@
 /**
- * The IPO and conversion watch — Ryntra does not let a token burn (canon
- * v5.2 В27, §7, §11; `RYN-PRESTOCKS-001`, session 2).
+ * The IPO and conversion watch — Ryntra does not let a token burn.
  *
  * When a private company goes public or is bought, its PreStocks token has a
  * deadline: it must be swapped before the issuer's cut-off, or it expires
@@ -16,7 +15,7 @@
  *   before any figure for everyone else; and before a purchase of the token;
  * - the action «Обміняти на SpaceX (SPCXx)» and the quiet «Продати за USDC»;
  * - the reminders: the day a holder is first told, then 90, 30, 7 and 1 days
- *   before the deadline — never more than one a day for one token (§11), and
+ *   before the deadline — never more than one a day for one token, and
  *   never a missed one caught up: a holder first seen late is told the stage
  *   that stands now, once;
  * - the words of each reminder, in both languages, for the inbox, the bell,
@@ -35,13 +34,13 @@ type Bi = Readonly<{ en: string; uk: string }>;
 
 const DAY_MS = 86_400_000;
 
-/** The days before the deadline a holder is reminded on (canon §11 via the card: 90, 30, 7 and 1). */
+/** The days before the deadline a holder is reminded on: 90, 30, 7 and 1. */
 export const REMINDER_DAYS_BEFORE = [90, 30, 7, 1] as const;
 
 /** The hour, UTC, a «days before» reminder falls due — the morning in Europe, the day in Asia, the early morning in the Americas. */
 export const REMINDER_HOUR_UTC = 9;
 
-/** No two reminders about one token closer than this (canon §11: one note per position per day). */
+/** No two reminders about one token closer than this: one note per position per day. */
 export const MIN_REMINDER_GAP_MS = DAY_MS;
 
 export type ConversionStage = "event" | "d90" | "d30" | "d7" | "d1";
@@ -149,12 +148,11 @@ export function causeLine(watch: ConversionWatch, lang: Lang): string {
 export type EventAudience = "holder" | "everyone" | "buyer";
 
 /**
- * The event's one line (canon v5.2 §7, the card's words): a holder is told
- * to swap — «SpaceX вийшла на біржу. Обміняй SPACEX до 12 березня 2027 —
- * після строку токен згорить.» — everyone else reads that the token must be
- * swapped, and a buyer, before a purchase, that the token they buy must be.
- * A closed window says so: the deadline passed, the issuer no longer
- * supports the token.
+ * The event's one line: a holder is told to swap — «SpaceX вийшла на біржу.
+ * Обміняй SPACEX до 12 березня 2027 — після строку токен згорить.» — everyone
+ * else reads that the token must be swapped, and a buyer, before a purchase,
+ * that the token they buy must be. A closed window says so: the deadline
+ * passed, the issuer no longer supports the token.
  */
 export function eventLine(event: WatchedEvent, audience: EventAudience, lang: Lang, nowMs: number): string {
   const { watch } = event;

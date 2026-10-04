@@ -87,11 +87,11 @@ export const FIGURES = {
   earnings: `${TRADE.earningsInDays} days`,
 } as const;
 
-/** The sum of the purchase the third block walks, in dollars — the product's least (canon v5.5 В35). */
+/** The sum of the purchase the third block walks, in dollars — the product's least. */
 const BUY_USD = RULE_MINIMUM_USD;
 
 /**
- * The purchase the third block walks since the new site of canon v5.5: $1 of
+ * The purchase the third block walks since the new site of 2026-09-26: $1 of
  * NVDAx at the same illustrative quote, so the hero's terminal and the
  * frame's cards never disagree about the price. «All costs» is Ryntra's fee
  * on the lane and the network's, under a cent on $1 — the same line the real

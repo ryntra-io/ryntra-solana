@@ -1,8 +1,8 @@
 /**
- * The context a conversation opens from, written as one query parameter
- * (`RYN-AGENT-TEXT-001`): `asset:<mint>[:<symbol>]`, `plan:<id>`, `portfolio`,
- * `note:<id>` or `page:<name>`. The same reader on the web page and on the
- * suggestions route; the same writer on every "Ask Ryn" link.
+ * The context a conversation opens from, written as one query parameter:
+ * `asset:<mint>[:<symbol>]`, `plan:<id>`, `portfolio`, `note:<id>` or
+ * `page:<name>`. The same reader on the web page and on the suggestions
+ * route; the same writer on every "Ask Ryn" link.
  */
 
 import { AgentContextSchema, BASE58, PLAN_ID, type AgentContext } from "../api/v1/contract.ts";

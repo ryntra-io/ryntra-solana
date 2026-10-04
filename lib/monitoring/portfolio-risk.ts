@@ -1,6 +1,5 @@
 /**
- * Ризик портфеля — one word for the whole wallet on Home (canon v5 §11 with
- * the caps of §5.3; `RYN-PROTECT-SIGNAL-001`, subtask 2).
+ * Ризик портфеля — one word for the whole wallet on Home.
  *
  * | State | When |
  * |---|---|
@@ -8,20 +7,20 @@
  * | «Увага: <причина>» | a rule is broken — the most urgent reason first |
  * | «Не вдалося перевірити» | a price or a read is missing, and nothing known breaks a rule |
  *
- * «Нормальний» is never said without full data (B.11). A broken rule that is
- * certain on what was read — a position at its limit, a company with no loss
- * limit over the weekend — is said even when something else could not be
- * read; a share is not, because a total with a part missing makes every
- * other part look larger than it is.
+ * «Нормальний» is never said without full data. A broken rule that is certain
+ * on what was read — a position at its limit, a company with no loss limit
+ * over the weekend — is said even when something else could not be read; a
+ * share is not, because a total with a part missing makes every other part
+ * look larger than it is.
  *
- * The caps (§5.3): one asset at most 25 % of the wallet — a company counted
- * once across its tokens — from a wallet of $500 up, and the private
- * companies (pre-IPO) together at most 10 % whatever the wallet's size (§7,
- * §11: a sale of one may not go through); dollars (USDC, USDT) are in the
- * total and outside the caps. The weekend is New York's calendar — from Friday, the
- * day of the last session before it, through Sunday — and a day off the
- * exchange says so itself: closed, and opening more than a day away. A
- * night's close is neither. A private company has no exchange and no weekend.
+ * The caps: one asset at most 25 % of the wallet — a company counted once
+ * across its tokens — from a wallet of $500 up, and the private companies
+ * (pre-IPO) together at most 10 % whatever the wallet's size (a sale of one
+ * may not go through); dollars (USDC, USDT) are in the total and outside the
+ * caps. The weekend is New York's calendar — from Friday, the day of the last
+ * session before it, through Sunday — and a day off the exchange says so
+ * itself: closed, and opening more than a day away. A night's close is
+ * neither. A private company has no exchange and no weekend.
  * Deterministic and pure: the words are a reader's, the state is decided here
  * and only here.
  */
@@ -42,19 +41,19 @@ export type RiskGap = (typeof RISK_GAPS)[number];
 export const RISK_ASSET_KINDS = ["company", "private", "crypto", "dollar"] as const;
 export type RiskAssetKind = (typeof RISK_ASSET_KINDS)[number];
 
-/** One asset's share of the wallet above this is «Увага» (§5.3, §11). */
+/** One asset's share of the wallet above this is «Увага». */
 export const ASSET_CAP_PCT = 25;
-/** The private companies' share together above this is «Увага» (§5.3, §7, §11). */
+/** The private companies' share together above this is «Увага». */
 export const PRIVATE_CAP_PCT = 10;
-/** The caps hold from a wallet worth this much (§5.3). */
+/** The caps hold from a wallet worth this much. */
 export const CAPS_FROM_USD = 500;
 
 export const USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 export const USDT_MINT = "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB";
 /**
- * Dollars — in the wallet's total, outside every cap (§5.3): USDC and USDT as
- * the canon names them, and the two dollar tokens the product already treats
- * as money beside them (`lib/liquidity/model.ts`, `lib/spot/coin-shelf.ts`).
+ * Dollars — in the wallet's total, outside every cap: USDC and USDT by name,
+ * and the two dollar tokens the product already treats as money beside them
+ * (`lib/liquidity/model.ts`, `lib/spot/coin-shelf.ts`).
  */
 export const DOLLAR_SYMBOLS: ReadonlyMap<string, string> = new Map([
   [USDC_MINT, "USDC"],

@@ -2,11 +2,11 @@
  * The shape of a page that is structure before it is capability.
  *
  * Measured, not chosen: one column at reading width, one statement at the top,
- * one destination at the bottom. Canon §14.1 asks a working screen for one
- * primary action and enough room around it, and this page has exactly one thing
- * a person can press. Nothing here is grey-on-grey — an honest page is a
- * readable page, and dimming it to signal "unfinished" would say with colour
- * what the chip already says in words.
+ * one destination at the bottom. A working screen has one primary action and
+ * enough room around it, and this page has exactly one thing a person can press.
+ * Nothing here is grey-on-grey — an honest page is a readable page, and dimming
+ * it to signal "unfinished" would say with colour what the chip already says in
+ * words.
  */
 
 .page {

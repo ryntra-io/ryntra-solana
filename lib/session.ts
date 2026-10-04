@@ -13,25 +13,24 @@ import { bearerToken, resolveNativeSession } from "@/lib/auth/native-session";
 /**
  * The cabinet session.
  *
- * **`telegramId` is nullable, and that is the whole of `RYN-ACCESS-001`.** An
- * account can now be reached by a wallet alone, so the identifier a caller
- * needs may not exist. Every site that passes a Telegram id to an RPC has to
- * decide what a wallet account does instead, and the type is what makes them
- * decide rather than assume.
+ * **`telegramId` is nullable.** An account can now be reached by a wallet
+ * alone, so the identifier a caller needs may not exist. Every site that passes
+ * a Telegram id to an RPC has to decide what a wallet account does instead,
+ * and the type is what makes them decide rather than assume.
  *
- * **`accountId` is the account (`RYN-ACCESS-002`).** It is the uuid of the
- * `beta_users` row every identity — Telegram bot, Supabase Auth user, proven
- * wallet — resolves to, and the key every account-bound RPC prefers. It is
- * `null` only for a legacy stateless session read before the migration that
- * projects it, which keeps working through the Telegram path.
+ * **`accountId` is the account.** It is the uuid of the `beta_users` row every
+ * identity — Telegram bot, Supabase Auth user, proven wallet — resolves to,
+ * and the key every account-bound RPC prefers. It is `null` only for a legacy
+ * stateless session read before the migration that projects it, which keeps
+ * working through the Telegram path.
  *
  * **`verified` did not change meaning.** It is still the Telegram channel join.
  * It gates the one surface that provisions a trading credential
  * (`/app/connect`); saving plans, notes and settings needs an account, not a
  * channel membership.
  *
- * **`sessionId` names the recorded row** for sessions minted after
- * RYN-ACCESS-002 — the ones that can be revoked — and is `null` for a legacy
+ * **`sessionId` names the recorded row** for sessions minted after the account
+ * migration — the ones that can be revoked — and is `null` for a legacy
  * stateless token, which lives until its own expiry and no longer.
  */
 export type SessionAccount = Readonly<{
@@ -216,7 +215,7 @@ export async function getWalletProof(): Promise<WalletProof | null> {
 
 /**
  * A proven wallet from whichever carrier the request uses: the native bearer
- * (`Authorization: Bearer …`, `RYN-API-CONTRACT-001`) or the web's `rw` cookie.
+ * (`Authorization: Bearer …`, per the API contract) or the web's `rw` cookie.
  *
  * A bearer that is present and fails is a refusal — it never falls through to
  * the cookie, so a native client cannot be quietly served a browser's session

@@ -12,11 +12,11 @@ export const revalidate = 3600;
 /**
  * `/product-map` — the whole accepted direction, including what is not built.
  *
- * The owner's decision of 2026-09-04 draws the line this page exists on:
- * *working app navigation is only usable routes; the Product Map is the full
- * accepted direction.* The rail throws rather than render a destination with no
- * page — canon §0.7, after a rail of nineteen dead `Soon` rows — and this is
- * where the things that have no page yet are described properly, so that taking
+ * A rule set on 2026-09-04 draws the line this page exists on: *working app
+ * navigation is only usable routes; the Product Map is the full accepted
+ * direction.* The rail throws rather than render a destination with no page —
+ * a rule made after a rail of nineteen dead `Soon` rows — and this is where
+ * the things that have no page yet are described properly, so that taking
  * them out of the menu never took them out of the product.
  *
  * Every card is projected from the capability registry. There is no array in
@@ -24,8 +24,8 @@ export const revalidate = 3600;
  * list is the `Soon` defect with a larger audience.
  *
  * What no card carries: a task id, a canary word, or a date. The registry's
- * `gate` field names rows like `RYN-SOL-M4`, canon §0.5 keeps internal
- * vocabulary off customer surfaces, and nothing here is scheduled.
+ * `gate` field names internal task rows, internal vocabulary stays off
+ * customer surfaces, and nothing here is scheduled.
  */
 export default async function ProductMapPage() {
   const locale = await publicServerLocale();

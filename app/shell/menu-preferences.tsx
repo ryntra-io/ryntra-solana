@@ -8,8 +8,8 @@ import { applyThemePref, getThemePref, type ThemePref } from "@/app/app/theme";
 import { WORKSPACE_LOCALE_META, type WorkspaceLocale } from "./locale";
 
 /**
- * Налаштування · Мова · Тема — three rows of the wallet's menu (canon v5.4
- * В31, 2026-09-24): the language and the theme left the foot of the rail for
+ * Налаштування · Мова · Тема — three rows of the wallet's menu (since
+ * 2026-09-24): the language and the theme left the foot of the rail for
  * the top bar's one menu, where a person looks for their own settings.
  *
  * Neither row holds a preference of its own. Language is the workspace

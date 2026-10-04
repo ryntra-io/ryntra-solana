@@ -16,7 +16,7 @@
  * There is no server sync here on purpose. Adding a database migration for a
  * sidebar toggle is the kind of thing that looks harmless and then owns you.
  *
- * v2 (RYN-UI-SYSTEM-001, spec §7): adds workspace Density, and per-panel
+ * v2: adds workspace Density, and per-panel
  * preferences — a density override, a collapsed flag, and section visibility.
  * v1 values are deliberately not migrated; the old key is left alone and reads
  * of it return defaults, exactly as rule 3 promises.
@@ -39,7 +39,7 @@ export const LAYOUT_SCHEMA_VERSION = 2;
  * opened since the rename still holds the old key, and there is no date after
  * which that stops being true.
  *
- * `robinhood-chain` was `tokenized-markets` until 2026-08-19 (`RYN-RHC-002`),
+ * `robinhood-chain` was `tokenized-markets` until 2026-08-19,
  * when the workspace stopped being a desk that settles on a chain and became
  * the chain, matching the `lib/product/ecosystems.ts` manifest id it had always
  * described.
@@ -51,7 +51,7 @@ export const RENAMED_WORKSPACES: Readonly<Record<string, string>> = {
 /**
  * The product's own preference scope, and where it adopts one from.
  *
- * Since the owner decision of 2026-09-04, `solana` and `agent-control` are not
+ * Since 2026-09-04, `solana` and `agent-control` are not
  * two workspaces — they are two domains of one product, and a product that
  * remembers two different Simple/Pro settings for itself is a product nobody
  * can configure. So the shell keys the product's preferences on one id.
@@ -109,7 +109,7 @@ export const DENSITIES: readonly Density[] = ["comfortable", "compact"];
  * Per-panel preferences.
  *
  * These are parsed and read but currently never written: the controls that
- * wrote them lived on the per-panel `⋮` menu, which is off by founder direction
+ * wrote them lived on the per-panel `⋮` menu, which is off
  * until the surface is approved. The shape stays so a preference saved before
  * the pause survives it, and so turning the menu back on is re-rendering a
  * control rather than re-designing a store.
@@ -132,7 +132,7 @@ export type WorkspacePrefs = {
    * normalised it to `guided` **with a write**, so every browser that had ever
    * rendered the control held a stored `guided` that nobody had chosen. Moving
    * the default to `pro` therefore changed nothing for the people who had
-   * already used the product — including the founder, who reported the
+   * already used the product — including a person who reported the
    * workspace still opening in Simple after the release that was supposed to
    * fix exactly that.
    *

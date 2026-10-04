@@ -2,15 +2,15 @@
  * Settle the rows the ledger left open — from the lane's own durable evidence,
  * never from a guess. Server only.
  *
- * `RYN-OPERATIONS-LEDGER-001`. The history row of a swap is written twice: once
- * as `IN_FLIGHT` before the bytes go out, once as `DONE` after the receipt. When
- * the second write does not land — the request died after the receipt, the
- * store refused the compare-and-set, the tab closed — the row stays *in
- * flight* although the lane finished. Two such rows existed on production on
- * 2026-09-16: one swap finalized and receipted on 2026-09-09 whose `DONE` write
- * never arrived, and one attempt of 2026-09-11 that expired after submission
- * and was already read as *Did not happen* by History, which overlays the
- * lane's state at read time. The ledger itself said neither.
+ * The history row of a swap is written twice: once as `IN_FLIGHT` before the
+ * bytes go out, once as `DONE` after the receipt. When the second write does
+ * not land — the request died after the receipt, the store refused the
+ * compare-and-set, the tab closed — the row stays *in flight* although the
+ * lane finished. Two such rows existed on production on 2026-09-16: one swap
+ * finalized and receipted on 2026-09-09 whose `DONE` write never arrived, and
+ * one attempt of 2026-09-11 that expired after submission and was already read
+ * as *Did not happen* by History, which overlays the lane's state at read
+ * time. The ledger itself said neither.
  *
  * This module writes the lane's answer into the row, so the ledger — the one
  * source the statistics read — says what History already knew:

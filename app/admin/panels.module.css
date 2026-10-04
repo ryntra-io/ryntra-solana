@@ -1,5 +1,5 @@
 /* ============================================================
-   Ryntra Admin — RYN-ADMIN-006 additions.
+   Ryntra Admin — the panels' shared pieces.
 
    Chips, attention list, definitions disclosure, provider board, timeline,
    filters and pager. Tokens come from app/globals.css and tokens.css; no
@@ -481,7 +481,7 @@
   min-width: 160px;
 }
 
-/* One provider under another in the evidence panel (RYN-DDXYZ-RISK-001): its own head, stats and family table, separated by a rule. */
+/* One provider under another in the evidence panel: its own head, stats and family table, separated by a rule. */
 .subsection {
   display: grid;
   grid-template-columns: minmax(0, 1fr);

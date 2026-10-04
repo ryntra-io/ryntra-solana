@@ -28,10 +28,9 @@ import { useAutoinvestRules } from "./use-rules";
 
 /**
  * «Автоінвест» — one block on Home and in Portfolio, for every connected
- * wallet (canon v5.1 §3, §4.1, v5.3 В29; `RYN-INVEST-SIMPLE-001` session 4,
- * `RYN-NAV-V5-001` session 2): the month's budget as its own line —
- * «Бюджет не задано · Задати» or «Бюджет місяця $45 з $100» over its bar —
- * the rules as cards with a switch each, and «Додати правило».
+ * wallet: the month's budget as its own line — «Бюджет не задано · Задати»
+ * or «Бюджет місяця $45 з $100» over its bar — the rules as cards with a
+ * switch each, and «Додати правило».
  *
  * The rules and the budget are the wallet's, read behind its proof; a page
  * without one says so in one line with one quiet action. A rule's card opens
@@ -45,10 +44,10 @@ import { useAutoinvestRules } from "./use-rules";
  * ones — and opens the same rule sheet the company's page has. Nothing here
  * is orange: the page's one orange action is «Купити» or the step before it.
  *
- * `compact` is Home's right column (`RYN-WIDTH-PREMIUM-001`): the same rules
- * with their switches, each in one line — the sum and the next purchase —
- * by the nearest purchase, three at most, and «Усі правила» to the block's
- * own page, where the rest and «Додати правило» are.
+ * `compact` is Home's right column: the same rules with their switches, each
+ * in one line — the sum and the next purchase — by the nearest purchase,
+ * three at most, and «Усі правила» to the block's own page, where the rest
+ * and «Додати правило» are.
  */
 
 /** How many rules Home's column names; the rest are on «Автоінвест»'s own page. */
@@ -62,7 +61,7 @@ export function AutoinvestBlock({
   compact = false,
 }: {
   locale: WorkspaceLocale;
-  /** False on «Автоінвест»'s own page, whose title already says it (canon v5.4 В30). */
+  /** False on «Автоінвест»'s own page, whose title already says it. */
   heading?: boolean;
   /** Home's right column: one line a rule, the nearest first, three at most. */
   compact?: boolean;
@@ -93,7 +92,7 @@ export function AutoinvestBlock({
   const owned = useMemo<readonly Pick[]>(() => {
     if (holdings.status !== "ready") return [];
     return holdings.data
-      /* A token Ryntra no longer supports (canon v5.2 В26) is never offered for a rule. */
+      /* A token Ryntra no longer supports is never offered for a rule. */
       .filter((holding) => holding.catalog?.category === "stock" && holding.mint && !isRetiredMint(holding.mint))
       .map((holding) => ({
         mint: holding.mint as string,

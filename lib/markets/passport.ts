@@ -31,7 +31,7 @@ export type PriceBasis = "token" | "underlying-share";
 export type BasedPrice = Readonly<{
   basis: PriceBasis;
   value: number;
-  /** Where it came from, stated per fact. The canon forbids a composite score. */
+  /** Where it came from, stated per fact. A composite score is never shown. */
   source: string;
 }>;
 
@@ -145,7 +145,7 @@ export function economicRepresentation(input: EconomicInput): EconomicRepresenta
 }
 
 /**
- * One fact with its own source, which is the canon's rule for a Passport:
+ * One fact with its own source, which is the product's rule for a Passport:
  * *every fact carries its own source and status; no 92/100 green score.*
  */
 export type PassportFact = Readonly<{

@@ -27,12 +27,12 @@ import {
 /**
  * One status source for the whole public site.
  *
- * The rule this file exists to enforce is canon §13/§22.9: marketing copy is
- * not the source of product truth. Every badge, every colour and every "what
- * works today" line on the redesigned site resolves through here, from
- * `lib/product/capabilities.ts` — so a section cannot
- * quietly advertise a maturity the product has not reached, and a page written
- * six weeks from now cannot disagree with the registry about the same id.
+ * The rule this file exists to enforce: marketing copy is not the source of
+ * product truth. Every badge, every colour and every "what works today" line
+ * on the redesigned site resolves through here, from
+ * `lib/product/capabilities.ts` — so a section cannot quietly advertise a
+ * maturity the product has not reached, and a page written six weeks from now
+ * cannot disagree with the registry about the same id.
  *
  * It also fails closed. A claim whose review window has expired renders as
  * `Re-verifying`, never as its old confident label, because an aging claim and
@@ -186,7 +186,7 @@ const SURFACE_DEFINITIONS: readonly Readonly<{
 ];
 
 /**
- * Environments and adapters — canon §22.9 calls them exactly that.
+ * Environments and adapters — the product calls them exactly that.
  *
  * They are not partners, and this file has no field in which a partnership
  * could be recorded. Ethereum and Solana carry `research` because no adapter
@@ -223,7 +223,7 @@ const ENVIRONMENT_DEFINITIONS: readonly Readonly<{
     role: "DeFi and RWA liquidity, approvals, contract and MEV evidence.",
     capabilityIds: [],
     fixedState: "research",
-    fixedScope: "No adapter exists. Designed in canon.",
+    fixedScope: "No adapter exists. Designed, not built.",
   },
   {
     id: "solana",
@@ -232,7 +232,7 @@ const ENVIRONMENT_DEFINITIONS: readonly Readonly<{
     role: "Separate signer and indexer semantics, high-speed routing, token intelligence.",
     capabilityIds: [],
     fixedState: "research",
-    fixedScope: "No adapter exists. Designed in canon.",
+    fixedScope: "No adapter exists. Designed, not built.",
   },
 ];
 
@@ -359,8 +359,8 @@ const CIRCUIT_DEFINITIONS: readonly Readonly<{
  *
  * The sample content names fields and their state vocabulary. It never invents
  * a price, a balance, a fill, a transaction hash, an address or a provider
- * response — a walkthrough that fabricates a number to look alive is the exact
- * decorative mockup canon §22.7 forbids.
+ * response — a walkthrough that fabricates a number to look alive is exactly
+ * the decorative mockup this site must never show.
  */
 const WALK_DEFINITIONS: readonly Readonly<{
   id: string;
@@ -505,8 +505,8 @@ const TODAY_DEFINITIONS: readonly Readonly<{
  * What is being built, kept visibly apart from what works.
  *
  * Every row carries its own preview, planned or behind-a-gate state. There is
- * no date, no quarter and no percentage here: canon §20 makes progress
- * gate-based, and a homepage is exactly where a calendar promise gets made.
+ * no date, no quarter and no percentage here: progress is gate-based, and a
+ * homepage is exactly where a calendar promise gets made.
  */
 const NEXT_DEFINITIONS: readonly Readonly<{
   title: string;

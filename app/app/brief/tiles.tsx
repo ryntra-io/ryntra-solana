@@ -130,9 +130,9 @@ export function briefTone(state: DailyBrief["state"]): Tone {
  * `HIGH` mapped to the `risk` tone drew a red cross beside every waiting
  * decision — the mark this system uses for *failed*, on something that has not
  * failed and simply matters. And `MEDIUM` drew an amber warning triangle on a
- * routine price move, which is the defect the wave-6 lifecycle bands were fixed
- * for: a stage is not trouble. Only `CRITICAL` keeps the stop mark; `HIGH`
- * warns; the two below it are quiet and carry no glyph at all.
+ * routine price move, which is the defect the lifecycle bands were fixed for:
+ * a stage is not trouble. Only `CRITICAL` keeps the stop mark; `HIGH` warns;
+ * the two below it are quiet and carry no glyph at all.
  */
 function severityTone(severity: string): Tone {
   if (severity === "CRITICAL") return "risk";

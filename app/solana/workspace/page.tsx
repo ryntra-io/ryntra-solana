@@ -9,11 +9,10 @@ export const metadata = { title: "Home" };
  * Home — the default start of Ryntra.
  *
  * This route used to be the Solana market overview, and that page has not been
- * deleted: it is `/app/markets`, where the Markets domain opens.
- * The move is the owner decision of 2026-09-04 in one line — the product's root
- * is where a person's own money is, not where a catalogue of mints is. Anyone
- * who had bookmarked the root lands on Home, which is the page they would have
- * wanted from a product that has one.
+ * deleted: it is `/app/markets`, where the Markets domain opens. The move
+ * states one rule — the product's root is where a person's own money is, not
+ * where a catalogue of mints is. Anyone who had bookmarked the root lands on
+ * Home, which is the page they would have wanted from a product that has one.
  *
  * The composition is a client island because every fact on it is wallet-scoped
  * and read from the browser: holdings and activity are POSTs keyed by the

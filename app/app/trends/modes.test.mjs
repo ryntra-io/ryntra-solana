@@ -6,13 +6,12 @@ import { PRODUCT_ROUTES } from "../../shell/product-routes.ts";
 import { DRAWN_TREND_MODES, isTrendMode, resolveTrendMode, TREND_MODE_SPECS, TREND_MODES } from "./modes.ts";
 
 /**
- * The modes of Trends, as the Owner fixed them on 2026-09-11: five, in order,
- * three backed by the ranked universe Spot reads. Since canon v5.0 (§0.0
- * rule 10, 2026-09-23) only those three are drawn: the two with no list stay
+ * The modes of Trends: five, in order, three backed by the ranked universe Spot
+ * reads. Since 2026-09-23 only those three are drawn: the two with no list stay
  * registered and reach no screen — no *Soon* tag, no card about a future list.
  */
 
-test("five modes in the Owner's order, three with a source and two with none", () => {
+test("five modes in their fixed order, three with a source and two with none", () => {
   assert.deepEqual(TREND_MODES, ["trending", "new", "memes", "stocks", "screeners"]);
   assert.deepEqual(TREND_MODE_SPECS.map((spec) => spec.id), TREND_MODES);
   assert.deepEqual(TREND_MODE_SPECS.map((spec) => spec.label.en), ["Trending", "New", "Memes", "Stocks/RWA", "My Screeners"]);
@@ -31,10 +30,9 @@ test("the bar draws only the modes with a list, and no mode describes a list it 
 });
 
 test("the Stocks/RWA mode leads to the Stocks page, and the page redirects a saved link there", () => {
-  /* Canon v4.0 §5.1: Stocks is a page; a saved transition to the old mode
-     inside Trends leads into the new context, never into a second screener.
-     Since canon v5.3 (В28) the Stocks page is the screener, where the
-     registry says it opens. */
+  /* Stocks is a page; a saved transition to the old mode inside Trends leads
+     into the new context, never into a second screener. The Stocks page is
+     the screener, where the registry says it opens. */
   const stocks = PRODUCT_ROUTES.find((route) => route.id === "stocks");
   assert.equal(TREND_MODE_SPECS.find((spec) => spec.id === "stocks").movedTo, stocks.href);
   assert.equal(stocks.href, "/app/stocks/screener");
@@ -60,6 +58,6 @@ test("the page renders the drawn modes and sends every row into Spot, and says n
   assert.ok(source.includes("listSpotMarkets("), "the rows must come from the ranked universe Spot reads");
   assert.ok(source.includes("/app/spot?mint="), "a row opens Spot");
   assert.doesNotMatch(source, /FEATURED_MINTS/, "the featured list is retired in favour of the ranked universe");
-  /* Canon v5.0 §0.0 rule 10: no Soon tag, no coming-soon card, no Being built chip. */
+  /* Only what is built is drawn: no Soon tag, no coming-soon card, no Being built chip. */
   assert.doesNotMatch(source, /"(Скоро|Незабаром|Розробляється|Soon|Coming soon|Being built)"|<StatusChip/);
 });

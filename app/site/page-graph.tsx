@@ -2,10 +2,10 @@ import { localizedUrl } from "@/app/seo";
 import { breadcrumbList, jsonLdScript, webPage, type JsonLd, type PageType } from "@/lib/site/structured-data";
 
 /**
- * A public page's structured data, in its language (the plan of
- * `RYN-SITE-V5-001` §5): what the page is — a page, an about page, a contact
- * page — at the address of the language it is drawn in, and where it sits
- * under the site. `Organization` and `WebSite` are the root layout's.
+ * A public page's structured data, in its language: what the page is — a
+ * page, an about page, a contact page — at the address of the language it is
+ * drawn in, and where it sits under the site. `Organization` and `WebSite`
+ * are the root layout's.
  */
 export function SitePageGraph({
   type = "WebPage",

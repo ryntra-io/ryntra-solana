@@ -31,10 +31,9 @@ import { useSheetAboveKeyboard } from "./sheet-keyboard";
 import { SumField } from "./sum-field";
 
 /**
- * «Продати з позиції» — the sale of a company the wallet holds
- * (`RYN-BUY-FLOW-001`, subtask 1; canon v5.6 §4 «Купити за 60 с · продати»),
- * drawn as the purchase's sheet is and opened from two places: the reader's
- * position on the company's page and the position in Portfolio.
+ * «Продати з позиції» — the sale of a company the wallet holds, drawn as the
+ * purchase's sheet is and opened from two places: the reader's position on
+ * the company's page and the position in Portfolio.
  *
  * **Намір.** A sum in dollars from $1, typed freely — the sheet opens on $10
  * when the position is worth that, a default and never advice — or a share of
@@ -48,16 +47,16 @@ import { SumField } from "./sum-field";
  * what the token is — and «Підписати». **Виконання · доказ.** The signature,
  * the network, and the receipt: «✓ Продано · $9,97».
  *
- * A private company's token (canon §6.2, §7) says before any sum what it is
- * and that selling may not be possible, and «Перевірка» says both again; the
- * issuer's fee on the transfer is the one the chain states for the mint, on
- * its own line under «Усі витрати».
+ * A private company's token says before any sum what it is and that selling
+ * may not be possible, and «Перевірка» says both again; the issuer's fee on
+ * the transfer is the one the chain states for the mint, on its own line
+ * under «Усі витрати».
  *
- * **Цифри — сервера (contract 1.20.0; `RYN-BUY-FLOW-001`, subtask 2).** What
- * the sale gives and brings, «Усі витрати» with the issuer's fee inside them,
- * the reserve and «Що це» are the `check` the quote and the order answer
- * (`lib/stocks/check.ts`): the sheet draws them and counts none of them, so
- * the phone shows the same figures for the same sum.
+ * **Цифри — сервера (contract 1.20.0).** What the sale gives and brings,
+ * «Усі витрати» with the issuer's fee inside them, the reserve and «Що це»
+ * are the `check` the quote and the order answer (`lib/stocks/check.ts`): the
+ * sheet draws them and counts none of them, so the phone shows the same
+ * figures for the same sum.
  *
  * Nothing here signs or spends: the wallet does, when the person presses.
  */
@@ -102,7 +101,7 @@ export function SellSheet(props: SellSheetProps) {
     };
   }, [open]);
 
-  /* On a phone the sheet stands above the keyboard the sum raises: «Продати на $1» stays in sight (`RYN-BUY-FLOW-001`, subtask 5). */
+  /* On a phone the sheet stands above the keyboard the sum raises: «Продати на $1» stays in sight. */
   useSheetAboveKeyboard(dialog, open);
 
   /* Nothing closes the sheet while a Review is being prepared, signed or sent: the flow keeps running and says so. */
@@ -241,7 +240,7 @@ function SellFlow({ asset, locale, titleId, onBusy, onClose, onConnect }: Readon
   const over = pct === null && typed !== null && isOverPosition(typed, valueUsd);
   const whole = pct === 100 || (pct === null && typed !== null && !over && isWholePosition(typed, valueUsd));
   const saleRaw = heldRaw === null || heldRaw <= 0n ? null : pct !== null ? shareRaw(heldRaw, pct) : typed !== null && !over ? rawForUsd(typed, heldRaw, baseDecimals, multiplier, price) : null;
-  /* A sum under a dollar is not a sale; the whole position always is (canon v5.5 В35). */
+  /* A sum under a dollar is not a sale; the whole position always is. */
   const belowMinimum = !whole && typed !== null && typed < MIN_SALE_USD - 1e-9;
   const valid = saleRaw !== null && saleRaw > 0n && !over && !belowMinimum && baseDecimals !== null;
   const amount = valid && baseDecimals !== null ? plainAmount(saleRaw.toString(), baseDecimals) : "";
@@ -298,7 +297,7 @@ function SellFlow({ asset, locale, titleId, onBusy, onClose, onConnect }: Readon
   const check: SwapCheck | null = prepared ? (prepared.check ?? null) : (quoted?.check ?? null);
   const outUsdc = check?.get.amount ?? null;
   const costs = amount ? (check?.costs ?? null) : null;
-  /* «з них комісія емітента 3% ≈ $0,03» — the share of the sale the mint withholds on the transfer, at the rate the chain states (canon v5.2 §7, §12). */
+  /* «з них комісія емітента 3% ≈ $0,03» — the share of the sale the mint withholds on the transfer, at the rate the chain states. */
   const issuerFee = costs?.issuerFee ? `${word("issuerFeeOfWhich")} ${new Intl.NumberFormat(numbers, { maximumFractionDigits: 2 }).format(costs.issuerFee.basisPoints / 100)}% ${approxUsd(costs.issuerFee.usd, numbers).replace(" ", " ")}` : null;
   /* The server answered the quote without its lines (the company could not be read): nothing is counted here in their place. */
   const uncounted = Boolean(amount) && quoted !== null && outUsdc === null;
@@ -400,7 +399,7 @@ function SellFlow({ asset, locale, titleId, onBusy, onClose, onConnect }: Readon
     const minUsdc = lines?.get.atLeast ?? null;
     const ready = ticket.preparedReadiness?.ready === true;
     const seconds = ticket.reviewSecondsLeft;
-    /* The account the sale opens for the dollars, if the wallet has none: its own line, never a cost — it stays in the wallet (canon v5.5 В35). */
+    /* The account the sale opens for the dollars, if the wallet has none: its own line, never a cost — it stays in the wallet. */
     const reserve = lines?.reserve?.usd ? approxUsd(lines.reserve.usd, numbers) : null;
     /* «Що це» as the server says it — the truth and, on a private company's token, «Продати може не вийти»; the page's own words only when the server could not read the company. */
     const whatLine = lines ? lines.what.truth[lang] : truth;
@@ -497,7 +496,7 @@ function SellFlow({ asset, locale, titleId, onBusy, onClose, onConnect }: Readon
   return (
     <div className={company.sheetBody} data-sheet="compose" data-sale-compose>
       {head(`${word("sell")} ${name}`)}
-      {/* A private company's token: what it is, and that selling may not be possible, before any sum (canon §6.2, §7). */}
+      {/* A private company's token: what it is, and that selling may not be possible, before any sum. */}
       {preIpo ? (
         <div className={company.sheetWarning} data-sale-caution>
           <p data-company-truth>{truth}</p>

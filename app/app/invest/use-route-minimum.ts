@@ -7,15 +7,13 @@ import { SOLANA_MAINNET_USDC_MINT } from "@/lib/solana/send-kinds";
 import { isNoRoute, ROUTE_MINIMUM_RETRY_MS, routeMinimumSteps } from "./company-model";
 
 /**
- * A company's own minimum, read from the live quote (canon v5.5 В35: «де
- * живе котирування на $1 маршруту не дає — мінімум цього активу з
- * котирування, чесно»). A purchase is from a dollar; when the venue finds no
- * route for the sum asked, the same read-only quote the purchase uses is asked
- * for the ladder's larger sums in turn (`ROUTE_MINIMUM_LADDER_USD`), and the
- * first that routes is the minimum the sheet says — «На $1 маршруту зараз
- * немає. IREN — від $5.» Nothing is claimed when none routes or the venue
- * does not answer. A minimum found is kept for the page's life, so a second
- * look does not ask again.
+ * A company's own minimum, read from the live quote. A purchase is from a
+ * dollar; when the venue finds no route for the sum asked, the same read-only
+ * quote the purchase uses is asked for the ladder's larger sums in turn
+ * (`ROUTE_MINIMUM_LADDER_USD`), and the first that routes is the minimum the
+ * sheet says — «На $1 маршруту зараз немає. IREN — від $5.» Nothing is
+ * claimed when none routes or the venue does not answer. A minimum found is
+ * kept for the page's life, so a second look does not ask again.
  */
 
 export type RouteMinimum = Readonly<{

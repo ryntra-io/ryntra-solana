@@ -8,10 +8,10 @@ import styles from "../stocks.module.css";
 import { MissingTicker } from "./missing-ticker";
 
 /**
- * An unknown ticker inside the product (`RYN-FIRST-SCREEN-001`): the
- * product's rail, header, type and language around one composed panel —
- * what happened, the way back to the list, and Spot for a token the list
- * does not carry. Never the framework's bare page.
+ * An unknown ticker inside the product: the product's rail, header, type and
+ * language around one composed panel — what happened, the way back to the
+ * list, and Spot for a token the list does not carry. Never the framework's
+ * bare page.
  */
 export default async function StockNotFound() {
   const locale = await solanaServerLocale();
@@ -19,7 +19,7 @@ export default async function StockNotFound() {
   return (
     <section className={styles.page} aria-labelledby="missing-title">
       <p className={styles.crumbs}>
-        {/* A company lives in Markets, so the way back is Markets (canon v5.3 В28). */}
+        {/* A company lives in Markets, so the way back is Markets. */}
         <Link href="/app/markets" prefetch={false}>
           {INVEST_WORDS.marketsTitle[locale]}
         </Link>

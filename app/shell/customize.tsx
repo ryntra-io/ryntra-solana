@@ -29,7 +29,7 @@ import { DENSITIES, resolveDepth, type Density, type WorkspaceMode } from "./lay
  * The two depths, in the product's own words.
  *
  * This menu offered three — `Guided | Standard | Pro` — while every visible
- * switch in the product offered two, `Simple | Pro`, and Shell v2 §18 fixes the
+ * switch in the product offered two, `Simple | Pro`, and the product fixes the
  * user-facing vocabulary at the second pair. That was survivable while the menu
  * was the secondary control. It stopped being survivable on 2026-08-24, when
  * the depth switch left the top bar and this became the only place a person can
@@ -62,7 +62,7 @@ const modeCopy = (copy: ShellChromeCopy["layout"]) =>
  * This menu answers *how does this workspace lay out* — mode, density, panels.
  * It no longer answers *how does the product look*.
  *
- * Appearance lived here for one day and the reason was sound: the founder
+ * Appearance lived here for one day and the reason was sound: a person
  * opened the workspace, could not find the light theme, and concluded it did
  * not exist. A preference is absent if a person cannot reach it. But the cause
  * was never the destination — it was that **Settings was missing from three
@@ -149,7 +149,7 @@ export function CustomizeMenu({ showMode = true }: { showMode?: boolean } = {}) 
          * and it read as a broken component rather than as a missing rule. It
          * survived because nothing measures a popover: it typechecks, it has no
          * failing test, and the only way to see it is to open the menu and look.
-         * `RYN-CHART-001` opened it while proving the Appearance control and it
+         * A check of the Appearance control opened it, and it
          * was the first thing on the screen. */
         <div className="rs-menu-panel rs-customize" role="menu" aria-label={copy.triggerTitle}>
           {showMode ? (

@@ -1,6 +1,6 @@
 /**
  * The Workspace token bridge — the "Workspace dark" rung of the DESIGN.md
- * migration ladder (a founder-approved control surface).
+ * migration ladder (an approved control surface).
  *
  * Inside the one application shell (`.rs`), every legacy variable name the
  * workspace consumes re-resolves to the DESIGN.md projection. The names stay —
@@ -14,8 +14,7 @@
  *
  * Deliberately NOT bridged on this rung:
  *   --fs-* / --maxw / --rw-*  — the workspace keeps its approved layout ramp
- *                               (docs/design/workspace-system.md §5) until the
- *                               screen-unification rung;
+ *                               until the screen-unification rung;
  *   --shadow / --glow          — site-owned atmospherics, absent from the
  *                               workspace idiom this bridge covers.
  */
@@ -89,8 +88,8 @@
   --radius-lg: var(--rt-radius-lg);
   --r-badge: var(--rt-radius-xs);
 
-  /* Inside the terminal every heading is Geist, one weight up — Brand Canon
-     v1.0 (Шрифти): a display face on a working screen tires the reader in
+  /* Inside the terminal every heading is Geist, one weight up — the brand's
+     type rule: a display face on a working screen tires the reader in
      twenty minutes, so Unbounded stays on the public landing and the shell
      resolves the display role onto the interface face. */
   --ry-font-display: var(--ry-font-sans);

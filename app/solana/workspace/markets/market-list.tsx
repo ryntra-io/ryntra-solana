@@ -16,8 +16,8 @@ export function MarketList({rows,available}:{rows:readonly MarketRow[];available
     {/* Search, and nothing beside it. The primary button that stood here went to
         Swap — which is a row of the rail and the destination of every row in the
         table below it, so on Trends it was a third way to say the same thing and
-        the only loud element on a page about looking rather than trading. Canon
-        14.1: one main action per working screen. */}
+        the only loud element on a page about looking rather than trading. A
+        working screen has one main action. */}
     <div className={styles.tools}><label htmlFor="market-search" className="sr-only">{uk?"Пошук активів":"Search assets"}</label><input id="market-search" value={query} onChange={e=>setQuery(e.target.value)} placeholder={uk?"Знайти актив":"Search assets"} type="search" autoComplete="off"/></div>
     {!available?<p className={styles.note} role="status">{uk?"Ціни тимчасово недоступні":"Prices are temporarily unavailable"}</p>:null}
     <table className={styles.table}><thead><tr><th>{uk?"Актив":"Asset"}</th><th>{uk?"Ціна":"Price"}</th><th><span className="sr-only">{uk?"Дії":"Actions"}</span></th></tr></thead><tbody>{filtered.map(row=><tr key={row.mint}>

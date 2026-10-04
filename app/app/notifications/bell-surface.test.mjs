@@ -5,10 +5,9 @@ import test from "node:test";
 import { onSurface } from "./bell-surface.ts";
 
 /**
- * The bell (canon v5.4 В31, §11) shows what Нагляд shows: the prediction
- * demo's paper notes left the surface with the demo (В32), so the bell neither
- * lists them nor counts them — its number is always the number of notes its
- * panel can open.
+ * The bell shows what Нагляд shows: the prediction demo's paper notes left
+ * the surface with the demo, so the bell neither lists them nor counts them
+ * — its number is always the number of notes its panel can open.
  */
 
 const note = (id, { unread = false, paper = false } = {}) => ({ id, unread, paper, title: id, reason: "", href: "/app/alerts", createdAt: "2026-09-24T18:00:00.000Z" });

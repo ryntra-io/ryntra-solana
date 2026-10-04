@@ -15,7 +15,7 @@ import {
 } from "./layout-store";
 
 /**
- * The layout word the product reads for its one version (canon v5.3 В28).
+ * The layout word the product reads for its one version.
  *
  * The product has no depth to choose: there is no switch, and nothing a
  * person once chose makes a page longer or shorter. Its panels read the one
@@ -49,14 +49,13 @@ type ShellState = {
   /** Moves a widget one place within a known ordering. Keyboard-operable by design. */
   moveWidget: (id: string, direction: -1 | 1, ids: readonly string[]) => void;
   /**
-   * Per-panel preferences (spec §7), read-only for now.
+   * Per-panel preferences, read-only for now.
    *
-   * The writers lived on the per-panel `⋮` menu, which the founder turned off
+   * The writers lived on the per-panel `⋮` menu, which is turned off
    * until the surface itself is approved. Keeping dead setters exported is how
    * a reader concludes a control exists somewhere; keeping the *reader* is what
    * lets a stored preference survive the pause instead of being thrown away.
-   * When the menu returns, the setters come back with it — see
-   * `docs/archive/design-pre-reset-2026-08-18/workspace-system.md` §12.
+   * When the menu returns, the setters come back with it.
    */
   panelPrefs: (id: string) => PanelPrefs;
   reset: () => void;
@@ -71,7 +70,7 @@ export function ShellStateProvider({
 }: {
   workspaceId: string;
   /**
-   * The product: one version for everyone (canon v5.3 В28). Its depth is not
+   * The product: one version for everyone. Its depth is not
    * a preference — `prefs.mode` always reads {@link ONE_VERSION} and choosing
    * a mode does nothing, whatever an older visit stored.
    */
@@ -91,8 +90,7 @@ export function ShellStateProvider({
   useEffect(() => {
     const stored = readPrefs(workspaceId);
     /*
-     * «Простий» first, for everyone (canon v5.0 §0.0 rule 9, adopted
-     * 2026-09-23, and the Owner's word the same evening): every person and
+     * «Простий» first, for everyone (since 2026-09-23): every person and
      * every guest opens Simple, in every workspace that still has two depths;
      * «Профі» is one switch and a person who pressed it keeps it. A stored
      * depth nobody chose — `pro` or `standard` written by an older default —

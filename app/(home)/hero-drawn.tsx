@@ -9,14 +9,14 @@ import styles from "./hero-drawn.module.css";
 /**
  * PARKED — not mounted on any route since the same evening it was built.
  *
- * This is the hero drawn in HTML from the Owner's design handoff of
- * 2026-09-13 and the ten corrections given beside it. An hour after it was
- * merged the Owner replaced it with a finished render of the same composition
- * (`hero-art.png`, mounted by `hero.tsx`). Canon keeps superseded work in
- * source rather than deleting it: everything here — the registry-read rail
- * of the drawn terminal, the catalogue-read words, the registry-read strip —
- * still passes its own tests and can be mounted again by pointing
- * `homepage.tsx` back at `Hero` from this file.
+ * This is the hero drawn in HTML from the design handoff of 2026-09-13 and
+ * the ten corrections given beside it. An hour after it was merged it was
+ * replaced with a finished render of the same composition (`hero-art.png`,
+ * mounted by `hero.tsx`). Superseded work is kept in source rather than
+ * deleted: everything here — the registry-read rail of the drawn terminal,
+ * the catalogue-read words, the registry-read strip — still passes its own
+ * tests and can be mounted again by pointing `homepage.tsx` back at `Hero`
+ * from this file.
  *
  * What it was. One dominant focal point: the real product.
  * The eye is meant to travel TRADE WITH A PLAN → the Spot workspace → NVDAx
@@ -27,7 +27,7 @@ import styles from "./hero-drawn.module.css";
  * rail of three proof lines and a strip of four.
  *
  * Every destination is a real page: the primary action opens the front door
- * the Owner named (Swap); *Explore Stocks* opens the stock desk, where Buy
+ * chosen for it then (Swap); *Explore Stocks* opens the stock desk, where Buy
  * comes first; the strip's items open the page they name, and *Strategy & Risk*
  * goes to the worked example below because that page is still being built —
  * which the item says, from the registry, rather than pretending otherwise.

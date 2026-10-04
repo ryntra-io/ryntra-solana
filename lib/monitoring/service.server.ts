@@ -187,10 +187,10 @@ export async function syncMonitorsForWallet(store: GuardStore, owner: string, no
 }
 
 /**
- * «Ryntra попередить» on a position (canon v5 §6.1, §11; 1.21.0): the price
- * against the loss limit and the target the person's preset set, every pass —
- * the engine's position words, the note in the language it was turned on in,
- * its one action the sale. Before a note leaves, the chain is asked whether the
+ * «Ryntra попередить» on a position (1.21.0): the price against the loss
+ * limit and the target the person's preset set, every pass — the engine's
+ * position words, the note in the language it was turned on in, its one
+ * action the sale. Before a note leaves, the chain is asked whether the
  * wallet still holds the token: a position sold in full is closed and told
  * nothing; a read that fails warns — a missed warning costs more than a spare.
  */
@@ -244,7 +244,7 @@ async function evaluateOne(store: GuardStore, monitor: MonitorRecord, nowMs: num
     if (!record) return;
     const plan = projectTradingPlan(record, nowMs);
     const href = `/app/strategies/plans/${plan.id}`;
-    /* A plan on a token Ryntra no longer supports (canon v5.2 В26) is history: nothing is watched on it and no note is written about it. */
+    /* A plan on a token Ryntra no longer supports is history: nothing is watched on it and no note is written about it. */
     if (isRetiredMint(plan.asset.mint)) {
       await applyMonitorResult(store, monitor, "paused", [], [], nowMs, locale, href);
       return;
@@ -295,7 +295,7 @@ async function evaluateOne(store: GuardStore, monitor: MonitorRecord, nowMs: num
         paused: monitor.paused,
         maxPricePerShare: current.rules.entry.maxPricePerShare,
         invalidationPerShare: current.rules.risk.invalidationPerShare,
-        /* 1.21.0: once bought, the plan's target is watched too — «Дія» at the limit or the target (canon §11). */
+        /* 1.21.0: once bought, the plan's target is watched too — «Дія» at the limit or the target. */
         targetPerShare: current.rules.exit.targetPerShare ?? null,
         validUntil: current.rules.entry.validUntil,
         maxReferenceDeviationPct: current.rules.execution.maxReferenceDeviationPct,
@@ -399,9 +399,9 @@ export async function tickMonitoring(store: GuardStore, nowMs: number, locale: "
       /* a failed evaluation must not stop the others */
     }
   }
-  /* «Автоінвест» (canon v5.1 §4.1): the rules that fell due remind now, so their deliveries leave in this same pass. */
+  /* «Автоінвест»: the rules that fell due remind now, so their deliveries leave in this same pass. */
   await tickAutoinvest(store, nowMs).catch(() => undefined);
-  /* The IPO and conversion watch (canon v5.2 В27, §11): a wallet holding a token whose swap window is open is reminded now, so its deliveries leave in this same pass. */
+  /* The IPO and conversion watch: a wallet holding a token whose swap window is open is reminded now, so its deliveries leave in this same pass. */
   await tickIssuerEvents(store, nowMs, { readHeld: readHeldOnChain }).catch(() => undefined);
   await deliverOutbox(store, nowMs);
   /* Once a day, after the deliveries: the issuer's product pages read against the registry of events. */
@@ -424,7 +424,7 @@ const ISSUER_READ_WAIT_MS = 2_500;
 
 export async function readMonitoringSurface(store: GuardStore, owner: string, nowMs: number, locale: "en" | "uk"): Promise<MonitoringSurface> {
   await syncMonitorsForWallet(store, owner, nowMs);
-  /* A token the wallet holds whose issuer opened a swap window (canon v5.2 В27): read while the person's own app reads its notes, so the note of a token just bought arrives while they look. A read that fails leaves the notes as they are. */
+  /* A token the wallet holds whose issuer opened a swap window: read while the person's own app reads its notes, so the note of a token just bought arrives while they look. A read that fails leaves the notes as they are. */
   await Promise.race([
     checkIssuerEvents(store, owner, nowMs, { readHeld: readHeldOnChain, everyMs: READ_EVERY_MS, locale }).catch(() => undefined),
     /* The bell never waits on a slow chain: past this, the notes answer as they are and the read finishes on its own. */

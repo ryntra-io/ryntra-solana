@@ -148,9 +148,9 @@ async function syncHistory(
   lookup: CrossSwapProviderStatus | null = null,
 ) {
   /* Read off the record, never by finding the pair in a list. The list is a
-     shortlist since `RYN-SOL-MONEY-FLOWS-001I`, so a lookup would miss every
-     pair outside it — and this function returns early on a miss, which would
-     leave money moving with History silent about it. */
+     shortlist since the lane widened which assets it carries, so a lookup
+     would miss every pair outside it — and this function returns early on a
+     miss, which would leave money moving with History silent about it. */
   const receivedRaw = record.state === "COMPLETED" && record.receivedAmount ? parseHumanAmount(record.receivedAmount, record.toDecimals) : null;
   const wallet = solanaWalletOf(record) ?? record.destinationWallet;
   const fee = feeForRow(record, lookup);

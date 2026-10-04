@@ -11,19 +11,19 @@ test("all cabinet screens stay beneath one unkeyed wallet provider and shell", (
   assert.equal((layout.match(/<SolanaConnectionProvider>/g) ?? []).length, 1);
   assert.equal((layout.match(/<WalletDataProvider>/g) ?? []).length, 1);
   assert.equal((layout.match(/<ProductShell\b/g) ?? []).length, 1);
-  /* RYN-ACCESS-002: the account provider sits between the wallet connection and
-     the wallet data — two principals, one tree, still unkeyed. */
+  /* The account provider sits between the wallet connection and the wallet
+     data — two principals, one tree, still unkeyed. */
   assert.match(layout, /<SolanaConnectionProvider>\s*<AccountProvider summary=\{account\}>\s*<WalletDataProvider>\s*<ProductShell/);
   assert.doesNotMatch(layout, /<SolanaConnectionProvider[^>]*\bkey=|<WalletDataProvider[^>]*\bkey=/);
   assert.doesNotMatch(layout, /\bredirect\(|<HomeShell|<AgentControlShell|<SolanaHubShell/);
   assert.match(shell, /product=\{\{\s*routes: PRODUCT_ROUTES/);
   assert.match(shell, /navGroups=\{\[\]\}/);
 
-  /* Two names left this list with their pages. Bridge, because the owner's
-     instruction of 2026-09-08 replaced it with the cross-chain swap — its engine
-     still runs, embedded in Swap. And Markets, because canon §4.4 renames the
-     surface Trends and `/app/markets` now redirects there; the cabinet re-export
-     it left behind was a page nobody could reach. */
+  /* Two names left this list with their pages. Bridge, because the cross-chain
+     swap replaced it on 2026-09-08 — its engine still runs, embedded in Swap.
+     And Markets, because the surface is now named Trends and `/app/markets`
+     redirects there; the cabinet re-export it left behind was a page nobody
+     could reach. */
   for (const route of ["portfolio", "swap", "send", "receive", "activity", "receipts", "assets"]) {
     const page = code(`app/app/${route}/page.tsx`);
     assert.match(page, /@\/app\/solana\/workspace\//, route);
@@ -71,8 +71,8 @@ test("Portfolio and Activity consume the same verified operation projection", ()
   assert.match(provider, /projectVerifiedReceiptOutcome\(/);
   assert.match(provider, /receipts\.owner===owner/);
   assert.match(provider, /<Context\.Provider value=\{\{\.\.\.current,activity,receiptRows,refresh\}\}/);
-  /* Two surfaces, not three. Portfolio absorbed the overview (canon §9.1), so
-     the Home dashboard that was the third reader is gone. */
+  /* Two surfaces, not three. Portfolio absorbed the overview, so the Home
+     dashboard that was the third reader is gone. */
   for (const file of ["app/solana/workspace/holdings/holdings-card.tsx", "app/solana/workspace/history/history-card.tsx"]) {
     const surface = code(file);
     assert.match(surface, /useWalletData\(\)/, file);
@@ -91,21 +91,21 @@ test("cabinet locale changes propagate to nested providers and server-rendered p
     const source = code(file);
     assert.match(source, /useEffect\(\(\)\s*=>\s*\{\s*setLocaleState\(initialLocale\);\s*\},\s*\[initialLocale\]\)/, file);
     assert.match(source, /persistWorkspaceLocale\(next\)/, file);
-    /* A page with an address per language goes to the chosen one's (`/uk/app/markets` ↔ `/app/markets`,
-       RYN-SITE-V5-001 subtask 4); every other page is asked for again in the cookie's language. */
+    /* A page with an address per language goes to the chosen one's (`/uk/app/markets` ↔ `/app/markets`);
+       every other page is asked for again in the cookie's language. */
     assert.match(source, file === "app/agents/workspace/i18n/provider.tsx" ? /router\.refresh\(\)/ : /showPageInLanguage\(router, next\)/, file);
   }
   assert.match(code("lib/site/use-page-path.ts"), /if \(target && target !== pathname \+ search\) router\.push\(target\);\s*else router\.refresh\(\);/);
   assert.match(code("app/app/settings/product-settings.tsx"), /useSolanaI18n\(\)/);
-  /* Since canon v5.4 (В31) the language is a row of the wallet's menu, writing the same locale. */
+  /* The language is a row of the wallet's menu, writing the same locale. */
   assert.match(code("app/app/product-shell.tsx"), /<MenuPreferences\s+locale=\{locale\}\s+onLocale=\{setLocale\}/);
 });
 
-test("the foot of the rail carries Відгук and Settings; the language and the theme live in the wallet's menu (canon v5.4 В31)", () => {
-  /* Canon v5.3 (В28) took the depth switch away — the product is one
-     version; canon v5.4 (В31) took the language and the theme off the rail's
-     foot for the top bar's one menu, where a person looks for their own
-     settings: Налаштування, Мова, Тема, Від'єднати. */
+test("the foot of the rail carries Відгук and Settings; the language and the theme live in the wallet's menu", () => {
+  /* The depth switch is gone — the product is one version; the language and
+     the theme moved off the rail's foot to the top bar's one menu, where a
+     person looks for their own settings: Налаштування, Мова, Тема,
+     Від'єднати. */
   const shell = code("app/app/product-shell.tsx");
   assert.doesNotMatch(shell, /<DepthSwitch|depth-switch/, "the rail's foot carries the «Простий»/«Профі» switch again");
   assert.doesNotMatch(shell, /<ShellLanguageToggle|<ThemeToggle|rs-view-pair/, "the language or the theme is back on the rail's foot");
@@ -116,7 +116,7 @@ test("the foot of the rail carries Відгук and Settings; the language and t
   let cursor = -1;
   for (const token of ["words.settings", "words.language", "words.theme"]) {
     const at = menu.indexOf(token);
-    assert.ok(at > cursor, `${token} is missing from the wallet's menu or out of the Owner's order`);
+    assert.ok(at > cursor, `${token} is missing from the wallet's menu or out of its order`);
     cursor = at;
   }
   const control = code("app/shell/connection-control.tsx");
@@ -136,12 +136,12 @@ test("the foot of the rail carries Відгук and Settings; the language and t
   assert.match(menu, /applyThemePref\(nextTheme\)/);
 });
 
-test("every section of the product's menu is visible — a caption is a label, not a control (canon v5.4 В30)", () => {
-  /* The founder's instruction of 2026-09-08 gave the groups an arrow; the
-     Owner's word of 2026-09-24 — «усе видно без «Ще»» — takes it back for
-     the product: nothing of the menu is shut. The collapse machinery stays
-     for the workspaces that still ask for it, and it still never shuts the
-     group of the page a person is on. */
+test("every section of the product's menu is visible — a caption is a label, not a control", () => {
+  /* The groups got an arrow on 2026-09-08; since 2026-09-24 everything is
+     visible without «Ще», so the product takes the arrow back: nothing of the
+     menu is shut. The collapse machinery stays for the workspaces that still
+     ask for it, and it still never shuts the group of the page a person is
+     on. */
   const appShell = code("app/shell/app-shell.tsx");
   const product = appShell.slice(appShell.indexOf("const groups: readonly NavGroup[] = menu"), appShell.indexOf("const settingsEntry"));
   assert.doesNotMatch(product, /collapsible: true/, "a section of the product's menu can be shut");

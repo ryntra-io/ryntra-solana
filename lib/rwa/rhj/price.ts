@@ -1,11 +1,11 @@
 /**
  * Comparing two prices that are not the same quantity.
  *
- * `RYN-TM-002` established the rule on the Asset Passport and proved what it
- * costs to break: on live `AAPL`, comparing the token's oracle price against
- * the venue's raw underlying quote reported `0.208%` where the honest
- * share-against-share figure was `0.152%`. The 56-basis-point gap was the
- * multiplier, not the market. After a 4:1 split the same mistake reads 300%.
+ * The Asset Passport established the rule and proved what it costs to break:
+ * on live `AAPL`, comparing the token's oracle price against the venue's raw
+ * underlying quote reported `0.208%` where the honest share-against-share
+ * figure was `0.152%`. The 56-basis-point gap was the multiplier, not the
+ * market. After a 4:1 split the same mistake reads 300%.
  *
  * This module is that rule applied to the direct issuer API, where the trap is
  * sharper because the provider itself publishes both quantities under names

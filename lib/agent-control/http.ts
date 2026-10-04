@@ -57,11 +57,11 @@ export function consumeSolanaReadRequest(headers: Headers) {
 /*
  * An evidence read may cost money, so it does not share the reads' window.
  *
- * `/api/v1/research/evidence` (RYN-NANSEN-EVIDENCE-001) is public — the
- * asset page is — and behind it a miss is a paid call to the evidence
- * provider, bounded by the credit governor. The governor is the ceiling on
- * spend; this window is the ceiling on one address's share of it: twenty a
- * minute is more than a person opening assets by hand and less than a loop.
+ * `/api/v1/research/evidence` is public — the asset page is — and behind it
+ * a miss is a paid call to the evidence provider, bounded by the credit
+ * governor. The governor is the ceiling on spend; this window is the ceiling
+ * on one address's share of it: twenty a minute is more than a person opening
+ * assets by hand and less than a loop.
  * Cached reads land on the same budget on purpose, so a scripted refresh of
  * one asset cannot starve the governor of its cache window either.
  */

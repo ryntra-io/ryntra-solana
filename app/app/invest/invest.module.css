@@ -1,9 +1,9 @@
 /*
- * «Простий»'s Home and Markets (canon v5.0 §2–§4; RYN-INVEST-SIMPLE-001,
- * session 1). Drawn for 390px first (В20), then widened: a company by its
- * logo and name, a price in dollars, the day's change, one orange action a
- * screen. Tokens only (DESIGN.md → app/design/tokens.css): big figures in
- * Geist with tabular numerals, no mono, no capitals, no word under 13px.
+ * «Простий»'s Home and Markets. Drawn for 390px first, then widened: a
+ * company by its logo and name, a price in dollars, the day's change, one
+ * orange action a screen. Tokens only (DESIGN.md → app/design/tokens.css):
+ * big figures in Geist with tabular numerals, no mono, no capitals, no word
+ * under 13px.
  */
 
 .page {
@@ -420,9 +420,9 @@ a.row:hover {
   min-width: 0;
 }
 
-/* A private company's row (canon v5.2 В27): the name and «Це не акція» on one
-   line, its one number under them — whole, wrapping on a narrow phone rather
-   than cut, and without a tone of good or bad. */
+/* A private company's row: the name and «Це не акція» on one line, its one
+   number under them — whole, wrapping on a narrow phone rather than cut, and
+   without a tone of good or bad. */
 .rowTitleLine {
   display: flex;
   align-items: center;
@@ -491,7 +491,7 @@ a.row:hover {
   color: var(--ry-text);
 }
 
-/* ── Markets: the title, the tabs, «Для досвідчених» (canon v5.4 В33) ── */
+/* ── Markets: the title, the tabs, «Для досвідчених» ──────────────────── */
 
 .marketsHead {
   display: grid;
@@ -643,7 +643,7 @@ a.row:hover {
   order: 5;
 }
 
-/* ── Width (RYN-WIDTH-PREMIUM-001): Markets on the full width ─────────── */
+/* ── Width: Markets on the full width ─────────────────────────────────── */
 
 /* The page reaches the edge of a wide screen; the cap keeps a line of
    four readable on a very wide one. */

@@ -32,7 +32,7 @@ export const FORBIDDEN_ADMIN_PROPERTIES = [
   "api_secret",
   "raw_query",
   "ip",
-  // RYN-ADMIN-006: identifiers, secrets, amounts and fingerprints named in canon §10.
+  // Identifiers, secrets, amounts and fingerprints.
   "telegram_id",
   "telegramId",
   "telegram_username",

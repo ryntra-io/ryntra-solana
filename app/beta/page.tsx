@@ -31,8 +31,8 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
  * It is deliberately NOT taken from `lib/beta/texts.ts`. That dictionary is the
  * bot's and is localised for the bot's own audience, while this page is English-only.
  *
- * Both now say the same thing, which was not true before RYN-BETA-001: one
- * confirmation in the bot opens the product, and nothing else affects access.
+ * Both now say the same thing, which was not always true: one confirmation
+ * in the bot opens the product, and nothing else affects access.
  * The old three-task checklist and its six-rung ladder are gone from every surface,
  * because only one of the three ever did anything.
  *

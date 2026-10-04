@@ -1,13 +1,12 @@
 /**
- * «Простий»'s company page and its purchase in dollars — the pure half
- * (canon v5.1 §2, §4, §7, §8; `RYN-INVEST-SIMPLE-001`, session 2).
+ * «Простий»'s company page and its purchase in dollars — the pure half.
  *
  * What a beginner reads about a company is decided here once and tested:
  * the one line of truth about what the token is (from the issuer's own
- * documents, §7 — never «акція Apple»), whether the exchange is open (§8),
- * the chart's four ranges and the change over each, how many shares an
- * amount buys, and what a purchase costs in dollars, all of it. No fetch,
- * no clock, no React: the page and the sheet hand the facts in.
+ * documents — never «акція Apple»), whether the exchange is open, the
+ * chart's four ranges and the change over each, how many shares an amount
+ * buys, and what a purchase costs in dollars, all of it. No fetch, no
+ * clock, no React: the page and the sheet hand the facts in.
  */
 
 import type { SpotTimeframe } from "../../../lib/spot/candles.ts";
@@ -22,7 +21,7 @@ export { truthLine } from "../../../lib/stocks/truth.ts";
 
 /**
  * A private company's token against the issuer's own valuation of it, the one
- * number its card and its page carry (canon v5.2 В27): «на 31% дорожче за
+ * number its card and its page carry: «на 31% дорожче за
  * оцінку PreStocks» · «на 21% дешевше…» — a whole per cent from ten up, one
  * decimal below it, «≈ як оцінка» within a twentieth of a per cent. No tone
  * of good or bad: the figure is context, never a reason to buy. Null when
@@ -46,10 +45,9 @@ export function premiumLine(premiumPct: number | null | undefined, issuerLabel: 
 export type ExchangeState = "open" | "closed";
 
 /**
- * Whether the exchange the share lists on is open now (canon §8). The
- * issuer's own period decides — its «market» is the exchange's regular
- * session; extended and overnight hours are the token trading while the
- * exchange is shut. Without a period the exchange's own flag decides, and
+ * Whether the exchange the share lists on is open now. The issuer's own
+ * period decides — its «market» is the exchange's regular session; extended
+ * and overnight hours are the token trading while the exchange is shut. Without a period the exchange's own flag decides, and
  * with neither the page says nothing rather than guess.
  */
 export function exchangeState(session: Readonly<{ period: SessionPeriod; exchangeOpen: boolean | null }>): ExchangeState | null {
@@ -178,7 +176,7 @@ export function lineGeometry(points: readonly LinePoint[], width: number, height
     high = Math.max(high, point.price);
   }
   const flat = high - low <= Math.abs(high) * 1e-9;
-  /* A quiet range is not drawn as a storm (RYN-COMPANY-PAGE-001): the height spans at least `minSpanRatio` of the price, so a move of a few tenths of a per cent stays a few tenths of the height. */
+  /* A quiet range is not drawn as a storm: the height spans at least `minSpanRatio` of the price, so a move of a few tenths of a per cent stays a few tenths of the height. */
   const need = Math.abs((low + high) / 2) * minSpanRatio;
   if (!flat && high - low < need) {
     const mid = (low + high) / 2;
@@ -197,9 +195,8 @@ export function lineGeometry(points: readonly LinePoint[], width: number, height
  * A pool's single trades read as needles on a short range: each inner point
  * takes the median of itself and its two neighbours — always one of the three
  * closes the pool printed, so any figure read on the line is a real price —
- * and the line keeps its moves while the one-trade spikes fall away
- * (RYN-COMPANY-PAGE-001, the Owner's «ніби дитина робила»). The ends stay as
- * they are: the last is anchored to the page's price.
+ * and the line keeps its moves while the one-trade spikes fall away. The
+ * ends stay as they are: the last is anchored to the page's price.
  */
 export function despike(points: readonly LinePoint[]): LinePoint[] {
   if (points.length < 3) return [...points];
@@ -227,25 +224,23 @@ export function nearestIndex(xs: readonly number[], width: number, fraction: num
 /* ------------------------------------------------------------ the purchase */
 
 /**
- * The least a purchase is — a dollar (canon v5.5 В35: «Може хтось хоче на
- * долар купляти. Кожний день по долару»). It was $10, from the v5.0 draft,
- * which had copied Jupiter's minimums for its DCA vault, Trigger orders and
- * the gasless swap; a plain Swap v2 order has none.
+ * The least a purchase is — a dollar, so a person can buy a dollar's worth,
+ * even every day. It was $10, copied from Jupiter's minimums for its DCA
+ * vault, Trigger orders and the gasless swap; a plain Swap v2 order has none.
  */
 export const MIN_BUY_USD = 1;
 export const MAX_BUY_USD = 1_000_000;
 
 /**
- * The sum a purchase opens on — $10 (the Owner's word, 2026-09-25: «зроби,
- * щоб було 10»). A default, not advice: every sum from a dollar is the
- * person's own, on their own budget, and nothing on the sheet recommends one.
+ * The sum a purchase opens on — $10. A default, not advice: every sum from a
+ * dollar is the person's own, on their own budget, and nothing on the sheet
+ * recommends one.
  */
 export const DEFAULT_BUY_USD = 10;
 
 /**
  * The quick choices of a purchase are shares of the wallet's USDC — 25 %, 50 %,
- * 75 % and 100 % (the Owner's word, 2026-09-25: «наскільки я хочу купити —
- * у відсотках: 25, 50, 75 і 100»); the sum itself stays free to type.
+ * 75 % and 100 %; the sum itself stays free to type.
  */
 export const BUY_SHARE_PRESETS_PCT = [25, 50, 75, 100] as const;
 
@@ -262,9 +257,8 @@ export function shareOfRaw(raw: bigint, decimals: number, pct: number): number {
 
 /**
  * Where the live quote gives no route for the sum asked, the company says its
- * own minimum — the least of these sums the same quote routes (canon v5.5
- * В35: «мінімум цього активу з котирування, чесно»). Tried in order and only
- * above the sum asked; when none routes, no minimum is claimed.
+ * own minimum — the least of these sums the same quote routes. Tried in order
+ * and only above the sum asked; when none routes, no minimum is claimed.
  */
 export const ROUTE_MINIMUM_LADDER_USD = [2, 5, 10, 25, 50, 100] as const;
 
@@ -312,7 +306,7 @@ export function dollars(value: number, numberLocale: string): string {
  */
 export { BASE_SIGNATURE_LAMPORTS, buyCosts, reserveOverPurchase, unitsFromRaw, type BuyCostInput, type BuyCosts } from "../../../lib/stocks/check.ts";
 
-/** A count of shares or tokens, to four decimals at most (canon §2, rule 2); a real but tiny one is never printed as zero. */
+/** A count of shares or tokens, to four decimals at most; a real but tiny one is never printed as zero. */
 export function formatUnits(value: number, numberLocale: string): string {
   if (value > 0 && value < 0.0001) return `< ${new Intl.NumberFormat(numberLocale, { minimumFractionDigits: 4 }).format(0.0001)}`;
   return new Intl.NumberFormat(numberLocale, { maximumFractionDigits: 4 }).format(value);

@@ -8,7 +8,7 @@ import { SWEEP_INTERVAL_MS } from "./motion";
 type Row = HomeCopy["scannerRows"][number];
 
 /**
- * Scanner method demonstration (RYN-LAND-002).
+ * Scanner method demonstration.
  *
  * The scanner capability is not released, so this block must never behave like
  * a working tool. Three rules follow from that and are enforced here rather

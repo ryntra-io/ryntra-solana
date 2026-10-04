@@ -5,7 +5,7 @@ import { FEES, REWARDS } from "@/app/docs/content/facts";
 
 export const metadata: Metadata = {
   title: "Terms of Use",
-  /* The search snippet within 160 characters (the plan of RYN-SITE-V5-001 §3): the description only — the terms below are unchanged. */
+  /* The search snippet within 160 characters: the description only — the terms below are unchanged. */
   description: "Terms of Use for Ryntra: non-custodial access, beta status, eligibility, fees, Rewards, risks, third-party services and liability.",
   alternates: { canonical: "https://ryntra.io/legal/terms" },
 };

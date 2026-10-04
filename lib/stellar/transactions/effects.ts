@@ -255,8 +255,8 @@ export type ObserveOptions = Readonly<{
  *
  * Horizon rather than RPC, and for a stated reason: RPC returns the result as
  * XDR, while the credits and debits a person needs to check are already JSON on
- * Horizon. Canon permits Horizon for exactly this kind of classic gap and
- * forbids depending on it alone forever — every value carries the source that
+ * Horizon. The rules permit Horizon for exactly this kind of classic gap and
+ * forbid depending on it alone forever — every value carries the source that
  * answered, so replacing it later is a source change and not a rewrite.
  *
  * A probe on 2026-08-13 measured the two reads at 3,830 and 2,542 bytes for a

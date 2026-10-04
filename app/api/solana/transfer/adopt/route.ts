@@ -298,7 +298,7 @@ export async function POST(request: Request) {
     simulation,
   };
 
-  /* Adoption is a customer path, so the founder's experiment configuration does
+  /* Adoption is a customer path, so the operator's experiment configuration does
      not decide it. Unreadable, it becomes the deterministic closed fallback and
      the re-derived verdict reads outside the envelope; the binding check above
      still verifies the exact signed verdict this bundle was reviewed with. */

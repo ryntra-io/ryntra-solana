@@ -1,6 +1,5 @@
 /**
- * The holdings route's answer, as the agent's holdings tool reads it
- * (`RYN-API-CONTRACT-002`; the defect it closes is recorded on the card).
+ * The holdings route's answer, as the agent's holdings tool reads it.
  *
  * The agent reads holdings through the route itself, in-process, so the
  * Portfolio page and Ryn never disagree about a balance. Until 2026-09-22 the

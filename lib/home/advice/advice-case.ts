@@ -6,11 +6,11 @@ import type { Entitlement } from "../research/mandate.ts";
 /**
  * The AdviceCase — Ryntra Home's decision record.
  *
- * Wave 4 gave the product a *change*. This is the *decision about* that change,
- * and it is one object rather than six screens, because an audit that has to be
- * reassembled from six screens is not an audit.
+ * The material-change engine gave the product a *change*. This is the
+ * *decision about* that change, and it is one object rather than six screens,
+ * because an audit that has to be reassembled from six screens is not an audit.
  *
- * The chain is exactly the canon's (`docs/products/home.md` §4):
+ * The chain it records is exactly this:
  *
  *   InvestorContext version → trigger → EvidenceBundle → conflicts, unknowns
  *   and alternatives → RiskCalculation → human disposition → optional exact
@@ -27,7 +27,7 @@ import type { Entitlement } from "../research/mandate.ts";
  * including doing nothing, and the reader's own decision.
  *
  * **A disposition is read, never inferred.** The most tempting shortcut in this
- * whole packet is to notice an open paper trade on the same instrument as a
+ * whole module is to notice an open paper trade on the same instrument as a
  * change and call that the reader's decision. It is not: it is two facts that
  * share a ticker. An inferred disposition would be a fabricated audit record,
  * which is precisely what this object exists to prevent, so a case nobody

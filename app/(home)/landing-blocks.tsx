@@ -28,11 +28,11 @@ import { Shot } from "./shot";
 import styles from "./blocks.module.css";
 
 /*
- * The landing's new blocks, between the Owner's workflow and the Owner's
- * Rewards (the Owner's word of 2026-09-26: «Твій дизайн + v5.5» — add the
- * phone, Autoinvest and every function, interactive, lit, moving, in the same
- * design). Each block's words are `landing-copy.ts`; each picture of the
- * product is a screen of `ryntra.io`; each figure is the product's own.
+ * The landing's new blocks, between the workflow and Rewards — the phone,
+ * Autoinvest and every function, interactive, lit, moving, in the same
+ * design as the blocks around them. Each block's words are `landing-copy.ts`;
+ * each picture of the product is a screen of `ryntra.io`; each figure is the
+ * product's own.
  */
 
 const d = (step: number) => ({ "--d": step }) as CSSProperties;
@@ -202,7 +202,7 @@ export function Security({ locale }: { locale: LandingLocale }) {
   );
 }
 
-/** Where Ryntra is today — what works now, what is being built, what comes next (canon В40). */
+/** Where Ryntra is today — what works now, what is being built, what comes next. */
 export function Today({ locale }: { locale: LandingLocale }) {
   const c = landingCopy(locale).status;
   return (

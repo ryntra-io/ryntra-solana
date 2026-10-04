@@ -1,7 +1,7 @@
 /**
  * When a backtest counts as evidence, and when it is just a curve.
  *
- * Home canon §10: *Backtest evidence must identify data and version, costs,
+ * Home's rule: *Backtest evidence must identify data and version, costs,
  * missing data, drawdown, out-of-sample/forward evidence and sensitivity; an
  * in-sample curve is never proof of future performance.*
  *
@@ -146,7 +146,7 @@ export type ApprovalCheck = Readonly<{ ok: boolean; reason: string }>;
  * Whether this evidence could carry a strategy to `APPROVED`.
  *
  * It is a *permission*, not an approval: the lifecycle still requires the human
- * transition, and this function only refuses the ones the canon refuses.
+ * transition, and this function only refuses the ones the rule refuses.
  */
 export function canReachApproved(assessment: BacktestAssessment): ApprovalCheck {
   if (assessment.state !== "EVIDENCE") {

@@ -1,5 +1,5 @@
 /**
- * The shape of a tool (`RYN-AGENT-TEXT-001`).
+ * The shape of a tool.
  *
  * A tool is one of two kinds and nothing else: `research` reads through an
  * existing service and returns what it read with its provenance; `prepare`

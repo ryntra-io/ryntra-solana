@@ -13,12 +13,11 @@ import { buyByRuleWord, investWords } from "./invest-words";
 import { useAutoinvestRules } from "./use-rules";
 
 /**
- * Spot's line while a rule's reminder is open for the token on the ticket
- * (canon v5.3 В29; `RYN-NAV-V5-001`, session 2): the reminder is open, a
- * purchase here does not close it — the rule counts only a purchase by the
- * rule — and the way to that purchase: the company's page, the Review on the
- * rule's sum. The rules are the wallet's, read only behind its proof; the
- * ticket, its figures and its path do not change.
+ * Spot's line while a rule's reminder is open for the token on the ticket:
+ * the reminder is open, a purchase here does not close it — the rule counts
+ * only a purchase by the rule — and the way to that purchase: the company's
+ * page, the Review on the rule's sum. The rules are the wallet's, read only
+ * behind its proof; the ticket, its figures and its path do not change.
  */
 export function RuleReminderNotice({ mint, proven, locale, className }: Readonly<{ mint: string | null; proven: boolean; locale: WorkspaceLocale; className?: string }>) {
   const word = investWords(locale);

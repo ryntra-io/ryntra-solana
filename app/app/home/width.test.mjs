@@ -3,12 +3,11 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 /**
- * Width and premium (`RYN-WIDTH-PREMIUM-001`, the Owner's word «Ширина й
- * преміум»): from 1440 up no half of the screen stands empty — Home has a main
- * column and a right one (notifications, «Автоінвест», «Спитати Ryntra», what
- * moves today), on a phone the right one's blocks come under the main ones;
- * Markets and Portfolio take the full width with big figures and one orange
- * action.
+ * Width and premium: from 1440 up no half of the screen stands empty — Home
+ * has a main column and a right one (notifications, «Автоінвест», «Спитати
+ * Ryntra», what moves today), on a phone the right one's blocks come under the
+ * main ones; Markets and Portfolio take the full width with big figures and
+ * one orange action.
  */
 
 const read = (path) => readFileSync(new URL(`../../../${path}`, import.meta.url), "utf8");
@@ -32,7 +31,7 @@ test("the right column holds notifications, «Автоінвест», «Спит
   const body = ASIDE.slice(ASIDE.indexOf("export function HomeAside"));
   const order = ["<NotesBlock", "<AutoinvestBlock", "<AskBlock", "<MoversBlock"].map((tag) => body.indexOf(tag));
   assert.ok(order.every((index) => index > 0), "every block is drawn");
-  assert.deepEqual([...order].sort((a, b) => a - b), order, "in the Owner's order");
+  assert.deepEqual([...order].sort((a, b) => a - b), order, "in that order");
 });
 
 test("«Автоінвест» in the column: the rules with their switches, one line each, the nearest purchase first, three at most", () => {
@@ -40,7 +39,7 @@ test("«Автоінвест» in the column: the rules with their switches, one
   assert.match(ASIDE, /<AutoinvestBlock locale=\{locale\} compact \/>/);
   assert.match(BLOCK, /const COMPACT_SHOWN = 3;/);
   assert.match(BLOCK, /compact \? byNextPurchase\(state\.rules, Date\.now\(\)\)\.slice\(0, COMPACT_SHOWN\) : state\.rules/);
-  /* The switch stays on every rule: canon v5.3 В29 keeps the rules with their switches on Home. */
+  /* The switch stays on every rule: Home keeps the rules with their switches. */
   assert.match(BLOCK, /role="switch"/);
   assert.match(BLOCK, /word\("allRules"\)/);
 });

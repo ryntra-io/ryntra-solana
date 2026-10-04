@@ -1,6 +1,6 @@
 /**
  * Representations — which Solana tokens are tokenized stocks, who stands
- * behind each one, and what it stands for. Canon v4.0 §7.1 and §7.7.
+ * behind each one, and what it stands for.
  *
  * A symbol is never an identity. A representation is a **mint** that two
  * independent facts agree on: the venue's verified universe tags it as a stock
@@ -11,17 +11,17 @@
  *
  * Issuers are separate models, and an issuer is never inferred from a
  * category: `pre-ipo` is a class of instrument, `prestocks` is an issuer,
- * confirmed by its own catalogue (`RYN-STOCKS-PROVIDERS-001`). xStocks
- * (Backed) publishes assets, references, multipliers and reserves; PreStocks
- * publishes its mints and its own marks; Backpack Securities and Ondo Global
- * Markets are known here by the venue's tag only, so their representations
- * carry `issuerConfirmation: "tag-only"` and no issuer reference until a
- * source exists. Ondo tokens with no on-chain route say so by route state,
- * never by issuer name.
+ * confirmed by its own catalogue. xStocks (Backed) publishes assets,
+ * references, multipliers and reserves; PreStocks publishes its mints and its
+ * own marks; Backpack Securities and Ondo Global Markets are known here by
+ * the venue's tag only, so their representations carry
+ * `issuerConfirmation: "tag-only"` and no issuer reference until a source
+ * exists. Ondo tokens with no on-chain route say so by route state, never by
+ * issuer name.
  *
- * Private companies come through PreStocks only (canon v5.2 В25–В26): a token
- * of any other pre-IPO issuer is no representation here, whatever the
- * venue's tags say (`retired.ts`).
+ * Private companies come through PreStocks only: a token of any other
+ * pre-IPO issuer is no representation here, whatever the venue's tags say
+ * (`retired.ts`).
  */
 
 import type { SpotMarket } from "../spot/markets.ts";

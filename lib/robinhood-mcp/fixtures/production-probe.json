@@ -1,5 +1,5 @@
 {
-  "capture": "RYN-RH-MCP-001 production egress probe",
+  "capture": "Robinhood Trading MCP production egress probe",
   "capturedAt": "2026-08-24",
   "egress": "Ryntra production deployment on Vercel, project ryntra, region iad1",
   "instrument": "GET https://ryntra.io/api/robinhood-mcp/reachability",

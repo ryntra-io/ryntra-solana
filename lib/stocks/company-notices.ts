@@ -1,7 +1,7 @@
 /**
  * What a company behind a private-company token has said about tokens like
- * it — the risk line canon v5.2 (C.8) puts on the asset, dated and sourced,
- * with no estimate of Ryntra's own.
+ * it — the risk line the asset carries, dated and sourced, with no estimate
+ * of Ryntra's own.
  *
  * Kept by hand and versioned, like the issuer events of `lifecycle-events.ts`:
  * an entry is written from the company's statement as the press reported it,

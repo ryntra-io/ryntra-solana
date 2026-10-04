@@ -26,10 +26,11 @@ export const dynamic = "force-dynamic";
  * The hosted MCP endpoint — the first Agent Control surface a stranger can
  * reach without a person handing them anything.
  *
- * It exists only because identity does. Before this packet there was no way to
- * say who a caller was, so a hosted endpoint could only have been anonymous,
- * and an anonymous write endpoint is a queue anybody can fill. The order in
- * this file is the order of that argument: authenticate, meter, then serve.
+ * It exists only because identity does. Without the OAuth server there would
+ * be no way to say who a caller was, so a hosted endpoint could only be
+ * anonymous, and an anonymous write endpoint is a queue anybody can fill. The
+ * order in this file is the order of that argument: authenticate, meter, then
+ * serve.
  *
  * **The challenge is the specification's, not an invention.** An
  * unauthenticated call answers `401` with `WWW-Authenticate: Bearer` naming the

@@ -1,6 +1,6 @@
--- RYN-ADMIN-002 feedback inbox.
+-- Admin feedback inbox.
 -- APPLIED to production project lbphobwqzwdkbmyedlwb via SQL Editor on
--- 2026-08-30 by the founder. Result: Success. No rows returned.
+-- 2026-08-30. Result: Success. No rows returned.
 -- Live RPC probe the same day: admin_feedback_open_count n=0; list empty;
 -- wrong secret denied.
 --

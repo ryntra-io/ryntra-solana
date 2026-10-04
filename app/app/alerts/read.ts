@@ -16,11 +16,12 @@ import type { HomeReads } from "@/app/app/home-reads";
  * compiled.
  *
  * The mapping is the point of this file being thin. Suppression is **not**
- * decided here: `notificationDecision` in wave 4 owns quiet hours, cooldown,
- * budget, alerting right and expiry, and this layer calls it with what a
- * material change actually observed. A second suppression rule written for a
- * display surface would be a second definition of when a person gets told
- * something, which is precisely the class of duplicate this product refuses.
+ * decided here: `notificationDecision` in the Radar's monitor rule owns quiet
+ * hours, cooldown, budget, alerting right and expiry, and this layer calls it
+ * with what a material change actually observed. A second suppression rule
+ * written for a display surface would be a second definition of when a person
+ * gets told something, which is precisely the class of duplicate this product
+ * refuses.
  *
  * The counts fed to that decision are the honest ones available today: this
  * deployment records no per-rule alert log, so `alertsSentToday` is `0` and

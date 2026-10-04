@@ -8,7 +8,7 @@ import type { TradingPlan, PlanListResponse } from "@/lib/api/v1/contract";
 import styles from "./holdings.module.css";
 
 /**
- * A holding's link to the plan it belongs to — `RYN-RESULTS-MEMORY-001` §10.
+ * A holding's link to the plan it belongs to.
  *
  * Portfolio answers *what do I hold*; a plan answers *why*. Until now the two
  * did not meet on the page, so a person holding NVDAx had no way to reach the
@@ -21,7 +21,7 @@ import styles from "./holdings.module.css";
  *
  * The read needs the wallet's proof. A wallet that has not proved itself on
  * this page simply has no chips, which is correct: Portfolio is readable by
- * address (canon §0.6) and a plan is not.
+ * address and a plan is not.
  */
 export function usePlansByMint(address: string | null): ReadonlyMap<string, readonly TradingPlan[]> {
   const [plans, setPlans] = useState<ReadonlyMap<string, readonly TradingPlan[]>>(new Map());

@@ -1,6 +1,6 @@
 /**
  * Нагляд за позицією — the state a company position the wallet holds is in,
- * and its one action (canon v5 §11; `RYN-PROTECT-SIGNAL-001`, subtask 1).
+ * and its one action.
  *
  * A position is watched as a position, not as a plan: the plan it was bought
  * under stops at «Виконано», the position does not. Its exit is the loss limit
@@ -46,9 +46,9 @@ export type WatchAction = (typeof WATCH_ACTIONS)[number];
 export const WATCH_SOURCES = ["plan", "watch"] as const;
 export type WatchSource = (typeof WATCH_SOURCES)[number];
 
-/** Within this share of the price above the loss limit, the position needs a look (canon §11, «до межі ≤2 %»). */
+/** Within this share of the price above the loss limit, the position needs a look («до межі ≤2 %»). */
 export const NEAR_LIMIT_PCT = 2;
-/** Above the exchange by more than this is «Дорого» (canon §8), and a watched position is told. */
+/** Above the exchange by more than this is «Дорого», and a watched position is told. */
 export const ABOVE_EXCHANGE_PCT = 1;
 /** A price older than this decides nothing — the half hour a rule's fall trusts (`lib/autoinvest/dip.ts`). */
 export const WATCH_PRICE_MAX_AGE_MS = 30 * 60_000;
@@ -71,7 +71,7 @@ export type WatchInput = Readonly<{
   exit: WatchExit | null;
   /** The issuer says the token is paused. */
   issuerPaused: boolean;
-  /** An issuer's event the holder must act on is open for this token (canon v5.2 В27). */
+  /** An issuer's event the holder must act on is open for this token. */
   issuerEvent: boolean;
   /** The token against the exchange's current reference, percent; null where there is none. */
   deviationPct: number | null;

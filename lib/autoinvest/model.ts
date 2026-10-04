@@ -1,7 +1,6 @@
 /**
  * What a rule's occurrences are, and what the tick and the order route decide
- * about them (`RYN-INVEST-SIMPLE-001`, sessions 3–4; canon v5.1 §4.1, B.3,
- * B.5).
+ * about them.
  *
  * **History is the durable source.** A purchase made under a reminder carries
  * `origin.rule` from the order into the issuer-signed bundle and onto the
@@ -16,32 +15,31 @@
  * service was down, the rule was paused), it opens only the latest, and only
  * while it is still open; nothing older is reminded of.
  *
- * **«Якщо впаде»** (session 4) opens its occurrence at the first read of the
- * price at or below its trigger, one note per crossing (`./dip.ts`); after a
- * purchase under it the reference point moves to what that purchase paid.
+ * **«Якщо впаде»** opens its occurrence at the first read of the price at or
+ * below its trigger, one note per crossing (`./dip.ts`); after a purchase
+ * under it the reference point moves to what that purchase paid.
  *
- * **«Бюджет місяця»** (session 4): a purchase that does not fit what is left
- * of the month's ceiling is not reminded of — the occurrence is `held` and the
- * rules stand until the 1st (`./budget.ts`). The order route refuses it too.
+ * **«Бюджет місяця»**: a purchase that does not fit what is left of the
+ * month's ceiling is not reminded of — the occurrence is `held` and the rules
+ * stand until the 1st (`./budget.ts`). The order route refuses it too.
  *
- * **«Умова ціни»** (`RYN-PRICE-GUARD-001`, canon v5.5 В37): a rule with a
- * price condition judges it when it falls due. Met, it reminds as before;
- * otherwise the occurrence is `deferred` — one note says why — and every pass
- * while it is open judges it again: met in time, it becomes `due` and
- * reminds; never met, it is `missed` at its end. A «Якщо впаде» crossing
- * whose price comes back above the trigger before the condition is met is
- * over. The order route judges the condition once more on its own facts.
+ * **«Умова ціни»**: a rule with a price condition judges it when it falls
+ * due. Met, it reminds as before; otherwise the occurrence is `deferred` —
+ * one note says why — and every pass while it is open judges it again: met
+ * in time, it becomes `due` and reminds; never met, it is `missed` at its
+ * end. A «Якщо впаде» crossing whose price comes back above the trigger
+ * before the condition is met is over. The order route judges the condition
+ * once more on its own facts.
  *
- * **«З кожної оплати»** (`RYN-PAY-TRIGGERS-001`, canon v5.5 В38): the rule
- * takes its share of every event the wallet's watch numbered after the last
- * one it took — counted from the instant it was turned on, never an event to
- * or from an account the person named as their own — and what it gathers
- * waits, the money in the wallet. Once the sum reaches the rule's minimum and
- * no reminder of it is open, one occurrence opens on exactly that sum and
- * takes every waiting event: within the month's budget and the price
- * condition it reminds; otherwise it is held or deferred like any rule's.
- * What an occurrence took never waits again — a reminder nobody bought is
- * missed, never gathered into the next.
+ * **«З кожної оплати»**: the rule takes its share of every event the wallet's
+ * watch numbered after the last one it took — counted from the instant it was
+ * turned on, never an event to or from an account the person named as their
+ * own — and what it gathers waits, the money in the wallet. Once the sum
+ * reaches the rule's minimum and no reminder of it is open, one occurrence
+ * opens on exactly that sum and takes every waiting event: within the month's
+ * budget and the price condition it reminds; otherwise it is held or deferred
+ * like any rule's. What an occurrence took never waits again — a reminder
+ * nobody bought is missed, never gathered into the next.
  *
  * Pure: the clock, the rule, the History rows, the ceiling, the price and the
  * condition's facts are arguments.
@@ -595,7 +593,7 @@ function conditionRefusal(check: PriceCheck): string {
 }
 
 /**
- * The order route's check of `origin.rule` (canon B.3: a rule is never an
+ * The order route's check of `origin.rule` (a rule is never an
  * authorization). The rule must be the proven wallet's and on; the reminder
  * the order names must be open — not bought, not on its way, not missed, not
  * deferred; the order must be the rule's own purchase: its sum of USDC for its

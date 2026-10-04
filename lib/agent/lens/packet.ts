@@ -1,6 +1,5 @@
 /**
- * What a model sees when it words a Brief or a Critic
- * (`RYN-BRIEF-CRITIC-001`).
+ * What a model sees when it words a Brief or a Critic.
  *
  * The same discipline as the conversation's packet (`model.ts`): facts,
  * notes and citations — never a key, never another wallet, never the raw

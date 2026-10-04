@@ -15,12 +15,12 @@ import { usePaperAccount } from "./use-paper-account";
 import { categoryName, wordsFor } from "./words";
 
 /**
- * The Predictions hub (`RYN-PREDICTIONS-001` item 5): search, Trending,
- * Ending soon, New, the watchlist, the provider's real categories with a
- * count each (an empty one is not drawn), and *needs attention* — what moved
- * since the person watched it, what is about to end, where a paper position
- * is open. The first page arrives with the server render; every other list
- * is one read of `/api/predictions/discover`.
+ * The Predictions hub: search, Trending, Ending soon, New, the watchlist, the
+ * provider's real categories with a count each (an empty one is not drawn),
+ * and *needs attention* — what moved since the person watched it, what is
+ * about to end, where a paper position is open. The first page arrives with
+ * the server render; every other list is one read of
+ * `/api/predictions/discover`.
  */
 
 type Tab = "trending" | "ending" | "newest" | "watchlist" | `category:${string}`;

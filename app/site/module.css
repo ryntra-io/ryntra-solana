@@ -138,12 +138,12 @@
 }
 
 /*
- * The band drifts again — by founder direction (2026-08-09), reversing the
- * RYN-SITE-002 static band. The guards that made the old marquee acceptable
- * all return with it: it is slow, it pauses under the pointer and under
- * keyboard focus, the duplicate pass that hides the seam is aria-hidden so the
- * list is announced once, and under prefers-reduced-motion the belt stops and
- * the band becomes the static scrollable strip it was before.
+ * The band drifts again, reversing the earlier static band. The guards that
+ * made the old marquee acceptable all return with it: it is slow, it pauses
+ * under the pointer and under keyboard focus, the duplicate pass that hides
+ * the seam is aria-hidden so the list is announced once, and under
+ * prefers-reduced-motion the belt stops and the band becomes the static
+ * scrollable strip it was before.
  */
 .rx-banner-belt {
   display: flex;

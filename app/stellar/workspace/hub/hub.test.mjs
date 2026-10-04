@@ -61,7 +61,7 @@ const KNOWN_UNRESOLVED = new Set([
   /* `--glow` left this list with the Academy v2 rebuild (2026-09-13): its one
      reference was the old academy stylesheet, which was replaced whole. */
   /* `--rt-paper-reconciled-green-fg` and `--rt-paper-review-amber-fg` left
-     this list with Brand Canon v1.0 (2026-09-11): the projection now
+     this list with the v1.0 brand tokens (2026-09-11): the projection now
      declares the paper inks for success and caution beside the paper ladder. */
   "--fs-18",
   "--font-space-grotesk",

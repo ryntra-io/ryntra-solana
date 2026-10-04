@@ -1,8 +1,7 @@
 /**
- * Autoinvest rules and the month's budget — in the Guard store
- * (`RYN-INVEST-SIMPLE-001`, sessions 3–4; canon v5.1 §4.1).
+ * Autoinvest rules and the month's budget — in the Guard store.
  *
- * The cabinet belongs to the wallet (canon §0.6), so a rule is keyed by the
+ * The cabinet belongs to the wallet, so a rule is keyed by the
  * wallet that proved itself when it was written and read back only through
  * that proof — the `rw` cookie in a browser, the native bearer on a phone.
  * The stored record is the contract's rule with the language its reminder is

@@ -22,8 +22,8 @@
  *
  * One `B402` label in a receipt attributes a payment to the wrong operator, the
  * wrong trust model and the wrong audit status. That is the same defect class
- * as the three-way `TSLA` collision `RYN-BIN-AOS-001` caught, and the fix is
- * the same: the axes are per surface, and the collapsed label does not exist.
+ * as the three-way `TSLA` collision caught earlier, and the fix is the same:
+ * the axes are per surface, and the collapsed label does not exist.
  *
  * So `providerImplementation`, `paymentMethod`, `facilitator` and `network` are
  * four independent fields. The fifth constraint — which assets are permitted on
@@ -102,8 +102,8 @@ export type PaymentImplementationDeclaration = Readonly<{
   assets: readonly DeclaredAsset[];
   /**
    * The highest trust class this operator's own report can support, before any
-   * independent observation. Canon `12 §4`: an x402 receipt is a server
-   * assertion about an interaction.
+   * independent observation. An x402 receipt is a server assertion about an
+   * interaction.
    */
   facilitatorTrustCeiling: PaymentTrustClass;
   /** Whether Ryntra can reach it at all today. It cannot, anywhere. */

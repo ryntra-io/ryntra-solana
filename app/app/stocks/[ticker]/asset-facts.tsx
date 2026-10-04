@@ -9,12 +9,12 @@ import { CompanyIndexFact } from "./pre-ipo-research";
 
 /**
  * The asset page's cards of facts — the market, what the person buys, and
- * the chain's own facts one press deep (canon v4.0 §7.3, the clarity pass
- * of 2026-09-16) — shared by the two depths: «Профі» lays them out beside
- * the chart and the deal, and «Простий» keeps every one of them under the
- * company page's «Деталі» (canon v5.1 §2; `RYN-INVEST-SIMPLE-001`, session 2),
- * so the facts a person verifies are written once and read the same way in
- * both. Technical facts sit under the figure they qualify, in one line.
+ * the chain's own facts one press deep (the clarity pass of 2026-09-16) —
+ * shared by the two depths: «Профі» lays them out beside the chart and the
+ * deal, and «Простий» keeps every one of them under the company page's
+ * «Деталі», so the facts a person verifies are written once and read the
+ * same way in both. Technical facts sit under the figure they qualify, in
+ * one line.
  */
 
 type Facts = ReturnType<typeof factsOf>;
@@ -252,7 +252,7 @@ export function WhatYouBuyCard({ asset, locale, className }: { asset: StockAsset
               <span className={styles.factSub}>{rights.body[lang]}</span>
             </dd>
           </div>
-          {/* Dividends, where the issuer reinvests them into the amount: the multiplier is the reinvested dividend, said once and applied once (canon v5.0 §9, B.9; RYN-FIRST-SCREEN-001, S2). */}
+          {/* Dividends, where the issuer reinvests them into the amount: the multiplier is the reinvested dividend, said once and applied once. */}
           {rep.issuer.id === "xstocks" ? (
             <div>
               <dt>{word("dividends")}</dt>

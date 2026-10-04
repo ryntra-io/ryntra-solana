@@ -8,12 +8,12 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 /**
- * Where a tokenized stock actually trades (`RYN-STOCKS-LIQUIDITY-001`): every
- * Meteora DLMM and DAMM v2 pool that holds the token's verified mint, ranked,
- * with the venue's own TVL, 24 h volume, fees and fee rate, and the time each
- * source answered. Addressed by the token's symbol or mint; only a confirmed
- * stock representation is answered, so the route is not a general venue
- * proxy. Read-only; nothing here can create a pool or move liquidity.
+ * Where a tokenized stock actually trades: every Meteora DLMM and DAMM v2
+ * pool that holds the token's verified mint, ranked, with the venue's own TVL,
+ * 24 h volume, fees and fee rate, and the time each source answered. Addressed
+ * by the token's symbol or mint; only a confirmed stock representation is
+ * answered, so the route is not a general venue proxy. Read-only; nothing here
+ * can create a pool or move liquidity.
  */
 
 const TICKER = /^[A-Za-z0-9._-]{1,44}$/;

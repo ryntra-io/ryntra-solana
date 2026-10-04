@@ -1,5 +1,5 @@
 /**
- * Independent chain read of a landed swap (RYN-SOL-M2).
+ * Independent chain read of a landed swap.
  *
  * The transfer observer reads generic balance movement; a swap needs the
  * taker's OWN two legs, which requires owner-aware token deltas the transfer
@@ -9,11 +9,11 @@
  * top-level programs. Provider prose is never consulted — everything here
  * comes from the transaction's own pre/post balances.
  *
- * `RYN-SOL-SWAP-MONETIZATION-001` adds one more read off the same metadata: the
- * Ryntra service fee Jupiter actually collected. It needs no new request and no
- * arithmetic. A V2 referral token account is a **plain associated token account
- * whose authority is the referral account** — verified on chain 2026-09-10, with
- * the `["referral_ata", referral, mint]` PDA the older API implies absent for the
+ * One more read comes off the same metadata: the Ryntra service fee Jupiter
+ * actually collected. It needs no new request and no arithmetic. A V2 referral
+ * token account is a **plain associated token account whose authority is the
+ * referral account** — verified on chain 2026-09-10, with the
+ * `["referral_ata", referral, mint]` PDA the older API implies absent for the
  * same pair — so the fee is an ordinary owner-scoped token movement and the
  * existing `tokenDeltaFor` reads it exactly. Jupiter states the fee's rate in the
  * order and never its amount, so this is the only place the amount is known, and

@@ -1,7 +1,7 @@
 import { evaluateFreshness, parseExplicitInstant, type FreshnessPolicy } from "../portfolio/freshness.ts";
 
 /**
- * `RegulatoryCapabilityState` — Home canon §4.
+ * `RegulatoryCapabilityState` — the regulatory state of a Home capability.
  *
  * A record of actual provider, counsel and product-perimeter facts for one
  * user context, one instrument class and one operation. It is **not** a Ryntra

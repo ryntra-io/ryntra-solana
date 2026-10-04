@@ -1,14 +1,13 @@
 /*
  * My strategies: what is saved, then what is coming.
  *
- * The page takes the whole canvas after the rail (the Owner's Premium
- * Product UI Pass, 2026-09-15): a 28px title with the one primary action
- * beside it, the plans' counts and cards from plans.module.css, and the
- * catalog of types as a grid of four on a wide screen. A locked type is an
- * icon, a name, a line and a chip — full ink on the name, because a locked
- * type is intended, not disabled; no control of any kind, because there is
- * nothing behind it yet. The live type carries the accent edge and the one
- * action.
+ * The page takes the whole canvas after the rail (the premium UI pass of
+ * 2026-09-15): a 28px title with the one primary action beside it, the
+ * plans' counts and cards from plans.module.css, and the catalog of types as
+ * a grid of four on a wide screen. A locked type is an icon, a name, a line
+ * and a chip — full ink on the name, because a locked type is intended, not
+ * disabled; no control of any kind, because there is nothing behind it yet.
+ * The live type carries the accent edge and the one action.
  */
 
 .page {

@@ -7,14 +7,13 @@ import { solanaNavigation, SOLANA_MANIFEST as MANIFEST } from "./manifest.ts";
 import { SOLANA_MODULES as REGISTRY } from "./modules.ts";
 import { needsDevelopmentRepository } from "../../../../lib/development-repository.mjs";
 /**
- * The Solana Hub's source-checkable gates — the subset of
- * `docs/archive/design-pre-reset-2026-08-18/solana-DESIGN.md` §4 a machine can answer with certainty.
+ * The Solana Hub's source-checkable gates — the subset of the workspace's
+ * design rules a machine can answer with certainty.
  *
  * Rendered geometry, contrast and screenshot evidence are deliberately
  * absent: they need a browser, and a test that pretended to measure a
  * rendered box from source would report green on exactly the defect class
- * that reaches the founder. They stay live-measurement obligations on the
- * task card.
+ * that reaches a person. They stay live-measurement obligations.
  *
  * Every check strips comments first. Three separate Stellar tests once failed
  * against the paragraph explaining the very defect they guard; that lesson is
@@ -95,9 +94,9 @@ test("every railed module points at a page that exists", () => {
 
 test("the rail carries working routes only, and Simple and Pro carry the same ones", () => {
   /* This assertion is the inverse of the one it replaces, and the reversal is
-     an owner decision of 2026-09-03 recorded in DECISIONS.md, not a relaxation.
-     The old rule — canon §4.2, and the test that guarded it — required Pro to
-     render the full end-state IA at once with inert `Soon` placeholders. What
+     a decision of 2026-09-03, not a relaxation. The old rule — and the test
+     that guarded it — required Pro to render the full end-state IA at once
+     with inert `Soon` placeholders. What
      it produced was twenty-nine rows, nineteen of them disabled, while Simple
      hid four surfaces that work: the beginner's mode showed less product and
      the depth mode showed mostly things that do not exist. `Soon` was also
@@ -143,22 +142,21 @@ test("the rail carries working routes only, and Simple and Pro carry the same on
 });
 
 test("the registry retains planned directions without projecting them into the rail", () => {
-  /* The A4 spec sidebar, as a check: Overview, Assets, Trade, Receipts,
-     Developers, Settings routed; Markets and Strategy gate-named. Trade
-     moved from gated to railed when RYN-SOL-A5 shipped the swap preview, and
-     `send` — registered as `devnet-lifecycle` until RYN-SOL-M0A took the
-     devnet ladder out of the vocabulary — moved from map-only to railed the
-     day it got a route. A module gets a rail entry the moment it has a page
-     and not one commit earlier, because a sidebar link to a route that does
-     not exist is a recorded defect class here. The set must not drift
-     otherwise. Bridge left the set entirely on the owner's instruction of
-     2026-09-08: the cross-chain swap replaced it, so its page and its registry
-     row are gone while its CCTP engine keeps running inside Swap. `journal` —
-     the History surface — moved from a `Soon`
+  /* The original sidebar, as a check: Overview, Assets, Trade, Receipts,
+     Developers, Settings routed; Markets and Strategy gate-named. Trade moved
+     from gated to railed when the swap preview shipped, and `send` —
+     registered as `devnet-lifecycle` until the devnet ladder left the
+     vocabulary — moved from map-only to railed the day it got a route. A
+     module gets a rail entry the moment it has a page and not one commit
+     earlier, because a sidebar link to a route that does not exist is a
+     recorded defect class here. The set must not drift otherwise. Bridge left
+     the set entirely on 2026-09-08: the cross-chain swap replaced it, so its
+     page and its registry row are gone while its CCTP engine keeps running
+     inside Swap. `journal` — the History surface — moved from a `Soon`
      placeholder in the rail to a routed entry the day the wallet-scoped action
      ledger and its page existed, which is the same rule applied again rather
-     than an exception to it. A gated entry must name the exact thing that
-     unblocks it; `gated()` already throws otherwise. */
+     than an exception to it. A gated entry must name the phase that opens it;
+     `gated()` already throws otherwise. */
   const entries = parseRegistry();
   const registeredOrRouted = entries.filter((entry) => entry.kind !== "mapped");
 
@@ -173,14 +171,14 @@ test("the registry retains planned directions without projecting them into the r
     assert.equal(entry?.kind, "gated", `"${id}" must be gate-named in the rail, not ${entry?.kind}.`);
     assert.match(
       entry.gate ?? "",
-      /RYN-SOL-|Phase [A-F]/,
-      `"${id}" is gated without naming its gate task or phase.`,
+      /\bPhase [A-F]\b/,
+      `"${id}" is gated without naming the phase that opens it.`,
     );
   }
   assert.equal(
     entries.find((candidate) => candidate.id === "trade")?.kind,
     "railed",
-    "Trade shipped with RYN-SOL-A5 and must stay a routed rail entry.",
+    "Trade has shipped and must stay a routed rail entry.",
   );
   assert.equal(
     entries.find((candidate) => candidate.id === "bridge")?.kind,
@@ -188,6 +186,15 @@ test("the registry retains planned directions without projecting them into the r
     "The transfer kept its record when it lost its page; its CCTP engine runs inside Swap.",
   );
 
+  /* What a gate may say, in three shapes: nothing is pending, no work is
+     planned yet, or the condition itself — a phase, a canary, a review, a
+     sign-in, a ladder, what it waits on or what must exist first. */
+  const NOTHING_PENDING = /^None\b/;
+  const NOT_PLANNED = /^No (?:[\w-]+ )*work is planned\b|\bis not planned\b/;
+  /* A condition names its object: a phase, a named canary or canary gate, sign-in, what exactly a module waits
+     on, or a release ladder. A bare «review», «canary» or «waits on later work» names nothing anybody can check. */
+  const NAMED_CONDITION = /\bPhase [A-F]\b|\b(?:bridge|Token-2022|swap|ATA-create|general Send) canar(?:y|ies)\b|\bcanary gate\b|\bsign-in\b|\b[Ww]aits? on (?!(?:later|other|more|further|future|some) work\b)(?:the |a |an )?\S+|\brelease ladder\b/;
+  const statesCondition = (gate) => NOTHING_PENDING.test(gate) || NOT_PLANNED.test(gate) || NAMED_CONDITION.test(gate);
   for (const entry of entries) {
     for (const fieldName of ["purpose", "exists", "missing", "gate"]) {
       assert.ok(
@@ -202,70 +209,104 @@ test("the registry retains planned directions without projecting them into the r
        discarded each module's real gate and wrote a generic "In development"
        instead. The registry forbade that shape and could not see it happen.
        So the rule moves here, where it covers the whole file: a gate either
-       names a registry row, a canon section or a phase, or it says plainly that
-       nothing is pending. A sentence that only asserts another row exists
-       somewhere is not a condition anybody can act on or check. */
+       names the condition that opens the module, says plainly that no work is
+       planned yet, or says plainly that nothing is pending. "In development",
+       "Soon" or a sentence that only asserts other work exists somewhere is
+       not a condition anybody can act on or check. */
     const gate = entry.gate ?? "";
     assert.ok(
-      /^None/.test(gate) || /RYN-|Phase [A-F]|§/.test(gate),
+      statesCondition(gate),
       `Module "${entry.id}" has a gate that names nothing: "${gate.slice(0, 80)}".`,
     );
+  }
+
+  /* And the vocabulary is a check rather than a formality: the shape the
+     rail once wrote for nineteen modules fails it. */
+  for (const vague of ["", "In development", "Soon", "A summary of History on this screen is its own row.", "Coming soon, pending review.", "Waits on later work.", "No second M2 canary."]) {
+    assert.ok(!statesCondition(vague), `The gate vocabulary accepts a gate that names nothing: "${vague}".`);
   }
 });
 
 // ------------------------------------------------- the stale-model class --
 
 /**
- * The defect `RYN-SOL-M0A` exists to remove, kept out by a test rather than by
- * memory.
+ * The stale-model defect, kept out by a test rather than by memory.
  *
- * Three live gate strings named `RYN-SOL-A7` after that row went terminal
- * `CANCELLED`, so three surfaces told a reader that the next thing to happen
- * was a signature nobody intends to give. Nothing in the suite could notice: a
- * gate is a free-text string, and every check on it asked whether it was
- * non-empty.
+ * Three live gate strings kept naming the owner-signed Devnet lifecycle after
+ * it was cancelled, so three surfaces told a reader that the next thing to
+ * happen was a signature nobody intends to give. Nothing in the suite could
+ * notice: a gate is a free-text string, and every check on it asked whether it
+ * was non-empty.
  *
  * Both halves are asserted over the whole Solana workspace, not just the
  * registry, because the gate strings were only half of it — the same
  * superseded model was written into page copy, an info control and a metadata
  * title.
  */
-test("no Solana surface names a cancelled row or sells devnet as a step", () => {
-  const CANCELLED = /RYN-SOL-A7/;
+test("no Solana surface revives the cancelled devnet step or sells devnet as a step", () => {
+  /* The cancelled step was the `devnet-lifecycle` module and the ladder it
+     climbed: DEVNET_ACTION, DEVNET_EXECUTION, DEVNET_VERIFIED. It stays
+     cancelled while no module carries that id or deals in a devnet
+     environment, mode or maturity, no card or rendered copy spells the old
+     ladder, and Send — the module that took its place — proves on mainnet. */
+  const CANCELLED_MODULE = "devnet-lifecycle";
+  const CANCELLED = /\bdevnet-lifecycle\b|\bDEVNET_(?:ACTION|EXECUTION|VERIFIED)\b/;
+  assert.ok(
+    !REGISTRY.some((entry) => entry.id === CANCELLED_MODULE),
+    `The cancelled "${CANCELLED_MODULE}" module is registered again.`,
+  );
+  for (const entry of REGISTRY) {
+    assert.ok(
+      !/devnet/i.test(`${entry.environment} ${entry.mode} ${entry.maturity}`),
+      `Module "${entry.id}" deals in a devnet environment, mode or maturity.`,
+    );
+  }
+  assert.equal(
+    REGISTRY.find((entry) => entry.id === "send")?.environment,
+    "MAINNET",
+    "Send took the cancelled devnet step's place and must prove on mainnet.",
+  );
+
+  /* What Devnet text has to say wherever it appears: that it is a regression
+     fixture, and that it is not a step towards release. */
+  const FIXTURE = /regression fixture/;
+  const NOT_A_STEP = /never a release gate|not a step/;
+
   for (const entry of parseRegistry()) {
-    for (const fieldName of ["purpose", "exists", "missing", "gate"]) {
+    for (const fieldName of ["purpose", "detail", "exists", "missing", "gate"]) {
       assert.ok(
         !CANCELLED.test(entry[fieldName] ?? ""),
-        `Module "${entry.id}" names cancelled RYN-SOL-A7 in ${fieldName}. Name the M-family gate that can still happen.`,
+        `Module "${entry.id}" names the cancelled devnet step in ${fieldName}. Name the mainnet gate that can still happen.`,
       );
     }
 
     /* The registry gets the file rule below, applied per card. Its strings are
-       rendered on the Hub Map, so a module that names Devnet anywhere must
-       name `RYN-SOL-M0C` on the same card — the reader sees one card, not a
-       file. The live map was checked and carries exactly one such mention, on
-       the Send card, beside its M0C gate; this is what keeps it that way. */
+       rendered on the Hub Map, so a module that names Devnet anywhere must say
+       on the same card that it is a regression fixture and not a step — the
+       reader sees one card, not a file. The live map once carried exactly one
+       such mention, on the Send card, beside its gate; this is what keeps any
+       later one honest. */
     const card = ["purpose", "detail", "exists", "missing", "gate"]
       .map((fieldName) => entry[fieldName] ?? "")
       .join(" ");
     if (/[Dd]evnet/.test(card)) {
       assert.ok(
-        /RYN-SOL-M0C/.test(card),
-        `Module "${entry.id}" names Devnet without naming RYN-SOL-M0C on the same card, so the map reads it as a step.`,
+        FIXTURE.test(card) && NOT_A_STEP.test(card),
+        `Module "${entry.id}" names Devnet without calling it a regression fixture that is not a step, so the map reads it as a step.`,
       );
     }
   }
 
-  /* Devnet survives in exactly two files now, and canon §3.1 permits it in
-     both for the same reason: their whole job is to state configuration — the
-     endpoint table, and the answer to "why is there no network switch".
+  /* Devnet survives in exactly two files now, and it is permitted in both for
+     the same reason: their whole job is to state configuration — the endpoint
+     table, and the answer to "why is there no network switch".
 
-     **The Send pair left this list in `RYN-SOL-M0C`**, which is what the
-     previous version of this comment said would happen: "when M0C lands this
-     list empties". It did not empty, it shrank, and the shrinking is the
-     assertion — `send/page.tsx` and `send/send-card.tsx` now read, build
-     and simulate on mainnet, so a Devnet mention in either of them is the
-     wiring coming back rather than a fixture being described.
+     **The Send pair has left this list**, as the previous version of this
+     comment said it would, though it predicted the list would empty. It did
+     not empty, it shrank, and the shrinking is the assertion —
+     `send/page.tsx` and `send/send-card.tsx` now read, build and simulate on
+     mainnet, so a Devnet mention in either of them is the wiring coming back
+     rather than a fixture being described.
 
      Anywhere else the word is the ladder coming back, and the assertion is
      zero mentions rather than a judgement about framing. A file that leaves
@@ -275,27 +316,36 @@ test("no Solana surface names a cancelled row or sells devnet as a step", () => 
     join(WORKSPACE, "settings", "page.tsx"),
   ]);
 
+  const RENDERED_STRING = /\btext\(\s*"((?:[^"\\]|\\.)*)"/g;
   for (const path of COMPONENTS) {
     const source = read(path);
     const prose = stripJs(source);
-    assert.ok(!CANCELLED.test(prose), `${path} names cancelled RYN-SOL-A7 in rendered copy.`);
+    assert.ok(!CANCELLED.test(prose), `${path} spells the cancelled devnet step in rendered copy.`);
 
     if (!/[Dd]evnet/.test(prose)) continue;
     assert.ok(
       FIXTURE_FILES.has(path),
-      `${path} prints Devnet. Only the Send path and the endpoint table may, and only while RYN-SOL-M0C is open.`,
+      `${path} prints Devnet. Only the endpoint table and the Settings network panel may, and only as a regression fixture.`,
     );
-    /* `prose`, not `source`: the row has to be named where a reader can see
-       it. A file-level comment explaining the fixture to the next engineer is
-       worth having and is not the thing this asserts.
+    /* `prose`, not `source`: the fixture has to be called one where a reader
+       can see it. A file-level comment explaining the fixture to the next
+       engineer is worth having and is not the thing this asserts.
 
        `assert.ok`, not `assert.match`: a failed match prints the whole file
        into the report, and the one that failed here first was 180 lines of
        JSX for a one-word finding. */
     assert.ok(
-      /RYN-SOL-M0C/.test(prose),
-      `${path} names Devnet without naming RYN-SOL-M0C where a reader sees it, so it reads as a step rather than a fixture being removed.`,
+      FIXTURE.test(prose) && NOT_A_STEP.test(prose),
+      `${path} names Devnet without saying where a reader sees it that it is a regression fixture and not a step.`,
     );
+    /* And per string, because a reader meets one string at a time: every
+       rendered string that names Devnet calls it a fixture in the same breath. */
+    for (const [, literal] of prose.matchAll(RENDERED_STRING)) {
+      assert.ok(
+        !/[Dd]evnet/.test(literal) || /fixture/.test(literal),
+        `${path} renders "${literal.slice(0, 80)}", which names Devnet without calling it a fixture.`,
+      );
+    }
   }
 });
 
@@ -373,7 +423,7 @@ test("the workspace offers every detected wallet, and no failure is guessed to b
 /**
  * One screen, one network.
  *
- * The defect this closes was on the live site and the founder found it: the
+ * The defect this closes was on the live site and a person found it: the
  * Send console asked the holdings route for `network: "devnet"`, so it printed
  * faucet dust and a devnet SOL balance under a page chip reading `MAINNET ·
  * USER-SIGNED`. Every fact on the screen was true of *a* network and the
@@ -445,9 +495,9 @@ test("Send is one card, not a numbered protocol printed on the page", () => {
  * result of comparing signed bytes, and an internal task id in two `data-testid`
  * hooks and the page lead. The Swap card carries the same rule
  * (`Raw codes or recovery vocabulary still leak into the customer flow`); this
- * is Send's half of it, and it is the gate the founder's requirement needs,
- * because the localization gate reads string literals and every one of these
- * reached the screen as a rendered expression instead.
+ * is Send's half of it, and it is the gate that rule needs, because the
+ * localization gate reads string literals and every one of these reached the
+ * screen as a rendered expression instead.
  */
 test("Send speaks to the person sending, not to the engine", () => {
   const card = read(join(WORKSPACE, "send", "send-card.tsx"));
@@ -506,10 +556,11 @@ test("Send offers a signature only where a signed transaction could be submitted
   assert.match(source, /sendInFlight\.current/, "React can open two wallet money actions before the button rerenders.");
   assert.match(source, /post<SettleResponse>\("\/api\/solana\/transfer\/settle"/);
   assert.match(source, /text\("Confirm in wallet"\)/);
-  /* Canon §9.4. The authorization was given over one exact world — wallet,
-     network, amount, mint, provider, recipient — and the Review is rebuilt at
-     the moment of signing because a blockhash expires. Without this the rebuild
-     is free to change any of those six and still open the wallet. */
+  /* The environment lock. The authorization was given over one exact world —
+     wallet, network, amount, mint, provider, recipient — and the Review is
+     rebuilt at the moment of signing because a blockhash expires. Without this
+     the rebuild is free to change any of those six and still open the
+     wallet. */
   assert.match(source, /checkEnvironmentLock\(\{[\s\S]{0,160}authorized/,
     "The rebuilt Review can change the authorized world and still reach a wallet.");
   assert.match(
@@ -550,7 +601,7 @@ test("Send offers a signature only where a signed transaction could be submitted
   );
 });
 
-test("M0E binds the durable canary verdict into Send and renders the control plane", () => {
+test("Send binds the durable canary verdict and renders the canary control plane", () => {
   const plan = read(join("app", "api", "solana", "transfer", "plan", "route.ts"));
   for (const boundary of [
     "buildSendCanaryIntent",
@@ -620,9 +671,9 @@ test("Settings shows what is left of the canary budget and what was spent it on"
 test("the bridge burn route settles the owner-canary budget it reserved", () => {
   const burn = read(join("app", "api", "solana", "bridge", "burn", "route.ts"));
 
-  /* RYN-SOL-M3 shipped without this and the ledger reported zero spent after
-     a real two-dollar transfer. The reservation is taken before the boundary
-     and settled from what the chain said afterwards. */
+  /* The bridge first shipped without this and the ledger reported zero spent
+     after a real two-dollar transfer. The reservation is taken before the
+     boundary and settled from what the chain said afterwards. */
   for (const boundary of [
     "openCctpCanaryExposure",
     "markCctpCanarySubmitted",
@@ -654,9 +705,9 @@ test("the bridge burn route settles the owner-canary budget it reserved", () => 
  * broken button from an ignored one.
  */
 test("the Swap surface answers on arrival and never suggests the trade it defaults to", () => {
-  /* 2026-08-30, RYN-SOL-M2: Swap stopped being a document. The surface is one
-     client card that quotes from the server on a settled amount, so the old
-     shape of this guard — a server-rendered default quote behind a GET form —
+  /* 2026-08-30: Swap stopped being a document. The surface is one client
+     card that quotes from the server on a settled amount, so the old shape of
+     this guard — a server-rendered default quote behind a GET form —
      describes a page that no longer exists. The PROPERTY it protected is the
      one that survives: a bare visit answers, and an answer nobody asked for
      says out loud that it is a default. */
@@ -781,9 +832,10 @@ test("the Swap surface quotes server-side, keeps its deep link, and renders ever
   for (const seed of ["params.in", "params.out", "params.amount"]) {
     assert.match(page, new RegExp(seed.replace(".", "\\.")), `The page no longer seeds the card's ${seed} from the URL.`);
   }
-  /* Since the Owner's split of 2026-09-10 this page mounts the Solana card
-     directly. `fromAsset`/`toAsset` were the unified surface's network-aware
-     seeds and have gone with it — Swap has no network selector to seed. */
+  /* Since Swap and Bridge were split on 2026-09-10 this page mounts the
+     Solana card directly. `fromAsset`/`toAsset` were the unified surface's
+     network-aware seeds and have gone with it — Swap has no network selector
+     to seed. */
   assert.match(page, /<SwapCard /, "The page no longer mounts the Solana card.");
   assert.doesNotMatch(page, /fromNetwork|toNetwork/, "Swap grew a network selector again.");
   assert.match(card, /history\.replaceState/, "The card no longer keeps the URL on the question it is showing.");
@@ -909,9 +961,9 @@ test("the swap card is keyed V2, fee-honest, freshness-bound and canary-gated", 
 
   assert.match(adapter, /https:\/\/api\.jup\.ag\/swap\/v2/);
   assert.match(adapter, /method:\s*"GET"/);
-  /* 2026-08-30, RYN-SOL-M2: the adapter's execute path exists now — behind
-     the activated canary row, not silently. What this guard pins instead is
-     the execute DISCIPLINE: one shot, every post-send failure marked possibly
+  /* 2026-08-30: the adapter's execute path exists now — behind the activated
+     canary row, not silently. What this guard pins instead is the execute
+     DISCIPLINE: one shot, every post-send failure marked possibly
      submitted, recovery by signature and never a second execute; and the
      /build submission lane (tx.jup.ag) stays absent until /order+/execute has
      an owner-canary Receipt. */
@@ -943,8 +995,8 @@ test("M2 keeps exact Review, wallet approval and submit ambiguity as three separ
   assert.match(orderRoute, /PROOF_NOT_SIGNED/, "An unsigned execution proof can still reach the wallet.");
   /* The admin session is gone on purpose. It was never a capability check —
      `lib/session.ts` reads a Telegram cookie — and it made a swap of a
-     person's own funds impossible for anyone but the founder, expiring after a
-     day even for him. What replaced it is a real operator control that fails
+     person's own funds impossible for anyone but the admin, expiring after a
+     day even for the admin. What replaced it is a real operator control that fails
      closed, plus the same-origin gate, which is CSRF and stays. */
   assert.ok(!/getAdminSession/.test(orderRoute), "A swap of a person's own funds requires a Ryntra admin login.");
   assert.match(orderRoute, /resolveSolanaLaneState\("SWAP"\)/, "The order route has no operator stop at all.");
@@ -1157,14 +1209,14 @@ test("Send and Receipts keep the working-product journey customer-first", () => 
   ]) {
     assert.ok(!receipts.includes(gone), `Receipts still shows one wallet's private history to everyone: ${gone}`);
   }
-  /* RYN-ACCESS-002: the archive block behind the account switch is a prop, not
-     a second list. */
+  /* The archive block behind the account switch is a prop, not a second
+     list. */
   assert.match(receipts, /<LocalReceiptList\s+filter=\{filter\}(?:\s+archiveOn=\{accountLoginEnabled\(\)\})?\s*\/>/,
     "Receipts ignores the browser-local artifacts created by Send and Swap.");
   /* The recorded canary receipts moved off the customer Receipts page — they
      were one wallet's private history rendered to every visitor as worked
      examples. They are still the record, and they are still verifiable: the
-     artifacts live under docs/tasks/evidence and the recorded-run projections
+     artifacts live with the evidence records and the recorded-run projections
      below are still asserted against them. What is no longer asserted is that
      a stranger can read them on a product page. */
 });
@@ -1222,9 +1274,9 @@ test("unclaimed Review cancellation is exact-blockhash-gated and reachable by th
 
 test("History shows four words a person knows and none a lane speaks", () => {
   /* The three lanes speak twenty-eight states between them. Not one belongs on
-     a screen a customer reads (canon §0.5), and the collapse into four outcomes
-     happens in `lib/solana/action-ledger.ts` — so this surface must contain no
-     lane vocabulary at all. The check is on the source with comments stripped,
+     a screen a customer reads, and the collapse into four outcomes happens in
+     `lib/solana/action-ledger.ts` — so this surface must contain no lane
+     vocabulary at all. The check is on the source with comments stripped,
      because the file explains the rule it obeys. */
   const card = stripJs(read(join(WORKSPACE, "history", "history-card.tsx")));
 
@@ -1252,7 +1304,7 @@ test("History shows four words a person knows and none a lane speaks", () => {
   }
 
   /* Coverage is stated, never implied. A history that does not say where it
-     begins reads as a claim that nothing else ever happened — canon §0.6. */
+     begins reads as a claim that nothing else ever happened. */
   assert.match(card, /Some activity could not be loaded/);
 
   /* Disconnected is the shared gate, not a fifth hand-rolled connect block. */

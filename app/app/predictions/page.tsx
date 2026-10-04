@@ -11,16 +11,16 @@ export const maxDuration = 30;
 export const metadata = { title: "Predictions" };
 
 /**
- * Predictions — the hub (`RYN-PREDICTIONS-001`, canon v4.3 §6.5): markets on
- * outcomes across the venues that price them, in paper mode. The head and
- * the first page (the provider's real categories and the trending events
- * with their live leading prices) are rendered on the server from the
- * provider boundary; every other list, the watchlist and the paper account
- * are the browser's reads of `/api/predictions/*`.
+ * Predictions — the hub: markets on outcomes across the venues that price
+ * them, in paper mode. The head and the first page (the provider's real
+ * categories and the trending events with their live leading prices) are
+ * rendered on the server from the provider boundary; every other list, the
+ * watchlist and the paper account are the browser's reads of
+ * `/api/predictions/*`.
  *
- * Owner decision of 2026-09-17: the page is a real product surface now, not
- * the locked placeholder of 2026-09-11 — the paper product exists, the
- * provider's capability set is preserved, and the identity stays Ryntra's.
+ * Since 2026-09-17 the page is a real product surface, not the locked
+ * placeholder of 2026-09-11 — the paper product exists, the provider's
+ * capability set is preserved, and the identity stays Ryntra's.
  */
 export default async function PredictionsPage() {
   const locale = await solanaServerLocale();

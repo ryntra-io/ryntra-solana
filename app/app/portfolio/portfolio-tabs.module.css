@@ -1,7 +1,7 @@
 /*
- * Portfolio's tabs (canon v5.3 В28): four words in one row at 390px, the
- * current one a pill. The row scrolls sideways rather than wraps if a
- * language ever needs more room.
+ * Portfolio's tabs: four words in one row at 390px, the current one a pill.
+ * The row scrolls sideways rather than wraps if a language ever needs more
+ * room.
  */
 
 .tabs {
@@ -51,10 +51,9 @@
   box-shadow: var(--ry-focus);
 }
 
-/* On a desk the menu already lists the four under «Портфель» (canon v5.4 В30),
-   so the row would say the same words twice on one screen: it is the phone's
-   way into the place (§3, «Портфель, вкладками»), and a desk whose rail is
-   folded to icons keeps it. */
+/* On a desk the menu already lists the four under «Портфель», so the row
+   would say the same words twice on one screen: it is the phone's way into
+   the place, and a desk whose rail is folded to icons keeps it. */
 @media (min-width: 901px) {
   :global(.rs[data-nav="expanded"]) .tabs {
     display: none;

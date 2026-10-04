@@ -3,11 +3,11 @@ import { test } from "node:test";
 
 import { backingPct, buyShare, countShort, dayShort, dividendWord, exchangeShort, moneyChange, moneyShort, monthYear, multiplierWord, pctShort, periodWord, ratioShort, truthTopic, yearRange } from "./company-facts-model.ts";
 
-/* RYN-COMPANY-PAGE-001: the company page's facts at rest, shaped once. */
+/* The company page's facts at rest, shaped once. */
 
 const nbsp = (text) => text?.replace(/[  ]/g, " ");
 
-test("money reads in the canon's one formatter — трлн / млрд / млн / тис. — and a loss keeps its minus", () => {
+test("money reads in the product's one formatter — трлн / млрд / млн / тис. — and a loss keeps its minus", () => {
   assert.equal(nbsp(moneyShort(5_436_000_000_000, "uk")), "$5,44 трлн");
   assert.equal(moneyShort(5_436_000_000_000, "en"), "$5.44T");
   assert.equal(nbsp(moneyShort(302_950_000_000, "uk")), "$303 млрд");
@@ -62,7 +62,7 @@ test("the exchange's short name comes from its MIC, then its filed name, then th
   assert.equal(exchangeShort(null, null), null);
 });
 
-test("every issuer has its label's topic and its word for dividends (canon §7)", () => {
+test("every issuer has its label's topic and its word for dividends", () => {
   assert.equal(truthTopic("xstocks"), "truthXStocks");
   assert.equal(truthTopic("prestocks"), "truthPreStocks");
   assert.equal(dividendWord("xstocks", "uk"), "Уже в кількості токена");

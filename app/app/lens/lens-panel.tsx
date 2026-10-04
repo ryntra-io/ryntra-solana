@@ -15,26 +15,24 @@ import { LENS_PANEL_ID, lensKey, setLensOpen, useLensOpen } from "./lens-open";
 import { criticKindLabel, lensWordsFor, type LensWord } from "./lens-words";
 
 /**
- * The Brief and the Critic where a person is deciding
- * (`RYN-BRIEF-CRITIC-001`).
+ * The Brief and the Critic where a person is deciding.
  *
  * One block on a surface that already has a subject — an asset, a plan, the
- * portfolio, the record. Since the first-screen pass of 2026-09-23
- * (`RYN-FIRST-SCREEN-001`) the block is closed until the person presses
+ * portfolio, the record. The block is closed until the person presses
  * *Ask Ryn*: on a page that has its own *Ask Ryn* beside its actions
  * (`trigger="page"`, the press is `AskRynLens`) the closed block draws
  * nothing; elsewhere (`trigger="own"`) it draws that one press and nothing
- * else. Once open, the Brief loads for the proven wallet and
- * costs nothing: `compose: "deterministic"` never reaches a model. The
- * Critic is an explicit press, because being argued with is something a
- * person asks for; it is the one call that may reach the model, and it does
- * so under the wallet's **existing** agent allowance — there is no second
- * budget anywhere in this panel.
+ * else. Once open, the Brief loads for the proven wallet and costs nothing:
+ * `compose: "deterministic"` never reaches a model. The Critic is an
+ * explicit press, because being argued with is something a person asks for;
+ * it is the one call that may reach the model, and it does so under the
+ * wallet's **existing** agent allowance — there is no second budget anywhere
+ * in this panel.
  *
- * The shape is the Owner's: **Brief → Critic → Plan/Review**. What the
- * person reads first is two sections; the data, the gaps and the checks are
- * folded under one control, and the sources under another. Nothing here is
- * an instruction: the boundary is said in the foot, and the server drops a
+ * The shape is fixed: **Brief → Critic → Plan/Review**. What the person
+ * reads first is two sections; the data, the gaps and the checks are folded
+ * under one control, and the sources under another. Nothing here is an
+ * instruction: the boundary is said in the foot, and the server drops a
  * directive sentence before it ever arrives.
  */
 
@@ -61,8 +59,8 @@ async function readError(response: Response): Promise<{ code: string; message: s
 
 /**
  * A moment in the reader's own clock — the page runs in their browser, so
- * their zone is the one to show (canon v5.0 §2, standard 3: local time on
- * the surface, never a bare UTC stamp).
+ * their zone is the one to show: local time on the surface, never a bare
+ * UTC stamp.
  */
 function localMoment(iso: string, locale: WorkspaceLocale): string {
   return new Date(iso).toLocaleString(locale === "uk" ? "uk-UA" : "en-US", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false });
@@ -117,7 +115,7 @@ function Handoffs({ handoffs, demote = false }: { handoffs: readonly AgentHandof
 /**
  * What the read stood on, one press deep: each source by its name, when it
  * was read and whether it was current. No citation ids — «c1», «c3» are the
- * engine's bookkeeping, not words for a person (canon v5.0 §0.0 rule 10).
+ * engine's bookkeeping, not words for a person.
  */
 function Sources({ citations, locale, word }: { citations: AgentBriefResponse["citations"]; locale: WorkspaceLocale; word: (key: LensWord) => string }) {
   if (citations.length === 0) return null;

@@ -266,7 +266,7 @@ export const ADAPTER_PROJECTION_DECLARATIONS: readonly AdapterProjectionDeclarat
     {
       id: "solana",
       label: "Solana Token-2022",
-      /* "Solana Devnet" until the mainnet-first canon, and it was the only
+      /* "Solana Devnet" until the product went mainnet-first, and it was the only
          adapter whose label named a network no lifecycle had ever used.
          Stellar names a testnet because one ran there; Solana had nothing
          to anchor it, and the adapter declares both refs below. The projection

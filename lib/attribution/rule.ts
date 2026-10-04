@@ -1,10 +1,10 @@
 /**
  * The attribution rule — which fact makes an operation Ryntra's, exactly once.
  *
- * `RYN-ATTRIBUTION-DUNE-001`. Pure and client-safe: no clock, no network, no
- * `process.env`. Everything that counts is a projection over chain facts the
- * public can read for themselves, and the rule is written here once so the
- * public statistics page, the Dune queries and the tests all say the same thing.
+ * Pure and client-safe: no clock, no network, no `process.env`. Everything
+ * that counts is a projection over chain facts the public can read for
+ * themselves, and the rule is written here once so the public statistics
+ * page, the Dune queries and the tests all say the same thing.
  *
  * ## The rule, in one sentence
  *
@@ -63,10 +63,10 @@
  *
  * The operation key is the signature for the chain path and the provider
  * request id for the record path. A web client and the native client executing
- * the same operation produce one signature — the one-submitter protocol of the
- * canon: either the app signs and the server executes, or the wallet
- * signs-and-sends and the server adopts that signature, never both — so the
- * key is the same and the operation is one row. A transaction that touches two
+ * the same operation produce one signature — the one-submitter protocol:
+ * either the app signs and the server executes, or the wallet signs-and-sends
+ * and the server adopts that signature, never both — so the key is the same
+ * and the operation is one row. A transaction that touches two
  * referral token accounts (the day both were created) is one signature and one
  * row. A route across four pools is one signature and one row.
  *
@@ -82,7 +82,7 @@
  * ## Value
  *
  * Volume is executed value at par: the person's own stablecoin leg — what left
- * or arrived in their wallet — and nothing else, the same rule the Owner's
+ * or arrived in their wallet — and nothing else, the same rule the admin
  * dashboard and the Points ledger use (`lib/solana/action-value.ts`). An
  * operation with no stablecoin leg is counted as an operation and reported
  * *unvalued*; it is never priced here, because a price read later is an

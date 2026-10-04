@@ -1,11 +1,11 @@
 /**
  * The published privacy policy's section on the Ryntra app for Android, in
  * English and Ukrainian — the one part of `/legal/privacy` written in both
- * languages, on the Owner's word of 2026-09-28 (the mobile line's request 27:
- * every store portal asks for a privacy address that says what the app keeps
- * and collects). The rest of the policy stays English until a lawyer gives it
- * Ukrainian; the review candidate in `lib/legal/candidate.ts` carries the same
- * facts and moves only through its own signed release.
+ * languages since 2026-09-28, because every store portal asks for a privacy
+ * address that says what the app keeps and collects. The rest of the policy
+ * stays English until a lawyer gives it Ukrainian; the review candidate in
+ * `lib/legal/candidate.ts` carries the same facts and moves only through its
+ * own signed release.
  *
  * Every sentence was checked against the phone's code on 2026-09-29: the
  * session in the phone's secure storage; the push token read on the phone and

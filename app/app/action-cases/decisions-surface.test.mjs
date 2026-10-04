@@ -155,14 +155,14 @@ test("nothing on these surfaces writes, signs, executes or reaches a model", () 
       "openai",
       "anthropic",
     ]) {
-      assert.equal(source.includes(forbidden), false, `${forbidden} is outside this packet`);
+      assert.equal(source.includes(forbidden), false, `${forbidden} has no place on these surfaces`);
     }
   }
 });
 
-test("no persistence is added anywhere in this packet", () => {
-  /* The founder's standing question, answered as a property of the diff: the
-     read layer calls only the read RPCs that already existed. */
+test("the read layer adds no persistence anywhere", () => {
+  /* Whether these surfaces store anything is answered as a property of the
+     code: the read layer calls only the read RPCs that already existed. */
   for (const source of [READ, JOURNAL_READ]) {
     for (const forbidden of ["insert(", "upsert(", "supabase.from", "createClient("]) {
       assert.equal(source.includes(forbidden), false, `${forbidden} would be new persistence`);
@@ -279,8 +279,8 @@ test("a missing measurement is never rendered as zero", () => {
 });
 
 test("every explanation on every route lives behind the info control", () => {
-  /* The founder's standing rule: a workspace prints no documentation. Prose
-     belongs to `info={...}`, which `Section` renders inside `InfoControl`. */
+  /* A workspace prints no documentation. Prose belongs to `info={...}`,
+     which `Section` renders inside `InfoControl`. */
   for (const [name, source] of [
     ["decisions", PAGE],
     ["detail route", DETAIL],

@@ -6,10 +6,10 @@ import { RYN_AI_AUTHORITY, RYN_OPERATIONS, rynOperation, type RynOperation } fro
 /**
  * The Ryn workbench's answer, and the structure it cannot escape.
  *
- * Home canon §7 gives the workbench a fixed output shape: plain answer;
- * attributable facts and times; conflicts and unknowns; scenarios; portfolio
- * and plan relevance; a deterministic result when the data is sufficient; the
- * next permissible step; source, model and policy versions. Eight sections.
+ * Home gives the workbench a fixed output shape: plain answer; attributable
+ * facts and times; conflicts and unknowns; scenarios; portfolio and plan
+ * relevance; a deterministic result when the data is sufficient; the next
+ * permissible step; source, model and policy versions. Eight sections.
  *
  * **Every one of them is always present**, and that is the load-bearing
  * decision in this file. A structure that lets a section vanish when it is
@@ -77,7 +77,7 @@ const SECTION_LABEL: Readonly<Record<RynAnswerSectionId, string>> = {
  * reader; *hold it* tells them what to do, and only the second one needs a
  * permitted provider of record behind it.
  *
- * `WAIT` is deliberately absent from the list: the canon names explicit
+ * `WAIT` is deliberately absent from the list: Home names explicit
  * no-action as a permitted current capability, so refusing the word would ban
  * the one answer this product is allowed to give.
  */

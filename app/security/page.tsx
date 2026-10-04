@@ -20,13 +20,12 @@ import "./security.css";
 
 /**
  * The security page — the boundary of the product, checked against the code
- * on `SECURITY_AS_OF` (the new site of canon v5.5, `RYN-SITE-V5-001`
- * subtask 3, English and Ukrainian by the reader's language).
+ * on `SECURITY_AS_OF`, in English or Ukrainian by the reader's language.
  *
  * At rest the page is what a reader asks first: what Ryntra cannot do and what
  * it can, and what has not been reviewed — the audit sentence read from
  * `lib/site/security.ts`, never retyped, so a copy edit cannot soften it. The
- * twelve sections of the founder's specification keep their ids, their
+ * twelve sections of the page's original specification keep their ids, their
  * numbers and their order a tap deeper, each a disclosure, so a link to any
  * of them still lands on it and no technical paragraph stands on the page
  * uninvited.

@@ -1,5 +1,5 @@
 /**
- * The durable record of one cross-chain swap order — `RYN-SOL-MONEY-FLOWS-001F`.
+ * The durable record of one cross-chain swap order.
  *
  * Modelled on `lib/solana/cctp-burn-claim.ts` and for the same reason: a swap
  * that leaves one chain cannot be undone from this side, so the thing that must
@@ -89,11 +89,11 @@ export const CrossSwapOrderRecordSchema = z
     intentDigest: z.string().regex(HEX_DIGEST),
     /** Digest of the reviewed quote facts; a different Review over the same intent is a conflict. */
     reviewDigest: z.string().regex(HEX_DIGEST),
-    /* The pair, by name. An enum of ten until `RYN-SOL-MONEY-FLOWS-001I` opened
-       which assets the lane carries: a stored order must still name its pair exactly,
-       so the shape stays pinned even though the membership no longer is. The
-       shortlisted pairs keep the names they were written with, so nothing
-       already stored changes meaning. */
+    /* The pair, by name. An enum of ten until the lane's asset list was opened
+       up: a stored order must still name its pair exactly, so the shape stays
+       pinned even though the membership no longer is. The shortlisted pairs
+       keep the names they were written with, so nothing already stored changes
+       meaning. */
     tupleId: z
       .string()
       .regex(/^[A-Z]+_[A-Za-z0-9]{1,64}_TO_[A-Z]+_[A-Za-z0-9]{1,64}$/)
@@ -132,10 +132,9 @@ export const CrossSwapOrderRecordSchema = z
     /**
      * The Cross-chain Receipt, minted once and then never rebuilt.
      *
-     * `RYN-MONEY-RECEIPT-PARITY-001`. Both default to null so every order
-     * written before these fields existed still parses — the two real fills of
-     * 2026-09-11 among them, which are exactly the orders that need a receipt
-     * issued after the fact.
+     * Both default to null so every order written before these fields existed
+     * still parses — the two real fills of 2026-09-11 among them, which are
+     * exactly the orders that need a receipt issued after the fact.
      *
      * The document is stored rather than recomputed because `createdAt` and the
      * issuer signature move with the clock: a second mint of identical facts is

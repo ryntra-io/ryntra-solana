@@ -3,17 +3,17 @@ import type { PageRoute } from "./domains";
 /**
  * Where each registered page of Ryntra opens, and everything it owns.
  *
- * Owner decision of 2026-09-04, unchanged: one product, one active network. The
- * routes below stay under `/app`, which is the wallet provider's subtree — the
- * directive is explicit that physical URL unification is not required where
+ * One product, one active network. The
+ * routes below stay under `/app`, which is the wallet provider's subtree —
+ * physical URL unification is not required where
  * moving a page would risk wallet state, recovery, receipts or a financial
  * boundary, and every money surface in this product lives under one wallet
  * provider. Clean single-segment customer URLs are a recorded future migration,
  * not a risk taken for tidiness.
  *
- * **Canon v4.0, adopted 2026-09-14 (MASTER-PLAN Part A §5).** TRADE is Swap ·
+ * **The four groups, since 2026-09-14.** TRADE is Swap ·
  * Spot · Stocks · Trends, with Perps and Predictions registered PLANNED and
- * not drawn — and since canon v4.3 (2026-09-17, §6.5, `RYN-PREDICTIONS-001`)
+ * not drawn — and since 2026-09-17
  * Predictions drawn as a paper-mode market; MONEY is Send · Receive · Bridge · Rewards; MANAGE is Portfolio ·
  * History. Stocks is a page of its own — the research workspace for tokenized
  * stocks and ETFs — while Spot remains the execution surface for every class.
@@ -27,7 +27,7 @@ import type { PageRoute } from "./domains";
  * promise nobody implemented:
  *
  * - **Swap owns `/app/trade`**, the address its form answered to before the
- *   canon renamed the page. Bridge answers for itself, so a person standing on
+ *   page was renamed. Bridge answers for itself, so a person standing on
  *   it sees Bridge marked current rather than Swap.
  * - **Trends owns `/app/assets`.** Asset detail is what a token opens into.
  * - **History owns `/app/receipts`.** A receipt is the detail of an operation,
@@ -44,7 +44,7 @@ import type { PageRoute } from "./domains";
  * owns the answer. A planned page is registered, served and honest on itself,
  * and is not projected into the rail.
  *
- * **Canon v5.3 (2026-09-24, В28): one version.** The menu is five places, not
+ * **One version, since 2026-09-24.** The menu is five places, not
  * these pages; which place holds a page is `PLACE_PAGES` in `domains.ts`. The
  * comments below keep the group each page was written for — TRADE, MONEY,
  * MANAGE — because that is still the kind of work it does (the API's
@@ -60,7 +60,7 @@ export const PRODUCT_ROUTES: readonly PageRoute[] = [
     href: `${BASE}/swap`,
     icon: "swap",
     readiness: "available",
-    /* Swap is Solana-only and Jupiter-only (Owner decision 2026-09-10). The
+    /* Swap is Solana-only and Jupiter-only. The
        page itself still redirects a cross-network link to Bridge, so old URLs
        keep leading to the new place — they lead there rather than being
        absorbed here. */
@@ -70,29 +70,29 @@ export const PRODUCT_ROUTES: readonly PageRoute[] = [
     id: "spot",
     href: `${BASE}/spot`,
     icon: "spot",
-    /* Live since `RYN-SPOT-V1-001`: one market terminal with Crypto, Memes and
+    /* Live: one market terminal with Crypto, Memes and
        Stocks/RWA inside it, on the engine Swap runs on. */
     readiness: "available",
     match: [`${BASE}/spot`],
   },
   {
     id: "stocks",
-    /* The screener since canon v5.3 (2026-09-24, `RYN-NAV-V5-001`): Stocks is
+    /* The screener since 2026-09-24: Stocks is
        a tool of Markets' «Для досвідчених», and it opens on every confirmed
        token with its filters. `/app/stocks` itself is Markets for everyone —
        companies first — the address the landing gives. */
     href: `${BASE}/stocks/screener`,
     icon: "stocks",
     /*
-     * Canon v4.0 §7: the research workspace for tokenized stocks and ETFs on
+     * The research workspace for tokenized stocks and ETFs on
      * Solana. `building` on the day it shipped (2026-09-14) with a composed
-     * first screen; `available` since `RYN-STOCKS-PRO-001` (2026-09-15) on
+     * first screen; `available` since 2026-09-15 on
      * the evidence the readiness model asks for — the confirmed universe,
      * the screener, the asset page with the issuer's reference, the session
      * and the units from the chain, the size-aware quote, the Spot handoff,
      * and the first purchase of a tokenized stock landed through Spot on
-     * 2026-09-14 (the Owner's own signature, `RYN-SPOT-LIVE-002`), with the
-     * quote path made reliable under concurrent use in the same task. What
+     * 2026-09-14, with the
+     * quote path made reliable under concurrent use in the same change. What
      * the Strategy layer will add is not part of this readiness.
      */
     readiness: "available",
@@ -102,8 +102,8 @@ export const PRODUCT_ROUTES: readonly PageRoute[] = [
     id: "trends",
     href: `${BASE}/trends`,
     icon: "trends",
-    /* `available` since `RYN-SURFACE-CLEAN-001` (2026-09-23): the two modes
-       with no list left the surface (canon v5.0 §0.0 rule 10), and what is
+    /* `available` since 2026-09-23: the two modes
+       with no list left the surface, and what is
        drawn — Trending and Memes over the ranked universe Spot reads, and the
        door to Stocks — lists the provider's own figures and opens Spot. */
     readiness: "available",
@@ -115,7 +115,7 @@ export const PRODUCT_ROUTES: readonly PageRoute[] = [
     id: "perps",
     href: `${BASE}/perps`,
     icon: "perps",
-    /* Registered and served; not a row until it is ready (canon v4.0 §6.4). */
+    /* Registered and served; not a row until it is ready. */
     readiness: "planned",
     match: [`${BASE}/perps`],
   },
@@ -123,16 +123,16 @@ export const PRODUCT_ROUTES: readonly PageRoute[] = [
     id: "predictions",
     href: `${BASE}/predictions`,
     icon: "predictions",
-    /* Owner decision 2026-09-11: prediction markets through aggregated venues,
-       registered planned until access existed. Owner decision 2026-09-17
-       (canon v4.3 §6.5, `RYN-PREDICTIONS-001`): the paper product exists —
+    /* Prediction markets through aggregated venues,
+       registered planned until access existed. Since 2026-09-17
+       the paper product exists —
        discovery across the aggregator's venues, the market detail with
        Research and Market depth, the Prediction Plan, the Review over the
        smart route, a paper order the provider's own ledgers confirm, the
        identity mapped behind the Ryntra account — so the page earns
        `available` on the readiness model's own terms: a verified capability
        (paper trading, said as such on every surface) the person can carry
-       out here. Live trading is a separate future Owner decision. */
+       out here. Live trading is a separate future decision. */
     readiness: "available",
     match: [`${BASE}/predictions`],
   },
@@ -158,7 +158,7 @@ export const PRODUCT_ROUTES: readonly PageRoute[] = [
     id: "my-strategies",
     href: `${BASE}/strategies`,
     icon: "strategies",
-    /* `RYN-STRATEGY-PLAN-001` stage A: the Trading Plan is the page — the
+    /* Stage A: the Trading Plan is the page — the
        wallet's plans, the builder with its deterministic size and check, the
        detail with versions and journal — live on the plan store behind the
        wallet's proof. The Review's Strategy block and Plan vs Actual are
@@ -183,7 +183,7 @@ export const PRODUCT_ROUTES: readonly PageRoute[] = [
     id: "results",
     href: `${BASE}/results`,
     icon: "results",
-    /* Available since RYN-RESULTS-MEMORY-001: the five things Results owns
+    /* Available: the five things Results owns
        are all drawn — an operation as an entry or an exit, what a plan's own
        executions add up to as a position, an exit judged only by rules that
        existed before it, a plan that made no trade with the rule that
@@ -214,10 +214,10 @@ export const PRODUCT_ROUTES: readonly PageRoute[] = [
     icon: "bridge",
     readiness: "available",
     /*
-     * A page in MONEY (canon v4.0 §6.3): cross-network execution has other
+     * A page in MONEY: cross-network execution has other
      * wallets, other states, other providers and its own recovery, so it is a
      * funding surface beside Send and Receive rather than a second trading
-     * form. Restored as a page by Owner decision of 2026-09-10 — "exchange two
+     * form. Restored as a page on 2026-09-10 — "exchange two
      * assets on Solana" and "move value from another network" share a shape
      * and share no code, and each page owns one provider and one failure, so
      * Relay being down leaves Swap working and a Jupiter problem leaves Bridge
@@ -230,7 +230,7 @@ export const PRODUCT_ROUTES: readonly PageRoute[] = [
     href: `${BASE}/rewards`,
     icon: "rewards",
     /*
-     * Owner decision of 2026-09-10: Rewards is a page in MONEY, because Send
+     * Rewards is a page in MONEY, because Send
      * and Receive are money moving and Rewards is money arriving.
      *
      * `available` because the surface is real on the day it ships: a person
@@ -263,7 +263,7 @@ export const PRODUCT_ROUTES: readonly PageRoute[] = [
     href: `${BASE}/activity`,
     icon: "activity",
     readiness: "available",
-    /* History. The id and the address stay; the label is the canon's word.
+    /* History. The id and the address stay; the label is the product's word.
        Not `/app/operations`: that path redirects to Settings, and a registry
        that claims a route the router sends elsewhere gives one URL two
        answers. */

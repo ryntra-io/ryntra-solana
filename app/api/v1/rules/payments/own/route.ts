@@ -10,13 +10,13 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 /**
- * «Це мій рахунок» (`RYN-PAY-TRIGGERS-001`, contract 1.19.0; canon v5.5 В38 —
- * «перекази між своїми рахунками не рахуються»). The proven wallet names the
- * other side of one of its counted payments, by the payment's signature, as
- * its own account: no transfer to or from it counts for any «З кожної оплати»
- * rule of the wallet from now on, and every waiting event with it leaves what
- * waits. The answer is the wallet's rules as they stand after it; the account
- * itself is never named back. Nothing moves money here.
+ * «Це мій рахунок» (contract 1.19.0 — «перекази між своїми рахунками не
+ * рахуються»). The proven wallet names the other side of one of its counted
+ * payments, by the payment's signature, as its own account: no transfer to or
+ * from it counts for any «З кожної оплати» rule of the wallet from now on, and
+ * every waiting event with it leaves what waits. The answer is the wallet's
+ * rules as they stand after it; the account itself is never named back.
+ * Nothing moves money here.
  */
 export async function POST(request: Request) {
   const refused = apiMajorRefusal(request.headers);

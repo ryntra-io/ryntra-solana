@@ -3,8 +3,8 @@ import type { ReactNode } from "react";
 /**
  * The tile — the surface grammar this product was missing.
  *
- * Five packets shipped correct facts typed as sentences on a bare canvas, and
- * the founder's review named exactly why that fails: there is no card, so
+ * Earlier surfaces shipped correct facts typed as sentences on a bare canvas,
+ * and a design review named exactly why that fails: there is no card, so
  * nothing for an eye to land on; no edge and no ground, so a card is a
  * paragraph with a border; no number, so the subject of a tile is prose; and no
  * emphasis, so nothing is the answer.
@@ -13,10 +13,10 @@ import type { ReactNode } from "react";
  *
  *   micro-label → number → state → chart → footer → the explanation, hidden
  *
- * The last one is working rule 6 as a component rather than as a good
- * intention: `note` renders behind a disclosure, so an explanation cannot be
- * printed on the page by forgetting to move it. There is no prop that puts it
- * inline.
+ * The last one is the rule *an explanation stays hidden until asked for* as a
+ * component rather than as a good intention: `note` renders behind a
+ * disclosure, so an explanation cannot be printed on the page by forgetting to
+ * move it. There is no prop that puts it inline.
  */
 
 export type Tone = "neutral" | "good" | "warn" | "bad" | "evidence";

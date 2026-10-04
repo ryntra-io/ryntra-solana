@@ -4,10 +4,9 @@ import test from "node:test";
 import { DEFAULT_SALE_USD, isOverPosition, isWholePosition, MIN_SALE_USD, openingSaleUsd, positionUsd, rawForUsd, SALE_SHARE_PRESETS_PCT, saleAssetOf, shareRaw, shareUsd, unitsOf } from "./sale-model.ts";
 
 /**
- * «Продати з позиції» (`RYN-BUY-FLOW-001`, subtask 1): a sum in dollars or a
- * share of the position → the raw units the one execution path takes; the
- * whole position is exactly what the wallet holds; the company's facts read
- * as the company page reads them.
+ * «Продати з позиції»: a sum in dollars or a share of the position → the raw
+ * units the one execution path takes; the whole position is exactly what the
+ * wallet holds; the company's facts read as the company page reads them.
  */
 
 /* 0.05 of an Apple share at $250: raw 5 000 000 at 8 decimals, no multiplier. */

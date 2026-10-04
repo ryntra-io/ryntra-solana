@@ -14,13 +14,13 @@ import "./agg-ryntra-theme.css";
 
 /*
  * Tab 3 — the same aggregator data in Ryntra's frame: Market → Research →
- * Plan → Review. A small preview for the visual comparison the Owner asked
- * for, not an integration: nothing here enters lib/, the rail or the product
- * pages, and there is no execution control — the Review ends where Ryntra's
- * own Review would hand over to the wallet, and says so.
+ * Plan → Review. A small preview for a visual comparison, not an
+ * integration: nothing here enters lib/, the rail or the product pages, and
+ * there is no execution control — the Review ends where Ryntra's own Review
+ * would hand over to the wallet, and says so.
  *
  * The comparison view at the bottom mounts the aggregator's EventMarketPage a
- * second time under Ryntra's tokens (agg-ryntra-theme.css), so the Owner can
+ * second time under Ryntra's tokens (agg-ryntra-theme.css), so a viewer can
  * see their component in our colours next to our own composition of the data.
  */
 
@@ -581,7 +581,7 @@ function Review({
       )}
       <p className={styles.notice}>
         Тут Ryntra передала б план на підпис у гаманець. У лабораторії виконання немає навмисно: Predictions лишаються
-        поза вертикаллю (канон v4.2, F7). Paper-виконання їхньою кнопкою — на вкладці 1, і крок за
+        поза вертикаллю. Paper-виконання їхньою кнопкою — на вкладці 1, і крок за
         кроком — на вкладці 2.
       </p>
       <div className={styles.actions}>

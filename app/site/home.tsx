@@ -48,7 +48,7 @@ import type { SiteTruth } from "./truth-view";
  *      three live ones under a single green pill.
  */
 
-/** Canon's trust line, in the order canon writes it. */
+/** The product's trust line, in the order it is always written. */
 const TRUST_RAIL = [
   "Non-custodial",
   "Paper-first",

@@ -133,7 +133,8 @@ export async function POST(request: Request) {
        cannot be read, a deterministic closed fallback stands in — declared, not
        disguised — and the verdict it produces is PAUSE / OUTSIDE_ENVELOPE with
        CONFIG_VALID short of PASS, so the signed bundle cannot claim a healthy
-       configuration. Owner canaries are refused elsewhere while that lasts. */
+       configuration. Transfers under the owner-canary policy are refused
+       elsewhere while that lasts. */
     const runtime = resolveCanaryRuntime();
     reportCanaryRuntime(runtime);
     const resolved = { policy: runtime.policy } as const;

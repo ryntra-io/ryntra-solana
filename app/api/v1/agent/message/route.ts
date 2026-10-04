@@ -13,13 +13,13 @@ export const maxDuration = 60;
 
 /**
  * `POST /api/v1/agent/message` — the person's words into the proven wallet's
- * session, Ryn's structured answer back (`RYN-AGENT-TEXT-001`, contract
- * 1.8.0). The tools read through the existing services for this wallet only;
- * a request to execute is refused and prepared for the Review; a request for
- * a secret is refused. Over the budget: `AGENT_BUDGET_EXHAUSTED` never hides
- * an answer — the answer is composed deterministically and the budget state
- * on the response says why the model was not called; `AGENT_BUSY` while a
- * question of the same wallet is being answered.
+ * session, Ryn's structured answer back (contract 1.8.0). The tools read
+ * through the existing services for this wallet only; a request to execute is
+ * refused and prepared for the Review; a request for a secret is refused. Over
+ * the budget: `AGENT_BUDGET_EXHAUSTED` never hides an answer — the answer is
+ * composed deterministically and the budget state on the response says why
+ * the model was not called; `AGENT_BUSY` while a question of the same wallet
+ * is being answered.
  */
 export async function POST(request: Request) {
   const refused = apiMajorRefusal(request.headers);

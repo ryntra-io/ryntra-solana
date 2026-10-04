@@ -21,24 +21,23 @@ export const metadata = { title: "Trends" };
 const LIMIT = 50;
 
 /**
- * Trends — where a trade or a piece of research starts, canon §4.4, and the
- * Owner's structure decision of 2026-09-11: **Trends owns discovery.**
+ * Trends — where a trade or a piece of research starts: **Trends owns
+ * discovery.**
  *
  * The bar draws the modes with a list behind them — Trending and Memes read
  * the ranked Jupiter universe Spot already reads (`listSpotMarkets`), so every
  * figure on a row is the provider's own: price, the day's change, volume,
  * liquidity, verification — and Stocks/RWA, which is a page of its own. New
- * and My Screeners have no source and are not drawn at all (canon v5.0 §0.0
- * rule 10, 2026-09-23): no *Soon* tag, no card about a list that does not
- * exist, no *Being built* chip over a page whose every mode works. A saved
- * link to one of them opens Trending.
+ * and My Screeners have no source and are not drawn at all: no *Soon* tag, no
+ * card about a list that does not exist, no *Being built* chip over a page
+ * whose every mode works. A saved link to one of them opens Trending.
  *
- * The Premium Product UI Pass (2026-09-15) composed the page as a market
- * desk: the head with the one line and the moment of the prices, the pulse —
- * the most traded, the biggest move, the most liquid, the day's activity,
- * each a real figure of the list itself — and the full-width list, a row per
- * asset with its picture, its figures and, on hover, where it goes: Spot,
- * where the star, the chart and the ticket are, or a plan for a stock.
+ * A design pass (2026-09-15) composed the page as a market desk: the head
+ * with the one line and the moment of the prices, the pulse — the most
+ * traded, the biggest move, the most liquid, the day's activity, each a real
+ * figure of the list itself — and the full-width list, a row per asset with
+ * its picture, its figures and, on hover, where it goes: Spot, where the star,
+ * the chart and the ticket are, or a plan for a stock.
  * Nothing here is a control over money.
  */
 export default async function TrendsPage({ searchParams }: { searchParams: Promise<{ mode?: string }> }) {
@@ -48,14 +47,14 @@ export default async function TrendsPage({ searchParams }: { searchParams: Promi
   const mode = resolveTrendMode(params.mode);
   /* A mode that became a page of its own opens that page: a saved
      `?mode=stocks` lands on Stocks, and Trends does not carry a second
-     screener of the same class (canon v4.0 §5.1). */
+     screener of the same class. */
   if (mode.movedTo) redirect(mode.movedTo);
   /* A mode with no list is not drawn, and a saved link to one opens the list
      that exists rather than a page about one that does not. */
   if (mode.source === null) redirect("/app/trends");
   const read = await listSpotMarkets(mode.source, LIMIT);
   /* The moment the prices were read, stated beside them. A valuation without a
-     time is a claim about now that nobody checked (canon §9.1, §4.4).
+     time is a claim about now that nobody checked.
      Rendered on the server, so the zone is named: a bare `11:50` from a
      machine in UTC reads as a wrong clock to a person in Kyiv. */
   const observedAt = read.ok ? new Date(read.observedAt).toLocaleTimeString(uk ? "uk-UA" : "en-US", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" }) : null;

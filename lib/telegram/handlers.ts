@@ -144,11 +144,11 @@ async function handleStart(
 ) {
   const user = msg.from;
   if (!user) return;
-  /* A notification-channel code from Settings (RYN-ACCESS-WALLET-ONLY-001):
-     the person came to be reachable, not to join the beta. The code is
-     verified, the chat is bound to the account it names, and the answer is
-     one sentence — no welcome, no checklist. A stale or forged code says so
-     and falls through to nothing else. */
+  /* A notification-channel code from Settings: the person came to be
+     reachable, not to join the beta. The code is verified, the chat is bound
+     to the account it names, and the answer is one sentence — no welcome, no
+     checklist. A stale or forged code says so and falls through to nothing
+     else. */
   if (isTelegramConnectCode(payload)) {
     const named = verifyTelegramConnectCode(payload);
     const lang = pickBetaLang(user.language_code);

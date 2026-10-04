@@ -277,10 +277,10 @@ test("the public surfaces state that they are public and point back", () => {
   }
 });
 
-test("the public headline is the canon's, not the superseded one", () => {
+test("the public headline is the current one, not the superseded one", () => {
   const source = read("./page.tsx");
-  assert.match(source, /Verify the intent\./, "/agents lost the v5.2 headline");
-  assert.ok(!source.includes("Understand the agent."), "the v5.1 headline is back on /agents");
+  assert.match(source, /Verify the intent\./, "/agents lost its current headline");
+  assert.ok(!source.includes("Understand the agent."), "the superseded headline is back on /agents");
 });
 
 test("the authorize route has a page heading and calls itself an experiment", () => {
@@ -351,7 +351,7 @@ test("no surface renders a stage the artifact cannot support", () => {
   assert.ok(!/OUTCOME_OBSERVED|RECEIPT_FINAL/.test(views), "a view invented an outcome vocabulary");
 });
 
-/* ── RYN-AGENT-CONTROL-009 ────────────────────────────────────────────────
+/* ── Agent Radar and Passport capabilities ───────────────────────────────
    Radar is a projection of canonical Passports, never discovery or a second
    actor model. Passport capability states keep claim and observation apart. */
 
@@ -420,7 +420,7 @@ test("Passport and Radar derive the same per-capability states without an aggreg
   assert.match(workspaceExplorer, /No server record was created/);
 });
 
-/* ── RYN-AGENT-CONTROL-010 ────────────────────────────────────────────────
+/* ── Owner control ───────────────────────────────────────────────────────
    Owner policy and the queue are two projections of one Action Case plus one
    typed owner-control context. The UI may explain authority; it may not create
    it by toggling a mode. */

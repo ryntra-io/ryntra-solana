@@ -17,25 +17,24 @@ import { fmtUnits, fmtUsd, fmtWhen, planWordsFor, statusWord } from "./plan-word
 import styles from "./plans.module.css";
 
 /**
- * The proven wallet's plans, in the order a person acts — the Owner's
- * direction of 2026-09-15: what needs a decision first, then what is
- * active, then what is drafted, then what recently happened; the catalogue
- * of types stays below all of it. The Premium Product UI Pass of the same
- * day set the shape: a card per plan that says what the plan is in one
- * glance — the asset, the state, the version, the planned entry, the
- * planned risk, the planned size, what happens next — with *Open plan* on
- * it. The clarity pass of 2026-09-16 (`RYN-UX-CLARITY-001` §5.1) made the
- * counts a compact line of the non-zero states only, drawn when there is
- * more than one state to count — two plans need no dashboard of zeros.
+ * The proven wallet's plans, in the order a person acts (since 2026-09-15):
+ * what needs a decision first, then what is active, then what is drafted,
+ * then what recently happened; the catalogue of types stays below all of it.
+ * The premium UI pass of the same day set the shape: a card per plan that
+ * says what the plan is in one glance — the asset, the state, the version,
+ * the planned entry, the planned risk, the planned size, what happens next —
+ * with *Open plan* on it. The clarity pass of 2026-09-16 made the counts a
+ * compact line of the non-zero states only, drawn when there is more than
+ * one state to count — two plans need no dashboard of zeros.
  *
  * A section with nothing in it is not drawn, and nothing here is a state
  * the product does not observe: an expired entry is the one thing v1 knows
- * needs a decision (no server monitoring yet — `RYN-MONITORING-PUSH-001`).
+ * needs a decision (no server monitoring yet).
  *
  * A wallet that is not connected or not yet proven is told exactly that
- * and nothing else — a plan is private to the wallet that wrote it (canon
- * §0.6), so no card is drawn before the proof exists, and a wallet with no
- * plans is told where a plan starts: from a stock, in the builder's picker.
+ * and nothing else — a plan is private to the wallet that wrote it, so no
+ * card is drawn before the proof exists, and a wallet with no plans is told
+ * where a plan starts: from a stock, in the builder's picker.
  */
 const RECENT_RESULTS = 3;
 
@@ -73,7 +72,7 @@ function PlanCard({ plan, locale, icon }: { plan: TradingPlan; locale: Workspace
               </span>
             </span>
             <span className={styles.planCardSub}>
-              {/* A plan on a token Ryntra no longer supports names no issuer — it says so in its place (canon v5.2 В26). */}
+              {/* A plan on a token Ryntra no longer supports names no issuer — it says so in its place. */}
               {word("planKind")} · {plan.asset.underlying.name ?? plan.asset.underlying.symbol} · {isRetiredMint(plan.asset.mint) ? RETIRED_WORDS.state[locale === "uk" ? "uk" : "en"] : plan.asset.issuer.label}
             </span>
           </span>

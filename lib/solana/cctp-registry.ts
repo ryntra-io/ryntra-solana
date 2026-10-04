@@ -7,16 +7,15 @@ import { canonicalJson } from "../guard/canonical-json.ts";
 /**
  * The CCTP lanes this product knows, read from Circle's own pages and nowhere else.
  *
- * Three chains now: Solana, Base and Ethereum. The third arrived with
- * `RYN-SOL-MONEY-FLOWS-001E` after the route research of 2026-09-05, and it
- * arrived *here* rather than as a fourth copy of the Base wiring because a
- * registry with two chains had let every module assume "the other side is
- * Base". Ethereum is the first candidate MASTER-PLAN §7 names, and on CCTP V2
- * it is the same rail as Base: native USDC burned on one side and minted on
- * the other, no wrapped token, no pool, the very same four contract addresses
- * — Circle deploys V2 at identical addresses on every EVM chain, which is a
- * fact this file pins rather than assumes (the `sourceRef` on every component
- * is the page it was read from).
+ * Three chains now: Solana, Base and Ethereum. The third arrived after the
+ * route research of 2026-09-05, and it arrived *here* rather than as a fourth
+ * copy of the Base wiring because a registry with two chains had let every
+ * module assume "the other side is Base". Ethereum was the first candidate
+ * network after Base, and on CCTP V2 it is the same rail as Base: native USDC
+ * burned on one side and minted on the other, no wrapped token, no pool, the
+ * very same four contract addresses — Circle deploys V2 at identical addresses
+ * on every EVM chain, which is a fact this file pins rather than assumes (the
+ * `sourceRef` on every component is the page it was read from).
  *
  * What the registry does **not** say is that a lane is open to a person. That
  * is a route-matrix and lane-state question (`bridge-routes.ts`,

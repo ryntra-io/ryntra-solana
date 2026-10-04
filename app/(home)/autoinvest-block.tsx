@@ -14,10 +14,10 @@ const KIND_SHOTS = { schedule: "autoinvest", dip: "dip", payments: "payments" } 
 const CYCLE_MS = 5200;
 
 /**
- * «Автоінвест» on the landing — the Owner's word of 2026-09-26: interactive,
- * with light, something moving. The three kinds of rule the product has
- * (canon v5.5 §4.1 — regularly, if it falls, from payments), each with the
- * product's own screen of its sheet from `ryntra.io` in the phone beside it.
+ * «Автоінвест» on the landing — interactive, with light, something moving.
+ * The three kinds of rule the product has (regularly, if it falls, from
+ * payments), each with the product's own screen of its sheet from
+ * `ryntra.io` in the phone beside it.
  * While the block is on screen the kinds take turns on their own, a line under
  * the shown one filling as its turn runs; a press, a pointer over the switch
  * or the keyboard's focus stops the turns, and the kind chosen stays. Under

@@ -3,7 +3,7 @@ import type { RynQuestion } from "./answer.ts";
 /**
  * The bounded question set, built from what the reader actually has.
  *
- * Home canon §7: *Ryn is a first-class contextual workbench, not an empty chat
+ * Home's rule: *Ryn is a first-class contextual workbench, not an empty chat
  * box.* This module is what makes that sentence structural. A question exists
  * because something in this account produced it — a change the Radar measured,
  * two sources that disagree, a constraint outside its limit, value nobody could

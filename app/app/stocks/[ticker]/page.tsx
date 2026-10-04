@@ -21,12 +21,11 @@ export const maxDuration = 60;
 const TICKER = /^[A-Za-z0-9._-]{1,44}$/;
 
 /**
- * A company page's words for a search result and a share (the plan of
- * `RYN-SITE-V5-001` §3, §6): the company's name first, never the token's
- * (canon v5.1 §2); its address in the page's language, the Ukrainian one at
- * `/uk/app/stocks/…`; its own card. Offered to the index when its token is the
- * one the shelf's card opens (decision 3) — the rest of a company's tokens,
- * an unknown ticker and a retired one stay out, as the cabinet's layout says.
+ * A company page's words for a search result and a share: the company's name
+ * first, never the token's; its address in the page's language, the Ukrainian
+ * one at `/uk/app/stocks/…`; its own card. Offered to the index when its token
+ * is the one the shelf's card opens — the rest of a company's tokens, an
+ * unknown ticker and a retired one stay out, as the cabinet's layout says.
  */
 export async function generateMetadata({ params }: { params: Promise<{ ticker: string }> }): Promise<Metadata> {
   const { ticker: raw } = await params;
@@ -65,8 +64,7 @@ function CompanyGraph({ row, locale }: { row: StockRow; locale: "en" | "uk" }) {
 }
 
 /**
- * A company's page — one for everyone (canon v5.3 В28; the company page of
- * canon v5.1 §2, §4, `RYN-INVEST-SIMPLE-001` session 2).
+ * A company's page — one for everyone.
  *
  * The company by its name, a big price, a line chart, one line of truth, one
  * action — *Купити* and its sheet — and under *Деталі* every card the stock
@@ -77,7 +75,7 @@ function CompanyGraph({ row, locale }: { row: StockRow; locale: "en" | "uk" }) {
  * (`company-view.tsx`). The candles and the full ticket are Spot's, one press
  * from the chart. An unknown ticker lands on the product's own not-found page
  * (`not-found.tsx`); a token Ryntra no longer supports says so, and where it
- * can be sold (canon v5.2 В26).
+ * can be sold.
  */
 export default async function StockAssetPage({ params }: { params: Promise<{ ticker: string }> }) {
   const { ticker: raw } = await params;
@@ -89,11 +87,11 @@ export default async function StockAssetPage({ params }: { params: Promise<{ tic
   const read = await readStockAsset(ticker);
   if (!read.ok && read.code === "UNKNOWN_ASSET") notFound();
   if (!read.ok) return <CompanyUnavailable locale={locale} ticker={ticker} />;
-  /* A token whose issuer opened a swap window (canon v5.2 В27): the listed token the swap goes into, read from the same universe — its price on the exchange and what it is, for the swap's Review. */
+  /* A token whose issuer opened a swap window: the listed token the swap goes into, read from the same universe — its price on the exchange and what it is, for the swap's Review. */
   const into = lifecycleEventFor(read.asset.row.representation.mint)?.watch?.into ?? null;
   const found = into ? await findStockRow(into.mint) : null;
   const target = found && found.ok ? found.row : null;
-  /* «Шлях компанії» (RYN-COMPANY-PATH-001): the company's other token on the path — what it is (its issuer's fee) on this page's strip. */
+  /* «Шлях компанії»: the company's other token on the path — what it is (its issuer's fee) on this page's strip. */
   const path = read.asset.row.companyPath;
   const other = path?.steps.find((step) => step.step !== path.at && (step.step === "private" || step.step === "solana"))?.token ?? null;
   const otherRead = other && other.mint !== into?.mint ? await findStockRow(other.mint) : null;

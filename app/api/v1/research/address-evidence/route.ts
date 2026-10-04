@@ -12,7 +12,7 @@ export const maxDuration = 30;
 
 /**
  * `GET /api/v1/research/address-evidence?address=` — the recipient check
- * (`RYN-DDXYZ-RISK-001`, contract 1.6.0): what the security provider says
+ * (contract 1.6.0): what the security provider says
  * about one plain address before a person sends to it — sanctions in the
  * source's own words, findings as counts by severity with the source's own
  * figure and band, `unsupported` for a kind of address the source does not

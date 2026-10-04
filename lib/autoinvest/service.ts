@@ -1,6 +1,5 @@
 /**
- * «Автоінвест» — the rule's lifecycle and the month's budget
- * (`RYN-INVEST-SIMPLE-001`, sessions 3–4; canon v5.1 §4.1, B.3).
+ * «Автоінвест» — the rule's lifecycle and the month's budget.
  *
  * Write a rule, read the wallet's rules, pause one or turn it on again,
  * remove one — for the wallet that proved itself and nobody else. The company
@@ -181,7 +180,7 @@ export async function createRule(store: GuardStore, input: RuleInput, deps: Rule
   if (existing.length >= RULE_LIST_LIMIT) {
     return { ok: false, code: "RULE_LIMIT_REACHED", message: `A wallet holds at most ${RULE_LIST_LIMIT} rules; remove one first.` };
   }
-  /* A token Ryntra no longer supports (canon v5.2 В26) is named by no new rule, and no provider is asked about it. */
+  /* A token Ryntra no longer supports is named by no new rule, and no provider is asked about it. */
   if (isRetiredMint(input.mint)) return { ok: false, code: "ASSET_UNCONFIRMED", message: `Autoinvest cannot name that token. ${RETIRED_REASON}` };
   const found = await (deps.findRow ?? findStockRow)(input.mint);
   if (!found.ok) return { ok: false, code: "UNAVAILABLE", message: found.reason };

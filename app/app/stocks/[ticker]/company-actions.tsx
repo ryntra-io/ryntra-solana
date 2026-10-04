@@ -21,17 +21,17 @@ import { useHolds } from "./company-event";
 import company from "./company.module.css";
 
 /**
- * A company's two actions (canon v5.1 §4, §4.1; `RYN-INVEST-SIMPLE-001`,
- * sessions 3–4): «Купити» — the one orange action — and «Автоінвест», quiet
- * beside it. A company that has a rule shows the rule in its place — how
- * much, how often or how far its price must fall, when next. A rule the
- * month's budget holds says so: «Бюджет вичерпано · до 1-го числа».
+ * A company's two actions: «Купити» — the one orange action — and
+ * «Автоінвест», quiet beside it. A company that has a rule shows the rule in
+ * its place — how much, how often or how far its price must fall, when next.
+ * A rule the month's budget holds says so: «Бюджет вичерпано · до 1-го
+ * числа».
  *
- * **While the rule's reminder is open** (canon v5.3 В29; `RYN-NAV-V5-001`,
- * session 2) the rule's purchase is the first action — «Час твоєї покупки ·
- * Щотижня · чт о 19:00» over «Купити $20 за правилом», the same purchase
- * sheet on the rule's sum — and an ordinary purchase is the second, saying
- * the reminder stays open: the rule counts only a purchase by the rule.
+ * **While the rule's reminder is open** the rule's purchase is the first
+ * action — «Час твоєї покупки · Щотижня · чт о 19:00» over «Купити $20 за
+ * правилом», the same purchase sheet on the rule's sum — and an ordinary
+ * purchase is the second, saying the reminder stays open: the rule counts
+ * only a purchase by the rule.
  *
  * A reminder's link (`?rule=…&due=…`, from the note or Telegram) opens that
  * purchase on arrival: the rule is read afresh behind the wallet's proof and
@@ -42,9 +42,9 @@ import company from "./company.module.css";
 type Props = Omit<BuySheetProps, "ruleBuy" | "onRuleBuyEnd" | "onRulesReload" | "onBuyWeekly" | "budget" | "onChangeBudget" | "ruleOffer" | "quiet"> &
   Readonly<{
     priceUsd: number | null;
-    /** The IPO and conversion watch (canon v5.2 В27): while the swap is a holder's one orange action above, «Купити» steps back to quiet for a wallet that holds the token. */
+    /** The IPO and conversion watch: while the swap is a holder's one orange action above, «Купити» steps back to quiet for a wallet that holds the token. */
     quietWhenHeld?: boolean;
-    /** «Умова ціни» (canon v5.5 В37): whose figure a rule's price condition is set against for this company; null when it has none, and the condition is not offered. */
+    /** «Умова ціни»: whose figure a rule's price condition is set against for this company; null when it has none, and the condition is not offered. */
     conditionReference?: PriceReference | null;
   }>;
 
@@ -142,7 +142,7 @@ export function CompanyActions({ priceUsd, quietWhenHeld = false, conditionRefer
   const last = rule ? lastSettled(rule) : null;
   const held = rule ? heldByBudget(rule, state.budget) && !due : false;
   const zone = rule ? ruleZone(rule) : "UTC";
-  /* The reminder open now: the rule's purchase first, an ordinary one second (canon v5.3 В29) — on the reminder's own sum (1.19.0). */
+  /* The reminder open now: the rule's purchase first, an ordinary one second — on the reminder's own sum (1.19.0). */
   const ruleOffer: RuleOffer | null = rule && due ? { amountUsd: purchaseSumUsd(rule, due), context: `${word("timeToBuy")} · ${ruleWhenLine(rule, lang)}`, onBuy: () => buyNow(rule, due) } : null;
 
   const cardSub = (() => {

@@ -25,7 +25,7 @@ import type { SendSupportVerdict } from "./send-support.ts";
  *
  * What stood here before were two gates, neither of which was about the
  * transfer in front of it: an action-kind allowlist admitting exactly
- * `TOKEN_ATA_CREATE` on mainnet, and the `RYN-SOL-M1B` owner-canary envelope
+ * `TOKEN_ATA_CREATE` on mainnet, and the M1B owner-canary envelope
  * allowlisting one recipient, one amount and one program set. Both were
  * correct for the single canary they were written for, and together they
  * refuse every ordinary transfer — which is precisely what the production Send

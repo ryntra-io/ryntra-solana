@@ -1,7 +1,7 @@
 /**
- * The provider session behind a wallet's paper account (`RYN-PREDICTIONS-001`,
- * canon v4.3 §6.5): held by the server, keyed by the proven Ryntra wallet,
- * refreshed by the server, never in the browser.
+ * The provider session behind a wallet's paper account: held by the server,
+ * keyed by the proven Ryntra wallet, refreshed by the server, never in the
+ * browser.
  *
  * One versioned record per wallet in Guard `predictionLinks`, the tokens
  * sealed by `vault.ts`. A wallet switch is a different key, so nothing of

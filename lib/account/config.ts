@@ -45,8 +45,7 @@ export function accountMethods(): AccountMethods {
  * The customer doors — email, Google, Telegram as ways *in* for a person in
  * the cabinet — are shut unless `RYNTRA_CUSTOMER_DOORS=on`.
  *
- * `RYN-ACCESS-WALLET-ONLY-001`, the Owner's decision of 2026-09-11: an
- * account is the wallet that signed, Telegram is a notification channel
+ * An account is the wallet that signed, Telegram is a notification channel
  * connected from Settings, and email and Google are not offered to a
  * customer at all. The operator's own email + second-factor login on
  * `/admin/login` reads `accountMethods()` and is untouched by this switch,

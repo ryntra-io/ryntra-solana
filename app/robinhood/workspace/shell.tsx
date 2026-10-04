@@ -27,9 +27,9 @@ import { resolveDepth, type WorkspaceMode } from "@/app/shell/layout-store";
 /**
  * The slots this ecosystem actually has, and no others.
  *
- * Radar is the slot; Screener, Scanner and Watchlist are its modes rather than
- * four sibling products, which is the founder's 2026-08-19 decision applied to
- * the rail. Their routes are unchanged — this is where they are *entered*.
+ * Radar is the only slot; Screener, Scanner and Watchlist are its modes
+ * rather than four sibling products, and the rail draws them that way. Their
+ * routes are unchanged — this is where they are *entered*.
  *
  * **Portfolio, Strategy and Journal are absent, and that is the correction.**
  * The old rail carried them as a `Ryntra Home` group pointing at `/app`,
@@ -89,13 +89,13 @@ export function RobinhoodShell({
       workspaceId="robinhood-chain"
       navGroupsFor={navGroupsFor}
       navSettings={SETTINGS}
-      /* The depth control is not in the top bar.
-         Founder decision, 2026-08-24: the product opens at full depth and
-         `Simple | Pro` lives with the rest of "how this workspace is laid
-         out" — the layout menu, bottom-left, beside density and reset. A
-         switch in the primary bar made the first thing a person saw a
-         question about the chrome. `modeInContext` is therefore gone with it,
-         so the layout menu is the one control again rather than the second. */
+      /* The depth control is not in the top bar: the product opens at full
+         depth and `Simple | Pro` lives with the rest of "how this workspace
+         is laid out" — the layout menu, bottom-left, beside density and
+         reset. A switch in the primary bar made the first thing a person saw
+         a question about the chrome. `modeInContext` is therefore gone with
+         it, so the layout menu is the one control again rather than the
+         second. */
       account={<RyntraConnectionControl identityWallet={identityWallet} />}
     >
       {children}

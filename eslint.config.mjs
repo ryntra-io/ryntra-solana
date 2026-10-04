@@ -45,7 +45,7 @@ const config = [
   {
     /* The legal review candidates are content-digest bound: their exact bytes are
        hashed into LEGAL_PACKAGE.contentDigest so a counsel sign-off can be tied to
-       the text that was reviewed (see lib/legal/release.ts and RYN-LEGAL-001).
+       the text that was reviewed (see lib/legal/release.ts).
        Rewriting their <a> tags — even mechanically — would break that binding and
        silently invalidate the sign-off contract, so the navigation rule is turned
        off for exactly these files instead. Nothing else is relaxed here, and the
@@ -71,7 +71,7 @@ const config = [
   },
   {
     /* The frozen public chrome swaps two local wordmark files with CSS so the
-       correct founder-approved artwork is present before theme hydration.
+       correct approved artwork is present before theme hydration.
        These are fixed-size decorative assets, not remote content or an LCP
        photograph; next/image would not replace the two-source theme contract. */
     files: ["app/site/frozen/public-header.tsx", "app/site/frozen/public-footer.tsx"],

@@ -26,8 +26,6 @@ export type HomeSurfaceRecord = Readonly<{
   question: string;
   /** The compiler that owns what this surface's facts mean. */
   module: string;
-  /** The delivery wave that built it. */
-  wave: string;
   /** What this surface refuses to do, stated where a reader will see it. */
   refuses: readonly string[];
   writeAuthority: typeof HOME_WRITE_AUTHORITY;
@@ -40,7 +38,6 @@ export const HOME_SURFACES: readonly HomeSurfaceRecord[] = Object.freeze([
     href: "/app",
     question: "What needs me right now, and what is the state of what I hold?",
     module: "app/app/overview/loop-state.ts",
-    wave: "RYN-HOME-003",
     refuses: ["Ranks attention by a fixed priority rather than an invented importance score."],
     writeAuthority: HOME_WRITE_AUTHORITY,
   },
@@ -50,7 +47,6 @@ export const HOME_SURFACES: readonly HomeSurfaceRecord[] = Object.freeze([
     href: "/app/brief",
     question: "What happened while I was not looking?",
     module: "lib/home/brief/daily-brief.ts",
-    wave: "RYN-HOME-007",
     refuses: [
       "Issues no single importance number: a decision outranks a change outranks a portfolio move outranks an operational state, by a declared table.",
       "Never drops an empty section — an empty one states why, so a calm day cannot look like a failed load.",
@@ -63,7 +59,6 @@ export const HOME_SURFACES: readonly HomeSurfaceRecord[] = Object.freeze([
     href: "/app/portfolio",
     question: "What do I hold, what is it worth, and what is the risk?",
     module: "lib/home/portfolio/read-model.ts",
-    wave: "RYN-HOME-002",
     refuses: [
       "Never shows a value without its coverage, currency, observation time and source state.",
       "Never totals the live and paper books.",
@@ -76,7 +71,6 @@ export const HOME_SURFACES: readonly HomeSurfaceRecord[] = Object.freeze([
     href: "/app/adviser",
     question: "What does this mean for me, and on what evidence?",
     module: "lib/home/workbench/answer.ts",
-    wave: "RYN-HOME-006",
     refuses: [
       "Issues no personalized buy, sell or hold verdict; the AI stays inside Explain, Formalize, Compare and Review.",
       "Withholds the deterministic result unless every required input is present and current.",
@@ -89,7 +83,6 @@ export const HOME_SURFACES: readonly HomeSurfaceRecord[] = Object.freeze([
     href: "/app/research",
     question: "What changed, and can I trust the evidence that says so?",
     module: "lib/home/research/read-model.ts",
-    wave: "RYN-HOME-004",
     refuses: [
       "Never computes a last-run time from a schedule; an unobserved run is unknown.",
       "Monitoring scope never widens execution authority.",
@@ -102,7 +95,6 @@ export const HOME_SURFACES: readonly HomeSurfaceRecord[] = Object.freeze([
     href: "/app/strategies",
     question: "Where is each strategy in its lifecycle, and does its evidence carry it?",
     module: "lib/home/strategy/lifecycle.ts",
-    wave: "RYN-HOME-006",
     refuses: [
       "Refuses seven of eleven lifecycle states by name, because nothing records the decision behind them.",
       "Incomplete backtest evidence is not evidence and cannot reach Approved.",
@@ -115,7 +107,6 @@ export const HOME_SURFACES: readonly HomeSurfaceRecord[] = Object.freeze([
     href: "/app/action-cases",
     question: "What is waiting on me, and what did I decide before?",
     module: "lib/home/advice/advice-case.ts",
-    wave: "RYN-HOME-005",
     refuses: [
       "Carries adviceAuthority NONE and a recommendation typed null; the product issues no personalized recommendation.",
       "A disposition nobody recorded stays pending rather than being inferred from a shared ticker.",
@@ -128,7 +119,6 @@ export const HOME_SURFACES: readonly HomeSurfaceRecord[] = Object.freeze([
     href: "/app/journal",
     question: "Did what I expected actually happen?",
     module: "lib/home/advice/journal.ts",
-    wave: "RYN-HOME-005",
     refuses: ["Marks every link of plan → decision → outcome → conclusion as recorded or missing, with a reason on each gap."],
     writeAuthority: HOME_WRITE_AUTHORITY,
   },
@@ -138,7 +128,6 @@ export const HOME_SURFACES: readonly HomeSurfaceRecord[] = Object.freeze([
     href: "/app/alerts",
     question: "What was I told, what was held back, and by which limit?",
     module: "lib/home/alerts/channels.ts",
-    wave: "RYN-HOME-007",
     refuses: [
       "Never merges channel configuration with observed delivery: linked and has-ever-delivered are separate facts.",
       "Shows a suppressed alert at full weight with the rule that suppressed it.",
@@ -152,7 +141,6 @@ export const HOME_SURFACES: readonly HomeSurfaceRecord[] = Object.freeze([
     href: "/app/coverage",
     question: "How much of my world can this product actually see?",
     module: "lib/home/coverage/coverage.ts",
-    wave: "RYN-HOME-007",
     refuses: [
       "Reports counted-of-total with every gap named; a percentage that hides its denominator is not offered.",
       "An unrecorded budget reads Unrecorded, never zero.",
@@ -165,7 +153,6 @@ export const HOME_SURFACES: readonly HomeSurfaceRecord[] = Object.freeze([
     href: "/app/operations",
     question: "Is the machinery up, what breaks while it is not, and what may this product legally do?",
     module: "lib/home/operations/operations.ts",
-    wave: "RYN-HOME-007",
     refuses: [
       "Incidents are derived from observed failures and cannot be authored.",
       "Kill switches are shown and never thrown; each names the authority that may.",
@@ -179,7 +166,6 @@ export const HOME_SURFACES: readonly HomeSurfaceRecord[] = Object.freeze([
     href: "/app/control",
     question: "What is the operating state of the machine, and who owns each fact?",
     module: "lib/home/control/projection.ts",
-    wave: "RYN-HOME-006",
     refuses: [
       "Every tile is a projection with a named owner and a link; nothing is recomputed here.",
       "A fact no server can read says exactly that.",
@@ -192,7 +178,6 @@ export const HOME_SURFACES: readonly HomeSurfaceRecord[] = Object.freeze([
     href: "/app/connect",
     question: "What is connected, with what scope, and how do I revoke it?",
     module: "lib/home/connections.ts",
-    wave: "RYN-HOME-001",
     refuses: [
       "Never requests a seed phrase, private key, withdrawal scope or master viewing key.",
       "Watch-only is a full connection state and never implies ownership.",

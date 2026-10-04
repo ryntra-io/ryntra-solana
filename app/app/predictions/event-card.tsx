@@ -11,11 +11,11 @@ import styles from "./predictions.module.css";
 import { outcomeLabel, venueName, wordsFor } from "./words";
 
 /**
- * One event, the decision information first (`RYN-PREDICTIONS-001` item 5):
- * the question, the leading outcomes with their probabilities and a bar of
- * the same width, the change since the person watched it where the store
- * holds one, the volume, the venues, the time to the end, the watch state.
- * The venues are chips at the foot — secondary, unless identity matters.
+ * One event, the decision information first: the question, the leading
+ * outcomes with their probabilities and a bar of the same width, the change
+ * since the person watched it where the store holds one, the volume, the
+ * venues, the time to the end, the watch state. The venues are chips at the
+ * foot — secondary, unless identity matters.
  */
 export function EventCard({
   event,

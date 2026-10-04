@@ -70,7 +70,7 @@ div.pending {
   }
 }
 
-/* ── The network's SOL (session 5): what is missing, said once, above the one action that brings it ── */
+/* ── The network's SOL: what is missing, said once, above the one action that brings it ── */
 
 .notice {
   display: grid;
@@ -90,11 +90,11 @@ div.pending {
   font-weight: 600;
 }
 
-/* ── «Ризик портфеля» (RYN-PROTECT-SIGNAL-001, subtask 2): drawn as «Розподіл» is — its name a quiet label
-   with «?», then the state: an icon, the word in its colour and the reason as one sentence, wrapping past the
-   icon; the one action a small capsule under it, as a position's state speaks in Portfolio
-   (../invest/watch.module.css). On a wide head it closes «Розподіл», beside the shares it speaks of; on a
-   narrow one — where «Розподіл» is not drawn — it follows the day's change. ── */
+/* ── «Ризик портфеля»: drawn as «Розподіл» is — its name a quiet label with «?», then the state: an icon,
+   the word in its colour and the reason as one sentence, wrapping past the icon; the one action a small
+   capsule under it, as a position's state speaks in Portfolio (../invest/watch.module.css). On a wide head
+   it closes «Розподіл», beside the shares it speaks of; on a narrow one — where «Розподіл» is not drawn —
+   it follows the day's change. ── */
 
 .risk {
   display: grid;
@@ -239,7 +239,7 @@ div.pending {
   border-top: 1px solid var(--ry-border);
 }
 
-/* ── Width (RYN-WIDTH-PREMIUM-001): a main column and a right one from 1280 px ── */
+/* ── Width: a main column and a right one from 1280 px ── */
 
 .layout {
   display: grid;
@@ -650,9 +650,9 @@ div.pending {
   }
 }
 
-/* On a phone the two columns become one list (the Owner's word, RYN-WIDTH-
-   PREMIUM-001): the main blocks first, a wallet's «Автоінвест» right after
-   what it owns, then the right column's other blocks in their order. */
+/* On a phone the two columns become one list: the main blocks first, a
+   wallet's «Автоінвест» right after what it owns, then the right column's
+   other blocks in their order. */
 @media (max-width: 900px) {
   .layout {
     display: flex;

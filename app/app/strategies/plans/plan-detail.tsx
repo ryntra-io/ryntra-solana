@@ -25,10 +25,9 @@ import { fmtDate, fmtUnits, fmtUsd, fmtWhen, planWordsFor, statusWord, type Plan
 import styles from "./plans.module.css";
 
 /**
- * One plan, as it stands — canon §9.3–§9.5 (`RYN-STRATEGY-PLAN-001`),
- * recomposed around decisions by the Owner's Premium Product UI Pass
+ * One plan, as it stands, recomposed around decisions by the premium UI pass
  * (2026-09-15) and made to say each thing once by the clarity pass of
- * 2026-09-16 (`RYN-UX-CLARITY-001`).
+ * 2026-09-16.
  *
  * The person is answered in three seconds: the head says which plan and
  * what state it is in; one summary says the money the way a person reads it
@@ -53,19 +52,19 @@ import styles from "./plans.module.css";
  * it as it stood, the banner says so, and the action offers the way back to
  * the current version — a trade is never offered from an old one.
  *
- * A plan on a token (1.7.0, `RYN-PLAN-CRYPTO-001`) reads *Market now* from
- * the Spot catalogue instead of the stock desk — the token's own price and
- * the pool — and shows no reference line, because a token has none; its
- * Trade opens the Spot market of its kind. Every version shows the planning
- * price it was written against, with its source and time.
+ * A plan on a token (1.7.0) reads *Market now* from the Spot catalogue
+ * instead of the stock desk — the token's own price and the pool — and shows
+ * no reference line, because a token has none; its Trade opens the Spot
+ * market of its kind. Every version shows the planning price it was written
+ * against, with its source and time.
  *
  * A plan on a pre-IPO token — a stock plan priced per token, the PreStocks
- * instruments — opens differently since the first-screen pass
- * of 2026-09-23 (`RYN-FIRST-SCREEN-001`): under the head, one line of state
- * with the one action, then the three things to know before anything else
- * (not a share · limited liquidity · no automatic stop), and the whole plan
- * — the figures, the rules, the history, the status — one press deep under
- * *Details*. Presentation only: the same plan, the same Review.
+ * instruments — opens differently since the first-screen pass of 2026-09-23:
+ * under the head, one line of state with the one action, then the three
+ * things to know before anything else (not a share · limited liquidity · no
+ * automatic stop), and the whole plan — the figures, the rules, the history,
+ * the status — one press deep under *Details*. Presentation only: the same
+ * plan, the same Review.
  */
 
 const EVENT_WORD: Readonly<Record<TradingPlan["journal"][number]["event"], PlanWord>> = {
@@ -160,7 +159,7 @@ export function PlanDetail({ planId, locale, fromMonitoring = false }: { planId:
     else setState({ status: "loading", plan: null });
   }, [proven, load]);
 
-  /* The observations the current version's conditions name (RYN-NANSEN-EVIDENCE-001): one read per window in use, through the card's own route, once per page — the figures are cached on the server for their window and the Review reads them again at signing. A version without conditions reads nothing. */
+  /* The observations the current version's conditions name: one read per window in use, through the card's own route, once per page — the figures are cached on the server for their window and the Review reads them again at signing. A version without conditions reads nothing. */
   const conditionWindows = [...new Set((state.plan?.current.rules.evidenceConditions ?? []).map((condition) => condition.window))].sort().join(",");
   const [evidence, setEvidence] = useState<Readonly<Record<string, MarketEvidenceReadDto | "loading">>>({});
   useEffect(() => {
@@ -186,7 +185,7 @@ export function PlanDetail({ planId, locale, fromMonitoring = false }: { planId:
   const mint = state.plan?.asset.mint ?? null;
   const tokenPlan = state.plan ? isTokenPlanAsset(state.plan.asset) : false;
   useEffect(() => {
-    /* A plan on a token Ryntra no longer supports is history (canon v5.2 В26): its market is not read. */
+    /* A plan on a token Ryntra no longer supports is history: its market is not read. */
     if (!mint || isRetiredMint(mint)) return;
     let cancelled = false;
     const read = async () => {
@@ -324,7 +323,7 @@ export function PlanDetail({ planId, locale, fromMonitoring = false }: { planId:
   const modelledLoss = sizing.units * sizing.lossPerShareUsd;
   /* A stock plan priced per token is a pre-IPO instrument (contract 1.4.0): its page leads with what it is not. */
   const preIpo = !tokenPlan && planUnitBasis(plan.asset) === "token";
-  /* A plan on a token Ryntra no longer supports (canon v5.2 В26) reads as history: the asset says so and where it can be sold, and nothing is offered to trade or edit. */
+  /* A plan on a token Ryntra no longer supports reads as history: the asset says so and where it can be sold, and nothing is offered to trade or edit. */
   const retired = isRetiredMint(plan.asset.mint);
   const retiredLine = `${RETIRED_WORDS.state[locale === "uk" ? "uk" : "en"]} · ${RETIRED_WORDS.exit[locale === "uk" ? "uk" : "en"]}`;
 
@@ -585,7 +584,7 @@ export function PlanDetail({ planId, locale, fromMonitoring = false }: { planId:
       ) : null}
       {activating.error ? <p className={styles.error}>{activating.error}</p> : null}
 
-      {/* A pre-IPO plan: the state in one line with its one action, then what the token is not (RYN-FIRST-SCREEN-001). */}
+      {/* A pre-IPO plan: the state in one line with its one action, then what the token is not. */}
       {preIpo ? (
         <>
           <div className={`${styles.card} ${styles.preIpoState}`} role="status">
@@ -599,7 +598,7 @@ export function PlanDetail({ planId, locale, fromMonitoring = false }: { planId:
         </>
       ) : null}
 
-      {/* The Brief on this plan, and the Critic on request — the Review is the door out of both (RYN-BRIEF-CRITIC-001); closed until *Ask Ryn* is pressed (RYN-FIRST-SCREEN-001). */}
+      {/* The Brief on this plan, and the Critic on request — the Review is the door out of both; closed until *Ask Ryn* is pressed. */}
       <LensPanel subject={{ kind: "plan", planId: plan.id }} locale={locale} trigger="page" />
 
       {shown ? (

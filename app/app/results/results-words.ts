@@ -5,7 +5,7 @@ import { fmtUnits, fmtUsd, fmtWhen } from "../strategies/plans/plan-words";
 import { conditionKindWords, findingOutcomeWords } from "@/lib/monitoring/engine";
 
 /**
- * The words Results says — `RYN-RESULTS-MEMORY-001`.
+ * The words Results says.
  *
  * The server states kinds and figures; the sentence is composed here, in the
  * reader's language, from those figures. That is the whole reason no prose
@@ -353,8 +353,8 @@ export function citationWord(kind: PlanMemoryFact["cites"][number]["kind"], loca
 /**
  * The citation as a person reads it: what kind of record and when. The
  * record opens by its link, so its id is never printed — «plan 1a2b3c4d…ef01»
- * is the store's bookkeeping, not a word (canon v5.0 §0.0 rule 10). A version
- * is named by its number, the one id a person already knows.
+ * is the store's bookkeeping, not a word. A version is named by its number,
+ * the one id a person already knows.
  */
 export function citationRef(cite: PlanMemoryFact["cites"][number], locale: WorkspaceLocale): string {
   const word = citationWord(cite.kind, locale);

@@ -1,7 +1,6 @@
 /**
- * «Шлях компанії» in words (`RYN-COMPANY-PATH-001`): the days as the page
- * writes them, the deadline with the issuer's minute, what each token is,
- * and no judgement anywhere.
+ * «Шлях компанії» in words: the days as the page writes them, the deadline
+ * with the issuer's minute, what each token is, and no judgement anywhere.
  */
 import assert from "node:assert/strict";
 import test from "node:test";

@@ -87,9 +87,9 @@ export const CCTP_CANARY_NOT_IN_SCOPE: CctpCanarySettlement = {
  * Asked before the policy is resolved, not after. The policy is read from the
  * founder's own environment, and resolving it can fail — a malformed allowlist,
  * a bad state word. Resolving it unconditionally therefore made his experiment
- * configuration a precondition for a stranger's bridge, which is the thing
- * `RYN-SOL-MONEY-FLOWS-001C` exists to end: the canary is an internal
- * instrument and may not decide an ordinary action.
+ * configuration a precondition for a stranger's bridge, which is the thing this
+ * check exists to end: the canary is an internal instrument and may not decide
+ * an ordinary action.
  *
  * Outside the envelope no budget is taken, no reservation is written and no
  * ceiling applies, so there is nothing for a policy to say. Inside it, the

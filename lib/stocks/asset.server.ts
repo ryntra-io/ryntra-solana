@@ -1,5 +1,5 @@
 /**
- * One representation in full — the asset page's data (canon v4.0 §7.3).
+ * One representation in full — the asset page's data.
  *
  * Overview: what is bought, who issues it, what it stands for, the reserves
  * the issuer attests. Market: the reference, the session, the token's own

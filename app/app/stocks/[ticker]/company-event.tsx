@@ -13,7 +13,7 @@ import { ConvertSheet, useConvertSheet, type ConvertMode, type ConvertTarget } f
 
 /** A token's issuer event as the page read it — the words already in the reader's language, the swap's facts for the sheet. */
 export type CompanyEventFacts = Readonly<{
-  /** The event line for a holder, and for everyone else (canon v5.2 §7). */
+  /** The event line for a holder, and for everyone else. */
   lines: Readonly<{ holder: string; everyone: string }>;
   /** The swap window is open now. */
   open: boolean;
@@ -48,16 +48,15 @@ export function useHolds(mint: string): boolean {
 }
 
 /**
- * A private company's truth before any figure (canon v5.2 §4, §7), and — the
- * IPO and conversion watch, `RYN-PRESTOCKS-001` session 2 — the issuer's event
- * in the same box: everyone reads that the token must be swapped by the
- * issuer's deadline; a holder reads «Обміняй SPACEX до 12 березня 2027 —
- * після строку токен згорить.» and, right under it, the one action
- * «Обміняти на SpaceX (SPCXx)» and the quiet «Продати за USDC», each opening
- * the swap's sheet. A note's link (`?convert=1`, from the inbox, the bell or
- * Telegram) opens the swap on arrival. Where «Шлях компанії» stands on the
- * page, the event is the strip's own line (`PathEvent`) and the box keeps the
- * truth alone.
+ * A private company's truth before any figure, and — the IPO and conversion
+ * watch — the issuer's event in the same box: everyone reads that the token
+ * must be swapped by the issuer's deadline; a holder reads «Обміняй SPACEX до
+ * 12 березня 2027 — після строку токен згорить.» and, right under it, the one
+ * action «Обміняти на SpaceX (SPCXx)» and the quiet «Продати за USDC», each
+ * opening the swap's sheet. A note's link (`?convert=1`, from the inbox, the
+ * bell or Telegram) opens the swap on arrival. Where «Шлях компанії» stands
+ * on the page, the event is the strip's own line (`PathEvent`) and the box
+ * keeps the truth alone.
  */
 export function CompanyWarning({ truth, notice, event, token, locale }: Readonly<{ truth: string; notice: string | null; event: CompanyEventFacts | null; token: CompanyToken; locale: WorkspaceLocale }>) {
   const holder = useHolds(token.mint);
@@ -83,11 +82,10 @@ export function CompanyWarning({ truth, notice, event, token, locale }: Readonly
 }
 
 /**
- * «Шлях компанії»'s line on the private token's own page (`RYN-COMPANY-PATH-001`):
- * the swap's deadline with the issuer's minute under the steps — «Власникам
- * SPACEX: обміняти на SPCXx до 12.03.2027, 23:59 UTC …» for everyone, «Обміняй
- * SPACEX на SPCXx …» for a holder — and, for a holder, the swap and the sale
- * right under it.
+ * «Шлях компанії»'s line on the private token's own page: the swap's deadline
+ * with the issuer's minute under the steps — «Власникам SPACEX: обміняти на
+ * SPCXx до 12.03.2027, 23:59 UTC …» for everyone, «Обміняй SPACEX на SPCXx …»
+ * for a holder — and, for a holder, the swap and the sale right under it.
  */
 export function PathEvent({ event, token, locale }: Readonly<{ event: CompanyEventFacts; token: CompanyToken; locale: WorkspaceLocale }>) {
   const holder = useHolds(token.mint);

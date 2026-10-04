@@ -2,15 +2,15 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 
 /*
- * The AGG product lab — `RYN-AGG-LAB-001`.
+ * The AGG product lab.
  *
- * A decision surface, not a destination, in the same spirit as the palette
- * A/B that was `/preview/hero-ab` (removed with the new site, 2026-09-26): it
- * is never indexed, nothing in the product links here,
- * and the page itself opens only for a Ryntra admin session. It exists so the
- * Owner can see the prediction-market aggregator's own product, their tool
- * layer and a Ryntra-styled walk of the same data side by side before anything
- * about Predictions is decided (canon v4.2 F7 keeps them outside the vertical).
+ * A decision surface, not a destination, in the same spirit as the palette A/B
+ * that was `/preview/hero-ab` (removed with the new site, 2026-09-26): it is
+ * never indexed, nothing in the product links here, and the page itself opens
+ * only for a Ryntra admin session. It exists so an admin can see the
+ * prediction-market aggregator's own product, their tool layer and a
+ * Ryntra-styled walk of the same data side by side before anything about
+ * Predictions is decided (they are kept outside the vertical).
  *
  * The aggregator's stylesheet is loaded here and nowhere else. It is a
  * compiled Tailwind sheet whose tokens live on `.agg-root`, so the rest of the

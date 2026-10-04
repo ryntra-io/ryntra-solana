@@ -1,7 +1,7 @@
 /* ============================================================================
    Ryntra brand lockup — the one header/footer identity on every surface.
 
-   The wordmark [R]YNTRA as the Owner's raster, one master per ground. No page
+   The wordmark [R]YNTRA as the brand's raster, one master per ground. No page
    draws its own logo; this file and `ryntra-brand.tsx` are the only place the
    lockup is styled, so a surface cannot drift to a local variant without
    failing `app/brand/brand.test.mjs`.
@@ -11,7 +11,7 @@
   display: inline-flex;
   align-items: center;
   /* The mark is the R, so the gap is an optical letter-gap, not a logo-to-word
-     space. BRAND.md §2: "Y uses the tight optical gap approved by the owner." */
+     space: the Y sits at a tight optical gap. */
   gap: 0.04em;
   color: var(--fg, #f5f7fa);
   line-height: 1;

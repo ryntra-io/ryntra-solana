@@ -1,4 +1,4 @@
-/* Where a control physically runs (RYN-RH-MCP-001, read-only discovery).
+/* Where a control physically runs (read-only discovery).
 
    This module exists because of one sentence Robinhood publishes about its own
    product: *"By creating an Agentic Account, you authorize third-party AI agents
@@ -84,7 +84,7 @@ export function assertEnforcementClaim(
  *
  * `NO_PATH`, not `AGENT_DIRECT_TO_PROVIDER`: there is no Ryntra adapter, and
  * there is also no imported Robinhood brokerage account anywhere in this product
- * to observe. The distinction matters for the next packet — moving to
+ * to observe. The distinction matters for any next step — moving to
  * `AGENT_DIRECT_TO_PROVIDER` is an import feature and changes no enforcement
  * claim, while moving to `AGENT_THROUGH_RYNTRA_ADAPTER` would be a different
  * product with a credential in it.

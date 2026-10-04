@@ -11,12 +11,12 @@ import { usePaperAccount } from "./use-paper-account";
 import { venueName, wordsFor } from "./words";
 
 /**
- * Paper operations in History (`RYN-PREDICTIONS-001` item 18): every paper
- * order as Ryntra recorded it — the market, the outcome, the amount, the
- * price the provider filled at, the state the provider reported — under its
- * own heading and with the word *Paper* on every row, so the real timeline
- * above and the simulated one here are never read as one. A guest sees
- * nothing; a wallet without paper orders sees one sentence.
+ * Paper operations in History: every paper order as Ryntra recorded it — the
+ * market, the outcome, the amount, the price the provider filled at, the
+ * state the provider reported — under its own heading and with the word
+ * *Paper* on every row, so the real timeline above and the simulated one
+ * here are never read as one. A guest sees nothing; a wallet without paper
+ * orders sees one sentence.
  */
 export function PaperHistorySection({ locale }: { locale: WorkspaceLocale }) {
   const word = wordsFor(locale);

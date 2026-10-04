@@ -71,7 +71,7 @@ test("the on-chain block is the chain read, with exact decimal fees, the share a
   assert.equal(block.since, new Date(1_788_000_000 * 1000).toISOString());
   assert.deepEqual(block.fees.map((fee) => [fee.symbol, fee.gross, fee.ryntra, fee.operations]), [["USDC", "0.0025", "0.002", 1], ["SOL", "0.0002233", "0.00017864", 2]]);
   assert.equal(block.ryntraSharePercent, 80);
-  assert.deepEqual(block.own, { operations: 2, wallets: 1 }, "the Owner's wallet is counted in and named, never dropped");
+  assert.deepEqual(block.own, { operations: 2, wallets: 1 }, "Ryntra's own wallet is counted in and named, never dropped");
   assert.deepEqual(block.stocks, { state: "ok", operations: 1, volumeUsd: 0.5, unvalued: 0 });
   assert.deepEqual(block.tokenAccounts.map((account) => account.symbol), ["USDC", "SOL"]);
   assert.equal(block.coverage.complete, true);

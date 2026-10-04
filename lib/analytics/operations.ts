@@ -3,13 +3,13 @@
  * own truth, read from the operation ledger and shown twice with different
  * disclosure: masked on the public statistics, whole on the admin.
  *
- * `RYN-OPERATIONS-LEDGER-001`. Pure and client-safe: no clock it does not
- * receive, no store, no `process.env`. The ledger row (`solanaWalletActions`)
- * is the source; this module names each row as a person would — *Swap USDC →
- * SOL*, *Buy NVDAx*, *Base → Solana* — values it on one rule, states its fee
- * and its verification against the chain, and adds the explorer link that
- * proves it. Nothing here is a second bookkeeping: a figure that disagrees
- * with the ledger is a bug in this file, not a second truth.
+ * Pure and client-safe: no clock it does not receive, no store, no
+ * `process.env`. The ledger row (`solanaWalletActions`) is the source; this
+ * module names each row as a person would — *Swap USDC → SOL*, *Buy NVDAx*,
+ * *Base → Solana* — values it on one rule, states its fee and its
+ * verification against the chain, and adds the explorer link that proves it.
+ * Nothing here is a second bookkeeping: a figure that disagrees with the
+ * ledger is a bug in this file, not a second truth.
  *
  * ## What counts
  *
@@ -21,7 +21,7 @@
  * ## Value
  *
  * Executed value is the stablecoin leg at par where one exists — the same
- * rule the Owner's dashboard and Points use — and otherwise the provider's
+ * rule the admin dashboard and Points use — and otherwise the provider's
  * own dollar figure for that exact fill, recorded at settlement; never a
  * price read later. A row with neither stays unvalued and is counted anyway.
  *
@@ -86,7 +86,7 @@ export type OperationRecord = Readonly<{
   /** The traded asset for Spot and stock operations; null for a swap and a bridge. */
   asset: string | null;
   wallet: string;
-  /** Marked by the Owner as one of Ryntra's own wallets. Counted in, named as such. */
+  /** Marked in the admin as one of Ryntra's own wallets. Counted in, named as such. */
   internal: boolean;
   status: OperationStatus;
   out: OperationLeg | null;

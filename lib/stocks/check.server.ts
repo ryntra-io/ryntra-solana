@@ -1,8 +1,8 @@
 /**
  * «Перевірка» on the server — the facts the four lines need besides the order
- * (`RYN-BUY-FLOW-001`, subtask 2; contract 1.20.0). The quote route and the
- * order route start this read beside the venue's order, so it costs no time
- * of its own, and count the lines on the order they answer (`check.ts`).
+ * (contract 1.20.0). The quote route and the order route start this read
+ * beside the venue's order, so it costs no time of its own, and count the
+ * lines on the order they answer (`check.ts`).
  *
  * The company is the universe's row, read as its page reads it — the name,
  * the issuer, the unit, the fee the chain states now — with the decimals and
@@ -83,8 +83,8 @@ export function awaitCheckContext(pending: Promise<CheckContext | null>, waitMs:
 
 /**
  * The issuer's event said to a buyer before a purchase (the IPO and
- * conversion watch, canon v5.2 В27) — a private company's token whose issuer
- * opened a window to swap it, while the window is open; null otherwise.
+ * conversion watch) — a private company's token whose issuer opened a window
+ * to swap it, while the window is open; null otherwise.
  */
 export function buyerEventLine(row: StockRow, nowMs: number): CheckWords | null {
   if (row.representation.instrument.class !== "pre-ipo") return null;

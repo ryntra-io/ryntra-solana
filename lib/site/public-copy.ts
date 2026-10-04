@@ -11,10 +11,10 @@ type Copy = Readonly<{
   skip: string;
   brandHome: string;
   navHome: string;
-  /* The header carries the site's one menu from `HOMEPAGE_COPY` (Owner,
-     2026-09-14: the landing's five ways in and *Open Ryntra*, on every public
-     page); the words here are the bar's controls and the footer. `navHome`
-     and `navEcosystems` survive for the footer and for the ecosystem surfaces
+  /* The header carries the site's one menu from `HOMEPAGE_COPY` (the
+     landing's five ways in and *Open Ryntra*, on every public page); the
+     words here are the bar's controls and the footer. `navHome` and
+     `navEcosystems` survive for the footer and for the ecosystem surfaces
      that still exist; neither is in the primary header any more. */
   navBusiness: string;
   /* The header word, which is not the product's name. `navAgents` stays
@@ -40,8 +40,8 @@ type Copy = Readonly<{
   menuOpen: string;
   menuClose: string;
   /* The footer's words — the five ways in, the two accounts, the legal pair
-     and the year — live with the menu's in `HOMEPAGE_COPY.footer` (Owner,
-     2026-09-14: one footer on every page); nothing here names a footer link. */
+     and the year — live with the menu's in `HOMEPAGE_COPY.footer` (one footer
+     on every page); nothing here names a footer link. */
   ecoOpen: string;
   ecoEnvironment: string;
   ecoMaturity: string;

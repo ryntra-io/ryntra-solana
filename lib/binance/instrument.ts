@@ -1,4 +1,4 @@
-/* Binance instrument identity (RYN-BIN-AOS-001, read-only discovery).
+/* Binance instrument identity (read-only discovery).
 
    Ryntra's chain-scoped `InstrumentKey` in `../domain/instrument.ts` keys an instrument by the
    CHAIN it settles on, which is correct for Robinhood Chain and HyperCore and cannot express a

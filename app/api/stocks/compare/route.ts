@@ -10,13 +10,13 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 /**
- * The comparison of representations (canon v4.0 §7.7): the open stock token
- * and every other confirmed representation of the same underlying, each
- * quoted for the same `usd` on the same side through the one quote path Spot
- * executes on, read on one basis — the executable price per underlying share.
- * The lowest is named as the lowest quoted cost for this amount, never as the
- * best token. Never cached at the edge — a comparison is a fact about a
- * moment — and never a transaction. A Sell answers the open token alone.
+ * The comparison of representations: the open stock token and every other
+ * confirmed representation of the same underlying, each quoted for the same
+ * `usd` on the same side through the one quote path Spot executes on, read on
+ * one basis — the executable price per underlying share. The lowest is named
+ * as the lowest quoted cost for this amount, never as the best token. Never
+ * cached at the edge — a comparison is a fact about a moment — and never a
+ * transaction. A Sell answers the open token alone.
  */
 
 const QuerySchema = z

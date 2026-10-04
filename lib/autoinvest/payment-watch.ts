@@ -1,7 +1,6 @@
 /**
  * The watch over a wallet's USDC — one record per wallet in the Guard store
- * (`RYN-PAY-TRIGGERS-001`, canon v5.5 В38) — the events every «З кожної
- * оплати» rule of the wallet reads.
+ * — the events every «З кожної оплати» rule of the wallet reads.
  *
  * Every five minutes, while the wallet has a rule of that kind turned on, the
  * monitoring tick reads the transactions that touched the wallet's USDC

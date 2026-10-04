@@ -1,6 +1,6 @@
 /**
- * Server-only wrappers for the RYN-ACCESS-002 account, session, wallet-link
- * and receipts-archive RPCs (migration `20260906120000_ryn_access_002_accounts_v1`).
+ * Server-only wrappers for the account, session, wallet-link and
+ * receipts-archive RPCs (migration `20260906120000_ryn_access_002_accounts_v1`).
  *
  * Every function here is a SECURITY DEFINER RPC gated by the app secret, so
  * this module — like `lib/beta/rpc.ts` — never runs in the browser. Failures

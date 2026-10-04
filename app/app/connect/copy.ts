@@ -197,7 +197,7 @@ export const CONNECTION_CENTER_COPY: Record<BetaLang, ConnectionCenterCopy> = {
       errors: {
         INVALID_DRAFT: "Check the address, label and at least one read scope.",
         DUPLICATE_ACTIVE_CONNECTION: "That address family and address already have an active read connection.",
-        CONNECTION_LIMIT_REACHED: "This browser has reached the 25-record history limit. Export is not part of this packet; keep the existing history or reset local Home data.",
+        CONNECTION_LIMIT_REACHED: "This browser has reached the 25-record history limit. Export is not available; keep the existing history or reset local Home data.",
         CONNECTION_NOT_FOUND: "That connection no longer exists. Reload and try again.",
         ALREADY_REVOKED: "That connection is already revoked.",
       },
@@ -306,7 +306,7 @@ export const CONNECTION_CENTER_COPY: Record<BetaLang, ConnectionCenterCopy> = {
       errors: {
         INVALID_DRAFT: "Перевірте адресу, назву й хоча б один read scope.",
         DUPLICATE_ACTIVE_CONNECTION: "Для цього типу адреси й самої адреси вже є активне read connection.",
-        CONNECTION_LIMIT_REACHED: "Досягнуто ліміту історії у 25 записів. Export не входить у цей packet; збережіть історію або reset local Home data.",
+        CONNECTION_LIMIT_REACHED: "Досягнуто ліміту історії у 25 записів. Експорт недоступний; збережіть історію або reset local Home data.",
         CONNECTION_NOT_FOUND: "Connection більше не існує. Оновіть сторінку й повторіть.",
         ALREADY_REVOKED: "Connection уже відкликано.",
       },
@@ -375,7 +375,7 @@ export const CONNECTION_CENTER_COPY: Record<BetaLang, ConnectionCenterCopy> = {
       title: "Watch-only", body: "Добавьте публичные адреса в объявленный read scope. Ryntra не выводит, кто ими владеет.", addTitle: "Добавить read connection", label: "Название", labelPlaceholder: "Treasury watch", network: "Тип адреса", address: "Публичный адрес", scopes: "Read scopes", add: "Добавить watch-only connection", empty: "Локальных read connections в этом браузере ещё нет.", active: "Активный read record", revoked: "Отозванный record", remove: "Отозвать локальное read connection", removed: "Read connection отозван. История осталась видимой.", history: "История revoke", ownership: "Владение", authority: "Action authority", storage: "Storage",
       networkLabels: { EVM: "EVM address", SOLANA: "Solana address", STELLAR: "Stellar account" },
       scopeLabels: { BALANCES: "Балансы", POSITIONS: "Позиции", ACTIVITY: "Активность", ASSET_EVIDENCE: "Asset evidence" },
-      errors: { INVALID_DRAFT: "Проверьте адрес, название и хотя бы один read scope.", DUPLICATE_ACTIVE_CONNECTION: "Для этого типа адреса и самого адреса уже есть активное read connection.", CONNECTION_LIMIT_REACHED: "Достигнут лимит истории в 25 записей. Export не входит в этот packet; сохраните историю или reset local Home data.", CONNECTION_NOT_FOUND: "Connection больше не существует. Обновите страницу и повторите.", ALREADY_REVOKED: "Connection уже отозвано." }
+      errors: { INVALID_DRAFT: "Проверьте адрес, название и хотя бы один read scope.", DUPLICATE_ACTIVE_CONNECTION: "Для этого типа адреса и самого адреса уже есть активное read connection.", CONNECTION_LIMIT_REACHED: "Достигнут лимит истории в 25 записей. Экспорт недоступен; сохраните историю или reset local Home data.", CONNECTION_NOT_FOUND: "Connection больше не существует. Обновите страницу и повторите.", ALREADY_REVOKED: "Connection уже отозвано." }
     },
     twin: {
       title: "Financial Twin", body: "Versioned record ваших деклараций о целях, горизонте, ликвидности и пределах. Это контекст для будущего планирования, не personality или eligibility score.", statusMissing: "InvestorContext ещё нет", statusPartial: "Частичные декларации", statusComplete: "Declared context complete", version: "Активная версия", missing: "Ещё не объявлено", noMissing: "Все обязательные декларации заполнены.", declaredBy: "User-declared", formTitle: "Создать следующую версию",

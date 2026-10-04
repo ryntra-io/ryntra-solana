@@ -3,9 +3,8 @@ import company from "./company.module.css";
 /**
  * A company page before its figures: the shapes the page draws — the name,
  * the price, the line, the action — so what arrives fills in rather than
- * jumps in (canon §2, rule 14: a skeleton, never a spinner). The catalogue
- * behind the page is usually warm; on a cold instance this is what stands
- * while it is read.
+ * jumps in (a skeleton, never a spinner). The catalogue behind the page is
+ * usually warm; on a cold instance this is what stands while it is read.
  */
 export default function CompanyLoading() {
   return (

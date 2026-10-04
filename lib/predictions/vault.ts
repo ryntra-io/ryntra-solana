@@ -1,14 +1,14 @@
 /**
- * The tokens of a provider session at rest (`RYN-PREDICTIONS-001`).
+ * The tokens of a provider session at rest.
  *
  * The aggregator's access and refresh tokens are held by the server, never
- * by the browser (canon v4.3 §6.5). At rest they are sealed with AES-256-GCM
- * under a key derived once from the deployment's session secret
- * (`BETA_TOKEN_SECRET`, the same root every Ryntra session cookie is signed
- * with) through HKDF with a purpose label of its own — so the Guard store's
- * rows carry ciphertext, a database read alone yields no token, and a
- * deployment without a session secret cannot link at all
- * (`LINK_UNAVAILABLE`) rather than storing a token in the clear.
+ * by the browser. At rest they are sealed with AES-256-GCM under a key
+ * derived once from the deployment's session secret (`BETA_TOKEN_SECRET`,
+ * the same root every Ryntra session cookie is signed with) through HKDF
+ * with a purpose label of its own — so the Guard store's rows carry
+ * ciphertext, a database read alone yields no token, and a deployment
+ * without a session secret cannot link at all (`LINK_UNAVAILABLE`) rather
+ * than storing a token in the clear.
  *
  * The sealed form is `v1.<iv>.<ciphertext>.<tag>` in base64url. Nothing here
  * logs a token or a key.

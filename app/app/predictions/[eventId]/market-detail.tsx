@@ -24,20 +24,20 @@ import { PaperTicket } from "./ticket";
 type Tab = "overview" | "research" | "depth";
 
 /**
- * The market detail (`RYN-PREDICTIONS-001` item 6), by progressive disclosure.
+ * The market detail, by progressive disclosure.
  *
  * The primary layer: the question, the outcomes with live probabilities, the
  * change, the volume, the resolution time, the person's paper position, and
  * the three acts — *Ask Ryntra*, *Build plan*, *Paper Yes / Paper No*.
  * Research and Market depth are one tap deeper, and nothing the provider
- * gives is thrown away to get there. One version since canon v5.3 (В28): the
- * venue table is in Research, the route's legs fold in the Review, and the
- * engine's technical line — «Профі»'s once — is no customer's word; no
- * consequence is hidden.
+ * gives is thrown away to get there. One version for everyone: the venue
+ * table is in Research, the route's legs fold in the Review, and the engine's
+ * technical line — «Профі»'s once — is no customer's word; no consequence is
+ * hidden.
  */
 export function MarketDetail({ locale, initial, live: liveConfig }: { locale: WorkspaceLocale; initial: PredictionEvent; live: Readonly<{ appId: string; wsUrl: string }> }) {
   const word = wordsFor(locale);
-  /* The one face: details a tap deeper (canon §2), the same for everyone. */
+  /* The one face: details a tap deeper, the same for everyone. */
   const pro = false;
   const account = usePaperAccount();
   const [event, setEvent] = useState(initial);

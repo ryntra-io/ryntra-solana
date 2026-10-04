@@ -9,15 +9,14 @@ import { publicServerLocale } from "@/lib/site/server-locale";
 import { RUN_COMMANDS, developersCopy } from "./developers-copy";
 
 /*
- * «Відкритий код» — the one public repository (canon §0.0 rule 8), what it
- * holds, how to run it and what it does not claim (the new site of canon
- * v5.5, `RYN-SITE-V5-001` subtask 3). Until 2026-09-26 this address led to
- * the developer references by a permanent redirect and this file drew a
- * platform hub no link reached; the references stay at `/docs/developers`
- * for whoever holds their link, and the hub's data stays in `platform.ts`.
+ * «Відкритий код» — the one public repository, what it holds, how to run it
+ * and what it does not claim. Until 2026-09-26 this address led to the
+ * developer references by a permanent redirect and this file drew a platform
+ * hub no link reached; the references stay at `/docs/developers` for whoever
+ * holds their link, and the hub's data stays in `platform.ts`.
  *
- * Out of the index by the plan's map: the page answers for whoever is sent
- * here, and the site tells search engines about the product people use.
+ * Out of the index on purpose: the page answers for whoever is sent here, and
+ * the site tells search engines about the product people use.
  */
 
 export async function generateMetadata(): Promise<Metadata> {

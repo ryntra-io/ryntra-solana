@@ -1,5 +1,5 @@
 /**
- * What a company does, in one line, in both languages (`RYN-COMPANY-PAGE-001`).
+ * What a company does, in one line, in both languages.
  *
  * Written 2026-09-25 for the companies and funds the product lists, from what
  * each company says of itself in its annual report and what each fund says it

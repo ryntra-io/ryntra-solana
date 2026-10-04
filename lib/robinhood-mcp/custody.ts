@@ -1,4 +1,4 @@
-/* Robinhood surface custody (RYN-RH-MCP-001, read-only discovery).
+/* Robinhood surface custody (read-only discovery).
 
    Recorded per SURFACE, for the same reason `lib/binance/capability.ts` records
    Binance per surface: Robinhood operates a custodial brokerage and a
@@ -81,7 +81,7 @@ export type RobinhoodSurfaceCustody = {
  * authorizes an order here is the OAuth grant made once at connection time, and
  * the per-order human step is an option the customer can switch off.
  *
- * That is the same asymmetry `RYN-AGENT-CONTROL-013` found in the MCP
+ * That is the same asymmetry Agent Control's MCP server found in the MCP
  * specification — every human-in-the-loop control is a client `SHOULD` while
  * every hard control is a server `MUST` — except here the venue is a registered
  * broker-dealer and the object being created is a real order.
@@ -130,7 +130,7 @@ export const ROBINHOOD_TRADING_MCP_AGENTIC_ACCOUNT: RobinhoodSurfaceCustody = {
  * Three of the axes invert. It is recorded here — not implemented here — so that
  * the moment anything is drawn about both surfaces at once, the two rows disagree
  * on the page instead of collapsing into one wrong sentence. The Stock Token
- * adapter itself is `RYN-RHC-001` and lives in `lib/rwa/rhj/`.
+ * adapter itself lives in `lib/rwa/rhj/`.
  */
 export const ROBINHOOD_CHAIN_STOCK_TOKEN: RobinhoodSurfaceCustody = {
   id: "ROBINHOOD_CHAIN_STOCK_TOKEN",
@@ -151,7 +151,7 @@ export const ROBINHOOD_CHAIN_STOCK_TOKEN: RobinhoodSurfaceCustody = {
     "this surface through the public Stock Token API only, and that read is itself refused from " +
     "this egress. No write path exists in this product.",
   evidence: [
-    "repo: lib/rwa/rhj/client.ts (RYN-RHC-001)",
+    "repo: lib/rwa/rhj/client.ts",
     "fixture: lib/robinhood-mcp/fixtures/reachability-probe.json",
   ],
 };

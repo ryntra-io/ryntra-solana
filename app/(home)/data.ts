@@ -1,10 +1,10 @@
 /*
- * The landing's content, transcribed from the founder's design handoff
+ * The landing's content, transcribed from the design handoff
  * (`Ryntra Landing.dc.html`, 2026-08-20) rather than re-authored.
  *
- * THE INSTRUCTION THIS FILE EXISTS TO OBEY: «точно такий самий дизайн зробити,
- * як там. Тільки графіки чуть-чуть поправити можна буде. І кольора наш з
- * канону.» Same blocks, same order, same rows, same figures — Brandbook v1.2
+ * THE RULE THIS FILE EXISTS TO OBEY: exactly the same design as the handoff,
+ * only the charts may be adjusted a little, and the colours are the brand's
+ * own. Same blocks, same order, same rows, same figures — Brandbook v1.2
  * palette and faces on top of them.
  *
  * The prototype builds these lists from packed strings through `caps()`,
@@ -50,7 +50,7 @@ function meters(spec: string): readonly Meter[] {
 
 /* ── the loops ──────────────────────────────────────────────────────────── */
 
-/** The decision loop, eleven stages, exactly as the brief §22 fixes it. */
+/** The decision loop, eleven stages, exactly as the brief fixes it. */
 export const FLOW_A = [
   "Intent", "Evidence", "Passport", "Risk", "Plan", "Review",
   "Authorize", "Execute", "Reconcile", "Receipt", "Learn",

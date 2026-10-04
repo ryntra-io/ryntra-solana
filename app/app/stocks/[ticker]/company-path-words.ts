@@ -1,10 +1,10 @@
 /**
- * «Шлях компанії» in words (`RYN-COMPANY-PATH-001`): the steps' names, the
- * line under each, what each token is, the swap's deadline and the issuer's
- * rule — in the reader's language, from the path the server read
- * (`lib/stocks/company-path.ts`). A day is written as the page writes days:
- * «12.06.2026» in Ukrainian, «Jun 12, 2026» in English; the deadline carries
- * the issuer's own minute in UTC. No judgement, no advice. Pure.
+ * «Шлях компанії» in words: the steps' names, the line under each, what each
+ * token is, the swap's deadline and the issuer's rule — in the reader's
+ * language, from the path the server read (`lib/stocks/company-path.ts`). A
+ * day is written as the page writes days: «12.06.2026» in Ukrainian, «Jun 12,
+ * 2026» in English; the deadline carries the issuer's own minute in UTC. No
+ * judgement, no advice. Pure.
  */
 
 import type { CompanyPath, CompanyPathStep, CompanyPathStepId } from "../../../../lib/stocks/company-path.ts";
@@ -72,7 +72,7 @@ export function stepLines(step: CompanyPathStep, lang: Lang): readonly string[] 
 }
 
 /**
- * What a token is, in the fewest words (canon §7): a private company's token
+ * What a token is, in the fewest words: a private company's token
  * is not a share and pays the issuer's fee on every transfer; a listed
  * share's token on Solana is backed one to one and carries no vote.
  */

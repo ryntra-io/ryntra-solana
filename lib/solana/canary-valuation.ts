@@ -105,7 +105,7 @@ export function buildSendCanaryValuation(args: {
 }
 
 /* ------------------------------------------------------------------------- *
- * Token-2022 canary valuation — RYN-SOL-M4
+ * Token-2022 canary valuation
  * ------------------------------------------------------------------------- */
 
 /**
@@ -203,8 +203,8 @@ function priceInstant(quote: CanaryPriceQuote): number | null {
  *
  * Both prices are required. The principal needs the token price and the fee
  * reserve needs SOL, and there is no lawful way to publish a total that
- * silently omits one — canon forbids inventing a USD value for a network fee or
- * for rent, so when SOL cannot be priced this refuses rather than returning a
+ * silently omits one — a USD value is never invented for a network fee or for
+ * rent, so when SOL cannot be priced this refuses rather than returning a
  * principal that reads like a complete exposure.
  */
 export function buildTokenCanaryValuation(args: {
@@ -213,8 +213,8 @@ export function buildTokenCanaryValuation(args: {
   solPrice: CanaryPriceQuote | null;
   /**
    * An independent second read of the token price, when the caller has one.
-   * Canon §3.5: a provider answer is not proof on its own, and two readers that
-   * disagree produce `UNKNOWN`, never a number picked from one of them.
+   * A provider answer is not proof on its own, and two readers that disagree
+   * produce `UNKNOWN`, never a number picked from one of them.
    */
   corroboratingTokenPrice?: CanaryPriceQuote | null;
   /** The owner policy ceiling for this family, in USD micros. */

@@ -52,9 +52,8 @@ export const JUPITER_RETRY_WAIT_MAX_MS = 2_500;
 /**
  * The pause a person's own signable order may wait for the window: the key's
  * window resets within about ten seconds (observed 2026-09-15 … 09-28, «reset
- * in 0–9 s»), and the person is waiting on this one press — the Owner's $1
- * purchase on 2026-09-28 was refused with the reset 4 s away, past the
- * 2.5 s a read waits (`RYN-BUY-FLOW-001`, subtask 5).
+ * in 0–9 s»), and the person is waiting on this one press — a $1 purchase on
+ * 2026-09-28 was refused with the reset 4 s away, past the 2.5 s a read waits.
  */
 export const JUPITER_ORDER_RETRY_WAIT_MAX_MS = 10_000;
 /** An observation older than this says nothing about the current window. */

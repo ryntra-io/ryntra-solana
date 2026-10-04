@@ -6,13 +6,12 @@ import { rynWordsFor } from "./ryn-words";
 import styles from "./ryn.module.css";
 
 export const dynamic = "force-dynamic";
-/* The assistant is Ryntra wherever a person reads (canon v5.0 §5); the route id stays internal. */
+/* The assistant is Ryntra wherever a person reads; the route id stays internal. */
 export const metadata = { title: "AI assistant" };
 
 /**
- * Ryn — the product's one agent, text-first (`RYN-AGENT-TEXT-001`; canon
- * Part A §9.2, §20.11). Not a menu entry (the canon: agent decisions belong
- * to My strategies): the page is reached from an asset, a plan, Portfolio,
+ * Ryn — the product's one agent, text-first. Not a menu entry (agent
+ * decisions belong to My strategies): the page is reached from an asset, a plan, Portfolio,
  * My strategies and a monitoring note, each carrying its context in
  * `?context=` — `asset:<mint>[:<symbol>]`, `plan:<id>`, `portfolio`,
  * `note:<id>`, `page:<name>` — and, optionally, a first question in `?q=`.

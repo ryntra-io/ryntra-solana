@@ -3,9 +3,9 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 /**
- * Source pins for the unified Swap surface (`RYN-SOL-MONEY-FLOWS-001F`).
+ * Source pins for the unified Swap surface.
  *
- * What these assert is the product law of the owner task, in the place it can
+ * What these assert is the product law of this surface, in the place it can
  * drift: the page renders one surface; the surface classifies with the shared
  * table and never chooses a provider by itself; the engines it embeds are the
  * accepted ones, reached through their embedded mode rather than copied; and no
@@ -25,12 +25,12 @@ test("the Bridge page mounts the cross-chain surface and nothing Solana-only", (
 });
 
 test("Swap is Solana-only: no network selector, and a cross-network link leaves for Bridge", () => {
-  /* Owner decision 2026-09-10. The two properties that make the split real are
-     both here: the page mounts the Jupiter card directly rather than a surface
-     that could classify its way into a bridge, and a link naming a network that
-     is not Solana is **redirected** to Bridge rather than reinterpreted —
-     reinterpreting a link is how a Robinhood Chain pair silently reopened
-     Solana once already. */
+  /* Swap is Solana-only and every cross-network pair belongs to Bridge. The
+     two properties that make the split real are both here: the page mounts the
+     Jupiter card directly rather than a surface that could classify its way
+     into a bridge, and a link naming a network that is not Solana is
+     **redirected** to Bridge rather than reinterpreted — reinterpreting a link
+     is how a Robinhood Chain pair silently reopened Solana once already. */
   const swapPage = read("../swap/page.tsx");
   assert.match(swapPage, /<SwapCard\b/, "Swap mounts the Solana card itself");
   assert.doesNotMatch(swapPage, /BridgeSurface|CrossSwapEngine/, "Swap can reach no cross-chain engine");
@@ -75,22 +75,21 @@ test("the cross-chain engine never falls back to another provider, never resubmi
   assert.match(engine, /\/api\/solana\/cross-swap\/submit/);
   assert.match(engine, /\/api\/solana\/cross-swap\/status/);
   assert.match(engine, /submitting\.current/, "one in-flight submit at a time");
-  /* The lane has carried two providers since `RYN-SOL-MONEY-FLOWS-001H`, so
-     "the engine never names one" stopped being the way to state this rule and
-     started being a rule against a comment. What must stay true is stronger and
-     is what this asserts: the engine never *chooses*. It has no provider
+  /* The lane now carries two providers, so "the engine never names one"
+     stopped being the way to state this rule and started being a rule against
+     a comment. What must stay true is stronger and is what this asserts: the engine never *chooses*. It has no provider
      branch, no fallback, no second attempt against another rail — it renders
      the label the plan gives it and posts to the same four routes whichever
      provider answered. A provider named in prose is fine; a provider named in
      a condition is the defect. */
   assert.doesNotMatch(engine, /(if|\?|&&|\|\|)[^\n]*\b(provider|engine)\s*===\s*"(MAYAN|RELAY)"/, "the engine never branches on which provider carried the order");
-  assert.doesNotMatch(engine, /\b(deBridge|LI\.FI|Across|Chainflip)\b/, "no provider outside the two the Owner approved is named at all");
+  assert.doesNotMatch(engine, /\b(deBridge|LI\.FI|Across|Chainflip)\b/, "no provider outside the two approved ones is named at all");
   assert.doesNotMatch(engine, /fallback|retryWith|otherProvider/i, "no fallback to a second rail exists");
   assert.match(engine, /plan\.quote\.routeLabel/, "the provider a person reads is the plan's own label, never one the engine picked");
   assert.match(engine, /bridgeSubmitNeedsRecovery\(result.failure\)/, "unknown and crossed responses go to recovery; its behavior is covered by bridge-client-state tests");
   assert.doesNotMatch(engine, /intentDigest\}\s*<\//, "the intent digest is never printed");
   assert.doesNotMatch(engine, /providerStatus\}/, "the provider's raw status word is never printed");
-  /* The Review states the exact figures the owner task lists. */
+  /* The Review states each of these exact figures. */
   for (const word of ["You pay", "You receive at least", "Provider fees", "Wallet prompts", "Expected time", "Provider", "Destination"]) {
     assert.match(engine, new RegExp(`text\\("${word}"\\)`), word);
   }
@@ -149,8 +148,8 @@ test("the destination address can be read from the person's own wallet, and a re
 });
 
 test("an approval is waited out on chain, not handed back to the person to guess", () => {
-  /* The founder's Base -> Solana canary of 2026-09-07: approve at 21:32:51,
-     swap at 21:36:39, and everything between was a person wondering whether the
+  /* The Base -> Solana canary of 2026-09-07: approve at 21:32:51, swap at
+     21:36:39, and everything between was a person wondering whether the
      allowance existed yet. A second early press would have asked them to
      approve twice. */
   const wallet = read("../../../../lib/base/wallet.client.ts");
@@ -175,11 +174,12 @@ test("a finished step is readable, not dark ink on a dark panel", () => {
 });
 
 test("every surface that words a lane words the cross-chain one", () => {
-  /* The founder's first cross-chain swap read "Sent 3.347272 USDC" on the Solana
-     home feed, "3.347272 USDC" on the app Home feed, "Sending" while it was in
-     flight, and showed only its outgoing leg on the receipt line. Four surfaces became three when Home folded into Portfolio,
-     one omission each: the lane was added to the ledger and to Activity and
-     nowhere else. A swap must never be worded as a send. */
+  /* The first cross-chain swap read "Sent 3.347272 USDC" on the Solana home
+     feed, "3.347272 USDC" on the app Home feed, "Sending" while it was in
+     flight, and showed only its outgoing leg on the receipt line. Four
+     surfaces became three when Home folded into Portfolio, one omission each:
+     the lane was added to the ledger and to Activity and nowhere else. A swap
+     must never be worded as a send. */
   for (const [file, path] of [
     ["home-surface", "../home-surface.tsx"],
     ["holdings-card", "../holdings/holdings-card.tsx"],
@@ -293,8 +293,8 @@ test("the address bar can be read back for every network and asset the card can 
 });
 
 test("both legs say what the amount is worth, and say nothing when they do not know", () => {
-  /* Owner instruction 2026-09-10: a person typing `5` saw `5`, and whether that
-     was five dollars or five hundred was on no surface. */
+  /* A person typing `5` saw `5`, and whether that was five dollars or five
+     hundred was on no surface. */
   assert.match(surface, /"\/api\/swap\/price"/);
   assert.match(surface, /const sendUsd = usdText\(from, amountRaw, amountDecimals\)/);
   assert.match(surface, /const receiveUsd = usdText\(to, receiveAmount\?\.raw \?\? null, receiveAmount\?\.decimals \?\? null\)/);
@@ -375,14 +375,14 @@ test("the asset links at the foot of a Solana swap say what they are", () => {
 });
 
 test("a Solana-only pair never speaks to an Ethereum wallet", () => {
-  /* Found on production 2026-09-10, by the founder, mid-swap. `eth_accounts` is
-     the silent half of `eth_requestAccounts` in a wallet that speaks only
-     Ethereum — and Phantom is not that wallet. It injects `window.ethereum`
-     beside its Solana provider, and with a Solana account active it answers
-     that call with a modal of its own: "Unsupported account — This website is
-     trying to use Ethereum, which this Solana account doesn't support."
-     It fired on a Solana-to-Solana swap, on a card with no Ethereum anything on
-     it, because the restore effect ran on mount with no deps. */
+  /* Found on production 2026-09-10, mid-swap. `eth_accounts` is the silent
+     half of `eth_requestAccounts` in a wallet that speaks only Ethereum — and
+     Phantom is not that wallet. It injects `window.ethereum` beside its Solana
+     provider, and with a Solana account active it answers that call with a
+     modal of its own: "Unsupported account — This website is trying to use
+     Ethereum, which this Solana account doesn't support." It fired on a
+     Solana-to-Solana swap, on a card with no Ethereum anything on it, because
+     the restore effect ran on mount with no deps. */
   assert.match(surface, /const pairTouchesEvm = from\.network !== "solana" \|\| to\.network !== "solana"/);
   assert.match(surface, /if \(!pairTouchesEvm\) return;/);
   assert.match(surface, /if \(!readEvmWalletHint\(\)\) return;[\s\S]*?await readEvmWalletAddress/, "silent reads still require a prior connection");

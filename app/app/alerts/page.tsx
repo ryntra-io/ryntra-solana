@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 /**
- * Monitoring — the shared service under My strategies (`RYN-MONITORING-PUSH-001`).
+ * Monitoring — the shared service under My strategies.
  * The address stays `/app/alerts`. The page is the inbox of what the server
  * watched, never a second alert terminal.
  */

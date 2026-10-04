@@ -2,7 +2,7 @@
  * The pages of Ryntra, the five places they live in, and the only place their
  * order is decided.
  *
- * **Canon v5.3, adopted 2026-09-24 (MASTER-PLAN В28, §0.0 rule 9, §3).** One
+ * **One version, since 2026-09-24.** One
  * version for everyone: one menu of five places — Головна · Ринки · Ryntra ·
  * Портфель · Ще (Home · Markets · Agent · Portfolio · More) — the same on the
  * web and on a phone, for every person and every guest. There is no
@@ -17,15 +17,15 @@
  * row, Portfolio as its tabs; the phone's bar is the five places
  * ({@link mobileNavigation}).
  *
- * **Canon v5.4, adopted 2026-09-24 (evening, В30).** The menu is one you can
+ * **The menu you can see, since 2026-09-24.** The menu is one you can
  * see: on a desk every section with its caption and nothing behind «Ще» —
  * Головна · Інвестувати · Торгувати · Гроші · Портфель · Ryntra —
  * ШІ-помічник · Винагороди — and on a phone «Ще» opens the same sections
  * ({@link menuNavigation}). The prediction demo is off the surface
  * ({@link OFF_SURFACE}).
  *
- * **PLANNED is hidden everywhere a person reads** (canon v5.0 §0.0 rule 10,
- * 2026-09-23). A planned page stays registered here as the Owner's target,
+ * **PLANNED is hidden everywhere a person reads** (since 2026-09-23).
+ * A planned page stays registered here as a target,
  * and is neither a row nor a destination: its address leads to a page that
  * works (`lib/product/customer-routing.ts`), and no word for «not yet» exists
  * in this file to draw. BUILDING is visible only with a useful action on the
@@ -57,9 +57,9 @@
  */
 
 /**
- * The four kinds of work a page does, in the order canon v4.0 named them.
+ * The four kinds of work a page does, in the order the product first named them.
  *
- * Since canon v5.3 they are no longer a menu — the five places are — but they
+ * Since 2026-09-24 they are no longer a menu — the five places are — but they
  * are still what a page *is*, and the API's capabilities carry a page's kind
  * as its `group` (contract field), so a client that read it keeps reading the
  * same four words.
@@ -121,7 +121,7 @@ export type ProductLocale = "en" | "uk";
 export type DomainLabel = Readonly<{ en: string; uk: string }>;
 
 /**
- * How finished a page is, in the canon's own vocabulary (§3.3).
+ * How finished a page is, in the product's own three-status vocabulary.
  *
  * `available` — a verified capability the person can carry out here.
  * `building`  — real implementation of a defined capability with a useful
@@ -145,11 +145,11 @@ export const GROUP_LABELS: Readonly<Record<ProductGroupId, DomainLabel>> = {
 };
 
 /**
- * The settled vocabulary. These names are an owner decision and are not
+ * The settled vocabulary. These names are decided and are not
  * reopened during implementation.
  *
- * `History / Історія` is the canon v4.0 word for the record of what a wallet
- * did here (§5.1, §11.2). `Activity` was the English label until 2026-09-14
+ * `History / Історія` is the product's word for the record of what a wallet
+ * did here. `Activity` was the English label until 2026-09-14
  * and is retired with `Операції` and `Активність`; the id and the address stay.
  *
  * `My strategies` keeps its first word. It is not a catalogue of strategies
@@ -195,7 +195,7 @@ export type PageRoute = Readonly<{
   href: string;
   /** The icon the rail draws. */
   icon: string;
-  /** How finished this page is, in the canon's three-status vocabulary. */
+  /** How finished this page is, in the product's three-status vocabulary. */
   readiness: PageReadiness;
   /**
    * Every route this page owns, landing included.
@@ -223,10 +223,10 @@ export type ProductNavEntry = Readonly<{
  *
  * `Workspace` and `Ecosystems` describe the model the one-product decision
  * replaced. `Operations` and `Activity` are English labels retired in favour of
- * `History`. `Passport` and `Agents` are names the canon removed from the menu
+ * `History`. `Passport` and `Agents` are names the product removed from the menu
  * — their functions moved into asset detail, Portfolio and My strategies, and
  * a row carrying one of those words would mean the move did not happen.
- * `Home` and «Ринки» came back with canon v5.0 §3 as two of the five places,
+ * `Home` and «Ринки» came back as two of the five places,
  * so neither is listed here any more.
  */
 export const FORBIDDEN_NAV_WORDS: readonly string[] = [
@@ -240,19 +240,19 @@ export const FORBIDDEN_NAV_WORDS: readonly string[] = [
   "Agents",
   "Активність",
   "Операції",
-  /* «Гроші» left this list with canon v5.4 (В30, 2026-09-24): the Owner named
-     it as the caption of the menu's section Поповнити · Надіслати · Отримати ·
+  /* «Гроші» left this list on 2026-09-24: it is now
+     the caption of the menu's section Поповнити · Надіслати · Отримати ·
      Міст. The API's kind of work keeps «Кошти» (`GROUP_LABELS`). */
   "Агенти",
   "Паспорт",
 ];
 
 /**
- * Pages kept off every surface a person reads, by the Owner's word — built,
- * and not shown (canon v5.4 В32, 2026-09-24: the prediction demo). Their code,
+ * Pages kept off every surface a person reads — built,
+ * and not shown (since 2026-09-24: the prediction demo). Their code,
  * their API and their records stay; their address leads to a page that works
  * (`lib/product/customer-routing.ts`); no menu, place, tab, search or
- * documentation draws them. Coming back is a new word of the Owner's, and it
+ * documentation draws them. Coming back is a new product decision, and it
  * is one line here.
  */
 export const OFF_SURFACE: ReadonlySet<ProductPageId> = new Set<ProductPageId>(["predictions"]);
@@ -327,9 +327,9 @@ export function pageActiveHref(
 /* ------------------------------------------------------------- the places */
 
 /**
- * The five places, in the canon's order (canon v5.0 §3, one version since
- * v5.3): Головна · Ринки · Ryntra · Портфель · Ще. The internal names are the
- * phone's (decision F1 of 2026-09-17): Home · Markets · Agent · Portfolio ·
+ * The five places, in the product's order (one version since
+ * 2026-09-24): Головна · Ринки · Ryntra · Портфель · Ще. The internal names are the
+ * phone's: Home · Markets · Agent · Portfolio ·
  * More.
  */
 export const PLACE_IDS = ["home", "markets", "agent", "portfolio", "more"] as const;
@@ -338,8 +338,8 @@ export type PlaceId = (typeof PLACE_IDS)[number];
 
 /**
  * The places' words. The third place carries the product's own name in both
- * languages — the assistant is Ryntra wherever a person reads (the Owner,
- * 2026-09-23: no «Ryn» persona) — so it is the one label that is the same in
+ * languages — the assistant is Ryntra wherever a person reads (no «Ryn»
+ * persona) — so it is the one label that is the same in
  * English and Ukrainian, on purpose.
  */
 export const PLACE_LABELS: Readonly<Record<PlaceId, DomainLabel>> = {
@@ -351,8 +351,8 @@ export const PLACE_LABELS: Readonly<Record<PlaceId, DomainLabel>> = {
 };
 
 /**
- * The pages each place holds, in the order the place draws them (canon v5.3
- * В28, §3). Every registered page lives in exactly one place.
+ * The pages each place holds, in the order the place draws them. Every
+ * registered page lives in exactly one place.
  *
  * - **Markets** — «Для досвідчених»: Spot with the chart and the ticket, the
  *   stock screener, Trends with crypto and memes; Perps when it is built.
@@ -360,7 +360,7 @@ export const PLACE_LABELS: Readonly<Record<PlaceId, DomainLabel>> = {
  * - **Portfolio** — the positions, My strategies (the full plan, versions and
  *   journal), Results and History.
  * - **«Ще»** — Swap, Bridge, Send, Receive, Rewards and the prediction demo,
- *   in the order the Owner named them on 2026-09-24.
+ *   in that order.
  *
  * Home holds no registered page: its own page and «Поповнити» are its.
  */
@@ -381,7 +381,7 @@ export const PAGE_PLACE: Readonly<Record<ProductPageId, PlaceId>> = Object.freez
  * A page named differently inside its place. Inside Portfolio the tabs read
  * Позиції · Стратегії · Результати · Історія — the place already says whose
  * they are; in Markets' «Для досвідчених» row the stock screener is «Скринер»
- * (canon v5.4 В33: «Спот, Скринер, Тренди»).
+ * («Спот, Скринер, Тренди»).
  */
 export const IN_PLACE_LABELS: Readonly<Partial<Record<ProductPageId, DomainLabel>>> = {
   stocks: { en: "Screener", uk: "Скринер" },
@@ -401,7 +401,7 @@ export type Place = Readonly<{
    * addresses (a company's page among them) and Trends; Portfolio owns its
    * pages' routes — the plans, the monitoring surface, Results, History and
    * a receipt — because a position, its record and the rules watching it are
-   * one place (canon §3). A route nobody owns lights nothing, which is honest.
+   * one place. A route nobody owns lights nothing, which is honest.
    */
   own: readonly string[];
 }>;
@@ -511,7 +511,7 @@ export function mobileNavigation(routes: readonly PageRoute[], locale: ProductLo
 /* --------------------------------------------------------------- the menu */
 
 /**
- * The menu you can see (canon v5.4 В30, 2026-09-24): on a desk every section
+ * The menu you can see: on a desk every section
  * with its caption and nothing behind «Ще» — Головна · Інвестувати (Ринки,
  * Автоінвест) · Торгувати (Обмін, Спот, Скринер акцій, Тренди) · Гроші
  * (Поповнити, Надіслати, Отримати, Міст) · Портфель (Позиції, Стратегії,
@@ -556,7 +556,7 @@ export const MENU_DESTINATIONS: Readonly<Record<MenuDestinationId, MenuDestinati
   markets: { label: PLACE_LABELS.markets, href: "/app/markets", icon: "explore", match: ["/app/markets", "/app/stocks"] },
   autoinvest: { label: { en: "Autoinvest", uk: "Автоінвест" }, href: "/app/autoinvest", icon: "autoinvest", match: ["/app/autoinvest"] },
   "top-up": { label: { en: "Top up", uk: "Поповнити" }, href: "/app/top-up", icon: "top-up", match: ["/app/top-up"] },
-  /* The assistant says what it is (the Owner, 2026-09-24): «Ryntra» alone
+  /* The assistant says what it is: «Ryntra» alone
      read as the product's name, not as the AI. Its older names lead here. */
   agent: {
     label: PLACE_LABELS.agent,

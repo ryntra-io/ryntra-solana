@@ -1,4 +1,4 @@
-/* Feedback — one rail row and one small dialog. RYN-ADMIN-FEEDBACK-LOOP-001. */
+/* Feedback — one rail row and one small dialog. */
 
 .launch {
   width: calc(100% - 2 * var(--ry-s2));

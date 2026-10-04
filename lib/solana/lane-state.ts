@@ -6,7 +6,7 @@
  * one, because each was closed by something else — Swap behind a Ryntra admin
  * session, Bridge behind the owner-canary policy. Both of those are gone now:
  * they were never product controls, they were leftovers from the period when
- * the only person allowed to move money here was the founder.
+ * the only person allowed to move money here was the operator.
  *
  * Removing them without putting this in its place would leave two value-moving
  * lanes with **no way to close them except a deploy**, which is the wrong thing
@@ -37,12 +37,12 @@ export type SolanaLane = (typeof SOLANA_LANES)[number];
 export type SolanaLaneState = "OPEN" | "PAUSED";
 
 /**
- * `CROSS_SWAP` is the fourth lane, added by `RYN-SOL-MONEY-FLOWS-001F` on
- * 2026-09-07: one asset in on one network, a different asset out on another,
- * through the provider the Owner decision named (Mayan). It has its own
- * variable for the same reason Ethereum has one beneath the bridge: a route
- * that moves money through a new provider opens because somebody set its
- * switch by name, never because Swap or Bridge happened to be open.
+ * `CROSS_SWAP` is the fourth lane, added on 2026-09-07: one asset in on one
+ * network, a different asset out on another, through the chosen provider
+ * (Mayan). It has its own variable for the same reason Ethereum has one beneath
+ * the bridge: a route that moves money through a new provider opens because
+ * somebody set its switch by name, never because Swap or Bridge happened to be
+ * open.
  */
 export const SOLANA_LANE_STATE_ENV = {
   SEND: "RYNTRA_SOLANA_SEND_STATE",
@@ -68,15 +68,15 @@ export function resolveSolanaLaneState(
 /**
  * The bridge networks that carry a stop of their own, beneath the lane's.
  *
- * `RYN-SOL-MONEY-FLOWS-001E` (2026-09-05) built the Solana ↔ Ethereum USDC
- * route on the same CCTP rail as Base. Base has moved money four times under
- * founder signatures; Ethereum has moved none, and the card that built it says
- * plainly that a route is not confirmed by a provider listing it or by a test
- * passing. So the Ethereum network opens only when somebody sets its own
- * variable to `OPEN`, after the first founder-signed transfer has been read back
- * from both chains — and it inherits nothing from `RYNTRA_SOLANA_BRIDGE_STATE`,
- * for the same reason no lane inherits another's: opening a money route has to
- * be a thing somebody did on purpose, for that route, by name.
+ * The Solana ↔ Ethereum USDC route was built on 2026-09-05 on the same CCTP
+ * rail as Base. Base has moved money four times under operator signatures;
+ * Ethereum has moved none, and a route is not confirmed by a provider listing
+ * it or by a test passing. So the Ethereum network opens only when somebody
+ * sets its own variable to `OPEN`, after the first operator-signed transfer has
+ * been read back from both chains — and it inherits nothing from
+ * `RYNTRA_SOLANA_BRIDGE_STATE`, for the same reason no lane inherits another's:
+ * opening a money route has to be a thing somebody did on purpose, for that
+ * route, by name.
  *
  * Base has no variable here. It is governed by the bridge lane alone, exactly
  * as it was before Ethereum existed; adding a second switch to a route that is
@@ -89,16 +89,16 @@ export const SOLANA_BRIDGE_NETWORK_STATE_ENV = {
 /**
  * The cross-swap networks that carry a stop of their own, beneath the lane's.
  *
- * `RYN-SOL-MONEY-FLOWS-001H` (2026-09-09) added Solana ↔ Robinhood Chain, and
- * it is the first route in this product carried by a provider that has never
- * moved a cent of anyone's money here. Mayan cannot reach chain 4663 at all,
- * so the six approved pairs go through Relay — a second provider, a second
- * set of contracts, a second failure mode nobody here has watched fail.
+ * Solana ↔ Robinhood Chain arrived on 2026-09-09, and it is the first route in
+ * this product carried by a provider that has never moved a cent of anyone's
+ * money here. Mayan cannot reach chain 4663 at all, so the six approved pairs
+ * go through Relay — a second provider, a second set of contracts, a second
+ * failure mode nobody here has watched fail.
  *
  * Ethereum earned its own switch beneath the bridge for a weaker reason than
  * this: same rail, same contracts, no signed transfer yet. A new *provider* is
  * a larger claim than a new chain on a proven rail, so it opens the same way
- * and no sooner — after a founder-signed swap has been read back from both
+ * and no sooner — after an operator-signed swap has been read back from both
  * chains, by somebody setting this variable on purpose, by name.
  *
  * Base, Ethereum and the pairs Mayan already carried have no variable here.
@@ -139,16 +139,16 @@ export function resolveSolanaBridgeNetworkState(
  * The three states a gated cross-swap route can be in.
  *
  * `PAUSED` and `OPEN` are the two this lane has always had. `CANARY` was added
- * on the owner's instruction of 2026-09-09, for one reason: proving a new rail
- * requires building and signing exactly one real transaction, and until then
- * the only way to do that was to set the route `OPEN` — which would open it
- * for everyone, to any amount, in order to move five dollars once.
+ * on 2026-09-09 for one reason: proving a new rail requires building and
+ * signing exactly one real transaction, and until then the only way to do
+ * that was to set the route `OPEN` — which would open it for everyone, to any
+ * amount, in order to move five dollars once.
  *
  * - `PAUSED` — no plan may be built and nothing may be submitted.
  * - `CANARY` — **only** the one controlled operation
  *   (`lib/swap/cross-swap-canary.ts`) may be planned, and only once may it be
  *   submitted. Everything else is refused exactly as under `PAUSED`.
- * - `OPEN` — ordinary production work, after a separate owner decision.
+ * - `OPEN` — ordinary production work, after a separate, deliberate decision.
  *
  * `OPEN` is never reached from `CANARY` by anything this code does. A finished
  * canary makes the route behave as `PAUSED` again — see

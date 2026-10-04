@@ -6,11 +6,10 @@ import type { AutoinvestRule, RuleBudget, RuleBudgetRequest, RuleBudgetResponse,
 
 /**
  * The proven wallet's «Автоінвест» rules and the month's budget, read on a
- * company page and on Home (`RYN-INVEST-SIMPLE-001`, sessions 3–4). The rules
- * are the wallet's, so they are read only behind its proof — the `rw` cookie
- * the wallet signed — and a page without one says so rather than guessing.
- * Every write answers the rule or the budget as the server now holds it, and
- * the list is read again after it.
+ * company page and on Home. The rules are the wallet's, so they are read only
+ * behind its proof — the `rw` cookie the wallet signed — and a page without
+ * one says so rather than guessing. Every write answers the rule or the
+ * budget as the server now holds it, and the list is read again after it.
  */
 
 const API_HEADERS = { accept: "application/json", "X-Ryntra-API": "1" } as const;

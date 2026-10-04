@@ -1,6 +1,5 @@
 /**
- * The Strategy block of the one Review — canon Part A §9.3, §9.5, §10.1
- * (`RYN-STRATEGY-PLAN-001` stage B).
+ * The Strategy block of the one Review.
  *
  * A plan's current version judged on the order in front of the person, as
  * the contract's `PlanReview`: seventeen typed checks, each `pass`, `fail` or
@@ -15,7 +14,7 @@
  * `expected` / `actual` strings are figures with a few state words, so both
  * languages read them.
  *
- * **The money at this price is the sizing's own model (§9.4), nothing else.**
+ * **The money at this price is the sizing's own model, nothing else.**
  * `sizing.ts` sized the version at the planned entry; here the same formula
  * runs with the executable per-share price in the entry's place:
  *
@@ -31,23 +30,23 @@
  * fee a second time. A deal that fits the budget and not the planned risk is
  * refused; the block also says the amount that would fit at this price.
  *
- * **The evidence checks (1.5.0, `RYN-NANSEN-EVIDENCE-001`).** A version that
- * carries evidence conditions is judged on the observations the caller
- * fetched for the windows the conditions name — one `evidence` check per
- * condition, in the version's order, each judged by the evidence layer's own
- * evaluator (`lib/evidence/conditions.ts`): required blocks on unmet, stale,
- * unknown or unavailable; advisory names it. The block records what it knew
- * — the provider, the reads with their times and states, each condition's
- * figure — and how long the figures are retained with it. The caller that
- * fetched nothing for a window has, for that window, an unknown; nothing
- * here reaches a provider, and a version without conditions gains no check.
+ * **The evidence checks (1.5.0).** A version that carries evidence conditions
+ * is judged on the observations the caller fetched for the windows the
+ * conditions name — one `evidence` check per condition, in the version's
+ * order, each judged by the evidence layer's own evaluator
+ * (`lib/evidence/conditions.ts`): required blocks on unmet, stale, unknown or
+ * unavailable; advisory names it. The block records what it knew — the
+ * provider, the reads with their times and states, each condition's figure —
+ * and how long the figures are retained with it. The caller that fetched
+ * nothing for a window has, for that window, an unknown; nothing here reaches
+ * a provider, and a version without conditions gains no check.
  *
- * **A token plan (1.7.0, `RYN-PLAN-CRYPTO-001`).** A `crypto` or `meme` asset
- * is judged on the mint's own decimals (no multiplier, no activation window)
- * and on the catalogue's liquidity the caller read; the reference and the
- * deviation are not applicable to it and say so — advisory, passing — because
- * a token has no issuer reference and the write already refused a version
- * that required one. Every other check is the same check.
+ * **A token plan (1.7.0).** A `crypto` or `meme` asset is judged on the mint's
+ * own decimals (no multiplier, no activation window) and on the catalogue's
+ * liquidity the caller read; the reference and the deviation are not
+ * applicable to it and say so — advisory, passing — because a token has no
+ * issuer reference and the write already refused a version that required
+ * one. Every other check is the same check.
  */
 
 import { isTokenPlanAsset, planUnitBasis, type PlanCheck, type PlanCheckId, type PlanReview, type PlanReviewEvidence, type PlanRules, type PlanSizing, type TradingPlan } from "../api/v1/contract.ts";

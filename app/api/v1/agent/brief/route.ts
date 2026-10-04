@@ -13,7 +13,7 @@ export const maxDuration = 60;
 
 /**
  * `POST /api/v1/agent/brief` — the Brief on a subject for the proven wallet
- * (`RYN-BRIEF-CRITIC-001`, contract 1.10.0): what changed, what matters for
+ * (contract 1.10.0): what changed, what matters for
  * this thesis or plan, which data supports it, what is unknown, what to
  * check next — every sentence citing the read it stands on.
  *

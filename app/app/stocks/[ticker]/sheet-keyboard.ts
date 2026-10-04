@@ -3,8 +3,7 @@
 import { useEffect, type RefObject } from "react";
 
 /**
- * A purchase's or a sale's sheet stands above a phone's keyboard
- * (`RYN-BUY-FLOW-001`, subtask 5 «Замір 60 секунд»).
+ * A purchase's or a sale's sheet stands above a phone's keyboard.
  *
  * A phone's browser lays a fixed sheet out on the whole screen and raises its
  * keyboard over it: the sum stays in sight, and the one action — «Купити за

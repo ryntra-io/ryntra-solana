@@ -3,7 +3,7 @@
  *
  * Every provider difference in this product lives in
  * `./implementations.ts` as data, and every decision about a payment route
- * lives here. That split is the packet's central claim, and it is checked
+ * lives here. That split is this module's central claim, and it is checked
  * rather than asserted: a test reads this file from disk and fails if it
  * branches on a provider id, and reads the implementations file and fails if it
  * defines a resolver.
@@ -23,8 +23,9 @@
  *
  * Provider capability first, owner permission second. A route that nobody can
  * take and this owner also has not allowed reports the provider fact, because
- * *you may not* is a misleading answer when the truth is *nobody can*. Canon
- * `04 §6` puts unsupported action and network above budget for the same reason.
+ * *you may not* is a misleading answer when the truth is *nobody can*. Policy
+ * evaluation puts unsupported action and network above budget for the same
+ * reason.
  *
  * ## The fifth constraint lives in the policy on purpose
  *
@@ -265,9 +266,9 @@ export function resolvePaymentRoute(input: ResolvePaymentRouteInput): ResolvedPa
  * What a resolved route would cost and why it still cannot happen.
  *
  * A preview is deliberately a different type from a receipt, with different
- * fields and its own limitation strings. Canon `01 §24`: a preview is never a
- * Receipt, and the cheapest way to break that rule is to give one object an
- * optional `settlement` field and fill it in later.
+ * fields and its own limitation strings. A preview is never a Receipt, and
+ * the cheapest way to break that rule is to give one object an optional
+ * `settlement` field and fill it in later.
  */
 export type X402RoutePreview = Readonly<{
   kind: "X402_ROUTE_PREVIEW";

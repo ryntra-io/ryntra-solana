@@ -123,25 +123,24 @@ export const GUARD_COLLECTIONS = [
      so an order can never answer "has this lane already had its one submit".
      That question needs a row that outlives every intent. */
   "solanaCrossSwapCanary",
-  /* Public payment requests (RYN-PAY-REQUEST-001). Three records on purpose,
-     because the owner task names three kinds of data that must not be one row:
-     the public request a payer page shows (`paymentRequests`, keyed by the
-     opaque public id), the private creator association that lists a wallet's
-     own requests behind proof of ownership (`paymentRequestOwners`, keyed
-     wallet-first like the action ledger), and the settlement observation that
-     alone may turn a request into `Paid` (`paymentRequestSettlements`). The
-     reference index makes one Solana Pay reference key answer to one request,
-     and `paymentIntents` remembers the exact unsigned bytes a payer was handed
-     so the submit boundary can refuse anything else. Same generic table. */
+  /* Public payment requests. Three records on purpose, because these are three
+     kinds of data that must not be one row: the public request a payer page
+     shows (`paymentRequests`, keyed by the opaque public id), the private
+     creator association that lists a wallet's own requests behind proof of
+     ownership (`paymentRequestOwners`, keyed wallet-first like the action
+     ledger), and the settlement observation that alone may turn a request into
+     `Paid` (`paymentRequestSettlements`). The reference index makes one Solana
+     Pay reference key answer to one request, and `paymentIntents` remembers
+     the exact unsigned bytes a payer was handed so the submit boundary can
+     refuse anything else. Same generic table. */
   "paymentRequests",
   "paymentRequestOwners",
   "paymentRequestSettlements",
   "paymentRequestReferences",
   "paymentIntents",
-  /* Rewards (RYN-REWARDS-V1-001). Four records, and the split is the same one
-     the payment request made: what a person is owed, who they are in the
-     referral graph, which code answers to them, and the one claim that may be
-     in flight.
+  /* Rewards. Four records, and the split is the same one the payment request
+     made: what a person is owed, who they are in the referral graph, which
+     code answers to them, and the one claim that may be in flight.
 
      `rewardEntries` leads with the wallet like `solanaWalletActions`, because
      the question is "what am I owed" and `valuesWithPrefix` is the only scan
@@ -186,9 +185,8 @@ export const GUARD_COLLECTIONS = [
      counter missed repairs itself the first time either party opens Rewards,
      and one it already has stays exactly as it is. */
   "rewardReferralEdges",
-  /* Admin business analytics (RYN-ADMIN-BUSINESS-001). Two records, neither a
-     boundary: nothing compare-and-sets on them to decide whether money may
-     move.
+  /* Admin business analytics. Two records, neither a boundary: nothing
+     compare-and-sets on them to decide whether money may move.
 
      `walletPresence` leads with the wallet, one row per address, and answers
      the two questions the action ledger cannot — *did a wallet open the
@@ -201,128 +199,123 @@ export const GUARD_COLLECTIONS = [
      that already exists. */
   "walletPresence",
   "adminInternalWallets",
-  /* Spot watchlist, one row per proven wallet — `RYN-SPOT-V1-001`. A value in
-     the same column, for the same reason as the two above. */
+  /* Spot watchlist, one row per proven wallet. A value in the same column, for
+     the same reason as the two above. */
   "spotWatchlists",
-  /* Ryntra Points (RYN-PRE-HACKATHON-FOUNDATION-001). One append-only ledger
-     keyed `wallet:day:reason:ref` and written only through
-     `insertIfAbsent`, beside `rewardEntries` and for the same reason: a
-     settlement read twice writes the same key. Not a boundary — nothing
-     compare-and-sets on it to decide whether money may move. A value in the
-     same column; no DDL. */
+  /* Ryntra Points. One append-only ledger keyed `wallet:day:reason:ref` and
+     written only through `insertIfAbsent`, beside `rewardEntries` and for the
+     same reason: a settlement read twice writes the same key. Not a boundary —
+     nothing compare-and-sets on it to decide whether money may move. A value
+     in the same column; no DDL. */
   "pointsEntries",
   /* Transaction fences and operation/qualification identities for Points.
      Values in the existing Guard table; no new database schema. */
   "pointsAccruals",
-  /* Feedback context (RYN-ADMIN-FEEDBACK-LOOP-001): who wrote a thread, in
-     the terms the inbox table does not hold — topic, wallet, contact, page —
-     keyed by the thread id. A value in the same column; no DDL. */
-  "feedbackContext",
-  /* Telegram as a notification channel (RYN-ACCESS-WALLET-ONLY-001): one row
-     per account — the chat the bot may write to — compare-and-set so a
-     second Start from another chat replaces the first rather than racing
-     it. Not a way in; nothing signs in through it. No DDL. */
-  "notificationChannels",
-  /* Trading plans (RYN-STRATEGY-PLAN-001): one row per plan, keyed
-     `solana:mainnet:<wallet>:<planId>` so a wallet's plans are one prefix
-     scan and never another wallet's; compare-and-set on the plan's own
-     version number, so an edit made from the phone and one from the web
-     cannot both become "version 3" — the loser re-reads and decides again.
-     A value in the same column; no DDL. */
-  "tradingPlans",
-  /* The evidence layer (RYN-NANSEN-EVIDENCE-001): the per-provider credit
-     ledger — one versioned record per (provider, day) and one per provider
-     for the whole packet, advanced by compare-and-set so two instances
-     reserving the same credit produce one reservation, never two — and the
-     snapshot cache keyed `<provider>:<network>:<mint>:<window>`, a copy that
-     lives no longer than the provider's documented cache and is shared
-     between instances so the second reader of an asset costs nothing. Values
+  /* Feedback context: who wrote a thread, in the terms the inbox table does
+     not hold — topic, wallet, contact, page — keyed by the thread id. A value
      in the same column; no DDL. */
+  "feedbackContext",
+  /* Telegram as a notification channel: one row per account — the chat the bot
+     may write to — compare-and-set so a second Start from another chat
+     replaces the first rather than racing it. Not a way in; nothing signs in
+     through it. No DDL. */
+  "notificationChannels",
+  /* Trading plans: one row per plan, keyed `solana:mainnet:<wallet>:<planId>`
+     so a wallet's plans are one prefix scan and never another wallet's;
+     compare-and-set on the plan's own version number, so an edit made from the
+     phone and one from the web cannot both become "version 3" — the loser
+     re-reads and decides again. A value in the same column; no DDL. */
+  "tradingPlans",
+  /* The evidence layer: the per-provider credit ledger — one versioned record
+     per (provider, day) and one per provider for the whole packet, advanced by
+     compare-and-set so two instances reserving the same credit produce one
+     reservation, never two — and the snapshot cache keyed
+     `<provider>:<network>:<mint>:<window>`, a copy that lives no longer than
+     the provider's documented cache and is shared between instances so the
+     second reader of an asset costs nothing. Values in the same column; no
+     DDL. */
   "evidenceLedger",
   "evidenceSnapshots",
-  /* The recipient check (RYN-DDXYZ-RISK-001): the address cache keyed
-     `<provider>:<network>:address:<address>` — what the security provider
-     said about one plain address, held an hour and shared between instances
-     so ten people sending to one deposit address cost one read. A value in
-     the same column; no DDL. */
+  /* The recipient check: the address cache keyed
+     `<provider>:<network>:address:<address>` — what the security provider said
+     about one plain address, held an hour and shared between instances so ten
+     people sending to one deposit address cost one read. A value in the same
+     column; no DDL. */
   "evidenceAddresses",
-  /* Predictions (RYN-PREDICTIONS-001): the provider session behind a wallet's
-     paper account — one versioned record per proven wallet, the tokens
-     encrypted at rest (`lib/predictions/vault.ts`), compare-and-set so a
-     refresh from two instances keeps one pair; the person's watchlist of
-     events, one row per wallet; the paper orders as Ryntra records them
-     (quote → Review → submitted → the provider's terminal state), keyed
-     `<wallet>:<quoteId>` and reconciled against the provider's own ledger on
-     every read; and the Prediction Plans, keyed `<wallet>:<planId>` like the
-     trading plans and versioned the same way. Values in the same column; no
-     DDL. */
+  /* Predictions: the provider session behind a wallet's paper account — one
+     versioned record per proven wallet, the tokens encrypted at rest
+     (`lib/predictions/vault.ts`), compare-and-set so a refresh from two
+     instances keeps one pair; the person's watchlist of events, one row per
+     wallet; the paper orders as Ryntra records them (quote → Review →
+     submitted → the provider's terminal state), keyed `<wallet>:<quoteId>` and
+     reconciled against the provider's own ledger on every read; and the
+     Prediction Plans, keyed `<wallet>:<planId>` like the trading plans and
+     versioned the same way. Values in the same column; no DDL. */
   "predictionLinks",
   "predictionWatchlists",
   "predictionOrders",
   "predictionPlans",
-  /* Monitoring (RYN-MONITORING-PUSH-001): one condition engine for plans,
-     evidence and paper predictions — monitors keyed by wallet, the inbox,
-     durable trigger identities (insertIfAbsent so a retry is not a second
-     alert), the outbox, push devices and quiet-hour preferences. Values in
-     the same column; no DDL. */
+  /* Monitoring: one condition engine for plans, evidence and paper
+     predictions — monitors keyed by wallet, the inbox, durable trigger
+     identities (insertIfAbsent so a retry is not a second alert), the outbox,
+     push devices and quiet-hour preferences. Values in the same column; no
+     DDL. */
   "monitoringMonitors",
   "monitoringInbox",
   "monitoringTriggers",
   "monitoringOutbox",
   "monitoringDevices",
   "monitoringPreferences",
-  /* The IPO and conversion watch (RYN-PRESTOCKS-001, session 2): one row per
-     wallet and watched token, keyed `solana:mainnet:<wallet>:<mint>` — when
-     the wallet's balance of the token was last read from the chain, what it
-     was, and which reminders of the issuer's deadline were sent (each stage
-     once; the note itself is claimed in `monitoringTriggers`); and one row per
-     UTC day of the daily read of the issuer's product pages against the
-     registry of events, for a person to verify what drifted. Values in the
-     same column; no DDL. */
+  /* The IPO and conversion watch: one row per wallet and watched token, keyed
+     `solana:mainnet:<wallet>:<mint>` — when the wallet's balance of the token
+     was last read from the chain, what it was, and which reminders of the
+     issuer's deadline were sent (each stage once; the note itself is claimed
+     in `monitoringTriggers`); and one row per UTC day of the daily read of the
+     issuer's product pages against the registry of events, for a person to
+     verify what drifted. Values in the same column; no DDL. */
   "monitoringIssuerWatch",
   "issuerNoticeChecks",
-  /* Ryn, the agent (RYN-AGENT-TEXT-001): the durable conversation keyed by
-     the proven wallet — structured turns, never a raw chat log as the source
-     of any state; the drafts a turn prepared (a plan's rules, a condition, a
-     trade intention), keyed by wallet and read back by the builder and the
-     ticket for a bounded time; the budget meter — one versioned counter per
-     (wallet, day), per (wallet, month), per (deployment, day) and the wallet's
-     in-flight lease, advanced by compare-and-set so two instances answering
-     one wallet count one call each, never a lost one; and the usage receipts
-     the admin reads (model, tokens, latency, outcome — never the words).
-     Values in the same column; no DDL. */
+  /* Ryn, the agent: the durable conversation keyed by the proven wallet —
+     structured turns, never a raw chat log as the source of any state; the
+     drafts a turn prepared (a plan's rules, a condition, a trade intention),
+     keyed by wallet and read back by the builder and the ticket for a bounded
+     time; the budget meter — one versioned counter per (wallet, day), per
+     (wallet, month), per (deployment, day) and the wallet's in-flight lease,
+     advanced by compare-and-set so two instances answering one wallet count
+     one call each, never a lost one; and the usage receipts the admin reads
+     (model, tokens, latency, outcome — never the words). Values in the same
+     column; no DDL. */
   "agentSessions",
   "agentDrafts",
   "agentBudget",
   "agentReceipts",
-  /* «Автоінвест» (RYN-INVEST-SIMPLE-001, session 3): one row per rule, keyed
-     `solana:mainnet:<wallet>:<ruleId>` so a wallet's rules are one prefix scan
-     and never another wallet's; compare-and-set on the row's own revision, so
-     the tick writing a reminder and the person pausing the rule from the
-     phone cannot both win. A rule schedules a reminder and nothing more — it
-     is never a boundary money moves through; the purchase is the wallet's
-     signature on the swap path, and History is where it is read from. A value
-     in the same column; no DDL. */
+  /* «Автоінвест»: one row per rule, keyed `solana:mainnet:<wallet>:<ruleId>`
+     so a wallet's rules are one prefix scan and never another wallet's;
+     compare-and-set on the row's own revision, so the tick writing a reminder
+     and the person pausing the rule from the phone cannot both win. A rule
+     schedules a reminder and nothing more — it is never a boundary money moves
+     through; the purchase is the wallet's signature on the swap path, and
+     History is where it is read from. A value in the same column; no DDL. */
   "autoinvestRules",
-  /* «Бюджет місяця» (RYN-INVEST-SIMPLE-001, session 4): one row per wallet,
-     keyed `solana:mainnet:<wallet>` — the person's own ceiling for every
-     rule's purchases in a month and the clock the month is counted on. Only
-     the person writes it; the spend is never stored, History says it at every
-     read. A value in the same column; no DDL. */
+  /* «Бюджет місяця»: one row per wallet, keyed `solana:mainnet:<wallet>` — the
+     person's own ceiling for every rule's purchases in a month and the clock
+     the month is counted on. Only the person writes it; the spend is never
+     stored, History says it at every read. A value in the same column; no
+     DDL. */
   "autoinvestBudgets",
-  /* «З кожної оплати» (RYN-PAY-TRIGGERS-001): one row per wallet, keyed
-     `solana:mainnet:<wallet>` — the watch over the wallet's USDC account: the
-     cursor and the balance the next read continues from, the payments and
-     incoming transfers numbered once, and the accounts the person named as
-     their own. The tick writes it; the person writes only the own accounts.
-     It moves nothing. A value in the same column; no DDL. */
+  /* «З кожної оплати»: one row per wallet, keyed `solana:mainnet:<wallet>` —
+     the watch over the wallet's USDC account: the cursor and the balance the
+     next read continues from, the payments and incoming transfers numbered
+     once, and the accounts the person named as their own. The tick writes it;
+     the person writes only the own accounts. It moves nothing. A value in the
+     same column; no DDL. */
   "autoinvestPaymentWatch",
-  /* «Ryntra попередить» on a position (RYN-PROTECT-SIGNAL-001): one row per
-     wallet and token, keyed `solana:mainnet:<wallet>:<mint>` — the preset the
-     person chose and the loss limit and target the server counted from the
-     price then; Нагляд warns at them, the sale stays the person's signature.
-     Closed, never deleted, when a complete read finds the token sold. It
-     moves and holds nothing. A value in the same column; no DDL. */
+  /* «Ryntra попередить» on a position: one row per wallet and token, keyed
+     `solana:mainnet:<wallet>:<mint>` — the preset the person chose and the
+     loss limit and target the server counted from the price then; Нагляд warns
+     at them, the sale stays the person's signature. Closed, never deleted,
+     when a complete read finds the token sold. It moves and holds nothing. A
+     value in the same column; no DDL. */
   "positionWatches",
 ] as const;
 

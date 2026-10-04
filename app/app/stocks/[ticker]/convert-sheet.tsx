@@ -27,8 +27,7 @@ import company from "./company.module.css";
 
 /**
  * The swap before the issuer's deadline, and the quiet sale — the IPO and
- * conversion watch's one action (canon v5.2 В27, §7; `RYN-PRESTOCKS-001`,
- * session 2), drawn as the purchase's sheet is.
+ * conversion watch's one action, drawn as the purchase's sheet is.
  *
  * «Обміняти на SpaceX (SPCXx)» sells the pre-IPO token straight into the
  * listed token the issuer points to; «Продати за USDC» sells it for dollars.
@@ -237,7 +236,7 @@ function ConvertFlow({
       : null;
   const issuerFee = estimate?.issuerFeeUsd != null && issuerFeeBps !== null && issuerFeeBps > 0 ? `${word("issuerFeeOfWhich")} ${new Intl.NumberFormat(numbers, { maximumFractionDigits: 2 }).format(issuerFeeBps / 100)}% ${approxUsd(estimate.issuerFeeUsd, numbers).replace(" ", " ")}` : null;
 
-  /* The rate against the company's price on the exchange: what one token brings, and how far below or above the listed share that is (canon §7 — «ціну обміну показує чесно»). */
+  /* The rate against the company's price on the exchange: what one token brings, and how far below or above the listed share that is — the swap's price, shown honestly. */
   const perToken = outUnits !== null && inUnits !== null && inUnits > 0 ? outUnits / inUnits : null;
   const exchangeUsd = into?.exchangeUsd ?? null;
   const perTokenUsd = perToken === null ? null : swap ? (exchangeUsd !== null ? perToken * exchangeUsd : null) : perToken;
@@ -405,7 +404,7 @@ function ConvertFlow({
               {estimate ? approxUsd(estimate.totalUsd, numbers) : "—"}
               {issuerFee ? <span data-issuer-fee>{issuerFee}</span> : null}
             </dd>
-            {/* The account the swap opens for the new token: its own line, never a cost — it stays in the wallet (canon v5.5 В35). */}
+            {/* The account the swap opens for the new token: its own line, never a cost — it stays in the wallet. */}
             {estimate?.accountUsd ? <dd data-reserve>{reserveLine(locale, approxUsd(estimate.accountUsd, numbers))}</dd> : null}
           </div>
           <div>

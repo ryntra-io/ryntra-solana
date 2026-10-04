@@ -5,7 +5,7 @@ import test from "node:test";
 const css = readFileSync(new URL("./landing.css", import.meta.url), "utf8");
 
 /**
- * Motion budget for the public surface (RYN-LAND-002).
+ * Motion budget for the public surface.
  *
  * A one-off frame-rate reading proves the machine that took it was fast enough;
  * it does not prevent the next component from animating `width`. These gates

@@ -1,9 +1,8 @@
 /**
- * The identity mapping (`RYN-PREDICTIONS-001`, canon v4.3 §6.5): one explicit
- * wallet signature opens the provider's session for the proven Ryntra wallet,
- * the server binds that session to the stable Ryntra id through the
- * provider's Partner External ID Linking, and the person never sees a second
- * profile.
+ * The identity mapping: one explicit wallet signature opens the provider's
+ * session for the proven Ryntra wallet, the server binds that session to the
+ * stable Ryntra id through the provider's Partner External ID Linking, and the
+ * person never sees a second profile.
  *
  *   start   — the provider issues its own nonce; the server builds the SIWS
  *             message for the proven wallet and this site; the browser signs

@@ -1,6 +1,6 @@
 /* The hero, drawn in code (hero.tsx, hero-atmosphere.tsx).
 
-   The Owner's render's composition — the words on the left, the Spot
+   The finished render's composition — the words on the left, the Spot
    workspace in a tilted device, two cards at its lower corners, the rail of
    three proofs, the strip of four — as HTML on the page's own light. The
    section is transparent on the landing's one ground; the atmosphere is
@@ -8,7 +8,7 @@
    where the hero ends and the universe begins.
 
    Tokens only, ramp sizes only. The device and the cards are a picture of
-   the dark terminal in both themes, so the canon's dark environment is named
+   the dark terminal in both themes, so the brand's dark environment is named
    once here as `--hero-t-*` — the same set the drawn terminal reads. The
    device is a 3D-transformed layer with no filter, no blend and no clipped
    shadow of its own light: its glow is a gradient in a box of its own
@@ -16,7 +16,7 @@
    universe's squares (2026-09-14). */
 
 .hero {
-  /* The dark environment of the canon, fixed for the product stage. */
+  /* The dark environment of the brand, fixed for the product stage. */
   --hero-t-bg: #0B121A;
   --hero-t-surface: #0E1620;
   --hero-t-elevated: #131E2A;
@@ -93,7 +93,7 @@
 .eyebrow { margin: 0 0 var(--ry-s2); font-family: var(--ry-font-mono); font-size: var(--ry-fs-label-sm); font-weight: 500; letter-spacing: .24em; text-transform: uppercase; color: var(--ry-unknown); }
 .h1 {
   margin: 0; font-family: var(--ry-font-sans); font-weight: 700; line-height: .96; letter-spacing: -.03em; text-transform: uppercase;
-  /* The line of canon v5.5 — «Купи частинку компанії від $1 — у своєму
+  /* The first screen's line — «Купи частинку компанії від $1 — у своєму
      гаманці» — is two long lines of capitals, so each may wrap once, balanced:
      8.2cqw holds the longer word of either language on a line of its column;
      the viewport term keeps it in step with the device beside it. */

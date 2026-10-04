@@ -1,14 +1,13 @@
 /**
- * Dollars and crypto on «Простий»'s Markets (canon v5.0 §3): «Долари (USDC,
- * USDT) · Крипта». Pure — the list the Spot registry already reads in, cards
- * out.
+ * Dollars and crypto on «Простий»'s Markets: «Долари (USDC, USDT) ·
+ * Крипта». Pure — the list the Spot registry already reads in, cards out.
  *
- * **Dollars** are the two dollar tokens the canon names, in its order, when
- * the venue lists them. **Crypto** is the venue's verified crypto — never a
- * meme (memes are «Профі»'s, canon §3), never a token the venue marks
- * suspicious, never a dollar token again — by the day's volume, the same
- * neutral order for everyone, a handful at a time. Nothing here is a
- * recommendation; the order is the provider's own figure.
+ * **Dollars** are the two dollar tokens, USDC then USDT, when the venue
+ * lists them. **Crypto** is the venue's verified crypto — never a meme
+ * (memes are «Профі»'s), never a token the venue marks suspicious, never a
+ * dollar token again — by the day's volume, the same neutral order for
+ * everyone, a handful at a time. Nothing here is a recommendation; the order
+ * is the provider's own figure.
  */
 
 import type { SpotMarketListRow } from "./markets.ts";
@@ -17,7 +16,7 @@ export const USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 export const USDT_MINT = "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB";
 const WRAPPED_SOL = "So11111111111111111111111111111111111111112";
 
-/** The dollar tokens, in the canon's order (§3). */
+/** The dollar tokens, in their order on the shelf. */
 const DOLLARS: readonly string[] = [USDC_MINT, USDT_MINT];
 
 /**
@@ -72,7 +71,7 @@ function coinOf(row: SpotMarketListRow): ShelfCoin {
 }
 
 /**
- * Memes on Markets' own tab (canon v5.4 В33): the venue's verified memes —
+ * Memes on Markets' own tab: the venue's verified memes —
  * never one it marks suspicious — by the day's volume, the same neutral order
  * for everyone. The tab states the risk before a single figure; this list is
  * only what the venue lists, never a pick.

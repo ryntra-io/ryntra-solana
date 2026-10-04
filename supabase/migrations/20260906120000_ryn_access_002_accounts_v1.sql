@@ -1,10 +1,10 @@
--- RYN-ACCESS-002 — accounts, sessions, wallet links, receipts archive.
+-- Accounts, sessions, wallet links, receipts archive.
 --
 -- PREPARED 2026-09-06 and verified locally in PGlite against the migration set
 -- production actually carries (every file except the unapplied
 -- 20260819200000_wallet_account_creation_v1), then APPLIED to production
 -- project lbphobwqzwdkbmyedlwb on 2026-09-06 through the
--- Supabase MCP apply_migration on the founder's instruction in session.
+-- Supabase's apply_migration with explicit approval.
 -- Every function whose signature changed is dropped by its exact old
 -- signature first, so no overload is left for PostgREST to choose between.
 --
@@ -27,7 +27,7 @@
 --     account without Telegram keeps its plans, notes and settings. The
 --     legacy path is byte-for-byte the old one, including its channel-join
 --     requirement.
---   * The RYN-ADMIN-006 stores learn the new login kinds and the account-id
+--   * The activity stores learn the new login kinds and the account-id
 --     actor; operators are excluded by account as well as by Telegram id.
 --
 -- WHAT IT DOES NOT DO

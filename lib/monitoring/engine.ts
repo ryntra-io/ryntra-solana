@@ -28,10 +28,10 @@ export type ConditionKind =
 export type FindingOutcome = "pass" | "fail" | "stale" | "unavailable" | "unknown";
 
 /**
- * What a condition and an outcome are called for a person
- * (`RYN-BRIEF-CRITIC-001`). The ids above are the engine's own and belong in
- * the store; a reader is told what was watched and what was found. A kind
- * this does not know is returned as it came — honest, and never a guess.
+ * What a condition and an outcome are called for a person. The ids above are
+ * the engine's own and belong in the store; a reader is told what was watched
+ * and what was found. A kind this does not know is returned as it came —
+ * honest, and never a guess.
  */
 export function conditionKindWords(kind: string, locale: Locale): string {
   const words: Readonly<Record<string, Bi>> = {
@@ -60,11 +60,10 @@ export function findingOutcomeWords(outcome: string, locale: Locale): string {
 }
 
 /**
- * The facts a finding stands on (the mobile line's request 23; the Owner's
- * directive of 2026-09-22): what the market and the plan said at the tick,
- * as figures, so a client renders the finding in its own language instead of
- * repeating the tick's sentence. Every figure is optional — a kind names the
- * ones it uses; a reader prints what is there.
+ * The facts a finding stands on: what the market and the plan said at the
+ * tick, as figures, so a client renders the finding in its own language
+ * instead of repeating the tick's sentence. Every figure is optional — a kind
+ * names the ones it uses; a reader prints what is there.
  */
 export type FindingFacts = Readonly<{
   symbol?: string;
@@ -214,12 +213,12 @@ export function evaluateTradingPlan(input: Readonly<{
   const findings: Finding[] = [];
   const symbol = input.plan.symbol;
   /*
-   * A plan whose buy settled is watched as a position (canon v5.0 §11;
-   * RYN-FIRST-SCREEN-001, S3): its entry rules are spent — the price bound,
-   * the window, the deviation and the evidence decided an entry that already
-   * happened — and its loss limit is what Ryntra warns about. The same
-   * condition as before the buy, so a line already crossed is not announced
-   * twice; the words are the position's. Ryntra never sells for the person.
+   * A plan whose buy settled is watched as a position: its entry rules are
+   * spent — the price bound, the window, the deviation and the evidence
+   * decided an entry that already happened — and its loss limit is what
+   * Ryntra warns about. The same condition as before the buy, so a line
+   * already crossed is not announced twice; the words are the position's.
+   * Ryntra never sells for the person.
    */
   const position = input.plan.status === "executed";
 
@@ -290,7 +289,7 @@ export function evaluateTradingPlan(input: Readonly<{
     }));
   }
 
-  /* A position's target (canon §11, «Дія»): reached, the sale is the person's to open — the same words a loss limit has. */
+  /* A position's target («Дія»): reached, the sale is the person's to open — the same words a loss limit has. */
   const target = position && typeof input.plan.targetPerShare === "number" && Number.isFinite(input.plan.targetPerShare) && input.plan.targetPerShare > input.plan.invalidationPerShare ? input.plan.targetPerShare : null;
   if (target !== null && input.market.lastPriceUsd !== null) {
     if (input.market.lastPriceUsd >= target) {

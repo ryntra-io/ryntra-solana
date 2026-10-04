@@ -1,5 +1,5 @@
 /**
- * The Critic — what argues against the thesis (`RYN-BRIEF-CRITIC-001`).
+ * The Critic — what argues against the thesis.
  *
  * It looks, on purpose, for the seven things a person about to act will not
  * look for themselves: an assumption that conflicts with a figure actually
@@ -83,9 +83,9 @@ export function isDirective(text: string): boolean {
 /**
  * A sentence that says where a price goes. Neither format may: the Brief
  * describes what was read, the Critic argues with a thesis and holds none,
- * and the canon is explicit that no read here says where a price goes. The
- * guard is applied to a model's words, which are the only ones that can
- * arrive as a forecast.
+ * and no read here is ever allowed to say where a price goes. The guard is
+ * applied to a model's words, which are the only ones that can arrive as a
+ * forecast.
  */
 const FORECAST: readonly RegExp[] = [
   /\b(?:will|would|is going to|are going to|gonna|shall)\s+(?:\w+\s+){0,3}(?:reach|hit|go|rise|fall|drop|pump|dump|double|triple|moon|rally|recover|break|be worth)\b/i,

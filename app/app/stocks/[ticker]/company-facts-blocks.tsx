@@ -20,15 +20,15 @@ import { YearRange } from "./company-live";
 import company from "./company.module.css";
 
 /**
- * The company page's facts at rest (`RYN-COMPANY-PAGE-001`) — four blocks, each
- * a set of figures with its label and, once under the block, where the figures
- * come from and when: «Ключові показники» (the company's size and results from
- * its SEC filings, the price over the year), «Про компанію» (what it does, its
- * industry, where it is, where it lists, its latest report), «Що ти купуєш»
- * (the issuer's label and line, the backing, the dividends, the issuer's fee)
- * and «Торги на Solana» (the token's day: volume, liquidity, holders, traders,
- * buying against selling). A figure no source states is not drawn; a block
- * with nothing to say is not drawn at all.
+ * The company page's facts at rest — four blocks, each a set of figures with
+ * its label and, once under the block, where the figures come from and when:
+ * «Ключові показники» (the company's size and results from its SEC filings, the
+ * price over the year), «Про компанію» (what it does, its industry, where it
+ * is, where it lists, its latest report), «Що ти купуєш» (the issuer's label
+ * and line, the backing, the dividends, the issuer's fee) and «Торги на Solana»
+ * (the token's day: volume, liquidity, holders, traders, buying against
+ * selling). A figure no source states is not drawn; a block with nothing to say
+ * is not drawn at all.
  */
 
 type Lang = "en" | "uk";

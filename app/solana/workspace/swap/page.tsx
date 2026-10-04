@@ -23,9 +23,9 @@ export async function generateMetadata() {
 /**
  * Swap — one asset for another, inside Solana, and nothing else.
  *
- * Owner decision 2026-09-10: *«Swap = Solana-only, Jupiter-only. Bridge =
- * cross-chain, Relay-only. Без автоматичного fallback між ними.»* This page had
- * spent one release trying to answer two different questions from one form —
+ * Swap is Solana-only and Jupiter-only; Bridge is cross-chain and Relay-only,
+ * with no automatic fallback between them. This page had spent one release
+ * trying to answer two different questions from one form —
  * *«хочу USDC поміняти на SOL»* and *«у мене ETH на Base, хочу перенести кошти в
  * Solana»* — and the code underneath them was never the same code either: one
  * chain against two, one wallet format against two, one status model against a
@@ -40,7 +40,7 @@ export async function generateMetadata() {
  *
  * ## Old links still land somewhere true
  *
- * Canon §3.4 — old URLs lead to the new place. The unified form used to write
+ * Old URLs lead to the new place. The unified form used to write
  * `?from=…&fa=…&to=…&ta=…` into the address bar for every pair it could carry,
  * so those links exist in bookmarks and in shared messages:
  *

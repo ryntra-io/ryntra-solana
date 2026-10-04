@@ -1,7 +1,7 @@
 /**
  * Spot watchlist — one row per proven wallet, in the Guard store.
  *
- * The cabinet belongs to the wallet, not the browser (canon §0.6), so a star
+ * The cabinet belongs to the wallet, not the browser, so a star
  * pressed on a laptop is a star on the phone. The row is keyed by the wallet
  * and written only through proof of the wallet — the `rw` cookie in a browser,
  * the native bearer session on a phone — the same gate the receipt archive
@@ -9,7 +9,7 @@
  * address. Each client keeps a copy so the list is instant and survives a lost
  * network; the server row is the truth the copy is reconciled to.
  *
- * ## Removals are remembered (`RYN-API-CONTRACT-001`)
+ * ## Removals are remembered
  *
  * A device that kept its own list before it could sign in merges it once after
  * sign-in. Without a memory of removals, a mint the person removed on the web

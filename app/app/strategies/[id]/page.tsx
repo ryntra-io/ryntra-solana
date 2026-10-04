@@ -230,13 +230,13 @@ export async function generateMetadata(): Promise<Metadata> {
 /**
  * One strategy, read as its lifecycle rather than as a record.
  *
- * The order on this page is the order the canon puts the facts in: which state
- * it is in and why, which rule fields changed between versions, what each run's
- * evidence covers and what it does not, and whether that evidence could carry
- * an approval decision at all.
+ * The facts on this page come in this order: which state it is in and why,
+ * which rule fields changed between versions, what each run's evidence covers
+ * and what it does not, and whether that evidence could carry an approval
+ * decision at all.
  *
  * **The approval block is a permission, not an approval.** It reports whether
- * the recorded evidence satisfies the canon's requirements. The decision stays
+ * the recorded evidence satisfies the approval requirements. The decision stays
  * the reader's, and no control here records one — that needs storage this
  * release does not add.
  */

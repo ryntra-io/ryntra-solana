@@ -33,7 +33,7 @@ export const dynamic = "force-dynamic";
  * comparison rather than trusting this file to remember.
  *
  * Every fact carries its own source, and there is no composite score. That is
- * the canon's rule for a Passport: facts and evidence, not advice.
+ * the rule for a Passport: facts and evidence, not advice.
  */
 
 function listOf(raw: unknown, key: string): readonly unknown[] | null {

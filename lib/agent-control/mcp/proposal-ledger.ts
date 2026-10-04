@@ -5,8 +5,7 @@
  * migration, no shared state, no persistence across a restart. That is not a
  * placeholder for a durable queue that is nearly ready — there is no durable
  * queue, and this module says so in the one place a caller would otherwise
- * assume one. `docs/tasks/active/RYN-AGENT-CONTROL-013.md` records the same
- * boundary as a non-goal.
+ * assume one. A durable queue is a stated non-goal of this ledger.
  *
  * ## Bounded means refused, not dropped
  *

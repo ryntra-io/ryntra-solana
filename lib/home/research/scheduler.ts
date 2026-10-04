@@ -3,7 +3,7 @@ import { parseExplicitInstant } from "../portfolio/freshness.ts";
 /**
  * Scheduler truth, and the line this module exists to hold.
  *
- * The canon is exact: *last/next check values come from real scheduler
+ * The rule is exact: *last/next check values come from real scheduler
  * records*. The temptation is to compute a plausible "last run" from a cron
  * expression — the schedule says 07:00 daily, it is now 09:00, therefore it ran
  * at 07:00. That sentence is a guess wearing a timestamp, and a monitoring

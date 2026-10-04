@@ -38,7 +38,7 @@ function json(body: Record<string, unknown>, status = 200) {
 export async function GET(req: NextRequest) {
   const address = new URL(req.url).searchParams.get("address") ?? "";
   /* The `rw` cookie in a browser, or the native bearer session for the same
-     wallet (`RYN-API-CONTRACT-001`, contract 1.1.0: receipts over the bearer). */
+     wallet (contract 1.1.0: receipts over the bearer). */
   const proof = await getWalletProofFrom(req.headers);
   if (!proof || proof.chain !== "solana" || proof.address !== address) return json({ error: "proof required", proof: false }, 401);
   const rows = await walletReceiptsList("solana", address, 200);

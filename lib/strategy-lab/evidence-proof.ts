@@ -16,10 +16,10 @@ export type EvidenceProofIdentity = {
 };
 
 /**
- * Who the proof is bound to: the account id when the session knows it
- * (RYN-ACCESS-002), otherwise the legacy Telegram id. Verification tries the
- * account form first and the Telegram form second, so proofs issued before
- * accounts existed still verify for the same person.
+ * Who the proof is bound to: the account id when the session knows it,
+ * otherwise the legacy Telegram id. Verification tries the account form first
+ * and the Telegram form second, so proofs issued before accounts existed
+ * still verify for the same person.
  */
 type EvidenceProofPayload = {
   telegramId?: number | null;

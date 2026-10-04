@@ -1,8 +1,8 @@
 /**
- * Public payment requests — the model (RYN-PAY-REQUEST-001).
+ * Public payment requests — the model.
  *
- * Three records, kept apart because the owner task names three kinds of data
- * that must not be one row:
+ * Three records, kept apart because they hold three kinds of data that must
+ * not be one row:
  *
  * - {@link PaymentRequestRecord} is the **public** request: what `/pay/:id`
  *   shows anyone with the link. It carries the Solana Pay reference key and

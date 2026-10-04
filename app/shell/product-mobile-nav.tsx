@@ -9,7 +9,7 @@
  * thing you came to see. On a money product that is the difference between
  * checking a balance and deciding not to bother.
  *
- * **Головна · Ринки · Ryntra · Портфель · Ще** (canon v5.3 В28, v5.4 В30).
+ * **Головна · Ринки · Ryntra · Портфель · Ще**.
  * Four places and one opener: the four a person reaches for stay in the bar,
  * and «Ще» opens the menu's sections — the same list, with the same captions,
  * a desk shows on its rail.

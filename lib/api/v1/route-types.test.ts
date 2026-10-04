@@ -1,10 +1,10 @@
 /**
- * Compile-time proof that the consumed routes' schemas (contract 1.11.0,
- * `RYN-API-CONTRACT-002`) agree with the types the routes build their answers
- * from — in both directions, so a field added to a route's answer without its
- * schema, or to a schema without the route, fails `tsc`, which the
- * repository's typecheck runs. The routes' tests parse the answers
- * themselves; this file holds the types to the same shapes. No runtime.
+ * Compile-time proof that the consumed routes' schemas (contract 1.11.0)
+ * agree with the types the routes build their answers from — in both
+ * directions, so a field added to a route's answer without its schema, or to
+ * a schema without the route, fails `tsc`, which the repository's typecheck
+ * runs. The routes' tests parse the answers themselves; this file holds the
+ * types to the same shapes. No runtime.
  */
 
 import type { z } from "zod";
@@ -57,7 +57,7 @@ import type { recoverUnrecordedSwap, SwapRecoveryResult } from "../../solana/swa
 import type { SwapQuoteReview } from "../../solana/swap-review.ts";
 import type { SwapTransactionRefusal } from "../../solana/swap-transaction-check.ts";
 import type { SolanaAssetPassport } from "../../solana/types.ts";
-/* 1.22.0 — the consumed transfer routes (`RYN-MOBILE-MONEY-API-001`); the lib types their answers are built from. */
+/* 1.22.0 — the consumed transfer routes; the lib types their answers are built from. */
 import type { NATIVE_SOL_TRANSFER_ACTION_REF, SendTransferInputSchema, SPL_TRANSFER_ACTION_REF, SplTransferObservation } from "../../agent-control/adapters/solana-token-2022.ts";
 import type { Reconciliation } from "../../agent-control/reconcile.ts";
 import type { ArtifactVerification } from "../../agent-control/verify.ts";
@@ -331,13 +331,13 @@ type TransferReviewServed = {
 };
 
 /**
- * 1.14.0 (canon v5.2 В26): the stock schemas keep the disconnected pre-IPO
- * issuer's values — its issuer id, its mark's source, its rights, its
- * catalogue's key — so a record written before still parses, and no route
- * builds them any more. `Current<>` takes exactly those values out of a
- * schema's output, so the equality in both directions still holds for
- * everything a route builds today: a field added on one side alone fails as
- * before, and a historical value can never come back into a route's type.
+ * 1.14.0: the stock schemas keep the disconnected pre-IPO issuer's values —
+ * its issuer id, its mark's source, its rights, its catalogue's key — so a
+ * record written before still parses, and no route builds them any more.
+ * `Current<>` takes exactly those values out of a schema's output, so the
+ * equality in both directions still holds for everything a route builds
+ * today: a field added on one side alone fails as before, and a historical
+ * value can never come back into a route's type.
  */
 type Historical = "tessera" | "issuer-tessera" | "loan-participation";
 type Current<T> = T extends Historical ? never : T extends readonly (infer U)[] ? Current<U>[] : T extends object ? { [K in keyof T as K extends Historical ? never : K]: Current<T[K]> } : T;
@@ -380,7 +380,7 @@ type RewardsServed = {
 /** What a preferences write can set: the three fields of the record, each left out to keep its value. */
 type MonitoringPreferencesWrite = Partial<Pick<PreferencesRecord, "telegram" | "push" | "quietHours">>;
 
-/* predictions (RYN-API-CONTRACT-002) — for lib/api/v1/route-types.test.ts */
+/* predictions — for lib/api/v1/route-types.test.ts */
 
 /* 1. imports (paths relative to lib/api/v1/; `import type` only) */
 
@@ -622,10 +622,10 @@ export type RouteChecks = [
 export const routeChecks: RouteChecks = [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true];
 
 /**
- * 1.22.0 — «Гроші» (`RYN-MOBILE-MONEY-API-001`): the v1 money shapes equal the
- * types their routes build from — «Перевірка» of a transfer, the payment link,
- * the recipient check, the reading of what the wallet returned — and their
- * word lists equal the engine's, so a code added on one side alone fails `tsc`.
+ * 1.22.0 — «Гроші»: the v1 money shapes equal the types their routes build from
+ * — «Перевірка» of a transfer, the payment link, the recipient check, the
+ * reading of what the wallet returned — and their word lists equal the
+ * engine's, so a code added on one side alone fails `tsc`.
  */
 type MoneyChecks = [
   Same<z.output<typeof TransferCheckSchema>, SendCheck>,
@@ -651,12 +651,12 @@ type MoneyChecks = [
 export const moneyChecks: MoneyChecks = [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true];
 
 /**
- * 1.22.0 — the consumed transfer routes (`RYN-MOBILE-MONEY-API-001`): the
- * schemas that travel back into adopt and settle equal the settlement
- * validator's, the served shapes equal the types the routes build them from,
- * and where the lib types an answer more loosely than the route serves it
- * (`SettlementResult`), the four exact forms are proven within it. A field or
- * a code added on one side alone fails `tsc`.
+ * 1.22.0 — the consumed transfer routes: the schemas that travel back into
+ * adopt and settle equal the settlement validator's, the served shapes equal
+ * the types the routes build them from, and where the lib types an answer
+ * more loosely than the route serves it (`SettlementResult`), the four exact
+ * forms are proven within it. A field or a code added on one side alone fails
+ * `tsc`.
  */
 type TransferRouteChecks = [
   /* 1.22.0 — the consumed transfer routes: the plan request is the route's own validator, both ways */
@@ -731,7 +731,7 @@ type TransferRouteChecks = [
 /* Every entry must be `true`. */
 export const transferRouteChecks: TransferRouteChecks = [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true];
 
-/* 1.23.0 — «Ризик портфеля» (`RYN-PROTECT-SIGNAL-001`, subtask 2): the verdict the server judges is the one the route serves, both ways. */
+/* 1.23.0 — «Ризик портфеля»: the verdict the server judges is the one the route serves, both ways. */
 export type RiskRouteChecks = [Same<z.output<typeof PortfolioRiskSchema>, PortfolioRisk>, Same<z.output<typeof PortfolioRiskFindingSchema>, RiskFinding>];
 
 export const riskRouteChecks: RiskRouteChecks = [true, true];

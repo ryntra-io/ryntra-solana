@@ -13,12 +13,11 @@ import { outcomeLabel, venueName, wordsFor } from "./words";
 type Account = ReturnType<typeof usePaperAccount>;
 
 /**
- * The paper account, in one card (`RYN-PREDICTIONS-001` items 9, 11, 18):
- * the link state as the server states it — enable with one wallet signature,
- * sign again when the provider session expired, disabled — and, once
- * enabled, the paper balance, the positions and the orders as the provider
- * holds them. Paper throughout; nothing here is the real portfolio and the
- * word says so on every figure.
+ * The paper account, in one card: the link state as the server states it —
+ * enable with one wallet signature, sign again when the provider session
+ * expired, disabled — and, once enabled, the paper balance, the positions and
+ * the orders as the provider holds them. Paper throughout; nothing here is
+ * the real portfolio and the word says so on every figure.
  */
 export function AccountCard({ account, locale, compact = false, eventId = null }: { account: Account; locale: WorkspaceLocale; compact?: boolean; /** Filter positions and orders to one event on the detail page. */ eventId?: string | null }) {
   const word = wordsFor(locale);

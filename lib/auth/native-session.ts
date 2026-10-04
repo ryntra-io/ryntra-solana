@@ -1,13 +1,13 @@
 /**
  * The native bearer session — server only.
  *
- * `RYN-API-CONTRACT-001`. A native client has no cookie jar it can be trusted
- * with and no `Origin` a server can check, so it carries the session itself:
- * `Authorization: Bearer <token>`, where the token is the same signed session
- * reference the web's `rw` cookie carries (`issueSessionRefToken`) and the
- * session is the same recorded `wallet` row (`session_open`) the web mints
- * after a verified SIWS message. One session model, two carriers; revocation,
- * expiry and idleness are the row's and apply to both.
+ * A native client has no cookie jar it can be trusted with and no `Origin` a
+ * server can check, so it carries the session itself: `Authorization: Bearer
+ * <token>`, where the token is the same signed session reference the web's
+ * `rw` cookie carries (`issueSessionRefToken`) and the session is the same
+ * recorded `wallet` row (`session_open`) the web mints after a verified SIWS
+ * message. One session model, two carriers; revocation, expiry and idleness
+ * are the row's and apply to both.
  *
  * A bearer is not ambient — a browser never attaches it on its own — so a
  * request that carries one needs no origin check; a request without one is

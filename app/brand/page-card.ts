@@ -10,10 +10,9 @@ import { STATS_COPY } from "../stats/copy.ts";
 import { fnv1a } from "./og-version.ts";
 
 /**
- * The share card of every page offered to the index (the plan of
- * `RYN-SITE-V5-001` §6): the landing's card language — the wordmark, one
- * headline, a line under it, the promise at the foot and the R — with the
- * page's own words, in the page's language.
+ * The share card of every page offered to the index: the landing's card
+ * language — the wordmark, one headline, a line under it, the promise at the
+ * foot and the R — with the page's own words, in the page's language.
  *
  * - a public page: its own name and headline;
  * - a documentation page: «Ryntra Docs» and its section, the page's title and

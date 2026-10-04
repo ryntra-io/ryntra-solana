@@ -18,7 +18,7 @@ export const dynamic = "force-dynamic";
 /**
  * The Scanner — standing conditions, and what they raised.
  *
- * The third of the canon's three discovery objects and the one that stops this
+ * The third of the three discovery objects and the one that stops this
  * being a market list. Radar pushes; the Screener answers a question asked
  * once; this keeps asking and reports **what changed and how it knows**.
  *
@@ -32,7 +32,7 @@ export const dynamic = "force-dynamic";
  *   2. **Zero is an answer.** When nothing fires the page says what was
  *      checked and when, rather than showing an empty box — or filling it.
  *   3. **Coverage is stated per condition.** Market hours join only the
- *      instruments that have a perps market, and three of the canon's own
+ *      instruments that have a perps market, and three of the Scanner's own
  *      listed conditions have no source in any endpoint this product reads.
  *      Those are listed with the exact thing that would end each, because
  *      dropping them would make the Scanner read complete.

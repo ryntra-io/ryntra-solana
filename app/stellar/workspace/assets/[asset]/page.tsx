@@ -14,7 +14,7 @@ import { provenanceLine } from "../../hub/provenance.ts";
 import styles from "./passport.module.css";
 
 /**
- * The Asset Passport — the Passport template of `docs/archive/design-pre-reset-2026-08-18/stellar-DESIGN.md` §4.
+ * The Asset Passport — the Passport template of the Stellar workspace design.
  *
  * The order is the argument: identity, then **what the issuer can do to what you
  * hold**, then what holding it costs, then what the chain records, then what the
@@ -26,7 +26,7 @@ import styles from "./passport.module.css";
  *
  * **Identity did not survive scrolling.** It was two cards at the top of a
  * 3,207px document, so 400px down nothing on screen said which asset you were
- * reading. It is a sticky header now — the one element §4 fixes in place.
+ * reading. It is a sticky header now — the one element the template fixes in place.
  *
  * **The unknowns rail was the last thing on the page**, roughly 2,700px below
  * the fold, which is the one position that makes a permanent honesty rail
@@ -131,9 +131,9 @@ export default async function StellarAssetPassportPage({ params }: { params: Pro
 
   return (
     <>
-      {/* §4's one fixed element. Code, model, issuer and claimed domain stay on
-          screen for the whole page, because a passport you have scrolled into
-          is a passport whose subject you can no longer see. */}
+      {/* The template's one fixed element. Code, model, issuer and claimed
+          domain stay on screen for the whole page, because a passport you have
+          scrolled into is a passport whose subject you can no longer see. */}
       <header className={styles.identity}>
         <span className={styles.identityCode} translate="no">
           {asset.code}
@@ -439,9 +439,9 @@ export default async function StellarAssetPassportPage({ params }: { params: Pro
           )}
         </Panel>
 
-        {/* Named because §4 names them, and short because the rail already
-            carries every reason. Three sentences of explanation used to live
-            here and again in the rail. */}
+        {/* Named because the Passport template names them, and short because
+            the rail already carries every reason. Three sentences of
+            explanation used to live here and again in the rail. */}
         <Panel
           id="passport-market"
           title="Price, liquidity and exposure"

@@ -11,22 +11,22 @@ import { SITE_NAME, TWITTER, landingOgImage, languageAlternates, localizedUrl, o
  * is drift: a page whose card says something the page itself no longer claims.
  * The description passed in here is the same sentence the page leads with.
  *
- * In the language the page is drawn in (the plan of `RYN-SITE-V5-001` §4):
- * the canonical is that language's address — `/uk/security` for the Ukrainian
- * page — and a page offered in both languages names the pair as `hreflang`.
+ * In the language the page is drawn in: the canonical is that language's
+ * address — `/uk/security` for the Ukrainian page — and a page offered in
+ * both languages names the pair as `hreflang`.
  */
 export function sitePageMetadata({
   path,
   title,
   description,
   keywords = [],
-  /** Guard and developer surfaces take the Guard descriptor (canon §19). */
+  /** Guard and developer surfaces take the Guard descriptor. */
   audience = "company",
   /**
    * A page that still answers but is no longer part of the story the site
    * tells search engines — a reviewer artifact kept for whoever holds its
-   * link (Master Plan §4). It keeps its canonical URL and its card, so a
-   * shared link still unfurls; it is simply not offered to the index.
+   * link. It keeps its canonical URL and its card, so a shared link still
+   * unfurls; it is simply not offered to the index.
    */
   index = true,
   /** The language the page is drawn in. */
@@ -46,9 +46,8 @@ export function sitePageMetadata({
   const canonical = localizedUrl(path, locale);
   const languages = index ? languageAlternates(path) : undefined;
   const category = audience === "guard" ? PRODUCT_CANON.guardCategory : HOMEPAGE_CATEGORY;
-  /* The landing's card, where a page has none of its own — the Owner's line of
-     2026-09-26. The canon's old trust line said «Paper-first», which the
-     product no longer is. */
+  /* The landing's card, where a page has none of its own. The old trust line
+     said «Paper-first», which the product no longer is. */
   const card = image ?? { url: landingOgImage(locale), alt: HOMEPAGE_COPY[locale].ogAlt };
 
   return {

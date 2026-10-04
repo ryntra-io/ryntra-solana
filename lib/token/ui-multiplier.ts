@@ -10,7 +10,7 @@
    The Chainlink feed price ALREADY bakes in the multiplier, so a token's price legitimately
    drifts ABOVE the headline share price over time (total-return) — expected, not a bug. Any
    surface that shows share counts or a per-share-equivalent price MUST apply this, or balances
-   and PnL silently mismatch after a split/dividend. See robinhood-chain-truth §5. */
+   and PnL silently mismatch after a split/dividend. */
 
 /** 1.0 in 18 dp. At token launch uiMultiplier() == this. */
 export const UI_MULTIPLIER_ONE = 10n ** 18n;

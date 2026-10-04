@@ -221,10 +221,10 @@ export async function buildCctpBurnPlan(args: {
   /**
    * The only amount this builder refuses is one that moves nothing.
    *
-   * It used to refuse anything outside 2–5 USDC, which was canon §25.5's bound
-   * on the *first owner canary* and never a fact about bridging. It made a
-   * one-off experiment into the product's ceiling, so a person with 40 USDC to
-   * move was told the transfer was out of range.
+   * It used to refuse anything outside 2–5 USDC, which was the bound set on
+   * the *first owner canary* and never a fact about bridging. It made a one-off
+   * experiment into the product's ceiling, so a person with 40 USDC to move was
+   * told the transfer was out of range.
    *
    * Every real limit is below and is derived rather than written down: Circle's
    * live fee for this exact lane must be readable, the fee ceiling is computed

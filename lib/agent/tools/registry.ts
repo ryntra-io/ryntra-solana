@@ -1,6 +1,5 @@
 /**
- * The tool registry — every tool Ryn has, and the proof that none executes
- * (`RYN-AGENT-TEXT-001`; the Owner's rule of 2026-09-22 §4, §17).
+ * The tool registry — every tool Ryn has, and the proof that none executes.
  *
  * Two lists and nothing else: the Research tools read, the Prepare tools
  * draft. `assertToolBoundary` is run by the registry test and at module load:

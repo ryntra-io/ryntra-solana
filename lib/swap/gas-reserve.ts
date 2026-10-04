@@ -1,21 +1,19 @@
 /**
  * What a native balance must keep back so the transaction can actually be sent.
  *
- * Owner instruction 2026-09-10: *«нажимаєш Max, не проходить. Чуть-чуть
- * зменшуєш, не проходить, ще зменшуєш, не проходить… мінімально, щоб
- * залишалися»* — and, on reading the first attempt at this, the correction that
- * shapes the whole module:
+ * A person presses Max and it does not go through; they lower the amount a
+ * little and it does not go through; they lower it again and it still does
+ * not. MAX has to leave behind the minimum the transaction needs, and no more.
+ * The first attempt at this taught the rule that shapes the whole module: one
+ * measured `gasLimit = 32 432` is not a universal truth for every EVM network
+ * and every asset type, and on EIP-1559/L2 the simple formula
+ * `eth_gasPrice × one fixed gasLimit` is not always the full maximum cost.
  *
- * > Не використовуй один виміряний `gasLimit = 32 432` як універсальну істину
- * > для всіх EVM-мереж і всіх типів активів… На EIP-1559/L2 також не можна
- * > вважати, що проста формула `eth_gasPrice × один зафіксований gasLimit`
- * > завжди є повною максимальною вартістю.
- *
- * That is right, and it is why this file no longer prices anything itself. One
- * measured gas limit describes one operation on one chain: a native deposit is
- * not an ERC-20 approve plus a bridge call, an EIP-1559 chain charges a base fee
- * plus a priority fee rather than a single price, and an optimistic rollup adds
- * an L1 data fee that appears in no `gasPrice` at all. A product that multiplied
+ * That is why this file no longer prices anything itself. One measured gas
+ * limit describes one operation on one chain: a native deposit is not an
+ * ERC-20 approve plus a bridge call, an EIP-1559 chain charges a base fee plus
+ * a priority fee rather than a single price, and an optimistic rollup adds an
+ * L1 data fee that appears in no `gasPrice` at all. A product that multiplied
  * one price by one limit would be confidently wrong on three chains out of four.
  *
  * ## So there are two phases, and they answer different questions
@@ -125,9 +123,9 @@ export type NativeCostVerdict =
  * Reconcile what the person is sending with what the built transaction will cost.
  *
  * Called once, after the plan exists and before anything is signed. It is the
- * half of the Owner's rule that stops the guessing game: *«Якщо точна транзакція
- * потребує більше, ніж попередньо залишив MAX, не змушуй користувача вручну
- * зменшувати суму кілька разів. Перерахуй максимально допустиму суму один раз»*.
+ * half of the rule that stops the guessing game: if the exact transaction needs
+ * more than MAX left behind, the person is never made to lower the amount by
+ * hand several times — the largest allowed amount is recalculated once.
  *
  * The `intendedNativeSpendRaw` argument is what makes this work for both origins
  * with one function. A native origin spends the same coin the fee comes from, so

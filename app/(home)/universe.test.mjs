@@ -14,7 +14,7 @@ const manifest = JSON.parse(read("app/(home)/universe-assets.json"));
 /*
  * The market universe — the second block of the landing (2026-09-13). What
  * these pin: every asset in orbit is a real market on Spot with its own
- * picture served from this site; the words the Owner gave, in both
+ * picture served from this site; the block's words, in both
  * languages; the honesty and motion rules the scene lives by. The look was
  * checked in a real browser before release.
  */
@@ -60,7 +60,7 @@ test("every asset in orbit is a Spot market with a picture of its own on this si
   }
 });
 
-test("the universe carries the Owner's words in both languages and one real destination", () => {
+test("the universe carries its words in both languages and one real destination", () => {
   for (const locale of ["en", "uk"]) {
     const u = HOMEPAGE_COPY[locale].universe;
     assert.equal(u.titleLines.length, 2);
@@ -71,7 +71,7 @@ test("the universe carries the Owner's words in both languages and one real dest
   assert.deepEqual(HOMEPAGE_COPY.en.universe.titleLines, ["Wall Street closes.", "Solana doesn’t."]);
   assert.equal(HOMEPAGE_COPY.en.universe.eyebrow, "Built on Solana");
   assert.equal(HOMEPAGE_COPY.en.universe.explore, "See the companies");
-  assert.deepEqual(HOMEPAGE_COPY.uk.universe.titleLines, ["Волл-стріт закривається.", "Solana — ні."], "the orbit keeps the Owner's line (the Owner's word of 2026-09-26)");
+  assert.deepEqual(HOMEPAGE_COPY.uk.universe.titleLines, ["Волл-стріт закривається.", "Solana — ні."], "the orbit keeps its line");
   const words = JSON.stringify([HOMEPAGE_COPY.en.universe, HOMEPAGE_COPY.uk.universe]);
   for (const forbidden of [/\b\d{3,}\+/, /Diamond/i, /RYN token/i, /win[- ]rate/i, /liquidity/i, /guarantee/i]) {
     assert.doesNotMatch(words, forbidden, `the universe must not claim ${forbidden}`);
@@ -79,7 +79,7 @@ test("the universe carries the Owner's words in both languages and one real dest
 
   const source = withoutComments(read("app/(home)/universe.tsx"));
   assert.match(source, /className=\{styles\.explore\} href=\{localizedPath\("\/app\/markets", locale\)\}/, "«Дивитися компанії» opens Markets, where the companies are, in the page's language");
-  /* A company opens its own page, where the purchase from $1 lives (canon v5.5), in the page's language; a coin opens its market in Spot. */
+  /* A company opens its own page, where the purchase from $1 lives, in the page's language; a coin opens its market in Spot. */
   assert.match(source, /href=\{company \? localizedPath\(`\/app\/stocks\/\$\{asset\.symbol\}`, locale\) : `\/app\/spot\?mint=\$\{asset\.mint\}`\}/);
   assert.match(source, /aria-label=\{`\$\{label\} — \$\{company \? u\.openCompany : u\.open\}`\}/);
   for (const asset of manifest.assets.filter((entry) => entry.kind === "stock")) {
@@ -150,11 +150,11 @@ test("the scene is honest motion: one clock per asset, still under reduced motio
   assert.doesNotMatch(coreBackground, /var\(--ry-iris\)/, "the orange is light, not the core's colour");
 });
 
-test("the network's light is canon and projected, and the logos' hues stay out of our palette", { skip: needsDevelopmentRepository("the design system document DESIGN.md") }, () => {
-  const canon = read("DESIGN.md");
+test("the network's light is the design system's and projected, and the logos' hues stay out of our palette", { skip: needsDevelopmentRepository("the design system document DESIGN.md") }, () => {
+  const design = read("DESIGN.md");
   const tokens = read("app/design/tokens.css");
   for (const [name, token, value] of [["solana-green", "--ry-sol-green", "#00FFA3"], ["solana-purple", "--ry-sol-purple", "#DC1FFF"], ["solana-violet", "--ry-sol-violet", "#9945FF"]]) {
-    assert.match(canon, new RegExp(`${name}: "${value}"`), `${name} is declared by the canon`);
+    assert.match(design, new RegExp(`${name}: "${value}"`), `${name} is declared by the design system`);
     assert.match(tokens, new RegExp(`${token}: ${value};`), `${name} is projected`);
   }
   /* The per-logo hue reaches the page as an inline variable from the

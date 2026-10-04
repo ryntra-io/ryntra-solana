@@ -1,8 +1,8 @@
 /**
- * Paper execution as Ryntra records it (`RYN-PREDICTIONS-001`, canon v4.3
- * §6.5): quote → Review → *Place paper order* → the provider's execution
- * status to a terminal state → the order, the position and the balance
- * re-read from the provider → reconciled on every later read.
+ * Paper execution as Ryntra records it: quote → Review → *Place paper order*
+ * → the provider's execution status to a terminal state → the order, the
+ * position and the balance re-read from the provider → reconciled on every
+ * later read.
  *
  * The smart route is the provider's infrastructure; the person sees the
  * Review — the event, the outcome, the paper amount, the probability the

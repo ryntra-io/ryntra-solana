@@ -131,7 +131,7 @@ export function CapabilityGroups({ groups, tight }: { readonly groups: readonly 
   );
 }
 
-/** SIMPLE | PRO. Default is PRO everywhere — the brief §85 is explicit. */
+/** SIMPLE | PRO. Default is PRO everywhere. */
 export function DepthSwitch({ pro, onChange, small, label, id }: {
   readonly pro: boolean;
   readonly onChange: (pro: boolean) => void;

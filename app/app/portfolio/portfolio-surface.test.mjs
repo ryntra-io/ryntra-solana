@@ -12,15 +12,15 @@ const LOADING = code("app/app/portfolio/loading.tsx");
 const WALLET_DATA = code("app/app/wallet-data.tsx");
 const CSS = read("app/solana/workspace/holdings/holdings.module.css");
 
-/* RYN-UX-UNIFY-001 replaces the mixed paper/venue portfolio on these routes.
+/* One portfolio replaces the mixed paper/venue portfolio on these routes.
    The retained Home read-model and Financial Twin tests still cover their
    algorithms; these checks cover the customer routes that now mount instead. */
 
 test("Portfolio is the overview, and it is one direct screen", () => {
-  /* Product Canon v1.0 9.1 made Portfolio the functional overview; since
-     canon v5.0 §3 the product opens on Home, and since canon v5.3 (В28) for
-     everyone — Portfolio is the fourth of the five places, one direct screen
-     with its tabs: the positions, Strategies, Results, History. */
+  /* Portfolio was first the functional overview; now the product opens on
+     Home, for everyone — Portfolio is the fourth of the five places, one
+     direct screen with its tabs: the positions, Strategies, Results,
+     History. */
   assert.doesNotMatch(PORTFOLIO, /\bredirect\(/);
   assert.match(PORTFOLIO, /export \{ default, generateMetadata \} from "@\/app\/solana\/workspace\/holdings\/page"/);
   /* One version: the beginner's empty states for everyone, no depth read on the server. */

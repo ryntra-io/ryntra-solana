@@ -29,8 +29,8 @@ function textOf(page, locale) {
 }
 
 test("every page is complete in both languages and structurally identical across them", () => {
-  /* 27 since canon v5.4 (В32, 2026-09-24): the prediction demo left the surface, and its page left the documentation.
-     33 since the new site of canon v5.5 (2026-09-26): Invest's five pages, Top up, the screener and Ryntra, with
+  /* 27 since 2026-09-24: the prediction demo left the surface, and its page left the documentation.
+     33 since the site's redesign (2026-09-26): Invest's five pages, Top up, the screener and Ryntra, with
      the old Stocks page split among them and «Security and risk» become the Security page. */
   assert.ok(DOC_PAGES.length >= 33, `expected a full documentation set, got ${DOC_PAGES.length} pages`);
   const slugs = new Set();
@@ -97,24 +97,23 @@ test("every page is complete in both languages and structurally identical across
 });
 
 test("every page the menu draws has its documentation, and a page that is not built has none", () => {
-  /* Canon v5.0 §0.0 rule 10 (2026-09-23): only what is built reaches a
-     person. A drawn page is documented as what it does today; a planned page
-     is registered and documented nowhere — no «What Perps will be», no
-     summary that says Planned — and its old address leads to a page that
-     works. */
+  /* Only what is built reaches a person (since 2026-09-23). A drawn page is
+     documented as what it does today; a planned page is registered and
+     documented nowhere — no «What Perps will be», no summary that says
+     Planned — and its old address leads to a page that works. */
   for (const id of PRODUCT_PAGE_IDS) {
     const page = DOC_PAGES.find((item) => item.pageId === id && item.group !== "reference");
     const route = PRODUCT_ROUTES.find((row) => row.id === id);
     assert.equal(readinessOf(id), route.readiness);
     assert.equal(hrefOf(id), route.href);
     if (!drawn(route)) {
-      /* A planned page, or one kept off the surface by the Owner's word (canon v5.4 В32), is documented nowhere. */
+      /* A planned page, or one kept off the surface, is documented nowhere. */
       assert.equal(page, undefined, `${id} is not on the surface and still has a documentation page`);
       continue;
     }
     assert.ok(page, `product page ${id} has no documentation page`);
   }
-  /* The table lists the pages the menu draws, section by section in the menu's order (canon v5.4 В30). */
+  /* The table lists the pages the menu draws, section by section in the menu's order. */
   const drawnInMenuOrder = MENU_SECTION_IDS.flatMap((section) => MENU_ROWS[section].flatMap((ref) => ("page" in ref ? [ref.page] : []))).filter((id) => drawn(PRODUCT_ROUTES.find((route) => route.id === id)));
   assert.deepEqual(PRODUCT_PAGES.map((page) => page.id), drawnInMenuOrder);
   assert.deepEqual([...new Set(PRODUCT_PAGES.map((page) => page.section))], ["trade", "money", "portfolio", "rewards"]);
@@ -137,9 +136,9 @@ test("the documentation speaks only of what is built, and the page count follows
      summaries still said *In development*, the FAQ still called Results
      planned, the strategy overview's table kept Results *In development*, and
      the cabinet counted fourteen pages after Predictions made fifteen. Since
-     canon v5.0 §0.0 rule 10 (2026-09-23) no page says anything is coming at
-     all: no *Planned*, *In development*, *Soon* or «згодом» anywhere a person
-     reads the documentation. */
+     2026-09-23 no page says anything is coming at all: no *Planned*,
+     *In development*, *Soon* or «згодом» anywhere a person reads the
+     documentation. */
   const NOT_BUILT = {
     /* Case-sensitive on purpose: «what you planned», «the planned entry» and
        Predictions' «ending soon» are sentences about now, not labels. */
@@ -170,8 +169,8 @@ test("the documentation speaks only of what is built, and the page count follows
   const EN = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty"];
   const UK = ["нуль", "одна", "дві", "три", "чотири", "п'ять", "шість", "сім", "вісім", "дев'ять", "десять", "одинадцять", "дванадцять", "тринадцять", "чотирнадцять", "п'ятнадцять", "шістнадцять", "сімнадцять", "вісімнадцять", "дев'ятнадцять", "двадцять"];
   /* The cabinet has the sections of the menu and the pages it draws — a
-     planned page and one kept off the surface are not among them (canon v5.4
-     В30, В32: the menu you can see). */
+     planned page and one kept off the surface are not among them (the menu
+     you can see). */
   const count = PRODUCT_ROUTES.filter(drawn).length;
   const sections = MENU_SECTION_IDS.length;
   const UK_SECTIONS = ["нуль", "один", "два", "три", "чотири", "п'ять", "шість", "сім", "вісім"];
@@ -241,7 +240,7 @@ test("the documentation speaks the product's language, never the company's", () 
 });
 
 test("the navigation is the menu's sections with every page once, and the developers' routes are real", () => {
-  /* The documentation's sections are the menu's (canon v5.4 В30), then Reference and Developers. */
+  /* The documentation's sections are the menu's, then Reference and Developers. */
   assert.deepEqual([...DOC_GROUP_IDS], ["start", "invest", "trade", "money", "portfolio", "ryntra", "rewards", "reference", "developers"]);
   assert.deepEqual(DOC_NAV.map((group) => group.id), [...DOC_GROUP_IDS]);
   const hrefs = DOC_NAV.flatMap((group) => group.items.map((item) => item.href));
@@ -270,7 +269,7 @@ test("the navigation is the menu's sections with every page once, and the develo
 test("search and the shared language control update the documentation in place", () => {
   assert.match(EXPERIENCE, /type="search"/);
   /* The server draws the page in its address's language — `/uk/docs/…` — or the cookie's, and the
-     page trusts it (RYN-SITE-V5-001 subtask 4); a page with one address still changes in place. */
+     page trusts it; a page with one address still changes in place. */
   assert.match(EXPERIENCE, /setLocale\(initialLocale\);/);
   assert.match(EXPERIENCE, /ryntra:public-locale/);
   assert.match(read("app/site/frozen/public-header.tsx"), /dispatchEvent\(new CustomEvent<PublicLocale>\("ryntra:public-locale"/);
@@ -279,10 +278,10 @@ test("search and the shared language control update the documentation in place",
 });
 
 test("the Guard reference is not in the documentation's menu, hub, search, overview or renderer", () => {
-  /* Canon В49 (2026-09-29): the Guard reference has no entry in the
-     app's menus. Its reference page stays reachable by its own links, out of
-     the index, and brings its own renderer — the documentation draws it as a
-     reference a page hands over, and carries none of it. */
+  /* Since 2026-09-29 the Guard reference has no entry in the app's menus. Its
+     reference page stays reachable by its own links, out of the index, and
+     brings its own renderer — the documentation draws it as a reference a page
+     hands over, and carries none of it. */
   const hrefs = DOC_NAV.flatMap((group) => group.items.map((item) => item.href));
   assert.equal(hrefs.some((href) => /guard/i.test(href)), false, "the documentation's menu lists the Guard reference");
   assert.equal(DEVELOPER_ENTRIES.some((entry) => /guard/i.test(`${entry.href} ${entry.title.en} ${entry.title.uk}`)), false);
@@ -309,8 +308,8 @@ test("Agent Control reference names only current client, HTTP and local MCP surf
 });
 
 test("the Ukrainian documentation speaks to the reader as «ти», like the app and the landing", () => {
-  /* The plan of the new site (`RYN-SITE-V5-001`, §1а): the Ukrainian documentation was written in «ви» while the
-     app and the landing say «ти». JS word boundaries do not bound Cyrillic, so the words are bounded by letters themselves. */
+  /* The Ukrainian documentation was written in «ви» while the app and the landing say «ти». JS word boundaries do
+     not bound Cyrillic, so the words are bounded by letters themselves. */
   const FORMAL = /(?<![\p{L}\p{N}'’])(?:ви|вас|вам|вами|ваш|ваша|ваше|ваші|вашого|вашої|вашому|вашій|вашим|вашими|ваших|вашу)(?![\p{L}\p{N}'’])/iu;
   const PLURAL_IMPERATIVE = /(?<![\p{L}'’])[\p{L}'’]{3,}(?:йте|іть|ьте|йтеся|іться|ьтеся)(?![\p{L}'’])/u;
   for (const page of DOC_PAGES) {

@@ -1,7 +1,7 @@
 /**
  * How a rule is said — «Щотижня · чт о 19:00», «Якщо впаде на 5 %», «Час
  * твоєї покупки: $10 в Apple», «Бюджет місяця вичерпано» — in both languages
- * (canon v5.1 §4.1: «Автоінвест» · «Щотижня» · «Якщо впаде на 5 %» · «Бюджет
+ * (the product's words: «Автоінвест» · «Щотижня» · «Якщо впаде на 5 %» · «Бюджет
  * місяця» · «Ryntra нагадає — ти підтвердиш одним дотиком»; never DCA,
  * trigger or «купує автоматично»).
  *
@@ -67,7 +67,7 @@ export type PaymentsWords = Readonly<{ mode: "roundup" | "fixed" | "percent"; ro
 /**
  * «Округлення кожної оплати до $1» · «$2 з кожної оплати» · «10 % з кожного
  * надходження»; «Round every payment up to $1» · «$2 from every payment» ·
- * «10% of every incoming transfer» (canon v5.5 В38, §4.1).
+ * «10% of every incoming transfer».
  */
 export function paymentsLine(payments: PaymentsWords, locale: RuleLocale): string {
   if (payments.mode === "percent") return locale === "uk" ? `${pctWord(payments.percent ?? 0, "uk")} з кожного надходження` : `${pctWord(payments.percent ?? 0, "en")} of every incoming transfer`;
@@ -148,7 +148,7 @@ export function reminderWords(input: Readonly<{ name: string; amountUsd: number;
 }
 
 /**
- * A «Якщо впаде» reminder (canon §4.1: «NVIDIA −5 % · докупити $20?» →
+ * A «Якщо впаде» reminder («NVIDIA −5 % · докупити $20?» →
  * «Купити»): the fall as measured from the reference point, the price, the
  * point, and the same promise — only the signature buys.
  */
@@ -171,7 +171,7 @@ export function dipReminderWords(input: Readonly<{ name: string; amountUsd: numb
 }
 
 /**
- * A «З кожної оплати» reminder (canon §4.1: «З оплат: $1,30 → Apple» →
+ * A «З кожної оплати» reminder («З оплат: $1,30 → Apple» →
  * «Купити»): what gathered, from how many events and by which terms — the
  * money stayed in the wallet, and only the signature buys.
  */
@@ -193,7 +193,7 @@ export function paymentsReminderWords(input: Readonly<{ name: string; amountUsd:
   };
 }
 
-/** «Бюджет місяця вичерпано» — what was spent of the ceiling, that the rules stand until the 1st, and the one action (canon §11). */
+/** «Бюджет місяця вичерпано» — what was spent of the ceiling, that the rules stand until the 1st, and the one action. */
 export function budgetSpentWords(input: Readonly<{ capUsd: number; countedUsd: number }>): ReminderWords {
   return {
     en: {

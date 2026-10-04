@@ -2,9 +2,9 @@ import type { AgentCriticKind } from "@/lib/api/v1/contract";
 
 /**
  * Every reader-facing word of the Brief and the Critic panel, per locale, in
- * one file (`RYN-BRIEF-CRITIC-001`). The sentences themselves come from the
- * server already in the reader's language — this is only the chrome around
- * them: the section headings, the two controls, the states.
+ * one file. The sentences themselves come from the server already in the
+ * reader's language — this is only the chrome around them: the section
+ * headings, the two controls, the states.
  */
 
 export type LensWord =

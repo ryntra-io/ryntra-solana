@@ -17,10 +17,10 @@ import styles from "./workflow.module.css";
  * under it whose content changes with the step: the company, the sum from
  * $1, the Review in four lines, the signature in the person's own wallet,
  * the receipt from the chain, and the rule that repeats it («Автоінвест»).
- * The block is the Owner's of 2026-09-13 («From opportunity to outcome»,
- * one trade from the market row to plan-versus-actual); since the new site
- * of canon v5.5 (2026-09-26) it walks the road a beginner walks, and the
- * frame gives the Review the most room.
+ * The block's design is of 2026-09-13 («From opportunity to outcome», one
+ * trade from the market row to plan-versus-actual); since the new site of
+ * 2026-09-26 it walks the road a beginner walks, and the frame gives the
+ * Review the most room.
  *
  * How it moves. From 1024px up, without a motion preference against it, the
  * rail and the frame pin under the header while the section's runway scrolls

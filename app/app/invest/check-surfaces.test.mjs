@@ -6,10 +6,10 @@ import { INVEST_WORDS } from "./invest-words.ts";
 import { SALE_MAY_FAIL } from "../../../lib/stocks/check.ts";
 
 /**
- * «Перевірка» from the server (`RYN-BUY-FLOW-001`, subtask 2; contract
- * 1.20.0): the purchase's and the sale's sheets draw the four lines and the
- * reserve the quote and the order answer as `check`, and count none of them;
- * «Популярне» on Home and beside a company's page is the server's one list.
+ * «Перевірка» from the server (contract 1.20.0): the purchase's and the
+ * sale's sheets draw the four lines and the reserve the quote and the order
+ * answer as `check`, and count none of them; «Популярне» on Home and beside a
+ * company's page is the server's one list.
  */
 
 const source = (path) => readFileSync(new URL(path, import.meta.url), "utf8").replace(/\r\n/g, "\n");

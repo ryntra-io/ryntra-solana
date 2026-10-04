@@ -9,12 +9,11 @@ import { sendMessage } from "../telegram/api.ts";
  * Telegram as a notification channel — connected from Settings, never a
  * way in.
  *
- * `RYN-ACCESS-WALLET-ONLY-001`. An account is the wallet that signed; what
- * Telegram adds is a place to be told something. The person presses one
- * button in Settings, lands in the bot with a signed code, presses Start,
- * and the bot writes the binding here — the account id and the Telegram id
- * that just pressed it. Nothing about it signs anybody in, and removing it
- * removes only the channel.
+ * An account is the wallet that signed; what Telegram adds is a place to be
+ * told something. The person presses one button in Settings, lands in the
+ * bot with a signed code, presses Start, and the bot writes the binding here
+ * — the account id and the Telegram id that just pressed it. Nothing about it
+ * signs anybody in, and removing it removes only the channel.
  *
  * The code travels in the bot's `start` payload, which Telegram caps at 64
  * characters of `[A-Za-z0-9_-]`: the account id as 22 base64url characters,

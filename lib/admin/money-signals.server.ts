@@ -11,13 +11,12 @@ import type { AttentionItem } from "./overview.ts";
  * The money's own signals, for the operator who has to notice before a
  * customer does.
  *
- * `RYN-ADMIN-FEEDBACK-LOOP-001`. The provider board knew whether the database
- * and the RPC answered; nothing on the admin said whether a swap had failed
- * today, whether a bridge was stuck, whether the Rewards treasury could pay,
- * whether Jupiter would collect the fee at all. These are those four, as
- * probes for the Operations board and as attention rows for the Overview,
- * each read from the source that decides it and bounded so a slow read never
- * holds the page.
+ * The provider board knew whether the database and the RPC answered; nothing
+ * on the admin said whether a swap had failed today, whether a bridge was
+ * stuck, whether the Rewards treasury could pay, whether Jupiter would collect
+ * the fee at all. These are those four, as probes for the Operations board and
+ * as attention rows for the Overview, each read from the source that decides
+ * it and bounded so a slow read never holds the page.
  */
 
 const HOUR_MS = 3_600_000;

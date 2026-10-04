@@ -1,6 +1,6 @@
 /**
- * The company's industry in a beginner's words (`RYN-COMPANY-PAGE-001`), from
- * the Standard Industrial Classification code it files under at the SEC.
+ * The company's industry in a beginner's words, from the Standard Industrial
+ * Classification code it files under at the SEC.
  *
  * The SEC's own titles are clerical («Services-Prepackaged Software»,
  * «Retail-Variety Stores»); each code the product's companies file under has a

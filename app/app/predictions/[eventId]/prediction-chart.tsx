@@ -11,12 +11,12 @@ import styles from "../predictions.module.css";
 import { wordsFor } from "../words";
 
 /**
- * The price history of one outcome, in Ryntra's chart (`RYN-PREDICTIONS-001`
- * items 3 and 15): the provider's bars drawn as an area of probability on a
- * 0–100% scale under the same tokens Spot's candles use, the resolution the
- * person picks, the staleness the provider reports said in the frame. The
- * summary line — *what changed* — is computed here from the bars: the last
- * close against the close a day and a week earlier.
+ * The price history of one outcome, in Ryntra's chart: the provider's bars
+ * drawn as an area of probability on a 0–100% scale under the same tokens
+ * Spot's candles use, the resolution the person picks, the staleness the
+ * provider reports said in the frame. The summary line — *what changed* — is
+ * computed here from the bars: the last close against the close a day and a
+ * week earlier.
  */
 
 export type Resolution = "1m" | "5m" | "1h" | "1d";

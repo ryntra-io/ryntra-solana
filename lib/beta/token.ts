@@ -14,7 +14,7 @@ import { createHmac, randomBytes, timingSafeEqual } from "crypto";
    New login links carry a random JTI. /api/session atomically records it before minting a session,
    so the same link cannot be exchanged twice. Rotating BETA_TOKEN_SECRET revokes all tokens.
 
-   SUBJECTS (RYN-ACCESS-002): a session token names either the legacy stateless subject — a Telegram
+   SUBJECTS: a session token names either the legacy stateless subject — a Telegram
    id or a lowercase EVM address — or a SERVER-RECORDED SESSION (`s<uuid>`). The recorded form is the
    only one that can be revoked before its expiry; the stateless forms are accepted until they expire
    (30 days at most) and are no longer minted for new sign-ins.
@@ -27,7 +27,7 @@ import { createHmac, randomBytes, timingSafeEqual } from "crypto";
 const SECRET = process.env.BETA_TOKEN_SECRET;
 
 // Deep-link (login) TTLs — shorter than the old 45-day user token; buttons older than this need a
-// fresh bot command (the bot re-issues on every /start · /status · /demo · /admin). Founder-tunable.
+// fresh bot command (the bot re-issues on every /start · /status · /demo · /admin). Tunable.
 const LOGIN_TTL_MS = 7 * 24 * 3600 * 1000; // user login link
 const ADMIN_LOGIN_TTL_MS = 15 * 60 * 1000; // admin login link — 15 minutes
 // Session cookie TTLs — must match the cookie maxAge set in /api/session.
@@ -68,15 +68,15 @@ function verifyMac(token: string): string | null {
  * Who a token is for.
  *
  * A subject is a Telegram id, a wallet address **or a recorded session id**,
- * never two of them and never none. `RYN-ACCESS-001` made an address an
- * account in its own right, and the alternative — minting a synthetic Telegram
- * id for wallet accounts — was rejected on sight: a fabricated identifier that
- * looks exactly like a real one is the kind of lie that survives for years.
+ * never two of them and never none. An address is an account in its own
+ * right, and the alternative — minting a synthetic Telegram id for wallet
+ * accounts — was rejected on sight: a fabricated identifier that looks
+ * exactly like a real one is the kind of lie that survives for years.
  *
  * A wallet subject is written `w` followed by the lowercase address; a session
- * subject is written `s` followed by the uuid of its row in `private.sessions`
- * (`RYN-ACCESS-002`). The prefixes keep the three forms apart for a parser and
- * for a person reading a payload. The longest payload is
+ * subject is written `s` followed by the uuid of its row in `private.sessions`.
+ * The prefixes keep the three forms apart for a parser and for a person
+ * reading a payload. The longest payload is
  * `sess:admin:s<36 chars>~<13 digits>` at 62 characters, well inside the
  * 128-character cap `verifyMac` enforces.
  */
@@ -167,7 +167,7 @@ export function issueAdminSessionToken(telegramId: number): string | null {
 const SESSION_ID = new RegExp(`^${UUID}$`);
 
 /**
- * A cookie value that names a recorded session (`RYN-ACCESS-002`).
+ * A cookie value that names a recorded session.
  *
  * The signed expiry mirrors the row's absolute expiry so a cookie that outlives
  * its row is refused before any store is asked; the row is still the authority

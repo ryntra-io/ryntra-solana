@@ -3,9 +3,9 @@ import { facts, links, list, note, p, productPages, section, steps, table, type 
 
 /**
  * Start here — what Ryntra is, the first company from $1, the wallet, the
- * menu (the new site of canon v5.5, `RYN-SITE-V5-001` subtask 3: the hub and
- * «Початок» rewritten for a purchase in dollars rather than a first swap, «the
- * cabinet» become the menu, Ukrainian in «ти» as the app and the landing).
+ * menu (since the site's redesign: the hub and «Початок» rewritten for a
+ * purchase in dollars rather than a first swap, «the cabinet» become the menu,
+ * Ukrainian in «ти» as the app and the landing).
  *
  * The overview is the one page that says what Ryntra is and says it once;
  * every later page describes a thing the reader can open.

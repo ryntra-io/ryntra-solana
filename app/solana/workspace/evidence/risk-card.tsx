@@ -248,7 +248,7 @@ export function RiskCard({ mint, locale, planHref, assetKind = "unknown", onRead
         {state.status === "idle" ? (
           <div className={styles.idle}>
             <p className={styles.lead}>{word("lead")}</p>
-            {/* A sensor, not the screen's action: quiet, so the page keeps one orange action (canon v5.0 §2, rule 1; RYN-FIRST-SCREEN-001). */}
+            {/* A sensor, not the screen's action: quiet, so the page keeps one orange action. */}
             <button type="button" className="rw-btn" onClick={() => void load()}>
               {word("check")}
             </button>

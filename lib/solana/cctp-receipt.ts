@@ -62,8 +62,8 @@ export const BRIDGE_RECEIPT_FACTS_SOURCE = "ryntra.solana.bridge-receipt.facts@2
 const EFFECT_CHUNK_SIZE = 480;
 
 /**
- * Everything canon §12.6 asks a cross-chain receipt to carry, and nothing that
- * is not read from somewhere.
+ * Everything a cross-chain receipt has to carry, and nothing that is not read
+ * from somewhere.
  *
  * Fields that can legitimately be unknown are nullable rather than absent or
  * zero: a destination that has not been observed says `null` and forces the
@@ -282,7 +282,7 @@ export type BridgeReceiptMintResult =
  *
  * Built twice on purpose, exactly as the Send lane is: the unsigned mint fixes
  * the content hash, and the signed mint reuses that hash **and** the same
- * timestamp. `RYN-AGENT-CONTROL-007` recorded what happens otherwise — a second
+ * timestamp. An earlier failure showed what happens otherwise — a second
  * `createdAt` moves the hash the signature was taken over, and the live
  * verifier returns `SIGNATURE_INVALID` for an artifact that is otherwise
  * perfectly correct.

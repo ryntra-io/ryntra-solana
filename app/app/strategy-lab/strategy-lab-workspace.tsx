@@ -465,7 +465,7 @@ export function StrategyLabWorkspace({ initialLocale, paidAiAvailable }: { initi
      ?lang → ryntra_hub_locale cookie → bot language and passes it down; the
      shell's language toggle refreshes the route, so a page-local select here
      was a second language control with ten answers inside a two-language
-     workspace — the exact drift lock 4 of RYN-WS-HOME-AC-001 forbids. */
+     workspace — exactly the drift one shared control exists to prevent. */
   const locale = initialLocale;
   /* Depth is the shell's too: one Simple/Pro control, in the top bar, for the
      whole cabinet. The lab's editor previously kept a private guided/pro pair

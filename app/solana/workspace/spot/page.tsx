@@ -16,19 +16,18 @@ export async function generateMetadata() {
 }
 
 /**
- * Spot — the trading workspace, canon §4.2 and the Owner's task of 2026-09-11.
+ * Spot — the trading workspace.
  *
  * One page inside TRADE. Crypto, Memes and Stocks/RWA are categories inside
  * it, never pages of their own. `?mint=` opens a market directly and
  * `?view=` a category, so a market can be shared as a link; anything else in
  * the address opens the default market rather than an error. `?plan=&v=`
- * opens the ticket under a Trading Plan and its version (`RYN-STRATEGY-PLAN-001`
- * stage B): a reference the server judges for the proven wallet, never a
- * proof of anything; a malformed one is simply not a plan. `?side=&amount=`
- * carry the side and the sum a person chose on an asset page into the
- * ticket once (`RYN-UX-CLARITY-001` §5.4) — the quote is asked again here,
- * nothing is carried but the intent, and the address forgets them on
- * arrival so a reload does not re-type them.
+ * opens the ticket under a Trading Plan and its version: a reference the
+ * server judges for the proven wallet, never a proof of anything; a malformed
+ * one is simply not a plan. `?side=&amount=` carry the side and the sum a
+ * person chose on an asset page into the ticket once — the quote is asked
+ * again here, nothing is carried but the intent, and the address forgets
+ * them on arrival so a reload does not re-type them.
  */
 export default async function SpotPage({ searchParams }: { searchParams: Promise<{ mint?: string; view?: string; plan?: string; v?: string; side?: string; amount?: string }> }) {
   const params = await searchParams;

@@ -6,7 +6,7 @@ import { rynHref } from "@/lib/agent/context";
 import type { AgentContext } from "@/lib/api/v1/contract";
 
 /**
- * The one way into Ryn from a page (`RYN-AGENT-TEXT-001`): a link that
+ * The one way into Ryn from a page: a link that
  * carries the page's context — the asset, the plan, the portfolio, the
  * note — so the conversation opens on what the person is looking at. Not a
  * menu entry; a control beside the page's own actions. Server-safe.

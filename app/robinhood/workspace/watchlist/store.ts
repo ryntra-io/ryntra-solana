@@ -17,11 +17,10 @@ import {
  * Where the watchlist lives, and why it lives there.
  *
  * A saved screen is a *question* — a name and a set of conditions — which is
- * why `RYN-RHC-003` put screens in the URL. A watchlist is not a question. It
- * is a personal ledger with a history, and a URL cannot hold one. There is no
- * account store in this product, so it lives in the browser that made it, and
- * the surface says exactly that rather than implying a synced account it does
- * not have.
+ * why screens live in the URL. A watchlist is not a question. It is a personal
+ * ledger with a history, and a URL cannot hold one. There is no account store
+ * in this product, so it lives in the browser that made it, and the surface
+ * says exactly that rather than implying a synced account it does not have.
  *
  * Every read is defensive to the same standard as `screener/saved.tsx` and
  * `app/shell/layout-store.ts`: this is a value a person can hand-edit, another

@@ -1,7 +1,7 @@
--- RYN-ACCESS-001 — a wallet becomes an account.
+-- A wallet becomes an account.
 --
--- AUTHORIZED: founder, 2026-08-19, in session — «Так робим міграцію».
--- Migrations are gated by the repository's rules and this one was asked for and given.
+-- AUTHORIZED 2026-08-19.
+-- Every production migration needs an explicit approval, and this one has it.
 --
 -- WHY THIS FILE EXISTS
 --   `20260812131229_wallet_identity_v1` made a wallet-only row *representable*:
@@ -133,8 +133,8 @@ commit;
 --   Any change to what `verified` means. A wallet account is signed in and not
 --   verified, and every surface that already reads that flag keeps its current
 --   behaviour without being touched.
---   Any paid or tiered access. The founder named it as a separate row and it
---   stays one; nothing here stores a plan, a tier or an entitlement.
+--   Any paid or tiered access. It is separate work and it stays separate;
+--   nothing here stores a plan, a tier or an entitlement.
 --   Any mutation keyed on a wallet. Task writes still go through
 --   `beta_set_task(p_telegram_id)`, so a wallet-only account cannot yet
 --   complete a task — which is correct, because every one of those three tasks

@@ -39,72 +39,68 @@ import { useSheetAboveKeyboard } from "./sheet-keyboard";
 import { SumField } from "./sum-field";
 
 /**
- * The purchase in dollars — «Простий»'s one action on a company (canon v5.1
- * §2, §4, §5.3, §6.1; `RYN-INVEST-SIMPLE-001`, session 2), drawn as a sheet
- * that rises from the bottom of a phone and stands in the middle of a wide
- * screen.
+ * The purchase in dollars — «Простий»'s one action on a company, drawn as a
+ * sheet that rises from the bottom of a phone and stands in the middle of a
+ * wide screen.
  *
  * **Намір.** A sum in dollars from $1, typed freely — the sheet opens on $10,
- * a default and not advice — or a share of the wallet's USDC in one tap: 25 %,
- * 50 %, 75 % or 100 % (the Owner's word, 2026-09-25) — and at once what it
- * buys: «≈ 0,0787 частки Apple · усі
- * витрати ≈ $0,06», from the same live quote Spot shows. Where the quote finds
- * no route for the sum, the company says its own minimum, read from the same
- * quote — «На $1 маршруту зараз немає. IREN — від $5.» — and the one action
- * puts it in. A loss limit is the person's choice:
- * «Немає» by default, or −5 % / −10 % (the Owner's presets, В11).
- * **Межі · дозвіл.** One button, «Купити за $10», prepares the exact Review
- * on the one execution path the product has (`useSpotTicket`: `/order` →
- * the wallet's signature over the reviewed bytes → `/execute` → `/recover`),
- * and the Review is four lines — what leaves the wallet, what arrives at
- * least, all costs, what the token is — and «Підписати». The one-time
- * reserve that opens a new token's account is its own line under «Усі
- * витрати», never among them: it stays in the wallet; when it is more than the
- * purchase itself, the Review says so first (В35). A chosen loss limit
- * is first written as the plan the published rules make of it
- * (`lib/plans/purchase.ts`) behind the wallet's proof, and the Review is
+ * a default and not advice — or a share of the wallet's USDC in one tap:
+ * 25 %, 50 %, 75 % or 100 % — and at once what it buys: «≈ 0,0787 частки
+ * Apple · усі витрати ≈ $0,06», from the same live quote Spot shows. Where
+ * the quote finds no route for the sum, the company says its own minimum,
+ * read from the same quote — «На $1 маршруту зараз немає. IREN — від $5.» —
+ * and the one action puts it in. A loss limit is the person's choice: «Немає»
+ * by default, or −5 % / −10 %. **Межі · дозвіл.** One button, «Купити за
+ * $10», prepares the exact Review on the one execution path the product has
+ * (`useSpotTicket`: `/order` → the wallet's signature over the reviewed bytes
+ * → `/execute` → `/recover`), and the Review is four lines — what leaves the
+ * wallet, what arrives at least, all costs, what the token is — and
+ * «Підписати». The one-time reserve that opens a new token's account is its
+ * own line under «Усі витрати», never among them: it stays in the wallet;
+ * when it is more than the purchase itself, the Review says so first. A
+ * chosen loss limit is first written as the plan the published rules make of
+ * it (`lib/plans/purchase.ts`) behind the wallet's proof, and the Review is
  * judged against it. **Виконання · доказ.** The signature, the network, and
  * the receipt: «✓ У тебе є частинка Apple · $20». **Нагляд.** Under a loss
  * limit, Ryntra watches it — said only when a channel can carry the warning.
  *
  * Nothing here signs or spends: the wallet does, when the person presses.
  *
- * **Цифри — сервера (contract 1.20.0; `RYN-BUY-FLOW-001`, subtask 2).** What
- * the sum buys, «Усі витрати» with the issuer's fee inside them, the reserve
- * and «Що це» are the `check` the quote and the order answer
- * (`lib/stocks/check.ts`): the sheet draws them and counts none of them, so
- * the phone shows the same figures for the same sum.
+ * **Цифри — сервера (contract 1.20.0).** What the sum buys, «Усі витрати»
+ * with the issuer's fee inside them, the reserve and «Що це» are the `check`
+ * the quote and the order answer (`lib/stocks/check.ts`): the sheet draws
+ * them and counts none of them, so the phone shows the same figures for the
+ * same sum.
  *
- * **За правилом (session 3, canon §4.1).** A reminder of an autoinvest rule
- * opens this same sheet on the rule's sum: one tap from the note, and the
- * fresh Review is prepared at once — the same four lines, the same signature,
- * the order naming the rule and the occurrence (`origin.rule`, refused by the
- * server if the reminder is not open). The receipt carries the rule and the
- * next purchase. A reminder that is bought, on its way, missed or gone says
- * so instead, and offers no purchase — nothing is caught up. After a plain
- * purchase the receipt offers «Купувати щотижня», the rule's sheet on the
- * same sum. A reminder whose purchase does not fit what is left of the
- * month's budget (session 4) says so — «Правила стоять до 1-го числа» — and
- * offers «Змінити бюджет» in the purchase's place.
+ * **За правилом.** A reminder of an autoinvest rule opens this same sheet on
+ * the rule's sum: one tap from the note, and the fresh Review is prepared at
+ * once — the same four lines, the same signature, the order naming the rule
+ * and the occurrence (`origin.rule`, refused by the server if the reminder is
+ * not open). The receipt carries the rule and the next purchase. A reminder
+ * that is bought, on its way, missed or gone says so instead, and offers no
+ * purchase — nothing is caught up. After a plain purchase the receipt offers
+ * «Купувати щотижня», the rule's sheet on the same sum. A reminder whose
+ * purchase does not fit what is left of the month's budget says so — «Правила
+ * стоять до 1-го числа» — and offers «Змінити бюджет» in the purchase's
+ * place.
  *
- * **Поки нагадування відкрите (canon v5.3 В29; `RYN-NAV-V5-001`, session
- * 2).** While a rule's reminder is open for this company, the page's first
- * action is «Купити $20 за правилом» — this sheet on the rule's sum — and an
- * ordinary purchase is the second, quiet one, saying the reminder stays open;
- * its sheet says it again before any sum. The rule counts only a purchase by
- * the rule: the words say so, the path is the same.
+ * **Поки нагадування відкрите.** While a rule's reminder is open for this
+ * company, the page's first action is «Купити $20 за правилом» — this sheet
+ * on the rule's sum — and an ordinary purchase is the second, quiet one,
+ * saying the reminder stays open; its sheet says it again before any sum. The
+ * rule counts only a purchase by the rule: the words say so, the path is the
+ * same.
  *
- * **Умова ціни (canon v5.5 В37; `RYN-PRICE-GUARD-001`).** A rule with a price
- * condition is judged again here on the company's figures, read afresh while
- * the sheet is open: met, the rule's purchase carries the condition's line —
- * the deviation, the reference, the limit, the data's time — over the
- * purchase and in the Review; not met, or the data old, the sheet says
- * «Купівлю відкладено» with the reason and offers no purchase, and the order
- * route would refuse it too. A purchase the tick deferred says why the same
- * way; the rule judges it again.
+ * **Умова ціни.** A rule with a price condition is judged again here on the
+ * company's figures, read afresh while the sheet is open: met, the rule's
+ * purchase carries the condition's line — the deviation, the reference, the
+ * limit, the data's time — over the purchase and in the Review; not met, or
+ * the data old, the sheet says «Купівлю відкладено» with the reason and
+ * offers no purchase, and the order route would refuse it too. A purchase the
+ * tick deferred says why the same way; the rule judges it again.
  */
 
-/* The sheet opens on $10 — a default, not advice; any sum from a dollar is the person's own (the Owner's word, 2026-09-25). */
+/* The sheet opens on $10 — a default, not advice; any sum from a dollar is the person's own. */
 const DEFAULT_USD = DEFAULT_BUY_USD;
 const USDC = SPOT_QUOTE_ASSETS[0];
 const API_HEADERS = { accept: "application/json", "X-Ryntra-API": "1" } as const;
@@ -133,22 +129,22 @@ export type BuySheetProps = Readonly<{
   onRulesReload?: () => void;
   /** «Купувати щотижня» on a plain purchase's receipt: the rule's sheet on the same sum; absent when the company has a rule already. */
   onBuyWeekly?: (amountUsd: number) => void;
-  /** The month's autoinvest budget as the rules' read last said it (session 4): a reminder's purchase that does not fit it is not offered. */
+  /** The month's autoinvest budget as the rules' read last said it: a reminder's purchase that does not fit it is not offered. */
   budget?: RuleBudget | null;
   /** «Змінити бюджет» — the budget's sheet, when the month's budget holds a reminder's purchase. */
   onChangeBudget?: () => void;
-  /** A rule's reminder open for this company right now: its purchase is the first action, and an ordinary one says the reminder stays open (canon v5.3 В29). */
+  /** A rule's reminder open for this company right now: its purchase is the first action, and an ordinary one says the reminder stays open. */
   ruleOffer?: RuleOffer | null;
   /**
-   * The issuer's event said before a purchase (the IPO and conversion watch,
-   * canon v5.2 В27): «SpaceX вийшла на біржу. Куплений SPACEX треба обміняти
-   * до 12 березня 2027 — після строку токен згорить.» — under the truth, before
-   * any sum, and again in the Review's «Що це»; null where the token has none.
+   * The issuer's event said before a purchase (the IPO and conversion watch):
+   * «SpaceX вийшла на біржу. Куплений SPACEX треба обміняти до 12 березня
+   * 2027 — після строку токен згорить.» — under the truth, before any sum, and
+   * again in the Review's «Що це»; null where the token has none.
    */
   eventLine?: string | null;
-  /** «Купити» quiet: a holder's one orange action on the page is the swap (canon §2, rule 1). */
+  /** «Купити» quiet: a holder's one orange action on the page is the swap. */
   quiet?: boolean;
-  /** «Умова ціни» (canon v5.5 В37): the facts a rule's price condition is judged on, as the page read them — the sheet reads them again while a rule's purchase is open. */
+  /** «Умова ціни»: the facts a rule's price condition is judged on, as the page read them — the sheet reads them again while a rule's purchase is open. */
   conditionFacts?: PriceFacts | null;
 }>;
 
@@ -190,7 +186,7 @@ export function BuySheet(props: BuySheetProps) {
   const closedOnRule = useRef(false);
   useEffect(() => {
     /* The sheet closed on a reminder's purchase: the page lets the reminder go, so the next «Купити» is a plain one — unless it closed only for the wallet's panel and comes back.
-       Only a close with a reminder's purchase in it counts: an ordinary purchase closed beside an open reminder must not end the rule's purchase pressed next (canon v5.3 В29). */
+       Only a close with a reminder's purchase in it counts: an ordinary purchase closed beside an open reminder must not end the rule's purchase pressed next. */
     if (wasOpen.current && !open) closedOnRule.current = ruleKey !== null;
     if (open) closedOnRule.current = false;
     wasOpen.current = open;
@@ -221,7 +217,7 @@ export function BuySheet(props: BuySheetProps) {
     };
   }, [open]);
 
-  /* On a phone the sheet stands above the keyboard the sum raises: «Купити за $1» stays in sight (`RYN-BUY-FLOW-001`, subtask 5). */
+  /* On a phone the sheet stands above the keyboard the sum raises: «Купити за $1» stays in sight. */
   useSheetAboveKeyboard(dialog, open);
 
   useEffect(() => {
@@ -261,7 +257,7 @@ export function BuySheet(props: BuySheetProps) {
   return (
     <>
       {ruleOffer ? (
-        /* A rule's reminder is open: its purchase first, on its sum; an ordinary purchase second, saying the reminder stays open — the rule counts only a purchase by the rule (canon v5.3 В29). */
+        /* A rule's reminder is open: its purchase first, on its sum; an ordinary purchase second, saying the reminder stays open — the rule counts only a purchase by the rule. */
         <>
           <p className={company.ruleDue} translate="no">
             <span>
@@ -397,13 +393,13 @@ function BuyFlow({
   const ruleMode = ruleBuy !== null;
   const rule = ruleBuy?.rule ?? null;
   const occurrence = rule ? (ruleBuy?.dueAt ? occurrenceAt(rule, ruleBuy.dueAt) : openOccurrence(rule)) : null;
-  /* One tap buys only while the reminder is open and the rule is on; anything else is said, never offered (canon §4.1). */
+  /* One tap buys only while the reminder is open and the rule is on; anything else is said, never offered. */
   const ruleOpen = rule !== null && rule.status === "active" && occurrence !== null && occurrence.state === "due" && Date.parse(occurrence.openUntil) > Date.now();
-  /* The month's budget (session 4): a reminder whose purchase does not fit what is left is said, never offered — the server refuses it too. */
+  /* The month's budget: a reminder whose purchase does not fit what is left is said, never offered — the server refuses it too. */
   const budgetHolds = ruleOpen && rule !== null && !fitsMonth(rule, budget, occurrence);
   /*
-   * The price condition (1.18.0, canon v5.5 В37): judged again on the company's
-   * figures, read afresh every minute while a rule's purchase is open here.
+   * The price condition (1.18.0): judged again on the company's figures, read
+   * afresh every minute while a rule's purchase is open here.
    * Not met now — or the data old — and the purchase is said, never offered;
    * the order route judges the same facts the same way.
    */
@@ -453,7 +449,7 @@ function BuyFlow({
   const proven = proof.state.status === "proven";
   const [channel, setChannel] = useState<Channel>("unknown");
   useEffect(() => {
-    /* The channel Ryntra warns through, read only for a proven wallet and only under a limit: «Ryntra попередить» is said only where it can (canon §6.1). */
+    /* The channel Ryntra warns through, read only for a proven wallet and only under a limit: «Ryntra попередить» is said only where it can. */
     if (!proven || !limit) return undefined;
     let live = true;
     fetch("/api/v1/notifications/telegram", { headers: API_HEADERS })
@@ -585,7 +581,7 @@ function BuyFlow({
   const usdcRawText = usdcRow ? usdcRow.amountRaw : null;
   const usdcRaw = usdcRawText && /^\d+$/.test(usdcRawText) ? BigInt(usdcRawText) : null;
   const insufficient = connection !== null && valid && amount !== null && usdc !== null && amount > usdc + 1e-9;
-  /* The network's SOL (session 5): the fee, and for a company the wallet does not hold yet the account it opens — short of that, the network would refuse the purchase, so the sheet says so before any Review. */
+  /* The network's SOL: the fee, and for a company the wallet does not hold yet the account it opens — short of that, the network would refuse the purchase, so the sheet says so before any Review. */
   const holdsCompany = holdings.status === "ready" && holdings.data.some((row) => row.mint === mint && /^\d+$/.test(row.amountRaw) && BigInt(row.amountRaw) > 0n);
   const cannotPayFee = connection !== null && solRow !== null && /^\d+$/.test(solRow.amountRaw) && solShort(BigInt(solRow.amountRaw), holdsCompany);
   const router = useRouter();
@@ -617,7 +613,7 @@ function BuyFlow({
   const check: SwapCheck | null = prepared ? (prepared.check ?? null) : (quoted?.check ?? null);
   const outUnits = check?.get.amount ?? null;
   const costs = valid ? (check?.costs ?? null) : null;
-  /* «з них комісія емітента 1% ≈ $0,10» — the share of the sum the token's own mint withholds, said on its own line (canon v5.2 §7, §12); «1% ≈ $0,10» is kept on one line on a phone. */
+  /* «з них комісія емітента 1% ≈ $0,10» — the share of the sum the token's own mint withholds, said on its own line; «1% ≈ $0,10» is kept on one line on a phone. */
   const issuerFee = costs?.issuerFee ? `${word("issuerFeeOfWhich")} ${new Intl.NumberFormat(numbers, { maximumFractionDigits: 2 }).format(costs.issuerFee.basisPoints / 100)}% ${approxUsd(costs.issuerFee.usd, numbers).replace(" ", " ")}` : null;
   /* The server answered the quote without its lines (the company could not be read): nothing is counted here in their place. */
   const uncounted = valid && quoted !== null && outUnits === null;
@@ -626,7 +622,7 @@ function BuyFlow({
   const quoteFailure = ticket.quoteFailure && valid ? ticket.quoteFailureMessage : null;
   const quoteStop = ticket.quoteFailure ? !swapFailureCopy(ticket.quoteFailure.code, text).retryable : false;
   const blocked = quoted?.verdict.verdict === "BLOCKED";
-  /* No route for the sum typed: the company's own minimum, read from the same quote at the ladder's larger sums (canon v5.5 В35). A reminder's sum is the rule's own, so only a purchase the person types looks for one. */
+  /* No route for the sum typed: the company's own minimum, read from the same quote at the ladder's larger sums. A reminder's sum is the rule's own, so only a purchase the person types looks for one. */
   const noRoute = !ruleMode && valid && isNoRoute(ticket.quoteFailure?.code);
   const routeMinimum = useRouteMinimum(mint, valid ? amount : null, noRoute);
   const minimumUsd = noRoute && routeMinimum.state === "found" ? routeMinimum.minimumUsd : null;
@@ -685,12 +681,12 @@ function BuyFlow({
             ? word("notFilled")
             : word("unknownTx");
     const watched = outcome.kind === "FILLED" && plan && binding && settled ? plan : null;
-    /* The receipt's mark of the rule, and when it reminds next (canon §4.1: «квитанція з позначкою правила»). */
+    /* The receipt's mark of the rule, and when it reminds next. */
     const byRule = outcome.kind === "FILLED" && ruleMode && boughtUnder ? boughtUnder : null;
     /* The next purchase as the rule reads now — the tick advanced it when it reminded; a «Якщо впаде» rule has none, its price decides. */
     const nextDue = byRule ? (rule?.id === byRule.id ? rule.nextDueAt : byRule.nextDueAt) : null;
     const nextOfRule = byRule && nextDue && byRule.schedule ? dueWords(Date.parse(nextDue), byRule.schedule.timeZone, lang) : null;
-    /* «Купувати щотижня» after a plain purchase, on the sum just bought (canon §4). */
+    /* «Купувати щотижня» after a plain purchase, on the sum just bought. */
     const weekly = outcome.kind === "FILLED" && !ruleMode && onBuyWeekly && spent !== null && spent >= MIN_BUY_USD - 0.005 ? Math.round(spent * 100) / 100 : null;
     return (
       <div className={company.sheetBody} data-sheet="receipt" data-rule={byRule ? "true" : undefined}>
@@ -781,7 +777,7 @@ function BuyFlow({
     const minUnits = lines?.get.atLeast ?? null;
     const ready = ticket.preparedReadiness?.ready === true;
     const seconds = ticket.reviewSecondsLeft;
-    /* The reserve a new token's account keeps: its own line, and said first when it is more than the purchase itself (canon v5.5 В35). */
+    /* The reserve a new token's account keeps: its own line, and said first when it is more than the purchase itself. */
     const reserve = lines?.reserve?.usd ? approxUsd(lines.reserve.usd, numbers) : null;
     const reserveFirst = reserve !== null && lines?.reserve?.first === true && paid !== null;
     /* «Що це» as the server says it — the truth and, under it, the issuer's event said to a buyer; the page's own words only when the server could not read the company. */
@@ -833,7 +829,7 @@ function BuyFlow({
             <span>{`${word("byRule")} · ${ruleWhenLine(boughtUnder, lang)}`}</span>
           </p>
         ) : null}
-        {/* The rule's price condition, judged on the figures read now: the deviation, the reference, the limit, the data's time (canon §4.1). */}
+        {/* The rule's price condition, judged on the figures read now: the deviation, the reference, the limit, the data's time. */}
         {ruleMode && boughtUnder && reviewedCondition ? (
           <p className={company.limitLine} data-condition={reviewedCondition.verdict} translate="no">
             <span>{`${word("priceCondition")} · ${conditionReviewLine(reviewedCondition, Date.now(), ruleZone, lang)}`}</span>
@@ -871,13 +867,13 @@ function BuyFlow({
     /* What became of the reminder when it is not open: said plainly, with no purchase offered (never caught up). */
     const readFailed = ruleBuy?.read === "failed" && !rule;
     const nowSheet = Date.now();
-    /* The price condition holds the purchase back (1.18.0): the tick deferred it, or the figures read now do not meet it — the reason, the figure and the data's time (canon §4.1, §11). */
+    /* The price condition holds the purchase back (1.18.0): the tick deferred it, or the figures read now do not meet it — the reason, the figure and the data's time. */
     const waitingOn = occurrence?.state === "deferred" && occurrence.condition ? occurrence.condition : conditionHolds ? conditionCheck : null;
     const closedWord = (() => {
       if (readFailed) return word("ruleReadFailed");
       if (ruleBuy?.read === "ready" && !rule) return word("ruleGone");
       if (!rule) return null;
-      /* Open, and the month's budget does not cover it: the rules stand until the 1st (canon §11 «Бюджет вичерпано»). */
+      /* Open, and the month's budget does not cover it: the rules stand until the 1st («Бюджет вичерпано»). */
       if (budgetHolds) return `${word("budgetBlocks")} ${word("rulesStand")}.`;
       if (waitingOn) return deferralLine(waitingOn, name, nowSheet, ruleZone, lang);
       if (ruleOpen) return null;
@@ -898,7 +894,7 @@ function BuyFlow({
       if (closedWord) return { label: word("done"), disabled: false, run: onClose };
       if (!rule) return { label: word("reading"), disabled: true, run: undefined };
       if (phase === "PREPARING" || wantReview) return { label: word("preparingReview"), disabled: true, run: undefined };
-      /* What is missing is never a dead button: the one action brings it — dollars first, then the network's SOL (session 5). */
+      /* What is missing is never a dead button: the one action brings it — dollars first, then the network's SOL. */
       if (insufficient) return { label: word("topUp"), disabled: false, run: () => topUp(null) };
       if (cannotPayFee) return { label: word("topUpSol"), disabled: false, run: () => topUp("sol") };
       if (blocked || quoteStop) return { label: word("unavailableNow"), disabled: true, run: undefined };
@@ -965,7 +961,7 @@ function BuyFlow({
     if (step === "proving") return { label: word("confirming"), disabled: true, run: undefined };
     if (step === "writing") return { label: word("savingLimit"), disabled: true, run: undefined };
     if (phase === "PREPARING" || wantReview) return { label: word("preparingReview"), disabled: true, run: undefined };
-    /* What is missing is never a dead button: the one action brings it — dollars first, then the network's SOL (session 5). */
+    /* What is missing is never a dead button: the one action brings it — dollars first, then the network's SOL. */
     if (insufficient) return { label: word("topUp"), disabled: false, run: () => topUp(null) };
     if (cannotPayFee) return { label: word("topUpSol"), disabled: false, run: () => topUp("sol") };
     if (blocked || quoteStop) return { label: word("unavailableNow"), disabled: true, run: undefined };
@@ -977,7 +973,7 @@ function BuyFlow({
     <div className={company.sheetBody} data-sheet="compose">
       {head(`${word("buy")} ${name}`)}
       {preIpo ? <SheetTruth truth={truth} eventLine={eventLine} /> : null}
-      {/* An ordinary purchase while a rule's reminder is open says so before any sum: the reminder stays open (canon v5.3 В29). */}
+      {/* An ordinary purchase while a rule's reminder is open says so before any sum: the reminder stays open. */}
       {ruleOffer ? (
         <p className={company.plainSheetNote} data-rule-open>
           {plainLeavesOpenLine(locale, ruleOffer.amountUsd)}
@@ -995,7 +991,7 @@ function BuyFlow({
         describedBy={`${titleId}-estimate`}
         disabled={busy}
       />
-      {/* The quick choices are shares of the wallet's USDC — 25 · 50 · 75 · 100 % (the Owner's word, 2026-09-25); the sum itself is typed freely. Drawn once the wallet's USDC is read; a share under a dollar is not offered. */}
+      {/* The quick choices are shares of the wallet's USDC — 25 · 50 · 75 · 100 %; the sum itself is typed freely. Drawn once the wallet's USDC is read; a share under a dollar is not offered. */}
       {usdcRaw !== null && usdcRaw > 0n ? (
         <div className={company.presets} role="group" aria-label={word("quickShares")}>
           {BUY_SHARE_PRESETS_PCT.map((pct) => {
@@ -1027,7 +1023,7 @@ function BuyFlow({
       {limit ? (
         <>
           {asset.status === "failed" ? <p className={company.sheetError}>{word("limitPriceUnknown")}</p> : made ? <LimitLine limitPerUnit={made.limitPerUnit} limit={limit} channel={proven ? channel : "unknown"} locale={locale} /> : <span className={company.lineBone} aria-hidden="true" />}
-          {/* The warning in full one press deep, inside the sheet itself: the product's `?` opens in a portal the modal sheet would cover (canon §5.4). */}
+          {/* The warning in full one press deep, inside the sheet itself: the product's `?` opens in a portal the modal sheet would cover. */}
           <details className={company.risk}>
             <summary>{word("canLoseAll")}</summary>
             <p>{`${warning.short} ${warning.important}`}</p>
@@ -1053,10 +1049,10 @@ function BuyFlow({
 }
 
 /**
- * A private company's truth at the top of the sheet, before any sum (canon
- * v5.2 §7) — and, where the issuer opened a swap window, the event in the
- * same box: the token bought now must be swapped by the issuer's deadline
- * (the IPO and conversion watch, В27).
+ * A private company's truth at the top of the sheet, before any sum — and,
+ * where the issuer opened a swap window, the event in the same box: the
+ * token bought now must be swapped by the issuer's deadline (the IPO and
+ * conversion watch).
  */
 export function SheetTruth({ truth, eventLine }: { truth: string; eventLine: string | null }) {
   if (!eventLine) {
@@ -1077,7 +1073,7 @@ export function SheetTruth({ truth, eventLine }: { truth: string; eventLine: str
   );
 }
 
-/** The loss limit in one line: where it stands, and whether Ryntra can warn — said only when the channel is known (canon §6.1). */
+/** The loss limit in one line: where it stands, and whether Ryntra can warn — said only when the channel is known. */
 function LimitLine({ limitPerUnit, limit, channel, locale }: { limitPerUnit: number; limit: LossLimitPreset | null; channel: Channel; locale: WorkspaceLocale }) {
   const word = investWords(locale);
   const numbers = numberLocale(locale);

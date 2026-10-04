@@ -1,4 +1,4 @@
-/** RYN-HOME-001 — versioned user-declared InvestorContext. */
+/** Versioned user-declared InvestorContext. */
 
 export const INVESTOR_CONTEXT_MAX_VERSIONS = 50;
 

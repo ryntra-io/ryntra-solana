@@ -21,15 +21,15 @@ export const metadata = { title: "Stocks" };
 const SPOT_STOCKS = "/app/spot?view=stock";
 
 /**
- * Stocks — the screener (canon v4.0 §7.2), the tool Markets holds a tap
- * deeper since canon v5.3 (В28, one version): the market strip — the US
- * session, how many tokens are listed and traded today, the issuers — over
- * every confirmed representation with the venue's figures, the issuer's
- * reference and session where there is one, filtered and sorted in the
- * browser over the server's cached universe. The desk's collections are its
- * filters (traded, liquid, pre-IPO) and its sortable columns (the day's
- * gainers and losers). The executable quote for an amount lives on a
- * company's page and in Spot, never on four hundred rows at once.
+ * Stocks — the screener, the tool Markets holds a tap deeper (one version for
+ * everyone): the market strip — the US session, how many tokens are listed
+ * and traded today, the issuers — over every confirmed representation with
+ * the venue's figures, the issuer's reference and session where there is one,
+ * filtered and sorted in the browser over the server's cached universe. The
+ * desk's collections are its filters (traded, liquid, pre-IPO) and its
+ * sortable columns (the day's gainers and losers). The executable quote for
+ * an amount lives on a company's page and in Spot, never on four hundred rows
+ * at once.
  */
 export default async function StocksScreenerPage({ searchParams }: { searchParams: Promise<{ q?: string | string[]; kind?: string | string[] }> }) {
   const locale = await solanaServerLocale();

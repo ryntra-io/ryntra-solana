@@ -1,12 +1,12 @@
 /**
  * Relay quote API — the read-only quote boundary of the Robinhood Chain lane.
  *
- * `RYN-SOL-MONEY-FLOWS-001H` (Owner decision 2026-09-09). Relay is the second
- * cross-asset provider, and it exists because it is the only one that reaches
- * chain 4663 at all: Circle has no CCTP domain there, the chain carries no
- * USDC, and Mayan's token endpoint answers HTTP 500 to every spelling of its
- * name. LI.FI does list the chain, but for a Solana origin its own answer
- * names `relaydepository` — this same rail with an aggregator in front of it.
+ * Relay is the second cross-asset provider, and it exists because it is the
+ * only one that reaches chain 4663 at all: Circle has no CCTP domain there,
+ * the chain carries no USDC, and Mayan's token endpoint answers HTTP 500 to
+ * every spelling of its name. LI.FI does list the chain, but for a Solana
+ * origin its own answer names `relaydepository` — this same rail with an
+ * aggregator in front of it.
  *
  * Like `lib/mayan/price-api.ts` this module asks a price and nothing more. It
  * builds no transaction, signs nothing, and never sees a wallet; every network
@@ -42,14 +42,14 @@
  * that requires KYB and $10M of trailing thirty-day volume — a door this product
  * is nowhere near.
  *
- * `appFees` is the other one and needs no key at all
- * (`RYN-SOL-SWAP-MONETIZATION-001`). It is charged in basis points of the input
- * value, quoted inside the price Relay returns, and — unlike every other fee on
- * this page — **not paid out per swap**: it accrues in an off-chain USDC balance
- * against an EVM claim address and is withdrawn later. Relay's own documented
- * warning shapes how this module treats it: on an operation that does not support
- * app fees the API returns no error and collects nothing, so the fee is never
- * assumed and `paidAppFees` is read back afterwards.
+ * `appFees` is the other one and needs no key at all. It is charged in basis
+ * points of the input value, quoted inside the price Relay returns, and —
+ * unlike every other fee on this page — **not paid out per swap**: it accrues
+ * in an off-chain USDC balance against an EVM claim address and is withdrawn
+ * later. Relay's own documented warning shapes how this module treats it: on
+ * an operation that does not support app fees the API returns no error and
+ * collects nothing, so the fee is never assumed and `paidAppFees` is read back
+ * afterwards.
  */
 
 import { z } from "zod";
@@ -471,12 +471,12 @@ export function normalizeRelayQuote(
     schemaVersion: "1.0.0",
     provider: "RELAY",
     route: RELAY_ROUTE,
-    /* The name, and only the name. Owner rule 2026-09-10: *«Не показувати
-       користувачу внутрішню архітектуру Relay»* — this label is read straight
-       onto the Review, and "solver fills on the destination chain" describes a
-       mechanism nobody is being asked to have an opinion about. Who carries the
-       money is worth naming; how they carry it is Pro depth, and the pre-sign
-       snapshot still records the mechanism in `route`. */
+    /* The name, and only the name. A person is never shown Relay's internal
+       architecture — this label is read straight onto the Review, and "solver
+       fills on the destination chain" describes a mechanism nobody is being
+       asked to have an opinion about. Who carries the money is worth naming;
+       how they carry it is Pro depth, and the pre-sign snapshot still records
+       the mechanism in `route`. */
     routeLabel: "Relay",
     tupleId: tuple.id,
     from: {

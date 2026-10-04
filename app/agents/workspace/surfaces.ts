@@ -16,7 +16,7 @@ import type { WorkspaceLocale } from "@/app/shell/locale";
  * six independent facts, and a page states the ones that are true of it.
  *
  * **A page with no backend must say so, in its own words.** The alternative is
- * a tab that looks like a capability, which canon v5.2 §10 forbids and which is
+ * a tab that looks like a capability, which is never allowed here and which is
  * how a preview becomes a promise. Every surface below either works or names
  * the exact thing that is missing — not "coming soon", the blocker.
  */
@@ -156,7 +156,7 @@ export const WORKSPACE_SURFACES: readonly WorkspaceSurface[] = [
       "An Action Passport Preview can be recomputed and its canonical hashes checked, with the three proof axes reported separately.",
     ],
     blocker:
-      "No finalized Outcome Receipt exists. A preview that states OUTCOME_NOT_OBSERVED is a preview, and calling it a receipt is the exact claim canon v5.2 forbids. A receipt needs an observed external effect, which needs execution.",
+      "No finalized Outcome Receipt exists. A preview that states OUTCOME_NOT_OBSERVED is a preview, and calling it a receipt would claim an outcome nobody observed. A receipt needs an observed external effect, which needs execution.",
     insteadHref: "/agents/workspace/verify",
     insteadLabel: "Verify a preview",
   },
@@ -383,7 +383,7 @@ const SURFACE_UK: Readonly<Record<string, SurfaceOverlay>> = {
       "Превʼю Action Passport можна переобчислити й перевірити його канонічні хеші; три осі доказу звітуються окремо.",
     ],
     blocker:
-      "Фіналізованої квитанції результату не існує. Превʼю зі статусом OUTCOME_NOT_OBSERVED — це превʼю, і назвати його квитанцією — саме те твердження, яке забороняє канон v5.2. Квитанції потрібен спостережений зовнішній ефект, а для нього — виконання.",
+      "Фіналізованої квитанції результату не існує. Превʼю зі статусом OUTCOME_NOT_OBSERVED — це превʼю, і назвати його квитанцією означало б заявити результат, якого ніхто не спостерігав. Квитанції потрібен спостережений зовнішній ефект, а для нього — виконання.",
     insteadLabel: "Перевірити превʼю",
   },
   integrations: {

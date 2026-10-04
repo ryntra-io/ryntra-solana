@@ -317,14 +317,13 @@ export async function POST(request: Request) {
     });
   }
 
-  /* The plan, if the order was made under one (`RYN-STRATEGY-PLAN-001`
-     stage B). The proof binds the block and the binding; what the proof
-     cannot know is what happened to the plan since the Review — an edit
-     into a new version, a cancellation, an expiry. A Review made before an
-     edit is not a valid confirmation after it, so the plan is read again
-     here, before the network sees anything: the wallet's signature is let
-     go and the person reviews afresh. A blocked block in a bundle is
-     refused for the same reason the order route refused it. */
+  /* The plan, if the order was made under one. The proof binds the block and
+     the binding; what the proof cannot know is what happened to the plan
+     since the Review — an edit into a new version, a cancellation, an expiry.
+     A Review made before an edit is not a valid confirmation after it, so the
+     plan is read again here, before the network sees anything: the wallet's
+     signature is let go and the person reviews afresh. A blocked block in a
+     bundle is refused for the same reason the order route refused it. */
   const planBinding = bundle.origin?.plan ?? null;
   if (planBinding) {
     const block = bundle.planReview ?? null;
@@ -782,9 +781,9 @@ export async function POST(request: Request) {
     signature,
     receiptHash: minted.receipt.contentHash,
     /* What it cost, read off the same settled fee the Receipt and Rewards use.
-       The cross-chain lane has carried this since `RYN-MONEY-RECEIPT-PARITY-001`;
-       a Solana swap row said what moved and never what it cost, so the owner's
-       revenue could not be added up from the one history that exists. */
+       The cross-chain lane already carried this; a Solana swap row said what
+       moved and never what it cost, so the owner's revenue could not be added
+       up from the one history that exists. */
     ...(swapRowFee ? { fee: swapRowFee } : {}),
     /* Spot or Swap — read off the signed bundle, never off the request. */
     origin: bundle.origin ?? null,

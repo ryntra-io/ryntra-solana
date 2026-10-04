@@ -40,7 +40,7 @@ export const dynamic = "force-dynamic";
  *
  * ## Public by address, for the same reason Holdings is
  *
- * Canon §0.6 splits public from private on proof of ownership, and it draws the
+ * Ryntra splits public from private on proof of ownership, and it draws the
  * line where the chain already draws it: anybody can put an address into an
  * explorer, so gating a read of public chain facts behind a signature is
  * theatre rather than security. `/api/solana/holdings` is the precedent this
@@ -50,7 +50,7 @@ export const dynamic = "force-dynamic";
  * Everything this returns is visible under that same address on chain: a
  * signature, an amount, a moment, whether it finished. What it does not return
  * is anything a person authored — no note, no label, no counterparty name.
- * Those are private wallet-scoped data in canon §0.6's sense and they wait on a
+ * Those are private wallet-scoped data in that same sense and they wait on a
  * Solana sign-in this repository does not have; `/api/auth/wallet` is EVM SIWE
  * and refuses wallet-only accounts on purpose.
  *
@@ -118,7 +118,7 @@ async function currentOutcome(
     }
     if (action.lane === "CROSS_SWAP") {
       /* The one lane that had no branch here, so its rows were whatever the
-         last write left and never healed. The founder's first Robinhood Chain
+         last write left and never healed. A person's first Robinhood Chain
          swap arrived and read "Swapped across chains 0.05 SOL": no asset
          received, no destination. Both live on the order record, and the
          amount can be asked of the provider when the record has not got it —
@@ -258,8 +258,7 @@ export async function POST(request: Request) {
    * belongs on the Rewards page beside the control it governs.
    *
    * The proof is the `rw` cookie in a browser or the native bearer session
-   * (`RYN-API-CONTRACT-001`, contract 1.1.0) — the same wallet, whichever
-   * client asks.
+   * (contract 1.1.0) — the same wallet, whichever client asks.
    */
   const proof = await getWalletProofFrom(request.headers);
   const rewards =
@@ -284,9 +283,9 @@ export async function POST(request: Request) {
         /* Null for an unproven read, which is different from an empty list:
            one means "not yours to see", the other means "nothing yet". */
         rewards,
-        /* Honest coverage, canon §0.6. `complete` false means a row existed and
-           could not be read — the surface says the list may be incomplete
-           rather than presenting a short list as the whole truth. */
+        /* Honest coverage. `complete` false means a row existed and could not
+           be read — the surface says the list may be incomplete rather than
+           presenting a short list as the whole truth. */
         complete: listed.complete,
         /* This history begins where the ledger does. A transfer made before it
            existed is on the chain and not in here, and the surface has to be

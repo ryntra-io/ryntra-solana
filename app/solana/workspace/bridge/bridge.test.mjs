@@ -7,18 +7,17 @@ import { solanaNavigation } from "../hub/manifest.ts";
 const read = (path) => readFileSync(path, "utf8");
 
 const CARD = "app/solana/workspace/bridge/bridge-card.tsx";
-/* The page that mounts the cross-chain engine. It was Swap until the Owner
-   split the two on 2026-09-10; it is Bridge now, and the guards below are about
-   the mounting page rather than about a name. */
+/* The page that mounts the cross-chain engine. It was Swap until the two were
+   split on 2026-09-10; it is Bridge now, and the guards below are about the
+   mounting page rather than about a name. */
 const SWAP_PAGE = "app/solana/workspace/bridge/page.tsx";
 const COPY = "app/solana/workspace/bridge/bridge-copy.ts";
 
 test("the transfer keeps its record even though it no longer has a surface", () => {
-  /* It used to be a railed module with a page. The owner's instruction of
-     2026-09-08 replaced the page with the cross-chain swap, and the record
-     stayed: deleting it would erase the owner canary of 2026-09-02 that proved
-     the lane, which is a fact about what this product has done rather than a
-     fact about where a menu points. So the module is map-only — recorded, not
+  /* It used to be a railed module with a page. On 2026-09-08 the cross-chain
+     swap replaced the page, and the record stayed: deleting it would erase the
+     owner canary of 2026-09-02 that proved the lane, which is a fact about what
+     this product has done rather than a fact about where a menu points. So the module is map-only — recorded, not
      rendered — and nothing in the rail offers a door to a page that is gone. */
   const modules = read("app/solana/workspace/hub/modules.ts");
   assert.match(modules, /id: "bridge"/);
@@ -36,10 +35,10 @@ test("the transfer keeps its record even though it no longer has a surface", () 
 
 test("the CCTP card is rollback code: compiled, and mounted by nothing", () => {
   const card = read(CARD);
-  /* Owner instruction of 2026-09-08: the cross-chain swap replaces the bridge.
-     The lane is untouched — the same CCTP engine, the same review, the same
-     recovery — but it is mounted by the one Swap surface that classifies a pair
-     into it, and `/app/bridge` is a redirect rather than a screen.
+  /* Since 2026-09-08 the cross-chain swap replaces the bridge. The lane is
+     untouched — the same CCTP engine, the same review, the same recovery — but
+     it is mounted by the one Swap surface that classifies a pair into it, and
+     `/app/bridge` is a redirect rather than a screen.
 
      The rule the old assertion protected survives in a stronger form: one card,
      one primary action, no second inert column, and the evidence panel that
@@ -249,10 +248,10 @@ test("nothing in the card can burn twice or send without the routes", () => {
  * The card draws the deployment's own route matrix and nothing else: Base
  * open, Ethereum gated until its first verified transfer, Robinhood Chain
  * named as having no USDC route. Three rules follow. A row the person cannot
- * choose is never a button — a dead control is the failure `MASTER-PLAN` §4
- * names by that phrase. Choosing a network clears what belonged to the old
- * one, exactly as turning the transfer round does. And nothing the card does
- * derives a lane from an address: the direction is looked up by network.
+ * choose is never a button — a dead control is a failure in its own right.
+ * Choosing a network clears what belonged to the old one, exactly as turning
+ * the transfer round does. And nothing the card does derives a lane from an
+ * address: the direction is looked up by network.
  */
 test("the network chooser draws the route matrix and never a dead button", () => {
   const card = read(CARD);

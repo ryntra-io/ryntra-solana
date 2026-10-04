@@ -1,13 +1,12 @@
 /**
  * The native sign-in — server only.
  *
- * `RYN-API-CONTRACT-001`. The same Sign In With Solana the web does
- * (`lib/auth/siws.ts`), the same nonce discipline (issued with an HMAC tag,
- * spent in the store *before* the signature is verified, so a captured
- * signature finds its nonce gone), the same recorded `wallet` session — and a
- * bearer in the JSON body instead of a cookie. The nonce context is native-only,
- * so a challenge minted here is refused by the web routes and a web nonce is
- * refused here.
+ * The same Sign In With Solana the web does (`lib/auth/siws.ts`), the same
+ * nonce discipline (issued with an HMAC tag, spent in the store *before* the
+ * signature is verified, so a captured signature finds its nonce gone), the
+ * same recorded `wallet` session — and a bearer in the JSON body instead of a
+ * cookie. The nonce context is native-only, so a challenge minted here is
+ * refused by the web routes and a web nonce is refused here.
  *
  * Nothing here touches a transaction; a session proves control of a wallet
  * and grants private reads and writes for that wallet, never a signature.

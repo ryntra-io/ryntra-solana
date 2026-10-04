@@ -1,15 +1,15 @@
 /**
- * Trading plans — one row per plan, in the Guard store (`RYN-STRATEGY-PLAN-001`).
+ * Trading plans — one row per plan, in the Guard store.
  *
- * The cabinet belongs to the wallet (canon §0.6), so a plan is keyed by the
- * wallet that proved itself when it was written and read back only through
- * that proof — the `rw` cookie in a browser, the native bearer on a phone.
- * The stored record is the contract's `TradingPlan` with three additions
- * that never leave the server as a whole: `history`, every version in full,
- * because a version's rules are read by number and never rewritten (§9.5);
- * `reviews`, the Strategy blocks the order route judged for this plan, each
- * written before the wallet signed anything; and the Review kept on each
- * execution, so Plan vs Actual reads what stood before the signature.
+ * The cabinet belongs to the wallet, so a plan is keyed by the wallet that
+ * proved itself when it was written and read back only through that proof —
+ * the `rw` cookie in a browser, the native bearer on a phone. The stored
+ * record is the contract's `TradingPlan` with three additions that never
+ * leave the server as a whole: `history`, every version in full, because a
+ * version's rules are read by number and never rewritten; `reviews`, the
+ * Strategy blocks the order route judged for this plan, each written before
+ * the wallet signed anything; and the Review kept on each execution, so Plan
+ * vs Actual reads what stood before the signature.
  *
  * **Two counters, on purpose.** `planVersion` is the product's version — the
  * number a person edits into, the `ifVersion` a client must name. `version`

@@ -61,8 +61,8 @@
 
   /* -- evidence surface --------------------------------------------------- */
   --paper: var(--rt-paper-page);
-  /* The deeper stone step has no canon token yet; it stays literal until the
-     site-screens rung either amends the canon or retires the step. */
+  /* The deeper stone step has no design-system token yet; it stays literal
+     until the token set either gains one or retires the step. */
   --paper-2: #e7e4da;
   --paper-ink: var(--rt-paper-ink-high);
   --paper-muted: var(--rt-paper-ink-mid);
@@ -87,9 +87,9 @@
   --amber: var(--rt-review-amber-fg);
   --red: var(--rt-blocked-red);
 
-  /* Two families (founder decision 2026-08-10, DESIGN.md §Typography): the
-     display role resolves to Inter — weight and scale carry the hero, not a
-     third face. JetBrains Mono keeps every instrument label and number. */
+  /* Two families (DESIGN.md §Typography): the display role resolves to
+     Inter — weight and scale carry the hero, not a third face. JetBrains Mono
+     keeps every instrument label and number. */
   --display: var(--rt-font);
   --tech: var(--rt-mono);
   --body: var(--rt-font);
@@ -134,9 +134,8 @@
 /* A faint technical grid, not a hero graphic. It reads as graph paper under
    the whole system rather than as an effect placed on top of one section.
    The 5.5% ink alpha and the #000 mask ramp are the documented
-   instrument-surface identity of the Decision Circuit (a screens-rung
-   classification recorded on its task card): drawing geometry, not palette
-   drift. */
+   instrument-surface identity of the Decision Circuit: drawing geometry, not
+   palette drift. */
 .rx::before {
   content: "";
   position: fixed;
@@ -1127,7 +1126,7 @@ button.rx-navlink {
   border-block: 0;
 }
 
-/* Flat card, canon hover: accent-line border plus lift. The gradient border
+/* Flat card, standard hover: accent-line border plus lift. The gradient border
    and the --grad hover retired — the One-Gradient Rule budgets the gradient
    to the R mark, the hero line and one designated visualization, and a hover
    border on every quad card is none of them. */
@@ -1248,7 +1247,7 @@ html.rxm .rx [data-rx-reveal]:not([data-rx-in="true"]) .rx-glyph .rx-pop { opaci
 
 /* Lift on a fine pointer only. On touch it either does nothing or sticks after
    a tap, and a card that stays raised reads as selected. */
-/* Canon hover: tone plus lift. The inset top stroke retired — no inner strokes. */
+/* Standard hover: tone plus lift. The inset top stroke retired — no inner strokes. */
 @media (hover: hover) and (pointer: fine) {
   .rx-card:hover {
     background: var(--raised);
@@ -1582,7 +1581,7 @@ html.rxm .rx [data-rx-reveal]:not([data-rx-in="true"]) .rx-glyph .rx-pop { opaci
   background: var(--raised);
   border: 1px solid var(--hairline);
   border-top: 0;
-  /* zero-corner composite of the canon step — the bar joins the split above */
+  /* zero-corner composite of the radius token — the bar joins the split above */
   border-radius: 0 0 var(--rt-radius-md) var(--rt-radius-md);
   padding: 20px clamp(24px, 3vw, 40px);
   display: flex;
@@ -1806,7 +1805,7 @@ html.rxm .rx [data-rx-reveal]:not([data-rx-in="true"]) .rx-glyph .rx-pop { opaci
   padding-inline-end: 56px;
 }
 
-/* Flat card, canon hover — same retirement as the quad above. */
+/* Flat card, standard hover — same retirement as the quad above. */
 .rx-deck-card {
   scroll-snap-align: start;
   flex: none;

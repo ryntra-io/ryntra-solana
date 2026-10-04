@@ -1,5 +1,5 @@
 /**
- * Pure helpers behind the landing's live product visuals (RYN-LAND-001 spec v2).
+ * Pure helpers behind the landing's live product visuals.
  *
  * Everything here is deterministic and DOM-free so the truth rules stay testable:
  * the landing may only ever show real venue numbers or an explicitly labelled

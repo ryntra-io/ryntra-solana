@@ -1,7 +1,7 @@
 /**
- * What moves today (`RYN-WIDTH-PREMIUM-001`): the companies and the crypto
- * that moved most over 24 hours, from the lists Markets draws (the search
- * index). Pure: the index in, the movers out.
+ * What moves today: the companies and the crypto that moved most over 24
+ * hours, from the lists Markets draws (the search index). Pure: the index in,
+ * the movers out.
  *
  * Only what trades: the pool is each list's head by the day's volume, so a
  * thin token's wild print never tops the column. Memes and the dollars stay

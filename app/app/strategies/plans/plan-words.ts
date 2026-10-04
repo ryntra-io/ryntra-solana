@@ -5,7 +5,7 @@ import type { PlanStatus } from "@/lib/api/v1/contract";
  * Every word the Trading Plan surfaces say, in both languages, and the
  * formats they share. Figures are USD per underlying share and underlying
  * units; the words say so beside each one, because a number without its
- * unit does not exist here (canon §23.2).
+ * unit does not exist here.
  */
 
 type Bi = Readonly<{ en: string; uk: string }>;
@@ -142,7 +142,7 @@ export const PLAN_WORDS = {
   advisory: bi("advisory", "лише попередження"),
   none: bi("none", "немає"),
   seeAsset: bi("Open the asset", "Відкрити актив"),
-  /* stage B — the page order, Plan vs Actual */
+  /* the page order, Plan vs Actual */
   attention: bi("Needs attention", "Потребують уваги"),
   activePlans: bi("Active", "Активні"),
   drafts: bi("Drafts", "Чернетки"),
@@ -186,7 +186,7 @@ export const PLAN_WORDS = {
   highestPrice: bi("Highest price", "Найвища ціна"),
   planningPrice: bi("Planning price", "Ціна планування"),
   noAutoSell: bi("No automatic sell is set up — the actual loss can be larger than the model.", "Автоматичний продаж не налаштований — фактичний збиток може бути більшим за модель."),
-  /* A plan on a pre-IPO token (RYN-FIRST-SCREEN-001): the three things to know before anything else, then the plan one press deep. */
+  /* A plan on a pre-IPO token: the three things to know before anything else, then the plan one press deep. */
   preIpoBanner: bi("Not a share · limited liquidity · no automatic stop", "Це не акція · ліквідність обмежена · автостопу немає"),
   details: bi("Details", "Деталі"),
   allRules: bi("All plan rules", "Усі умови плану"),
@@ -233,7 +233,7 @@ export const PLAN_WORDS = {
   perShareShort: bi("/ share", "/ акцію"),
   kept: bi("kept for costs", "резерв на витрати"),
   noPlansTitle: bi("No plans yet", "Планів ще немає"),
-  /* the builder, simplified (the Owner, 2026-09-15, late evening): three steps, the rest behind More rules */
+  /* the builder, simplified (2026-09-15): three steps, the rest behind More rules */
   stepWhy: bi("Why this stock", "Чому ця акція"),
   thesisPlaceholder: bi("One or two sentences, in your own words.", "Одне-два речення своїми словами."),
   moreThesis: bi("Why now, horizon, sources, assumptions", "Чому зараз, горизонт, джерела, припущення"),
@@ -252,7 +252,7 @@ export const PLAN_WORDS = {
   entryYours: bi("Your own figure.", "Твоя цифра."),
   example: bi("e.g.", "напр."),
   readsAs: bi("reads as", "читається як"),
-  /* The Owner did not know the word (2026-09-16): the surface says what it is, the `?` keeps the term. */
+  /* A person did not know the word (2026-09-16): the surface says what it is, the `?` keeps the term. */
   invalidationLabel: bi("Where the thesis is wrong", "Де теза хибна"),
   invalidationHint: bi("The price at which you admit the idea failed and leave — yourself; no order is placed. This is the invalidation.", "Ціна, за якої ти визнаєш, що ідея не спрацювала, і виходиш — сам; ордер не виставляється. Це і є інвалідація."),
   maxPriceLabel: bi("Do not pay more than", "Не платити більше ніж"),
@@ -263,7 +263,7 @@ export const PLAN_WORDS = {
   perShareUnit: bi("$ per share", "$ за акцію"),
   moreRules: bi("More rules", "Більше правил"),
   moreRulesSub: bi("validity, costs, target, execution limits", "строк, витрати, ціль, межі виконання"),
-  /* Conditions on observations — the person's own rules on what the market did (RYN-NANSEN-EVIDENCE-001). */
+  /* Conditions on observations — the person's own rules on what the market did. */
   stepEvidence: bi("Conditions on what the market did", "Умови щодо того, що робив ринок"),
   evidenceLead: bi("Your own rules on the token's onchain activity. The server reads the figures again at the Review, before you sign.", "Твої власні правила щодо активності токена в мережі. Сервер перечитає цифри на Review, перед підписом."),
   evidenceNone: bi("No conditions — the plan trades on its price and money rules alone.", "Умов немає — план торгує лише за ціновими та грошовими правилами."),
@@ -322,7 +322,7 @@ export const PLAN_WORDS = {
   companyIndexIndicative: bi("Pyth · indicative · not the token's price", "Pyth · орієнтовний · не ціна токена"),
   companyIndexUnavailable: bi("Company index unavailable", "Індекс компанії недоступний"),
   monitoringWatching: bi("Monitoring is watching this plan", "Monitoring стежить за цим планом"),
-  /* 1.7.0 — a plan on a token (RYN-PLAN-CRYPTO-001): the picker over every asset a plan may name, the catalogue's own words, the indication as planning context. */
+  /* 1.7.0 — a plan on a token: the picker over every asset a plan may name, the catalogue's own words, the indication as planning context. */
   startFromAsset: bi("A plan starts from an asset — a tokenized stock, SOL, a verified crypto or meme.", "План починається з активу — токенізованої акції, SOL, перевіреної крипти чи мему."),
   pickAssetAny: bi("Which asset is the plan for?", "Для якого активу план?"),
   searchAssets: bi("Search a stock, SOL, a crypto or a meme", "Пошук акції, SOL, крипти чи мему"),
@@ -351,9 +351,8 @@ export type PlanWord = keyof typeof PLAN_WORDS;
 
 /**
  * The unit word inside a label: a plan on a token-priced instrument (the
- * pre-IPO issuers, `RYN-STOCKS-PROVIDERS-001`) says *per token* wherever a
- * share plan says *per share* — the same label, the same figure, the unit
- * the plan is actually in.
+ * pre-IPO issuers) says *per token* wherever a share plan says *per share* —
+ * the same label, the same figure, the unit the plan is actually in.
  */
 export function unitize(text: string, unitBasis: "share" | "token"): string {
   if (unitBasis === "share") return text;
@@ -422,12 +421,11 @@ export type IssueFigures = Readonly<{
 }>;
 
 /**
- * A contradiction said with the person's own figures and the next action
- * (the Owner's directive of 2026-09-22): *your planned entry is $974, but
- * your maximum price is $900 — change the planned entry or the maximum
- * price*, never the validator's dry sentence. Keyed by the issue's stable
- * code (contract 1.7.0); an issue without one, or without its figures,
- * falls back to the translated sentence.
+ * A contradiction said with the person's own figures and the next action:
+ * *your planned entry is $974, but your maximum price is $900 — change the
+ * planned entry or the maximum price*, never the validator's dry sentence.
+ * Keyed by the issue's stable code (contract 1.7.0); an issue without one,
+ * or without its figures, falls back to the translated sentence.
  */
 export function issueSentence(issue: Readonly<{ path: string; message: string; code?: string }>, figures: IssueFigures, locale: WorkspaceLocale, unitBasis: "share" | "token" = "share"): string {
   const uk = locale === "uk";

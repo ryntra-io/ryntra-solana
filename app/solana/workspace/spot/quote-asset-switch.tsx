@@ -12,8 +12,8 @@ import styles from "./spot.module.css";
  * drawn by the product.
  *
  * It replaces a native `<select>`: the browser painted that control's list
- * in its own light colours over the dark ticket (the Owner, 2026-09-14), and
- * a list that opens for two choices is one click more than the choice needs.
+ * in its own light colours over the dark ticket, and a list that opens for
+ * two choices is one click more than the choice needs.
  * Both assets are on the pill at once; the pressed one is the current one.
  * It is a radio group to the keyboard and to assistive technology — arrows
  * move the choice, Home and End go to the ends — and when a market is itself

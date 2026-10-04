@@ -21,11 +21,11 @@ const ADMIN_COOKIE_MAX_AGE = 24 * 3600; // matches ADMIN_SESSION_TTL_MS
  * accepted here. The cookie value is a NEW session token, never the raw login token, and the
  * session remains inside an HttpOnly cookie.
  *
- * RYN-ACCESS-002: the session minted here is a RECORDED one whenever the
- * account's uuid is known — a row in `private.sessions` that can be revoked,
- * with the admin form carrying its idle limit. The stateless token stays as the
- * fallback for the window before the accounts migration is applied, so the
- * bot door never closes because of a migration's timing.
+ * The session minted here is a RECORDED one whenever the account's uuid is
+ * known — a row in `private.sessions` that can be revoked, with the admin form
+ * carrying its idle limit. The stateless token stays as the fallback for the
+ * window before the accounts migration is applied, so the bot door never
+ * closes because of a migration's timing.
  */
 
 function recoveryRedirect(origin: string, lang: string) {

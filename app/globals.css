@@ -44,8 +44,8 @@
   /* `--accent` is the ACTION colour, not the evidence one.
      It used to forward to `--rt-evidence-cyan-fg`, which was defensible only
      while cyan meant both — the legacy ramp had one hue doing action, evidence,
-     links, borders and glow, which is the exact list Brandbook v1.2 §16 names
-     as forbidden. With the two separated, the alias that feeds every button,
+     links, borders and glow, which is the exact list Brandbook v1.2 names as
+     forbidden. With the two separated, the alias that feeds every button,
      link and focus ring in the legacy sheet had to pick one, and a button is an
      action. The primary CTA measured #6B5236 — evidence INK — until it did. */
   --accent: var(--rt-action-blue-fg);
@@ -59,7 +59,7 @@
   --violet: var(--rt-authorization-violet);
   --violet-soft: var(--rt-authorization-violet-soft);
   --violet-strong: var(--rt-authorization-violet-fg);
-  /* Brand blue (RYN-BRAND-001 palette): the primary-action accent — always
+  /* Brand blue (the brand palette): the primary-action accent — always
      paired with icon + label on protected steps. */
   --blue: var(--rt-action-blue);
   --blue-soft: var(--rt-action-blue-soft);
@@ -80,7 +80,7 @@
   --radius-sm: var(--rt-radius-sm);
   --radius-lg: var(--rt-radius-lg);
   --radius-xs: var(--rt-radius-xs);
-  /* The 6px badge one-off consolidates onto the canon shape scale. */
+  /* The 6px badge one-off consolidates onto the shared shape scale. */
   --r-badge: var(--rt-radius-xs);
 
   /* RWS workspace system (docs/design/workspace-system.md): grid, type scale
@@ -96,10 +96,9 @@
      rendering its labels at 12px and its body, tables, steps and buttons at
      13px, under a Brandbook floor that is 14px and allows 13 only inside a
      dense Pro table. Read on a real screen it was a cheat sheet rather than an
-     instrument, which is the founder's word for it and the correct one. The
-     names keep their old numbers deliberately — they are ramp *positions*,
-     read by 550 declarations, and renaming them to match their new pixel
-     values would be a rename disguised as a fix. */
+     instrument. The names keep their old numbers deliberately — they are ramp
+     *positions*, read by 550 declarations, and renaming them to match their
+     new pixel values would be a rename disguised as a fix. */
   --fs-12: 0.8125rem;
   --fs-13: 0.875rem;
   --fs-14: 0.9375rem;
@@ -124,11 +123,11 @@
   color-scheme: light;
   /* Mineral Paper (DESIGN.md). The `--rt-*` projection flips itself under
      this attribute and every re-pointed name above follows it — the
-     pure-white page this block used to declare is exactly what the
-     canon retired. What remains is the set the projection cannot flip through
-     the names alone: the red/violet text remap (their solids stay for fills;
-     as text on paper they sit below the 4.5:1 bar), and the two site
-     atmospherics that have paper-specific values. */
+     pure-white page this block used to declare is exactly what was retired.
+     What remains is the set the projection cannot flip through the names
+     alone: the red/violet text remap (their solids stay for fills; as text on
+     paper they sit below the 4.5:1 bar), and the two site atmospherics that
+     have paper-specific values. */
   --danger: var(--rt-blocked-red-fg);
   --violet: var(--rt-authorization-violet-fg);
   --blue: var(--rt-action-blue-fg);
@@ -2063,7 +2062,7 @@ button.pc-dot { width: 12px; height: 12px; border: 1px solid var(--border-strong
    its own subtree, which is the mechanism the token file documents — a nested
    theme wins inside its own subtree — so the island tracks the frozen palette
    instead of holding a private copy of a superseded one. Every value here is a
-   canon v2 key, not a new shade. */
+   key of the v2 palette, not a new shade. */
 [data-theme="light"] .sl-code {
   --ry-bg: #080D13;
   --ry-deep: #0B121A;

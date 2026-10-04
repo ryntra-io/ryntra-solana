@@ -1,9 +1,9 @@
 /**
  * One gate between Review and a wallet signature.
  *
- * M0C keeps mainnet signing closed, but M1 must not be able to open it by
- * flipping one network constant while simulation, policy or fee evidence is
- * incomplete. This pure decision is shared by the UI and settlement tests.
+ * Opening mainnet signing must never come down to flipping one network
+ * constant while simulation, policy or fee evidence is incomplete. This pure
+ * decision is shared by the UI and settlement tests.
  */
 
 import type { SolanaPolicyVerdict, SplTransferPreflight } from "./contracts.ts";
@@ -38,8 +38,8 @@ export function assessSendReadiness(args: {
   verdict?: Pick<SolanaPolicyVerdict, "verdict">;
   /**
    * The historical owner-canary envelope. Ordinary user-signed Send no longer
-   * consults it — `RYN-SOL-M1B`'s evidence is history, not a gate — so it is
-   * optional and checked only where a caller still supplies one.
+   * consults it — the ATA-create canary's evidence is history, not a gate — so
+   * it is optional and checked only where a caller still supplies one.
    */
   canaryVerdict?: Pick<SolanaCanaryVerdict, "decision" | "newRiskAllowed">;
   /** What this exact transfer shape was proven to be. */

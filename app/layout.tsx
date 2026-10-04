@@ -13,10 +13,10 @@ import { CONTACTS, ORGANIZATION_PROFILES } from "@/lib/site/contacts";
 import { THEME_BOOT_SCRIPT } from "@/app/app/theme";
 
 /**
- * The brand faces, loaded once at the root — Brand Canon v1.0 (Owner,
- * 2026-09-11, LOGO/Брендбук2/Шрифти.txt): Geist for the interface, Geist Mono
- * for every figure, hash and address, Unbounded only as the public landing's
- * display accent. Both interface faces ship the Cyrillic subset.
+ * The brand faces, loaded once at the root — the brand book v1.0
+ * (2026-09-11): Geist for the interface, Geist Mono for every figure, hash
+ * and address, Unbounded only as the public landing's display accent. Both
+ * interface faces ship the Cyrillic subset.
  *
  * The CSS variable names are historical and carry the current faces:
  * `--font-geist` / `--font-geist-mono` feed `--ry-font-sans` / `--ry-font-mono`
@@ -25,7 +25,7 @@ import { THEME_BOOT_SCRIPT } from "@/app/app/theme";
  * display accent. A nested route segment may still load its own variable
  * inside its subtree; this is the floor beneath them.
  *
- * ABC Diatype is the Owner's first choice and needs a licence — when it
+ * ABC Diatype is the preferred face and needs a licence — when it
  * arrives, `--ry-font-sans` in app/design/tokens.css is the one line that
  * changes.
  */
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
 };
 
 // Capability claims are emitted by the hourly-revalidated landing routes, not
-// by this static root layout. This global graph carries only stable product canon.
+// by this static root layout. This global graph carries only stable product facts.
 const jsonLd = [
   {
     "@context": "https://schema.org",

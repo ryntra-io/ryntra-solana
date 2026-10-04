@@ -1,14 +1,13 @@
 import { SOLANA_EVIDENCE_REPOSITORY_URL } from "../../lib/site/contacts.ts";
 
 /**
- * «Відкритий код» — the words of `/developers`, English and Ukrainian together
- * (the new site of canon v5.5, `RYN-SITE-V5-001` subtask 3; the plan's map:
- * one page about the public repository, out of the index).
+ * «Відкритий код» — the words of `/developers`, English and Ukrainian together:
+ * one page about the public repository, out of the index.
  *
- * It describes the one public repository (canon §0.0 rule 8) as that
- * repository's own README states it — what is open, how to run it, what it
- * does not claim — and nothing the repository does not hold: no hosted API,
- * no key, no published package (`FORBIDDEN_DEVELOPER_CLAIMS`).
+ * It describes the one public repository as that repository's own README
+ * states it — what is open, how to run it, what it does not claim — and
+ * nothing the repository does not hold: no hosted API, no key, no published
+ * package (`FORBIDDEN_DEVELOPER_CLAIMS`).
  */
 
 export type DevelopersLocale = "en" | "uk";

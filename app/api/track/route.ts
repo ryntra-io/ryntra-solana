@@ -8,7 +8,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /* Anonymous site clicks only. `workspace_cta_click` is fired by the site chrome
-   and was refused here until RYN-ADMIN-006, so the admin never saw it. */
+   and was once refused here, so the admin never saw it. */
 const ALLOWED_EVENTS = new Set(["telegram_cta_click", "workspace_cta_click", "arcus_link_click"]);
 const limiter = new FixedWindowLimiter({ limit: 60, windowMs: 60_000, maxKeys: 5_000 });
 const TRACK_ERROR_REPORT_WINDOW_MS = 60_000;

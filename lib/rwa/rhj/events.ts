@@ -3,19 +3,18 @@
  * accounting of which of them can actually fire here.
  *
  * **A kind that cannot fire is registered carrying the exact thing that would
- * end that, and cannot be armed.** `RYN-RHC-003` registered three Scanner
- * conditions that way and `RYN-RHC-004` refused to arm a condition with no
- * source, because arming it would be a promise. The same rule applies here and
- * it bites harder, because the split is not about missing endpoints — it is
+ * end that, and cannot be armed.** The Scanner registers three conditions
+ * that way and the Watchlist refuses to arm a condition with no source,
+ * because arming it would be a promise. The same rule applies here and it
+ * bites harder, because the split is not about missing endpoints — it is
  * about *time*.
  *
  * Eight of these twelve are **transitions**: a status that changed, a halt that
  * started, a tradability that moved, an action that was added. A transition is
- * a statement about two moments, and this product has one — `RYN-HOME-004`
- * decided against persistence and that decision stands, so nothing here
- * remembers the previous read. The remaining four are **derivable from a single
- * read**, because both sides of the comparison are values a source states in
- * the same response:
+ * a statement about two moments, and this product has one — it deliberately
+ * keeps no persistence, so nothing here remembers the previous read. The
+ * remaining four are **derivable from a single read**, because both sides of
+ * the comparison are values a source states in the same response:
  *
  *   `MULTIPLIER_CHANGED` — `/assets` states `currentMultiplier` and
  *   `pendingMultiplier` together. A pending multiplier is the issuer declaring
@@ -77,7 +76,7 @@ export type EventDefinition = Readonly<{
  * one.
  */
 const BASELINE_SENTENCE =
-  "a stored snapshot of the previous read; this product persists nothing, by the decision recorded in RYN-HOME-004";
+  "a stored snapshot of the previous read; this product deliberately persists nothing";
 
 export const RHJ_EVENT_CATALOGUE: readonly EventDefinition[] = Object.freeze([
   {

@@ -218,11 +218,11 @@ function pnlObservations(reads: HomeSourceReads): readonly PnlObservation[] {
 /**
  * Typed facts that are true about this reader but are not portfolio arithmetic.
  *
- * Exactly one exists in this wave, and it is a real one: a closed paper outcome
- * with no journal entry is `UNREVIEWED_OUTCOME` in the canon's own vocabulary
+ * Exactly one exists today, and it is a real one: a closed paper outcome with
+ * no journal entry is `UNREVIEWED_OUTCOME` in the product's own vocabulary
  * and has a destination that exists. Onboarding prompts — no wallet, no
  * confirmed account — are deliberately *not* here; they explain an empty
- * surface, and putting them in Attention is the filler the canon refuses.
+ * surface, and putting them in Attention is the filler the product refuses.
  */
 function signals(input: Readonly<{ reads: HomeSourceReads; asOf: string }>): readonly AttentionItem[] {
   const paper = input.reads.paper;

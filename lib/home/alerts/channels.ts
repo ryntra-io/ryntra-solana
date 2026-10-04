@@ -17,13 +17,13 @@ import type { NotificationBlock, NotificationDecision } from "../research/monito
  *
  * **A suppressed alert is not a missing alert.** Quiet hours, a cooldown, a
  * dedupe key and a daily budget all exist to reduce noise, and every one of
- * them can silently drop the message that mattered. Wave 4's rule engine
+ * them can silently drop the message that mattered. The monitor-rule engine
  * already decides suppression and already marks it `visible: true`; this module
  * carries that decision to a surface with the rule that caused it attached, so
  * a reader can see *what* was held back and *which limit* held it.
  *
  * Nothing here enables, disables or tests a channel. Those are writes, and this
- * packet adds none: `authority` is the constant `READ_ONLY` and an unconfigured
+ * module adds none: `authority` is the constant `READ_ONLY` and an unconfigured
  * channel carries a `null` enable target rather than a control that would 404.
  *
  * Pure: no clock, no fetch, no randomness. `asOf` arrives from the caller.
@@ -49,7 +49,7 @@ export type ChannelProjection = Readonly<{
   reason: string;
   /** What it would take to configure this channel. Never a control. */
   wouldTake: string;
-  /** Always `null` in this packet: enabling a channel is a write. */
+  /** Always `null` here: enabling a channel is a write. */
   enableHref: null;
   lastDeliveredAt: string | null;
   lastFailureAt: string | null;

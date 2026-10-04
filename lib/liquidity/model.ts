@@ -5,7 +5,7 @@
  * fact, and one a person needs before a plan: which pools hold it, how much
  * sits there, what moved through in the last day, what the venue charges.
  * This module names those facts in Ryntra's words so no venue's response
- * shape reaches the stock UI (`RYN-STOCKS-LIQUIDITY-001`).
+ * shape reaches the stock UI.
  *
  * Every figure is the venue's own, in the venue's own unit — TVL, a 24-hour
  * volume, a 24-hour fee total, a fee rate — carried with the time it was

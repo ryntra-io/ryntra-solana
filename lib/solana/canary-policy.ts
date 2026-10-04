@@ -336,7 +336,7 @@ export function resolveSolanaAtaApprovalConfiguration(
 }
 
 /* ------------------------------------------------------------------------- *
- * The Token-2022 owner approval envelope — RYN-SOL-M4
+ * The Token-2022 owner approval envelope
  * ------------------------------------------------------------------------- */
 
 const HEX_DIGEST = /^0x[0-9a-f]{64}$/;
@@ -345,16 +345,17 @@ const RAW_TOKEN_AMOUNT = /^(0|[1-9][0-9]*)$/;
 /**
  * The exact Token-2022 action one owner approval authorizes, and nothing else.
  *
- * `RYN-SOL-M1B` proved the shape of this idea with three environment variables
- * — recipient, amount, reference — because the action it fenced had three
- * degrees of freedom. A Token-2022 transfer has far more, and each is a way for
- * the signed action to differ from the reviewed one: a different mint, a token
- * program that is not Token-2022, an amount, a delegate that changed between
- * the read and the prompt, an account creation that appeared or vanished, a
- * price the exposure was computed from, a policy version, a blockhash. Naming
- * them one variable at a time would be nineteen variables and no way to check
- * that they describe a single coherent action, so the envelope is one strict
- * JSON document instead, parsed and bound as a unit.
+ * The ATA-creation approval proved the shape of this idea with three
+ * environment variables — recipient, amount, reference — because the action it
+ * fenced had three degrees of freedom. A Token-2022 transfer has far more, and
+ * each is a way for the signed action to differ from the reviewed one: a
+ * different mint, a token program that is not Token-2022, an amount, a delegate
+ * that changed between the read and the prompt, an account creation that
+ * appeared or vanished, a price the exposure was computed from, a policy
+ * version, a blockhash. Naming them one variable at a time would be nineteen
+ * variables and no way to check that they describe a single coherent action,
+ * so the envelope is one strict JSON document instead, parsed and bound as a
+ * unit.
  *
  * **This is deliberately not an "approve Token-2022" switch.** There is no
  * wildcard in this schema, `mint` is one address, `amountRaw` is one integer,
@@ -601,8 +602,8 @@ export function resolveSolanaCanaryPolicy(env: CanaryEnv = process.env): SolanaC
               : ataApproval
                 ? []
                 : destinations,
-            /* Owner-set, and empty until the owner sets it. An empty allowlist
-               is nobody, so this family fails closed by default. */
+            /* Set by the owner, and empty until the owner sets it. An empty
+               allowlist is nobody, so this family fails closed by default. */
             allowedMints: token2022Mints,
             /* A Token-2022 transfer invokes its own program, the Associated
                Token Program when it has to create the recipient account, and
@@ -710,14 +711,14 @@ function highestDecision(findings: readonly Finding[]): SolanaCanaryDecision {
 /**
  * What a person is told when this policy decides against them.
  *
- * The policy's name and its five verdicts are internal vocabulary, and canon
- * `§0.5` keeps internal vocabulary off customer surfaces. `The owner-canary
- * policy returned BLOCK.` shipped to production and was read there on
- * 2026-09-04: it names a mechanism the reader does not have, gives no remedy,
- * and invites them to go looking for a control that is not theirs. The verdict
- * word alone tells them none of the three things they actually need — that
- * their money is untouched, that the limit is Ryntra's own rather than
- * something they did, and whether waiting will help.
+ * The policy's name and its five verdicts are internal vocabulary, and internal
+ * vocabulary stays off customer surfaces. `The owner-canary policy returned
+ * BLOCK.` shipped to production and was read there on 2026-09-04: it names a
+ * mechanism the reader does not have, gives no remedy, and invites them to go
+ * looking for a control that is not theirs. The verdict word alone tells them
+ * none of the three things they actually need — that their money is
+ * untouched, that the limit is Ryntra's own rather than something they did,
+ * and whether waiting will help.
  *
  * The decision is unchanged. Only the sentence is.
  */

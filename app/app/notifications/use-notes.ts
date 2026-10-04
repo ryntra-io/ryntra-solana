@@ -9,9 +9,9 @@ import { useWalletProof } from "@/app/solana/workspace/wallet-proof";
 import { onSurface, type BellSurface } from "./bell-surface";
 
 /**
- * The wallet's notes, read once for the page (canon v5.4 В31, §11). The bell
- * in the top bar and Home's column read the same answer, so a note marked
- * read in one is read in the other and a count never disagrees with a list.
+ * The wallet's notes, read once for the page. The bell in the top bar and
+ * Home's column read the same answer, so a note marked read in one is read
+ * in the other and a count never disagrees with a list.
  *
  * The monitoring surface (`/api/monitoring`) is read behind the wallet's
  * proof, in the reader's language, and kept per wallet and language. A reader

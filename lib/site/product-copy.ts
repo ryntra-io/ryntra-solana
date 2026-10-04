@@ -2,7 +2,7 @@ import type { PublicLocale } from "./locale.ts";
 import type { ProductMapLabel } from "./product-map.ts";
 
 /**
- * Copy for the two public surfaces `RYN-PUBLIC-SITE-PRODUCT-MAP-001` builds.
+ * Copy for the two public surfaces: the product page and the Product Map.
  *
  * Its own file rather than a wing of `PUBLIC_COPY`, which already carries the
  * homepage, the chrome, the ecosystem cards and the flow scenes. Two surfaces

@@ -1,9 +1,8 @@
 /*
- * «Поповнити» (canon v5.1 §4 «Почати з картки»; RYN-INVEST-SIMPLE-001,
- * session 5). Drawn for 390 px first (В20): a title and one line, what the
- * wallet holds against what a purchase needs, and three ways as three rows.
- * One column even on a wide screen — it is a list of steps, not a dashboard.
- * Tokens only (DESIGN.md → app/design/tokens.css).
+ * «Поповнити» — the top-up. Drawn for 390 px first: a title and one line,
+ * what the wallet holds against what a purchase needs, and three ways as
+ * three rows. One column even on a wide screen — it is a list of steps, not
+ * a dashboard. Tokens only (DESIGN.md → app/design/tokens.css).
  */
 
 .page {

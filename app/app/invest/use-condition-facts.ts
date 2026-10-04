@@ -10,12 +10,11 @@ const REFRESH_MS = 60_000;
 export type ConditionRead = Readonly<{ facts: PriceFacts | null; status: "idle" | "loading" | "ready" | "failed" }>;
 
 /**
- * The facts a rule's price condition is judged on while a sheet shows it
- * (canon v5.5 В37; `RYN-PRICE-GUARD-001`): the page's own row first, then the
- * company's row read again from the same server read the order route judges
- * on (`/api/stocks/asset`), every minute while `enabled`. A read that fails
- * keeps the last facts, which age into «stale» on their own — the sheet never
- * invents fresh ones.
+ * The facts a rule's price condition is judged on while a sheet shows it: the
+ * page's own row first, then the company's row read again from the same
+ * server read the order route judges on (`/api/stocks/asset`), every minute
+ * while `enabled`. A read that fails keeps the last facts, which age into
+ * «stale» on their own — the sheet never invents fresh ones.
  */
 export function useConditionFacts(mint: string, enabled: boolean, initial: PriceFacts | null): ConditionRead {
   const [read, setRead] = useState<ConditionRead>({ facts: initial, status: initial ? "ready" : "idle" });

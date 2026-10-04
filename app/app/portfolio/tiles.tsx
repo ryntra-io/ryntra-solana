@@ -39,7 +39,7 @@ import styles from "./portfolio.module.css";
  * what a number means and `format.ts` owns what it looks like, so a second
  * definition of "spendable" cannot appear on a screen.
  *
- * Two presentation rules carry the canon:
+ * Two presentation rules hold throughout:
  *
  *   Unknown is grey. Never green, never zero, never absent — a missing fact is
  *   shown as a missing fact, with its reason one click away.

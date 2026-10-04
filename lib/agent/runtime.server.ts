@@ -1,6 +1,6 @@
 /**
  * The agent's runtime — the real readers behind the tools, and the model
- * behind the composer (`RYN-AGENT-TEXT-001`). Server only.
+ * behind the composer. Server only.
  *
  * Every reader is the product's own service: the Spot catalogue and its
  * search, the stock universe, the evidence layer with its budgets and
@@ -11,7 +11,7 @@
  * discipline (the two token programs, the second attempt, the catalogue
  * overlay) answers the agent that answers the Portfolio page.
  *
- * The model is created only when the Owner's switch is on beside the key
+ * The model is created only when the explicit switch is on beside the key
  * (`RYNTRA_AGENT_MODEL_ENABLED=1` and `OPENAI_API_KEY`); otherwise it is
  * null and every answer is deterministic — nothing is spent.
  */

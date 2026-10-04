@@ -186,7 +186,7 @@ export type CbCopy = {
     title: string;
     sub: string;
     attnTitle: string;
-    /** The visitor branch of Attention, and the two wave-3 blocks. */
+    /** The visitor branch of Attention, and the two blocks that follow it. */
     attnUnavailable: string;
     observedTitle: string;
     observedSub: string;

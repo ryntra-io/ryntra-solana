@@ -60,8 +60,8 @@ const STALE_GRACE_MS = 30 * 60_000;
 const BUCKET_PER_MINUTE = 24;
 const CANDLE_LIMIT = 300;
 /* A year and a day of daily bars: «1Р» on a company page in «Простий» is a
-   year, not three hundred days (RYN-INVEST-SIMPLE-001). The source allows a
-   thousand; the contract's schema allows the same. */
+   year, not three hundred days. The source allows a thousand; the
+   contract's schema allows the same. */
 const DAILY_CANDLE_LIMIT = 366;
 const RESPONSE_CEILING_BYTES = 512 * 1024;
 

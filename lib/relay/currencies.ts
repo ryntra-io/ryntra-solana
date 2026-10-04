@@ -1,11 +1,10 @@
 /**
  * Which tokens a person may name, and what they actually are.
  *
- * `RYN-SOL-MONEY-FLOWS-001I` opened the cross-chain swap from a fixed list of
- * ten owner-named pairs to supported assets between supported networks, across
- * networks. That is only safe if the product can answer two questions about a
- * token it has never seen: **how many decimals** it has, and **whether it is
- * the token whose name it is wearing**.
+ * The cross-chain swap grew from a fixed list of ten named pairs to supported
+ * assets between supported networks. That is only safe if the product can
+ * answer two questions about a token it has never seen: **how many decimals**
+ * it has, and **whether it is the token whose name it is wearing**.
  *
  * Both come from Relay's own currency index, which covers all four networks
  * including Solana. Decimals are not negotiable — an 18-decimal reading of a

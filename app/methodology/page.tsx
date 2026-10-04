@@ -11,7 +11,7 @@ import { methodologyCopy } from "./methodology-copy";
 
 /*
  * «Звідки цифри» — every figure a person sees in Ryntra, the source it is read
- * from and when (the new site of canon v5.5, `RYN-SITE-V5-001` subtask 3).
+ * from and when.
  * From 2026-08-19 this address was a permanent redirect into the handbook and
  * this directory held only the old summary's translations as data; it is a
  * page again, and those translations stay beside it (`content.ts`, `copy.ts`)

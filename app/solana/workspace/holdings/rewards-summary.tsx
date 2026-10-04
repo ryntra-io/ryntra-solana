@@ -13,20 +13,19 @@ import { dollars } from "@/lib/rewards/format";
  *
  * ## Deliberately not part of the total
  *
- * The owner's instruction is explicit and the reasoning is worth keeping: an
- * unclaimed reward is a **claim against Ryntra**, not an asset in the person's
- * wallet. Adding it to portfolio value would mix two different kinds of thing
- * and would make the total disagree with what any block explorer says the
- * wallet holds. Once claimed, the USDC arrives on chain and the total picks it
- * up the way it picks up everything else — through the balance read, with no
- * special case anywhere.
+ * The rule is explicit and the reasoning is worth keeping: an unclaimed reward
+ * is a **claim against Ryntra**, not an asset in the person's wallet. Adding
+ * it to portfolio value would mix two different kinds of thing and would make
+ * the total disagree with what any block explorer says the wallet holds. Once
+ * claimed, the USDC arrives on chain and the total picks it up the way it
+ * picks up everything else — through the balance read, with no special case
+ * anywhere.
  *
  * ## Deliberately not a second Rewards page
  *
  * A figure and a link. No sources breakdown, no referral panel, no claim
- * control. Rewards has a page; duplicating it here would be the second copy of
- * a surface that canon §3.2 exists to prevent, and it would give a person two
- * places to press Claim.
+ * control. Rewards has a page; duplicating it here would make a second copy of
+ * that surface, and it would give a person two places to press Claim.
  *
  * It renders nothing at all until there is something to say — no wallet, no
  * proof, or a zero balance draws no row rather than an empty one.

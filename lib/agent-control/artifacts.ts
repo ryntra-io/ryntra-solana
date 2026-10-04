@@ -27,10 +27,10 @@ import {
  *
  * The consequence that matters is the third one. An `OutcomeReceipt` cannot be
  * constructed without an observed outcome, so "no outcome" is the *absence of
- * a receipt* rather than a receipt that says nothing. Nothing in this packet
- * observes an outcome, so this repository produces no `OutcomeReceipt` at all —
- * which is exactly the honest state, and `RYN-AGENT-CONTROL-007` is where the
- * first one comes from.
+ * a receipt* rather than a receipt that says nothing. Nothing in this
+ * repository observes an outcome, so it produces no `OutcomeReceipt` at all —
+ * which is exactly the honest state, and the first one comes from the first
+ * action that actually executes.
  *
  * Every type carries the same three-axis proof envelope, and the axes are never
  * collapsed into one verdict:
@@ -123,9 +123,9 @@ export const UNSIGNED_ATTESTATION: IssuerAttestation = Object.freeze({
 /**
  * Defined here, required nowhere.
  *
- * `RYN-AGENT-CONTROL-007` fills the `PRESENT` branch with an EIP-712 wallet
- * signature over the exact `contentHash`. It is defined a release early so the
- * artifact bytes do not have to change again when a real authorization
+ * The first real authorization fills the `PRESENT` branch with an EIP-712
+ * wallet signature over the exact `contentHash`. It is defined a release early
+ * so the artifact bytes do not have to change again when a real authorization
  * arrives — which is the whole point of freezing the serialization first.
  *
  * The demo acknowledgement has no way into this type. It lives on the

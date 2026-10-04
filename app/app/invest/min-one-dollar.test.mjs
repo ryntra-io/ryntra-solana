@@ -10,11 +10,10 @@ import { fundingNeed, fundsOf } from "./funding-model.ts";
 import { INVEST_WORDS, reserveFirstLine, reserveLine, routeMinimumLine, setMinimumWord } from "./invest-words.ts";
 
 /**
- * «Від $1» (`RYN-MIN-ONE-DOLLAR-001`, subtask 1; canon v5.5 В35, the Owner's
- * word «Чому 10? … Кожний день по долару»): a purchase, an «Автоінвест» rule
- * and the month's budget from one dollar; a company without a route at the sum
- * says its own minimum, read from the live quote; the one-time reserve that
- * opens a token's account is its own line in «Перевірка», never a cost.
+ * «Від $1»: a purchase, an «Автоінвест» rule and the month's budget from one
+ * dollar; a company without a route at the sum says its own minimum, read
+ * from the live quote; the one-time reserve that opens a token's account is
+ * its own line in «Перевірка», never a cost.
  */
 
 const source = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
@@ -27,7 +26,7 @@ test("a purchase, a rule and the month's budget start at one dollar; the purchas
   assert.equal(MIN_BUY_USD, 1);
   assert.equal(RULE_MINIMUM_USD, 1);
   assert.equal(BUDGET_MINIMUM_USD, 1);
-  /* The purchase's quick choices are shares of the wallet's USDC, not sums (the Owner's word, 2026-09-25: «у відсотках: 25, 50, 75 і 100»); the dollar examples stay only in the deal's comparison under «Деталі». */
+  /* The purchase's quick choices are shares of the wallet's USDC, not sums; the dollar examples stay only in the deal's comparison under «Деталі». */
   assert.deepEqual([...BUY_SHARE_PRESETS_PCT], [25, 50, 75, 100]);
   assert.deepEqual([...STOCK_QUOTE_PRESETS_USD], [1, 5, 10, 25]);
   /* 24.5 USDC: a quarter is $6.12 (never rounded up), all of it exactly $24.50. */
@@ -40,11 +39,11 @@ test("a purchase, a rule and the month's budget start at one dollar; the purchas
   assert.match(BUY_SHEET, /BUY_SHARE_PRESETS_PCT\.map\(\(pct\) => \{/);
   assert.match(BUY_SHEET, /disabled=\{busy \|\| share < MIN_BUY_USD\}/);
   assert.doesNotMatch(BUY_SHEET, /STOCK_QUOTE_PRESETS_USD/, "the purchase offers no fixed sums");
-  assert.doesNotMatch(RULE_SHEET, /STOCK_QUOTE_PRESETS_USD|company\.presets/, "a rule's sum is typed: no quick sums (the Owner's word: «на авто — певну суму, довільну»)");
+  assert.doesNotMatch(RULE_SHEET, /STOCK_QUOTE_PRESETS_USD|company\.presets/, "a rule's sum is typed, any sum the person likes: no quick sums");
   /* A dollar a day never runs into the ceiling: the longest month is 31 days. */
   assert.deepEqual([...BUDGET_PRESETS_USD], [31, 50, 100, 200]);
   assert.equal(BUDGET_PRESETS_USD[0], 31 * 1);
-  /* The sheets open on $10 — a default, not advice: the Owner's word (2026-09-25) «зроби, щоб було 10 … не рекомендовано, кожен робить на свій бюджет». */
+  /* The sheets open on $10 — a default, not advice: each person buys on their own budget. */
   assert.equal(DEFAULT_BUY_USD, 10);
   assert.equal(RULE_DEFAULT_USD, 10);
   assert.match(BUY_SHEET, /const DEFAULT_USD = DEFAULT_BUY_USD;/);

@@ -3,11 +3,11 @@ import { facts, list, note, p, section, steps, table, type DocPage } from "./mod
 import { BRIDGE } from "./trade.ts";
 
 /**
- * Money and Rewards — as the menu draws them (canon v5.4 В30): Top up, Send,
- * Receive and Bridge under Money; Rewards, Referrals and Points under Rewards,
- * keeping the `money/*` addresses they have always answered at. Every rate on
- * these pages is read from the ledger's own policy (`./facts`), so the number
- * a reader sees is the number the ledger applies.
+ * Money and Rewards — as the menu draws them: Top up, Send, Receive and
+ * Bridge under Money; Rewards, Referrals and Points under Rewards, keeping the
+ * `money/*` addresses they have always answered at. Every rate on these pages
+ * is read from the ledger's own policy (`./facts`), so the number a reader
+ * sees is the number the ledger applies.
  */
 
 export const TOP_UP_PAGE: DocPage = {

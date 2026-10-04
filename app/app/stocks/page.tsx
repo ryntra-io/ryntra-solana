@@ -13,7 +13,7 @@ export async function generateMetadata() {
 }
 
 /**
- * `/app/stocks` — Markets, for everyone (canon v5.3 В28, one version).
+ * `/app/stocks` — Markets, for everyone, in one version.
  *
  * The address the landing's «Explore stocks» and the footer give opens the place where a person finds a company: companies first, one
  * card a company (`markets-place.tsx`). Stocks the tool — every confirmed

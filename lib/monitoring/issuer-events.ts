@@ -1,6 +1,5 @@
 /**
- * The IPO and conversion watch in Monitoring — Ryntra does not let a token
- * burn (canon v5.2 В27, §7, §11; `RYN-PRESTOCKS-001`, session 2).
+ * The IPO and conversion watch in Monitoring — Ryntra does not let a token burn.
  *
  * A wallet that holds a token whose issuer opened a swap window is told: the
  * day Ryntra first sees it hold the token, then 90, 30, 7 and 1 days before

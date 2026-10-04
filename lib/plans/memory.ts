@@ -1,5 +1,5 @@
 /**
- * Strategy memory — `RYN-RESULTS-MEMORY-001`, canon Part A §11.
+ * Strategy memory.
  *
  * What the product remembers about how this wallet decides, so the next
  * decision is not made in a vacuum. Three rules make it worth trusting, and

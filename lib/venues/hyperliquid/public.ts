@@ -1,4 +1,4 @@
-/* Hyperliquid public /info client — READ-ONLY, zero-auth (STEP 6, wave 1 of venue #2).
+/* Hyperliquid public /info client — READ-ONLY, zero-auth (venue #2).
    Every request/response shape below is taken verbatim from the official docs
    (hyperliquid.gitbook.io → for-developers/api/info-endpoint, verified 2026-07-12):
      - POST https://api.hyperliquid.xyz/info, Content-Type: application/json
@@ -7,7 +7,7 @@
        userFills at most 2000 most recent fills
      - rate limits: aggregated REST weight 1200/min/IP; l2Book/clearinghouseState weigh 2,
        most other info types weigh 20 — this client stays far below with on-demand reads
-   NO exchange endpoint here: live execution is deliberately out of scope for this wave.
+   NO exchange endpoint here: live execution is deliberately out of scope for this client.
    The transport is injectable so tests run on doc-shaped fixtures without a network. */
 
 export const HL_INFO_URL = "https://api.hyperliquid.xyz/info";

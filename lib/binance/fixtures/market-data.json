@@ -1,6 +1,6 @@
 {
   "capturedAt": "2026-08-23T12:22:55Z",
-  "note": "Public Binance REST market data captured by the RYN-BIN-AOS-001 read-only discovery probe. The Binance MCP Server states its tools are \"the same endpoints as the Binance REST API, exposed as individual callable tools\"; these payloads are REST-verified and MCP-UNVERIFIED.",
+  "note": "Public Binance REST market data captured by a read-only discovery probe. The Binance MCP Server states its tools are \"the same endpoints as the Binance REST API, exposed as individual callable tools\"; these payloads are REST-verified and MCP-UNVERIFIED.",
   "ticker": {
     "endpoint": "GET https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT",
     "httpStatus": 200,

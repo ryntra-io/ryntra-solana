@@ -14,10 +14,9 @@ import { contactCopy } from "./contact-copy";
 
 /*
  * «Контакти» — one inbox, three subjects that sort it, what helps an answer
- * and what never to send (the new site of canon v5.5, `RYN-SITE-V5-001`
- * subtask 3). The page's own action — the letter — is the one orange on the
- * screen, so the header's «Open the app» steps back. Every address comes from
- * `lib/site/contacts.ts`, the one place that knows them.
+ * and what never to send. The page's own action — the letter — is the one
+ * orange on the screen, so the header's «Open the app» steps back. Every
+ * address comes from `lib/site/contacts.ts`, the one place that knows them.
  */
 
 export async function generateMetadata(): Promise<Metadata> {

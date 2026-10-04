@@ -215,7 +215,7 @@ export function buildCctpPrecanaryReview(args: {
   findings.push({
     code: "DESTINATION_GAS",
     outcome: "REVIEW",
-    detail: "Destination gas is not estimated in M0F; no forwarding or destination transaction is built.",
+    detail: "Destination gas is not estimated in this bridge preview; no forwarding or destination transaction is built.",
   });
 
   let canaryIntent: z.output<typeof SolanaCanaryIntentSchema> | null = null;
@@ -291,7 +291,7 @@ export function buildCctpPrecanaryReview(args: {
     findings.push({
       code: "HUMAN_APPROVAL",
       outcome: "REVIEW",
-      detail: "No owner approval is recorded; M0F never asks for one.",
+      detail: "No owner approval is recorded; the bridge preview never asks for one.",
     });
   }
 

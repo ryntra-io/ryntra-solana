@@ -188,7 +188,7 @@ export function Rules({
             <span className={styles.rowName}>{rule.label}</span>
             {/* Four labelled values, separated. At the meta row's own 4px gap
                 they ran together into one string nobody could parse — the same
-                defect the wave-6 action classes shipped as. */}
+                defect the action-class labels once had. */}
             <span className={`${styles.rowMeta} ${styles.rowMetaSeparated}`}>
               <span>{c.quietHours} <b>{rule.quietHoursLabel}</b></span>
               <span>{c.cooldown} <b>{rule.cooldownLabel}</b></span>

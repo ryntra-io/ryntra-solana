@@ -8,7 +8,7 @@ import type { AgentDeps } from "@/lib/agent/service";
 import { getGuardRuntime } from "@/lib/guard/runtime";
 
 /**
- * The agent's dependencies for one request (`RYN-AGENT-TEXT-001`).
+ * The agent's dependencies for one request.
  *
  * The holdings reader invokes the holdings route in-process with the
  * caller's own forwarding headers, so the read is rate-limited and disciplined
@@ -25,8 +25,7 @@ export const FIXTURES_ENV = "RYNTRA_AGENT_FIXTURES";
  * `route` on the stand: the fixture world, but the holdings read through the
  * real holdings route over the public RPC — the one reader whose answer the
  * fixtures had written in the agent's shape instead of the route's, which is
- * how a native SOL row without a mint reached production unseen
- * (`RYN-API-CONTRACT-002`).
+ * how a native SOL row without a mint reached production unseen.
  */
 export const FIXTURE_HOLDINGS_ENV = "RYNTRA_AGENT_FIXTURE_HOLDINGS";
 
@@ -40,7 +39,7 @@ function holdingsThroughRoute(request: Request): HoldingsReader {
     headers.set("content-type", "application/json");
     try {
       const response = await readHoldingsRoute(new Request(new URL("/api/solana/holdings", request.url), { method: "POST", headers, body: JSON.stringify({ owner, network: "mainnet" }) }));
-      /* Read against the contract, never cast: the route's native SOL row has no mint (`RYN-API-CONTRACT-002`). */
+      /* Read against the contract, never cast: the route's native SOL row has no mint. */
       return holdingsReadFromAnswer(response.status, await response.json());
     } catch (error) {
       return { ok: false, reason: error instanceof Error ? error.message : "the holdings route did not answer" };
@@ -71,7 +70,7 @@ export async function agentDepsFor(request: Request, owner: string): Promise<Age
   if (fixturesOn()) {
     const world = await fixtureWorldFor(owner);
     const budget = resolveAgentBudgetConfig(process.env);
-    /* The stand's model is the fixture: `modelEnabled` follows the Owner's switch so the budget path is walked, and nothing is spent. */
+    /* The stand's model is the fixture: `modelEnabled` follows the deployment's switch so the budget path is walked, and nothing is spent. */
     const readers = process.env[FIXTURE_HOLDINGS_ENV]?.trim() === "route" ? { ...world.readers, holdings: holdingsThroughRoute(request) } : world.readers;
     return { store, readers, model: budget.modelEnabled || process.env.RYNTRA_AGENT_FIXTURE_MODEL === "1" ? createFixtureAgentModel({ invent: process.env.RYNTRA_AGENT_FIXTURE_INVENT === "1" }) : null, budget: { ...budget, modelEnabled: budget.modelEnabled || process.env.RYNTRA_AGENT_FIXTURE_MODEL === "1" } };
   }

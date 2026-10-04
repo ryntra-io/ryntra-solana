@@ -1,14 +1,13 @@
 /**
- * The durable conversation (`RYN-AGENT-TEXT-001`; the Owner's rule of
- * 2026-09-22 §11).
+ * The durable conversation.
  *
  * One record per session in the Guard store, keyed by the proven wallet and
  * read back only through that proof — the same tenancy every other cabinet
- * collection keeps (canon §0.6): `solana:mainnet:<wallet>:<sessionId>`, the
- * trailing colon on the scan prefix so one wallet's scan never reads a
- * wallet whose address starts the same way. The turns are structured — the
- * person's words, Ryn's answer with its cards and citations — and they are a
- * record of what was said, never the source of a balance, a plan's state, an
+ * collection keeps: `solana:mainnet:<wallet>:<sessionId>`, the trailing
+ * colon on the scan prefix so one wallet's scan never reads a wallet whose
+ * address starts the same way. The turns are structured — the person's
+ * words, Ryn's answer with its cards and citations — and they are a record
+ * of what was said, never the source of a balance, a plan's state, an
  * order's state or the inbox: those are read again through the tools on
  * every question. Compare-and-set on the store's revision keeps two answers
  * to one session from overwriting each other; the loser re-reads.

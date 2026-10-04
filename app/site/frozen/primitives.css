@@ -501,11 +501,11 @@
 }
 
 /*
- * The ramp is Brandbook v1.2 §06 verbatim and stays that way — 2.75rem is the
- * H1. That is the desktop value: at 375px it renders a two-sentence heading as
- * five lines, so the token is stepped down for small viewports rather than
- * softened into a clamp, which would change the frozen value everywhere and
- * break its projection gate.
+ * The ramp is the brand book's type scale verbatim and stays that way —
+ * 2.75rem is the H1. That is the desktop value: at 375px it renders a
+ * two-sentence heading as five lines, so the token is stepped down for small
+ * viewports rather than softened into a clamp, which would change the frozen
+ * value everywhere and break its projection gate.
  */
 @media (max-width: 560px) {
   .rx {

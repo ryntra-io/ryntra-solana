@@ -13,12 +13,12 @@ export const dynamic = "force-dynamic";
 /**
  * Find a token on any of the four networks, by ticker, name or address.
  *
- * `RYN-SOL-MONEY-FLOWS-001I` widened which assets the cross-chain swap carries, and a
- * pair a person cannot name is a pair they cannot make. Solana already had
- * this — `/api/solana/tokens/search`, over Jupiter's catalogue — so that path
- * is reused rather than replaced: it is the one this product has shipped on,
- * it carries Jupiter's own `isVerified` and `isSuspicious`, and swapping it
- * for a second source would trade a known answer for a new one. The three EVM
+ * The cross-chain swap carries arbitrary tokens, and a pair a person cannot
+ * name is a pair they cannot make. Solana already had this —
+ * `/api/solana/tokens/search`, over Jupiter's catalogue — so that path is
+ * reused rather than replaced: it is the one this product has shipped on, it
+ * carries Jupiter's own `isVerified` and `isSuspicious`, and swapping it for a
+ * second source would trade a known answer for a new one. The three EVM
  * networks come from Relay's index, which is the same index the quote will be
  * priced against.
  *

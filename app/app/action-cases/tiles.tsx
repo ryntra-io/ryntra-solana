@@ -37,7 +37,7 @@ import styles from "./decisions.module.css";
  * The chrome is the Portfolio surface's, imported rather than copied, so the
  * tone vocabulary, the spacing and the info control stay one system.
  *
- * Three presentation rules carry the canon here:
+ * Three presentation rules carry the chain here:
  *
  *   **A missing link is shown with its reason.** Never a dash, never a blank.
  *
@@ -197,7 +197,7 @@ export function ActionList({ actions }: { actions: readonly HomeActionCase[] }) 
 /**
  * The audited chain, drawn as a chain.
  *
- * Eight links in the canon's order. A link is either the fact it carries or the
+ * Eight links in their fixed order. A link is either the fact it carries or the
  * exact reason it is missing, and the second is the point: a chain that stops
  * at the decision, with the sentence saying why, is the honest picture of this
  * release.

@@ -1,8 +1,7 @@
 /**
- * What the tools read through — the existing services, behind one interface
- * (`RYN-AGENT-TEXT-001`; the Owner's rule of 2026-09-22 §2: tools read through
- * existing services and provider boundaries, never a provider API called from
- * agent code).
+ * What the tools read through — the existing services, behind one interface.
+ * Tools read through existing services and provider boundaries, never a
+ * provider API called from agent code.
  *
  * The interface is the seam: `runtime.server.ts` binds every reader to the
  * real service (the Spot catalogue, the stock universe, the evidence layer
@@ -75,8 +74,8 @@ const MINT = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
  * stock first (the universe, by ticker or by mint), else the catalogue
  * (exact symbol, the verified row first). A word the catalogue does not know
  * is `none` with the reason — never a guess at what the person meant. A token
- * Ryntra no longer supports is `none` with the reason `retired` (canon v5.2
- * В26): never a look-alike that borrowed its symbol.
+ * Ryntra no longer supports is `none` with the reason `retired`: never a
+ * look-alike that borrowed its symbol.
  */
 export async function resolveAsset(readers: AgentReaders, query: string): Promise<ResolvedAsset> {
   const text = query.trim().replace(/^\$/, "");

@@ -1,7 +1,6 @@
 /**
  * The language of an address — English without a prefix, Ukrainian at `/uk`
- * and the same path (the plan of `RYN-SITE-V5-001` §4, the Owner's decision 4:
- * «для кожної сторінки з індексу, сторінок застосунку теж»).
+ * and the same path, for every page offered to the index, the app's pages too.
  *
  * Every page a search engine is offered has two addresses: `/docs/invest/buy`
  * and `/uk/docs/invest/buy`, `/app/stocks/NVDAx` and `/uk/app/stocks/NVDAx`.

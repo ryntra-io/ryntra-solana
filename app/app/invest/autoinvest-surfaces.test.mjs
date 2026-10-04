@@ -4,12 +4,12 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 /*
- * «Автоінвест» made clear (canon v5.3 В29; `RYN-NAV-V5-001`, session 2): the
- * block on Home and in Portfolio for every connected wallet, the rule's
- * purchase first while its reminder is open, the ordinary purchase second and
- * saying the reminder stays open — on a company's page and in Spot — and the
- * month's budget as its own line, never the rule's sum. Words and the order of
- * actions only: the execution path, the checks and the contract do not move.
+ * «Автоінвест» made clear: the block on Home and in Portfolio for every
+ * connected wallet, the rule's purchase first while its reminder is open, the
+ * ordinary purchase second and saying the reminder stays open — on a company's
+ * page and in Spot — and the month's budget as its own line, never the rule's
+ * sum. Words and the order of actions only: the execution path, the checks and
+ * the contract do not move.
  */
 
 const read = (path) => readFileSync(new URL("../../../" + path, import.meta.url), "utf8");
@@ -29,7 +29,7 @@ const TICKET = code("app/solana/workspace/spot/order-ticket.tsx");
 const NOTICE = code("app/app/invest/rule-reminder-notice.tsx");
 
 test("«Автоінвест» is on Home for every connected wallet — not held back until the wallet can buy", () => {
-  /* Since RYN-WIDTH-PREMIUM-001 the block stands in Home's right column — beside the main one on a desk, under it on a phone. */
+  /* The block stands in Home's right column — beside the main one on a desk, under it on a phone. */
   assert.match(HOME, /<HomeAside locale=\{locale\} \/>/, "Home draws its right column");
   assert.match(ASIDE, /import \{ AutoinvestBlock \} from "@\/app\/app\/invest\/autoinvest-block"/);
   const call = ASIDE.indexOf("<AutoinvestBlock locale={locale} compact />");

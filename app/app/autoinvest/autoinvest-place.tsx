@@ -8,10 +8,10 @@ import type { WorkspaceLocale } from "@/app/shell/locale";
 import { useSolanaConnection } from "@/app/solana/workspace/connection";
 
 /**
- * «Автоінвест» — its own row of the menu, under «Інвестувати» (canon v5.4
- * В30), and the same block Home and Portfolio draw (§4.1, В29): the month's
- * budget as its own line, the rules with their switches, «Додати правило».
- * One block in three places, one truth: nothing here is a second store.
+ * «Автоінвест» — its own row of the menu, under «Інвестувати», and the same
+ * block Home and Portfolio draw: the month's budget as its own line, the rules
+ * with their switches, «Додати правило». One block in three places, one
+ * truth: nothing here is a second store.
  *
  * A guest reads what «Автоінвест» is in one line and has one way in — the
  * wallet — which is the page's one orange action.

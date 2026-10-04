@@ -1,9 +1,8 @@
 /**
  * How much of Ryntra's Relay rate limit is actually being used.
  *
- * Owner instruction 2026-09-10, after reading the Dashboard: *«Додай у
- * Admin/Observability можливість бачити Relay 429/rate-limit errors, щоб ми
- * помітили, коли підходимо до межі.»*
+ * Admin/Observability shows Relay's 429 and rate-limit errors, so the team
+ * notices when traffic approaches the limit.
  *
  * This reads **Relay's own accounting** — `GET /metrics/usage`, call counts for
  * the authenticated key grouped by endpoint, status code and minute — rather

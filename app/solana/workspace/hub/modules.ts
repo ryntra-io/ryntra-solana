@@ -8,11 +8,11 @@ import { translateSolana } from "../i18n/catalog.ts";
  * entry without a page is the most expensive mistake this file can make**, so
  * `railed()` throws rather than rendering a destination that does not exist.
  *
- * This file used to carry a second job, and canon §0.7 removed it on
- * 2026-09-03. The old spec sentence read: *the sidebar must carry Markets, Swap
- * and Strategy gate-named — visible where a person looks for them, never
- * rendered as finished*, and `gated()` existed to put a routeless module into
- * the Pro rail with its gate showing. The rail no longer projects routeless
+ * This file used to carry a second job, and it was removed on 2026-09-03. The
+ * old rule read: *the sidebar must carry Markets, Swap and Strategy
+ * gate-named — visible where a person looks for them, never rendered as
+ * finished*, and `gated()` existed to put a routeless module into the Pro rail
+ * with its gate showing. The rail no longer projects routeless
  * entries at all, so `gated()` and `mapped()` now differ only in that `gated()`
  * asserts its gate names something. The invariant that matters is unchanged and
  * is enforced by construction: a routed module has been verified, and a module
@@ -20,9 +20,9 @@ import { translateSolana } from "../i18n/catalog.ts";
  *
  * What replaced the rail's job is this registry doing it properly. Eighteen
  * capabilities that were rail rows tagged `Soon` are registered here instead,
- * each with what exists, what does not, and the row or canon clause that moves
- * it — which is the description the rail could never carry, because a rail row
- * has room for a label and a badge and nothing else.
+ * each with what exists, what does not, and the condition that moves it —
+ * which is the description the rail could never carry, because a rail row has
+ * room for a label and a badge and nothing else.
  *
  * ## Four independent facts, not one word
  *
@@ -36,39 +36,39 @@ import { translateSolana } from "../i18n/catalog.ts";
  * lastVerifiedAt  when that was last true against a live source
  * ```
  *
- * ## The vocabulary is the canon's, and it has no Devnet in it
+ * ## The vocabulary has no Devnet in it
  *
  * This registry used to carry `DEVNET_ACTION`, `DEVNET_EXECUTION` and
- * `DEVNET_VERIFIED`, held there by a devnet-first ladder whose last rung was a
- * founder signature on a network where nothing has worth. The Solana Mainnet
- * Product Canon v5.0 removed that ladder: Solana is built as a mainnet
- * product, Devnet is an optional internal regression fixture and never a
- * release gate (§3.1), and the five status axes are named in §26. So the
- * environment axis is `MAINNET · OFFCHAIN`, the mode axis is
- * `READ_ONLY · USER_SIGNED · NONE`, and the word above `AVAILABLE` is
+ * `DEVNET_VERIFIED`, held there by a devnet-first ladder whose last rung was an
+ * owner signature on a network where nothing has worth. That ladder is gone:
+ * Solana is built as a mainnet product, Devnet is an optional internal
+ * regression fixture and never a release gate, and the product names five
+ * status axes. So the environment axis is `MAINNET · OFFCHAIN`, the mode axis
+ * is `READ_ONLY · USER_SIGNED · NONE`, and the word above `AVAILABLE` is
  * `OWNER_CANARY_VERIFIED` — the M5 promotion word, earned per action family by
  * one owner-signed mainnet action, never by a devnet rehearsal.
  *
- * `NONE` survives on the mode axis because §26.2 has no value for a surface
- * that touches no network at all, and calling the Settings page `READ_ONLY`
- * would claim a read it never performs. `PLANNED` survives on the maturity
- * axis for the same reason: §26.3 stops at `GATED`, and an accepted direction
- * with no active work is not blocked on a named condition.
+ * `NONE` survives on the mode axis because the named modes have no value for a
+ * surface that touches no network at all, and calling the Settings page
+ * `READ_ONLY` would claim a read it never performs. `PLANNED` survives on the
+ * maturity axis for the same reason: the named maturity ladder stops at
+ * `GATED`, and an accepted direction with no active work is not blocked on a
+ * named condition.
  */
 
 export type SolanaModuleGroup = "HOME" | "OBSERVE" | "TRADE" | "PROVE" | "BUILD" | "CONTROL";
 
-/** Which network's facts a module deals in. Canon §26.1. */
+/** Which network's facts a module deals in. */
 export type SolanaModuleEnvironment =
   /** Solana mainnet — real mints, real balances, real consequences. */
   | "MAINNET"
   /** Touches no network — preferences, documentation, the map itself. */
   | "OFFCHAIN";
 
-/** What a module is permitted to do in its environment. Canon §26.2. */
+/** What a module is permitted to do in its environment. */
 export type SolanaModuleMode = "READ_ONLY" | "USER_SIGNED" | "NONE";
 
-/** How far a module has actually come. Canon §26.3. */
+/** How far a module has actually come. */
 export type SolanaModuleMaturity =
   /** A real working surface. Reads only; moves nothing. */
   | "AVAILABLE"
@@ -123,16 +123,17 @@ function railed(spec: Spec & { guided?: boolean }): SolanaModule {
 /**
  * Registered with no page, and with an enforced gate.
  *
- * It once put the entry into the Pro rail as a disabled row; canon §0.7 ended
- * that, so this is now a `mapped()` that additionally refuses a gate naming
- * nothing — *a gated entry whose gate says nothing is a "coming soon" badge,
- * which is the thing this registry forbids*. That rule is the reason to keep
- * the helper rather than fold it away, and `surfaces.test.mjs` now applies the
- * same rule to every entry in the file however it was constructed.
+ * It once put the entry into the Pro rail as a disabled row; that ended on
+ * 2026-09-03, so this is now a `mapped()` that additionally refuses a gate
+ * that does not name the phase opening it — *a gated entry whose gate says
+ * nothing is a "coming soon" badge, which is the thing this registry forbids*.
+ * That rule is the reason to keep the helper rather than fold it away, and
+ * `surfaces.test.mjs` applies a matching rule to every entry in the file
+ * however it was constructed.
  */
 function gated(spec: Omit<Spec, "route" | "lastVerifiedAt">): SolanaModule {
-  if (!/RYN-SOL-|Phase [A-F]/.test(spec.gate)) {
-    throw new Error(`Solana Hub module "${spec.id}" is gated without naming its gate task or phase.`);
+  if (!/\bPhase [A-F]\b/.test(spec.gate)) {
+    throw new Error(`Solana Hub module "${spec.id}" is gated without naming the phase that opens it.`);
   }
   return {
     ...spec,
@@ -180,8 +181,7 @@ const M1_VERIFIED_AT = "2026-09-01T16:19:31.000Z";
 const M2_VERIFIED_AT = "2026-09-01T11:55:21.403Z";
 
 /* The day the shell, the passport surface and the live mainnet reads behind
-   them were verified rendered — geometry measured and looked at — in the
-   RYN-SOL-A4 session. */
+   them were verified rendered — geometry measured and looked at. */
 const SHELL_SHIPPED = "2026-08-17";
 
 /* The day the public evidence kit was last checked the way a stranger checks
@@ -206,7 +206,7 @@ export const SOLANA_MODULES: readonly SolanaModule[] = [
     exists: "Live epoch read, live issuer-power rows over the six fixture-verified mints, and the module ledger.",
     missing:
       "Watched mints, and a resting summary of recent activity. History has its own page now; this screen does not yet carry a view of it.",
-    gate: "The watchlist waits on Phase B's retention decision. A summary of History on this screen is its own row.",
+    gate: "The watchlist waits on Phase B's retention decision. A summary of History on this screen is a separate piece of work.",
     /* Market overview moved off the product root on 2026-09-04: the root is
        Home now, and a catalogue of mints is where Markets opens. */
     route: `${BASE}/markets`,
@@ -226,7 +226,7 @@ export const SOLANA_MODULES: readonly SolanaModule[] = [
     exists:
       "The full passport over any mainnet mint — SPL or Token-2022 — with provenance on every field, plus six real mints to start from.",
     missing: "Off-chain metadata (name, logo, issuer's own description), price, liquidity and holder concentration.",
-    gate: "Phase B data adapters (RYN-SOL-B1) for metadata and prices; the scanner (RYN-SOL-B3) for concentration.",
+    gate: "Phase B data adapters for metadata and prices; the scanner for concentration.",
     route: `${BASE}/assets`,
     environment: "MAINNET",
     mode: "READ_ONLY",
@@ -248,9 +248,9 @@ export const SOLANA_MODULES: readonly SolanaModule[] = [
     purpose: "Curated market universes with prices, metadata and freshness on every read.",
     detail:
       "Token lists and prices from named providers, compared rather than trusted singly, over curated universes — tokenized assets, majors, stables — with a stated method and never a claimed index. The live quote path already runs on the Swap surface; this module is the market view around it.",
-    exists: "The quote adapter and venue health, live on Swap since RYN-SOL-A5.",
+    exists: "The quote adapter and venue health, live on Swap since the swap preview shipped.",
     missing: "Market data adapters (prices, metadata, OHLCV decision), the universes and the page.",
-    gate: "Phase B — RYN-SOL-B1 brings the data adapters, RYN-SOL-B2 the universes and watchlist.",
+    gate: "Phase B — the data adapters, and separately the universes and watchlist.",
     environment: "MAINNET",
     mode: "READ_ONLY",
     maturity: "PLANNED",
@@ -264,9 +264,9 @@ export const SOLANA_MODULES: readonly SolanaModule[] = [
       "Curated means curated: Solana has no asset index this product reads, so coverage is a set with a stated method, never a market. The watchlist follows the Stellar retention decision — browser-local, deletable, nowhere else.",
     exists: "Nothing. The curated-scope discipline is inherited from the Stellar Observe slice, where it is enforced in the type.",
     missing: "The universes, the page, and the local store.",
-    /* Was "Phase B — RYN-SOL-B2", a row superseded by the M-family on
-       2026-08-26. A gate that names a retired row names nothing. */
-    gate: "RYN-SOL-B1 — Radar and the data-coverage truth model, which owns the curated-scope discipline this needs.",
+    /* The gate used to name work that was superseded on 2026-08-26. A gate
+       that names retired work names nothing. */
+    gate: "Phase B — Radar and the data-coverage truth model, which owns the curated-scope discipline this needs.",
     environment: "MAINNET",
     mode: "READ_ONLY",
     maturity: "PLANNED",
@@ -280,7 +280,7 @@ export const SOLANA_MODULES: readonly SolanaModule[] = [
       "Liquidity depth, pool age, holder concentration, authorities present, extension risk flags, price change. Facts with provenance, filterable; UNKNOWN stays UNKNOWN instead of defaulting to reassurance.",
     exists: "Nothing. The per-mint facts it would aggregate are the passport's, already read with provenance.",
     missing: "The multi-mint read path, the filters and the saved-scan store.",
-    gate: "Phase B — RYN-SOL-B3.",
+    gate: "Phase B — the scanner itself.",
     environment: "MAINNET",
     mode: "READ_ONLY",
     maturity: "PLANNED",
@@ -295,7 +295,7 @@ export const SOLANA_MODULES: readonly SolanaModule[] = [
     exists:
       "One exact 2.622093 USDC to 0.025621005 SOL transaction is finalized, independently read by two RPC operators and bound to a signed receipt plus an exact-hash correction record. The full keyed production surface still quotes routed pairs and amounts behind the same evidence and wallet controls.",
     missing: "One exact owner canary verifies this action family; it does not guarantee every pair, amount, route or future landing, and it creates no autonomous or public execution authority.",
-    gate: "None. RYN-SOL-MONEY-FLOWS-001A closed Swap as a product; every later swap still requires a fresh route, an exact Review and the person's own visible wallet signature.",
+    gate: "None. Swap is closed as a product; every later swap still requires a fresh route, an exact Review and the person's own visible wallet signature.",
     route: `${BASE}/swap`,
     environment: "MAINNET",
     mode: "USER_SIGNED",
@@ -306,14 +306,14 @@ export const SOLANA_MODULES: readonly SolanaModule[] = [
   /*
    * The transfer between chains: recorded, and no longer a surface.
    *
-   * Owner instruction of 2026-09-08: the cross-chain swap replaces the bridge.
-   * The capability did not go anywhere — the same Circle CCTP V2 engine runs,
-   * signed in the person's own wallet, mounted by Swap for the one class of
-   * pair that is the same asset on two networks — but it has no page, no rail
-   * row and no route of its own, so the record is `mapped` rather than
-   * `railed`. Deleting the record instead would erase the owner canary of
-   * 2026-09-02 that proved it, which is a fact about what this product has
-   * done rather than a fact about where a menu points.
+   * Since 2026-09-08 the cross-chain swap replaces the bridge. The capability
+   * did not go anywhere — the same Circle CCTP V2 engine runs, signed in the
+   * person's own wallet, mounted by Swap for the one class of pair that is the
+   * same asset on two networks — but it has no page, no rail row and no route
+   * of its own, so the record is `mapped` rather than `railed`. Deleting the
+   * record instead would erase the owner canary of 2026-09-02 that proved it,
+   * which is a fact about what this product has done rather than a fact about
+   * where a menu points.
    */
   mapped({
     id: "bridge",
@@ -326,7 +326,7 @@ export const SOLANA_MODULES: readonly SolanaModule[] = [
       "The Solana to Base direction, for any amount your balance and the provider allow. One owner-signed transfer of 2 USDC is finalized and reconciled MATCHED on both chains, with a receipt the public verifier reads as valid.",
     missing:
       "The Base to Solana direction, provider-driven token and route discovery, and live provider minimums and maximums.",
-    gate: "RYN-SOL-MONEY-FLOWS-001D — the reverse leg is a build, not a switch: an ERC-20 approve, a Base depositForBurn encoder, a Solana receiveMessage builder and a chain-tagged duplicate-burn claim.",
+    gate: "Waits on the reverse leg, which is a build, not a switch: an ERC-20 approve, a Base depositForBurn encoder, a Solana receiveMessage builder and a chain-tagged duplicate-burn claim.",
     environment: "MAINNET",
     mode: "USER_SIGNED",
     maturity: "OWNER_CANARY_VERIFIED",
@@ -341,7 +341,7 @@ export const SOLANA_MODULES: readonly SolanaModule[] = [
       "The Strategy Lab core exists in this product for other markets. Binding it to Solana instruments — specs, historical data with provenance, deterministic backtests, walk-forward, paper trading — is its own registered phase, and pretending a binding exists before it does is what this card exists to prevent.",
     exists: "The chain-neutral Strategy Lab kernel, live elsewhere in the product.",
     missing: "Every Solana binding: instruments, data, backtests, paper lifecycle.",
-    gate: "Phase C — RYN-SOL-C1 through C7.",
+    gate: "Phase C — all seven of its steps.",
     environment: "OFFCHAIN",
     mode: "NONE",
     maturity: "PLANNED",
@@ -355,7 +355,7 @@ export const SOLANA_MODULES: readonly SolanaModule[] = [
       "Three immutable observations. The M1 Send receipt reconciled MATCHED with no deviation to record. M1B's preserves the deviation it found rather than reissuing a cleaner one, and M2's carries a hash-bound public correction naming the two inaccurate provenance sentences it shipped with.",
     exists: "The signed M1 Send Outcome Receipt, the signed M1B Outcome Receipt, the signed M2 Swap Outcome Receipt with its hash-bound correction, explorer proofs and both verifier paths.",
     missing: "No Bridge or Token-2022 receipt exists.",
-    gate: "Send and Swap are closed for their exact proved actions. RYN-SOL-M3 and RYN-SOL-M4 remain separate action-family gates.",
+    gate: "Send and Swap are closed for their exact proved actions. The bridge canary and the Token-2022 canary remain separate action-family gates.",
     route: `${BASE}/receipts`,
     environment: "OFFCHAIN",
     mode: "NONE",
@@ -374,7 +374,7 @@ export const SOLANA_MODULES: readonly SolanaModule[] = [
       "Two exact owner-signed transfers are finalized on Solana Mainnet. M1 moved 0.5 USDC to a recipient who already held an account and reconciled MATCHED — the first Solana receipt this product matched outright. M1B proved the harder shape before it, creating the recipient's account and paying its rent. Both were wallet-signed, submitted once and read back by two independent RPC operators.",
     missing:
       "Neither proof promotes an amount, a destination or an asset beyond the ones actually sent. Nothing here executes on anyone's behalf: every transfer still needs a fresh build, a fresh simulation and the owner's own wallet confirmation.",
-    gate: "Send is proved for owner-signed classic SPL transfers. Supported Token-2022 cases remain RYN-SOL-M4, and Send as a finished product is RYN-SOL-MONEY-FLOWS-001B.",
+    gate: "Send is proved for owner-signed classic SPL transfers. Supported Token-2022 cases wait on the Token-2022 canary, and Send as a finished product waits on its own production step.",
     route: `${BASE}/send`,
     environment: "MAINNET",
     mode: "USER_SIGNED",
@@ -393,7 +393,7 @@ export const SOLANA_MODULES: readonly SolanaModule[] = [
       "Live balances for the connected wallet, native SOL and every non-zero SPL and Token-2022 account, with search, a value total and an explicit count of what could not be priced. Money that has left and not yet settled is counted above the total rather than folded into it. An unreadable balance renders as unreadable rather than as an empty wallet.",
     missing:
       "Per-chain totals for a linked EVM wallet. A Solana wallet and an EVM wallet are not one person because both are open in one browser, so this waits on each being signed for explicitly.",
-    gate: "Canon §0.6 — multi-chain totals wait on the wallet sign-in that proves ownership, and this repository has no Solana sign-in yet.",
+    gate: "Multi-chain totals wait on the wallet sign-in that proves ownership, and this repository has no Solana sign-in yet.",
     route: `${BASE}/holdings`,
     environment: "MAINNET",
     mode: "READ_ONLY",
@@ -412,7 +412,7 @@ export const SOLANA_MODULES: readonly SolanaModule[] = [
       "Send, Swap and Bridge write to a wallet-first action ledger, and this reads it back for the connected address with the current state of each lane. A swap that never came back can be asked what happened, from any browser that connects the wallet.",
     missing:
       "Transfers made before this ledger existed, and any made outside Ryntra: both are on the chain and not in here, and the page says so rather than implying the wallet did nothing. Swap amounts are unlabelled because that lane stores no decimals anywhere.",
-    gate: "No registry row owns full onchain reconstruction. Canon §0.6 owns the private half: notes are wallet-scoped private data and wait on Solana sign-in.",
+    gate: "Full onchain reconstruction is not planned yet. The private half is notes: wallet-scoped private data that waits on Solana sign-in.",
     route: `${BASE}/history`,
     environment: "MAINNET",
     mode: "READ_ONLY",
@@ -431,7 +431,7 @@ export const SOLANA_MODULES: readonly SolanaModule[] = [
       "The address as a scannable code, and a payment request as a normal link — https://ryntra.io/pay/<id> — that opens in any browser with the amount, the token, what it is for, who is paid and until when, a code for phone wallets and Pay with wallet in the browser. Ryntra watches the request's own reference on chain and says Awaiting, Paid or Expired; a paid request appears in Activity. The payer signs with their own wallet; nothing here signs.",
     missing:
       "A Payment Receipt for what somebody else sent you: Activity shows the received payment with its transaction, and the receipt model does not yet describe an incoming transfer.",
-    gate: "RYN-SOL-B5 — subscriptions, allowances and the wider payments business tools. The incoming-payment receipt waits on the receipt model naming an incoming transfer.",
+    gate: "Phase B — subscriptions, allowances and the wider payments business tools. The incoming-payment receipt waits on the receipt model naming an incoming transfer.",
     route: `${BASE}/receive`,
     environment: "MAINNET",
     /* Read-only in the exact sense: this surface has no transaction builder and
@@ -451,7 +451,7 @@ export const SOLANA_MODULES: readonly SolanaModule[] = [
     exists:
       "The registry entry, four published schemas, the RPC source table, the refusal list — and the public evidence kit itself, Apache-2.0 at `ryntra-io/ryntra-solana-evidence`.",
     missing: "A package-registry release. The kit is cloned and run from source; nothing is published to npm.",
-    gate: "None for the kit — RYN-SOL-A6 shipped it public. A registry release is its own separate founder decision.",
+    gate: "None for the kit — it shipped public. A registry release is its own separate operator decision.",
     route: `${BASE}/developers`,
     environment: "OFFCHAIN",
     mode: "NONE",
@@ -468,7 +468,7 @@ export const SOLANA_MODULES: readonly SolanaModule[] = [
     exists:
       "The whole kit, public and Apache-2.0 at `ryntra-io/ryntra-solana-evidence`: the typed SDK, the local stdio MCP server, the CLI, the four schemas and a green verify workflow. It holds no key and has no signing path — that is a property of the kit, not a gap in it.",
     missing: "Nothing in scope. A write tool is not planned: an assistant that could sign is the boundary this kit exists to hold.",
-    gate: "None. RYN-SOL-A6 published it; a package-registry release is a separate founder decision, not a gate on this module.",
+    gate: "None. The kit is published; a package-registry release is a separate operator decision, not a gate on this module.",
     environment: "OFFCHAIN",
     mode: "NONE",
     maturity: "AVAILABLE",
@@ -499,7 +499,7 @@ export const SOLANA_MODULES: readonly SolanaModule[] = [
     detail:
       "The evidence policy remains thirteen dials. The owner-canary layer adds an immutable package/family budget, destination/mint/program allowlists, durable submit-once exposure and ALLOW / REVIEW / BLOCK / PAUSE / UNKNOWN under a fail-closed operator switch.",
     exists:
-      "Both deterministic engines: the thirteen-rule evidence policy and RYN-SOL-M0E's durable owner-canary policy. Send binds both verdicts into one issuer-signed Review bundle; Settings renders the canary control plane read-only.",
+      "Both deterministic engines: the thirteen-rule evidence policy and the durable owner-canary policy. Send binds both verdicts into one issuer-signed Review bundle; Settings renders the canary control plane read-only.",
     missing: "A general user-editable policy builder. The canary switch remains operator configuration, never an unauthenticated browser control.",
     gate: "None for the enforced owner-canary policy. A general policy editor belongs to a later bounded control task.",
     environment: "OFFCHAIN",
@@ -509,7 +509,7 @@ export const SOLANA_MODULES: readonly SolanaModule[] = [
   }),
 
   /* ── The capabilities that left the rail, 2026-09-03 ──────────────────────
-     Canon §0.7: a future capability stays registered and does not occupy
+     The rule: a future capability stays registered and does not occupy
      primary working navigation until it has a real user route. These thirteen
      were rail rows tagged `Soon`, which is how they came to be described
      without ever being registered — the rail typed their labels by hand and
@@ -531,7 +531,7 @@ export const SOLANA_MODULES: readonly SolanaModule[] = [
     exists: "Nothing is built.",
     missing:
       "Pool-creation and mint-age discovery, a candidate list, and the coverage model that would make such a list readable rather than a leaderboard.",
-    gate: "RYN-SOL-B1 — Radar and the data-coverage truth model, which owns discovery and the coverage vocabulary this needs.",
+    gate: "Phase B — Radar and the data-coverage truth model, which owns discovery and the coverage vocabulary this needs.",
     environment: "MAINNET",
     mode: "READ_ONLY",
     maturity: "PLANNED",
@@ -546,7 +546,7 @@ export const SOLANA_MODULES: readonly SolanaModule[] = [
     exists: "Nothing is built.",
     missing:
       "Buy and sell volume, net flow, large-trade observation, liquidity and holder change, and any aggregation across sources.",
-    gate: "RYN-SOL-B1 — Radar and the data-coverage truth model.",
+    gate: "Phase B — Radar and the data-coverage truth model.",
     environment: "MAINNET",
     mode: "READ_ONLY",
     maturity: "PLANNED",
@@ -561,7 +561,7 @@ export const SOLANA_MODULES: readonly SolanaModule[] = [
     exists: "Nothing is built. This repository reads a wallet only when somebody hands it one, and tracks no address.",
     missing: "Clustering, labelling, cohorts, ranking and any tracking of an address the person did not supply.",
     gate:
-      "No registry row owns this. It is the weakest-owned of the Radar family and would need its own row behind RYN-SOL-B1, because the coverage model comes first.",
+      "No work is planned for this yet. It is the least-planned part of the Radar family, and its own work would have to follow Phase B's Radar, because the coverage model comes first.",
     environment: "MAINNET",
     mode: "READ_ONLY",
     maturity: "PLANNED",
@@ -577,7 +577,7 @@ export const SOLANA_MODULES: readonly SolanaModule[] = [
       "Nothing on Solana. A real tokenized-asset kernel exists in this repository and every line of it is Robinhood Chain: ERC-8056 multipliers and eth_call, with no mint, no SPL or Token-2022 and no Solana RPC in it.",
     missing:
       "Any Solana-side tokenized-asset read: the mint-level passport for an RWA, the issuer-power model in SPL terms, and the market view over it.",
-    gate: "RYN-SOL-B4 — the Solana RWA passport and the Pro view.",
+    gate: "Phase B — the Solana RWA passport and the Pro view.",
     environment: "MAINNET",
     mode: "READ_ONLY",
     maturity: "PLANNED",
@@ -594,7 +594,7 @@ export const SOLANA_MODULES: readonly SolanaModule[] = [
     missing:
       "The Solana projection. Nothing in the Home alert machinery mentions Solana, and no Solana event can raise an alert today.",
     gate:
-      "No Solana registry row owns Alerts. Canon §18 owns it — the categories are fixed there, and the Home surface they project into already exists.",
+      "No Solana work is planned for Alerts yet. Their categories are already fixed, and the Home surface they project into already exists.",
     environment: "MAINNET",
     mode: "READ_ONLY",
     maturity: "PLANNED",
@@ -609,19 +609,18 @@ export const SOLANA_MODULES: readonly SolanaModule[] = [
     exists: "Nothing is built. There is no treasury, multi-signer or team-approval machinery in the Solana lane.",
     missing:
       "Holder counts and concentration, treasury balances, large-exit observation, project events, and any multi-signer approval path.",
-    gate: "No registry row owns this capability. Canon §19 defines it, and Business Tools open through Settings rather than the rail (§20.1).",
+    gate: "No work is planned for this capability yet. Its scope is defined, and Business Tools open through Settings rather than the rail.",
     environment: "MAINNET",
     mode: "READ_ONLY",
     maturity: "PLANNED",
   }),
 
   /*
-   * Spot is live (`RYN-SPOT-V1-001`, 2026-09-11). `AVAILABLE` rather than
-   * `OWNER_CANARY_VERIFIED` because the fill that would prove the family
-   * from this surface is the Owner's own act and has not been observed yet;
-   * the engine underneath is the one Swap's canary proved. The public map
-   * reads both words as AVAILABLE, and the receipt is where the evidence
-   * belongs.
+   * Spot is live since 2026-09-11. `AVAILABLE` rather than
+   * `OWNER_CANARY_VERIFIED` because the fill that would prove the family from
+   * this surface is an owner-signed act and has not been observed yet; the
+   * engine underneath is the one Swap's canary proved. The public map reads
+   * both words as AVAILABLE, and the receipt is where the evidence belongs.
    */
   mapped({
     id: "spot",
@@ -638,11 +637,11 @@ export const SOLANA_MODULES: readonly SolanaModule[] = [
     maturity: "AVAILABLE",
   }),
   /*
-   * Predictions — the only new first-class page of the Owner's target
-   * structure (2026-09-11), visible and locked. The aggregator integration is
-   * not implemented and the page carries no odds, balances or trading
-   * actions; the record exists so the public map can show the direction
-   * without the app pretending to have it.
+   * Predictions — the only new first-class page of the target structure
+   * (2026-09-11), visible and locked. The aggregator integration is not
+   * implemented and the page carries no odds, balances or trading actions; the
+   * record exists so the public map can show the direction without the app
+   * pretending to have it.
    */
   mapped({
     id: "predictions",
@@ -653,7 +652,7 @@ export const SOLANA_MODULES: readonly SolanaModule[] = [
       "Discovery across venues with the same question priced side by side, a position opened and closed through Review with the person's own signature, its result in Activity, and prediction signals beside the markets they refer to. Prediction detail lives inside the page and is never a row of its own.",
     exists: "A visible locked page at /app/predictions that states what it will own. No market, odd, balance or trading action is shown.",
     missing: "The aggregator integration: market discovery, pricing, order construction, settlement and the signals. Partner/API access has been requested and is pending.",
-    gate: "Canon §4.3: a separate surface only after its own data, custody, risk and canary gate — and, before that, the aggregator's partner/API access, requested and pending.",
+    gate: "A separate surface only after its own data, custody, risk and canary gate — and, before that, the aggregator's partner/API access, requested and pending.",
     environment: "MAINNET",
     mode: "USER_SIGNED",
     maturity: "PLANNED",
@@ -664,12 +663,12 @@ export const SOLANA_MODULES: readonly SolanaModule[] = [
     label: "Limit & DCA",
     purpose: "An order that waits, and a schedule that keeps buying — each with the custody question answered first.",
     detail:
-      "A limit order that waits has to hold funds somewhere, and a schedule that keeps buying acts while nobody is watching. Both are custody questions before they are trading features, which is why canon §11.7 puts Schedule → notification → fresh evidence → fresh quote → Review → wallet signature in that order.",
+      "A limit order that waits has to hold funds somewhere, and a schedule that keeps buying acts while nobody is watching. Both are custody questions before they are trading features, which is why the product puts Schedule → notification → fresh evidence → fresh quote → Review → wallet signature in that order.",
     exists: "Nothing is built. There is no Trigger or Recurring adapter in this repository.",
     missing:
       "The order construction, the custodial-vault deposit, withdrawal and recovery path, and the DCA schedule with its per-draw Review.",
     gate:
-      "Canon §11.7 and §15.5 name the blocking condition rather than a date: the custody disclosure and the withdrawal path must exist before an order may wait on anyone's funds.",
+      "The blocking condition is named rather than dated: the custody disclosure and the withdrawal path must exist before an order may wait on anyone's funds.",
     environment: "MAINNET",
     mode: "USER_SIGNED",
     maturity: "GATED",
@@ -682,7 +681,7 @@ export const SOLANA_MODULES: readonly SolanaModule[] = [
     detail: "Grid remains a planned strategy pattern; the builder and execution adapter are not implemented.",
     exists: "The strategy direction is accepted; there is no Grid execution engine.",
     missing: "A grid specification, simulation, limits, execution provider and user-authorized lifecycle.",
-    gate: "RYN-STRATEGY-DISCIPLINE-001: Grid builder, simulation and separate execution acceptance.",
+    gate: "Waits on the Grid builder, simulation and a separate execution acceptance.",
     environment: "MAINNET",
     mode: "NONE",
     maturity: "PLANNED",
@@ -693,11 +692,11 @@ export const SOLANA_MODULES: readonly SolanaModule[] = [
     label: "Perps",
     purpose: "Leveraged positions, which is the one place on this product where a person can lose more than they put in.",
     detail:
-      "Funding, margin and liquidation are the whole feature; the order ticket is the easy part. Canon §22.3 sets a five-rung ladder for exactly that reason, and nothing about it is reachable by extending Swap.",
+      "Funding, margin and liquidation are the whole feature; the order ticket is the easy part. The product sets a five-rung ladder for exactly that reason, and nothing about it is reachable by extending Swap.",
     exists: "Nothing is built. There is no perps client, market read, position, funding, margin or liquidation model in the Solana tree.",
     missing:
       "A venue adapter, market and funding reads, position and margin state, leverage input, liquidation-price calculation, and the paper rung that has to come before any of it moves money.",
-    gate: "Canon §22.3 and its Gate 6 ladder, whose first rung is a read-only market and position model with no order path at all.",
+    gate: "The perps release ladder, whose first rung is a read-only market and position model with no order path at all.",
     environment: "MAINNET",
     mode: "USER_SIGNED",
     maturity: "GATED",
@@ -712,8 +711,8 @@ export const SOLANA_MODULES: readonly SolanaModule[] = [
     exists:
       "The URL half, and it ships inside Receive rather than a Payments surface: buildSolanaPayUrl produces a real Solana Pay transfer request with recipient, amount, SPL token and reference.",
     missing:
-      "Everything after the URL — expiry, policy, observed payment, expected against actual, and the Receipt canon §20.2 requires.",
-    gate: "RYN-SOL-B5 — Payments, subscriptions, x402 and agents, as Business Tools rather than a consumer hero.",
+      "Everything after the URL — expiry, policy, observed payment, expected against actual, and the Receipt a payment request requires.",
+    gate: "Phase B — Payments, subscriptions, x402 and agents, as Business Tools rather than a consumer hero.",
     environment: "MAINNET",
     mode: "USER_SIGNED",
     maturity: "PLANNED",
@@ -724,11 +723,11 @@ export const SOLANA_MODULES: readonly SolanaModule[] = [
     label: "Subscriptions & x402",
     purpose: "A recurring charge you can see, cap and stop.",
     detail:
-      "An allowance is a promise about the future, so the whole feature is the revoke path and the cap — not the charge. Canon §20.3 fixes the shape: a delegate with a cap, a cadence, an expiry, and expected draws recorded against actual ones.",
+      "An allowance is a promise about the future, so the whole feature is the revoke path and the cap — not the charge. The shape is fixed: a delegate with a cap, a cadence, an expiry, and expected draws recorded against actual ones.",
     exists: "Nothing is built in the Solana lane. x402 and B402 appear nowhere under lib/solana or app/solana, and there is no allowance machinery.",
     missing:
       "The delegate, cap, cadence, expiry and revocation, the expected-against-actual draw record, and the receipts for each charge.",
-    gate: "RYN-SOL-B5 — the same row that owns Payments. Canon §20.3 defines the allowance shape it must implement.",
+    gate: "Phase B — the same work as Payments. It must implement the allowance shape described above.",
     environment: "MAINNET",
     mode: "USER_SIGNED",
     maturity: "PLANNED",
@@ -740,11 +739,11 @@ export const SOLANA_MODULES: readonly SolanaModule[] = [
     label: "Automation",
     purpose: "Something that acts while you are not looking — which is why it is a policy question, not a feature.",
     detail:
-      "Canon §15.2 sets the ladder: watch, then paper, then prepare, and only then anything guarded. Agent Control is the product that would govern the last rung, and it currently pins execution off and human authorization on by contract.",
+      "The ladder is fixed: watch, then paper, then prepare, and only then anything guarded. Agent Control is the product that would govern the last rung, and it currently pins execution off and human authorization on by contract.",
     exists:
       "Nothing is built. There is no scheduler, recurring action or unattended execution path in this repository, and Agent Control is structurally incapable of executing: its policy contract pins execution disabled and human authorization required.",
     missing: "Every rung above Prepare, and the Agent Control authorization path that would have to carry it.",
-    gate: "No registry row owns Solana automation. Canon §15.2's ladder is the clause that owns it, and RYN-SOL-B3 owns the Strategy Lab rungs beneath it.",
+    gate: "No Solana automation work is planned yet. The ladder above governs it, and the Strategy Lab owns the rungs beneath it.",
     environment: "MAINNET",
     mode: "USER_SIGNED",
     maturity: "PLANNED",
@@ -755,11 +754,11 @@ export const SOLANA_MODULES: readonly SolanaModule[] = [
     label: "Provider status",
     purpose: "Which provider answered, how fresh the answer was, and what to do when one is down.",
     detail:
-      "This is the one capability here whose engine already exists and whose surface does not. Canon §23.2's four states are implemented over the endpoint pair and are read on every request; nothing renders them.",
+      "This is the one capability here whose engine already exists and whose surface does not. The four provider states are implemented over the endpoint pair and are read on every request; nothing renders them.",
     exists:
       "The engine. lib/solana/health.ts implements the four states over the mainnet endpoint pair, with tests, running in production on every read.",
     missing: "The surface. No page, route or panel renders the health state anywhere in this workspace.",
-    gate: "No registry row owns the surface. Canon §23 owns the contract — the provider list, the four states and the degraded-read discipline — and the engine already satisfies it.",
+    gate: "No work is planned for the surface yet. The contract — the provider list, the four states and the degraded-read discipline — is fixed, and the engine already satisfies it.",
     environment: "MAINNET",
     mode: "READ_ONLY",
     maturity: "PLANNED",

@@ -1,12 +1,11 @@
 /* Compliance gate — classifies Arcus's live `GET /v1/compliance` response (rwa-risk-signals #18)
-   into the four INDEPENDENT states the founder's decision separates (DECISIONS 2026-07-08 /
-   ROADMAP "Відкрите юр-питання"):
+   into four INDEPENDENT states, deliberately kept apart:
      - venueAllowed  — Arcus's own geo verdict, per product (spot / perps are independent booleans)
      - walletAllowed — Arcus wallet screening (COMPLIANT / BLOCKED), address-based
      - assetAllowed  — the instrument itself is listed/tradeable (not decided here)
      - issuerAllowed — RHJ (Jersey) issuer eligibility for Stock Tokens — NOT a hard gate here; it
-                       is an always-shown DISCLOSURE, never a block (founder's locked call: gate on
-                       Arcus compliance, never claim "available in Ukraine", never block UA).
+                       is an always-shown DISCLOSURE, never a block (the rule: gate on Arcus
+                       compliance, never claim "available in Ukraine", never block UA).
 
    Honesty rules baked in (capability-honesty):
    - This IS the venue's own signal, called with the USER's IP client-side (a server proxy would use

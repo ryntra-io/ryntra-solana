@@ -14,10 +14,9 @@ import { SOLANA_UK_TEXT } from "./catalog.ts";
  * is a 500 for every Ukrainian visitor of the surface that renders it, and it is
  * invisible in English.
  *
- * It has already been paid twice. `RYN-SOL-MONEY-FLOWS-001A` found `/settings`
- * and `/map` were error pages in Ukrainian because fifteen catalogue keys had
- * never been written, and `RYN-SOL-DEPTH-001` was one `text("Export")` away from
- * doing it again to History.
+ * It has already been paid twice. `/settings` and `/map` were once error pages
+ * in Ukrainian because fifteen catalogue keys had never been written, and a
+ * later change to History was one `text("Export")` away from doing it again.
  *
  * The parity test beside this one asks whether copy goes *through* the
  * translation boundary. This one asks whether the boundary can answer, which is

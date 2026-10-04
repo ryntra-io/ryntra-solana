@@ -1,5 +1,5 @@
 /**
- * The position a plan's own executions add up to — `RYN-RESULTS-MEMORY-001`.
+ * The position a plan's own executions add up to.
  *
  * An entry establishes a position, an exit reduces it, and a plan with no
  * settled entry has none. That is the whole model: there is no second

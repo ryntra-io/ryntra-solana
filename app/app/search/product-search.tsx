@@ -39,9 +39,9 @@ import styles from "./product-search.module.css";
 import { readSearchIndex } from "./search-index";
 
 /**
- * The product's search, in the top bar of every page (canon v5.4 В31): a
- * company, a coin or an action — one field on a desk, the glass on a phone,
- * ⌘K / Ctrl+K anywhere.
+ * The product's search, in the top bar of every page: a company, a coin or
+ * an action — one field on a desk, the glass on a phone, ⌘K / Ctrl+K
+ * anywhere.
  *
  * It navigates and only navigates. A company opens its page, a coin opens
  * Spot, an action opens the row of the menu it is; nothing here buys, signs

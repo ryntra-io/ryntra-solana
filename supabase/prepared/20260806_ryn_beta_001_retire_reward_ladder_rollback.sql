@@ -1,4 +1,4 @@
--- RYN-BETA-001 · rollback for 20260806_ryn_beta_001_retire_reward_ladder_v1.sql.
+-- Rollback for 20260806_ryn_beta_001_retire_reward_ladder_v1.sql.
 -- Prepared, NOT APPLIED. Run only under explicit owner approval.
 --
 -- WHY THIS FILE EXISTS RATHER THAN "re-apply the original migrations"

@@ -1,7 +1,7 @@
 /**
- * «Популярні компанії», listed by the server (`RYN-BUY-FLOW-001`, subtask 2;
- * contract 1.20.0) — one list for Home, the column beside a company's page
- * and the phone, so every surface shows the same companies in the same order.
+ * «Популярні компанії», listed by the server (contract 1.20.0) — one list for
+ * Home, the column beside a company's page and the phone, so every surface
+ * shows the same companies in the same order.
  *
  * The shelf's own rule (`shelf.ts`): the listed companies a beginner is shown,
  * one card each, the representation a card stands for chosen by the issuer's

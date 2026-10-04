@@ -1,12 +1,10 @@
 /**
  * The Ryntra service fee — one shape, whichever provider carries the swap.
  *
- * `RYN-SOL-SWAP-MONETIZATION-001` (Owner decision 2026-09-10): the Swap surface
- * takes **25 basis points** (Owner decision 2026-09-10, down from 50), and it
- * takes them through the fee mechanism each integrated provider already ships.
- * No fee contract of Ryntra’s own was
- * written, no extra transfer was added, and no route was made worse to earn
- * more.
+ * The Swap surface takes **25 basis points** (since 2026-09-10, down from 50),
+ * and it takes them through the fee mechanism each integrated provider already
+ * ships. No fee contract of Ryntra’s own was written, no extra transfer was
+ * added, and no route was made worse to earn more.
  *
  * ## Three mechanisms, and they are not the same thing
  *
@@ -40,10 +38,10 @@
  * The direct Circle CCTP lane has none. `depositForBurn(uint256,uint32,bytes32,
  * address,bytes32,uint256,uint32)` has seven arguments and not one of them is an
  * integrator fee; `maxFee` is Circle's own fast-transfer charge. Inventing a fee
- * there would mean a second transfer or a contract of our own, and the Owner
- * decision is explicit that neither happens and that nobody is steered off a
- * good rail to earn on a worse one. So USDC moved by CCTP carries
- * `mechanism: "NONE"` and the surface shows a zero that is true.
+ * there would mean a second transfer or a contract of our own, and the rule is
+ * explicit that neither happens and that nobody is steered off a good rail to
+ * earn on a worse one. So USDC moved by CCTP carries `mechanism: "NONE"` and
+ * the surface shows a zero that is true.
  *
  * ## Nothing here is income until a provider says it was taken
  *
@@ -64,14 +62,14 @@ import { z } from "zod";
 export type ServiceFeeMechanism = "JUPITER_REFERRAL" | "RELAY_APP_FEE" | "MAYAN_REFERRER" | "NONE";
 
 /**
- * Ryntra's rate **per mechanism**, in basis points. Owner decision 2026-09-11.
+ * Ryntra's rate **per mechanism**, in basis points, since 2026-09-11.
  *
  * There used to be one number here for every provider, and that is how the
  * product went a day without a Jupiter fee: the rate moved to 25 for Relay's
  * sake, Jupiter's referral floor is 50 (verified live on 2026-09-11 — HTTP 400,
  * *"must be between 50 and 255 (inclusive)"*), and the one constant could not
- * be right for both. Each mechanism now carries the rate its provider takes and
- * the Owner set, and nothing reads a global rate any more:
+ * be right for both. Each mechanism now carries the rate set for it against
+ * what its provider takes, and nothing reads a global rate any more:
  *
  * - **Jupiter referral** — Swap and Spot on Solana same-chain — 50 bps, the
  *   provider's own minimum. Half of it goes back to the person as cashback

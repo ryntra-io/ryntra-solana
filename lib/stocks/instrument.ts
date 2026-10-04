@@ -36,7 +36,7 @@ export type UnitBasis = "share" | "token";
  * (the listed-equity issuers). `economic-exposure`: PreStocks — price
  * exposure to a private company through a holding entity, no ownership,
  * voting, dividend or information rights. (The contract keeps one more value
- * for records written before canon v5.2 В26; no answer carries it now.)
+ * for older records; no answer carries it now.)
  */
 export type RightsKind = "issuer-terms" | "economic-exposure";
 
@@ -152,7 +152,7 @@ export type LifecycleEvent = Readonly<{
   watch?: ConversionWatch;
 }>;
 
-/** The words and the one action of a conversion event (canon v5.2 В27, §7, §11). */
+/** The words and the one action of a conversion event. */
 export type ConversionWatch = Readonly<{
   /** The token's symbol, as the issuer names it («SPACEX»). */
   symbol: string;

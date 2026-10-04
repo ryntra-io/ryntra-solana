@@ -35,11 +35,11 @@ export const dynamic = "force-dynamic";
  * console entry to show for it. Keeping the endpoint server-side also keeps it
  * an operator's choice rather than a page's.
  *
- * `network` defaults to mainnet because that is what this product reads
- * (canon §3.1). It is a parameter and not a constant for exactly one caller:
- * the Send console is still wired to the internal regression fixture its
- * mainnet rewrite (`RYN-SOL-M0C`) removes, and pinning this route so hard that
- * the fixture broke would be this row quietly doing that row's work.
+ * `network` defaults to mainnet because that is what this product reads. It
+ * is a parameter and not a constant for exactly one caller: the Send console
+ * is still wired to the internal regression fixture its mainnet rewrite
+ * removes, and pinning this route so hard that the fixture broke would be this
+ * route quietly doing that rewrite's work.
  */
 const RequestSchema = z
   .object({ owner: z.string().min(32).max(44), network: z.enum(SOLANA_NETWORKS).default("mainnet") })
@@ -83,11 +83,10 @@ function scaledUiMultiplierOf(extensions: MintReadSuccess["decoded"]["extensions
 const HOLDINGS_DEADLINE_MS = 4_500;
 const ENDPOINT_TIMEOUT_MS = 800;
 /**
- * The one bounded second attempt a silent token-program read gets (the mobile
- * line's request 19; the Owner's directive of 2026-09-22): a wallet with
- * dozens of token accounts can outrun the 800 ms first pass on both hosts and
- * flap COMPLETE → PARTIAL → UNAVAILABLE between refreshes. The retry asks the
- * pair once more with a longer budget, only for a program whose transport
+ * The one bounded second attempt a silent token-program read gets: a wallet
+ * with dozens of token accounts can outrun the 800 ms first pass on both hosts
+ * and flap COMPLETE → PARTIAL → UNAVAILABLE between refreshes. The retry asks
+ * the pair once more with a longer budget, only for a program whose transport
  * failed (an answer, even a malformed one, is a fact and is not re-asked),
  * only when the native read answered, and adds at most two calls per program.
  */
@@ -376,7 +375,7 @@ async function readHoldings(request: Request, rate: RateLimitDecision, signal: A
   const catalogMints = [nativeSolPriceMint(), ...toDetail.map((asset) => asset.mint as string)];
   /* Every other held mint is named and priced too — by the Spot catalogue,
      a hundred mints a call, which costs no mint read. Twelve was the cap on
-     passports and had quietly become the cap on names: the Owner's fresh
+     passports and had quietly become the cap on names: a person's fresh
      STONK fill sat in the Portfolio as `6GmA…UNgx · —` under *Without a
      price* while the Spot page priced it a click away (2026-09-12). Three
      hundred mints is three calls; a wallet with more keeps the rest unnamed,

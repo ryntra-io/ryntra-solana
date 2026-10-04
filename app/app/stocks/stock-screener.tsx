@@ -13,7 +13,7 @@ import styles from "./stocks.module.css";
 type IssuerFilter = "all" | StockIssuerId;
 type SessionFilter = "all" | "open" | "closed";
 type MarketFilter = "all" | "traded" | "liquid";
-/** The class of instrument: listed equities and ETFs, pre-IPO exposure, or both (`RYN-STOCKS-PROVIDERS-001`). */
+/** The class of instrument: listed equities and ETFs, pre-IPO exposure, or both. */
 type KindFilter = "all" | "listed" | "preipo";
 
 type Filters = Readonly<{ issuer: IssuerFilter; session: SessionFilter; market: MarketFilter; kind: KindFilter }>;
@@ -49,10 +49,10 @@ function readFilters(): Filters {
 }
 
 /**
- * Screener v1 (canon v4.0 §7.2) over every confirmed representation: search,
- * the issuer, the session, how much of a market the token has — the filters
- * kept in the browser for the person who set them — and every column sorts.
- * The rows are the server's cached universe; nothing here asks a provider.
+ * Screener v1 over every confirmed representation: search, the issuer, the
+ * session, how much of a market the token has — the filters kept in the
+ * browser for the person who set them — and every column sorts. The rows are
+ * the server's cached universe; nothing here asks a provider.
  */
 export function StockScreener({ rows, locale, initialQuery, initialKind = "all", sources }: { rows: readonly SlimStockRow[]; locale: WorkspaceLocale; initialQuery: string; /** A kind the address asked for (`?kind=preipo`) wins over the remembered filter. */ initialKind?: KindFilter; sources: ReactNode }) {
   const word = wordsFor(locale);

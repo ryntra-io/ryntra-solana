@@ -13,15 +13,14 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 /**
- * `GET /api/v1/stocks/popular[?limit=][&exclude=<mint>]` (contract 1.20.0,
- * `RYN-BUY-FLOW-001` subtask 2): «Популярні компанії» as the server lists them
- * — the listed companies a beginner is shown, one card each, by the day's
- * trading across their representations, the same for everyone
- * (`lib/stocks/popular.ts`). Home, the column beside a company's page and the
- * phone read one list. `exclude` leaves out a company beside its own page.
- * Public, like the pages that draw it; the read budget of the Solana routes
- * bounds it per address, and the universe it is cut from is the server's warm
- * copy.
+ * `GET /api/v1/stocks/popular[?limit=][&exclude=<mint>]` (contract 1.20.0):
+ * «Популярні компанії» as the server lists them — the listed companies a
+ * beginner is shown, one card each, by the day's trading across their
+ * representations, the same for everyone (`lib/stocks/popular.ts`). Home, the
+ * column beside a company's page and the phone read one list. `exclude` leaves
+ * out a company beside its own page. Public, like the pages that draw it; the
+ * read budget of the Solana routes bounds it per address, and the universe it
+ * is cut from is the server's warm copy.
  */
 
 const QuerySchema = z

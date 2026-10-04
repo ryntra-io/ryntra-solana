@@ -3,8 +3,8 @@
  *
  * The expectations are derived from the **preflight and the plan**, both of
  * which exist before a signature does. That ordering is the entire value of
- * this step: `RYN-AGENT-CONTROL-007` recorded that writing the expectations
- * after seeing the result produces a prettier `MATCHED` and proves nothing.
+ * this step: writing the expectations after seeing the result produces a
+ * prettier `MATCHED` and proves nothing.
  *
  * Two levels describe the same movement and must agree. The preflight states
  * owner-level deltas — what the sender and recipient *wallets* gain and lose —
@@ -136,13 +136,13 @@ export type ReceiptMintResult = ReceiptMintSuccess | ReceiptMintFailure;
  * Reconcile and mint, through the same builder and issuer every other Ryntra
  * artifact uses.
  *
- * The receipt is built **once**. `RYN-AGENT-CONTROL-007` recorded the failure
- * that makes this worth stating: a route that minted twice stamped a second
- * `createdAt`, so the artifact carried a hash the signature had never covered
- * and the live verifier returned `SIGNATURE_INVALID`. A signature is a claim
- * about exact bytes, and any field that moves between minting and signing
- * breaks it — so the unsigned mint fixes the content hash, and the signed mint
- * reuses that exact hash and the same timestamp.
+ * The receipt is built **once**. A recorded failure makes this worth stating:
+ * a route that minted twice stamped a second `createdAt`, so the artifact
+ * carried a hash the signature had never covered and the live verifier
+ * returned `SIGNATURE_INVALID`. A signature is a claim about exact bytes, and
+ * any field that moves between minting and signing breaks it — so the unsigned
+ * mint fixes the content hash, and the signed mint reuses that exact hash and
+ * the same timestamp.
  */
 export function mintSolanaOutcomeReceipt(args: {
   id: string;

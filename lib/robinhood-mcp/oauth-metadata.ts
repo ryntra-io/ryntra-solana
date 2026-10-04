@@ -1,12 +1,11 @@
-/* Reading the two documents an MCP client fetches before it authenticates
-   (RYN-RH-MCP-001).
+/* Reading the two documents an MCP client fetches before it authenticates.
 
    Both are public and unauthenticated by design: RFC 8414 authorization-server
    metadata and RFC 9728 protected-resource metadata. They name grant types, PKCE
-   methods, scopes and endpoints, which is the entire OAuth lifecycle a discovery
-   packet can honestly establish without an account.
+   methods, scopes and endpoints, which is the entire OAuth lifecycle read-only
+   discovery can honestly establish without an account.
 
-   **An allowlist, never a denylist.** `RYN-BIN-AOS-003` found that a name-based
+   **An allowlist, never a denylist.** The Binance work found that a name-based
    blocklist is defeated by any name nobody thought of, and a document served by
    somebody else is precisely where an unthought-of name comes from. So the
    extractor keeps the fields the two standards define and drops everything else,

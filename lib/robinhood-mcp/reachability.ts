@@ -1,10 +1,10 @@
-/* Whether the Robinhood Trading MCP answers at all (RYN-RH-MCP-001).
+/* Whether the Robinhood Trading MCP answers at all.
 
-   This is the packet's first gate and it is pure classification: given a status,
+   This is the package's first gate and it is pure classification: given a status,
    say what it means, and never let an absence of an answer read as permission.
 
    The targets are module constants. Nothing here accepts a host, url, path or
-   header from a caller — which is the property `RYN-AGENT-CONTROL-013` held
+   header from a caller — which is the property Agent Control's MCP server held
    across all twelve of its write schemas, and the reason the probe route built on
    this module cannot be turned into an open relay by anyone who finds it.
 
@@ -12,8 +12,8 @@
    option, no forwarded-address header, no tunnelling suggestion. The test scans
    this file for each of those words and fails on any of them, which is the same
    absence `lib/rwa/rhj/client.ts` already asserts for the Stock Token API.
-   Robinhood's terms prohibit masking, and the founder's 2026-08-19 decision says
-   a venue answers for itself and Ryntra shows that answer as it comes back. */
+   Robinhood's terms prohibit masking, and a venue answers for itself: Ryntra
+   shows that answer as it comes back. */
 
 /** The published Trading MCP endpoint. */
 export const ROBINHOOD_MCP_URL = "https://agent.robinhood.com/mcp/trading";

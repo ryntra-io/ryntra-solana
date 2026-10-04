@@ -74,10 +74,10 @@ test("colour carries meaning and every state has a label", () => {
 });
 
 test("the overview separates guest, failed wallet reads and unpriced assets", () => {
-  /* Product Canon v1.0 §9.1: Portfolio *is* the overview, and there is no
-     separate Home to hold one. The three states this used to check on the Home
-     dashboard are checked where they now live — on the holdings card, which is
-     what `/app/portfolio` renders and what `/app` opens on. */
+  /* Portfolio *is* the overview, and there is no separate Home to hold one.
+     The three states this used to check on the Home dashboard are checked
+     where they now live — on the holdings card, which is what
+     `/app/portfolio` renders and what `/app` opens on. */
   const holdings = read("app/solana/workspace/holdings/holdings-card.tsx");
   assert.match(holdings, /useWalletData\(\)/);
   assert.match(holdings, /if \(!connection\)/);
@@ -87,11 +87,10 @@ test("the overview separates guest, failed wallet reads and unpriced assets", ()
   assert.match(holdings, /holdings\.status === "ready" && holdings\.complete/);
   assert.doesNotMatch(holdings, /10000|paperSummary|paperBalance/);
 
-  /* Saved plans moved with them: canon §5.2 makes My strategies their one home.
-     Since `RYN-STRATEGY-PLAN-001` the plans are the wallet's trading plans, read
-     from `/api/v1/plans` only once the wallet has proved itself; a failed read
-     is named with a retry, an empty list says where a plan starts, and nothing
-     redirects. */
+  /* Saved plans moved with them: My strategies is their one home. The plans
+     are the wallet's trading plans, read from `/api/v1/plans` only once the
+     wallet has proved itself; a failed read is named with a retry, an empty
+     list says where a plan starts, and nothing redirects. */
   const plans = read("app/app/strategies/plans/plans-panel.tsx");
   assert.doesNotMatch(plans, /\bredirect\(/);
   const guard = plans.indexOf("if (proven) void load();");
@@ -107,8 +106,8 @@ test("the overview separates guest, failed wallet reads and unpriced assets", ()
 
 test("the overview hands off to working pages and does not invent market advice", () => {
   /* The quick-action panel the Home dashboard carried is gone, and the eleven
-     rail entries replaced it — canon §3.1 gives every destination a row of its
-     own, which is a better answer than three links inside one panel. What must
+     rail entries replaced it — every destination has a row of its own, which
+     is a better answer than three links inside one panel. What must
      survive is the boundary: the overview offers destinations and never
      fabricates a market feed, a chat or a signature. */
   const holdings = read("app/solana/workspace/holdings/holdings-card.tsx");

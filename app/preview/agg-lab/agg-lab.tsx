@@ -23,7 +23,7 @@ import { RyntraAdaptationTab } from "./ryntra-adaptation";
 import styles from "./lab.module.css";
 
 /*
- * The lab shell — `RYN-AGG-LAB-001`.
+ * The lab shell.
  *
  * One aggregator client, one query cache and one AGG provider for the whole
  * page; three tabs over them. The first tab renders the aggregator's own

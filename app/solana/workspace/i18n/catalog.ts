@@ -21,7 +21,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "I understand the value lost in this quote.": "Я розумію втрату вартості за цією котировкою.",
   "Balance unavailable": "Баланс недоступний",
   "No tokens found": "Токенів не знайдено",
-  /* Spot — one market terminal, RYN-SPOT-V1-001 (2026-09-11). */
+  /* Spot — one market terminal. */
   "Tokenized": "Токенізований",
   "Tokenized asset": "Токенізований актив",
   "Meme": "Мем",
@@ -94,7 +94,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Pricing…": "Рахуємо ціну…",
   "Order ticket": "Тікет ордера",
   "Finished with a note": "Завершено з приміткою",
-  /* The settled answer in the person's words, RYN-SPOT-LIVE-001 (2026-09-12). */
+  /* The settled answer in the person's words. */
   "Filled, with a note": "Виконано, з приміткою",
   "Nothing happened": "Нічого не сталося",
   "Not filled": "Не виконано",
@@ -110,13 +110,13 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
     "Мережа відхилила транзакцію. Витрачено лише мережеву комісію; те, що ви витрачали, не зрушило з місця.",
   "Landed and receipted earlier. The receipt holds the amounts.": "Виконано й підтверджено квитанцією раніше. Суми — у квитанції.",
   "Some balances could not be read.": "Частину балансів не вдалося прочитати.",
-  /* Activity as a statement, RYN-MANAGE-PAGES-001 (2026-09-12). */
+  /* Activity as a statement. */
   "Today": "Сьогодні",
   "Yesterday": "Вчора",
   "Open Spot": "Відкрити Спот",
   "You paid": "Ви сплатили",
   "Signed record": "Підписаний запис",
-  /* Portfolio as a broker shows it, RYN-MANAGE-PAGES-001 (2026-09-12). */
+  /* Portfolio as a broker shows it. */
   "Other": "Інше",
   "Total value": "Загальна вартість",
   "today": "сьогодні",
@@ -126,7 +126,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Hide small and unpriced balances": "Сховати дрібні й неоцінені баланси",
   "Tokenized by": "Токенізовано:",
   /* Tokenized stocks — the reference, the session and the units beside a stock
-     in Spot and Portfolio (RYN-STOCKS-CORE-001). */
+     in Spot and Portfolio. */
   "Reading the reference…": "Читаємо референс…",
   "Reference price": "Референсна ціна",
   "Deviation": "Відхилення",
@@ -188,7 +188,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Filled": "Виконано",
   "In flight": "У дорозі",
 
-  /* Solana swap failures, named rather than collapsed — RYN-SWAP-FAILURE-TRUTH-001 (2026-09-10). */
+  /* Solana swap failures, named rather than collapsed. */
   "The provider priced this and would not build it — usually the wallet does not cover the amount plus its fee.":
     "Провайдер порахував ціну, але не став будувати транзакцію — зазвичай це означає, що гаманця не вистачає на суму разом з комісією.",
   "The swap provider could not be reached just now. Nothing was sent.": "Зараз не вдалося зв'язатися з провайдером обміну. Нічого не відправлено.",
@@ -200,7 +200,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "That took too long and was stopped. Nothing was sent — try again.": "Це тривало задовго і було зупинено. Нічого не відправлено — спробуйте ще раз.",
   "Ryntra could not be reached. Nothing was sent.": "Не вдалося зв'язатися з Ryntra. Нічого не відправлено.",
 
-  /* Cross-chain swap lane repair — RYN-SOL-CROSS-SWAP-RH-FIX-001 (2026-09-10). */
+  /* Cross-chain swap lane. */
   "No route for this pair right now. Nothing was sent — try another amount, or another asset.":
     "Зараз для цієї пари немає маршруту. Нічого не відправлено — спробуйте іншу суму або інший актив.",
   "One of those addresses does not belong to its network.": "Одна з цих адрес не належить своїй мережі.",
@@ -219,7 +219,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
     "Роутер цієї мережі прямо відмовляє в цьому активі, тож обміняти тут не вийде жодної його кількості.",
   "Choose a different network on one side. Swapping within one Ethereum-style network is not offered here.":
     "Оберіть іншу мережу з одного боку. Обмін усередині однієї мережі Ethereum-типу тут не пропонується.",
-  /* Feedback in the cabinet — RYN-ADMIN-FEEDBACK-LOOP-001 (2026-09-11). */
+  /* Feedback in the cabinet. */
   "Feedback": "Відгук",
   "Question": "Запитання",
   "Idea": "Ідея",
@@ -243,7 +243,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Telegram @name or email": "Telegram @name або email",
   "Attached": "Додано",
   "wallet": "гаманець",
-  /* Ryntra Points V1 — RYN-PRE-HACKATHON-FOUNDATION-001 (2026-09-11). */
+  /* Ryntra Points V1. */
   "Ryntra Points": "Ryntra Points",
   "Points are unavailable right now.": "Бали зараз недоступні.",
   "Level": "Рівень",
@@ -268,8 +268,8 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
     "Активний день — $10 або більше обсягу — додає 10 балів. Коли запрошена вами людина має свій перший активний день, ви отримуєте 100.",
   "Points have no cash value and cannot be transferred. Nothing about leverage, profit or loss changes them.":
     "Бали не мають грошової вартості й не передаються. Плече, прибуток чи збиток на них не впливають.",
-  /* Ryntra Rewards V1 — RYN-REWARDS-V1-001 (2026-09-10). */
-  /* Referral Pending -> Confirmed flow, same task, same day. */
+  /* Ryntra Rewards V1. */
+  /* The referral's Pending -> Confirmed flow. */
   "Referral invitation detected": "Знайдено реферальне запрошення",
   "Referral invitation": "Реферальне запрошення",
   "Invited by": "Запросив",
@@ -326,7 +326,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "10% of the Ryntra service fee from someone you invited, and 5% from the people they invited.": "10% сервісної комісії Ryntra від того, кого ви запросили, і 5% — від тих, кого запросили вони.",
   "Claim from $1.00 USDC, to the wallet you are signed in with.": "Отримання від $1.00 USDC — на гаманець, яким ви увійшли.",
   "Only fees actually collected after Rewards launched are eligible. Routes with no Ryntra fee earn nothing.": "Зараховуються лише комісії, фактично отримані після запуску Винагород. Маршрути без комісії Ryntra не дають нічого.",
-  /* Rewards as a canvas — RYN-REWARDS-PREMIUM-001 (2026-09-12). */
+  /* Rewards as a canvas. */
   "Available to claim": "Доступно до отримання",
   "Where it came from": "Звідки надійшло",
   "to Level": "до рівня",
@@ -343,8 +343,8 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Grid remains a planned strategy pattern; the builder and execution adapter are not implemented.": "Grid залишається запланованим шаблоном стратегії; конструктор та адаптер виконання ще не реалізовані.",
   "The strategy direction is accepted; there is no Grid execution engine.": "Напрям стратегії прийнято; механізму виконання Grid ще немає.",
   "A grid specification, simulation, limits, execution provider and user-authorized lifecycle.": "Специфікація сітки, симуляція, ліміти, провайдер виконання та дії за дозволом користувача.",
-  "RYN-STRATEGY-DISCIPLINE-001: Grid builder, simulation and separate execution acceptance.": "RYN-STRATEGY-DISCIPLINE-001: конструктор Grid, симуляція та окреме приймання виконання.",
-  /* Unified Swap V1 — RYN-SOL-MONEY-FLOWS-001F (2026-09-07). */
+  "Waits on the Grid builder, simulation and a separate execution acceptance.": "Чекає на конструктор Grid, симуляцію та окреме приймання виконання.",
+  /* Unified Swap V1. */
   "The approval is still confirming. Nothing else was sent; press Review when it lands.": "Дозвіл ще підтверджується. Більше нічого не відправлено; натисніть Перегляд, коли він завершиться.",
   "Swapping across chains": "Обмін між мережами…",
   "Add the destination address": "Додайте адресу призначення",
@@ -363,8 +363,8 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Solana": "Solana",
   "Base": "Base",
   "Ethereum": "Ethereum",
-  /* Robinhood Chain — RYN-SOL-MONEY-FLOWS-001H/I. A chain name is a proper
-     noun and stays in both languages; the words around it do not. */
+  /* Robinhood Chain. A chain name is a proper noun and stays in both
+     languages; the words around it do not. */
   "Robinhood Chain": "Robinhood Chain",
   "Add the destination address — this route is priced for the wallet it pays.":
     "Додайте адресу призначення — цей маршрут котирується під гаманець, якому платить.",
@@ -417,8 +417,8 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "What you receive": "Що ви отримаєте",
   "At least": "Щонайменше",
   "Provider fees": "Комісії провайдера",
-  /* The Owner's word for the same line: costs rather than fees, because
-     what it holds is the rail's whole charge and not one fee among them. */
+  /* The same line, named costs rather than fees, because what it holds is
+     the rail's whole charge and not one fee among them. */
   "Provider costs": "Витрати провайдера",
   "Time": "Час",
   "Quote age": "Вік котирування",
@@ -429,9 +429,8 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "That is not an Ethereum-style address.": "Це не адреса у форматі Ethereum.",
   "Network fee, at most": "Комісія мережі, не більше",
   /* Ryntra’s own fee — 0.50% on Jupiter, 0.25% on Relay — named after the
-     company charging it and never folded into the provider's row.
-     `RYN-SOL-SWAP-MONETIZATION-001`; the rate per mechanism is
-     `RYNTRA_SERVICE_FEE_POLICY`. */
+     company charging it and never folded into the provider's row. The rate
+     per mechanism is `RYNTRA_SERVICE_FEE_POLICY`. */
   "Ryntra service fee": "Комісія Ryntra",
   /* A quote whose own figures disagreed with each other. Refused rather than
      shown, because a price nothing can fill is worse than no price. */
@@ -563,7 +562,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Back to Trade": "До торгівлі",
   "Current price": "Поточна ціна",
   "Asset details": "Відомості про актив",
-  /* RYN-RESULTS-MEMORY-001 §10 — the door from a holding to the plan it came from. */
+  /* The door from a holding to the plan it came from. */
   "Under a plan": "За планом",
   plans: "планів",
   "What you planned, and what actually happened": "Що ти планував і що сталося насправді",
@@ -1097,7 +1096,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Not on Jupiter's verified list": "Немає у списку підтверджених Jupiter",
   "Sold": "Продано",
   "Bought": "Куплено",
-  /* The loop's last step on the settled card of a purchase made under a plan (RYN-FIRST-SCREEN-001, S3). */
+  /* The loop's last step on the settled card of a purchase made under a plan. */
   "Ryntra watches your loss limit": "Ryntra стежить за межею збитку",
   "Open the plan": "Відкрити план",
   "State": "Стан",
@@ -1113,14 +1112,14 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   /* Corrected module copy: three modules named the action ledger as absent. */
   "Watched mints, and a resting summary of recent activity. History has its own page now; this screen does not yet carry a view of it.":
     "Відстежувані мінти й зведення нещодавніх дій у спокої. Історія тепер має власну сторінку; цей екран її огляду ще не показує.",
-  "The watchlist waits on Phase B's retention decision. A summary of History on this screen is its own row.":
+  "The watchlist waits on Phase B's retention decision. A summary of History on this screen is a separate piece of work.":
     "Список спостереження чекає на рішення про зберігання у фазі B. Зведення історії на цьому екрані — окрема задача.",
   "Per-chain totals for a linked EVM wallet. A Solana wallet and an EVM wallet are not one person because both are open in one browser, so this waits on each being signed for explicitly.":
     "Підсумки за мережами для прив'язаного EVM-гаманця. Гаманець Solana і гаманець EVM не є однією людиною через те, що обидва відкриті в одному браузері, тож це чекає на явний підпис кожного з них.",
-  "Canon §0.6 — multi-chain totals wait on the wallet sign-in that proves ownership, and this repository has no Solana sign-in yet.":
-    "Канон §0.6 — підсумки за кількома мережами чекають на вхід гаманцем, який доводить володіння, а входу для Solana в цьому репозиторії ще немає.",
-  "RYN-SOL-B5 — subscriptions, allowances and the wider payments business tools. The incoming-payment receipt waits on the receipt model naming an incoming transfer.":
-    "RYN-SOL-B5 — підписки, ліміти й ширші бізнес-інструменти платежів. Квитанція про вхідний платіж чекає, доки модель квитанцій опише вхідний переказ.",
+  "Multi-chain totals wait on the wallet sign-in that proves ownership, and this repository has no Solana sign-in yet.":
+    "Підсумки за кількома мережами чекають на вхід гаманцем, який доводить володіння, а входу для Solana в цьому репозиторії ще немає.",
+  "Phase B — subscriptions, allowances and the wider payments business tools. The incoming-payment receipt waits on the receipt model naming an incoming transfer.":
+    "Фаза B — підписки, ліміти й ширші бізнес-інструменти платежів. Квитанція про вхідний платіж чекає, доки модель квитанцій опише вхідний переказ.",
   "Live balances for the connected wallet, native SOL and every non-zero SPL and Token-2022 account, with search, a value total and an explicit count of what could not be priced. Money that has left and not yet settled is counted above the total rather than folded into it. An unreadable balance renders as unreadable rather than as an empty wallet.":
     "Живі баланси підключеного гаманця: нативний SOL і кожен ненульовий рахунок SPL та Token-2022, з пошуком, загальною вартістю і явною кількістю активів, які не вдалося оцінити. Кошти, які пішли й ще не завершились, показані над підсумком, а не приховані в ньому. Нечитабельний баланс показується як нечитабельний, а не як порожній гаманець.",
 
@@ -1133,8 +1132,8 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
     "Send, Swap і Bridge пишуть у журнал дій, ключем якого є гаманець, а ця сторінка читає його для підключеної адреси разом з поточним станом кожної смуги. В обміну, який так і не повернувся, можна запитати, що сталося, з будь-якого браузера, у якому підключено цей гаманець.",
   "Transfers made before this ledger existed, and any made outside Ryntra: both are on the chain and not in here, and the page says so rather than implying the wallet did nothing. Swap amounts are unlabelled because that lane stores no decimals anywhere.":
     "Перекази, зроблені до появи цього журналу, і будь-які зроблені поза Ryntra: вони є в мережі, але не тут, і сторінка про це каже, а не вдає, ніби гаманець нічого не робив. Суми обмінів без підпису, бо та смуга ніде не зберігає кількість знаків.",
-  "No registry row owns full onchain reconstruction. Canon §0.6 owns the private half: notes are wallet-scoped private data and wait on Solana sign-in.":
-    "Жоден рядок реєстру не володіє повною реконструкцією історії з мережі. Приватною половиною володіє канон §0.6: нотатки це приватні дані, прив'язані до гаманця, і чекають на вхід гаманцем для Solana.",
+  "Full onchain reconstruction is not planned yet. The private half is notes: wallet-scoped private data that waits on Solana sign-in.":
+    "Повна реконструкція історії з мережі поки не запланована. Приватна половина — це нотатки: приватні дані, прив'язані до гаманця, які чекають на вхід гаманцем для Solana.",
   "still moving, and not counted below": "ще в русі й не враховано нижче",
 
   /* History — the wallet's own list of what it did here. */
@@ -1208,16 +1207,16 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
     "CCTP V2 для native USDC між Solana й Base до межі pre-canary.",
   "Native USDC across Solana and Base through Circle CCTP V2. This surface reads the route, fees and allowance, builds a pre-canary Review, and stops before any approval, burn, mint or signature.":
     "Native USDC між Solana й Base через Circle CCTP V2. Поверхня читає route, fees і allowance, будує pre-canary Review та зупиняється до approval, burn, mint чи підпису.",
-  "A keyed Jupiter Swap API V2 mainnet ticket: exact quote and fee fields, both Asset Passports, a hash-bound Review window and the policy verdict. Keyless access is explicit and degraded. Execution exists only in the RYN-SOL-M2 owner-canary console below — founder signature, one execute, independent read, signed Receipt.":
-    "Mainnet ticket Jupiter Swap API V2 з ключем: точні quote/fee fields, обидва паспорти активів, Review window з hash binding і verdict policy. Доступ без ключа явний і degraded. Виконання існує лише в owner-canary консолі RYN-SOL-M2 нижче — підпис засновника, одне виконання, незалежне читання, підписана квитанція.",
+  "A keyed Jupiter Swap API V2 mainnet ticket: exact quote and fee fields, both Asset Passports, a hash-bound Review window and the policy verdict. Keyless access is explicit and degraded. Execution exists only in the owner-canary console below — a wallet signature, one execute, independent read, signed Receipt.":
+    "Mainnet ticket Jupiter Swap API V2 з ключем: точні quote/fee fields, обидва паспорти активів, Review window з hash binding і verdict policy. Доступ без ключа явний і degraded. Виконання існує лише в owner-canary консолі нижче — підпис гаманця, одне виконання, незалежне читання, підписана квитанція.",
   "A read-only workspace over Solana mainnet: exact mint identity, issuer powers, every Token-2022 extension with its provenance — and a registry that states what exists against what still waits on a gate. Nothing here holds a key, signs, or executes.":
     "Робочий простір лише для читання над Solana mainnet: точна ідентичність mint, повноваження емітента, кожне розширення Token-2022 з походженням і реєстр, що відділяє наявне від того, що чекає gate. Тут нічого не тримає ключ, не підписує й не виконує.",
   "Which network this workspace reads and through which endpoint, and the boundaries that are structural rather than configurable. Appearance and layout are in the Customize control in the top bar.":
     "Яку мережу й через який endpoint читає простір, а також межі, що є структурними, а не налаштовуваними. Вигляд і макет знаходяться в контролі налаштування.",
   "The first owner-signed Solana Mainnet lifecycle is finalized and independently read back. Its signed Outcome Receipt is downloadable, verifier-valid and preserves the exact deviation it recorded.":
     "Перший owner-signed lifecycle Solana Mainnet фіналізовано й незалежно прочитано. Його підписану Outcome Receipt можна завантажити; verifier підтверджує її, а записане відхилення збережено без переписування.",
-  "Choose an asset, a recipient and an amount. Ryntra reads the mint, simulates the exact bytes and judges them against policy. Your wallet signs; this site never holds a key. The exact RYN-SOL-M1B ATA-create canary is finalized and receipted; every other mainnet transfer remains review-only until its own gate.":
-    "Оберіть актив, отримувача й суму. Ryntra читає mint, симулює точні bytes і оцінює їх за policy. Підписує ваш wallet; сайт ніколи не тримає ключ. Точний RYN-SOL-M1B ATA-create canary фіналізовано й забезпечено Receipt; кожен інший mainnet-переказ лишається review-only до власного gate.",
+  "Choose an asset, a recipient and an amount. Ryntra reads the mint, simulates the exact bytes and judges them against policy. Your wallet signs; this site never holds a key. The exact ATA-create canary is finalized and receipted; every other mainnet transfer remains review-only until its own gate.":
+    "Оберіть актив, отримувача й суму. Ryntra читає mint, симулює точні bytes і оцінює їх за policy. Підписує ваш wallet; сайт ніколи не тримає ключ. Точний ATA-create canary фіналізовано й забезпечено Receipt; кожен інший mainnet-переказ лишається review-only до власного gate.",
   "Paste a mint address to read what it structurally is: which program owns it, what its authorities and extensions can do to a holding, and what is not known. The page's address is the shareable link, and opening one re-reads the chain.":
     "Вставте адресу mint, щоб прочитати його структуру: яка program ним володіє, що authorities і extensions можуть зробити з активом та що невідомо. Адреса сторінки є посиланням; відкриття повторно читає chain.",
   "What this workspace reads, from which source, under which contract — and exactly what the kit refuses to do. The SDK, the local MCP server and the CLI are published: ryntra-io/ryntra-solana-evidence, Apache-2.0, v1.0.0, cloned and verified from GitHub as a stranger would. It holds no key and has no signing path, which is a property of the kit rather than a gap in it.":
@@ -1241,8 +1240,8 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Fast · allowance-dependent": "Швидкий · залежить від allowance",
   "Review": "Перевірка",
   "Why the verdict is not an execution permission": "Чому verdict не є дозволом на виконання",
-  "M0F is pre-canary architecture. The owner policy remains fail-closed, destination gas is not estimated, and no approval or signature is requested. A later owner-present canary starts from a new Review.":
-    "M0F є pre-canary архітектурою. Owner policy лишається fail-closed, destination gas не оцінено, approval чи підпис не запитуються. Пізніший canary у присутності власника почнеться з нового Review.",
+  "This bridge is pre-canary architecture. The owner policy remains fail-closed, destination gas is not estimated, and no approval or signature is requested. A later owner-present canary starts from a new Review.":
+    "Цей міст є pre-canary архітектурою. Owner policy лишається fail-closed, destination gas не оцінено, approval чи підпис не запитуються. Пізніший canary у присутності власника почнеться з нового Review.",
   "Source chain": "Вихідний chain",
   "Destination chain": "Цільовий chain",
   "Exact source asset": "Точний вихідний актив",
@@ -1301,18 +1300,18 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Refused after any burn may exist": "Відмовлено, щойно burn може існувати",
   "Receipt schema": "Схема квитанції",
   "Receipt state": "Стан квитанції",
-  "No Bridge Receipt exists · first possible at RYN-SOL-M3":
-    "Bridge Receipt не існує · перша можлива в RYN-SOL-M3",
+  "No Bridge Receipt exists yet":
+    "Bridge Receipt ще не існує",
   "Execution boundary": "Межа виконання",
-  "No transaction is built, signed or submitted in M0F":
-    "У M0F транзакція не будується, не підписується й не надсилається",
+  "No transaction is built, signed or submitted in the bridge preview":
+    "У попередньому перегляді мосту транзакція не будується, не підписується й не надсилається",
   "Choose Solana → Base or Base → Solana.": "Оберіть Solana → Base або Base → Solana.",
   "Choose Standard or Fast.": "Оберіть Standard або Fast.",
   "Network": "Мережа",
   "Config fact": "Факт конфігурації",
   "Why there is no network switch": "Чому немає перемикача мережі",
-  "Every read here is Solana mainnet, because that is where the real mints are, and mainnet is the only network this product treats as a release target. A devnet endpoint stays configured only as an internal regression fixture; RYN-SOL-M0C moved Send to mainnet semantics — a fixture is not a step, and a switch between the two would offer a choice that means nothing to a reader. There are two mainnet endpoints rather than one because a single public endpoint is not production infrastructure: the primary is asked first and an independent operator answers when it does not, and the workspace says which one answered instead of substituting quietly.":
-    "Кожне читання тут виконується в Solana mainnet, де існують реальні мінти; mainnet є єдиною release target мережею продукту. Devnet endpoint лишається лише внутрішнім regression fixture; RYN-SOL-M0C перевів Send на mainnet semantics — fixture не є етапом, а перемикач створив би вибір без сенсу. Mainnet має два endpoint, бо один публічний endpoint не є production infrastructure: спочатку запитується primary, потім незалежний оператор, і простір прямо називає, хто відповів.",
+  "Every read here is Solana mainnet, because that is where the real mints are, and mainnet is the only network this product treats as a release target. A devnet endpoint stays configured only as an internal regression fixture; Send has moved to mainnet semantics — a fixture is not a step, and a switch between the two would offer a choice that means nothing to a reader. There are two mainnet endpoints rather than one because a single public endpoint is not production infrastructure: the primary is asked first and an independent operator answers when it does not, and the workspace says which one answered instead of substituting quietly.":
+    "Кожне читання тут виконується в Solana mainnet, де існують реальні мінти; mainnet є єдиною release target мережею продукту. Devnet endpoint лишається лише внутрішнім regression fixture; Send переведено на mainnet semantics — fixture не є етапом, а перемикач створив би вибір без сенсу. Mainnet має два endpoint, бо один публічний endpoint не є production infrastructure: спочатку запитується primary, потім незалежний оператор, і простір прямо називає, хто відповів.",
   "Reads": "Читання",
   "Solana mainnet, read-only": "Solana mainnet, лише читання",
   "Venue quotes": "Котирування venue",
@@ -1370,8 +1369,8 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Holds none, requests none, never sees a seed phrase.":
     "Не тримає й не запитує ключів, ніколи не бачить seed phrase.",
   "Signing": "Підписання",
-  "Ryntra holds no signer. The exact RYN-SOL-M1B ATA-create canary is finalized and receipted; every other mainnet Send remains review-only until RYN-SOL-M1.":
-    "Ryntra не тримає signer. Точний RYN-SOL-M1B ATA-create canary фіналізовано й забезпечено Receipt; усі інші mainnet Send лишаються review-only до RYN-SOL-M1.",
+  "Ryntra holds no signer. The exact ATA-create canary is finalized and receipted; every other mainnet Send remains review-only until the general Send canary.":
+    "Ryntra не тримає signer. Точний ATA-create canary фіналізовано й забезпечено Receipt; усі інші mainnet Send лишаються review-only до загального Send canary.",
   "Accounts": "Акаунти",
   "There is nothing to sign up for; the workspace is open.":
     "Реєстрація не потрібна; робочий простір відкритий.",
@@ -1437,15 +1436,15 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Mainnet fallback — independent operator": "Mainnet fallback — незалежний оператор",
   "from the environment": "з environment",
   "Devnet — internal fixture only": "Devnet — лише внутрішній fixture",
-  "a regression fixture for the Send path awaiting its mainnet rewrite (RYN-SOL-M0C), never a release gate":
-    "regression fixture для Send path, ніколи не release gate",
+  "a regression fixture for the Send path awaiting its mainnet rewrite, never a release gate":
+    "regression fixture для Send path, що чекає на переписування під mainnet, ніколи не release gate",
   "Environment overrides": "Environment overrides",
   "keyed production configured": "production з ключем налаштовано",
   "production key required": "потрібен production key",
   "the key enters only through": "ключ надходить лише через",
   "Custom route contract": "Контракт custom route",
-  "typed for the future allowlist path; no network caller in M0D":
-    "типізований для майбутнього allowlist path; у M0D немає network caller",
+  "typed for the future allowlist path; no network caller yet":
+    "типізований для майбутнього allowlist path; network caller поки немає",
   "What this kit refuses": "Що цей kit відмовляється робити",
   "By construction": "За конструкцією",
   "Why refusals are listed": "Навіщо перелічені відмови",
@@ -1557,8 +1556,8 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Registered on the map": "Зареєстровано на мапі",
   "more, each with its gate": "ще, кожен зі своїм gate",
   "Next in the queue": "Наступне в черзі",
-  "No active Solana packet — the task registry chooses what starts next":
-    "Активного пакета Solana немає — task registry визначає, що стартує далі",
+  "No Solana work is active — the roadmap chooses what starts next":
+    "Активної роботи над Solana немає — що стартує далі, визначає дорожня карта",
   "What this workspace reads live, which issuer powers sit on real mints, and what waits on which gate.":
     "Що цей простір читає наживо, які повноваження емітента мають реальні мінти та що чекає на який gate.",
   "Mission control for a read-only workspace: the mainnet epoch as the endpoint answered it, issuer powers across the six verified mints, and the registry's own account of what exists against what is registered with a gate.":
@@ -1577,18 +1576,18 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
     "Повний паспорт будь-якого мінта мейннету — SPL або Token-2022 — з походженням кожного поля та шістьма реальними мінтами для початку.",
   "Off-chain metadata (name, logo, issuer's own description), price, liquidity and holder concentration.":
     "Off-chain metadata (назва, логотип, опис емітента), ціна, ліквідність і концентрація власників.",
-  "Phase B data adapters (RYN-SOL-B1) for metadata and prices; the scanner (RYN-SOL-B3) for concentration.":
-    "Адаптери даних Phase B (RYN-SOL-B1) для metadata й цін; сканер (RYN-SOL-B3) для концентрації.",
+  "Phase B data adapters for metadata and prices; the scanner for concentration.":
+    "Адаптери даних Phase B для metadata й цін; сканер для концентрації.",
   "Curated market universes with prices, metadata and freshness on every read.":
     "Керовані ринкові всесвіти з цінами, metadata та свіжістю кожного читання.",
   "Token lists and prices from named providers, compared rather than trusted singly, over curated universes — tokenized assets, majors, stables — with a stated method and never a claimed index. The live quote path already runs on the Swap surface; this module is the market view around it.":
     "Списки токенів і ціни від названих провайдерів, які порівнюються, а не приймаються поодинці, для керованих всесвітів — токенізованих активів, основних активів і стейблкоїнів — з описаним методом, але без заяви про індекс. Живий шлях котирування вже працює в Обміні; цей модуль додає ринковий контекст.",
-  "The quote adapter and venue health, live on Swap since RYN-SOL-A5.":
-    "Адаптер котирувань і стан venue, що працюють в Обміні з RYN-SOL-A5.",
+  "The quote adapter and venue health, live on Swap since the swap preview shipped.":
+    "Адаптер котирувань і стан venue, що працюють в Обміні відтоді, як запрацював попередній перегляд обміну.",
   "Market data adapters (prices, metadata, OHLCV decision), the universes and the page.":
     "Адаптери ринкових даних (ціни, metadata, рішення щодо OHLCV), всесвіти й сторінка.",
-  "Phase B — RYN-SOL-B1 brings the data adapters, RYN-SOL-B2 the universes and watchlist.":
-    "Phase B — RYN-SOL-B1 додає адаптери даних, RYN-SOL-B2 — всесвіти й список спостереження.",
+  "Phase B — the data adapters, and separately the universes and watchlist.":
+    "Phase B — адаптери даних, а окремо — всесвіти й список спостереження.",
   "Curated sets of tokenized assets, majors and stables — and a watchlist that stays in your browser.":
     "Керовані набори токенізованих активів, основних активів і стейблкоїнів — та список спостереження, що лишається у вашому браузері.",
   "Curated means curated: Solana has no asset index this product reads, so coverage is a set with a stated method, never a market. The watchlist follows the Stellar retention decision — browser-local, deletable, nowhere else.":
@@ -1596,7 +1595,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Nothing. The curated-scope discipline is inherited from the Stellar Observe slice, where it is enforced in the type.":
     "Нічого. Дисципліна керованого scope успадкована від Stellar Observe, де вона закріплена типом.",
   "The universes, the page, and the local store.": "Всесвіти, сторінка й локальне сховище.",
-  "Phase B — RYN-SOL-B2.": "Фаза B — RYN-SOL-B2.",
+  "Phase B — universes and watchlist.": "Фаза B — всесвіти й список спостереження.",
   "Structural facts across many mints at once — never a score.":
     "Структурні факти одразу для багатьох мінтів — ніколи не score.",
   "Liquidity depth, pool age, holder concentration, authorities present, extension risk flags, price change. Facts with provenance, filterable; UNKNOWN stays UNKNOWN instead of defaulting to reassurance.":
@@ -1605,7 +1604,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
     "Нічого. Факти окремих мінтів, які він агрегуватиме, уже читає паспорт із походженням.",
   "The multi-mint read path, the filters and the saved-scan store.":
     "Шлях читання багатьох мінтів, фільтри й сховище збережених сканів.",
-  "Phase B — RYN-SOL-B3.": "Фаза B — RYN-SOL-B3.",
+  "Phase B — the scanner itself.": "Фаза B — сам сканер.",
   "A live mainnet swap quote for any pair, and your own wallet's signature to execute it.":
     "Живе котирування swap у мейннеті для будь-якої пари та власний підпис вашого гаманця для виконання.",
   "Jupiter Swap API V2's exact order fields — quote, minimum received, total/platform/priority fees, router, mode, route and a bounded Review window — beside both Asset Passports and the thirteen-rule policy verdict. Keyless access is explicit and degraded. The execute path adds a taker order, the exact-bytes firewall, a simulation whose proven deltas must equal the reviewed legs, the swap policy verdict, your own wallet signature, one execute and an independent chain read.":
@@ -1624,8 +1623,8 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
     "Повна pre-canary архітектура Review і recovery для обох напрямків Solana ↔ Base, де недосяжність provider edge відділена від refusal, а кожне невідоме лишається явним.",
   "The owner canary itself: no approval, burn, attestation for a real message, destination mint, signature, transaction or Bridge Receipt exists.":
     "Сам owner canary: немає approval, burn, attestation реального message, destination mint, підпису, транзакції чи Bridge Receipt.",
-  "RYN-SOL-M3 — one 2–5 USDC owner-signed CCTP mainnet canary, observed on both chains, reconciled and receipted.":
-    "RYN-SOL-M3 — один підписаний власником CCTP canary мейннету на 2–5 USDC, спостережений в обох chains, reconciled і з квитанцією.",
+  "One 2–5 USDC owner-signed CCTP mainnet canary, observed on both chains, reconciled and receipted.":
+    "Один підписаний власником CCTP canary мейннету на 2–5 USDC, спостережений в обох chains, reconciled і з квитанцією.",
   "Formalize a strategy, test it on history, prove it on paper — before it touches a venue.":
     "Формалізуйте стратегію, перевірте на історії та доведіть у paper-режимі до контакту з venue.",
   "The Strategy Lab core exists in this product for other markets. Binding it to Solana instruments — specs, historical data with provenance, deterministic backtests, walk-forward, paper trading — is its own registered phase, and pretending a binding exists before it does is what this card exists to prevent.":
@@ -1634,7 +1633,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
     "Chain-neutral ядро Strategy Lab, що працює в іншій частині продукту.",
   "Every Solana binding: instruments, data, backtests, paper lifecycle.":
     "Усі прив'язки Solana: інструменти, дані, backtests і paper lifecycle.",
-  "Phase C — RYN-SOL-C1 through C7.": "Фаза C — RYN-SOL-C1–C7.",
+  "Phase C — all seven of its steps.": "Фаза C — усі сім її кроків.",
   "One real transfer: built, simulated, signed in the owner's wallet, observed independently, reconciled, receipted.":
     "Один реальний переказ: побудований, симульований, підписаний у wallet власника, незалежно спостережений, reconciled і з квитанцією.",
   "The first Solana transaction this product stands behind. The wallet is yours, the signature is yours, and the observation is an independent read-back — Ryntra holds no key and asks the wallet to sign rather than to sign-and-send, so a comparison still happens between your approval and the network. A deviation records as a deviation, never rounded to a match.":
@@ -1643,18 +1642,18 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
     "Відкрийте першу підписану Solana Outcome Receipt і незалежно перевірте, що саме вона доводить.",
   "M1B produced the first owner-signed Solana Mainnet Outcome Receipt. Its exact 0.5 USDC movement and ATA creation match two independent RPC reads; the immutable receipt remains DEVIATION_RECORDED because its issued fee split and expected program set were incomplete, and the public verifier returns valid integrity and issuer signature.":
     "M1B створив першу owner-signed Solana Mainnet Outcome Receipt. Точний рух 0.5 USDC і створення ATA збігаються у двох незалежних RPC-read; незмінна receipt лишається DEVIATION_RECORDED через неповний поділ fee та expected program set, а public verifier підтверджує integrity й issuer signature.",
-  "The signed M1B Outcome Receipt, immutable JSON download, explorer proof, unified public verifier and M0F's Bridge Receipt verifier.":
-    "Підписана M1B Outcome Receipt, незмінний JSON download, explorer proof, unified public verifier і Bridge Receipt verifier з M0F.",
-  "No Swap, Bridge or Token-2022 receipt exists; the general Send owner canary remains RYN-SOL-M1.":
-    "Receipt для Swap, Bridge чи Token-2022 ще немає; general Send owner canary лишається RYN-SOL-M1.",
-  "M1B is closed for the exact ATA-create case. RYN-SOL-M1 remains the separate general Send owner canary.":
-    "M1B закрито для точного ATA-create case. RYN-SOL-M1 лишається окремим general Send owner canary.",
+  "The signed Outcome Receipt of the ATA-create canary, immutable JSON download, explorer proof, unified public verifier and the Bridge Receipt verifier.":
+    "Підписана Outcome Receipt для ATA-create canary, незмінний JSON download, explorer proof, unified public verifier і Bridge Receipt verifier.",
+  "No Swap, Bridge or Token-2022 receipt exists; the general Send owner canary remains its own gate.":
+    "Receipt для Swap, Bridge чи Token-2022 ще немає; general Send owner canary лишається окремим gate.",
+  "The ATA-create canary is closed for its exact case. The general Send owner canary remains separate.":
+    "ATA-create canary закрито для його точного case. General Send owner canary лишається окремим.",
   "M1B finalized one exact 0.5 USDC ATA-create transfer on Solana Mainnet: wallet-signed, one-shot submitted, independently read by two RPC operators and bound to a signed Outcome Receipt. The explicit asset picker, simulation, policy and durable reservation remain the working path.":
     "M1B фіналізував один точний ATA-create переказ 0.5 USDC у Solana Mainnet: wallet-signed, one-shot submitted, незалежно прочитаний двома RPC-операторами й прив'язаний до підписаної Outcome Receipt. Явний asset picker, simulation, policy і durable reservation лишаються робочим шляхом.",
-  "Every mainnet Send outside that exact proved ATA-create case remains review-only. RYN-SOL-M1 is still the general owner canary; M1B does not promote another destination, amount or transfer shape.":
-    "Кожен mainnet Send поза точним доведеним ATA-create case лишається review-only. RYN-SOL-M1 досі є general owner canary; M1B не промотує інший destination, amount або transfer shape.",
-  "RYN-SOL-M1 remains the separate general owner canary for other Sends.":
-    "RYN-SOL-M1 лишається окремим general owner canary для інших Send.",
+  "Every mainnet Send outside that exact proved ATA-create case remains review-only. The general owner canary is still its own gate; the ATA-create proof does not promote another destination, amount or transfer shape.":
+    "Кожен mainnet Send поза точним доведеним ATA-create case лишається review-only. General owner canary досі є окремим gate; доказ ATA-create не промотує інший destination, amount або transfer shape.",
+  "The general owner canary for other Sends remains separate.":
+    "General owner canary для інших Send лишається окремим.",
   "The read adapter, its sources, its published contracts and its refusals.":
     "Read adapter, його джерела, опубліковані контракти та відмови.",
   "Every read this workspace performs, from which endpoint, under which timeout — and the exact things the kit refuses to do. The passport and preflight contracts are published as JSON Schemas generated from the source types, with a parity test that fails on drift.":
@@ -1663,8 +1662,8 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
     "Registry entry, чотири опубліковані schema, таблиця RPC source, список відмов і сам публічний evidence kit Apache-2.0 у `ryntra-io/ryntra-solana-evidence`.",
   "A package-registry release. The kit is cloned and run from source; nothing is published to npm.":
     "Реліз у package registry. Kit клонують і запускають із source; в npm нічого не опубліковано.",
-  "None for the kit — RYN-SOL-A6 shipped it public. A registry release is its own separate founder decision.":
-    "Для kit gate немає — RYN-SOL-A6 опублікував його. Реліз у registry потребує окремого рішення засновника.",
+  "None for the kit — it shipped public. A registry release is its own separate operator decision.":
+    "Для kit gate немає — його опубліковано. Реліз у registry потребує окремого рішення оператора.",
   "The same evidence, callable from your own code and readable by an assistant that cannot act on it.":
     "Ті самі докази, доступні з вашого коду й читабельні асистентом, який не може діяти.",
   "`inspect_solana_mint`, `preflight_solana_action`, `verify_solana_receipt` — read tools only. An assistant may explain, formalize, compare and review; it never supplies a missing fact, decides a policy, authorizes, signs or executes.":
@@ -1673,8 +1672,8 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
     "Увесь публічний kit Apache-2.0 у `ryntra-io/ryntra-solana-evidence`: typed SDK, локальний stdio MCP server, CLI, чотири schema та зелений verify workflow. Він не тримає ключа й не має signing path — це властивість kit, а не прогалина.",
   "Nothing in scope. A write tool is not planned: an assistant that could sign is the boundary this kit exists to hold.":
     "У scope нічого не бракує. Write tool не планується: межа kit саме в тому, що асистент не може підписати.",
-  "None. RYN-SOL-A6 published it; a package-registry release is a separate founder decision, not a gate on this module.":
-    "Немає. RYN-SOL-A6 його опублікував; реліз у package registry — окреме рішення засновника, а не gate модуля.",
+  "None. The kit is published; a package-registry release is a separate operator decision, not a gate on this module.":
+    "Немає. Kit опубліковано; реліз у package registry — окреме рішення оператора, а не gate модуля.",
   "Which network is read, how the owner-canary policy is bounded, and what this workspace structurally cannot do.":
     "Яку мережу читають, як обмежено owner-canary policy і чого простір структурно не може робити.",
   "The endpoint table, the enforced 20 USD owner-canary package with per-family allowlists and durable exposure, the operator emergency stop, and the boundary list. The public page can read policy state and cannot mutate it.":
@@ -1711,23 +1710,23 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "ISSUER DECLARED": "ЗАЯВЛЕНО ЕМІТЕНТОМ",
   "Identity and supply": "Ідентичність і пропозиція",
   "Initialized": "Ініціалізовано",
-  "Largest-account reads belong to the scanner (RYN-SOL-B3).":
-    "Читання найбільших accounts належить Scanner (RYN-SOL-B3).",
+  "Largest-account reads belong to the scanner.":
+    "Читання найбільших accounts належить Scanner.",
   "Mint address": "Адреса mint",
   "Mint authority": "Mint authority",
   "Name, symbol and issuer description": "Назва, символ і опис емітента",
   "No extensions are present on this mint.": "Цей mint не має extensions.",
   "No ticker is shown because the chain does not state one, and this surface does not guess.":
     "Ticker не показано, бо chain його не містить, а поверхня не вгадує.",
-  "No venue is read yet. The swap preview (RYN-SOL-A5) brings live quotes, read-only.":
-    "Venue ще не читається. Swap preview (RYN-SOL-A5) додає живі котирування лише для читання.",
+  "No venue is read yet. The swap preview brings live quotes, read-only.":
+    "Venue ще не читається. Swap preview додає живі котирування лише для читання.",
   "None possible — classic SPL mints carry no extensions.":
     "Неможливо: класичні SPL mints не мають extensions.",
   "None present on this mint.": "На цьому mint немає.",
   "Not a ranking": "Не рейтинг",
   "ONCHAIN VERIFIED": "ПЕРЕВІРЕНО В CHAIN",
-  "Off-chain metadata is not read yet. Phase B's data adapters (RYN-SOL-B1) bring it, labelled as the issuer describing itself.":
-    "Off-chain metadata ще не читається. Data adapters фази B (RYN-SOL-B1) додадуть її з явною позначкою, що це опис емітента.",
+  "Off-chain metadata is not read yet. Phase B's data adapters bring it, labelled as the issuer describing itself.":
+    "Off-chain metadata ще не читається. Data adapters фази B додадуть її з явною позначкою, що це опис емітента.",
   "Open passport": "Відкрити паспорт",
   "PayPal USD — carries PermanentDelegate, a transfer-fee config, a transfer hook and confidential transfers at once":
     "PayPal USD — одночасно має PermanentDelegate, конфігурацію transfer fee, transfer hook і confidential transfers",
@@ -1936,11 +1935,11 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "The mint you pay with could not be read": "Mint для оплати не вдалося прочитати",
   "The mint you would receive could not be read": "Mint для отримання не вдалося прочитати",
   "The output review could not be built": "Review вихідного активу не вдалося побудувати",
-  "RYN-SOL-M2 is the active owner canary: the execute path exists, and it opens only in the console below — a fresh taker order, the exact-bytes firewall, a simulation, the canary policy verdict, the founder's own visible wallet signature, one execute and an independently observed Swap Receipt. This shareable ticket itself stays quote evidence.":
-    "RYN-SOL-M2 — активна owner canary: шлях виконання існує і відкривається лише в консолі нижче — свіжий taker order, firewall точних байтів, симуляція, verdict canary-політики, власний видимий підпис гаманця засновника, одне виконання і незалежно спостережена Swap-квитанція. Сам цей shareable ticket залишається evidence котирування.",
+  "The swap owner canary is active: the execute path exists, and it opens only in the console below — a fresh taker order, the exact-bytes firewall, a simulation, the canary policy verdict, a visible wallet signature, one execute and an independently observed Swap Receipt. This shareable ticket itself stays quote evidence.":
+    "Swap owner canary активна: шлях виконання існує і відкривається лише в консолі нижче — свіжий taker order, firewall точних байтів, симуляція, verdict canary-політики, видимий підпис гаманця, одне виконання і незалежно спостережена Swap-квитанція. Сам цей shareable ticket залишається evidence котирування.",
   "Owner canary gated": "За owner canary",
   "Owner canary — one signed swap": "Owner canary — один підписаний swap",
-  "RYN-SOL-M2 · founder signature only": "RYN-SOL-M2 · лише підпис засновника",
+  "Swap canary · operator signature only": "Swap canary · лише підпис оператора",
   "real funds": "реальні кошти",
   "Connect the owner wallet to ask for an executable order. Nothing signs without your visible confirmation.":
     "Підключіть гаманець власника, щоб запросити виконуваний order. Ніщо не підписується без вашого видимого підтвердження.",
@@ -2082,8 +2081,8 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "You pay": "Ви сплачуєте",
   "You pay (mint)": "Ви сплачуєте (mint)",
   "You receive (mint)": "Ви отримуєте (mint)",
-  "`/order` is the managed Meta-Aggregator path. M0D asks without taker, payer, referral, custom slippage or excluded routers, so it receives quote evidence and no transaction. `/build` is typed for the later allowlist path but has no network caller.":
-    "`/order` є керованим шляхом Meta-Aggregator. M0D запитує без taker, payer, referral, custom slippage чи excluded routers, тому отримує evidence котирування без транзакції. `/build` типізовано для пізнішого allowlist-шляху, але він не має network caller.",
+  "`/order` is the managed Meta-Aggregator path. The quote request asks without taker, payer, referral, custom slippage or excluded routers, so it receives quote evidence and no transaction. `/build` is typed for the later allowlist path but has no network caller.":
+    "`/order` є керованим шляхом Meta-Aggregator. Запит котирування йде без taker, payer, referral, custom slippage чи excluded routers, тому отримує evidence котирування без транзакції. `/build` типізовано для пізнішого allowlist-шляху, але він не має network caller.",
   "asset transfer fee": "transfer fee активу",
   "bps per transfer": "bps за переказ",
   "cap applied": "cap застосовано",
@@ -2113,13 +2112,13 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Manage connections": "Керувати підключеннями",
   "No SPL or Token-2022 balance on this address.": "На цій адресі немає balance SPL або Token-2022.",
   "No Solana wallet detected": "Гаманець Solana не виявлено",
-  /* A browser with no wallet at all, and the way on (RYN-INVEST-SIMPLE-001, session 5). */
+  /* A browser with no wallet at all, and the way on. */
   "No wallet in this browser": "У цьому браузері немає гаманця",
   "On a phone, Ryntra opens inside your wallet app.": "На телефоні Ryntra відкривається всередині застосунку гаманця.",
   "Install Phantom, Solflare or Backpack, then reload this page.": "Встановіть Phantom, Solflare або Backpack і оновіть сторінку.",
   "Open in Phantom": "Відкрити в Phantom",
   "Install Phantom": "Встановити Phantom",
-  /* «Простий»'s empty Portfolio: a guest, and a wallet with nothing yet (session 5). */
+  /* «Простий»'s empty Portfolio: a guest, and a wallet with nothing yet. */
   "Connect a wallet — and buy a piece of a company from $1": "Під'єднай гаманець — і купи частинку компанії від $1",
   "Top up — and buy your first piece.": "Поповни — і купи першу частинку.",
   "Top up": "Поповнити",
@@ -2201,26 +2200,26 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
     "Точні поля Jupiter Swap API V2 — котирування, мінімальне отримання, загальна комісія, комісії платформи й пріоритету, router, mode, route та обмежене вікно Review — розміщені поруч з обома Asset Passports і policy verdict із тринадцяти правил. Один owner-signed canary USDC → SOL фіналізовано й звірено; його незмінна квитанція дійсна та має окреме публічне виправлення двох застарілих описів походження.",
   "One exact 2.622093 USDC to 0.025621005 SOL transaction is finalized, independently read by two RPC operators and bound to a signed receipt plus an exact-hash correction record. The full keyed production surface still quotes routed pairs and amounts behind the same evidence and wallet controls.":
     "Одну точну транзакцію 2.622093 USDC → 0.025621005 SOL фіналізовано, незалежно прочитано двома RPC-операторами та прив'язано до підписаної квитанції й запису виправлення з точним хешем. Повна keyed production surface і далі котирує routed пари та суми під тими самими доказовими й wallet controls.",
-  "The owner has not accepted the provenance and canary-accounting disposition, so this action family is not promoted yet.":
-    "Власник ще не прийняв рішення щодо виправлень походження та обліку canary, тому ця action family ще не промотована.",
-  "One explicit owner disposition closes M2; no second swap or wallet signature is required.":
-    "Одне явне рішення власника закриває M2; другий обмін або новий підпис гаманця не потрібні.",
+  "The provenance and canary-accounting disposition is not accepted yet, so this action family is not promoted.":
+    "Рішення щодо виправлень походження та обліку canary ще не прийнято, тому ця action family ще не промотована.",
+  "One explicit disposition closes the swap canary; no second swap or wallet signature is required.":
+    "Одне явне рішення закриває swap canary; другий обмін або новий підпис гаманця не потрібні.",
   "The M2 Swap receipt and M1B Send receipt are both immutable observations. M2's integrity and issuer signature are valid; its public correction explicitly records the inaccurate legacy submitter sentence and action-path label rather than presenting a clean verdict.":
     "Квитанція M2 Swap і квитанція M1B Send є незмінними спостереженнями. Цілісність і підпис видавця M2 дійсні; публічне виправлення явно фіксує неточне застаріле речення про submitter і label шляху дії, а не показує чистий verdict.",
   "The signed M2 Swap Outcome Receipt, its hash-bound public correction, the signed M1B Outcome Receipt for Send, explorer proofs and both verifier paths.":
     "Підписана M2 Swap Outcome Receipt, її публічне виправлення, прив'язане до хешу, підписана M1B Send Outcome Receipt, докази explorer і обидва verifier paths.",
-  "No Bridge or Token-2022 receipt exists; the general Send owner canary remains RYN-SOL-M1.":
-    "Квитанції Bridge або Token-2022 ще немає; загальний Send owner canary залишається RYN-SOL-M1.",
-  "M2 awaits the exact owner disposition recorded on its task. RYN-SOL-M1 and RYN-SOL-M3 remain separate action-family gates.":
-    "M2 очікує точного рішення власника, зафіксованого в його task. RYN-SOL-M1 і RYN-SOL-M3 залишаються окремими gates для своїх action families.",
+  "No Bridge or Token-2022 receipt exists; the general Send owner canary remains its own gate.":
+    "Квитанції Bridge або Token-2022 ще немає; загальний Send owner canary залишається окремим gate.",
+  "The swap canary awaits one explicit disposition. The general Send canary and the bridge canary remain separate action-family gates.":
+    "Swap canary очікує одного явного рішення. Загальний Send canary і bridge canary залишаються окремими gates для своїх action families.",
   "One exact owner canary verifies this action family; it does not guarantee every pair, amount, route or future landing, and it creates no autonomous or public execution authority.":
     "Один точний owner canary підтверджує цю action family; він не гарантує кожну пару, суму, route або майбутнє виконання й не створює автономної чи публічної execution authority.",
-  "None. RYN-SOL-MONEY-FLOWS-001A closed Swap as a product; every later swap still requires a fresh route, an exact Review and the person's own visible wallet signature.":
-    "Немає. RYN-SOL-MONEY-FLOWS-001A закрив Swap як продукт; кожен наступний обмін і далі потребує свіжого маршруту, точного Review і власного видимого підпису людини в гаманці.",
+  "None. Swap is closed as a product; every later swap still requires a fresh route, an exact Review and the person's own visible wallet signature.":
+    "Немає. Swap закрито як продукт; кожен наступний обмін і далі потребує свіжого маршруту, точного Review і власного видимого підпису людини в гаманці.",
   "Open signed Solana Outcome Receipts and independently check what each one proves.":
     "Відкривайте підписані Solana Outcome Receipts і незалежно перевіряйте, що саме доводить кожна з них.",
-  "M2 is closed for its exact Swap action. RYN-SOL-M1 and RYN-SOL-M3 remain separate action-family gates.":
-    "M2 закрито для його точної Swap-дії. RYN-SOL-M1 і RYN-SOL-M3 залишаються окремими gates для своїх action families.",
+  "The swap canary is closed for its exact Swap action. The general Send canary and the bridge canary remain separate action-family gates.":
+    "Swap canary закрито для його точної Swap-дії. Загальний Send canary і bridge canary залишаються окремими gates для своїх action families.",
   "Verifying…": "Перевіряємо…",
   "Integrity": "Цілісність",
   "Issuer": "Видавець",
@@ -2243,9 +2242,9 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   /* The thirteen capabilities that left the rail on 2026-09-03. `translateSolana`
      throws on a missing key rather than falling back, so a registry entry with an
      untranslated field is a 500 for every Ukrainian visitor to the Hub Map — the
-     way `/settings` and `/map` were until RYN-SOL-MONEY-FLOWS-001A. */
-  "RYN-SOL-B1 — Radar and the data-coverage truth model, which owns the curated-scope discipline this needs.":
-    "RYN-SOL-B1 — Radar і модель правди про покриття даних, якій належить дисципліна курованих наборів, потрібна тут.",
+     way `/settings` and `/map` once were. */
+  "Phase B — Radar and the data-coverage truth model, which owns the curated-scope discipline this needs.":
+    "Фаза B — Radar і модель правди про покриття даних, якій належить дисципліна курованих наборів, потрібна тут.",
   "New mints and new pools, with how little is known about them stated first.":
     "Нові мінти й нові пули — і насамперед сказано, як мало про них відомо.",
   "A new token is the case where coverage matters most and exists least: no price history, no holder history, often no metadata beyond what the issuer wrote. Anything here has to lead with what is unknown rather than rank on what little is known.":
@@ -2253,16 +2252,16 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Nothing is built.": "Не побудовано нічого.",
   "Pool-creation and mint-age discovery, a candidate list, and the coverage model that would make such a list readable rather than a leaderboard.":
     "Виявлення створення пулів і віку мінтів, список кандидатів і модель покриття, яка зробила б цей список читабельним, а не таблицею лідерів.",
-  "RYN-SOL-B1 — Radar and the data-coverage truth model, which owns discovery and the coverage vocabulary this needs.":
-    "RYN-SOL-B1 — Radar і модель правди про покриття даних, якій належать виявлення та словник покриття, потрібні тут.",
+  "Phase B — Radar and the data-coverage truth model, which owns discovery and the coverage vocabulary this needs.":
+    "Фаза B — Radar і модель правди про покриття даних, якій належать виявлення та словник покриття, потрібні тут.",
   "Where volume actually went, and how much of that is one address.":
     "Куди насправді пішов обсяг і скільки з нього — одна адреса.",
   "Net flow, large trades and liquidity change over time. Its value is entirely in the coverage statement beside it: a flow figure assembled from partial sources is a confident number about an unknown quantity.":
     "Чистий потік, великі угоди та зміна ліквідності в часі. Уся цінність — у заяві про покриття поруч: цифра потоку, зібрана з часткових джерел, це впевнене число про невідому величину.",
   "Buy and sell volume, net flow, large-trade observation, liquidity and holder change, and any aggregation across sources.":
     "Обсяг купівель і продажів, чистий потік, спостереження великих угод, зміна ліквідності й власників — і будь-яке зведення між джерелами.",
-  "RYN-SOL-B1 — Radar and the data-coverage truth model.":
-    "RYN-SOL-B1 — Radar і модель правди про покриття даних.",
+  "Phase B — Radar and the data-coverage truth model.":
+    "Фаза B — Radar і модель правди про покриття даних.",
   "What a set of addresses has done, without pretending to know who they are.":
     "Що робив набір адрес — без удавання, ніби ми знаємо, хто за ними.",
   "Clustering and labelling addresses is the easiest place in this product to state a guess as a fact. Nothing here may name a person, and a cohort has to carry the method that built it.":
@@ -2271,8 +2270,8 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
     "Не побудовано нічого. Цей репозиторій читає гаманець лише тоді, коли його хтось сам передав, і не відслідковує жодної адреси.",
   "Clustering, labelling, cohorts, ranking and any tracking of an address the person did not supply.":
     "Кластеризація, маркування, когорти, ранжування — і будь-яке відслідковування адреси, якої людина не давала.",
-  "No registry row owns this. It is the weakest-owned of the Radar family and would need its own row behind RYN-SOL-B1, because the coverage model comes first.":
-    "Жоден рядок реєстру цим не володіє. Це найслабше закріплена частина Radar-родини, і їй потрібен власний рядок за RYN-SOL-B1, бо модель покриття йде першою.",
+  "No work is planned for this yet. It is the least-planned part of the Radar family, and its own work would have to follow Phase B's Radar, because the coverage model comes first.":
+    "Для цього поки не заплановано жодної роботи. Це найменш запланована частина Radar-родини, і її власна робота мала б іти після Radar фази B, бо модель покриття йде першою.",
   "Tokenized real-world assets on Solana, with the issuer's powers stated before the price.":
     "Токенізовані реальні активи на Solana — і повноваження емітента названі раніше за ціну.",
   "A tokenized share is a claim with a controller, a jurisdiction and a schedule. The passport discipline this workspace already applies to a mint is the part that transfers; the market data is not the hard half.":
@@ -2281,8 +2280,8 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
     "На Solana — нічого. Справжнє ядро токенізованих активів у цьому репозиторії є, і кожен його рядок — це Robinhood Chain: множники ERC-8056 та eth_call, без жодного мінта, без SPL чи Token-2022 і без Solana RPC.",
   "Any Solana-side tokenized-asset read: the mint-level passport for an RWA, the issuer-power model in SPL terms, and the market view over it.":
     "Будь-яке читання токенізованого активу з боку Solana: паспорт RWA на рівні мінта, модель повноважень емітента в термінах SPL і ринковий вид над цим.",
-  "RYN-SOL-B4 — the Solana RWA passport and the Pro view.":
-    "RYN-SOL-B4 — паспорт RWA для Solana і вид Pro.",
+  "Phase B — the Solana RWA passport and the Pro view.":
+    "Фаза B — паспорт RWA для Solana і вид Pro.",
   "Being told when something you hold changes, rather than finding out by opening a page.":
     "Дізнаватися про зміну в тому, що ви тримаєте, а не відкривши сторінку.",
   "Alerts belong to Home, because the question is about a person's whole position and not one network's slice. What Solana owes is the projection: the events worth waking somebody for, and the freshness behind each one.":
@@ -2291,8 +2290,8 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
     "Справжня поверхня сповіщень існує, і вона належить Home, а не Solana: /app/alerts малюється над lib/home/alerts/channels.ts, маршрутизація й доставка вже побудовані.",
   "The Solana projection. Nothing in the Home alert machinery mentions Solana, and no Solana event can raise an alert today.":
     "Проєкція для Solana. Ніде в механіці сповіщень Home Solana не згадана, і жодна подія Solana сьогодні не може підняти сповіщення.",
-  "No Solana registry row owns Alerts. Canon §18 owns it — the categories are fixed there, and the Home surface they project into already exists.":
-    "Жоден Solana-рядок реєстру не володіє сповіщеннями. Ними володіє канон §18 — категорії зафіксовані там, а поверхня Home, у яку вони проєктуються, уже існує.",
+  "No Solana work is planned for Alerts yet. Their categories are already fixed, and the Home surface they project into already exists.":
+    "Для сповіщень у Solana поки не заплановано жодної роботи. Їхні категорії вже зафіксовані, а поверхня Home, у яку вони проєктуються, уже існує.",
   "For the people who issued a token: who holds it, where it moved, and what the treasury did.":
     "Для тих, хто випустив токен: хто його тримає, куди він рухався і що робила скарбниця.",
   "This is the business side of the same passport read — holder concentration, large exits, treasury balances and team approvals. It is a different reader with a different job, not a Pro version of the consumer page.":
@@ -2301,8 +2300,8 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
     "Не побудовано нічого. У Solana-лінії немає ні скарбниці, ні багатопідписної механіки, ні погоджень команди.",
   "Holder counts and concentration, treasury balances, large-exit observation, project events, and any multi-signer approval path.":
     "Кількість і концентрація власників, баланси скарбниці, спостереження великих виходів, події проєкту — і будь-який шлях багатопідписного погодження.",
-  "No registry row owns this capability. Canon §19 defines it, and Business Tools open through Settings rather than the rail (§20.1).":
-    "Жоден рядок реєстру не володіє цією можливістю. Її визначає канон §19, а Business Tools відкриваються через Settings, а не через рейку (§20.1).",
+  "No work is planned for this capability yet. Its scope is defined, and Business Tools open through Settings rather than the rail.":
+    "Для цієї можливості поки не заплановано жодної роботи. Її обсяг визначено, а Business Tools відкриваються через Settings, а не через рейку.",
   "An order ticket for people who trade, rather than a swap box.":
     "Ордер-тікет для тих, хто торгує, а не віконце обміну.",
   "One market terminal: find an asset, see its real price and chart, and buy or sell it with your own signature.":
@@ -2323,77 +2322,77 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
     "Видима заблокована сторінка /app/predictions, яка каже, чим володітиме. Жодного ринку, коефіцієнта, балансу чи торгової дії не показано.",
   "The aggregator integration: market discovery, pricing, order construction, settlement and the signals. Partner/API access has been requested and is pending.":
     "Інтеграція агрегатора: пошук ринків, ціни, побудова ордера, розрахунок і сигнали. Партнерський/API-доступ запитано, очікуємо.",
-  "Canon §4.3: a separate surface only after its own data, custody, risk and canary gate — and, before that, the aggregator's partner/API access, requested and pending.":
-    "Канон §4.3: окрема поверхня лише після власного гейта даних, кастодії, ризику й canary — а перед тим партнерський/API-доступ агрегатора, який запитано й очікується.",
+  "A separate surface only after its own data, custody, risk and canary gate — and, before that, the aggregator's partner/API access, requested and pending.":
+    "Окрема поверхня лише після власного гейта даних, кастодії, ризику й canary — а перед тим партнерський/API-доступ агрегатора, який запитано й очікується.",
   "Predictions": "Прогнози",
-  "Canon §13 describes a surface where size comes from a plan and market context sits beside the ticket. Swap is the action; Spot is the workspace around it, and it is not a tab of Swap.":
-    "Канон §13 описує поверхню, де розмір походить із плану, а ринковий контекст стоїть поруч із тікетом. Swap — це дія; Spot — робоче місце навколо неї, і він не є вкладкою Swap.",
+  "Spot is a surface where size comes from a plan and market context sits beside the ticket. Swap is the action; Spot is the workspace around it, and it is not a tab of Swap.":
+    "Spot — це поверхня, де розмір походить із плану, а ринковий контекст стоїть поруч із тікетом. Swap — це дія; Spot — робоче місце навколо неї, і він не є вкладкою Swap.",
   "Nothing is built as a Spot surface. There is no route, no module and no order ticket in this workspace.":
     "Як поверхня Spot не побудовано нічого. У цьому кабінеті немає ні маршруту, ні модуля, ні ордер-тікета.",
-  "The route, the ticket, size-from-plan and the market context canon §13.4 requires beside it.":
-    "Маршрут, тікет, розмір із плану і ринковий контекст, який канон §13.4 вимагає поруч.",
-  "No registry row owns Spot. Canon §4.3 governs it: a separate surface only after its own data, custody, risk and canary gate. RYN-SOL-B2, the only row that ever named a spot route, was superseded by the M-family in 2026-08-26.":
-    "Жоден рядок реєстру не володіє Spot. Ним керує канон §4.3: окрема поверхня лише після власного гейта даних, кастодії, ризику й канарки. RYN-SOL-B2, єдиний рядок, який колись називав spot-маршрут, заміщено M-родиною 2026-08-26.",
+  "The route, the ticket, size-from-plan and the market context beside it.":
+    "Маршрут, тікет, розмір із плану і ринковий контекст поруч.",
+  "Spot opens as a separate surface only after its own data, custody, risk and canary gate.":
+    "Spot відкривається як окрема поверхня лише після власного гейта даних, кастодії, ризику й канарки.",
   "An order that waits, and a schedule that keeps buying — each with the custody question answered first.":
     "Ордер, який чекає, і розпис, який продовжує купувати — і в кожного першим відповідене питання кастодії.",
-  "A limit order that waits has to hold funds somewhere, and a schedule that keeps buying acts while nobody is watching. Both are custody questions before they are trading features, which is why canon §11.7 puts Schedule → notification → fresh evidence → fresh quote → Review → wallet signature in that order.":
-    "Лімітний ордер, який чекає, мусить десь тримати кошти, а розпис, який продовжує купувати, діє, коли ніхто не дивиться. Обидва — питання кастодії раніше, ніж торгові функції; саме тому канон §11.7 ставить розпис → сповіщення → свіжі факти → свіже котирування → Review → підпис гаманця саме в цьому порядку.",
+  "A limit order that waits has to hold funds somewhere, and a schedule that keeps buying acts while nobody is watching. Both are custody questions before they are trading features, which is why the product puts Schedule → notification → fresh evidence → fresh quote → Review → wallet signature in that order.":
+    "Лімітний ордер, який чекає, мусить десь тримати кошти, а розпис, який продовжує купувати, діє, коли ніхто не дивиться. Обидва — питання кастодії раніше, ніж торгові функції; саме тому продукт ставить розпис → сповіщення → свіжі факти → свіже котирування → Review → підпис гаманця саме в цьому порядку.",
   "Nothing is built. There is no Trigger or Recurring adapter in this repository.":
     "Не побудовано нічого. У цьому репозиторії немає ні адаптера Trigger, ні Recurring.",
   "The order construction, the custodial-vault deposit, withdrawal and recovery path, and the DCA schedule with its per-draw Review.":
     "Побудова ордера, внесення до кастодіального сховища, шлях виведення й відновлення — і розпис DCA з окремим Review на кожне списання.",
-  "Canon §11.7 and §15.5 name the blocking condition rather than a date: the custody disclosure and the withdrawal path must exist before an order may wait on anyone's funds.":
-    "Канон §11.7 і §15.5 називають блокуючу умову, а не дату: розкриття кастодії та шлях виведення мусять існувати, перш ніж ордер отримає право чекати на чиїхось коштах.",
+  "The blocking condition is named rather than dated: the custody disclosure and the withdrawal path must exist before an order may wait on anyone's funds.":
+    "Блокуюча умова названа, а не прив'язана до дати: розкриття кастодії та шлях виведення мусять існувати, перш ніж ордер отримає право чекати на чиїхось коштах.",
   "Leveraged positions, which is the one place on this product where a person can lose more than they put in.":
     "Позиції з плечем — єдине місце в цьому продукті, де людина може втратити більше, ніж внесла.",
-  "Funding, margin and liquidation are the whole feature; the order ticket is the easy part. Canon §22.3 sets a five-rung ladder for exactly that reason, and nothing about it is reachable by extending Swap.":
-    "Фандинг, маржа й ліквідація — це і є вся функція; ордер-тікет тут легка частина. Саме тому канон §22.3 ставить п'ятищаблеву драбину, і ніщо з цього не досягається розширенням Swap.",
+  "Funding, margin and liquidation are the whole feature; the order ticket is the easy part. The product sets a five-rung ladder for exactly that reason, and nothing about it is reachable by extending Swap.":
+    "Фандинг, маржа й ліквідація — це і є вся функція; ордер-тікет тут легка частина. Саме тому продукт ставить п'ятищаблеву драбину, і ніщо з цього не досягається розширенням Swap.",
   "Nothing is built. There is no perps client, market read, position, funding, margin or liquidation model in the Solana tree.":
     "Не побудовано нічого. У Solana-дереві немає ні клієнта перпів, ні читання ринку, ні позиції, ні моделі фандингу, маржі чи ліквідації.",
   "A venue adapter, market and funding reads, position and margin state, leverage input, liquidation-price calculation, and the paper rung that has to come before any of it moves money.":
     "Адаптер майданчика, читання ринку й фандингу, стан позиції та маржі, введення плеча, розрахунок ціни ліквідації — і паперовий щабель, який мусить іти перед тим, як щось із цього почне рухати гроші.",
-  "Canon §22.3 and its Gate 6 ladder, whose first rung is a read-only market and position model with no order path at all.":
-    "Канон §22.3 і його драбина Gate 6, чий перший щабель — модель ринку й позиції лише для читання, узагалі без шляху для ордера.",
+  "The perps release ladder, whose first rung is a read-only market and position model with no order path at all.":
+    "Драбина випуску perps, чий перший щабель — модель ринку й позиції лише для читання, узагалі без шляху для ордера.",
   "Ask someone for a payment, and know when it actually arrived.":
     "Попросити когось про платіж — і знати, коли він справді надійшов.",
   "The link is the easy half. What makes a payment request a product is everything after it: an expiry, the expected amount against the observed one, and a receipt for the person who paid as well as the person who asked.":
     "Посилання — легка половина. Продуктом запит на платіж робить усе, що після нього: строк дії, очікувана сума проти спостереженої і квитанція як для того, хто заплатив, так і для того, хто попросив.",
   "The URL half, and it ships inside Receive rather than a Payments surface: buildSolanaPayUrl produces a real Solana Pay transfer request with recipient, amount, SPL token and reference.":
     "Половина з посиланням — і вона живе всередині Receive, а не на поверхні Payments: buildSolanaPayUrl створює справжній запит переказу Solana Pay з отримувачем, сумою, SPL-токеном і референсом.",
-  "Everything after the URL — expiry, policy, observed payment, expected against actual, and the Receipt canon §20.2 requires.":
-    "Усе після посилання — строк дії, політика, спостережений платіж, очікуване проти фактичного і квитанція, якої вимагає канон §20.2.",
-  "RYN-SOL-B5 — Payments, subscriptions, x402 and agents, as Business Tools rather than a consumer hero.":
-    "RYN-SOL-B5 — платежі, підписки, x402 і агенти, як Business Tools, а не як головна користувацька обіцянка.",
+  "Everything after the URL — expiry, policy, observed payment, expected against actual, and the Receipt a payment request requires.":
+    "Усе після посилання — строк дії, політика, спостережений платіж, очікуване проти фактичного і квитанція, якої вимагає запит на оплату.",
+  "Phase B — Payments, subscriptions, x402 and agents, as Business Tools rather than a consumer hero.":
+    "Фаза B — платежі, підписки, x402 і агенти, як Business Tools, а не як головна користувацька обіцянка.",
   "A recurring charge you can see, cap and stop.":
     "Регулярне списання, яке ви бачите, можете обмежити й зупинити.",
-  "An allowance is a promise about the future, so the whole feature is the revoke path and the cap — not the charge. Canon §20.3 fixes the shape: a delegate with a cap, a cadence, an expiry, and expected draws recorded against actual ones.":
-    "Дозвіл на списання — це обіцянка про майбутнє, тому вся функція це шлях відкликання і межа, а не саме списання. Канон §20.3 фіксує форму: делегат з межею, періодичністю, строком дії та очікуваними списаннями, записаними проти фактичних.",
+  "An allowance is a promise about the future, so the whole feature is the revoke path and the cap — not the charge. The shape is fixed: a delegate with a cap, a cadence, an expiry, and expected draws recorded against actual ones.":
+    "Дозвіл на списання — це обіцянка про майбутнє, тому вся функція це шлях відкликання і межа, а не саме списання. Форма зафіксована: делегат з межею, періодичністю, строком дії та очікуваними списаннями, записаними проти фактичних.",
   "Nothing is built in the Solana lane. x402 and B402 appear nowhere under lib/solana or app/solana, and there is no allowance machinery.":
     "У Solana-лінії не побудовано нічого. x402 і B402 не зустрічаються ні під lib/solana, ні під app/solana, і механіки дозволів немає.",
   "The delegate, cap, cadence, expiry and revocation, the expected-against-actual draw record, and the receipts for each charge.":
     "Делегат, межа, періодичність, строк дії та відкликання, запис очікуваних списань проти фактичних — і квитанція на кожне списання.",
-  "RYN-SOL-B5 — the same row that owns Payments. Canon §20.3 defines the allowance shape it must implement.":
-    "RYN-SOL-B5 — той самий рядок, який володіє платежами. Канон §20.3 визначає форму дозволу, яку він мусить реалізувати.",
+  "Phase B — the same work as Payments. It must implement the allowance shape described above.":
+    "Фаза B — та сама робота, що й платежі. Вона мусить реалізувати описану вище форму дозволу.",
   "Something that acts while you are not looking — which is why it is a policy question, not a feature.":
     "Те, що діє, коли ви не дивитеся, — і саме тому це питання політики, а не функція.",
-  "Canon §15.2 sets the ladder: watch, then paper, then prepare, and only then anything guarded. Agent Control is the product that would govern the last rung, and it currently pins execution off and human authorization on by contract.":
-    "Канон §15.2 ставить драбину: спостерігати, потім папір, потім підготовка — і лише тоді щось під охороною. Останнім щаблем керував би Agent Control, а він контрактом тримає виконання вимкненим і людську авторизацію обов'язковою.",
+  "The ladder is fixed: watch, then paper, then prepare, and only then anything guarded. Agent Control is the product that would govern the last rung, and it currently pins execution off and human authorization on by contract.":
+    "Драбина зафіксована: спостерігати, потім папір, потім підготовка — і лише тоді щось під охороною. Останнім щаблем керував би Agent Control, а він контрактом тримає виконання вимкненим і людську авторизацію обов'язковою.",
   "Nothing is built. There is no scheduler, recurring action or unattended execution path in this repository, and Agent Control is structurally incapable of executing: its policy contract pins execution disabled and human authorization required.":
     "Не побудовано нічого. У цьому репозиторії немає ні планувальника, ні регулярної дії, ні шляху виконання без нагляду, а Agent Control структурно не здатний виконувати: його контракт політики тримає виконання вимкненим, а людську авторизацію обов'язковою.",
   "Every rung above Prepare, and the Agent Control authorization path that would have to carry it.":
     "Кожен щабель вище за підготовку — і шлях авторизації Agent Control, який мусив би це нести.",
-  "No registry row owns Solana automation. Canon §15.2's ladder is the clause that owns it, and RYN-SOL-B3 owns the Strategy Lab rungs beneath it.":
-    "Жоден рядок реєстру не володіє автоматизацією Solana. Нею володіє драбина канону §15.2, а щаблями Strategy Lab під нею — RYN-SOL-B3.",
+  "No Solana automation work is planned yet. The ladder above governs it, and the Strategy Lab owns the rungs beneath it.":
+    "Для автоматизації Solana поки не заплановано жодної роботи. Нею керує описана вище драбина, а щаблі під нею належать Strategy Lab.",
   "Which provider answered, how fresh the answer was, and what to do when one is down.":
     "Який провайдер відповів, наскільки свіжою була відповідь і що робити, коли один із них лежить.",
-  "This is the one capability here whose engine already exists and whose surface does not. Canon §23.2's four states are implemented over the endpoint pair and are read on every request; nothing renders them.":
-    "Це єдина можливість тут, чий рушій уже існує, а поверхня — ні. Чотири стани канону §23.2 реалізовані над парою ендпоінтів і читаються на кожному запиті; ніщо їх не малює.",
+  "This is the one capability here whose engine already exists and whose surface does not. The four provider states are implemented over the endpoint pair and are read on every request; nothing renders them.":
+    "Це єдина можливість тут, чий рушій уже існує, а поверхня — ні. Чотири стани провайдерів реалізовані над парою ендпоінтів і читаються на кожному запиті; ніщо їх не малює.",
   "The engine. lib/solana/health.ts implements the four states over the mainnet endpoint pair, with tests, running in production on every read.":
     "Рушій. lib/solana/health.ts реалізує чотири стани над парою мейннет-ендпоінтів, із тестами, і працює у проді на кожному читанні.",
   "The surface. No page, route or panel renders the health state anywhere in this workspace.":
     "Поверхня. Ні сторінка, ні маршрут, ні панель ніде в цьому кабінеті не малюють стан здоров'я.",
-  "No registry row owns the surface. Canon §23 owns the contract — the provider list, the four states and the degraded-read discipline — and the engine already satisfies it.":
-    "Жоден рядок реєстру не володіє поверхнею. Контрактом володіє канон §23 — список провайдерів, чотири стани й дисципліна деградованого читання — і рушій його вже задовольняє.",
+  "No work is planned for the surface yet. The contract — the provider list, the four states and the degraded-read discipline — is fixed, and the engine already satisfies it.":
+    "Для поверхні поки не заплановано жодної роботи. Контракт — список провайдерів, чотири стани й дисципліна деградованого читання — зафіксований, і рушій його вже задовольняє.",
   "A real, working thing today. Some of these only read; others move money, and always with your own wallet — the line beside the name says which.":
     "Справжня робоча річ уже сьогодні. Одні лише читають, інші рухають гроші — і завжди вашим власним гаманцем; рядок біля назви каже, що саме.",
   "Move native USDC between Solana and Base through Circle CCTP V2, signed in your own wallet.":
@@ -2404,8 +2403,8 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
     "Напрямок Solana → Base, на будь-яку суму, яку дозволяють ваш баланс і провайдер. Один переказ на 2 USDC, підписаний власником, фіналізовано і звірено як MATCHED на обох ланцюгах, із квитанцією, яку публічний верифікатор читає як дійсну.",
   "The Base to Solana direction, provider-driven token and route discovery, and live provider minimums and maximums.":
     "Напрямок Base → Solana, визначення токенів і маршрутів із боку провайдера та живі мінімуми й максимуми провайдера.",
-  "RYN-SOL-MONEY-FLOWS-001D — the reverse leg is a build, not a switch: an ERC-20 approve, a Base depositForBurn encoder, a Solana receiveMessage builder and a chain-tagged duplicate-burn claim.":
-    "RYN-SOL-MONEY-FLOWS-001D — зворотне плече це збірка, а не перемикач: approve для ERC-20, кодувальник depositForBurn на Base, будівник receiveMessage на Solana і заявка проти подвійного спалення з позначкою ланцюга.",
+  "Waits on the reverse leg, which is a build, not a switch: an ERC-20 approve, a Base depositForBurn encoder, a Solana receiveMessage builder and a chain-tagged duplicate-burn claim.":
+    "Чекає на зворотне плече — це збірка, а не перемикач: approve для ERC-20, кодувальник depositForBurn на Base, будівник receiveMessage на Solana і заявка проти подвійного спалення з позначкою ланцюга.",
   "below the quote, above your minimum": "менше за котирування, вище за ваш мінімум",
   "above the quote": "більше за котирування",
   "Observed": "Спостережено",
@@ -2558,17 +2557,17 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
     "Тринадцять правил, які визначають, що переказ може зробити до будь-якого підпису.",
   "The evidence policy remains thirteen dials. The owner-canary layer adds an immutable package/family budget, destination/mint/program allowlists, durable submit-once exposure and ALLOW / REVIEW / BLOCK / PAUSE / UNKNOWN under a fail-closed operator switch.":
     "Evidence policy лишається набором із 13 правил. Owner-canary layer додає незмінний package/family budget, allowlists destination/mint/program, durable submit-once exposure і ALLOW / REVIEW / BLOCK / PAUSE / UNKNOWN під fail-closed operator switch.",
-  "Both deterministic engines: the thirteen-rule evidence policy and RYN-SOL-M0E's durable owner-canary policy. Send binds both verdicts into one issuer-signed Review bundle; Settings renders the canary control plane read-only.":
-    "Обидва детерміновані engines: evidence policy з 13 правил і durable owner-canary policy з RYN-SOL-M0E. Send зв'язує обидва verdict в одному підписаному issuer Review bundle; Налаштування показують canary control plane лише для читання.",
+  "Both deterministic engines: the thirteen-rule evidence policy and the durable owner-canary policy. Send binds both verdicts into one issuer-signed Review bundle; Settings renders the canary control plane read-only.":
+    "Обидва детерміновані engines: evidence policy з 13 правил і durable owner-canary policy. Send зв'язує обидва verdict в одному підписаному issuer Review bundle; Налаштування показують canary control plane лише для читання.",
   "A general user-editable policy builder. The canary switch remains operator configuration, never an unauthenticated browser control.":
     "Загальний policy builder для редагування користувачем. Canary switch лишається конфігурацією оператора, а не неавтентифікованим browser control.",
   "None for the enforced owner-canary policy. A general policy editor belongs to a later bounded control task.":
     "Для примусової owner-canary policy gate немає. Загальний policy editor належить пізнішій обмеженій control task.",
 
-  /* Trade, rebuilt as one swap card (RYN-SOL-M2). The surface stopped being a
-     document and became the swap itself, so its copy is new and its Ukrainian
-     projection is new with it. The terms of art the workspace already keeps in
-     Latin — wallet, mint, chain, policy, route, recovery — stay that way here. */
+  /* Trade, rebuilt as one swap card. The surface stopped being a document and
+     became the swap itself, so its copy is new and its Ukrainian projection is
+     new with it. The terms of art the workspace already keeps in Latin —
+     wallet, mint, chain, policy, route, recovery — stay that way here. */
   "The two sides are the same asset.": "Обидві сторони — той самий актив.",
   "The wallet returned different bytes than the reviewed message. Nothing was submitted.":
     "Wallet повернув інші байти, ніж перевірене повідомлення. Нічого не надіслано.",
@@ -2614,8 +2613,8 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "The policy refuses what receiving this asset would subject a holder to.":
     "Policy відмовляє через те, чому отримання цього активу піддає власника.",
   "Pair outside the owner canary": "Пара поза owner canary",
-  "The first signature is bounded to USDC ↔ SOL, 2–5 USDC, by canon §25.4.":
-    "Перший підпис обмежено парою USDC ↔ SOL на 2–5 USDC за каноном §25.4.",
+  "The first signature is bounded to USDC ↔ SOL, 2–5 USDC.":
+    "Перший підпис обмежено парою USDC ↔ SOL на 2–5 USDC.",
   "Change the amount to ask for a fresh one; a stale quote never reaches a signature.":
     "Змініть суму, щоб запитати свіже; застаріле котирування ніколи не доходить до підпису.",
   "Preparing the exact transaction…": "Готуємо точну транзакцію…",
@@ -2770,20 +2769,20 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "The network fee could not be read. Review it again.":
     "Комісію мережі не вдалося прочитати. Перевірте переказ ще раз.",
   "This transfer is not ready to send.": "Цей переказ ще не готовий до надсилання.",
-  /* ── RYN-SOL-M1: the general Send proof ──────────────────────────────── */
+  /* ── The general Send proof ──────────────────────────────────────────── */
   "Three immutable observations. The M1 Send receipt reconciled MATCHED with no deviation to record. M1B's preserves the deviation it found rather than reissuing a cleaner one, and M2's carries a hash-bound public correction naming the two inaccurate provenance sentences it shipped with.":
     "Три незмінні спостереження. Квитанція M1 для Send звірилася MATCHED — записувати відхилення не було чого. Квитанція M1B зберігає знайдене відхилення, а не перевидає чистішу версію, а квитанція M2 несе прив'язану за хешем публічну корекцію, яка називає два неточні речення про походження, з якими вона вийшла.",
   "The signed M1 Send Outcome Receipt, the signed M1B Outcome Receipt, the signed M2 Swap Outcome Receipt with its hash-bound correction, explorer proofs and both verifier paths.":
     "Підписана Outcome Receipt M1 для Send, підписана Outcome Receipt M1B, підписана Outcome Receipt M2 для Swap разом із прив'язаною за хешем корекцією, докази в explorer і обидва шляхи перевірки.",
   "No Bridge or Token-2022 receipt exists.": "Квитанцій для Bridge чи Token-2022 не існує.",
-  "Send and Swap are closed for their exact proved actions. RYN-SOL-M3 and RYN-SOL-M4 remain separate action-family gates.":
-    "Send і Swap закриті для своїх точних доведених дій. RYN-SOL-M3 і RYN-SOL-M4 лишаються окремими гейтами родин дій.",
+  "Send and Swap are closed for their exact proved actions. The bridge canary and the Token-2022 canary remain separate action-family gates.":
+    "Send і Swap закриті для своїх точних доведених дій. Bridge canary і Token-2022 canary лишаються окремими гейтами родин дій.",
   "Two exact owner-signed transfers are finalized on Solana Mainnet. M1 moved 0.5 USDC to a recipient who already held an account and reconciled MATCHED — the first Solana receipt this product matched outright. M1B proved the harder shape before it, creating the recipient's account and paying its rent. Both were wallet-signed, submitted once and read back by two independent RPC operators.":
     "У мейннеті Solana фіналізовано два точні перекази, підписані власником. M1 переказав 0.5 USDC отримувачу, який уже мав account, і звірився MATCHED — це перша квитанція Solana, яку продукт звірив без жодного відхилення. M1B до нього довів складнішу форму: створив account отримувача й оплатив його ренту. Обидва підписані гаманцем, надіслані один раз і прочитані назад двома незалежними RPC-операторами.",
   "Neither proof promotes an amount, a destination or an asset beyond the ones actually sent. Nothing here executes on anyone's behalf: every transfer still needs a fresh build, a fresh simulation and the owner's own wallet confirmation.":
     "Жоден із цих доказів не поширюється на суму, адресу чи актив поза тими, які справді надіслали. Тут ніщо не виконується від чийогось імені: кожен переказ і далі потребує свіжої побудови, свіжої симуляції та власного підтвердження в гаманці власника.",
-  "Send is proved for owner-signed classic SPL transfers. Supported Token-2022 cases remain RYN-SOL-M4, and Send as a finished product is RYN-SOL-MONEY-FLOWS-001B.":
-    "Send доведено для класичних SPL-переказів, підписаних власником. Підтримані випадки Token-2022 лишаються за RYN-SOL-M4, а Send як завершений продукт — це RYN-SOL-MONEY-FLOWS-001B.",
+  "Send is proved for owner-signed classic SPL transfers. Supported Token-2022 cases wait on the Token-2022 canary, and Send as a finished product waits on its own production step.":
+    "Send доведено для класичних SPL-переказів, підписаних власником. Підтримані випадки Token-2022 чекають на канарку Token-2022, а Send як завершений продукт — на власний виробничий крок.",
 
   /* Settings and the Hub Map. Fifteen keys that were never written, and the
      omission was not cosmetic: `translateSolana` throws rather than falling
@@ -2840,7 +2839,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "More": "Більше",
   "Source transaction": "Вихідна транзакція",
   "Destination transaction": "Цільова транзакція",
-  /* The plan on the Spot ticket — RYN-STRATEGY-PLAN-001 stage B: the chip, the Strategy block, the gate. */
+  /* The plan on the Spot ticket: the chip, the Strategy block, the gate. */
   "Under plan": "За планом",
   "Reading the plan…": "Читаємо план…",
   "Confirm your wallet to trade under the plan.": "Підтверди гаманець, щоб торгувати за планом.",
@@ -2855,7 +2854,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Within the plan": "У межах плану",
   "Within the plan · your call": "У межах плану · твоє рішення",
   "Outside the plan": "Поза планом",
-  /* 1.7.0 — the refusal in one sentence, and the Review's four answers (RYN-PLAN-CRYPTO-001). */
+  /* 1.7.0 — the refusal in one sentence, and the Review's four answers. */
   "could not be judged right now": "зараз не вдалося перевірити",
   "the plan expects": "план очікує",
   "A required check that cannot be judged does not sign — try again in a moment.": "Обов'язкова перевірка, яку не вдалося виконати, не підписує — спробуй за хвилину.",
@@ -2912,9 +2911,9 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Slippage bound": "Межа сліпеджу",
   "Pool liquidity": "Ліквідність пулу",
   "Units known": "Одиниці відомі",
-  /* The evidence condition on the Review — the person's own rule on an observation (RYN-NANSEN-EVIDENCE-001). */
+  /* The evidence condition on the Review — the person's own rule on an observation. */
   "Evidence condition": "Умова за доказом",
-  /* The second source on the Review — a rule on how the token is built, and one line per source under the checks (RYN-DDXYZ-RISK-001). */
+  /* The second source on the Review — a rule on how the token is built, and one line per source under the checks. */
   "Due diligence": "Перевірка токена",
   "Onchain activity": "Активність у мережі",
   "Evidence sources": "Джерела доказів",
@@ -2926,13 +2925,13 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "stale": "застаріло",
   "no data": "немає даних",
   "not available": "недоступно",
-  /* The plan's price bound said beside the order before the Review — RYN-UX-CLARITY-001 §5.3. */
+  /* The plan's price bound said beside the order before the Review. */
   "The price of this order is above your plan's limit.": "Ціна цієї заявки вища за ліміт твого плану.",
   "Now": "Зараз",
   "Your limit": "Твій ліміт",
   "This order, per share": "Ця заявка, за акцію",
   "The Review decides at signing.": "Вирішує Review при підписі.",
-  /* Pre-IPO instruments in the Spot Review — the token as the unit, the issuer's mark named as such, the transfer fee the mint withholds (RYN-STOCKS-PROVIDERS-001). */
+  /* Pre-IPO instruments in the Spot Review — the token as the unit, the issuer's mark named as such, the transfer fee the mint withholds. */
   "Tokens": "Токенів",
   "This order, per token": "Ця заявка, за токен",
   "Per token": "За токен",
@@ -2949,7 +2948,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "indicative · not the token's price": "орієнтовний · не ціна токена",
   "unavailable": "недоступний",
   "The issuer no longer offers this token for purchase.": "Емітент більше не пропонує цей токен для купівлі.",
-  /* A token Ryntra no longer supports (canon v5.2 В26): Spot's ticket, the Portfolio row, History. */
+  /* A token Ryntra no longer supports: Spot's ticket, the Portfolio row, History. */
   "No longer supported in Ryntra": "Більше не підтримується в Ryntra",
   "You can sell it in your own wallet": "Продати можна у своєму гаманці",
   /* The order route's refusals under a plan — lib/solana/swap-failure-copy.ts. */

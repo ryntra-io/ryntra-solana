@@ -3,12 +3,11 @@
 /**
  * Portfolio — what this wallet owns, and what it is worth where that is known.
  *
- * Rebuilt on the Owner's instruction of 2026-09-12 (*«зроби нормальне
- * портфоліо»*): the value first with the day's change, the allocation as one
- * bar, the holdings as a table a broker would show — icon, price, the day's
- * move, amount, value, share — grouped by what the asset is (Crypto ·
- * Stocks/RWA · Memes), and the dust folded under one line instead of forty
- * anonymous rows between the real positions.
+ * Rebuilt on 2026-09-12 as a proper portfolio: the value first with the day's
+ * change, the allocation as one bar, the holdings as a table a broker would
+ * show — icon, price, the day's move, amount, value, share — grouped by what
+ * the asset is (Crypto · Stocks/RWA · Memes), and the dust folded under one
+ * line instead of forty anonymous rows between the real positions.
  *
  * ## The one rule that is not cosmetic
  *
@@ -17,7 +16,7 @@
  * shows a dash rather than $0.00. When the balance read itself failed, the
  * list does not render as an empty wallet.
  *
- * ## Width and the one action (`RYN-WIDTH-PREMIUM-001`)
+ * ## Width and the one action
  *
  * From 1280 px the positions take a main column and «Автоінвест» the right
  * one, as on Home; the value reads in big figures in the reader's language
@@ -26,8 +25,8 @@
  *
  * ## Read by address
  *
- * Canon §0.6: public onchain balances are readable by address, so this needs
- * no signature. It is keyed by the wallet, never the browser.
+ * Public onchain balances are readable by address, so this needs no
+ * signature. It is keyed by the wallet, never the browser.
  */
 
 import { ArrowUpRight, CaretDown, CaretUp, HourglassMedium } from "@phosphor-icons/react";
@@ -81,7 +80,7 @@ type Row = Readonly<{
   change: number | null;
   tradeable: boolean;
   retired: boolean;
-  /** The issuer's event about the token (the IPO and conversion watch, canon v5.2 В27): the holder's line, the swap and the quiet sale; null for every other token. */
+  /** The issuer's event about the token (the IPO and conversion watch): the holder's line, the swap and the quiet sale; null for every other token. */
   event: RowEvent | null;
 }>;
 
@@ -113,10 +112,9 @@ function categoryOf(holding: WalletHolding): Category {
 
 /**
  * What the connected wallet owns. The empty states are the beginner's, for
- * everyone since canon v5.3 (В28, one version): a guest reads «Під'єднай
+ * everyone, because there is one version: a guest reads «Під'єднай
  * гаманець — і купи частинку компанії від $1», a wallet with nothing yet
- * reads «Поповни — і купи першу частинку» and the way to top up
- * (RYN-INVEST-SIMPLE-001, session 5).
+ * reads «Поповни — і купи першу частинку» and the way to top up.
  */
 export function HoldingsCard() {
   const { text, locale } = useSolanaI18n();
@@ -132,12 +130,12 @@ export function HoldingsCard() {
     [holdings],
   );
   const stockRows = useStockRows(stockMints);
-  /* The plan a holding belongs to (RYN-RESULTS-MEMORY-001 §10): the wallet's own plans by mint, so a position can be opened as the decision it came from. Nothing about value is computed here. */
+  /* The plan a holding belongs to: the wallet's own plans by mint, so a position can be opened as the decision it came from. Nothing about value is computed here. */
   const plansByMint = usePlansByMint(connection?.address ?? null);
   const [dustOpen, setDustOpen] = useState(false);
-  /* «Продати з позиції» (RYN-BUY-FLOW-001): the position whose sale's sheet is open, and its own logo and name for the head while the company is read. */
+  /* «Продати з позиції»: the position whose sale's sheet is open, and its own logo and name for the head while the company is read. */
   const [sale, setSale] = useState<Readonly<{ mint: string; name: string; icon: string | null }> | null>(null);
-  /* Нагляд over each company the wallet holds (RYN-PROTECT-SIGNAL-001): its state and one action under the row; «Ryntra попередить» opens its sheet. */
+  /* Нагляд over each company the wallet holds: its state and one action under the row; «Ryntra попередить» opens its sheet. */
   const watches = usePositions();
   const [warning, setWarning] = useState<PositionWatchView | null>(null);
   /* A closed sale re-reads Нагляд: a position sold, or sold in part, says so at once. */
@@ -177,7 +175,7 @@ export function HoldingsCard() {
           category: holding.kind === "NATIVE_SOL" ? "crypto" : categoryOf(holding),
           price: price !== null && Number.isFinite(price) && price > 0 ? price : null,
           change: typeof change === "number" && Number.isFinite(change) ? change : null,
-          /* A token Ryntra no longer supports (canon v5.2 В26) opens no ticket: its row says so and where it can be sold. */
+          /* A token Ryntra no longer supports opens no ticket: its row says so and where it can be sold. */
           tradeable: (Boolean(holding.catalog?.symbol) || holding.kind === "NATIVE_SOL") && !isRetiredMint(holding.mint),
           retired: isRetiredMint(holding.mint),
           event: rowEventOf(holding.mint, lang, nowMs),
@@ -282,7 +280,7 @@ export function HoldingsCard() {
                 {dayChange.usd >= 0 ? "+" : "−"}{usdValueIn(BigInt(Math.round(Math.abs(dayChange.usd) * 1_000_000)), locale)} · {formatPercent(dayChange.pct, numbers)} <span>{text("today")}</span>
               </span>
             ) : null}
-            {/* The page's one orange action (RYN-WIDTH-PREMIUM-001): the wallet's next step. */}
+            {/* The page's one orange action: the wallet's next step. */}
             <FundingActions need={need} firstStep={need === "usdc" && funds !== null && !funds.ownsCompany} locale={locale} />
             <dl className={styles.coverage}>
               <div className={styles.fact}>
@@ -412,7 +410,7 @@ export function HoldingsCard() {
 
         <ul className={styles.list}>
           {(searching ? rows : [...positions, ...(dustOpen ? dust : [])]).map((row) => {
-            /* A company the wallet holds is sold from its position (RYN-BUY-FLOW-001): a stock Ryntra lists, priced, not paused, and not dust. A position whose issuer event already offers the sale keeps that one; crypto is not sold here. */
+            /* A company the wallet holds is sold from its position: a stock Ryntra lists, priced, not paused, and not dust. A position whose issuer event already offers the sale keeps that one; crypto is not sold here. */
             const listed = row.category === "stock" && !row.retired && !row.event && row.price !== null && row.value !== null && row.value >= DUST_MICRO_USD ? stockRows?.get(row.mint) : undefined;
             const sellable = listed !== undefined && !listed.halted;
             const watch = row.category === "stock" && !row.retired ? watches.of(row.mint) : null;
@@ -433,7 +431,7 @@ export function HoldingsCard() {
                     {row.category === "stock" && stockRows?.get(row.mint) ? <StockRowChips row={stockRows.get(row.mint)!} /> : null}
                   </span>
                 </Link>
-                {/* The decision this position came from — a door, never a second calculation (RYN-RESULTS-MEMORY-001 §10). */}
+                {/* The decision this position came from — a door, never a second calculation. */}
                 <PlanLink plans={plansByMint.get(row.mint) ?? []} text={text} />
               </div>
               <span className={styles.price} translate="no">{row.price === null ? "—" : `$${formatPrice(row.price, locale)}`}</span>
@@ -463,7 +461,7 @@ export function HoldingsCard() {
               ) : (
                 <span className={styles.open} aria-hidden />
               )}
-              {/* The issuer's event under the position, as wide as the row: the deadline, the swap, the quiet sale — each on the token's own page (canon v5.2 В27). */}
+              {/* The issuer's event under the position, as wide as the row: the deadline, the swap, the quiet sale — each on the token's own page. */}
               {row.event ? (
                 <div className={styles.rowEvent} data-holding-event>
                   <p>
@@ -504,7 +502,7 @@ export function HoldingsCard() {
       <PositionSale mint={sale?.mint ?? null} placeholder={sale} locale={locale} onClose={() => setSale(null)} />
       <WarnSheet view={warning} locale={locale} onClose={() => setWarning(null)} />
 
-      {/* «Автоінвест» — the wallet's rules and the month's budget, the block Home draws (canon v5.3 §3, В29): the right column from 1280 px, under the value on a narrower desk, after the positions on a phone. */}
+      {/* «Автоінвест» — the wallet's rules and the month's budget, the block Home draws: the right column from 1280 px, under the value on a narrower desk, after the positions on a phone. */}
       <div className={styles.autoinvest}>
         <AutoinvestBlock locale={locale} />
       </div>

@@ -1,4 +1,4 @@
-/* Ryntra public surface — founder-approved fixed dark premium shell with restrained risk-state accents. */
+/* Ryntra public surface — fixed dark premium shell with restrained risk-state accents. */
 
 .lp-root {
   --bg: #0a0e1a;
@@ -29,11 +29,11 @@
   --radius-lg: 14px;
   --shadow: 0 1px 2px rgba(2, 6, 16, 0.4), 0 24px 60px rgba(2, 6, 16, 0.5);
 
-  /* Motion system (RYN-LAND-002). One place to read and tune every timing on
-     the public surface, so "restrained" is a property of the system rather than
-     a habit that decays each time someone adds a component. Durations rise in
-     roughly 1.5x steps; ambient loops are deliberately an order of magnitude
-     slower than interactions, which is what keeps the page calm while alive. */
+  /* Motion system. One place to read and tune every timing on the public
+     surface, so "restrained" is a property of the system rather than a habit
+     that decays each time someone adds a component. Durations rise in roughly
+     1.5x steps; ambient loops are deliberately an order of magnitude slower
+     than interactions, which is what keeps the page calm while alive. */
   --motion-fast: 160ms;      /* hover, focus, small state flips */
   --motion-base: 240ms;      /* reveals, panel transitions */
   --motion-slow: 420ms;      /* data bars settling into a new value */
@@ -1040,7 +1040,7 @@ html[dir="rtl"] .lp-final-inner { text-align: start; }
 }
 
 
-/* ===== RYN-LAND-001 — five-section beginner-clear landing (lp2-*) ===== */
+/* ===== Five-section beginner-clear landing (lp2-*) ===== */
 
 .lp2-hero { padding: 72px 0 66px; position: relative; overflow: hidden; }
 .lp2-hero::before { content: ''; position: absolute; inset: -20% -10%; pointer-events: none; background: radial-gradient(560px 320px at 16% 8%, rgba(255,90,31,0.16), transparent 62%), radial-gradient(520px 300px at 86% 18%, rgba(139,92,246,0.15), transparent 60%), radial-gradient(700px 380px at 55% 110%, rgba(255,90,31,0.06), transparent 70%); animation: lp2-aurora var(--motion-ambient-aurora) ease-in-out infinite alternate; }
@@ -1161,7 +1161,7 @@ html[dir="rtl"] .lp-final-inner { text-align: start; }
 
 
 
-/* ===== RYN-LAND-001 spec v2 — the living product hero (lp3-*) ===== */
+/* ===== The living product hero (lp3-*) ===== */
 
 /* --- hero stage: a real market plane with the risk snapshot and ticket in front --- */
 .lp3-stage { position: relative; min-height: 600px; perspective: 1500px; }
@@ -1508,7 +1508,7 @@ html[dir="rtl"] .lp-final-inner { text-align: start; }
 
 
 /* ============================================================
-   lp4 — RYN-LAND-002
+   lp4
    Maturity badges resolved from the capability registry.
    Deliberately quiet: a status marker is information, not decoration,
    and risk colours stay reserved for data so the page never borrows

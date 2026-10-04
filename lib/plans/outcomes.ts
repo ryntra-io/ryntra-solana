@@ -1,5 +1,5 @@
 /**
- * A plan that made no trade is a result — `RYN-RESULTS-MEMORY-001`.
+ * A plan that made no trade is a result.
  *
  * Until this existed, Results mapped executions and a plan that never traded
  * produced nothing at all, so the product could not answer the most useful

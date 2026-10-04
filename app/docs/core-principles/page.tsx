@@ -33,7 +33,7 @@ export default function Page() {
           bare
           source={["Owner: lib/product/capabilities.ts", "Stages: lib/guard — the Evidence Kernel"]}
         >
-          {/* An anchor for the canon's alternative name for this section, so
+          {/* An anchor for this section's alternative name, so
               `/docs#decision-method` reaches it as well as `#methodology`. */}
           <span id="decision-method" aria-hidden />
 

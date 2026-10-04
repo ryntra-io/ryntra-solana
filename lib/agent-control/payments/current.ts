@@ -357,7 +357,7 @@ export const COMMERCE_BLOCKERS: readonly Readonly<{ title: string; detail: strin
   Object.freeze({
     title: "No payment credential exists",
     detail:
-      "Ryntra holds no facilitator clientId, no RSA signing key, no allowlisted source IP and no wallet on any of these four routes. Nothing here can attempt a payment, and none of those is requested by this packet.",
+      "Ryntra holds no facilitator clientId, no RSA signing key, no allowlisted source IP and no wallet on any of these four routes. Nothing here can attempt a payment, and none of those is requested.",
   }),
   Object.freeze({
     title: "No route has been observed",
@@ -372,6 +372,6 @@ export const COMMERCE_BLOCKERS: readonly Readonly<{ title: string; detail: strin
   Object.freeze({
     title: "Enforcement is not a kernel field on this path",
     detail:
-      "Canon 08 §6.2 holds: while enforcement lives outside the policy decision, nothing here can be promoted above PREVIEW. Completing this surface changed none of that.",
+      "While enforcement lives outside the policy decision, nothing here can be promoted above PREVIEW. Completing this surface changed none of that.",
   }),
 ]);

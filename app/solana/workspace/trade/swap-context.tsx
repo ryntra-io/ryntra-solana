@@ -63,10 +63,10 @@ export function SwapContext({sell,buy,buyDecimals,facts}:{sell:SwapSide;buy:Swap
    *
    * This was `pro && …`, so in Simple a person saw no minimum received, no
    * network fee, no account reserve and no executor — on the screen where
-   * they decide whether to sign. Canon 4.1 lists every one of them among
-   * what a swap shows, and 14.1 forbids hiding a material fact to reduce
-   * noise; the repository’s own depth rule says the same thing from the
-   * other side — depth is more data and more control, never fewer costs.
+   * they decide whether to sign. Every one of them belongs to what a swap
+   * shows, and a material fact is never hidden to reduce noise; the
+   * repository’s own depth rule says the same thing from the other side —
+   * depth is more data and more control, never fewer costs.
    *
    * `minReceivedRaw` still gates the block, and that gate is honest rather
    * than defensive: before Review the order carries no taker, so these

@@ -22,12 +22,11 @@ const MINT_SHAPE = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
  * `/assets/:mint` — the shareable Asset Passport, at the address it should
  * always have had.
  *
- * The Passport has been readable since `RYN-SOL-A1`, and only ever from inside
- * a workspace at `/solana/workspace/assets?mint=…` — a URL that says which
- * *application* you are in to a person who was sent a link about a *token*.
- * The owner's decision of 2026-09-04 gives it the canonical address, and that
- * URL is now what the metadata, the share control and every card on the public
- * site point at.
+ * The Passport had long been readable, but only ever from inside a workspace
+ * at `/solana/workspace/assets?mint=…` — a URL that says which *application*
+ * you are in to a person who was sent a link about a *token*. Since
+ * 2026-09-04 it has the canonical address, and that URL is now what the
+ * metadata, the share control and every card on the public site point at.
  *
  * The in-product page is untouched and keeps working: it is reached from a
  * Portfolio row and from the Markets table, where being inside the product is

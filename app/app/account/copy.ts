@@ -40,7 +40,7 @@ export type AccountCopy = Readonly<{
   methodsPreparing: string;
   returned: Readonly<{ ok: string; okNew: string; linked: string; cancel: string; error: string; telegramClaimed: string; telegramIdentity: string; link: string; state: string }>;
   menu: Readonly<{ method: string; settings: string; logout: string; logoutAll: string; logoutFailed: string; logoutAllFailed: string; walletNote: string }>;
-  /** The account inside the wallet panel: the wallet is the account (Owner, 2026-09-11). */
+  /** The account inside the wallet panel: the wallet is the account. */
   identity: Readonly<{ lead: string; signIn: string; signing: string; signedIn: string; signedInOther: string; refused: string; failed: string; unsupported: string; taken: string }>;
   methods: Readonly<Record<"email_password" | "email_recovery" | "google_oidc" | "telegram_oidc" | "telegram_link" | "wallet_siwe" | "solana_siws", string>>;
   reset: Readonly<{ title: string; lead: string; done: string; signedOut: string; sessionsOpen: string; signOutAll: string }>;

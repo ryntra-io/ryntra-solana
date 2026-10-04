@@ -27,12 +27,11 @@ export default async function AgentWorkspaceLayout({ children }: { children: Rea
         {/*
          * The wallet travels with the person, the session does not become it.
          *
-         * Owner decision of 2026-09-04: a Ryntra account and a Solana wallet are
-         * two security principals and stay that way — connecting Phantom never
-         * authorizes anything in Control. What was wrong was the *reading*: this
-         * surface showed `Connect wallet` while a wallet was plainly connected,
-         * which looks like a defect and teaches a person to distrust the chip
-         * that matters most.
+         * A Ryntra account and a Solana wallet are two security principals and
+         * stay that way — connecting Phantom never authorizes anything in Control.
+         * What was wrong was the *reading*: this surface showed `Connect wallet`
+         * while a wallet was plainly connected, which looks like a defect and
+         * teaches a person to distrust the chip that matters most.
          *
          * So the provider is mounted here too. It is a second instance rather
          * than shared state, because `/solana` and `/agents` are sibling trees

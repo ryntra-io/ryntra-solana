@@ -12,7 +12,7 @@ import styles from "./decisions.module.css";
 /**
  * The first link of the chain, read where it actually lives.
  *
- * The declared InvestorContext is held in this browser — that was `RYN-HOME-001`'s
+ * The declared InvestorContext is held in this browser — that was a deliberate
  * decision and it has not changed — so the server render binds
  * `NOT_SERVER_READABLE` and this island fills in the version once the browser
  * reports one. Rendering a version the server could not see would be inventing

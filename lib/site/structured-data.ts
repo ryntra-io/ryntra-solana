@@ -1,9 +1,9 @@
 /**
- * The structured data of the pages offered to the index (the plan of
- * `RYN-SITE-V5-001` §5), in the page's language and naming the page's own
- * address in it. `Organization` and `WebSite` are the root layout's, once per
- * page; each page adds what it is — a web page, a collection, an article, an
- * about or a contact page — and where it sits, as breadcrumbs.
+ * The structured data of the pages offered to the index, in the page's
+ * language and naming the page's own address in it. `Organization` and
+ * `WebSite` are the root layout's, once per page; each page adds what it is —
+ * a web page, a collection, an article, an about or a contact page — and where
+ * it sits, as breadcrumbs.
  *
  * What is deliberately never here: a price, a rating, an offer of a token.
  * The token is not sold by Ryntra and its price is live, so a company page is

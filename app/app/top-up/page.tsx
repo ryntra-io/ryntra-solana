@@ -13,11 +13,9 @@ export async function generateMetadata() {
 }
 
 /**
- * Поповнити — the top-up (canon v5.1 §3–§4 «Почати з картки», В5, В12;
- * `RYN-INVEST-SIMPLE-001`, session 5), the same for everyone since canon v5.3
- * (В28). Reached from Home, from the purchase that found too few dollars or
- * no SOL for the network, and from the empty states; Receive, with its
- * payment requests, stays in «Ще».
+ * Поповнити — the top-up, the same for everyone. Reached from Home, from the
+ * purchase that found too few dollars or no SOL for the network, and from the
+ * empty states; Receive, with its payment requests, stays in «Ще».
  *
  * `need=sol` says the person came for the network's SOL, so the first paint
  * already words the ways for SOL; `from` is the page to go back to once the

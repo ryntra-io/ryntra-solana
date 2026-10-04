@@ -75,8 +75,8 @@ export const METRIC_IDS = [
   "daily_acted",
   "daily_errors",
   "services_attention",
-  /* Business analytics (RYN-ADMIN-BUSINESS-001): wallets, trades and dollars
-     from the product's own ledgers, external wallets by default. */
+  /* Business analytics: wallets, trades and dollars from the product's own
+     ledgers, external wallets by default. */
   "biz_visitors",
   "biz_wallets_connected",
   "biz_wallets_verified",

@@ -52,8 +52,8 @@ export type RwaRiskSnapshot = {
   sequencerUp: boolean | null;
   spreadBps: number | null;
   /** Signed % the token's traded price sits above (+) / below (−) its Chainlink feed price
-      (rwa-risk-signals #14). The feed prices the TOKEN (uiMultiplier already baked in — see
-      robinhood-chain-truth §5), so no multiplier adjustment here. This is Ryntra's own
+      (rwa-risk-signals #14). The feed prices the TOKEN (uiMultiplier already baked in, per
+      the Robinhood Chain docs), so no multiplier adjustment here. This is Ryntra's own
       moment-in-time ESTIMATE, never RHJ's official deviation methodology. null = not measured.
       An enhancement signal: null never degrades the verdict to "unknown". */
   premiumPct: number | null;
@@ -98,7 +98,7 @@ export function classifyRwaRisk(s: RwaRiskSnapshot): { level: RwaRiskLevel; reas
   // #9). Off-hours staleness is surfaced by the off-hours caution below, not as a false red.
   if (s.oracleFresh === false && !s.offHours) avoid.push("Oracle price is stale — last update is too old.");
   if (s.sequencerUp === false) avoid.push("L2 sequencer appears down — transactions may not settle.");
-  // RHJ frames the halt as typical, not guaranteed (robinhood-chain-truth §7) — hedge, don't state.
+  // RHJ frames the halt as typical, not guaranteed — hedge, don't state.
   if (s.corporateAction === "paused")
     avoid.push("A corporate action is processing — trading typically pauses and open orders may be canceled.");
   if (avoid.length) return { level: "avoid", reasons: avoid };

@@ -1,6 +1,5 @@
 /**
- * One underlying, several representations — the grouping rule of canon
- * v4.0 §7.7 (`RYN-STOCKS-CHOICE-001`).
+ * One underlying, several representations — the grouping rule.
  *
  * Two confirmed representations are the same underlying when they name the
  * same instrument, never merely the same company: the same underlying symbol

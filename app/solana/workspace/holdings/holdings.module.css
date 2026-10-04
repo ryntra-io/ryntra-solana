@@ -1,8 +1,7 @@
 /* Portfolio — the value, the allocation, the holdings as a table. Tokens only.
    From 1280 px a main column (the value on its full width, the table under
-   it) and «Автоінвест» on the right, as on Home (RYN-WIDTH-PREMIUM-001); a
-   narrower desk keeps the summary column beside the table; one column on a
-   phone. */
+   it) and «Автоінвест» on the right, as on Home; a narrower desk keeps the
+   summary column beside the table; one column on a phone. */
 
 .workspace {
   --pf-side: clamp(300px, 26vw, 380px);
@@ -26,14 +25,14 @@
   grid-area: holdings;
 }
 
-/* The wallet's rules and the month's budget — the block Home draws (canon v5.3 В29); its title stands apart from the panel above. */
+/* The wallet's rules and the month's budget — the block Home draws; its title stands apart from the panel above. */
 .autoinvest {
   grid-area: rules;
   min-width: 0;
   padding-top: var(--ry-s3);
 }
 
-/* ── Width (RYN-WIDTH-PREMIUM-001): the main column and the right one ──── */
+/* ── Width: the main column and the right one ───────────────────────────── */
 
 @media (min-width: 1280px) {
   .workspace {
@@ -560,14 +559,14 @@
   white-space: nowrap;
 }
 
-/* A token Ryntra no longer supports (canon v5.2 В26): the line may wrap — it is the way out, not a label to cut. */
+/* A token Ryntra no longer supports: the line may wrap — it is the way out, not a label to cut. */
 .assetRetired {
   color: var(--ry-caution);
   font-size: var(--ry-fs-label);
   line-height: var(--ry-lh-body);
 }
 
-/* The issuer's event under a position (the IPO and conversion watch, canon v5.2 В27): a sentence as wide as the row, past the icon — the deadline, then the swap and the quiet sale. Neither is orange: the page's one orange action is «Поповнити». */
+/* The issuer's event under a position (the IPO and conversion watch): a sentence as wide as the row, past the icon — the deadline, then the swap and the quiet sale. Neither is orange: the page's one orange action is «Поповнити». */
 .rowEvent {
   grid-column: 1 / -1;
   display: flex;
@@ -580,7 +579,7 @@
   color: var(--ry-text);
 }
 
-/* Нагляд over a company the wallet holds (RYN-PROTECT-SIGNAL-001): a line of the position itself, under its name — the row's gap is taken back so the line reads as the name's own. */
+/* Нагляд over a company the wallet holds: a line of the position itself, under its name — the row's gap is taken back so the line reads as the name's own. */
 .rowWatch {
   grid-column: 1 / -1;
   margin: calc(var(--ry-s2) * -1) 0 var(--ry-s1) calc(32px + var(--ry-s3));
@@ -672,7 +671,7 @@
   color: var(--text-faint);
 }
 
-/* «Продати» on a company the wallet holds (RYN-BUY-FLOW-001): quiet, in its own column — the page's one orange action is the wallet's next step above. */
+/* «Продати» on a company the wallet holds: quiet, in its own column — the page's one orange action is the wallet's next step above. */
 .sellCell {
   display: flex;
   justify-content: flex-end;
@@ -684,7 +683,7 @@
   padding: 5px 12px;
 }
 
-/* «Дія» (RYN-PROTECT-SIGNAL-001): the price reached the loss limit or the target — the row's «Продати» is the sale the watch asks for, in the state's colour; never orange. */
+/* «Дія»: the price reached the loss limit or the target — the row's «Продати» is the sale the watch asks for, in the state's colour; never orange. */
 .sell[data-urgent="limit"] {
   border-color: color-mix(in srgb, var(--ry-risk) 55%, transparent);
   background: var(--ry-risk-soft);

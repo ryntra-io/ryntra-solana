@@ -1,6 +1,6 @@
 /**
  * Outbox delivery — Telegram through the person's connected channel, push
- * through the device registry when the Owner's provider key exists. The
+ * through the device registry when the push provider's key is set. The
  * Telegram side (the wallet → account lookup and the bot send) is passed in,
  * so this module imports no account RPC and the whole durable loop runs in
  * a test with a memory store and a fake bot. A note is never permission to

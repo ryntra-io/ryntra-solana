@@ -15,8 +15,8 @@
  * There is no RPC client here, no signer, and no policy. The adapter entry
  * says `READ_ONLY` because that is the literal truth of this repository: it
  * observes a transfer somebody else submitted and reconciles it against what
- * was authorized. Preflight and execution are separate decisions with their
- * own packets.
+ * was authorized. Preflight and execution are separate decisions, each with
+ * its own change.
  */
 
 import { z } from "zod";
@@ -27,14 +27,13 @@ import { z } from "zod";
  * here is the same mismatch a replayed transaction would hit on chain.
  *
  * **Base mainnet — `eip155:8453` — is deliberately absent, and its absence is
- * the decision, not an omission.** Founder decision FD-02 (2026-08-21,
- * `docs/agent-control/README.md`, "Founder decisions taken") makes Base
- * Sepolia the default execution rail, testnet only, no mainnet execution this
- * phase, and states that projection work does not by itself enable an
- * execution adapter. A chain reference is what a policy matches on, so adding
- * the mainnet id here would not be a wider list — it would be an execution
- * rail no decision opened. Opening it is a founder decision plus its own
- * packet, and then this constant grows by one line.
+ * the decision, not an omission.** Since 2026-08-21 Base Sepolia is the
+ * default execution rail, testnet only, no mainnet execution this phase, and
+ * projection work does not by itself enable an execution adapter. A chain
+ * reference is what a policy matches on, so adding the mainnet id here would
+ * not be a wider list — it would be an execution rail no decision opened.
+ * Opening it takes a decision by a person with authority plus a change of its
+ * own, and then this constant grows by one line.
  */
 export const BASE_SEPOLIA_CAIP2 = "eip155:84532";
 

@@ -3,20 +3,20 @@
 /**
  * A page of the product that is not yet a capability.
  *
- * Product Canon v1.0 §3.4 allows the routes, the shell and the links of all
- * eleven pages to be laid down at once, and forbids exactly one thing while
- * they are: **an unimplemented module gets no invented balances, no live
- * quotes and no active execute button.** This surface is what that permission
- * and that prohibition look like together.
+ * The routes, the shell and the links of all eleven pages may be laid down at
+ * once, with exactly one thing forbidden while they are: **an unimplemented
+ * module gets no invented balances, no live quotes and no active execute
+ * button.** This surface is what that permission and that prohibition look
+ * like together.
  *
  * Three rules it keeps, none of them decorative:
  *
- * **It says which of the four statuses it is, in the canon's own words**
- * (§14.2), and it *looks the word up* from the route registry by page id rather
- * than being handed one. The first version took a `readiness` prop, and within
- * an hour Ideas was declared `building` in the registry and `planned` on the
- * page — the rail said nothing while the page said `In the plan`. A page cannot
- * state a status it does not own.
+ * **It says which of the four statuses it is, in the product's own words**, and
+ * it *looks the word up* from the route registry by page id rather than being
+ * handed one. The first version took a `readiness` prop, and within an hour
+ * Ideas was declared `building` in the registry and `planned` on the page — the
+ * rail said nothing while the page said `In the plan`. A page cannot state a
+ * status it does not own.
  *
  * **It states what the page is for before it states what is missing.** A person
  * who opened Perps wants to know what Perps will be. A page that opens with an
@@ -45,11 +45,11 @@ export type NotYetCopy = Readonly<{
   title: string;
   /**
    * The one line under the name — what kind of thing this page is, e.g.
-   * `Prediction markets · Agg integration`. Owner decision 2026-09-11: a
-   * locked page reads *name · what it is · Coming soon*, and looks intended.
+   * `Prediction markets · Agg integration`. A locked page reads *name · what
+   * it is · Coming soon*, and looks intended.
    */
   tagline?: string;
-  /** One sentence: what a person will do here. The canon's «Призначення». */
+  /** One sentence: what a person will do here — its «Призначення». */
   purpose: string;
   /** What the page will hold. Three to five short lines, never a paragraph. */
   holds: readonly string[];
@@ -57,9 +57,9 @@ export type NotYetCopy = Readonly<{
   instead: Readonly<{ label: string; href: string; hint: string }>;
 }>;
 
-/* The Owner's word for a locked page is *Coming soon* (2026-09-11): visible,
-   intended, and not yet a capability. The rail says the short form of the
-   same fact from the same registry. */
+/* The word for a locked page is *Coming soon*: visible, intended, and not
+   yet a capability. The rail says the short form of the same fact from the
+   same registry. */
 const STATUS_WORD: Readonly<Record<PageReadiness, Readonly<{ en: string; uk: string }>>> = {
   available: { en: "Available", uk: "Доступно" },
   building: { en: "Being built", uk: "Розробляється" },

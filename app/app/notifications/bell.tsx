@@ -13,8 +13,8 @@ import { NoteList } from "./note-list";
 import { useNotes } from "./use-notes";
 
 /**
- * The notifications bell (canon v5.4 В31, §11) — in the top bar on every page
- * of the product, on a desk and on a phone.
+ * The notifications bell — in the top bar on every page of the product, on a
+ * desk and on a phone.
  *
  * It reads the one monitoring surface Нагляд reads (`/api/monitoring`), behind
  * the same proof of the wallet, through the page's one read (`useNotes`) that

@@ -5,10 +5,10 @@ import type { GuardStore } from "../guard/store.ts";
 /**
  * The owner's own wallets — the ones a business figure must not count.
  *
- * `RYN-ADMIN-BUSINESS-001`. Eight test swaps in an afternoon would otherwise
- * read as eight customers. A wallet on this list is *internal*: it stays in
- * every ledger exactly as it is, still shows in the *all activity* scope, and
- * is left out of the external figures the owner reads first.
+ * Eight test swaps in an afternoon would otherwise read as eight customers. A
+ * wallet on this list is *internal*: it stays in every ledger exactly as it
+ * is, still shows in the *all activity* scope, and is left out of the external
+ * figures the owner reads first.
  *
  * Two sources, both server-side and never shipped to a browser bundle: the
  * deployment's `RYNTRA_INTERNAL_WALLETS` (comma or whitespace separated base58
@@ -18,11 +18,10 @@ import type { GuardStore } from "../guard/store.ts";
  */
 
 const BASE58_ADDRESS = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
-/* An EVM address is accepted since `RYN-ADMIN-OWNER-WALLETS-001`, so the
-   owner can record the other side of their own bridges beside the Solana
-   wallets. Every business figure is keyed by the Solana wallet, so an EVM
-   entry excludes nothing on its own — it is the owner's note of what is
-   theirs, kept in the one list. */
+/* An EVM address is accepted too, so the owner can record the other side of
+   their own bridges beside the Solana wallets. Every business figure is keyed
+   by the Solana wallet, so an EVM entry excludes nothing on its own — it is
+   the owner's note of what is theirs, kept in the one list. */
 const EVM_ADDRESS = /^0x[0-9a-fA-F]{40}$/;
 const COLLECTION = "adminInternalWallets" as const;
 

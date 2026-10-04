@@ -3,7 +3,7 @@ import { NotYet } from "../not-yet";
 export const metadata = { title: "Ideas" };
 
 /**
- * Ideas — where an analysis starts, canon §5.1.
+ * Ideas — where an analysis starts.
  *
  * The audit of 2026-09-08 found a research surface written and unreachable, and
  * reading it found the reason it should stay that way for now: its sources are
@@ -13,10 +13,9 @@ export const metadata = { title: "Ideas" };
  * person. So this page is the structure with the work still to do behind it,
  * and it says so.
  *
- * Owner decision of 2026-09-11: Ideas owns the stages **Research → Critic →
- * Risk → strategy proposal**. They are stages inside an idea — internal tools
- * that never become rows of the rail — and the proposal is what crosses into
- * My strategies.
+ * Ideas owns the stages **Research → Critic → Risk → strategy proposal**. They
+ * are stages inside an idea — internal tools that never become rows of the
+ * rail — and the proposal is what crosses into My strategies.
  */
 export default function IdeasPage() {
   return (

@@ -1,10 +1,9 @@
 /**
- * The words of Нагляд over a position, in both languages (canon v5 §11;
- * `RYN-PROTECT-SIGNAL-001`, subtask 1): a state's name, its one line with the
- * figures the server judged it on, and its one action. Pure: a reader passes
- * its own money and per-cent formatters, so the web and the phone say the same
- * thing in their own number style. The state itself is never decided here —
- * it arrives from the server (`watch-state.ts`).
+ * The words of Нагляд over a position, in both languages: a state's name, its
+ * one line with the figures the server judged it on, and its one action.
+ * Pure: a reader passes its own money and per-cent formatters, so the web and
+ * the phone say the same thing in their own number style. The state itself is
+ * never decided here — it arrives from the server (`watch-state.ts`).
  */
 
 import type { WatchAction, WatchReason, WatchState } from "./watch-state.ts";
@@ -45,10 +44,10 @@ export const WATCH_ACTION_SHORT: Readonly<Record<WatchAction, Bi>> = {
   warn: bi("Set it up", "Налаштувати"),
 };
 
-/** What «Деталі» of an issuer's pause says (canon §11). */
+/** What «Деталі» of an issuer's pause says. */
 export const ISSUER_PAUSED_DETAILS = bi("You can't sell right now — Ryntra waits for the issuer to lift the pause.", "Продати зараз неможливо — чекаємо, поки емітент зніме паузу.");
 
-/** The honest limit of a warning (canon §6.1): until the sale is signed, the loss can grow. */
+/** The honest limit of a warning: until the sale is signed, the loss can grow. */
 export const WARN_HONEST_LIMIT = bi("Ryntra warns you; it does not sell for you. Until you sign the sale, the loss can grow.", "Ryntra попереджає, а не продає за тебе. Поки продаж не підписано, збиток може зрости.");
 
 export const WATCH_WORDS = {

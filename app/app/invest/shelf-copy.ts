@@ -1,8 +1,8 @@
 /**
- * The browser's own copy of the last shelf it drew — «копія з кешу» of the
- * card's session 1: when the catalogue is still being read on a cold
- * server, a person who has been here before sees the companies they saw last
- * time, marked as updating, instead of a skeleton for seconds.
+ * The browser's own copy of the last shelf it drew — «копія з кешу»: when
+ * the catalogue is still being read on a cold server, a person who has been
+ * here before sees the companies they saw last time, marked as updating,
+ * instead of a skeleton for seconds.
  *
  * A convenience, never a source: the copy is replaced the moment the live
  * list arrives, it is at most a week old, and a browser that refuses storage
@@ -11,10 +11,10 @@
 
 const KEYS = {
   popular: "ryntra.shelf.popular.v1",
-  /* v2 (canon v5.2 В26–В27): the private cards carry their one number, and a copy kept before could still hold a disconnected issuer's tokens — it is never drawn again. */
+  /* v2: the private cards carry their one number, and a copy kept before could still hold a disconnected issuer's tokens — it is never drawn again. */
   companies: "ryntra.shelf.companies.v2",
   coins: "ryntra.shelf.coins.v1",
-  /* Markets' «Меми» tab (canon v5.4 В33). */
+  /* Markets' «Меми» tab. */
   memes: "ryntra.shelf.memes.v1",
 } as const;
 

@@ -13,10 +13,10 @@ import { publicServerLocale } from "@/lib/site/server-locale";
 import { companyCopy } from "./company-copy";
 
 /*
- * «Про Ryntra» — who builds Ryntra, the rules it keeps and how it earns (the
- * new site of canon v5.5, `RYN-SITE-V5-001` subtask 3). It was a page about a
+ * «Про Ryntra» — who builds Ryntra, the rules it keeps and how it earns.
+ * It was a page about a
  * trading platform with a plan until 2026-09-26, when `/company` led into the
- * app instead; it answers again in the words of v5.5, English and Ukrainian by
+ * app instead; it answers again in the words of the new site, English and Ukrainian by
  * the reader's language, every figure read from the policy the product
  * charges with (`company-copy.ts`).
  */

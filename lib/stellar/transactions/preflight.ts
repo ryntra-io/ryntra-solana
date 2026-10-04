@@ -6,7 +6,7 @@ import { toStroops } from "./effects.ts";
 /**
  * What is knowable before a signature is spent.
  *
- * This exists because of two real runs. On 2026-08-13 the founder built,
+ * This exists because of two real runs. On 2026-08-13 a person built,
  * authorized, signed and submitted the same payment twice, and both times the
  * network refused it with `paymentNoDestination` — the destination account had
  * never been created. Every part of the lifecycle worked and reported the
@@ -25,7 +25,7 @@ import { toStroops } from "./effects.ts";
  * and then it protects nobody. Under-strict on purpose.
  *
  * This is **not** the policy engine. There is no rule set, no version, no
- * decision record — those are `RYN-STELLAR-006` and this must never be
+ * decision record — those belong to the policy engine and this must never be
  * described as them. It is four deterministic reads of what the network already
  * knows.
  */

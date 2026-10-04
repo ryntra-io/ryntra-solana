@@ -7,8 +7,8 @@
  * five-minute TTL costs nothing, and a venue that has stopped answering
  * costs one attempt a minute and no more — the failure is remembered for
  * sixty seconds so a page viewed twice does not wait twice. That is the
- * lesson of the xStocks outage (`RYN-STOCKS-RESILIENCE-001`): a provider's
- * silence must never gate a surface's time.
+ * lesson of the xStocks outage: a provider's silence must never gate a
+ * surface's time.
  *
  * A source that fails while a complete copy from the last six hours exists
  * is served from that copy and marked stale, with the copy's own time; the

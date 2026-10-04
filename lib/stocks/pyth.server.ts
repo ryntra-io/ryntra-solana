@@ -1,20 +1,19 @@
 /**
- * Pyth — the exchange calendar for free, the price only with the Owner's key.
+ * Pyth — the exchange calendar for free, the price only with an API key.
  *
- * Read on 2026-09-14 (canon v4.0 §7.4, sources [P1]): Hermes' price feed
- * catalogue answers without a key and carries, for every equity feed, the
- * exchange schedule with holidays and half-days plus `market_hours`
- * (`is_open`, `next_open`, `next_close`); the latest-price route answers
- * `401 unauthorized` without a key, and since the 2026-08-26 upgrade every
- * Hermes price caller needs a Pyth API key. Ryntra therefore reads the
- * calendar here today, and reads prices only when `PYTH_HERMES_API_KEY` is
- * present in the server environment — a dependency of the reference
- * function, not a reason to invent a figure. The header the key travels in is
- * taken from `PYTH_HERMES_API_KEY_HEADER` (default `Authorization`, sent as a
- * bearer token) so the Owner can set whichever form the key page states
- * without a code change.
+ * Read on 2026-09-14: Hermes' price feed catalogue answers without a key and
+ * carries, for every equity feed, the exchange schedule with holidays and
+ * half-days plus `market_hours` (`is_open`, `next_open`, `next_close`); the
+ * latest-price route answers `401 unauthorized` without a key, and since the
+ * 2026-08-26 upgrade every Hermes price caller needs a Pyth API key. Ryntra
+ * therefore reads the calendar here today, and reads prices only when
+ * `PYTH_HERMES_API_KEY` is present in the server environment — a dependency
+ * of the reference function, not a reason to invent a figure. The header the
+ * key travels in is taken from `PYTH_HERMES_API_KEY_HEADER` (default
+ * `Authorization`, sent as a bearer token) so the deployment can set
+ * whichever form the key page states without a code change.
  *
- * Re-read on 2026-09-16 (`RYN-STOCKS-PROVIDERS-001`, stage 4) against
+ * Re-read on 2026-09-16 against
  * `docs.pyth.network/price-feeds/core/upgrade/preparing`,
  * `…/pro/acquire-api-key` and `…/pro/api/rest`: the key comes from a Pyth
  * Terminal account (a free trial is included; paid plans cover ongoing use)
@@ -216,7 +215,7 @@ export function readPythEquityCatalogue(deps: Readonly<{ fetchImpl?: typeof fetc
     });
 }
 
-/** Whether a price read is possible at all: the Owner's key is in the environment. */
+/** Whether a price read is possible at all: the API key is in the environment. */
 export function pythPriceAccess(env: NodeJS.ProcessEnv = process.env): Readonly<{ enabled: boolean; header: string }> {
   const key = env[PYTH_ENV.apiKey]?.trim();
   return { enabled: Boolean(key), header: env[PYTH_ENV.header]?.trim() || "Authorization" };
@@ -253,7 +252,7 @@ export function parseLatestBody(body: unknown, fetchedAt: string): Map<string, P
 }
 
 /**
- * The latest prices of many feeds, in batches, with the Owner's key — the
+ * The latest prices of many feeds, in batches, with the API key — the
  * universe build asks once for every US-listed row it can name a feed for.
  * Without the key every id answers `NO_KEY`; a feed Hermes did not return
  * answers `SHAPE`; a refused or unreachable batch answers for all its ids.
@@ -329,7 +328,7 @@ export async function readPythLatestMany(
 }
 
 /**
- * The latest price of one feed through Hermes, with the Owner's key. Without
+ * The latest price of one feed through Hermes, with the API key. Without
  * the key this returns `NO_KEY` and the reference stays UNAVAILABLE — the
  * honest state, never a guess.
  */

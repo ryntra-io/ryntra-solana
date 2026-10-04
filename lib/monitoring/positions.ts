@@ -1,12 +1,11 @@
 /**
- * The wallet's company positions as Нагляд sees them (canon v5 §11;
- * `RYN-PROTECT-SIGNAL-001`, subtask 1): every company the wallet holds — a
- * listed stock or a private one — with its exit, the state it is in and its
- * one action (`watch-state.ts`). Composed here from facts read elsewhere:
- * what the chain says the wallet holds, the universe's row for the token, the
- * plans the wallet bought under, «Ryntra попередить» turned on for a
- * position, the issuer's events and whether a channel is connected. Pure, so
- * a test composes exactly what the route answers.
+ * The wallet's company positions as Нагляд sees them: every company the
+ * wallet holds — a listed stock or a private one — with its exit, the state
+ * it is in and its one action (`watch-state.ts`). Composed here from facts
+ * read elsewhere: what the chain says the wallet holds, the universe's row for
+ * the token, the plans the wallet bought under, «Ryntra попередить» turned on
+ * for a position, the issuer's events and whether a channel is connected.
+ * Pure, so a test composes exactly what the route answers.
  *
  * A position's exit is the one written last: the plan it was bought under
  * while that plan is watched as a position (`position.ts`), or «Ryntra

@@ -5,10 +5,10 @@ import { isTradable } from "./radar.ts";
  * The Screener: conditions a person states, over the universe Radar shows.
  *
  * Radar is **pushed** — the product decides what is worth showing. This is
- * **queried** — the person decides, and gets back the set that matches. The
- * canon calls keeping them apart the single most important structural
- * decision in the product package, because collapsing discovery into one
- * "markets screen" is what makes every competitor's surface interchangeable.
+ * **queried** — the person decides, and gets back the set that matches.
+ * Keeping them apart is the single most important structural decision in the
+ * product, because collapsing discovery into one "markets screen" is what
+ * makes every competitor's surface interchangeable.
  *
  * Two rules carry the weight here, and both are about the same thing:
  *
@@ -22,7 +22,7 @@ import { isTradable } from "./radar.ts";
  *   2. **A Screen cannot raise an event.** There is no callback, no listener
  *      and no subscription in this file, and `scan.ts` has no result set. That
  *      is what makes them two objects rather than two views over one query,
- *      which is the acceptance this packet is written against.
+ *      which is the acceptance this module is written against.
  *
  * Nothing here fetches. A screen runs against rows a caller already has, which
  * is what lets the same screen be re-run later against a changed universe and
@@ -362,7 +362,7 @@ export const MAX_CONDITIONS = 12;
  * Conditions live in the URL, and that is a product decision rather than a
  * storage one.
  *
- * "Saved as a named screen, re-runnable" is what the canon asks for, and a
+ * "Saved as a named screen, re-runnable" is what the product asks for, and a
  * screen whose conditions are in the address bar is re-runnable by definition —
  * the same link run tomorrow answers for tomorrow. It also keeps the universe
  * on the server: the alternative shipped all 231 rows to the browser so a

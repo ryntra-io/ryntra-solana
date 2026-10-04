@@ -6,12 +6,12 @@ import type { InternalWalletRecord } from "./internal-wallets.ts";
 /**
  * Every wallet the product has ever seen, in one list the owner can mark.
  *
- * `RYN-ADMIN-OWNER-WALLETS-001`. The owner looked at the dashboard, saw
- * masked addresses and did not recognise their own; the list that excludes
- * them was a disclosure at the bottom of the feed. So: one card, every
- * wallet from the presence index, the action ledger and the reward
- * accounts, with what it did and a switch that says *mine*. Pure and
- * client-safe; a projection over records that already exist.
+ * The owner looked at the dashboard, saw masked addresses and did not
+ * recognise their own; the list that excludes them was a disclosure at the
+ * bottom of the feed. So: one card, every wallet from the presence index, the
+ * action ledger and the reward accounts, with what it did and a switch that
+ * says *mine*. Pure and client-safe; a projection over records that already
+ * exist.
  *
  * A wallet is *seen* when any of those three has a row for it. The figures
  * beside it are counts, not money — enough to tell a test wallet from a

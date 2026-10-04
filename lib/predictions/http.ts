@@ -1,8 +1,8 @@
 /**
- * The prediction routes' shared HTTP surface (`RYN-PREDICTIONS-001`): the one
- * error shape (`{ error: { code, message, issues? } }`, the same shape the
- * v1 routes answer), the no-store headers, a bounded JSON body reader, and
- * the wallet behind a request — the same proof both clients carry
+ * The prediction routes' shared HTTP surface: the one error shape
+ * (`{ error: { code, message, issues? } }`, the same shape the v1 routes
+ * answer), the no-store headers, a bounded JSON body reader, and the wallet
+ * behind a request — the same proof both clients carry
  * (`lib/api/v1/proof.ts`: the phone's bearer, the web's proof cookie).
  *
  * Server only.

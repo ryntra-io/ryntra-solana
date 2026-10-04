@@ -93,7 +93,7 @@ const COPY = {
     chipWithOwner: (n: number) => `${n} WITH AN OWNER`,
     gridLabel: "Attention and recovery",
     actorLabel: {
-      OWNER: "founder",
+      OWNER: "owner",
       RYNTRA: "Ryntra",
       PROVIDER: "provider",
       NOBODY: "nobody yet",
@@ -149,7 +149,7 @@ const COPY = {
     chipWithOwner: (n: number) => `${n} З ВІДПОВІДАЛЬНИМ`,
     gridLabel: "Увага та відновлення",
     actorLabel: {
-      OWNER: "засновник",
+      OWNER: "власник",
       RYNTRA: "Ryntra",
       PROVIDER: "провайдер",
       NOBODY: "поки ніхто",

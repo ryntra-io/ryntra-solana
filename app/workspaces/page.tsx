@@ -48,14 +48,14 @@ export const metadata: Metadata = sitePageMetadata({
  * research directions. A menu is a set of choices, so anything in it that
  * cannot be chosen makes every row harder to trust.
  *
- * Rebuilt 2026-08-18 on the founder's report that it read as one text wall and
- * that the mega-menu above it could not be understood. Both had the same cause
- * and it was not the writing: **six doors and eleven registered facts were
- * rendered as the same card**, and the header carried a two-column menu the
- * frozen system does not contain. Landing Brief v1.3 fixes the public bar at
+ * Rebuilt 2026-08-18 on a report that it read as one text wall and that the
+ * mega-menu above it could not be understood. Both had the same cause and it
+ * was not the writing: **six doors and eleven registered facts were rendered as
+ * the same card**, and the header carried a two-column menu the frozen system
+ * does not contain. Landing Brief v1.3 fixes the public bar at
  * `RYNTRA | … | Docs | [Request beta]`, so migrating onto the frozen chrome
- * removes the mega-menu rather than restyling it, and `Request beta` here opens
- * the real gate — iron law 3 — instead of the explanatory page.
+ * removes the mega-menu rather than restyling it, and `Request beta` here
+ * opens the real gate — iron law 3 — instead of the explanatory page.
  *
  * Every fact, every registry binding and every boundary sentence is carried
  * over unchanged. Two rules keep it honest, exactly as before:
@@ -65,11 +65,10 @@ export const metadata: Metadata = sitePageMetadata({
  *   one invented in prose does not exist and cannot be typed in.
  *
  *   A research row gets no action control. `isSelectable()` decides that in
- *   code — canon §7: no execution CTA, no implied partnership, no "coming
- *   soon".
+ *   code: no execution CTA, no implied partnership, no "coming soon".
  *
  * The one copy change is the boundary's own heading. "Registration is not
- * support" is the sentence the founder circled as unreadable; it now reads
+ * support" is the sentence a person circled as unreadable; it now reads
  * "Registered, not supported", which states the same distinction in words that
  * survive one pass of the eye. The claim is unchanged.
  */

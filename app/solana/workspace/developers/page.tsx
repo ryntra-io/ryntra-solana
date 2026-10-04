@@ -139,7 +139,7 @@ export default async function SolanaDevelopersPage() {
             <span className="so-mint" translate="no">
               {resolveEndpoint("devnet")}
             </span>{" "}
-            — {text("a regression fixture for the Send path awaiting its mainnet rewrite (RYN-SOL-M0C), never a release gate")}
+            — {text("a regression fixture for the Send path awaiting its mainnet rewrite, never a release gate")}
           </KeyValue>
           <KeyValue label={text("Environment overrides")}>
             <span className="so-mint" translate="no">
@@ -157,7 +157,7 @@ export default async function SolanaDevelopersPage() {
             </span>
           </KeyValue>
           <KeyValue label={text("Custom route contract")}>
-            <span className="so-mint" translate="no">{JUPITER_SWAP_V2_BASE_URL}/build</span> — {text("typed for the future allowlist path; no network caller in M0D")}
+            <span className="so-mint" translate="no">{JUPITER_SWAP_V2_BASE_URL}/build</span> — {text("typed for the future allowlist path; no network caller yet")}
           </KeyValue>
         </Panel>
 

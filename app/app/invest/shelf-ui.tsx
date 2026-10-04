@@ -11,8 +11,8 @@ import type { ShelfCard } from "@/lib/stocks/shelf";
 import styles from "./invest.module.css";
 
 /**
- * The shelf's two shapes (canon v5.0 §2: a company by its logo and name, a
- * price in dollars, the day's change — nothing else at rest).
+ * The shelf's two shapes: a company by its logo and name, a price in
+ * dollars, the day's change — nothing else at rest.
  *
  * A **tile** is Home's «Популярні компанії»: a square a thumb lands on.
  * A **row** is Markets': one company to a row, full width on a phone, in
@@ -34,14 +34,14 @@ export type ShelfItem = Readonly<{
   sub?: string;
   /** A coin's icon comes from any host, and the optimiser refuses some: served as it is. */
   plainIcon?: boolean;
-  /** The row carries its one number in place of the day's change (a private company, canon v5.2 В27). */
+  /** The row carries its one number in place of the day's change (a private company). */
   oneNumber?: boolean;
 }>;
 
 /**
  * A company's card. A private company's card (`privateLine`) carries «Це не
  * акція» and its one number — «на 31% дорожче за оцінку PreStocks» — in place
- * of the day's change: one number, not two (canon v5.2 В27).
+ * of the day's change: one number, not two.
  */
 export function companyItem(card: ShelfCard, privateLine?: Readonly<{ note: string; premium: string | null }>): ShelfItem {
   return {
@@ -124,7 +124,7 @@ export function ShelfRow({ item, locale, figures }: { item: ShelfItem; locale: s
   );
 }
 
-/** The shape of what is coming — never a spinner (canon v5.0 §2, rule 14). */
+/** The shape of what is coming — never a spinner. */
 export function TileSkeleton({ count, className }: { count: number; className?: string }) {
   return (
     <div className={className ? `${styles.tiles} ${className}` : styles.tiles} aria-hidden="true">

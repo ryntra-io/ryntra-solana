@@ -57,7 +57,7 @@ const UK_COPY: ConnectionCopy = {
 /**
  * The Ryntra **account**, which is not the wallet.
  *
- * Owner decision of 2026-09-04: a Ryntra account and a Solana wallet are two
+ * A Ryntra account and a Solana wallet are two
  * security principals and stay that way — connecting Phantom authorizes nothing
  * in Control. This copy said `Connect wallet`, so on Control it asked a person
  * to connect a wallet they had plainly already connected. That reads as a

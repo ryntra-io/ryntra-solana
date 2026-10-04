@@ -6,8 +6,7 @@ import { contextParam } from "@/lib/agent/context";
 import type { AgentContext } from "@/lib/api/v1/contract";
 
 /**
- * Whether the Brief and the Critic are open on a surface
- * (`RYN-FIRST-SCREEN-001`, the Owner's first-screen pass of 2026-09-23).
+ * Whether the Brief and the Critic are open on a surface.
  *
  * The lens no longer opens by itself where a person is deciding: it waits
  * behind the page's own *Ask Ryn*. The press and the panel are two separate

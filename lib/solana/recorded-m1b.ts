@@ -2,10 +2,11 @@
  * The first owner-signed Solana Mainnet lifecycle Ryntra actually observed.
  *
  * This record is deliberately facts-only. The signed receipt and the two-RPC
- * read-back live in `docs/tasks/evidence`; regression tests require this
- * projection to agree with both rather than letting product copy become a
- * second history. The two wallets and their token accounts stay in that
- * evidence: the product reads none of them, and the explorer link names them.
+ * read-back live in the development repository's evidence archive; regression
+ * tests require this projection to agree with both rather than letting product
+ * copy become a second history. The two wallets and their token accounts stay
+ * in that evidence: the product reads none of them, and the explorer link
+ * names them.
  */
 export const SOLANA_M1B_RECORDED_RUN = Object.freeze({
   taskId: "RYN-SOL-M1B",

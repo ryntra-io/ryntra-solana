@@ -112,10 +112,9 @@ test('async artifact requests discard stale responses before committing state', 
 
 test('every artifact-defining UI mutation invalidates pending requests', () => {
   const component = readWorkspaceSource();
-  /* `changeLocale` left this list with RYN-WS-HOME-AC-001: the locale is no
-     longer a page-local mutation — it arrives from the server as a prop, and
-     the shell's language toggle refreshes the route. There is nothing left for
-     it to invalidate. */
+  /* `changeLocale` left this list: the locale is no longer a page-local
+     mutation — it arrives from the server as a prop, and the shell's language
+     toggle refreshes the route. There is nothing left for it to invalidate. */
   for (const handler of [
     'const clearAfterSpec',
     'const invalidateExperimentBinding',
@@ -175,9 +174,9 @@ test('workspace controls retain local direction and keyboard-readable semantics'
   const css = readFileSync(new URL('../../globals.css', import.meta.url), 'utf8');
 
   /* `aria-pressed` lived on the page's own beginner|pro segmented toggle,
-     removed by RYN-WS-HOME-AC-001: editor depth now follows the shared
-     top-bar DepthSwitch, which carries its own pressed semantics and its own
-     tests. The lab must not grow a second depth control back. */
+     since removed: editor depth now follows the shared top-bar DepthSwitch,
+     which carries its own pressed semantics and its own tests. The lab must
+     not grow a second depth control back. */
   assert.ok(!component.includes('sl-segmented'));
   assert.ok(!component.includes('sl-locale'));
   assert.ok(component.includes('aria-current'));

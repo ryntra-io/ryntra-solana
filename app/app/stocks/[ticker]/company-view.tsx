@@ -39,51 +39,46 @@ import { LiquidityBlock, LiquiditySkeleton } from "./liquidity-block";
 import { AboutPreStocksToken, StructureRisks } from "./pre-ipo-research";
 
 /**
- * A company's page, one for everyone (canon v5.3 В28; the company page of
- * canon v5.1 §2, §4, §7, §8; `RYN-INVEST-SIMPLE-001`, session 2; complete since
- * `RYN-COMPANY-PAGE-001`) — drawn for a phone first, laid out like Home from
- * 1280 px: the company in the main column, its purchase and the other popular
- * companies beside it, staying in view.
+ * A company's page, one for everyone — drawn for a phone first, laid out like
+ * Home from 1280 px: the company in the main column, its purchase and the
+ * other popular companies beside it, staying in view.
  *
  * The head says who the company is — its logo and name («Apple», never the
  * token's ticker), and under the name its ticker on its exchange and its
  * industry — then the price in dollars with the move in dollars and per cent,
  * whether the exchange is open, and the line over a day, a week, a month or a
  * year. *Купити* is the one orange action and opens the purchase in dollars;
- * *Автоінвест* stands quiet beside it (session 3) — or, once a rule exists,
- * the rule itself (`company-actions.tsx`) — and the reader's own position
- * under them, when the wallet holds the token.
+ * *Автоінвест* stands quiet beside it — or, once a rule exists, the rule
+ * itself (`company-actions.tsx`) — and the reader's own position under them,
+ * when the wallet holds the token.
  *
- * Then the facts, at rest, as figures (`company-facts-blocks.tsx`, the Owner's
- * word of 2026-09-25): «Ключові показники» — the company's market value, P/E,
- * revenue and net income over twelve months from its SEC filings, its
- * dividend, the price over the year; «Про компанію» — what it does, its
- * industry, headquarters, exchange, fiscal year and latest report; «Що ти
- * купуєш» — the issuer's label (§7), the backing, the dividends, the issuer's
- * fee; «Торги на Solana» — the token's day.
+ * Then the facts, at rest, as figures (`company-facts-blocks.tsx`): «Ключові
+ * показники» — the company's market value, P/E, revenue and net income over
+ * twelve months from its SEC filings, its dividend, the price over the year;
+ * «Про компанію» — what it does, its industry, headquarters, exchange, fiscal
+ * year and latest report; «Що ти купуєш» — the issuer's label, the backing,
+ * the dividends, the issuer's fee; «Торги на Solana» — the token's day.
  *
- * A private company comes through PreStocks only (canon v5.2 В25–В27): its
- * truth says what the token is not, the issuer's fee on every transfer and
- * that the issuer can freeze or take the token, before any figure; a company
- * that has spoken about tokens like it (OpenAI, Anthropic) has that dated line
- * under the truth; one number stands under the price — the token against
- * PreStocks' own valuation, with its time — and the valuation stands among the
- * statistics.
+ * A private company comes through PreStocks only: its truth says what the
+ * token is not, the issuer's fee on every transfer and that the issuer can
+ * freeze or take the token, before any figure; a company that has spoken
+ * about tokens like it (OpenAI, Anthropic) has that dated line under the
+ * truth; one number stands under the price — the token against PreStocks' own
+ * valuation, with its time — and the valuation stands among the statistics.
  *
- * «Шлях компанії» stands under the name (`RYN-COMPANY-PATH-001`): where the
- * company is on its way from a private token to its stock on Solana, this
- * token's step and the company's other token one press away — SPACEX and
- * SPCXx one company at two steps — with the private token's swap deadline
- * under the steps; on the private token's own page that line is the event's,
- * with a holder's swap under it, and the truth box keeps the truth alone.
+ * «Шлях компанії» stands under the name: where the company is on its way from
+ * a private token to its stock on Solana, this token's step and the company's
+ * other token one press away — SPACEX and SPCXx one company at two steps —
+ * with the private token's swap deadline under the steps; on the private
+ * token's own page that line is the event's, with a holder's swap under it,
+ * and the truth box keeps the truth alone.
  *
- * Everything technical stays one press deep under *Деталі*, nothing dropped
- * (canon v5.3 В28, §10): Ryntra's Brief and Critic on request; the issuer's
- * reference and the deviation, the reserves, the multiplier
- * (`asset-facts.tsx`); the estimate for an amount compared across the same
- * company's tokens (`deal-block.tsx`, quiet); the pools; the onchain activity
- * and the risk card; the mint. The candles and the full ticket are Spot's, one
- * press from the line.
+ * Everything technical stays one press deep under *Деталі*, nothing dropped:
+ * Ryntra's Brief and Critic on request; the issuer's reference and the
+ * deviation, the reserves, the multiplier (`asset-facts.tsx`); the estimate
+ * for an amount compared across the same company's tokens (`deal-block.tsx`,
+ * quiet); the pools; the onchain activity and the risk card; the mint. The
+ * candles and the full ticket are Spot's, one press from the line.
  */
 export function CompanyView({ locale, asset, target = null, counterpart = null, nowMs = Date.now() }: { locale: WorkspaceLocale; asset: StockAsset; target?: StockRow | null; counterpart?: StockRow | null; nowMs?: number }) {
   const word = investWords(locale);
@@ -99,10 +94,10 @@ export function CompanyView({ locale, asset, target = null, counterpart = null, 
   const exchange = preIpo ? null : exchangeState(row.session);
   const onchain = "error" in asset.onchain ? null : asset.onchain;
   const multiplier = asset.chainMultiplier?.current ?? row.multiplier?.current ?? null;
-  /* The IPO and conversion watch (canon v5.2 В27, §7): the issuer's event before any figure, the holder's one action and the swap's facts. */
+  /* The IPO and conversion watch: the issuer's event before any figure, the holder's one action and the swap's facts. */
   const watched = preIpo ? lifecycleEventFor(rep.mint) : null;
   const read = isWatched(watched) ? eventFacts(watched, target, lang, nowMs) : null;
-  /* «Шлях компанії» (RYN-COMPANY-PATH-001): the company's way and this token's step; on the private token's page the event becomes the strip's own line, with the issuer's minute. */
+  /* «Шлях компанії»: the company's way and this token's step; on the private token's page the event becomes the strip's own line, with the issuer's minute. */
   const path = row.companyPath ?? null;
   const pathEvent = read && path?.swap && path.at === "private" ? { ...read, lines: swapLines(path.swap, lang) } : null;
   const event = pathEvent ? null : read;
@@ -110,9 +105,9 @@ export function CompanyView({ locale, asset, target = null, counterpart = null, 
   const publicSince = preIpo && path?.swap ? (path.steps.find((step) => step.step === "ipo")?.date ?? null) : null;
   const buyerLine = isWatched(watched) && read?.open ? eventLine(watched, "buyer", lang, nowMs) : null;
   const buyable = row.lifecycle.tradable && rep.tradingHalted !== true && typeof row.market.priceUsd === "number";
-  /* «Продати з позиції» (RYN-BUY-FLOW-001): the holder's sale beside the position, read as the page reads the company — unless the issuer's event already offers the holder a sale on this page, so no one sees two. */
+  /* «Продати з позиції»: the holder's sale beside the position, read as the page reads the company — unless the issuer's event already offers the holder a sale on this page, so no one sees two. */
   const sale = read ? null : saleAssetOf(asset, lang);
-  /* «Умова ціни» (canon v5.5 В37): the facts a rule's price condition is judged on, as this read states them — the sheets read them again while they are open. */
+  /* «Умова ціни»: the facts a rule's price condition is judged on, as this read states them — the sheets read them again while they are open. */
   const assetReadAt = Date.parse(asset.fetchedAt);
   const conditionFacts = priceFactsOf(row, Number.isFinite(assetReadAt) ? assetReadAt : null);
   const conditionReference = referenceKindOf(row);
@@ -120,7 +115,7 @@ export function CompanyView({ locale, asset, target = null, counterpart = null, 
   /* A plan can be made where the issuer offers the token (the builder's own rule). */
   const planHref = row.lifecycle.tradable ? `/app/strategies/new?mint=${encodeURIComponent(rep.mint)}` : null;
 
-  /* The company's facts (RYN-COMPANY-PAGE-001): its filings by its ticker, the price of one share for what is set against it, its industry and its one line. */
+  /* The company's facts: its filings by its ticker, the price of one share for what is set against it, its industry and its one line. */
   const ticker = preIpo ? null : rep.underlying.symbol;
   const facts = preIpo ? null : companyFactsFor(ticker);
   const fund = !preIpo && (facts?.kind === "fund" || isKnownFund(ticker));
@@ -163,7 +158,7 @@ export function CompanyView({ locale, asset, target = null, counterpart = null, 
               footer={pathEvent ? <PathEvent event={pathEvent} token={{ mint: rep.mint, symbol: rep.symbol, name, icon: row.market.icon, decimals: onchain?.decimals ?? null, multiplier, issuerFeeBps: feeBps }} locale={locale} /> : null}
             />
           ) : null}
-          {/* A private company: what the token is not, before any figure (canon §4, §7) — the company's own dated word about tokens like it, where it spoke (C.8) — and the issuer's event with a holder's one action (В27). */}
+          {/* A private company: what the token is not, before any figure — the company's own dated word about tokens like it, where it spoke — and the issuer's event with a holder's one action. */}
           {preIpo ? (
             <CompanyWarning
               truth={truth}
@@ -190,7 +185,7 @@ export function CompanyView({ locale, asset, target = null, counterpart = null, 
               ) : null
             }
             aside={
-              /* The line is the company's; the candles, the drawing and the full ticket are Spot's, one press away (canon §2 rule 10, В28). */
+              /* The line is the company's; the candles, the drawing and the full ticket are Spot's, one press away. */
               <Link className={company.toSpot} href={spotHref} prefetch={false}>
                 {word("chartInSpot")}
                 <ArrowRight size={14} weight="bold" aria-hidden="true" />
@@ -272,11 +267,11 @@ export function CompanyView({ locale, asset, target = null, counterpart = null, 
         </div>
       </div>
 
-      {/* What the stock desk's asset page showed, one press deep — the same cards, nothing dropped (canon §2, В28). */}
+      {/* What the stock desk's asset page showed, one press deep — the same cards, nothing dropped. */}
       <details className={company.details}>
         <summary>{word("details")}</summary>
         <div className={`${styles.grid} ${company.detailsGrid}`}>
-          {/* Ryntra's Brief on this company, and the Critic on request — closed until pressed, so no text of the assistant sits on the way to a purchase (canon §2). */}
+          {/* Ryntra's Brief on this company, and the Critic on request — closed until pressed, so no text of the assistant sits on the way to a purchase. */}
           <div className={styles.w12}>
             <LensPanel subject={{ kind: "asset", mint: rep.mint, symbol: rep.symbol }} locale={locale} trigger="own" />
           </div>
@@ -305,11 +300,11 @@ export function CompanyView({ locale, asset, target = null, counterpart = null, 
 
 /**
  * The issuer's event as the page hands it to the client (the IPO and
- * conversion watch, canon v5.2 В27): the lines in the reader's language, the
- * window's state now, the two actions' words and the swap's facts — the
- * listed token it goes into, read from the same universe (its icon, its
- * multiplier, the company's price on the exchange by its issuer's reference,
- * what it is). Without that row the swap is not offered; the sale is.
+ * conversion watch): the lines in the reader's language, the window's state
+ * now, the two actions' words and the swap's facts — the listed token it goes
+ * into, read from the same universe (its icon, its multiplier, the company's
+ * price on the exchange by its issuer's reference, what it is). Without that
+ * row the swap is not offered; the sale is.
  */
 function eventFacts(event: WatchedEvent, target: StockRow | null, lang: "en" | "uk", nowMs: number): CompanyEventFacts {
   const into = event.watch.into;
@@ -338,10 +333,10 @@ function eventFacts(event: WatchedEvent, target: StockRow | null, lang: "en" | "
 }
 
 /**
- * A token Ryntra no longer supports (canon v5.2 В26): the page a holder, an
- * old plan or an old receipt still links to says what the token is now and
- * the way out — a sale in the person's own wallet — and offers nothing to
- * buy, plan or trade here. No issuer is named.
+ * A token Ryntra no longer supports: the page a holder, an old plan or an
+ * old receipt still links to says what the token is now and the way out — a
+ * sale in the person's own wallet — and offers nothing to buy, plan or trade
+ * here. No issuer is named.
  */
 export function RetiredCompany({ locale, token }: { locale: WorkspaceLocale; token: RetiredToken }) {
   const word = investWords(locale);
@@ -369,7 +364,7 @@ export function RetiredCompany({ locale, token }: { locale: WorkspaceLocale; tok
   );
 }
 
-/** The company could not be read right now: one line and one action — read it again (canon §2, rule 8). */
+/** The company could not be read right now: one line and one action — read it again. */
 export function CompanyUnavailable({ locale, ticker }: { locale: WorkspaceLocale; ticker: string }) {
   const word = investWords(locale);
   return (

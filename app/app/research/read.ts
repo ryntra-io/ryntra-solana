@@ -26,7 +26,7 @@ import { RHJ_SCOPE_KIND, RHJ_SOURCE_ID, RHJ_SOURCE_LABEL, rhjFacts, rhjMateriali
  * handing the pure half a literal.
  *
  * **The mandate is compiled, not stored.** Editing a mandate needs persistence
- * this packet deliberately does not add, so the mandate is derived
+ * this surface deliberately does not add, so the mandate is derived
  * deterministically from configuration that already exists — the positions the
  * reader holds, the paper trades they opened, the markets those touch. That is
  * an honest read-only mandate rather than an editor over a table that is not
@@ -44,8 +44,8 @@ import { RHJ_SCOPE_KIND, RHJ_SOURCE_ID, RHJ_SOURCE_LABEL, rhjFacts, rhjMateriali
  * rather than run times, in a table this surface is not authorized to read. So
  * every rule reports `enrolled: false` and an `UNKNOWN` last run with the
  * reason, and its next run is `DECLARED` from the deployment's own cron
- * expression. That is exactly the canon's rule applied rather than worked
- * around.
+ * expression. That is exactly the rule — an unknown is reported as unknown —
+ * applied rather than worked around.
  */
 
 export const RESEARCH_POSITION_SOURCE = "arcus-positions";
@@ -71,7 +71,7 @@ const PAPER_MAX_AGE_SECONDS = 900;
  * `/assets` and `/corporate-actions` are one call each. `/prices` is per-symbol
  * — the provider asks for that form — so it is bounded twice: only symbols that
  * already have something to say, and never more than this many. A Radar that
- * priced every Stock Token would be a screener, which the canon keeps as a
+ * priced every Stock Token would be a screener, which the product keeps as a
  * separate object, and it would spend the documented 60 requests/second on
  * rows nobody asked about.
  */
@@ -160,8 +160,8 @@ function holdingSymbols(
  *
  * A token the issuer has something to say about — a scheduled multiplier, an
  * action in progress — plus anything this reader holds. That set is the
- * material one by construction, which is the canon's own rule for the Radar:
- * the object is a change, not a ranked asset.
+ * material one by construction, which is the Radar's own rule: the object is
+ * a change, not a ranked asset.
  */
 function rhjPriceSymbols(
   assets: readonly RhjAsset[],
@@ -276,14 +276,14 @@ function scope(reads: ResearchReads): readonly MandateScopeItem[] {
     }
   }
   /* Only the markets this reader actually touches. A radar over every venue
-     market would be a screener, and the canon is explicit that the Radar ranks
-     changes rather than assets. */
+     market would be a screener, and the Radar ranks changes rather than
+     assets. */
   for (const market of [...markets].sort()) {
     items.push({ kind: "CHAIN", ref: marketRef(market), label: market });
   }
   /* The issuer's own instruments enter scope only where the issuer has said
      something about them on this read. Registering all two hundred would turn
-     the Radar into the screener the canon keeps separate. */
+     the Radar into the screener the product keeps separate. */
   for (const symbol of rhjScopeSymbols(reads)) {
     items.push({ kind: RHJ_SCOPE_KIND, ref: rhjSubjectRef(symbol), label: symbol });
   }
@@ -527,7 +527,7 @@ function degradations(reads: ResearchReads): readonly SourceDegradation[] {
  * The source states, without needing a mandate to exist first.
  *
  * The no-scope branch of this surface used to render nothing about sources at
- * all, which hid the one fact this packet exists to report: from a restricted
+ * all, which hid the one fact this function exists to report: from a restricted
  * jurisdiction the issuer API refuses every call, and a reader in that
  * jurisdiction has no scope *and* no explanation. A source that answered — or
  * refused — is a fact whether or not a rule was compiled from it.
@@ -571,10 +571,10 @@ function sourceStates(reads: ResearchReads): readonly ResearchSourceState[] {
  *
  * Probed 2026-08-23 from this repository's own environment, all three endpoints
  * returned a regional `403` while the provider's documentation host and the chain's RPC both returned `200` in the
- * same session. That is the venue deciding, and the founder's recorded position
- * is that Ryntra shows a venue's answer as it comes back rather than
- * predicting, simulating or working around it. Where this code runs decides
- * which answer it gets; neither is assumed here.
+ * same session. That is the venue deciding, and Ryntra's rule is to show a
+ * venue's answer as it comes back rather than predicting, simulating or
+ * working around it. Where this code runs decides which answer it gets;
+ * neither is assumed here.
  */
 function rhjSourceState(reads: ResearchReads): ResearchSourceState {
   const refused = reads.rhj.outcomes.find((outcome) => !outcome.ok);

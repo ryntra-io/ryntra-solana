@@ -24,12 +24,12 @@ export async function generateMetadata() {
 }
 
 /**
- * Головна — the first of the five places (canon v5.0 §3; `RYN-INVEST-SIMPLE-001`,
- * session 1), for everyone since canon v5.3 (В28). The head (a guest's promise or a wallet's balance) is drawn at
- * once; «Популярні компанії» — eight companies by the day's volume, twelve
- * beside the right column on a wide desk, the same for everyone — arrive from
- * the catalogue the server keeps warm, and until
- * they do the section shows the browser's last copy or the tiles' shape.
+ * Головна — the first of the five places, for everyone. The head (a guest's
+ * promise or a wallet's balance) is drawn at once; «Популярні компанії» —
+ * eight companies by the day's volume, twelve beside the right column on a
+ * wide desk, the same for everyone — arrive from the catalogue the server
+ * keeps warm, and until they do the section shows the browser's last copy or
+ * the tiles' shape.
  */
 export default async function HomePage() {
   const locale = await solanaServerLocale();

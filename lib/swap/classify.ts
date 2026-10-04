@@ -2,7 +2,7 @@
  * Which kind of action a FROM/TO pair is, and which engine carries it.
  *
  * The person never chooses between Swap, Bridge and Cross-chain; this function
- * does, from the two sides alone (Unified Swap V1, `RYN-SOL-MONEY-FLOWS-001F`):
+ * does, from the two sides alone (Unified Swap V1):
  *
  * - same network, different asset → `SWAP`, the accepted Jupiter path;
  * - different network, same economic asset → `TRANSFER`, the accepted Circle
@@ -24,7 +24,7 @@
  * swap that changed rails between the quote and the signature would not be the
  * swap that was reviewed.
  *
- * ## The product rule, in the Owner's words (2026-09-09)
+ * ## The product rule (2026-09-09)
  *
  * > **Supported assets between supported networks, where a real executable
  * > route exists and it passes our checks.**
@@ -100,10 +100,10 @@ export type SwapRouteClassification =
 /**
  * Which CCTP lane a USDC pair would use — **rollback only, and not called here.**
  *
- * Circle CCTP left default routing on 2026-09-10 with the Owner's instruction to
- * keep the code rather than delete it. This is the piece that decides the lane,
- * exported so the classifier can reach for it again in one edit, and kept beside
- * the classification it used to produce so a restore is not archaeology.
+ * Circle CCTP left default routing on 2026-09-10, with its code kept rather
+ * than deleted. This is the piece that decides the lane, exported so the
+ * classifier can reach for it again in one edit, and kept beside the
+ * classification it used to produce so a restore is not archaeology.
  */
 export function cctpDirection(from: ResolvedSwapAsset, to: ResolvedSwapAsset): CctpDirection | null {
   if (from.network === "solana" && to.network === "base") return "SOLANA_TO_BASE";

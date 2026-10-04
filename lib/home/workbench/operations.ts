@@ -1,12 +1,12 @@
 /**
  * What the Ryn workbench is allowed to do with a model, written as a type.
  *
- * Frozen decision 22: **AI stays Explain / Formalize / Compare / Review and
- * never governs or signs.** That sentence has been in the canon since Home v2
- * was imported, and until this file existed it was a sentence — something a
- * reviewer had to remember while reading a surface. Here it is a closed union
- * with no widening path: `rynOperation` throws on anything else, so a fifth
- * verb cannot be added by a caller, only by editing this list and the test that
+ * The rule: **AI stays Explain / Formalize / Compare / Review and never
+ * governs or signs.** That sentence has been a product rule since Home v2,
+ * and until this file existed it was a sentence — something a reviewer had
+ * to remember while reading a surface. Here it is a closed union with no
+ * widening path: `rynOperation` throws on anything else, so a fifth verb
+ * cannot be added by a caller, only by editing this list and the test that
  * pins it.
  *
  * **The six forbidden acts are attached to every operation rather than stated
@@ -32,7 +32,7 @@ export type RynOperation = (typeof RYN_OPERATIONS)[number];
 export const RYN_AI_AUTHORITY = "NONE" as const;
 
 /**
- * What no operation may do, in the order the canon states them.
+ * What no operation may do, in a fixed order.
  *
  * `SUPPLY_MISSING_FACT` and `MATERIAL_ARITHMETIC` are the two that get lost:
  * a model that fills a gap reads as helpful, and a model that adds two numbers

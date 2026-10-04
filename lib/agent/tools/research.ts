@@ -1,14 +1,13 @@
 /**
- * The Research tools — read-only, through the existing services
- * (`RYN-AGENT-TEXT-001`; the Owner's rule of 2026-09-22 §2).
+ * The Research tools — read-only, through the existing services.
  *
  * Each tool reads one thing the product already reads for its own pages and
  * returns it as facts with citations, a typed card, and sentences for the
  * composer in both languages. Nothing here computes a balance, a size, a
- * settlement or a multiplier (canon §9.2): amounts are the chain's decimal
- * text, prices are the venue's, sizes are the plan engine's, verdicts are the
- * Review's. An unavailable figure stays unavailable in words; nothing is
- * summed across states.
+ * settlement or a multiplier: amounts are the chain's decimal text, prices
+ * are the venue's, sizes are the plan engine's, verdicts are the Review's.
+ * An unavailable figure stays unavailable in words; nothing is summed across
+ * states.
  */
 
 import { z } from "zod";
@@ -90,7 +89,7 @@ export const marketRead: AgentTool<typeof MarketInput> = {
   },
 };
 
-/** A token Ryntra no longer supports (canon v5.2 В26), in one plain line: its state and the way out. */
+/** A token Ryntra no longer supports, in one plain line: its state and the way out. */
 export function retiredLine(query: string, locale: Locale): string {
   const name = query.trim().replace(/^\$/, "");
   return w(locale, `${name} is no longer supported in Ryntra. You can sell it in your own wallet.`, `${name} більше не підтримується в Ryntra. Продати можна у своєму гаманці.`);
@@ -331,8 +330,8 @@ export function planCard(plan: TradingPlan, reviews: readonly PlanReview[], ctx:
  * What the plan's own version says beyond its figures — the thesis in the
  * person's words, whether it carries a measurable condition, whether it
  * names an exit, its horizon. These are facts of the run, never figures of
- * the card: the Critic reads them to argue with a thesis on its own terms
- * (`RYN-BRIEF-CRITIC-001`), and no surface renders them as numbers.
+ * the card: the Critic reads them to argue with a thesis on its own terms,
+ * and no surface renders them as numbers.
  */
 function planShapeFacts(plan: TradingPlan, cite: string, locale: Locale, nowMs: number): readonly ToolFact[] {
   const rules = plan.current.rules;
@@ -526,7 +525,7 @@ export const activityRead: AgentTool<z.ZodObject<{ limit: z.ZodDefault<z.ZodNumb
     if (rows.length === 0) return { ...emptyRun("activity_read", "research", "empty", "current"), notes: [note("observation", w(locale, "History holds no operation of this wallet yet.", "Історія ще не має операцій цього гаманця."), [cite.id])], handoffs: [{ kind: "portfolio", href, label: w(locale, "Open History", "Відкрити Історію"), primary: false }] };
     /* The lane and the outcome in the words History uses — never the stored
        codes (`SEND IN_FLIGHT`), which are the ledger's bookkeeping, not a
-       sentence (canon v5.0 §0.0 rule 1, RYN-SURFACE-CLEAN-001). */
+       sentence. */
     const laneWord = (lane: string): string =>
       ({ SEND: w(locale, "Send", "Переказ"), SWAP: w(locale, "Swap", "Обмін"), BRIDGE: w(locale, "Bridge", "Міст"), CROSS_SWAP: w(locale, "Bridge", "Міст"), RECEIVE: w(locale, "Receive", "Отримання") } as Record<string, string>)[lane] ?? w(locale, "Operation", "Операція");
     const outcomeWord = (outcome: string): string =>
@@ -570,8 +569,7 @@ export const watchlistRead: AgentTool<z.ZodObject<Record<string, never>>> = {
 const MemoryInput = z.object({ symbol: z.string().min(1).max(32).optional(), planId: z.string().regex(PLAN_ID).optional() }).strict();
 
 /**
- * What the product remembers about how this wallet decides —
- * `RYN-RESULTS-MEMORY-001` §11.
+ * What the product remembers about how this wallet decides.
  *
  * The tool reads memory; it cannot write it. There is no writer on the
  * reader seam at all, so the only way a fact reaches Ryn is by already being
@@ -638,7 +636,7 @@ export const memoryRead: AgentTool<typeof MemoryInput> = {
 /**
  * What a memory figure is called for a person, and what its word says. The
  * server files a fact under stable keys and stores the engine's own ids in
- * the `word` figures; a surface must show neither (`RYN-BRIEF-CRITIC-001`).
+ * the `word` figures; a surface must show neither.
  */
 function memoryFigureLabel(key: string, locale: Locale): string {
   const words: Readonly<Record<string, readonly [string, string]>> = {

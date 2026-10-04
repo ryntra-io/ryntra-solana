@@ -9,11 +9,11 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 /**
- * The size-aware quote (canon v4.0 §7.5): `usd` of a stock token on a side,
- * through the same Jupiter order path Spot executes on, quote-only, with the
- * token leg in underlying units and the executable per-share price against
- * the issuer's reference. Never cached at the edge — a quote is a fact about
- * a moment — and never a transaction: nothing here can be signed.
+ * The size-aware quote: `usd` of a stock token on a side, through the same
+ * Jupiter order path Spot executes on, quote-only, with the token leg in
+ * underlying units and the executable per-share price against the issuer's
+ * reference. Never cached at the edge — a quote is a fact about a moment — and
+ * never a transaction: nothing here can be signed.
  */
 
 const QuerySchema = z

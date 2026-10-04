@@ -23,10 +23,10 @@ export type LocaleDir = "ltr" | "rtl";
  * sitemap, the sub-locale routes and the header language control all derive
  * from it. Nothing else decides which locales are public.
  *
- * Founder decision 2026-08-26: English and Ukrainian are public. Every other
- * locale stays translated in the repository and reachable through a temporary
- * 307 to its English URL — parked, not deleted. Restoring a locale means adding
- * its code back here and running its copy QA.
+ * English and Ukrainian are public. Every other locale stays translated in the
+ * repository and reachable through a temporary 307 to its English URL —
+ * parked, not deleted. Restoring a locale means adding its code back here and
+ * running its copy QA.
  *
  * Interface language has never gated anything. It does not affect eligibility,
  * readiness, or any trading gate, and that stays true with one locale or twelve.

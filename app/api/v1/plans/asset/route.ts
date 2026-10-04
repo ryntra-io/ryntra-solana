@@ -12,15 +12,15 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 /**
- * `GET /api/v1/plans/asset?mint=` (contract 1.7.0, `RYN-PLAN-CRYPTO-001`): any
- * mint resolved the way `POST /api/v1/plans` will resolve it — a confirmed
- * stock representation, or a verified, tradable crypto or meme token of the
- * Spot catalogue — as the asset the plan would carry, with the planning price
- * read now (or null: no indication, the person writes their own figure) and
- * the venue's liquidity. An unconfirmed or untradable mint is
- * `ASSET_UNCONFIRMED` with the reason; a source that did not answer is
- * `UNAVAILABLE`. Public, like the asset pages: nothing here is the wallet's;
- * the read budget of the Solana routes bounds it per address.
+ * `GET /api/v1/plans/asset?mint=` (contract 1.7.0): any mint resolved the way
+ * `POST /api/v1/plans` will resolve it — a confirmed stock representation, or
+ * a verified, tradable crypto or meme token of the Spot catalogue — as the
+ * asset the plan would carry, with the planning price read now (or null: no
+ * indication, the person writes their own figure) and the venue's liquidity.
+ * An unconfirmed or untradable mint is `ASSET_UNCONFIRMED` with the reason; a
+ * source that did not answer is `UNAVAILABLE`. Public, like the asset pages:
+ * nothing here is the wallet's; the read budget of the Solana routes bounds it
+ * per address.
  */
 
 const QuerySchema = z.object({ mint: z.string().regex(BASE58) }).strict();

@@ -5,11 +5,11 @@ import type { EventSource } from "./scan.ts";
 /**
  * The Watchlist: an entry that survives what happens to the thing it watches.
  *
- * The canon's §5 opens with the whole module in three words — **not a star.**
- * A star is a boolean on a row: it says *this symbol interests me* and it
- * carries nothing, so the first time the venue renames a token, withdraws a
- * route or applies a corporate action, the star is either wrong or gone. What
- * is asked for instead is an object that remembers, and the acceptance says
+ * The whole module fits in three words — **not a star.** A star is a boolean
+ * on a row: it says *this symbol interests me* and it carries nothing, so the
+ * first time the venue renames a token, withdraws a route or applies a
+ * corporate action, the star is either wrong or gone. What is asked for
+ * instead is an object that remembers, and the acceptance says
  * exactly what it has to survive:
  *
  *   > a watchlist entry survives a route change and a corporate action with
@@ -94,9 +94,9 @@ export type Observation = Readonly<{
 /**
  * The route, named with its provider.
  *
- * "Routes and providers" is one fact in the canon, and writing only the symbol
- * would make a provider change invisible — the route would look unchanged
- * while the thing executing it had been replaced.
+ * "Routes and providers" is one fact, and writing only the symbol would make
+ * a provider change invisible — the route would look unchanged while the
+ * thing executing it had been replaced.
  */
 export const ROUTE_PROVIDER = "arcus-spot-rfq";
 
@@ -231,7 +231,7 @@ export type WatchAlertKind =
 export type AlertThreshold = Readonly<{ label: string; unit: string; fallback: number; min: number; max: number }>;
 
 /**
- * Every condition the canon names, plus the one this surface earned.
+ * Every condition the product names, plus the one this surface earned.
  *
  * `source: null` is not "not implemented yet". It means no endpoint or
  * contract this product reads carries the figure at all, and `gate` states
@@ -279,7 +279,7 @@ export const ALERT_SPECS: readonly AlertSpec[] = Object.freeze([
        only change this can currently see is Ryntra's own configuration. It
        still fires truthfully for the person watching — what changed for them
        is that the instrument became executable — and it stops being merely
-       self-observation when a second adapter exists (RYN-TM-005). */
+       self-observation when a second adapter exists. */
     gate: null,
     threshold: null,
   }),
@@ -312,7 +312,7 @@ export const ALERT_SPECS: readonly AlertSpec[] = Object.freeze([
     label: "A Strategy condition becomes true",
     question: "Did this asset enter a condition one of my strategies is waiting for?",
     source: null,
-    gate: "Strategy Lab is RYN-SLAB-001 and is owner-parked BLOCKED. There is no strategy to bind to, so this is registered as the condition the canon names rather than as a field that could only ever be empty.",
+    gate: "Strategy Lab is parked and blocked. There is no strategy to bind to, so this is registered as a named condition rather than as a field that could only ever be empty.",
     threshold: null,
   }),
 ]);

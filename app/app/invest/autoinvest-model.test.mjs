@@ -72,12 +72,12 @@ test("a rule is said the same on the page, in the note and in Telegram", () => {
   assert.equal(words.uk.cta, "Купити $10");
   for (const locale of ["en", "uk"]) {
     for (const text of Object.values(words[locale])) {
-      assert.doesNotMatch(text, /\bRyn\b|DCA|trigger|автоматично|automatically/i, "never the words the canon forbids");
+      assert.doesNotMatch(text, /\bRyn\b|DCA|trigger|автоматично|automatically/i, "never a forbidden word");
     }
   }
 });
 
-test("«Якщо впаде» and the month's budget are said the same on the page, on Home and in the note — never the words the canon forbids", () => {
+test("«Якщо впаде» and the month's budget are said the same on the page, on Home and in the note — never a forbidden word", () => {
   assert.equal(dipLine(5, "uk"), "Якщо впаде на 5 %");
   assert.equal(dipLine(5, "en"), "If it falls 5%");
   assert.equal(pctWord(5.46, "uk", 1), "5,5 %");
@@ -113,7 +113,7 @@ test("a purchase fits the month to the cent; a rule the budget holds says so; th
   assert.deepEqual(monthUse({ ...budget, spentUsd: 120, unknownUsd: 0 }), { countedUsd: 120, share: 1 });
   assert.equal(monthUse({ ...budget, capUsd: null }).share, null);
   assert.equal(budgetOfInput(100), 100);
-  /* From a dollar (canon v5.5 В35, contract 1.16.0): «щодня по $1» for the longest month is $31. */
+  /* From a dollar (contract 1.16.0): «щодня по $1» for the longest month is $31. */
   assert.equal(budgetOfInput(0.99), null);
   assert.equal(budgetOfInput(1), 1);
   assert.equal(budgetOfInput(31), 31);
@@ -122,7 +122,7 @@ test("a purchase fits the month to the cent; a rule the budget holds says so; th
   assert.equal(budgetOfInput(2_000_000), null);
 });
 
-test("a reminder is offered first only while its window is open (canon v5.3 В29)", () => {
+test("a reminder is offered first only while its window is open", () => {
   const occurrence = (dueAt, state) => ({ dueAt, openUntil: iso(Date.parse(dueAt) + 86_400_000), state, remindedAt: dueAt, signature: null, spentUsd: null, boughtAt: null, trigger: null });
   const rule = { id: "rule_a", asset: { mint: "M1" }, status: "active", occurrences: [occurrence("2026-09-24T16:00:00.000Z", "due")] };
   assert.equal(reminderOpenNow(rule, Date.parse("2026-09-24T17:00:00.000Z")).dueAt, "2026-09-24T16:00:00.000Z");
@@ -131,13 +131,13 @@ test("a reminder is offered first only while its window is open (canon v5.3 В29
   assert.equal(reminderOpenNow({ ...rule, occurrences: [occurrence("2026-09-24T16:00:00.000Z", "bought")] }, Date.parse("2026-09-24T17:00:00.000Z")), null);
 });
 
-test("the month's budget is its own line — «Бюджет не задано · Задати» or «$10 з $50» — never the rule's sum (canon v5.3 В29)", () => {
+test("the month's budget is its own line — «Бюджет не задано · Задати» or «$10 з $50» — never the rule's sum", () => {
   const month = { timeZone: "Europe/Kyiv", monthStartsAt: "2026-08-31T21:00:00.000Z", monthEndsAt: "2026-09-30T21:00:00.000Z", updatedAt: null };
   assert.equal(budgetView(null), null, "not read yet: no line");
   assert.deepEqual(budgetView({ ...month, capUsd: null, spentUsd: 10, unknownUsd: 0, remainingUsd: null, exhausted: false }), { kind: "unset" });
   assert.deepEqual(budgetView({ ...month, capUsd: 50, spentUsd: 10, unknownUsd: 0, remainingUsd: 40, exhausted: false }), { kind: "capped", countedUsd: 10, capUsd: 50, percent: 20, exhausted: false });
   assert.deepEqual(budgetView({ ...month, capUsd: 50, spentUsd: 45, unknownUsd: 10, remainingUsd: 0, exhausted: true }), { kind: "capped", countedUsd: 55, capUsd: 50, percent: 100, exhausted: true });
-  /* The Owner's words, both languages: the sum of a rule is each purchase, the budget's is the month's most. */
+  /* Said in both languages: the sum of a rule is each purchase, the budget's is the month's most. */
   assert.equal(INVEST_WORDS.budgetNotSet.uk, "Бюджет не задано");
   assert.equal(INVEST_WORDS.setShort.uk, "Задати");
   assert.equal(INVEST_WORDS.eachPurchase.uk, "Кожна купівля");
@@ -146,7 +146,7 @@ test("the month's budget is its own line — «Бюджет не задано ·
   assert.equal(INVEST_WORDS.atMostPerMonth.en, "At most per month");
 });
 
-test("a rule's purchase is never mistaken for an ordinary one, and the ordinary one says the reminder stays open (canon v5.3 В29)", () => {
+test("a rule's purchase is never mistaken for an ordinary one, and the ordinary one says the reminder stays open", () => {
   assert.equal(buyByRuleWord("uk", 20), "Купити $20 за правилом");
   assert.equal(buyByRuleWord("en", 20), "Buy $20 by your rule");
   assert.equal(buyByRuleWord("uk", 10.5), "Купити $10,50 за правилом");

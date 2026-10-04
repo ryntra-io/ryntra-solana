@@ -4,11 +4,11 @@ import { useEffect, useRef, useState } from "react";
 
 /**
  * The live book and trades of one outcome over the provider's WebSocket
- * (`RYN-PREDICTIONS-001` item 3: WebSocket updates, live trades, aggregated
- * book preserved). Public data, the app id in the URL, no token: the socket
- * never authenticates here. Where the origin is not approved for the socket
- * (a local stand) or the connection fails, `connected` stays false and the
- * page polls the REST book instead — the person sees which of the two it is.
+ * (updates, live trades, the aggregated book preserved). Public data, the app
+ * id in the URL, no token: the socket never authenticates here. Where the
+ * origin is not approved for the socket (a local stand) or the connection
+ * fails, `connected` stays false and the page polls the REST book instead —
+ * the person sees which of the two it is.
  *
  * The SDK's client is loaded on demand so the hub's bundle carries none of it.
  */

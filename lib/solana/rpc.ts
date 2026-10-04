@@ -3,10 +3,10 @@
  *
  * ## Two endpoints, not one
  *
- * Canon §6.1 is blunt about it: a public endpoint is rate-limited and is not
- * production application infrastructure, so a mainnet product needs a primary
- * **and an independent fallback read path**. §3.5 wants the same thing for a
- * different reason — a provider's answer is not proof on its own, and a second
+ * A public endpoint is rate-limited and is not production application
+ * infrastructure, so a mainnet product needs a primary **and an independent
+ * fallback read path**. Evidence wants the same thing for a different
+ * reason — a provider's answer is not proof on its own, and a second
  * operator is what makes a disagreement visible instead of invisible.
  *
  * So a handle holds an ordered pair rather than a URL. Every request tries the
@@ -103,7 +103,7 @@ const PUBLIC_ENDPOINTS: Record<SolanaNetwork, EndpointPair> = {
   devnet: {
     primary: "https://api.devnet.solana.com",
     /* Absent, and absent is the honest value. Devnet is an internal regression
-       fixture rather than a release target (canon §3.1), and no keyless public
+       fixture rather than a release target, and no keyless public
        devnet second operator answered when this pair was probed. The env slot
        below exists for anyone who has one. */
     fallback: null,

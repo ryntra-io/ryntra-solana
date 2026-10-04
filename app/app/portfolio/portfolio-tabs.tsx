@@ -10,12 +10,11 @@ import { PRODUCT_ROUTES } from "@/app/shell/product-routes";
 import styles from "./portfolio-tabs.module.css";
 
 /**
- * Portfolio's pages, one tap apart (canon v5.3 В28, §3): Позиції · Стратегії
- * · Результати · Історія — the positions, the full plans with their versions
- * and journal, what the plans did, and every operation with its receipt.
- * Drawn from the registry (`PLACE_PAGES`), at the top of each of the four, so
- * a person always sees where they stand inside the place and the rail keeps
- * five rows.
+ * Portfolio's pages, one tap apart: Позиції · Стратегії · Результати ·
+ * Історія — the positions, the full plans with their versions and journal,
+ * what the plans did, and every operation with its receipt. Drawn from the
+ * registry (`PLACE_PAGES`), at the top of each of the four, so a person
+ * always sees where they stand inside the place and the rail keeps five rows.
  */
 export function PortfolioTabs({ locale }: { locale: WorkspaceLocale }) {
   const pathname = usePathname() ?? "";

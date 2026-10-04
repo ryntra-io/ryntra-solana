@@ -19,11 +19,11 @@ const PROTECTED_PATHS = [
 /*
  * Where crawlers may go: the site — the landing at `/` and `/uk`, the public
  * pages and the documentation at both addresses among it — and, of the
- * cabinet, the pages offered to the index (the plan of `RYN-SITE-V5-001` §4):
- * Home and Markets, `$` keeping each to that one page, and the companies'
- * pages under `/app/stocks/`, in English and at `/uk`. The longer rule wins
- * under the Robots Exclusion Protocol. `/app` itself stays open: it is the one
- * hop to Home that every shared link to the app takes.
+ * cabinet, the pages offered to the index: Home and Markets, `$` keeping each
+ * to that one page, and the companies' pages under `/app/stocks/`, in English
+ * and at `/uk`. The longer rule wins under the Robots Exclusion Protocol.
+ * `/app` itself stays open: it is the one hop to Home that every shared link
+ * to the app takes.
  *
  * Only what is live is named: the QA route this file used to list
  * (`/strategy-lab-qa`) no longer exists.

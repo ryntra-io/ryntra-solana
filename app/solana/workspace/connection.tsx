@@ -54,13 +54,13 @@ import {
  *
  * ## What connecting now shows
  *
- * Real mainnet balances, from `RYN-SOL-M0B`. Before it, connecting a wallet
- * changed a label and nothing else: the control could report an address and a
- * capability set, and the first thing a person actually wants — *what do I
- * hold* — was on no surface in this workspace at all. The read is the ordinary
- * one every other Solana read uses, so it inherits the endpoint pair, the
- * failover and the health that comes with them, and the panel states which
- * endpoint answered rather than implying the configured one did.
+ * Real mainnet balances. Before them, connecting a wallet changed a label and
+ * nothing else: the control could report an address and a capability set, and
+ * the first thing a person actually wants — *what do I hold* — was on no
+ * surface in this workspace at all. The read is the ordinary one every other
+ * Solana read uses, so it inherits the endpoint pair, the failover and the
+ * health that comes with them, and the panel states which endpoint answered
+ * rather than implying the configured one did.
  */
 
 export type SolanaConnectionValue = Readonly<{
@@ -160,8 +160,8 @@ export function SolanaConnectionProvider({ children }: { children: ReactNode }) 
    * `/agents/workspace` is outside it, so one trip out of this tree and back
    * used to leave holdings, history, receipts, receive, send, swap and bridge
    * disconnected — and Activity empty, because receipts are keyed by the
-   * connected address. Owner decision of 2026-09-04: one wallet context is a
-   * property of the product, so it has to survive navigation.
+   * connected address. One wallet context is a property of the product, so it
+   * has to survive navigation.
    *
    * Guarded by a ref rather than a dependency list because `wallets` changes
    * whenever a wallet registers late, and a restore attempt per registration is
@@ -318,7 +318,7 @@ export function SolanaConnectionControl({
   compact = false,
 }: {
   identity?: ReactNode;
-  /** The person's own settings in the panel — the product's menu (canon v5.4 В31). */
+  /** The person's own settings in the panel — the product's menu. */
   preferences?: (close: () => void) => ReactNode;
   /** The product's menu: the address and the SOL balance, no technical rows. */
   compact?: boolean;
@@ -327,10 +327,10 @@ export function SolanaConnectionControl({
   const { wallets, connection, connecting, error, errorKind, connect, disconnect } = useSolanaConnection();
   const [read, setRead] = useState<WalletRead>({ status: "idle" });
   const address = connection?.address ?? null;
-  /* A browser with no wallet at all (RYN-INVEST-SIMPLE-001, session 5): a phone's
-     Safari or Chrome cannot carry one, so the panel offers this page inside
-     Phantom's own browser; a computer is told where to get one. Read after
-     mount — the server does not know the device. */
+  /* A browser with no wallet at all: a phone's Safari or Chrome cannot carry
+     one, so the panel offers this page inside Phantom's own browser; a
+     computer is told where to get one. Read after mount — the server does not
+     know the device. */
   const [phone, setPhone] = useState(false);
   useEffect(() => {
     setPhone(isPhoneUserAgent(window.navigator.userAgent));
@@ -517,8 +517,8 @@ export function SolanaConnectionControl({
       adapter={adapter}
       preferences={preferences}
       compact={compact}
-      /* The account, inside the wallet's own panel: the wallet is the account
-         (Owner, 2026-09-11), and the header carries one principal. */
+      /* The account, inside the wallet's own panel: the wallet is the account,
+         and the header carries one principal. */
       identity={identity}
       venue={
         <>

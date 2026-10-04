@@ -81,7 +81,7 @@ test("opening the cabinet to visitors changed what is shown, never what is allow
   // The layout still resolves the session; it just no longer walls on it.
   assert.match(CABINET_LAYOUT, /getSession\(\)/);
   assert.doesNotMatch(CABINET_LAYOUT, /\bredirect\(|if\s*\(\s*!session/);
-  /* RYN-ACCESS-002: signed in means an account that can keep personal data;
+  /* Signed in means an account that can keep personal data;
      the channel join is no longer the definition. */
   assert.match(CABINET_LAYOUT, /const signedIn = Boolean\(session && canKeepPersonalData\(session\)\);/);
   assert.match(CABINET_LAYOUT, /<ProductShell\s+signedIn=\{signedIn\}/);
@@ -89,9 +89,9 @@ test("opening the cabinet to visitors changed what is shown, never what is allow
      Session presence changes the account label, never the wallet's authority. */
   assert.equal((CABINET_LAYOUT.match(/<SolanaConnectionProvider>/g) ?? []).length, 1);
   const productShell = code("app/app/product-shell.tsx");
-  /* RYN-CABINET-HEADER-001 (Owner, 2026-09-12): one control in the header for
+  /* One control in the header for
      the person — the wallet — with the account inside its panel; the separate
-     *Sign in* is gone. Since canon v5.4 (В31) the panel is the person's menu
+     *Sign in* is gone. Since 2026-09-24 the panel is the person's menu
      too: Налаштування, Мова, Тема, Від'єднати — Settings is one of its rows,
      not a second link in the identity block. */
   assert.equal((productShell.match(/<SolanaConnectionControl\s+identity=\{<WalletAccountIdentity \/>\}/g) ?? []).length, 1);
@@ -102,8 +102,8 @@ test("opening the cabinet to visitors changed what is shown, never what is allow
   assert.doesNotMatch(productShell, /signedIn\s*\?\s*<SolanaConnectionControl/);
   assert.doesNotMatch(CABINET_LAYOUT, /VisitorAccount|CabinetAccount/);
 
-  /* Home wave 1 splits the page-level account gate from the exact credential
-     gate. An authenticated wallet-only account may keep browser-local read
+  /* Home splits the page-level account gate from the exact credential gate.
+     An authenticated wallet-only account may keep browser-local read
      connections and InvestorContext; Arcus mutation still gets the existing
      verified-session fact as its own prop and remains server-gated too. */
   const connect = read("app/app/connect/page.tsx");
@@ -260,7 +260,7 @@ test("the switcher answers one question and delegates the rest", () => {
 
   /* Agent Control is ours: a domain product with an adapter, not a pack for
      someone else's network. Robinhood Chain sat beside it under PRODUCTS until
-     RYN-RHC-002, on the argument that a desk settling on a chain is not the
+     2026-08-19, on the argument that a desk settling on a chain is not the
      chain — which was true of the desk and is not true of what replaced it. */
   assert.equal(workspaceGroup(workspaceById("agent-control")), "PRODUCTS");
   for (const id of ["robinhood-chain", "stellar", "solana"]) {
@@ -294,7 +294,7 @@ test("the workspace is decided by the route, not by the layout that mounted it",
      Simple/Pro settings for itself — but it is still the ROUTE that decides,
      never the mounting layout, which is what this test exists to hold. */
   assert.match(SHELL, /<ShellStateProvider\s+workspaceId=\{product \? "ryntra" : workspace\.id\}/);
-  /* Canon v5.3 (В28): the product is one version — no depth to paint first,
+  /* The product is one version — no depth to paint first,
      none to mirror into a cookie; its scope reads the one layout whatever
      an older visit stored. */
   assert.match(SHELL, /oneVersion=\{Boolean\(product\)\}/);
@@ -342,7 +342,7 @@ test("the Workspace Map carries the directions the switcher stopped carrying", a
   assert.match(map, /entry\.gate/, "each direction must render its own stated limit");
   // A research row gets no action control; `isSelectable` decides that in code.
   assert.match(map, /workspace && isSelectable\(entry\)/);
-  /* `RYN-SITE-003` rewrote this heading to survive one pass of the eye. The
+  /* A site rewrite changed this heading to survive one pass of the eye. The
      claim is identical; only the sentence changed, and the test followed it
      three weeks late. */
   assert.match(map, /Registered, not supported/);
@@ -453,8 +453,8 @@ test("no rail repeats the workspace list", () => {
     assert.match(rhShell, new RegExp(`id: "${mode}"[^\\n]*sub: true`), `${mode} must be a Radar mode`);
   }
   assert.match(rhShell, /navSettings=\{SETTINGS\}/, "Settings is pinned, not an entry in a group");
-  /* Solana joins the visible top-bar Simple/Pro placement by direct founder
-     instruction on 2026-09-01 so the complete final menu can be inspected now. */
+  /* Solana joins the visible top-bar Simple/Pro placement
+     since 2026-09-01 so the complete final menu can be inspected now. */
   for (const file of [
     "app/app/home-shell.tsx",
     "app/agents/workspace/agent-control-shell.tsx",
@@ -657,7 +657,7 @@ test("the switcher panel does not scroll, because it cannot need to", () => {
   assert.doesNotMatch(panel, /overflow-y/);
   assert.doesNotMatch(panel, /max-height/);
   assert.match(panel, /width: min\(380px, calc\(100vw - var\(--ry-s6\)\)\)/);
-  /* Six since RYN-SOL-A4 shipped the Solana Hub — a real, enterable
+  /* Six since the Solana Hub shipped — a real, enterable
      workspace, not a row invented to fill a menu. The bound stays tight on
      purpose: the next workspace must argue its case here, not inherit a
      taller box. */
@@ -798,7 +798,7 @@ test("the cabinet's theme control is one the shell actually answers", () => {
   }
 
   /* Semantic colour keeps its meaning in light and only changes its darkness.
-     Since the token unification (RYN-UI-SYSTEM-001, spec §4) that darkening
+     Since the token unification that darkening
      comes from the root `-strong` tokens: the shell aliases into them instead
      of restating hex literals, so the chrome and the canvas can never disagree
      about what light-cyan is. A literal here would fork the palette again. */
@@ -864,7 +864,7 @@ test("cabinet content keeps a readable column in a wide canvas", () => {
 
 test("a workspace's own tools are added to the shared cluster, never a replacement for it", () => {
   /*
-   * The drift the founder saw with both workspaces open side by side.
+   * The drift seen with both workspaces open side by side.
    *
    * `tools` was applied as `tools ?? (…default…)`, so any workspace supplying
    * its own controls silently lost every shared one. One hub supplied Search and
@@ -912,7 +912,7 @@ test("a workspace's own tools are added to the shared cluster, never a replaceme
 
   /* Focus mode was the rail's second control and is gone. Appearance left with
      it on 2026-08-19 — one global theme, one home in `Settings → Appearance` —
-     and the founder put a control back in this slot on 2026-08-24, beside the
+     and a control came back in this slot on 2026-08-24, beside the
      language button at the foot of the rail. `PRODUCT.md` had said so all
      along: dark/light and the language are compact one-click controls in the
      lower rail beside a hub's Map.
@@ -956,7 +956,7 @@ test("a workspace's own tools are added to the shared cluster, never a replaceme
     "the cabinet rail footer writes no theme");
 
   /* Settings has one persistent destination in the product rail: the menu's
-     foot (canon v5.4 В30), from the registry — and the wallet's menu opens the
+     foot, from the registry — and the wallet's menu opens the
      same address. */
   assert.match(read("app/shell/domains.ts"), /settings: \{ label: SECONDARY_LABELS\.settings, href: "\/app\/settings"/);
   assert.match(code("app/shell/app-shell.tsx"), /const settingsEntry: NavEntry \| null \| undefined = menu/);
@@ -1016,7 +1016,7 @@ test("only a workspace with a catalog renders a language control", () => {
 
 test("a workspace and the direction it opens are one record, not two", () => {
   /*
-   * The defect `RYN-RHC-002` closed. `robinhood-chain` existed twice — as a
+   * A defect now closed. `robinhood-chain` existed twice — as a
    * chain in `lib/product/ecosystems.ts` and as a desk called
    * `tokenized-markets` in the switcher — with a third record, a hand-written
    * `Record` on the Workspace Map, deciding which one had a door. Three places
@@ -1055,7 +1055,7 @@ test("a workspace and the direction it opens are one record, not two", () => {
     );
   }
 
-  // The fact this packet established, stated as itself.
+  // The renamed Robinhood Chain workspace, stated as itself.
   const chain = workspaceById("robinhood-chain");
   assert.equal(chain.kind, "ecosystem_pack");
   assert.equal(chain.name, "Robinhood Chain");
@@ -1101,7 +1101,7 @@ test("a workspace's name is registry data and cabinet copy never spells it out",
       assert.ok(!source.includes(`href="${workspace.href}"`), `${path} must take the destination from the registry too`);
     }
   }
-  /* The product root has no page of its own since canon 9.1 folded Home into
+  /* The product root has no page of its own since Home was folded into
      Portfolio; the overview it opens on is checked instead. */
   for (const workspace of WORKSPACES) {
     assert.ok(!code("app/solana/workspace/holdings/holdings-card.tsx").includes(`href="${workspace.href}"`));
@@ -1111,7 +1111,7 @@ test("a workspace's name is registry data and cabinet copy never spells it out",
 test("renaming a workspace id migrates its layout preferences instead of resetting them", () => {
   /*
    * The rule is stated in as many words — *a display name is copy; an id is a
-   * migration* — and a hub's row keeps a stale id rather than risk this. `RYN-RHC-002` changed one id, so the migration had
+   * migration* — and a hub's row keeps a stale id rather than risk this. The `robinhood-chain` rename changed one id, so the migration had
    * to be real: the store is keyed by workspace id, the schema shape did not
    * change so the version cannot move, and without a rename map every Pro
    * mode, panel order and hidden widget set on that desk silently reverts.
@@ -1150,8 +1150,8 @@ test("renaming a workspace id migrates its layout preferences instead of resetti
   }
 });
 
-test("«Простий» opens first for every person and guest; only a press chooses «Профі» (canon v5.0 §0.0 rule 9)", () => {
-  /* The Owner's decision of 2026-09-23, recorded by RYN-SURFACE-CLEAN-001:
+test("«Простий» opens first for every person and guest; only a press chooses «Профі»", () => {
+  /* Since 2026-09-23:
      Simple by default everywhere. Until then the product shell (`ryntra`)
      flipped an un-chosen Simple into Pro and the switch promoted `standard`
      to a *chosen* Pro, so a first visit landed in «Профі». */
@@ -1160,7 +1160,7 @@ test("«Простий» opens first for every person and guest; only a press ch
   assert.doesNotMatch(state, /mode: "pro"/, "the shell writes Pro for somebody who never chose it");
   assert.doesNotMatch(state, /GUIDED_FIRST_WORKSPACES/, "Simple-first is for every workspace, not a list of some");
   assert.match(state, /if \(!oneVersion && !stored\.depthChosen && stored\.mode !== "guided"\)/, "an un-chosen depth opens Simple");
-  /* And the product has no depth at all since canon v5.3 (В28): it reads its
+  /* And the product has no depth at all since 2026-09-24: it reads its
      one version whatever is stored, choosing a mode does nothing there, and
      nothing writes a depth cookie any more. */
   assert.match(state, /prefs: oneVersion \? \{ \.\.\.prefs, mode: ONE_VERSION \} : prefs/);

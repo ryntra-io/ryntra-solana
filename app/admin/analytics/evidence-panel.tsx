@@ -12,18 +12,17 @@ import { formatDateTime } from "../format";
 import { PlainStat } from "../stat";
 
 /**
- * The evidence layer's spend, per provider, as the Owner reconciles it with
- * each provider's dashboard (`RYN-NANSEN-EVIDENCE-001`, `RYN-DDXYZ-RISK-001`):
- * today and the longer period (the packet for Nansen, the UTC month for
- * DD.xyz) — calls made, calls answered, failures by their kind, retries,
- * cache hits, credits reserved and credits the provider said it deducted,
- * the balance the provider last reported (in its headers, or read from its
- * usage endpoint for reconciliation and cached ten minutes), the last
- * successful call, the ceilings in force. A missing ceiling reads as *paid
- * calls off*, which is what it means. The rights the reads run under are
- * listed by family, so a look here says what may be shown, what the plan
- * gates and what is never called. Provider cost is infrastructure; nothing
- * here is a trading fee or a person's result.
+ * The evidence layer's spend, per provider, as an admin reconciles it with
+ * each provider's dashboard: today and the longer period (the credit packet
+ * for Nansen, the UTC month for DD.xyz) — calls made, calls answered,
+ * failures by their kind, retries, cache hits, credits reserved and credits
+ * the provider said it deducted, the balance the provider last reported (in
+ * its headers, or read from its usage endpoint for reconciliation and cached
+ * ten minutes), the last successful call, the ceilings in force. A missing
+ * ceiling reads as *paid calls off*, which is what it means. The rights the
+ * reads run under are listed by family, so a look here says what may be
+ * shown, what the plan gates and what is never called. Provider cost is
+ * infrastructure; nothing here is a trading fee or a person's result.
  */
 
 type Payload = Readonly<{ generatedAt: string; usage: readonly EvidenceUsage[] }>;

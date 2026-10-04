@@ -1,5 +1,5 @@
 -- APPLIED to production project lbphobwqzwdkbmyedlwb as migration 20260812131229,
--- under explicit founder authorization given in session on 2026-08-12.
+-- under explicit authorization on 2026-08-12.
 --
 -- Wallet sign-in, step 2: give an account an identity that is not a Telegram id.
 --
@@ -24,7 +24,7 @@
 --   nowhere to land until this ran. That was the whole blocker, and it is a
 --   schema change on the production database holding every user's account,
 --   paper trades and journal, so it needed an explicit owner decision rather
---   than an agent's judgement. That authorization was given in session.
+--   than an automated one. That authorization was given.
 --
 -- THE SECURITY DECISION THIS FILE IS BUILT AROUND
 --   `beta_users.wallet_address` **must never become the login identity.** It is

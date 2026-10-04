@@ -18,15 +18,15 @@
  *
  * ## Three chains, two kinds of chain
  *
- * Ethereum joined on 2026-09-05 (`RYN-SOL-MONEY-FLOWS-001E`). It did not add a
- * third *kind* of chain: every question this module answers about Base — what
- * a recipient is, who needs an approval, how a transaction is named — has the
- * same answer on Ethereum, because both are EVM chains running Circle's V2
- * contracts at the same addresses. What differs is the chain id, the domain
- * number, the USDC contract and the gas. So the model below is `"solana"` on
- * one side and an *EVM chain* on the other, and code that used to test
- * `chain === "base"` to mean "the EVM side" now asks `isEvmChain`, which is the
- * question it always meant.
+ * Ethereum joined on 2026-09-05. It did not add a third *kind* of chain: every
+ * question this module answers about Base — what a recipient is, who needs an
+ * approval, how a transaction is named — has the same answer on Ethereum,
+ * because both are EVM chains running Circle's V2 contracts at the same
+ * addresses. What differs is the chain id, the domain number, the USDC
+ * contract and the gas. So the model below is `"solana"` on one side and an
+ * *EVM chain* on the other, and code that used to test `chain === "base"` to
+ * mean "the EVM side" now asks `isEvmChain`, which is the question it always
+ * meant.
  *
  * ## What each half of a lane actually is
  *
@@ -163,13 +163,12 @@ export function cctpChainRef(chain: CctpChain): string {
  * The CAIP-2 reference of a chain that carries a Circle domain, narrowed.
  *
  * An RPC handle can now name an EVM chain that CCTP has never heard of
- * (Robinhood Chain, added by `RYN-SOL-MONEY-FLOWS-001H` for the swap lane), so
- * a plan that copies `handle.chain.chainRef` into a CCTP receipt is copying a
- * wider type than the receipt means. This is the one place that narrows it,
- * and it refuses rather than widening the receipt: a reference that is not one
- * of Circle's two is a bug upstream of here, and a bridge that keeps going
- * with the wrong chain in its receipt is the defect this module exists to
- * prevent.
+ * (Robinhood Chain, added for the swap lane), so a plan that copies
+ * `handle.chain.chainRef` into a CCTP receipt is copying a wider type than the
+ * receipt means. This is the one place that narrows it, and it refuses rather
+ * than widening the receipt: a reference that is not one of Circle's two is a
+ * bug upstream of here, and a bridge that keeps going with the wrong chain in
+ * its receipt is the defect this module exists to prevent.
  */
 export function cctpChainRefOf(chainRef: string): "eip155:8453" | "eip155:1" {
   if (chainRef === "eip155:8453" || chainRef === "eip155:1") return chainRef;

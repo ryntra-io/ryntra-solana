@@ -4,8 +4,8 @@
  * They were in six: the Company founder card, the site footer, the Organization
  * JSON-LD in the root layout, the beta link table, and two retired chromes. Six
  * copies of an address is six chances for one of them to be the old one — and
- * that is exactly what happened. The Telegram channel the founder retired from
- * public copy stayed in `sameAs`, which is the machine-readable claim about who
+ * that is exactly what happened. The Telegram channel retired from public
+ * copy stayed in `sameAs`, which is the machine-readable claim about who
  * Ryntra *is*: search engines were still being told an abandoned channel was an
  * official Ryntra identity long after the page stopped saying so.
  *
@@ -16,8 +16,8 @@
  * One thing deliberately does not live here: `LINKS.channelHandle` in
  * `lib/beta/types.ts`. That handle is not a contact — it is the bootstrap
  * fallback while `admin_operators` is empty or unmigrated. Deleting it would
- * lock the founder out before the operator table exists. It stays where the
- * authorization code can see it.
+ * lock the bootstrap admin out before the operator table exists. It stays
+ * where the authorization code can see it.
  */
 
 export const CONTACTS = {
@@ -89,7 +89,7 @@ export function contactMailto(subject?: string): string {
 }
 
 export type ContactAction = Readonly<{
-  /** The visible control text. Never the href — canon: no raw URL as copy. */
+  /** The visible control text. Never the href — no raw URL as copy. */
   label: string;
   href: string;
   external?: boolean;

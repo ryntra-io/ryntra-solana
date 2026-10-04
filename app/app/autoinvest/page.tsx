@@ -12,9 +12,8 @@ export async function generateMetadata() {
 }
 
 /**
- * «Автоінвест» — a row of the menu under «Інвестувати» (canon v5.4 В30): the
- * wallet's rules and the month's budget, the same block Home and Portfolio
- * draw (§4.1).
+ * «Автоінвест» — a row of the menu under «Інвестувати»: the wallet's rules and
+ * the month's budget, the same block Home and Portfolio draw.
  */
 export default async function AutoinvestPage() {
   const locale = await solanaServerLocale();

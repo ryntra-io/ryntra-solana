@@ -12,11 +12,10 @@ export const maxDuration = 30;
 const SORTS = new Set(["volume24h", "volume", "newest", "ending"]);
 
 /**
- * Discovery (`RYN-PREDICTIONS-001`): the provider's real categories, a page
- * of open events by category and sort, or a text search — the leading
- * probabilities read live in one batch. With a proven wallet the answer also
- * names which of the events are watched. Public otherwise; nothing here
- * needs the paper account.
+ * Discovery: the provider's real categories, a page of open events by
+ * category and sort, or a text search — the leading probabilities read live
+ * in one batch. With a proven wallet the answer also names which of the
+ * events are watched. Public otherwise; nothing here needs the paper account.
  */
 export async function GET(request: Request) {
   const url = new URL(request.url);

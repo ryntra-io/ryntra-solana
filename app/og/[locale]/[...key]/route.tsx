@@ -7,8 +7,8 @@ export const runtime = "nodejs";
 export const maxDuration = 30;
 
 /**
- * The share card of a page offered to the index (the plan of
- * `RYN-SITE-V5-001` §6), drawn from the same words the page is:
+ * The share card of a page offered to the index, drawn from the same words
+ * the page is:
  *
  * - `/og/{en|uk}/page/{company|security|methodology|contact|stats}`
  * - `/og/{en|uk}/docs` and `/og/{en|uk}/docs/{slug}`

@@ -26,8 +26,7 @@
   margin-bottom: 4px;
 }
 
-/* 22px/700 is the documented workspace page-title step —
-   `docs/design/workspace-system.md` §5. */
+/* 22px/700 is the documented workspace page-title step. */
 .so-title {
   margin: 0;
   font-size: 22px;
@@ -290,11 +289,11 @@
 }
 
 /* ---------------------------------------------------- connection panel -----
-   The mainnet environment lock (canon §9.4) as it appears on the connection
-   panel: one plate, stated the same way everywhere, in the workspace's own
-   mono so it reads as a machine fact rather than as reassurance. It carries no
-   semantic colour — `real funds` is a statement of where you are, and painting
-   it green or amber would make it a verdict about whether that is fine. */
+   The mainnet environment lock as it appears on the connection panel: one
+   plate, stated the same way everywhere, in the workspace's own mono so it
+   reads as a machine fact rather than as reassurance. It carries no semantic
+   colour — `real funds` is a statement of where you are, and painting it
+   green or amber would make it a verdict about whether that is fine. */
 .so-conn-plate {
   margin: 0;
   padding: 6px 8px;
@@ -325,10 +324,10 @@
   border-bottom-color: var(--border-strong);
 }
 
-/* Provider health (canon §23), and it is its own family rather than a borrowed
-   maturity chip: how finished a capability is and whether its data source is
-   answering are different questions, and one chip vocabulary answering both is
-   the exact drift the shared status chip exists to stop. Healthy is neutral —
+/* Provider health, and it is its own family rather than a borrowed maturity
+   chip: how finished a capability is and whether its data source is answering
+   are different questions, and one chip vocabulary answering both is the exact
+   drift the shared status chip exists to stop. Healthy is neutral —
    an endpoint doing its job is not an achievement to paint green. */
 .so-health {
   display: inline-flex;

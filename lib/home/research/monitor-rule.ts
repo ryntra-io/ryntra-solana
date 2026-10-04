@@ -26,8 +26,8 @@ import type {
  * is the opposite of the truth that nothing is being measured.
  *
  * **Severity is the strongest trigger, never an average.** Averaging a HIGH and
- * a LOW into a MEDIUM is exactly the collapse the canon forbids: it hides the
- * one thing that mattered behind the one that did not.
+ * a LOW into a MEDIUM is exactly the collapse that must never happen: it hides
+ * the one thing that mattered behind the one that did not.
  *
  * **Notification and visibility are separate decisions.** Quiet hours, the
  * cooldown, the daily alert budget and a source's alerting right can each stop

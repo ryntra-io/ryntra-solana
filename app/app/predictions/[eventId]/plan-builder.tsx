@@ -13,13 +13,13 @@ import styles from "../predictions.module.css";
 import { wordsFor } from "../words";
 
 /**
- * The Prediction Plan in three steps (`RYN-PREDICTIONS-001` item 13): *Why*
- * (the thesis and the outcome), *Risk / Money* (the amount — the whole of it
- * at risk — the entry probability the market shows now, an optional bound
- * the Review refuses above), *Conditions* (the invalidation, the resolution
- * deadline, the monitoring conditions on the common system, the references
- * behind *More rules*). What the rules imply is computed the one way the
- * server computes it and shown before the plan is saved.
+ * The Prediction Plan in three steps: *Why* (the thesis and the outcome),
+ * *Risk / Money* (the amount — the whole of it at risk — the entry
+ * probability the market shows now, an optional bound the Review refuses
+ * above), *Conditions* (the invalidation, the resolution deadline, the
+ * monitoring conditions on the common system, the references behind *More
+ * rules*). What the rules imply is computed the one way the server computes
+ * it and shown before the plan is saved.
  */
 
 type Step = 0 | 1 | 2;

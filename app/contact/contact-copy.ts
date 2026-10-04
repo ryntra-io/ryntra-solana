@@ -1,8 +1,8 @@
 /**
- * «Контакти» — the words of `/contact`, English and Ukrainian together (the new
- * site of canon v5.5, `RYN-SITE-V5-001` subtask 3; the plan's §3 for the title
- * and the description: about the app, a purchase that went wrong, or security
- * — no «access» and no «integrations» any more).
+ * «Контакти» — the words of `/contact`, English and Ukrainian together (the
+ * title and the description since the site's redesign: about the app, a
+ * purchase that went wrong, or security — no «access» and no «integrations»
+ * any more).
  *
  * One inbox, three subjects that sort it, what to send and what never to send;
  * `/support` reads the same three subjects, and it is the page the Android

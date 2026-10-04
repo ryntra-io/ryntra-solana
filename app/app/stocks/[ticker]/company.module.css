@@ -1,10 +1,9 @@
 /*
- * «Простий»'s company page and its purchase in dollars (canon v5.1 §2, §4;
- * RYN-INVEST-SIMPLE-001, session 2). Drawn for 390px first (В20), then
- * widened: the company by its logo and name, a big price, a line, one line
- * of truth, one orange action; the purchase rises as a sheet from the bottom
- * of a phone and stands in the middle of a wide screen. Tokens only
- * (DESIGN.md → app/design/tokens.css): big figures in Geist with tabular
+ * «Простий»'s company page and its purchase in dollars. Drawn for 390px
+ * first, then widened: the company by its logo and name, a big price, a line,
+ * one line of truth, one orange action; the purchase rises as a sheet from
+ * the bottom of a phone and stands in the middle of a wide screen. Tokens
+ * only (DESIGN.md → app/design/tokens.css): big figures in Geist with tabular
  * numerals, no mono, no capitals, no word under 13px.
  */
 
@@ -17,9 +16,9 @@
 }
 
 /*
- * The company page, complete (RYN-COMPANY-PAGE-001): laid out like Home from
- * 1280 px — the company in the main column (its head and line, then its facts),
- * the purchase in a card beside it that stays in view. Under 1280 one column:
+ * The company page, complete: laid out like Home from 1280 px — the company
+ * in the main column (its head and line, then its facts), the purchase in a
+ * card beside it that stays in view. Under 1280 one column:
  * the head and the line, the purchase, the facts — the order a phone reads.
  */
 .layout {
@@ -184,7 +183,7 @@
   margin: 0;
 }
 
-/* The company's own dated statement under the truth, in the same box — its sources are under «Деталі» (canon v5.2 C.8). */
+/* The company's own dated statement under the truth, in the same box — its sources are under «Деталі». */
 .warning > .warningNote {
   margin-top: var(--ry-s2);
   padding-top: var(--ry-s2);
@@ -193,7 +192,7 @@
   color: var(--ry-text-muted);
 }
 
-/* The issuer's event under the truth, in the same box, before any figure (canon v5.2 В27, §7): the window and its deadline; a holder's line says what to do. */
+/* The issuer's event under the truth, in the same box, before any figure: the window and its deadline; a holder's line says what to do. */
 .warning > .warningEvent,
 .sheetWarning > .warningEvent {
   display: flex;
@@ -217,7 +216,7 @@
   margin: 0;
 }
 
-/* A holder's one action and the quiet second, right under the event — «Купити» steps back to quiet for a holder, so the screen keeps one orange action (canon §2, rule 1). */
+/* A holder's one action and the quiet second, right under the event — «Купити» steps back to quiet for a holder, so the screen keeps one orange action. */
 .eventActions {
   display: flex;
   flex-wrap: wrap;
@@ -239,7 +238,7 @@
   }
 }
 
-/* ── «Шлях компанії» (RYN-COMPANY-PATH-001) ─────────────────────────── */
+/* ── «Шлях компанії» ────────────────────────────────────────────────── */
 
 /* One strip under the company's name: the four steps, this token at its step, the company's other token one press away, the swap's deadline under them. */
 .path {
@@ -561,7 +560,7 @@ a.pathChip:focus-visible {
   color: var(--ry-muted);
 }
 
-/* A private company's one number under the price — no tone of good or bad (canon v5.2 В27). */
+/* A private company's one number under the price — no tone of good or bad. */
 .premium {
   margin: var(--ry-s1) 0 0;
   font-size: var(--ry-fs-dense);
@@ -722,7 +721,7 @@ a.pathChip:focus-visible {
   color: var(--ry-text);
 }
 
-/* The way to the candles: quiet, under the line it deepens (canon v5.3 В28). */
+/* The way to the candles: quiet, under the line it deepens. */
 .toSpot {
   display: inline-flex;
   align-items: center;
@@ -901,7 +900,7 @@ a.pathChip:focus-visible {
   }
 }
 
-/* The label from the issuer's documents (canon §7), as a quiet chip over its line. */
+/* The label from the issuer's documents, as a quiet chip over its line. */
 .truthLabel {
   display: inline-flex;
   align-items: center;
@@ -923,7 +922,7 @@ a.pathChip:focus-visible {
   text-align: center;
 }
 
-/* The reader's own position, when the wallet holds the token — and «Продати» beside it, quiet (RYN-BUY-FLOW-001). */
+/* The reader's own position, when the wallet holds the token — and «Продати» beside it, quiet. */
 .position {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -949,7 +948,7 @@ a.pathChip:focus-visible {
   visibility: hidden;
 }
 
-/* And the page's purchase with it: one orange action on a screen — the sale's own, in its sheet; «Ryntra попередить»'s own in its (RYN-PROTECT-SIGNAL-001). */
+/* And the page's purchase with it: one orange action on a screen — the sale's own, in its sheet; «Ryntra попередить»'s own in its. */
 body:has(dialog[data-sale][open]) .buy,
 body:has(dialog[data-warn][open]) .buy {
   visibility: hidden;
@@ -1000,13 +999,13 @@ body:has(dialog[data-warn][open]) .buy {
   visibility: hidden;
 }
 
-/* «Автоінвест» — quiet beside «Купити» (canon v5.1 §4). */
+/* «Автоінвест» — quiet beside «Купити». */
 .autoinvest {
   width: 100%;
   min-height: 48px;
 }
 
-/* A rule's reminder is open (canon v5.3 В29): what it is, in one line above its purchase — the brand's colour as a dot, never a second orange button. */
+/* A rule's reminder is open: what it is, in one line above its purchase — the brand's colour as a dot, never a second orange button. */
 .ruleDue {
   display: flex;
   align-items: flex-start;
@@ -1096,7 +1095,7 @@ body:has(dialog[data-warn][open]) .buy {
   color: var(--ry-caution);
 }
 
-/* The price condition holds the purchase back (canon v5.5 В37): the wait in the caution colour, the reason under it in the quiet one. */
+/* The price condition holds the purchase back: the wait in the caution colour, the reason under it in the quiet one. */
 .ruleCard[data-state="deferred"] .ruleCardSub {
   color: var(--ry-caution);
 }
@@ -1144,7 +1143,7 @@ body:has(dialog[data-warn][open]) .buy {
   margin: 0;
 }
 
-/* A token Ryntra no longer supports (canon v5.2 В26): what it is now, the way out, one quiet action — read top to bottom, as wide as a sentence. */
+/* A token Ryntra no longer supports: what it is now, the way out, one quiet action — read top to bottom, as wide as a sentence. */
 .retired {
   display: grid;
   justify-items: start;
@@ -1173,7 +1172,7 @@ body:has(dialog[data-warn][open]) .buy {
   margin-top: var(--ry-s2);
 }
 
-/* ── The facts at rest (RYN-COMPANY-PAGE-001) ─────────────────────────── */
+/* ── The facts at rest ────────────────────────────────────────────────── */
 
 .facts2 {
   display: grid;
@@ -1738,7 +1737,7 @@ body:has(dialog[data-warn][open]) .buy {
   cursor: default;
 }
 
-/* What the sum is — «Кожна купівля» in a rule's sheet, «Не більше на місяць» in the budget's: the two sums never read alike (canon v5.3 В29). */
+/* What the sum is — «Кожна купівля» in a rule's sheet, «Не більше на місяць» in the budget's: the two sums never read alike. */
 .amountLabel {
   margin: 0 0 calc(var(--ry-s3) * -1);
   font-size: var(--ry-fs-dense);
@@ -1929,7 +1928,7 @@ body:has(dialog[data-warn][open]) .buy {
   line-height: var(--ry-lh-body);
 }
 
-/* The swap before the deadline (RYN-PRESTOCKS-001, session 2): from what into what, one line under the sheet's head. */
+/* The swap before the deadline: from what into what, one line under the sheet's head. */
 .convertTo {
   display: flex;
   align-items: center;
@@ -2045,7 +2044,7 @@ body:has(dialog[data-warn][open]) .buy {
   color: var(--ry-caution);
 }
 
-/* The one-time reserve that opens the token's account: its own line under «Усі витрати», across the row and never one of the costs — it stays in the wallet (canon v5.5 В35). */
+/* The one-time reserve that opens the token's account: its own line under «Усі витрати», across the row and never one of the costs — it stays in the wallet. */
 .review dd[data-reserve] {
   grid-column: 1 / -1;
   justify-items: start;

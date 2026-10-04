@@ -28,7 +28,7 @@ export type BetaState = {
        which is the schema and the code disagreeing in the one direction that
        never fails loudly: every read looked safe and one of them was not. */
     /* The account uuid (`beta_users.id`), projected by the state function since
-       the RYN-ACCESS-002 migration; absent until it is applied. */
+       the accounts migration `20260906120000`; absent until it is applied. */
     id?: string;
     /**
      * When legacy access for this account was closed, if it ever was.
@@ -60,7 +60,7 @@ export type BetaState = {
 export const LINKS = {
   bot: "https://t.me/RyntraBeta_bot",
   /* `channel` — the public Telegram channel URL — is gone. It had no reader
-     left in the codebase and it was the address the founder retired from every
+     left in the codebase and it was the address retired from every
      public surface. `channelHandle` below is not the same fact wearing a
      different shape: `isChannelAdmin()` reads it to decide who is an admin, so
      it is an access list and it stays. Public contact identities live in

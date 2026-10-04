@@ -26,53 +26,53 @@ import { fmtUnits, fmtUsd, fmtWhen, issueSentence, planWordsFor, type IssueFigur
 import styles from "./plans.module.css";
 
 /**
- * The plan builder — canon §9.3–§9.4 (`RYN-STRATEGY-PLAN-001`).
+ * The plan builder.
  *
  * Three steps a person can answer without reading — *why this stock*, *money*
  * (the budget and the planned risk), *prices* (the entry, the invalidation,
  * the bound) — and every other rule behind *More rules* with a sensible
  * default: the entry valid thirty days, one per cent kept for costs, one per
  * cent modelled for costs and slippage, slippage 0.50 %, a quote no older
- * than 60 s, 1.5 % from the reference. The Owner asked for exactly this on
- * 2026-09-15 (*«так само професійно, тільки набагато проще»*): the same rules
- * schema, the same deterministic size and check, nothing hidden that the
- * Review will judge — only the order and the words changed. Beside the form,
- * live, one card: the plan estimate and what the model says you can lose.
+ * than 60 s, 1.5 % from the reference. Just as professional, only much
+ * simpler (2026-09-15): the same rules schema, the same deterministic size
+ * and check, nothing hidden that the Review will judge — only the order and
+ * the words changed. Beside the form, live, one card: the plan estimate and
+ * what the model says you can lose.
  *
- * The UX audit of 2026-09-16 (`RYN-UX-CLARITY-001`) changed what the form
- * *assumes*: money is the person's — no budget or risk is prefilled, a sum
- * chosen on the asset page arrives as `?budget=`; the entry says which price
- * it was prefilled with, or that none is available (no invented figure); the
- * invalidation is an example in the placeholder, never a value; a comma is a
- * decimal separator and the field shows the reading it will send; a bound's
- * switch stands beside its own field; a disabled button says what is still
- * needed. A plan with no stock in the address starts from a picker over the
- * same universe the Stocks page searches.
+ * The UX audit of 2026-09-16 changed what the form *assumes*: money is the
+ * person's — no budget or risk is prefilled, a sum chosen on the asset page
+ * arrives as `?budget=`; the entry says which price it was prefilled with, or
+ * that none is available (no invented figure); the invalidation is an example
+ * in the placeholder, never a value; a comma is a decimal separator and the
+ * field shows the reading it will send; a bound's switch stands beside its
+ * own field; a disabled button says what is still needed. A plan with no
+ * stock in the address starts from a picker over the same universe the
+ * Stocks page searches.
  *
  * The asset is read from the confirmed universe, never typed. A new plan is
  * saved as a draft or activated; an existing one is edited into a new version
  * with `ifVersion`, so an edit made elsewhere in the meantime is refused, not
  * overwritten. Saving needs the wallet's proof, the same one Spot uses.
  *
- * **Conditions on what the market did** (`RYN-NANSEN-EVIDENCE-001`): the
- * person's own rules on the token's onchain figures — a figure from the
- * registry, a window, above or below, a threshold, and whether an unmet or
- * unjudgeable rule warns or refuses the order. The row shows the figure as
- * it stands now, read through the same route the card uses, so a threshold
- * is written against a real number; the server judges the rule again at the
- * Review. A row arrives prefilled from the analysis card (`?evidence=`).
+ * **Conditions on what the market did**: the person's own rules on the token's
+ * onchain figures — a figure from the registry, a window, above or below, a
+ * threshold, and whether an unmet or unjudgeable rule warns or refuses the
+ * order. The row shows the figure as it stands now, read through the same route
+ * the card uses, so a threshold is written against a real number; the server
+ * judges the rule again at the Review. A row arrives prefilled from the
+ * analysis card (`?evidence=`).
  *
- * **A plan on a token** (`RYN-PLAN-CRYPTO-001`, contract 1.7.0). The same
- * form names SOL, a verified crypto or a verified meme of the Spot catalogue:
- * every mint is resolved by `GET /api/v1/plans/asset` the way the create
- * will resolve it, so the builder never shows an asset the server would
- * refuse. A token plan is per token; its entry is prefilled with the market
- * indication Jupiter stated, named with its time as *planning context* and
- * never as the price the person will get — or, when none is available, left
- * for the person's own figure (nothing is invented). A token has no issuer
- * reference, so the deviation bound and the reference rule are not offered
- * on it. A contradiction between rules is said with the person's own figures
- * and the next action (`issueSentence`), never as the validator's sentence.
+ * **A plan on a token** (contract 1.7.0). The same form names SOL, a verified
+ * crypto or a verified meme of the Spot catalogue: every mint is resolved by
+ * `GET /api/v1/plans/asset` the way the create will resolve it, so the
+ * builder never shows an asset the server would refuse. A token plan is per
+ * token; its entry is prefilled with the market indication Jupiter stated,
+ * named with its time as *planning context* and never as the price the
+ * person will get — or, when none is available, left for the person's own
+ * figure (nothing is invented). A token has no issuer reference, so the
+ * deviation bound and the reference rule are not offered on it. A
+ * contradiction between rules is said with the person's own figures and the
+ * next action (`issueSentence`), never as the validator's sentence.
  */
 
 type ConditionDraft = {
@@ -345,7 +345,7 @@ export function PlanBuilder({ mint, planId, budget, locale, carried = null, agen
   /* A field says what it needs once the person has been in it; a fresh form does not open with warnings. */
   const [touched, setTouched] = useState<ReadonlySet<keyof Draft>>(() => new Set());
   const [save, setSave] = useState<{ status: "idle" | "saving" | "failed"; message: string | null; issues: readonly PlanIssue[] }>({ status: "idle", message: null, issues: [] });
-  /* Ryn's draft (RYN-AGENT-TEXT-001): read back through the wallet's proof once it exists; the form opens on the mint meanwhile. */
+  /* Ryn's draft: read back through the wallet's proof once it exists; the form opens on the mint meanwhile. */
   const [agentDraft, setAgentDraft] = useState<{ status: "idle" | "loading" | "applied" | "missing" | "unproven" }>({ status: agentDraftId ? "idle" : "applied" });
 
   /* An existing plan first (its mint names the asset), else the mint from the address bar. */

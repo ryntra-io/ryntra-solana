@@ -12,13 +12,13 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 /**
- * The index the product's search reads (canon v5.4 В31): the same lists
- * Markets draws — one company, one card, from the stock universe; the venue's
- * verified crypto and memes; the two dollars — trimmed to what a search
- * shows. Read-only and wallet-free, built from reads the server already keeps
- * warm, cached briefly at the edge because every visitor sees the same index.
- * A list whose source did not answer is empty and `partial` says so; the
- * search then finds the actions and what did answer.
+ * The index the product's search reads: the same lists Markets draws — one
+ * company, one card, from the stock universe; the venue's verified crypto and
+ * memes; the two dollars — trimmed to what a search shows. Read-only and
+ * wallet-free, built from reads the server already keeps warm, cached briefly
+ * at the edge because every visitor sees the same index. A list whose source
+ * did not answer is empty and `partial` says so; the search then finds the
+ * actions and what did answer.
  */
 
 const COINS = 80;

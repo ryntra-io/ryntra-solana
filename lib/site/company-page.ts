@@ -1,12 +1,12 @@
 /**
  * A company page as the search engines and the share cards see it — read from
- * the same row the page draws (the plan of `RYN-SITE-V5-001` §1, §3, §6).
+ * the same row the page draws.
  *
- * Which pages are offered to the index is the shelf's rule, the Owner's
- * decision 3: the token a company's card opens — today about 150 listed
- * companies and funds and the private ones — each in both languages. The
- * company's other tokens (Ondo's, a second Backpack one) stay reachable and
- * out of the index: the same company twice in the results is one page too many.
+ * Which pages are offered to the index is the shelf's rule: the token a
+ * company's card opens — today about 150 listed companies and funds and the
+ * private ones — each in both languages. The company's other tokens (Ondo's, a
+ * second Backpack one) stay reachable and out of the index: the same company
+ * twice in the results is one page too many.
  */
 
 import type { CompanyCardInput } from "../../app/brand/page-card.ts";

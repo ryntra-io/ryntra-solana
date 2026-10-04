@@ -1,6 +1,5 @@
 /**
- * Canon §10.3 — four Send action types, and one successful case never
- * claims the others.
+ * Four Send action types, and one successful case never claims the others.
  *
  * Native SOL is not a mint. Classic SPL `transferChecked` is not Token-2022.
  * Creating the recipient's associated account is not the same transfer as
@@ -69,13 +68,13 @@ export const LIGHTHOUSE_PROGRAM_ID = "L2TExMFKdjpN9kozasaurPirfHy9P8sbXoAN1qA3S9
  * an effect, not a family.** This used to be the other way round — ATA-create
  * outranked the program kind — on the reasoning that claiming an account-
  * creating transfer as a proven existing-account transfer would be an overlap.
- * The reasoning was right and the encoding was wrong, and `RYN-SOL-M4` is where
- * that cost something: a Token-2022 transfer into a recipient with no account
- * classified as `TOKEN_ATA_CREATE`, which carries M1B's classic-USDC envelope —
- * a 0.5 USD cap and a mint allowlist holding classic USDC alone. A Token-2022
- * canary would have been decided by the policy written for a different mint on
- * a different program, and the answer would have been a permanent `BLOCK` that
- * read as a refusal rather than as a misfiling.
+ * The reasoning was right and the encoding was wrong, and the Token-2022 canary
+ * is where that cost something: a Token-2022 transfer into a recipient with no
+ * account classified as `TOKEN_ATA_CREATE`, which carries M1B's classic-USDC
+ * envelope — a 0.5 USD cap and a mint allowlist holding classic USDC alone. A
+ * Token-2022 canary would have been decided by the policy written for a
+ * different mint on a different program, and the answer would have been a
+ * permanent `BLOCK` that read as a refusal rather than as a misfiling.
  *
  * The overlap the old shape guarded against is preserved where it belongs.
  * `createsRecipientAccount` travels on the plan beside this verdict, the
@@ -86,7 +85,7 @@ export const LIGHTHOUSE_PROGRAM_ID = "L2TExMFKdjpN9kozasaurPirfHy9P8sbXoAN1qA3S9
  * action and its token program.
  *
  * `TOKEN_ATA_CREATE` therefore keeps exactly its original meaning: the classic
- * SPL account-creation case `RYN-SOL-M1B` proved. Nothing about that row moves.
+ * SPL account-creation case the M1B canary proved. Nothing about that row moves.
  */
 export function classifyTokenTransfer(args: {
   tokenProgram: string;

@@ -25,7 +25,7 @@ import {
 } from "./company-model.ts";
 
 /**
- * «Простий»'s company page and purchase (RYN-INVEST-SIMPLE-001, session 2):
+ * «Простий»'s company page and purchase:
  * the words a beginner reads about what the token is, the exchange, the
  * chart's ranges, the shares an amount buys and every cost of a purchase.
  */
@@ -37,7 +37,7 @@ const DAY = 24 * HOUR;
 test("the line of truth names what the token is, from the issuer's documents — never «акція Apple»", () => {
   assert.equal(truthLine("xstocks", "Apple", "uk"), "Токен, що відстежує ціну Apple · забезпечений 1:1 · без голосу");
   assert.equal(truthLine("xstocks", "Apple", "en"), "A token that tracks the price of Apple · backed 1:1 · no vote");
-  /* A PreStocks token (canon v5.2 §7): not a share, the issuer's fee on every transfer as the chain states it, the issuer's power over the token. */
+  /* A PreStocks token: not a share, the issuer's fee on every transfer as the chain states it, the issuer's power over the token. */
   assert.equal(truthLine("prestocks", "OpenAI", "uk", 100), "Це не акція OpenAI · комісія емітента 1% на кожен переказ · емітент може заморозити чи забрати токен");
   assert.equal(truthLine("prestocks", "OpenAI", "en", 100), "Not a share in OpenAI · a 1% issuer fee on every transfer · the issuer can freeze or take away the token");
   assert.equal(truthLine("prestocks", "SpaceX", "uk", 50), "Це не акція SpaceX · комісія емітента 0,5% на кожен переказ · емітент може заморозити чи забрати токен");
@@ -219,7 +219,7 @@ test("all costs are the venue's own dollar gap, never less than the stated fees,
   assert.equal(buyCosts({ ...base, rentFeeLamports: "2039280", solUsd: null }).accountUsd, null);
 });
 
-/* «Перевірка» for a PreStocks token (canon v5.2 §7, §12; RYN-PRESTOCKS-001): read against the venue's quote of $10 of OpenAI on 2026-09-25 — 10 USDC in, 4,956,563 raw out (the venue quotes what arrives after the mint's 1 %), the venue's own dollar values $9.9983 and $9.8265, the route's 10 bps. */
+/* «Перевірка» for a PreStocks token: read against the venue's quote of $10 of OpenAI on 2026-09-25 — 10 USDC in, 4,956,563 raw out (the venue quotes what arrives after the mint's 1 %), the venue's own dollar values $9.9983 and $9.8265, the route's 10 bps. */
 test("a PreStocks purchase: what arrives is the quote through the multiplier, never cut by the fee a second time; all costs hold the issuer's 1 % and name it on its own line", () => {
   const quote = { spendUsd: 10, inUsdValue: "9.99834580445001", outUsdValue: "9.826547047809152", totalFeeBasisPoints: 10, priceImpactPct: "-0.01718271802165456", signatureFeeLamports: "5000", priorityFeeLamports: "0", rentFeeLamports: "0", solUsd: 200, issuerFeeBasisPoints: 100 };
   /* «Отримаєш»: 0.004956563 base tokens × 1.4861347 = 0.0073661 tokens as the wallet shows them. */

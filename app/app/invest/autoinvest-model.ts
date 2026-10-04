@@ -1,10 +1,10 @@
 /**
- * «Автоінвест» on a company page and on Home (`RYN-INVEST-SIMPLE-001`,
- * sessions 3–4; canon v5.1 §4.1) — the pure half: the schedule a new rule
- * starts from, the rule a company already has, the reminder that is open now,
- * whether a purchase fits the month's budget, and the words a rule is read
- * in. Client-safe; the same schedule functions the server reminds with, so
- * «Перша купівля: чт, 24 вер. о 19:00» is the instant the reminder comes.
+ * «Автоінвест» on a company page and on Home — the pure half: the schedule a
+ * new rule starts from, the rule a company already has, the reminder that is
+ * open now, whether a purchase fits the month's budget, and the words a rule
+ * is read in. Client-safe; the same schedule functions the server reminds
+ * with, so «Перша купівля: чт, 24 вер. о 19:00» is the instant the reminder
+ * comes.
  */
 
 import type { AutoinvestRule, RuleBudget, RuleOccurrence } from "../../../lib/api/v1/contract.ts";
@@ -40,10 +40,8 @@ export function defaultSchedule(nowMs: number, timeZone: string): RuleSchedule {
 
 /**
  * The schedule a new rule's sheet opens on: weekly, on today's weekday at the
- * next full hour, beside $10 — a default, not advice (the Owner's word,
- * 2026-09-25: «може бути раз на два дні, може бути раз на тиждень … кожен
- * робить на свій бюджет»); every day, every week or every month, from a
- * dollar, is the person's own choice.
+ * next full hour, beside $10 — a default, not advice; every day, every week
+ * or every month, from a dollar, is the person's own choice.
  */
 export function openingSchedule(nowMs: number, timeZone: string, cadence: RuleCadence = "weekly"): RuleSchedule {
   return withCadence(defaultSchedule(nowMs, timeZone), cadence, nowMs);
@@ -80,10 +78,10 @@ export function openOccurrence(rule: AutoinvestRule): RuleOccurrence | null {
 
 /**
  * The reminder a rule's purchase can be made under right now — open, the rule
- * on, its window not yet passed (canon v5.3 В29): while it is, a company's
- * page offers the rule's purchase first and Spot says an ordinary purchase
- * leaves it open. The window is the server's; a reminder whose window passed
- * before the tick wrote it missed is not offered.
+ * on, its window not yet passed: while it is, a company's page offers the
+ * rule's purchase first and Spot says an ordinary purchase leaves it open.
+ * The window is the server's; a reminder whose window passed before the tick
+ * wrote it missed is not offered.
  */
 export function reminderOpenNow(rule: AutoinvestRule, nowMs: number): RuleOccurrence | null {
   const occurrence = openOccurrence(rule);
@@ -93,9 +91,9 @@ export function reminderOpenNow(rule: AutoinvestRule, nowMs: number): RuleOccurr
 }
 
 /**
- * A purchase the rule's price condition holds back right now (1.18.0, canon
- * v5.5 В37): the rule on, the occurrence deferred and its window not passed —
- * the page says why and offers nothing; the rule judges it again.
+ * A purchase the rule's price condition holds back right now (1.18.0): the
+ * rule on, the occurrence deferred and its window not passed — the page says
+ * why and offers nothing; the rule judges it again.
  */
 export function deferredNow(rule: AutoinvestRule, nowMs: number): RuleOccurrence | null {
   if (rule.status !== "active") return null;
@@ -132,9 +130,9 @@ export function purchaseSumUsd(rule: Pick<AutoinvestRule, "amountUsd">, occurren
 }
 
 /**
- * Whether a rule's purchase fits what is left of the month's budget (session
- * 4, canon §4.1): always without a ceiling; to the cent under one — the same
- * rule the tick and the order route judge by. Under a reminder, its own sum.
+ * Whether a rule's purchase fits what is left of the month's budget: always
+ * without a ceiling; to the cent under one — the same rule the tick and the
+ * order route judge by. Under a reminder, its own sum.
  */
 export function fitsMonth(rule: Pick<AutoinvestRule, "amountUsd">, budget: RuleBudget | null, occurrence?: Pick<RuleOccurrence, "amountUsd"> | null): boolean {
   if (!budget || budget.remainingUsd === null) return true;
@@ -158,7 +156,7 @@ export function monthUse(budget: RuleBudget): Readonly<{ countedUsd: number; sha
 }
 
 /**
- * The month's budget as its own line (canon v5.3 В29): without a ceiling —
+ * The month's budget as its own line: without a ceiling —
  * «Бюджет не задано · Задати»; with one — «$10 з $50» over its bar, and when
  * it is spent, the rules stand until the 1st. Null until the rules' read has
  * said what the budget is. The rule's sum never stands in this line.
@@ -182,9 +180,9 @@ export function budgetOfInput(value: number | null): number | null {
 }
 
 /**
- * The rules by their nearest purchase — Home's right column reads them so
- * (`RYN-WIDTH-PREMIUM-001`): an open reminder first, then the scheduled ones
- * by when they come, then those that wait for a fall, the paused ones last.
+ * The rules by their nearest purchase — Home's right column reads them so:
+ * an open reminder first, then the scheduled ones by when they come, then
+ * those that wait for a fall, the paused ones last.
  */
 export function byNextPurchase(rules: readonly AutoinvestRule[], nowMs: number): AutoinvestRule[] {
   const rank = (rule: AutoinvestRule): number => {

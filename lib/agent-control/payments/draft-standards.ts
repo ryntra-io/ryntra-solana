@@ -1,9 +1,9 @@
 /**
  * ERC-8004 and ERC-8183, mirrored rather than integrated.
  *
- * Both are **Draft**. Canon `12 §5.1` and `§6` give the same instruction for
- * each: pin the exact revision before writing a line against it, and never
- * consume a moving Draft as "latest". This module is that instruction in code.
+ * Both are **Draft**, and the same instruction holds for each: pin the exact
+ * revision before writing a line against it, and never consume a moving Draft
+ * as "latest". This module is that instruction in code.
  *
  * What "mirrored" means here, precisely:
  *
@@ -16,17 +16,17 @@
  *
  * ## Two boundaries that are the whole point
  *
- * **A registry entry is evidence, never a verdict.** Canon `06 §7` states it as
- * a prohibition — never derive `registered = safe` or `high reputation = action
+ * **A registry entry is evidence, never a verdict.** The rule is a
+ * prohibition — never derive `registered = safe` or `high reputation = action
  * allowed` — and the enforcement here is structural: the top capability rung
  * `PROVEN` is absent from the mirrored state list, and any aggregate handed to
  * the builder is refused rather than dropped. Dropping it silently would be
  * worse: the caller would believe the number was recorded.
  *
- * **A completed job is the provider's state, not Ryntra's outcome.** Canon
- * `03 §8.2` says a provider `completed` is not a Receipt `MATCHED`. Every job
- * observation therefore carries `reconciliationSupport: "NONE"` as a field
- * about itself, so a reader does not have to remember the rule.
+ * **A completed job is the provider's state, not Ryntra's outcome.** A
+ * provider `completed` is not a Receipt `MATCHED`. Every job observation
+ * therefore carries `reconciliationSupport: "NONE"` as a field about itself,
+ * so a reader does not have to remember the rule.
  *
  * ## A discrepancy worth carrying rather than smoothing over
  *
@@ -82,7 +82,7 @@ export type DraftStandardPin = Readonly<{
  * The ways of writing "latest" while looking like a pin.
  *
  * A branch name resolves to different bytes tomorrow, which is the exact
- * failure canon `12 §5.1` names. The list is explicit because a length check
+ * failure a pin exists to prevent. The list is explicit because a length check
  * alone would accept `main`.
  */
 const MOVING_REFERENCES = new Set(["latest", "main", "master", "head", "draft", "dev", "next"]);
@@ -149,7 +149,7 @@ export const REPUTATION_REGISTRIES = ["IDENTITY", "REPUTATION", "VALIDATION"] as
 export type ReputationRegistry = (typeof REPUTATION_REGISTRIES)[number];
 
 /**
- * Canon `03 §6.1a`'s capability states, **minus `PROVEN`**.
+ * Ryntra's capability states, **minus `PROVEN`**.
  *
  * The omission is the rule. A third-party registry entry is not one of the
  * things that can prove a capability, and a state list that offered `PROVEN`
@@ -177,7 +177,7 @@ export type ReputationEvidence = Readonly<{
   subjectRef: string;
   registry: ReputationRegistry;
   state: ReputationSignalState;
-  /** Who said it, in words a reader can check. Canon 03 §7.3. */
+  /** Who said it, in words a reader can check. */
   sourceLabel: string;
   observedAt: string;
   limitation: string;
@@ -334,7 +334,7 @@ export type JobObservation = Readonly<{
   terminalKind: JobTerminalKind | null;
   sourceLabel: string;
   observedAt: string;
-  /** Canon 03 §8.2, stated on the record rather than left to the reader. */
+  /** Not a Ryntra MATCHED, stated on the record rather than left to the reader. */
   reconciliationSupport: "NONE";
   reconciliationSupportReason: string;
 }>;

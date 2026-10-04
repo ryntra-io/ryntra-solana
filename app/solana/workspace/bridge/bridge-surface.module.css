@@ -659,7 +659,7 @@
  * `--rt-reconciled-green-ink` is the ink that sits *on* the verified green fill
  * (`--ry-on-verified`, #0B3D2A) and the receipts surface uses it on paper for
  * exactly that reason. Here the pill has no fill, so that ink was dark green on
- * a dark panel: the founder's screenshot showed three outlined capsules with no
+ * a dark panel: a person's screenshot showed three outlined capsules with no
  * words in them, once every step had finished. A step that has happened is the
  * green itself, over a wash of it.
  */
@@ -931,10 +931,10 @@
 /*
  * An expired quote, still on screen and no longer an offer.
  *
- * Owner rule of 2026-09-10: the last figures may stay for context, but they must
- * stop looking like something a person can act on. Dimming alone would be a
- * rendering bug to anyone who has not been told, so the state always ships with
- * the word beside it — colour is never the only carrier of meaning.
+ * The last figures may stay for context, but they must stop looking like
+ * something a person can act on. Dimming alone would be a rendering bug to
+ * anyone who has not been told, so the state always ships with the word beside
+ * it — colour is never the only carrier of meaning.
  *
  * `--rt-ink-low` rather than an opacity: opacity would fade the figure against
  * whatever sits behind it and lose its contrast floor on one of the two grounds.
@@ -1017,11 +1017,10 @@
 /*
  * What MAX kept back, and why.
  *
- * Owner instruction 2026-09-10: MAX must go through on the first press and leave
- * as little as possible — and a button that silently returns less than the
- * balance is one a person cannot tell from a bug. So the reserve is named. Quiet
- * type, under the balance, because it explains a number rather than asking for a
- * decision.
+ * MAX must go through on the first press and leave as little as possible — and
+ * a button that silently returns less than the balance is one a person cannot
+ * tell from a bug. So the reserve is named. Quiet type, under the balance,
+ * because it explains a number rather than asking for a decision.
  */
 .heldBack {
   margin-top: 6px;

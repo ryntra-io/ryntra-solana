@@ -12,13 +12,12 @@ import { venueName, wordsFor } from "../words";
 import { PredictionChartCard } from "./prediction-chart";
 
 /**
- * Research (`RYN-PREDICTIONS-001` item 15) — a Ryntra composition over
- * everything the provider gives: *What the market says* (each venue's live
- * price), *What changed* (the chart with its day and week), *Related
- * markets*, *Signals* (generated, the model named, advisory), *Ripple*,
- * *News*, *Resolution* (each venue's own words and where they differ), and
- * *What is uncertain*. Every part answers on its own; a part the provider
- * does not have is a sentence, never a broken page.
+ * Research — a Ryntra composition over everything the provider gives: *What
+ * the market says* (each venue's live price), *What changed* (the chart with
+ * its day and week), *Related markets*, *Signals* (generated, the model
+ * named, advisory), *Ripple*, *News*, *Resolution* (each venue's own words
+ * and where they differ), and *What is uncertain*. Every part answers on its
+ * own; a part the provider does not have is a sentence, never a broken page.
  */
 
 type Part<T> = Readonly<{ ok: true; value: T }> | Readonly<{ ok: false; code: string }>;

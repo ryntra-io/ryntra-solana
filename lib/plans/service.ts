@@ -1,27 +1,27 @@
 /**
- * The Trading Plan's lifecycle — canon Part A §9.3–§9.5 (`RYN-STRATEGY-PLAN-001`).
+ * The Trading Plan's lifecycle.
  *
  * Create, edit as a new version, activate or cancel, read one or all — for
  * the wallet that proved itself and nobody else. Every write validates the
  * rules and sizes them the one way (`sizing.ts`); rules that do not make a
  * plan are refused with every failing field named. The asset is resolved by
- * mint — a confirmed stock representation of the universe, or (1.7.0,
- * `RYN-PLAN-CRYPTO-001`) a verified, tradable `crypto` or `meme` token of the
- * Spot catalogue, priced per token — so a plan never names a token nobody
- * confirms. Every version records the planning price the server read at the
- * write (context, never the quote, never invented). Every transition and
- * decision is a journal entry with its time and version.
+ * mint — a confirmed stock representation of the universe, or (1.7.0) a
+ * verified, tradable `crypto` or `meme` token of the Spot catalogue, priced
+ * per token — so a plan never names a token nobody confirms. Every version
+ * records the planning price the server read at the write (context, never the
+ * quote, never invented). Every transition and decision is a journal entry
+ * with its time and version.
  *
- * **Stage B — the plan joined to the deal.** The order route records the
- * Strategy block on the plan *before* the wallet signs (`recordPlanReview`,
- * a `reviewed` entry with the operation's id); the execute route appends the
- * execution *after* the History row (`recordPlanExecution`, keyed by the
- * signature so a second write of the same settlement changes nothing). The
- * History row carries the binding too, and it is the durable source: every
- * read of a plan reconciles the plan's executions against the wallet's
- * History (`reconcilePlanExecutions`) — an execution the plan missed is
- * appended, an outcome that moved is updated, and a write that still fails
- * is reported as `sync: pending`, never hidden and never retried by trading.
+ * **The plan joined to the deal.** The order route records the Strategy block
+ * on the plan *before* the wallet signs (`recordPlanReview`, a `reviewed`
+ * entry with the operation's id); the execute route appends the execution
+ * *after* the History row (`recordPlanExecution`, keyed by the signature so a
+ * second write of the same settlement changes nothing). The History row
+ * carries the binding too, and it is the durable source: every read of a plan
+ * reconciles the plan's executions against the wallet's History
+ * (`reconcilePlanExecutions`) — an execution the plan missed is appended, an
+ * outcome that moved is updated, and a write that still fails is reported as
+ * `sync: pending`, never hidden and never retried by trading.
  *
  * The result types are the contract's; the routes turn them into the one
  * error shape. Nothing here reads a cookie or a header.
@@ -166,7 +166,7 @@ export type ResolvedPlanAsset = Readonly<{ ok: true; asset: PlanAsset; planningP
  * `UNAVAILABLE`, never a refusal of the asset.
  */
 export async function resolvePlanAsset(mint: string, deps: Deps = {}): Promise<ResolvedPlanAsset | PlanFailure> {
-  /* A token Ryntra no longer supports (canon v5.2 В26) is named by no new plan, and no provider is asked about it. */
+  /* A token Ryntra no longer supports is named by no new plan, and no provider is asked about it. */
   if (isRetiredMint(mint)) return { ok: false, code: "ASSET_UNCONFIRMED", message: `No plan can name that token. ${RETIRED_REASON}` };
   const now = nowOf(deps).toISOString();
   const found = await (deps.findRow ?? findStockRow)(mint);
@@ -218,7 +218,7 @@ export function sizingContextOf(asset: PlanAsset): PlanSizingContext {
 
 /**
  * The rules judged as rules and sized: the money by `sizing.ts`, the evidence
- * conditions by the evidence layer's registry (`RYN-NANSEN-EVIDENCE-001`) —
+ * conditions by the evidence layer's registry —
  * one list of issues, every failing field named, before anything is stored.
  */
 function sizeRules(rules: PlanRules, nowMs: number, context: PlanSizingContext): ReturnType<typeof computePlanSizing> {
@@ -333,7 +333,7 @@ export async function setPlanStatus(
   return { ok: true, plan: projectTradingPlan({ ...next, version: record.version + 1 }, now.getTime()) };
 }
 
-/* ------------------------------------------------------------ stage B: the Review, the execution, the reconciliation */
+/* ------------------------------------------------------------ the Review, the execution, the reconciliation */
 
 export type PlanReviewRecordResult = Readonly<{ ok: true; plan: TradingPlan }> | PlanFailure;
 
@@ -342,13 +342,13 @@ export type PlanReviewRecordResult = Readonly<{ ok: true; plan: TradingPlan }> |
  * bytes reach the wallet: a `reviewed` entry with the operation's id and the
  * verdict, the block kept for Plan vs Actual.
  *
- * **A refusal is recorded too (1.9.0, `RYN-RESULTS-MEMORY-001`).** Until
- * this row, only a Review that passed was written down, so a plan whose
- * maximum price was never met kept no trace of the three times it refused —
- * and the product could not answer the most useful question a careful person
- * asks, *why did I not buy?*, without inventing the reason. The refusal is
- * the record that answers it, and the caller writes it non-fatally: a write
- * that fails never turns a refusal into anything else.
+ * **A refusal is recorded too (1.9.0).** Before that, only a Review that
+ * passed was written down, so a plan whose maximum price was never met kept
+ * no trace of the three times it refused — and the product could not answer
+ * the most useful question a careful person asks, *why did I not buy?*,
+ * without inventing the reason. The refusal is the record that answers it,
+ * and the caller writes it non-fatally: a write that fails never turns a
+ * refusal into anything else.
  *
  * Refused when the plan is no longer the one judged.
  */

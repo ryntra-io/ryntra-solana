@@ -12,15 +12,15 @@ import { clockOf } from "../stock-model";
 import styles from "../stocks.module.css";
 
 /**
- * Where the token actually trades (`RYN-STOCKS-LIQUIDITY-001`), at rest one
- * calm line (`RYN-FIRST-SCREEN-001`, S4): the primary Meteora pool's value and
- * its day of trading — "Where it trades: Meteora · $610K in the pool · $4.8M a
- * day". One press on *Details* opens everything the card held before: the
- * primary pool with the venue's own figures (in the pool, 24 h volume, 24 h
- * fees, fee rate), the strongest few beside it, the whole list with the dust
- * counted rather than paraded, a deeper pool on another venue named, and where
- * the figures come from under the product's `?`. A page may open the card by
- * itself (`defaultOpen`) where a Meteora pool is the token's whole market.
+ * Where the token actually trades, at rest one calm line: the primary Meteora
+ * pool's value and its day of trading — "Where it trades: Meteora · $610K in
+ * the pool · $4.8M a day". One press on *Details* opens everything the card
+ * held before: the primary pool with the venue's own figures (in the pool,
+ * 24 h volume, 24 h fees, fee rate), the strongest few beside it, the whole
+ * list with the dust counted rather than paraded, a deeper pool on another
+ * venue named, and where the figures come from under the product's `?`. A
+ * page may open the card by itself (`defaultOpen`) where a Meteora pool is
+ * the token's whole market.
  *
  * A server component behind a Suspense boundary: the page streams without it
  * and the reader's own budget bounds the wait; when Meteora does not answer,

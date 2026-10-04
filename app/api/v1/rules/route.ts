@@ -10,17 +10,16 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 /**
- * The proven wallet's «Автоінвест» rules (`RYN-INVEST-SIMPLE-001`, sessions
- * 3–4, contracts 1.12.0 and 1.13.0): `GET` lists them newest first, each
- * occurrence read through the wallet's History, with the month's budget;
- * `POST` writes one — a confirmed company, a sum in dollars, and how often and
- * when on the person's own clock («Регулярно»), how far its price must fall
- * («Якщо впаде», the reference point the price now), or what it takes from
- * the wallet's own USDC payments and incoming transfers («З кожної оплати»,
- * contract 1.19.0 — the sum the least a reminder opens at). A rule only schedules a
- * reminder: every purchase is the wallet's own signature on a fresh Review.
- * One set of routes for the web (proof cookie) and the phone (bearer); see
- * `lib/api/v1/proof.ts`.
+ * The proven wallet's «Автоінвест» rules (contracts 1.12.0 and 1.13.0): `GET`
+ * lists them newest first, each occurrence read through the wallet's History,
+ * with the month's budget; `POST` writes one — a confirmed company, a sum in
+ * dollars, and how often and when on the person's own clock («Регулярно»), how
+ * far its price must fall («Якщо впаде», the reference point the price now),
+ * or what it takes from the wallet's own USDC payments and incoming transfers
+ * («З кожної оплати», contract 1.19.0 — the sum the least a reminder opens
+ * at). A rule only schedules a reminder: every purchase is the wallet's own
+ * signature on a fresh Review. One set of routes for the web (proof cookie)
+ * and the phone (bearer); see `lib/api/v1/proof.ts`.
  */
 
 export async function GET(request: Request) {

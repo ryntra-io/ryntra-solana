@@ -9,8 +9,7 @@ import type { WorkspaceLocale } from "./locale";
 import styles from "./help.module.css";
 
 /**
- * The product's one help control — the Owner's decision of 2026-09-15
- * (Premium Product UI Pass §3).
+ * The product's one help control.
  *
  * A small `?` beside a label. Hover or focus shows one line; a press opens
  * the topic — what it is, a simple example, the one limitation — in a
@@ -21,7 +20,7 @@ import styles from "./help.module.css";
  *
  * What never moves in here: a material risk. The planned risk's model note
  * and the invalidation's "a rule, not an order" stand on the surface in one
- * short line; the help adds the example and the reason (§2 of the decision).
+ * short line; the help adds the example and the reason.
  */
 
 const PANEL_WIDTH = 344;

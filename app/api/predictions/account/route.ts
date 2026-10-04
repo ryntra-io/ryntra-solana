@@ -9,11 +9,11 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 /**
- * The wallet's paper account (`RYN-PREDICTIONS-001`): the link state, the
- * paper balance, positions and orders as the provider states them, Ryntra's
- * own order records reconciled, the watchlist and the plans. An external-id
- * link that could not be made at sign-in is retried here once the signing
- * key exists. The same route for the web (proof cookie) and the phone (bearer).
+ * The wallet's paper account: the link state, the paper balance, positions
+ * and orders as the provider states them, Ryntra's own order records
+ * reconciled, the watchlist and the plans. An external-id link that could not
+ * be made at sign-in is retried here once the signing key exists. The same
+ * route for the web (proof cookie) and the phone (bearer).
  */
 export async function GET(request: Request) {
   const resolved = await requirePredictionActor(request, "read");

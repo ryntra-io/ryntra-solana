@@ -1,12 +1,12 @@
 /**
- * The Brief and the Critic on a subject (`RYN-BRIEF-CRITIC-001`).
+ * The Brief and the Critic on a subject.
  *
  * One engine, two formats. The subject is the same `AgentContext` a
  * conversation is opened from — an asset, a plan, the portfolio, a
  * monitoring note, a page — and the tools that run for it are the same
- * Research tools of `RYN-AGENT-TEXT-001`, chosen here by the server and
- * never by a model. What comes back is a `ToolRun` per read; the Brief and
- * the Critic are compositions over those runs.
+ * Research tools the conversation uses, chosen here by the server and never
+ * by a model. What comes back is a `ToolRun` per read; the Brief and the
+ * Critic are compositions over those runs.
  *
  * The budget is the agent's own and there is no other: `deterministic`
  * never reaches a model and never spends, so a surface may render a Brief

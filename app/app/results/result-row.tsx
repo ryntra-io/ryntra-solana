@@ -12,7 +12,7 @@ import { checkWord, costPartText, costReasonText, legWord, noTradeLabel, noTrade
 import styles from "./results.module.css";
 
 /**
- * One row of Results — `RYN-RESULTS-MEMORY-001`.
+ * One row of Results.
  *
  * Three shapes, one look: a position under a plan, one operation against the
  * plan it was made under, and a plan that made no trade. Each opens with the

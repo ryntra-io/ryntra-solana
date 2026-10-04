@@ -1,4 +1,4 @@
-/** RYN-HOME-001 — browser-local read-connection contract. */
+/** Browser-local read-connection contract. */
 
 export const HOME_CONNECTION_SCHEMA_VERSION = 1 as const;
 export const HOME_MAX_CONNECTIONS = 25;

@@ -15,16 +15,15 @@ import "./product.css";
 import "./account/account.css";
 
 /**
- * The product's frame (canon v5.4 В30–В31, 2026-09-24): the menu you can see
- * on the rail, and the top bar the Owner named — search, the notifications
- * bell, the wallet.
+ * The product's frame: the menu you can see on the rail, and the top bar —
+ * search, the notifications bell, the wallet.
  *
- * One control for the person in the header: the wallet. Since the Owner's
- * decision of 2026-09-11 the wallet is the account, and signing in (one
- * signature that opens the account) and signing out live inside the wallet's
- * panel. Since v5.4 the panel is the person's menu too — Налаштування, Мова,
- * Тема, Від'єднати — so the language and the theme left the foot of the rail,
- * where only Відгук stays above Settings.
+ * One control for the person in the header: the wallet. Since 2026-09-11 the
+ * wallet is the account, and signing in (one signature that opens the
+ * account) and signing out live inside the wallet's panel. Since 2026-09-24
+ * the panel is the person's menu too — Налаштування, Мова, Тема, Від'єднати —
+ * so the language and the theme left the foot of the rail, where only Відгук
+ * stays above Settings.
  */
 export function ProductShell({ children }: { children: ReactNode; signedIn: boolean }) {
   const { locale, setLocale } = useSolanaI18n();

@@ -1,10 +1,10 @@
 /**
- * The provider boundary (`RYN-PREDICTIONS-001`, canon v4.3 §6.5): what a
- * prediction-market aggregator must give Ryntra, stated in Ryntra's own view
- * models. The AGG adapter (`agg/adapter.ts`) is the one implementation; the
- * pages, the routes and the Agent tools read this interface and never the
- * SDK. A second provider, or the same one after a breaking release, is a
- * second adapter — nothing above this line moves.
+ * The provider boundary: what a prediction-market aggregator must give
+ * Ryntra, stated in Ryntra's own view models. The AGG adapter
+ * (`agg/adapter.ts`) is the one implementation; the pages, the routes and the
+ * Agent tools read this interface and never the SDK. A second provider, or
+ * the same one after a breaking release, is a second adapter — nothing above
+ * this line moves.
  *
  * Two kinds of calls: **public** reads that need only the app id (discovery,
  * markets, prices, books, charts, research), and **user** calls that act for

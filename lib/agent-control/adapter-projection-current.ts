@@ -117,7 +117,7 @@ export const SOLANA_ADAPTER_PROJECTION: AdapterProjection<AdapterProjectionId> =
     "The historical Receipt remains DEVIATION_RECORDED; later source corrections do not rewrite it.",
   ],
   nextGate:
-    "RYN-SOL-M1 remains the separately authorized general Send owner canary; M1B proves only the ATA-create case.",
+    "General Send is proved by its own separately authorized owner canary; M1B proves only the ATA-create case.",
 });
 
 /**

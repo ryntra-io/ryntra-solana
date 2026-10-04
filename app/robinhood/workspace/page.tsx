@@ -21,9 +21,9 @@ export const dynamic = "force-dynamic";
 /**
  * Radar — the discovery surface for Tokenized Markets.
  *
- * It is not at `/app/radar`: that route is the Ryntra Home canon's frozen
- * *Global* Radar across every ecosystem, and the same canon says specialist
- * radars keep their own chain-specific depth. This is the specialist one.
+ * It is not at `/app/radar`: that route is Ryntra Home's fixed *Global* Radar
+ * across every ecosystem, and Home's design says specialist radars keep their
+ * own chain-specific depth. This is the specialist one.
  *
  * **The headline is a ratio, and it is deliberately the first thing here.**
  * The venue lists 231 instruments on Robinhood Chain; three of them are
@@ -31,13 +31,12 @@ export const dynamic = "force-dynamic";
  * name and a logo, so a Radar that merely listed them would read as 231
  * tradable assets without a single false sentence being written.
  *
- * **Rebuilt on the tile system by `RYN-CHART-001`.** The first version stated
- * all of this correctly and rendered it as three paragraphs above a definition
- * list above a table — every figure typed at the size of the sentence
- * explaining it. Nothing was wrong and nothing was showable. What changed is
- * only the form: each count is now a tile with the chart that makes it
- * readable, and every explanation moved behind an icon, which is this
- * project's own working rule 6.
+ * **Rebuilt on the tile system.** The first version stated all of this
+ * correctly and rendered it as three paragraphs above a definition list above
+ * a table — every figure typed at the size of the sentence explaining it.
+ * Nothing was wrong and nothing was showable. What changed is only the form:
+ * each count is now a tile with the chart that makes it readable, and every
+ * explanation moved behind an icon.
  *
  * Nothing here is computed by us. Price, 24-hour change, volume, category and
  * the verification flag are the venue's own fields; the executable set is this
@@ -76,7 +75,7 @@ function Row({ row }: { row: RadarRow }) {
   return (
     <tr>
       <td>
-        {/* The row is the way into the Passport. Canon: a trade opens from
+        {/* The row is the way into the Passport. A trade opens from
             Radar or from a Passport, never from a page of its own. */}
         <Link className="rm-link" href={`/robinhood/workspace/${encodeURIComponent(row.symbol)}`}>
           <span className="rm-symbol">{row.symbol}</span>

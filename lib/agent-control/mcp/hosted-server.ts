@@ -31,15 +31,15 @@ import { MCP_WRITE_TOOLS } from "./write-tools.ts";
  * `admitHostedToolCall` against the same scopes before any body executes — so a
  * caller that guessed a name, kept one from a wider token, or reached the
  * endpoint through some generic execute indirection is refused with the same
- * reason the filter was expressing. `RYN-BIN-AOS-003` is why that is written
- * twice on purpose.
+ * reason the filter was expressing. That is written twice on purpose, because
+ * a filter alone is not a control.
  *
  * **No tool here reaches outside this process.** The three read tools compute
  * locally; the five write tools produce a proposal in an in-memory ledger. The
  * four upstream read tools the stdio server carries are deliberately not hosted
  * — see `./hosted.ts`. So this endpoint has no outbound surface at all, which
- * is the same property `013` gave tool input when it refused to accept an
- * endpoint from a caller.
+ * is the same property the write gate gives tool input when it refuses to
+ * accept an endpoint from a caller.
  *
  * **The ledger is per request, and that is a stated limitation rather than a
  * bug.** A proposal made through the hosted endpoint lives in the instance that

@@ -1,14 +1,13 @@
 /**
  * What a wallet needs before it can buy — the pure half of «Поповнити» and
- * of «Простий»'s empty states (canon v5.1 §4 «Почати з картки», В5, В12;
- * `RYN-INVEST-SIMPLE-001`, session 5).
+ * of «Простий»'s empty states.
  *
  * Two things, never confused on a beginner's screen: **USDC**, the dollars a
- * purchase spends (from $1, canon v5.5 В35), and **a little SOL**, what the network
+ * purchase spends (from $1), and **a little SOL**, what the network
  * charges for every transaction and, once for each company the wallet does
  * not hold yet, the reserve that opens the token's account in the wallet.
  *
- * **Why a beginner still needs SOL here (В5).** Jupiter pays the gas only for
+ * **Why a beginner still needs SOL here.** Jupiter pays the gas only for
  * a taker below 0.01 SOL, from about $10, and only on an order with no
  * referral or payer parameters; it does so by adding its own fee payer as a
  * second signer (dev.jup.ag «Gasless», read 2026-09-24). Every purchase here

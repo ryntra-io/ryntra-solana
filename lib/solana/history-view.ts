@@ -1,11 +1,11 @@
 /**
  * Narrowing a history to what a person is looking for, and taking it with them.
  *
- * This is the depth `Simple | Pro` was supposed to mean and did not. Canon
- * `§0.7` allows Pro to carry *more data and control over the same product* and
- * forbids it from becoming a technical dump or a longer list, so what Pro adds
- * here is a way to narrow the list and a way to leave with it — never a row
- * Simple cannot see, and never a code, host or digest on screen.
+ * This is the depth `Simple | Pro` was supposed to mean and did not. Pro may
+ * carry *more data and control over the same product* and may never become a
+ * technical dump or a longer list, so what Pro adds here is a way to narrow the
+ * list and a way to leave with it — never a row Simple cannot see, and never a
+ * code, host or digest on screen.
  *
  * Pure and total: no clock, no storage, no network, no locale. The card decides
  * what to render; this decides what the answer is, and every branch of it is a
@@ -20,11 +20,11 @@
  */
 
 /**
- * The filters are the product's own pages, not the ledger's lanes (Owner,
- * 2026-09-12: *«можна було так само вибрати, що було у Своп, що було в Брідж,
- * що було в Спот»*). `SPOT` is a Swap-lane row whose origin says Spot; `SWAP`
- * is a Swap-lane row that does not; `BRIDGE` is everything that crossed a
- * chain — the USDC bridge and the cross-chain swap the Bridge page runs.
+ * The filters are the product's own pages, not the ledger's lanes: a person
+ * picks what happened in Swap, in Bridge or in Spot. `SPOT` is a Swap-lane row
+ * whose origin says Spot; `SWAP` is a Swap-lane row that does not; `BRIDGE` is
+ * everything that crossed a chain — the USDC bridge and the cross-chain swap
+ * the Bridge page runs.
  */
 export const HISTORY_FILTERS = ["ALL", "SPOT", "SWAP", "BRIDGE", "SEND", "RECEIVE", "NEEDS_YOU"] as const;
 export type HistoryFilter = (typeof HISTORY_FILTERS)[number];
@@ -51,8 +51,8 @@ export type HistoryAction = Readonly<{
    * Optional so every caller that predates them still satisfies this type. The
    * export reads them because a file somebody reconciles against a statement is
    * exactly where the identifier of a Base or Robinhood Chain transaction
-   * belongs — canon `§0.5` keeps a hash off the screen, not out of a file the
-   * person asked for.
+   * belongs — a hash is kept off the screen, not out of a file the person
+   * asked for.
    */
   sourceTx?: string | null;
   destinationTx?: string | null;
@@ -152,8 +152,8 @@ export const HISTORY_EXPORT_COLUMNS = [
  * Deliberately the *filtered* list rather than everything: the export answers
  * the question the screen is currently asking. The signature is included
  * because this is a record to keep and check against a chain, which is the one
- * place a signature belongs — canon `§0.5` keeps it off the screen, not out of
- * a file the person asked for.
+ * place a signature belongs — it is kept off the screen, not out of a file the
+ * person asked for.
  */
 export function historyToCsv(actions: readonly HistoryAction[]): string {
   const rows = [HISTORY_EXPORT_COLUMNS.map(field).join(",")];

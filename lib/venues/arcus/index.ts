@@ -1,4 +1,4 @@
-/* Arcus — the REFERENCE implementation of the VenueAdapter contract (NORTH-STAR §3).
+/* Arcus — the REFERENCE implementation of the VenueAdapter contract.
    Server-safe read ports only: it wraps the existing zero-auth Arcus reads (lib/arcus/public.ts)
    and normalizes them into the venue-agnostic shapes the core consumes. Nothing here holds keys
    or funds. Wallet-signed execution lives in lib/arcus/spot-exec.ts (client-only) and is wired to

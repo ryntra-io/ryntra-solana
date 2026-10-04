@@ -19,7 +19,7 @@
 /*
  * Identity, pinned.
  *
- * The one element `docs/stellar/DESIGN.md` §4 fixes in place. It used to be two
+ * The one element the Passport template fixes in place. It used to be two
  * cards at the top of a 3,207px document: four hundred pixels down, nothing on
  * screen said which asset you were reading, on the page whose entire job is to
  * be about one exact asset.

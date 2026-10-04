@@ -13,8 +13,7 @@ import { useSpotCandles } from "@/app/solana/workspace/spot/use-spot-data";
 import company from "./company.module.css";
 
 /**
- * The company's price and its line (canon v5.1 §2, rules 4 and 10;
- * `RYN-INVEST-SIMPLE-001`, session 2).
+ * The company's price and its line.
  *
  * One price on the surface — the venue's, the one the cards on Home and
  * Markets show — and its change over the range the person picked: the day's
@@ -45,13 +44,13 @@ function momentOf(at: number, range: ChartRange, numbers: string): string {
 }
 
 /**
- * A private company's one number under its price (canon v5.2 В27): the token
- * against the issuer's own valuation — «на 30% дорожче за оцінку PreStocks» —
- * with the time that valuation was read, on the reader's clock. No tone.
+ * A private company's one number under its price: the token against the
+ * issuer's own valuation — «на 30% дорожче за оцінку PreStocks» — with the
+ * time that valuation was read, on the reader's clock. No tone.
  */
 export type QuotePremium = Readonly<{ line: string; at: string | null }>;
 
-export function CompanyQuote({ mint, name, price, dayChangePct, locale, premium = null, defaultRange = "1d", status = null, aside = null }: { mint: string; name: string; price: number | null; dayChangePct: number | null; locale: WorkspaceLocale; premium?: QuotePremium | null; /** The range the chart opens on — a month for a PreStocks company, whose thin market saws a day's line (the Owner's word, 2026-09-25); the switches stay. */ defaultRange?: ChartRange; /** The exchange's state, said under the price it qualifies (RYN-COMPANY-PAGE-001). */ status?: ReactNode; /** What stands at the end of the ranges' row — the way to the candles. */ aside?: ReactNode }) {
+export function CompanyQuote({ mint, name, price, dayChangePct, locale, premium = null, defaultRange = "1d", status = null, aside = null }: { mint: string; name: string; price: number | null; dayChangePct: number | null; locale: WorkspaceLocale; premium?: QuotePremium | null; /** The range the chart opens on — a month for a PreStocks company, whose thin market saws a day's line; the switches stay. */ defaultRange?: ChartRange; /** The exchange's state, said under the price it qualifies. */ status?: ReactNode; /** What stands at the end of the ranges' row — the way to the candles. */ aside?: ReactNode }) {
   const word = investWords(locale);
   const numbers = numberLocale(locale);
   const [range, setRange] = useState<ChartRange>(defaultRange);
@@ -65,7 +64,7 @@ export function CompanyQuote({ mint, name, price, dayChangePct, locale, premium 
     /* The range ends at the moment the candles are drawn; they arrive after the page, so the clock is the browser's. */
     const now = Date.now();
     const raw = candles.value ? rangePoints(candles.value.candles, range, now) : [];
-    /* A day and a week are drawn without the pool's one-trade needles; a month and a year are already calm (RYN-COMPANY-PAGE-001). */
+    /* A day and a week are drawn without the pool's one-trade needles; a month and a year are already calm. */
     const points = anchorPoints(range === "1d" || range === "1w" ? despike(raw) : raw, price);
     return { points, geometry: lineGeometry(points, WIDTH, HEIGHT, 8, dayAgo, MIN_SPAN_RATIO[range]), late: historyStartsLate(points, range, now) };
   }, [candles.value, range, dayAgo, price]);

@@ -7,7 +7,7 @@
  * size budget. So the server resolves state in `truth.ts` and hands down the
  * small shapes declared here.
  *
- * The states are canon vocabulary (MASTER-PLAN §12), not marketing adjectives.
+ * The states are the product's own vocabulary, not marketing adjectives.
  * `production` is deliberately absent: nothing has reached it, and a label the
  * product cannot earn has no business existing in the type.
  */

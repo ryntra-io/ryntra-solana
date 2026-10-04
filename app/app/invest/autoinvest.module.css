@@ -1,9 +1,8 @@
 /*
- * «Автоінвест» — one block on Home and in Portfolio (canon v5.1 §4.1, v5.3
- * В29; RYN-INVEST-SIMPLE-001 session 4, RYN-NAV-V5-001 session 2): the
- * month's budget as its own line, the rules with a switch each, «Додати
- * правило», and the budget's line inside a rule's sheet. Tokens only; the
- * orange belongs to «Купити» — nothing here wears it.
+ * «Автоінвест» — one block on Home and in Portfolio: the month's budget as
+ * its own line, the rules with a switch each, «Додати правило», and the
+ * budget's line inside a rule's sheet. Tokens only; the orange belongs to
+ * «Купити» — nothing here wears it.
  */
 
 .panel {
@@ -214,7 +213,7 @@
   color: var(--ry-caution);
 }
 
-/* The price condition holds the purchase back (canon v5.5 В37): a wait, said in the caution colour — nothing to buy until the rule judges it met. */
+/* The price condition holds the purchase back: a wait, said in the caution colour — nothing to buy until the rule judges it met. */
 .rule[data-state="deferred"] .ruleState {
   color: var(--ry-caution);
 }
@@ -364,8 +363,8 @@
   }
 }
 
-/* Home's right column (RYN-WIDTH-PREMIUM-001): a rule in one line — the sum
-   and the next purchase — so the column stays as short as the main one. */
+/* Home's right column: a rule in one line — the sum and the next purchase —
+   so the column stays as short as the main one. */
 .rule[data-compact="true"] {
   min-height: 56px;
   padding-block: var(--ry-s1);

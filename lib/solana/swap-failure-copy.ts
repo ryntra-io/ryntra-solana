@@ -2,12 +2,12 @@
  * What went wrong on a Solana swap, and whether pressing the button again could
  * possibly help.
  *
- * Lifted out of `swap-card.tsx` under `RYN-SWAP-FAILURE-TRUTH-001` for one
- * reason: it is the map from every code the swap routes can emit to the
- * sentence a person reads, and a map like that has to be **testable against the
- * routes themselves**. Inside a `.tsx` it could only ever be grepped.
+ * Lifted out of `swap-card.tsx` for one reason: it is the map from every code
+ * the swap routes can emit to the sentence a person reads, and a map like that
+ * has to be **testable against the routes themselves**. Inside a `.tsx` it could
+ * only ever be grepped.
  *
- * The founder met the cost of that on production on 2026-09-10. Ten distinct
+ * A person met the cost of that on production on 2026-09-10. Ten distinct
  * failures — the provider unreachable, the provider refusing, a token that
  * could not be checked, a wallet that does not cover the amount, and a request
  * the platform killed for want of a declared time budget — all printed the same
@@ -39,7 +39,7 @@ export function swapFailureCopy(
   /* Turned off on purpose, by an operator. */
   if (/SWAP_PAUSED/.test(code)) return stop(text("Swapping is turned off right now."));
 
-  /* The issuer no longer offers this token for purchase — redemption open, the window closed (RYN-STOCKS-PROVIDERS-001). Nothing a person does changes it. */
+  /* The issuer no longer offers this token for purchase — redemption open, the window closed. Nothing a person does changes it. */
   if (/^ASSET_NOT_OFFERED$/.test(code)) return stop(text("The issuer no longer offers this token for purchase."));
 
   /* This deployment is missing something it needs in order to sign at all. A
@@ -117,10 +117,10 @@ export function swapFailureCopy(
     return stop(text("This swap did not pass Ryntra's own checks, so it was not offered."));
   }
 
-  /* An order under a Trading Plan (RYN-STRATEGY-PLAN-001 stage B). The plan's
-     block is drawn beside the sentence; the sentence says what to do. Another
-     amount or a new version can change the plan's verdict, so those retry;
-     the wallet and the plan itself are facts the button cannot change. */
+  /* An order under a Trading Plan. The plan's block is drawn beside the
+     sentence; the sentence says what to do. Another amount or a new version
+     can change the plan's verdict, so those retry; the wallet and the plan
+     itself are facts the button cannot change. */
   if (/^PLAN_REVIEW_BLOCKED$/.test(code)) return retry(text("This order is outside the plan, so it was not offered. Change the amount, or the plan."));
   if (/^PLAN_VERSION_CONFLICT$/.test(code)) return retry(text("The plan changed since this Review. Nothing was sent — review again on the current version."));
   if (/^PLAN_STATE_REFUSED$/.test(code)) return stop(text("The plan is no longer active, so nothing was sent under it."));

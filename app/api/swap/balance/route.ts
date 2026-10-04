@@ -32,7 +32,7 @@ export const maxDuration = 20;
  * no CCTP direction at all, so the card asked Ethereum instead and read a
  * stranger's chain. USDG is not USDC, so the asset the whole Robinhood Chain
  * lane exists for could never appear. And any token from the picker — which is
- * every token now, since `RYN-SOL-MONEY-FLOWS-001I` — was never readable.
+ * every token now — was never readable.
  *
  * So this route asks the question the swap form actually has: **this network,
  * this wallet, this asset**. It is deliberately not a widening of the bridge

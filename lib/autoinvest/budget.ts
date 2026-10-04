@@ -1,8 +1,8 @@
 /**
  * «Бюджет місяця» — the person's own ceiling for every rule's purchases in a
- * calendar month (canon v5.1 §4.1, В19; `RYN-INVEST-SIMPLE-001`, session 4).
+ * calendar month.
  *
- * **Only proof counts** (canon B.5). The month's spend is read from History:
+ * **Only proof counts.** The month's spend is read from History:
  * a purchase made under a rule's reminder (`origin.rule`) whose receipt
  * settled counts the USDC that left the wallet; one signed and not settled
  * yet counts as spent until its outcome is known — an unknown purchase is

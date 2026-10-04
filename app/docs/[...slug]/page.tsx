@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const card = docsCard(page.slug, locale);
   return sitePageMetadata({
     path: `/docs/${page.slug}`,
-    /* The plan's §3: a page's own search title where it says more than the heading; else «{title} — Ryntra Docs». */
+    /* A page's own search title where it says more than the heading; else «{title} — Ryntra Docs». */
     title: page.seoTitle?.[locale] ?? `${page.title[locale]} — ${docsTitle(locale)}`,
     description: page.summary[locale],
     locale,

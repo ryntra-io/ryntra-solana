@@ -1,7 +1,7 @@
 /**
- * Markets' tabs (canon v5.4 В33, 2026-09-24): Усі · Компанії · Приватні ·
- * Крипта · Меми · Долари, in the Owner's order. A plain module, so the server
- * page can read `?tab=` and the client tabs can draw it from one list.
+ * Markets' tabs: Усі · Компанії · Приватні · Крипта · Меми · Долари, in that
+ * order. A plain module, so the server page can read `?tab=` and the client
+ * tabs can draw it from one list.
  */
 
 export const MARKETS_TABS = ["all", "companies", "private", "crypto", "memes", "dollars"] as const;

@@ -11,7 +11,7 @@ import { formatUsdMoney } from "./spot-format.ts";
 import styles from "./spot.module.css";
 
 /**
- * The plan on the ticket — `RYN-STRATEGY-PLAN-001` stage B, canon §10.1.
+ * The plan on the ticket.
  *
  * Two pieces. **The plan chip** says which plan and version the order is
  * made under, with the version's own size, and lets the person leave the
@@ -28,8 +28,8 @@ import styles from "./spot.module.css";
  *
  * The evidence checks name their source: a rule on what the market did is
  * *Evidence condition*, a rule on how the token is built is *Due diligence*
- * (RYN-DDXYZ-RISK-001) — and under the checks one line per source says when
- * it was read, how far behind it may be, and whose data it is.
+ * — and under the checks one line per source says when it was read, how far
+ * behind it may be, and whose data it is.
  */
 
 const CHECK_WORDS: Readonly<Record<PlanCheckId, string>> = {
@@ -88,13 +88,13 @@ function clock(iso: string): string {
 }
 
 /**
- * The refusal in one sentence, with the figures and the next action (the
- * Owner's directive of 2026-09-22): the first required check that failed or
- * could not be judged, said as *the price now is $974.10 / token, but your
- * plan pays at most $900.00 / token — wait for the price, or raise the bound
- * in a new version of the plan*, never as a bare row. The figures are the
- * block's own `actual` and `expected` strings, so the sentence never says
- * what the server did not. Null when nothing required is open.
+ * The refusal in one sentence, with the figures and the next action: the
+ * first required check that failed or could not be judged, said as *the price
+ * now is $974.10 / token, but your plan pays at most $900.00 / token — wait
+ * for the price, or raise the bound in a new version of the plan*, never as a
+ * bare row. The figures are the block's own `actual` and `expected` strings,
+ * so the sentence never says what the server did not. Null when nothing
+ * required is open.
  */
 export function planRefusalSentence(review: PlanReview, text: (english: string) => string): string | null {
   const open = review.checks.find((check) => check.required && check.outcome !== "pass");

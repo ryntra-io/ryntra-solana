@@ -203,7 +203,7 @@ test("the trigger is an address, and it is never an avatar", () => {
 /**
  * A failure nobody classified is not a refusal.
  *
- * This is the defect the founder hit on `ryntra.io`. MetaMask held a
+ * This is the defect a person hit on `ryntra.io`. MetaMask held a
  * `wallet_requestPermissions` it had already been asked for, threw `-32002`,
  * and the panel titled it "The wallet refused" over a retry that could never
  * clear it — the request was open inside the extension and nothing on the page
@@ -269,7 +269,7 @@ test("a page with more than one connector offers the choice", () => {
   assert.ok(failure.includes("ConnectAction"), "The failure section offers no way back to the wallet list.");
 });
 
-test("every record states the counts the contract actually produces", { skip: needsDevelopmentRepository("docs/STATE.md and a task card") }, () => {
+test("every record states the counts the contract actually produces", { skip: needsDevelopmentRepository("the development records it reads") }, () => {
   /* Positive, derived from the code. A guard that blacklists one false spelling
      can be satisfied by saying something else false or by saying nothing; this
      demands the true sentence, and the numbers in it come from the arrays — so
@@ -291,7 +291,7 @@ test("every record states the counts the contract actually produces", { skip: ne
 });
 
 test("a connection made from the open panel closes it, and a browser with no wallet is shown the way on", () => {
-  /* RYN-INVEST-SIMPLE-001, session 5: a beginner's walk on a phone stopped under
+  /* A beginner's walk on a phone stopped under
      the panel after connecting, and a phone's browser with no wallet read a
      sentence about the Wallet Standard with no way on. */
   assert.match(CONTROL_CODE, /<CloseOnConnect address=\{address\} close=\{close\} \/>/);

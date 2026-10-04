@@ -5,12 +5,11 @@ import test from "node:test";
 import { INVEST_WORDS, heldLine, sellForWord } from "./invest-words.ts";
 
 /**
- * «Продати з позиції» (`RYN-BUY-FLOW-001`, subtask 1; canon v5.6 §4, §6.2,
- * §7): «Продати» on the company page for a holder and on the position in
- * Portfolio — a sum in dollars or a share of the position → «Перевірка» → the
- * signature → «Продано» with the receipt, on the purchase's own path, one
- * orange action on the screen; a PreStocks token says its fee from the chain
- * and that selling may not be possible.
+ * «Продати з позиції»: «Продати» on the company page for a holder and on the
+ * position in Portfolio — a sum in dollars or a share of the position →
+ * «Перевірка» → the signature → «Продано» with the receipt, on the purchase's
+ * own path, one orange action on the screen; a PreStocks token says its fee
+ * from the chain and that selling may not be possible.
  */
 
 const source = (path) => readFileSync(new URL(path, import.meta.url), "utf8");

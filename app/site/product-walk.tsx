@@ -30,7 +30,7 @@ import "./walk.css";
  *   3. **Nothing here is invented.** The facts name fields and their state
  *      vocabulary; there is no price, balance, fill, hash, address or provider
  *      response on this surface, because a fabricated number is indistinguishable
- *      from a real one at a glance and canon §22.7 forbids exactly that.
+ *      from a real one at a glance, and this surface must never show one.
  *   4. **The frame says what it is.** The complete loop is not shipped as a
  *      single workflow, so the label reads `Sample walkthrough` rather than
  *      implying a live session.

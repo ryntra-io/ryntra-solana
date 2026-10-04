@@ -10,12 +10,12 @@
 /*
  * 1380, not 1140.
  *
- * The founder's design handoff sets every scene in a 1380px container,
- * and the public landing now does too. A 1140px bar over a 1380px page puts the
- * lockup 120px inside the content it sits above — visible on every screenshot
- * as a header that does not line up with the page under it. The chrome follows
- * the page rather than the page following the chrome, and it moves for all
- * migrated surfaces at once so no route gets its own width.
+ * The design handoff sets every scene in a 1380px container, and the public
+ * landing now does too. A 1140px bar over a 1380px page puts the lockup 120px
+ * inside the content it sits above — visible on every screenshot as a header
+ * that does not line up with the page under it. The chrome follows the page
+ * rather than the page following the chrome, and it moves for all migrated
+ * surfaces at once so no route gets its own width.
  */
 .wrap {
   max-width: 1380px;
@@ -366,7 +366,7 @@
 .openApp:hover { background: var(--ry-gradient-hover); box-shadow: var(--ry-brand-glow-strong); transform: translateY(-1px); }
 .openApp:active { transform: translateY(0); }
 .openApp:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--ry-bg), var(--ry-focus); }
-/* Quiet where the page below has its own one orange action (the landing's Open App, the reviewer page's Verify a receipt): outlined, the brand kept to the line (RYN-FIRST-SCREEN-001). */
+/* Quiet where the page below has its own one orange action (the landing's Open App, the reviewer page's Verify a receipt): outlined, the brand kept to the line. */
 .openAppQuiet {
   background: transparent;
   border-color: var(--ry-border-strong);
@@ -570,10 +570,10 @@
      entirely off the right edge of a phone, and the shell clips, so nothing
      scrolled to reveal it. The container wrapping is only half the rule.
 
-     This is the interim, not the answer. Landing Brief §72 asks for one compact
-     menu behind a trigger rather than a bar that grows rows; that is its own
-     packet and this is what stops a phone losing the way into the product in
-     the meantime. */
+     This is the interim, not the answer. The answer is one compact menu
+     behind a trigger rather than a bar that grows rows; that is its own
+     change, and this is what stops a phone losing the way into the product
+     in the meantime. */
   .navLinks {
     margin-inline-start: 0;
     width: 100%;

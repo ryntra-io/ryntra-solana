@@ -3,9 +3,9 @@
  *
  * Production is keyed and fail-closed. Keyless access is reachable only when
  * the caller explicitly selects the labelled degraded mode; a failed keyed
- * request is never retried against another access tier. M0D asks `/order`
+ * request is never retried against another access tier. A quote asks `/order`
  * without a taker, so that response is quote-only and any returned transaction
- * is refused. RYN-SOL-M2 adds the taker order (`fetchJupiterExecutableOrder`,
+ * is refused. Execution adds the taker order (`fetchJupiterExecutableOrder`,
  * which returns a signable transaction) and the one-shot `/execute` client
  * (`executeJupiterOrder`). The execute client never retries: once the POST may
  * have left the process, every failure is reported as possibly submitted and
@@ -33,7 +33,7 @@ const MAX_PROVIDER_TEXT = 256;
  * How long a built order stays signable.
  *
  * This was 15 seconds, and 15 seconds is not a review window — it is a
- * countdown a person cannot win. The founder read the Review panel, pressed
+ * countdown a person cannot win. Someone read the Review panel, pressed
  * the button, answered the wallet, and the window had already closed: the card
  * showed ORDER_EXPIRED before the wallet came back. Nothing in the signing
  * path is even bounded by it, because `withWalletPromptTimeout` in
@@ -191,7 +191,7 @@ export type JupiterOrderRequest = Readonly<{
   excludeRouters?: readonly string[];
 }>;
 
-/** Typed only in M0D. There is deliberately no fetch function for `/build`. */
+/** Typed for the later allowlist path only. There is deliberately no fetch function for `/build`. */
 export type JupiterBuildRequest = Readonly<{
   inputMint: string;
   outputMint: string;
@@ -264,9 +264,9 @@ export type JupiterOrderQuote = Readonly<{
    * Ryntra's service fee — 50 bps on Jupiter, `RYNTRA_SERVICE_FEE_POLICY` —
    * as Jupiter's own answer states it.
    *
-   * `RYN-SOL-SWAP-MONETIZATION-001`: this was a hard-coded zero for as long as
-   * this lane sent no referral parameters. It is now read from the response, and
-   * the read is deliberately narrow — see `readJupiterServiceFee`.
+   * This was a hard-coded zero for as long as this lane sent no referral
+   * parameters. It is now read from the response, and the read is deliberately
+   * narrow — see `readJupiterServiceFee`.
    */
   ryntraFee: RyntraServiceFee;
   /**
@@ -604,10 +604,10 @@ export function normalizeJupiterOrder(
 ): JupiterOrderQuote {
   const raw = asObject(body, "order");
   if (raw.transaction !== null) {
-    throw new Error("transaction must be null for the M0D quote-only order request.");
+    throw new Error("transaction must be null for the quote-only order request.");
   }
   if (raw.taker !== null) {
-    throw new Error("taker must be null for the M0D quote-only order request.");
+    throw new Error("taker must be null for the quote-only order request.");
   }
   return {
     schema: "ryntra.solana.jupiter-order-quote",
@@ -627,7 +627,7 @@ const BASE64_TEXT = /^[A-Za-z0-9+/]+={0,2}$/;
 
 /**
  * A taker order: the same quote surface plus the provider-built, signable
- * transaction. Nothing here is submitted — signing stays with the founder's
+ * transaction. Nothing here is submitted — signing stays with the person's
  * wallet and submission goes through `executeJupiterOrder` exactly once.
  */
 export type JupiterExecutableOrder = Omit<
@@ -783,10 +783,10 @@ async function readBoundedJson(response: Response): Promise<unknown> {
  * Jupiter's own range for `referralFee`, verified live on 2026-09-11 with the
  * exact answer: HTTP 400, *"The referralFee parameter must be between 50 and
  * 255 (inclusive)"* — as `text/plain`, which is why the read below accepts a
- * refusal in that shape. `RYN-SWAP-BRIDGE-SPLIT-001` had recorded 200 at 10
- * and 25 the day before it moved the rate to 25; whatever answered then, the
- * provider refuses 25 today, and lowering this floor to match the constant
- * took the whole Solana swap lane down for one minute on production.
+ * refusal in that shape. A check the day before, when the rate moved to 25,
+ * had recorded 200 at 10 and 25; whatever answered then, the provider refuses
+ * 25 today, and lowering this floor to match the constant took the whole
+ * Solana swap lane down for one minute on production.
  */
 export const JUPITER_REFERRAL_FEE_MIN_BPS = 50;
 export const JUPITER_REFERRAL_FEE_MAX_BPS = 255;
@@ -842,11 +842,11 @@ function applyJupiterReferral(url: URL, referral: JupiterReferral | null): reado
  * recognised and the fee is dropped — once, on a read that moves nothing.
  */
 function refusedForTheFee(status: number, body: unknown): boolean {
-  /* Narrow on purpose, in three ways at once, because the owner's instruction is
-     that this is **not** a universal way around a provider error. It fires only
-     on HTTP 400 — never on 429, never on a 5xx, never on a refusal with no body
-     — and only when Jupiter's own text names one of the two fee parameters or the
-     referral program itself. Anything else is a refusal and stays one.
+  /* Narrow on purpose, in three ways at once, because this is **not** a
+     universal way around a provider error. It fires only on HTTP 400 — never on
+     429, never on a 5xx, never on a refusal with no body — and only when
+     Jupiter's own text names one of the two fee parameters or the referral
+     program itself. Anything else is a refusal and stays one.
 
      It also cannot reach a submitted transaction. This is the quote boundary;
      `executeJupiterOrder` performs at most one network attempt and has no retry
@@ -862,11 +862,11 @@ function refusedForTheFee(status: number, body: unknown): boolean {
 /**
  * Ask again without the router that answered badly, exactly once.
  *
- * The owner's instruction is the shape of this: filter the problem quote out and
- * get another usable route, without rewriting routing and without substituting
- * numbers on top of an order that already exists. So the router is named to
- * Jupiter's own `excludeRouters` and the whole order is asked for again — a new
- * quote, a new minimum, a new transaction, a new Review. Nothing is patched.
+ * The rule is the shape of this: filter the problem quote out and get another
+ * usable route, without rewriting routing and without substituting numbers on
+ * top of an order that already exists. So the router is named to Jupiter's own
+ * `excludeRouters` and the whole order is asked for again — a new quote, a new
+ * minimum, a new transaction, a new Review. Nothing is patched.
  *
  * Once. If the second answer also disagrees with itself, something is wrong that
  * a third request will not fix, and the honest end is a refusal that says the
@@ -1096,9 +1096,9 @@ export type JupiterExecutableOrderFailure = Readonly<{
    * On `RATE_LIMITED` only: the provider's own pause when it is short enough
    * to wait for (`jupiterRetryWaitMs` up to `JUPITER_ORDER_RETRY_WAIT_MAX_MS`,
    * ten seconds — the person is waiting on this one press), so the order route
-   * may ask once more before any lock is crossed (`askOnceMoreAfterRate`,
-   * `RYN-BUY-FLOW-001` subtask 5); null when the window resets later. Never
-   * read by `/execute`, which is never asked twice.
+   * may ask once more before any lock is crossed (`askOnceMoreAfterRate`);
+   * null when the window resets later. Never read by `/execute`, which is never
+   * asked twice.
    */
   retryWaitMs?: number | null;
 }>;
@@ -1110,19 +1110,19 @@ export type JupiterExecutableOrderResult =
 /**
  * Fetch a fresh taker-pays order — quote plus signable transaction.
  *
- * M2 does not implement JupiterZ's market-maker fee payer / co-signature
- * semantics, so the executable canary excludes that router by name. Jupiter's
- * documented response-level fee-payer check remains mandatory because the
- * exclusion alone does not disable every future gasless path.
+ * The swap path does not implement JupiterZ's market-maker fee payer /
+ * co-signature semantics, so the executable canary excludes that router by
+ * name. Jupiter's documented response-level fee-payer check remains mandatory
+ * because the exclusion alone does not disable every future gasless path.
  *
  * Three optional parameters go out and no others: `excludeRouters=jupiterz` for
  * the reason above; — when one is configured —
  * `referralAccount`/`referralFee` for Ryntra's service fee, 50 bps on Jupiter
- * (`RYN-SOL-SWAP-MONETIZATION-001`; the rate is `RYNTRA_SERVICE_FEE_POLICY`);
- * and — only when the caller names one — `slippageBps`, a fixed bound in
- * place of the venue's estimate (under a Trading Plan, the plan's own rule).
- * Still no `payer` and no `receiver`: `payer` is the parameter that would
- * actually narrow routing, and this lane does not send it.
+ * (the rate is `RYNTRA_SERVICE_FEE_POLICY`); and — only when the caller names
+ * one — `slippageBps`, a fixed bound in place of the venue's estimate (under a
+ * Trading Plan, the plan's own rule). Still no `payer` and no `receiver`:
+ * `payer` is the parameter that would actually narrow routing, and this lane
+ * does not send it.
  */
 export async function fetchJupiterExecutableOrder(
   request: JupiterExecutableOrderRequest,
@@ -1161,9 +1161,9 @@ export async function fetchJupiterExecutableOrder(
   url.searchParams.set("outputMint", request.outputMint);
   url.searchParams.set("amount", request.amountRaw);
   url.searchParams.set("taker", request.taker);
-  /* `jupiterz` is always excluded here — M2 does not implement its market-maker
-     co-signature semantics — and anything the caller adds is a router that
-     already answered with a quote that did not agree with itself. */
+  /* `jupiterz` is always excluded here — the swap path does not implement its
+     market-maker co-signature semantics — and anything the caller adds is a
+     router that already answered with a quote that did not agree with itself. */
   const excluded = [...new Set(["jupiterz", ...(request.excludeRouters ?? [])])];
   url.searchParams.set("excludeRouters", excluded.join(","));
   /* A slippage bound is a rule the person wrote; a value that is not a whole
@@ -1359,7 +1359,7 @@ export async function fetchJupiterExecutableOrder(
 }
 
 export type JupiterExecuteRequest = Readonly<{
-  /** The founder-signed transaction, exact bytes, base64. */
+  /** The wallet-signed transaction, exact bytes, base64. */
   signedTransactionBase64: string;
   /** The requestId returned by the same `/order` response that built the bytes. */
   requestId: string;

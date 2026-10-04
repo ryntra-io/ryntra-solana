@@ -1,6 +1,6 @@
 /**
  * The Prepare tools — a draft in the contract's own schema, never a write to
- * the product (`RYN-AGENT-TEXT-001`; the Owner's rule of 2026-09-22 §3, §7).
+ * the product.
  *
  * A plan draft is `PlanRules` judged and sized by the plan engine's own
  * functions, with every assumption named, opened in the builder where the

@@ -1,7 +1,7 @@
 // Run from repo root: node --test app/company/company.test.mjs
 //
-// «Про Ryntra» and «Контакти» — two public pages of the new site of canon v5.5
-// (`RYN-SITE-V5-001` subtask 3), their words as data in both languages.
+// «Про Ryntra» and «Контакти» — two public pages of the site,
+// their words as data in both languages.
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
@@ -50,12 +50,12 @@ test("About says what production does, and the one fee, from the policy the prod
     assert.doesNotMatch(text, /Trade with a plan|Торгуйте за планом|strategy cycle|Ideas, My strategies|workspace|кабінет/i);
     assert.doesNotMatch(text, /advisory board|official partner|guaranteed|risk-free|profit promise|гарантован|без ризику/i);
     assert.doesNotMatch(text, /RYN-[A-Z0-9-]+|docs\/tasks|MASTER-PLAN|canon|readiness|founder action/i);
-    assert.doesNotMatch(text, /coming soon|being built|Будуємо|Скоро|у планах|незабаром/i, "no roadmap outside the landing (canon В40)");
+    assert.doesNotMatch(text, /coming soon|being built|Будуємо|Скоро|у планах|незабаром/i, "no roadmap outside the landing");
   }
 });
 
 test("Contact is one inbox, three subjects that sort it, and no promise of a response time", () => {
-  assert.doesNotMatch(code(read("app/contact/contact-copy.ts")), /access|integrations|доступ|інтеграц/i, "the plan: no «access» and no «integrations»");
+  assert.doesNotMatch(code(read("app/contact/contact-copy.ts")), /access|integrations|доступ|інтеграц/i, "the contact page offers no «access» and no «integrations»");
   assert.match(CONTACT_PAGE, /<InfoPage locale=\{locale\} quietHeaderAction>/, "the letter is the one orange action");
   assert.match(CONTACT_PAGE, /PRIMARY_CONTACT_ACTIONS/);
   assert.match(CONTACT_PAGE, /contactMailto\(topic\.subject\)/);

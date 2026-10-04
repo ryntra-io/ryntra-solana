@@ -1,7 +1,7 @@
 /* Tiny inline-SVG status marks — replace unicode dingbats (✓ ✗) used as UI glyphs.
    Pure SVG, no hooks/context → safe in both server and client components (unlike the
    Phosphor icon components, which can't be imported into an RSC). Colour via currentColor.
-   See docs/archive/design-pre-reset-2026-08-18/ryntra-design-bar.md §2 (no emoji/dingbats as UI icons). */
+   No emoji or dingbats as UI icons. */
 
 type MarkProps = { size?: number; className?: string; "aria-label"?: string };
 

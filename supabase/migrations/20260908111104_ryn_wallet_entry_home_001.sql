@@ -2,7 +2,7 @@
 -- Supabase migration 20260908111104; project lbphobwqzwdkbmyedlwb.
 -- Approved transaction source is preserved unchanged in supabase/prepared/:
 -- SHA-256 130B02CDB5D313BBA06B4BFA467C899D05CCB863B7197C3567155A0A11A96417.
--- RYN-WALLET-ENTRY-HOME-001 part A. Applied transaction; original approval source preserved.
+-- Wallet entry to Home, part A. Applied transaction; original approval source preserved.
 -- Existing account IDs, auth identities, wallets and private plans stay intact.
 -- Server-verified SIWS is a prerequisite at the application boundary. These
 -- RPCs retain the existing app-secret authorization, empty search_path and

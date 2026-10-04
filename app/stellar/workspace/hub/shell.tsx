@@ -77,13 +77,13 @@ export function StellarHubShell({ children }: { children: ReactNode }) {
       workspaceId="stellar"
       navSettings={settingsEntry(STELLAR_MANIFEST)}
       navGroupsFor={navGroupsFor}
-      /* The depth control is not in the top bar.
-         Founder decision, 2026-08-24: the product opens at full depth and
-         `Simple | Pro` lives with the rest of "how this workspace is laid
-         out" — the layout menu, bottom-left, beside density and reset. A
-         switch in the primary bar made the first thing a person saw a
-         question about the chrome. `modeInContext` is therefore gone with it,
-         so the layout menu is the one control again rather than the second. */
+      /* The depth control is not in the top bar: the product opens at full
+         depth and `Simple | Pro` lives with the rest of "how this workspace
+         is laid out" — the layout menu, bottom-left, beside density and
+         reset. A switch in the primary bar made the first thing a person saw
+         a question about the chrome. `modeInContext` is therefore gone with
+         it, so the layout menu is the one control again rather than the
+         second. */
       navFooter={<HubFooter />}
       /* The wallet is the account control, and it is the only place a wallet
          package can be reached from. Everything else on this workspace reads

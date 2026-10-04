@@ -26,11 +26,11 @@ const ADVISER = read("app/app/adviser/page.tsx");
 const ADVISER_TILES = read("app/app/adviser/tiles.tsx");
 const ADVISER_READ = read("app/app/adviser/read.ts");
 const ADVISER_LOADING = read("app/app/adviser/loading.tsx");
-/* `app/app/strategies/page.tsx` is My strategies — since `RYN-STRATEGY-PLAN-001`
-   the wallet's trading plans (`plans/plans-panel.tsx`), read behind the
-   wallet's proof rather than an account session. The lab's own read model
-   (`read.ts`, `tiles.tsx`, `[id]/`) stays for the lab's pages, so the rules
-   below follow the code that is mounted rather than the filename. */
+/* `app/app/strategies/page.tsx` is My strategies — the wallet's trading plans
+   (`plans/plans-panel.tsx`), read behind the wallet's proof rather than an
+   account session. The lab's own read model (`read.ts`, `tiles.tsx`, `[id]/`)
+   stays for the lab's pages, so the rules below follow the code that is
+   mounted rather than the filename. */
 const STRATEGIES = read("app/app/strategies/plans/plans-panel.tsx");
 const STRATEGY_DETAIL = read("app/app/strategies/[id]/page.tsx");
 const STRATEGY_TILES = read("app/app/strategies/tiles.tsx");
@@ -70,7 +70,7 @@ test("the comment stripper removes prose and keeps code", () => {
   assert.equal(codeOnly('const verdict = "BUY";').includes("BUY"), true);
 });
 
-test("no personalized verdict is issuable from any wave-6 surface", () => {
+test("no personalized verdict is issuable from any adviser, strategy or control surface", () => {
   for (const [name, source] of SURFACES) {
     for (const verdict of ['"BUY"', '"SELL"', '"HOLD"', '"REDUCE"', '"HEDGE"', '"REBALANCE"']) {
       assert.equal(codeOnly(source).includes(verdict), false, `${name} must not carry the verdict ${verdict}`);
@@ -78,7 +78,7 @@ test("no personalized verdict is issuable from any wave-6 surface", () => {
   }
 });
 
-test("no wave-6 surface writes, signs, executes or moves funds", () => {
+test("no adviser, strategy or control surface writes, signs, executes or moves funds", () => {
   for (const [name, source] of SURFACES) {
     for (const forbidden of [
       'method: "POST"',
@@ -100,7 +100,7 @@ test("no wave-6 surface writes, signs, executes or moves funds", () => {
   }
 });
 
-test("no wave-6 surface calls a model", () => {
+test("no adviser, strategy or control surface calls a model", () => {
   for (const [name, source] of SURFACES) {
     for (const forbid of ["openai", "OpenAI", "responses.parse", "formalizeStrategy", "reviewStrategy"]) {
       assert.equal(codeOnly(source).includes(forbid), false, `${name} must not call ${forbid}`);
@@ -171,14 +171,14 @@ test("all four routes exist as direct destinations and none redirects", () => {
 
 test("each route serves a no-account state rather than a blank shell", () => {
   for (const [name, source] of [["adviser", ADVISER], ["detail", STRATEGY_DETAIL], ["control", CONTROL]]) {
-    /* RYN-ACCESS-002: the gate is the account (canKeepPersonalData), the legacy
+    /* The gate is the account (canKeepPersonalData), the legacy
        form is the channel-join flag. */
     assert.match(source, /session\?\.verified|canKeepPersonalData\(session\)/, `${name} must gate on the session`);
     assert.match(source, /No account/, `${name} must state the no-account case`);
   }
-  /* The plans are the wallet's, not an account's (canon §0.6): the list is
-     drawn only behind the wallet's proof, and the unproven and unconnected
-     states are named in the person's own words, never a blank shell. */
+  /* The plans are the wallet's, not an account's: the list is drawn only
+     behind the wallet's proof, and the unproven and unconnected states are
+     named in the person's own words, never a blank shell. */
   assert.match(STRATEGIES, /const proven = proof\.state\.status === "proven" && proof\.state\.address === address/);
   assert.match(STRATEGIES, /if \(proven\) void load\(\);/);
   assert.match(STRATEGIES, /word\("connectToSee"\)/);

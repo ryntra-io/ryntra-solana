@@ -37,8 +37,8 @@ type LocaleText = {
 };
 
 export type LandingCopy = LocaleText & {
-  // The landing speaks to individual users, so it carries the company category
-  // (canon §19), not the Guard developer-surface category.
+  // The landing speaks to individual users, so it carries the company category,
+  // not the Guard developer-surface category.
   category: "Risk, Strategy & Evidence OS";
   heroTitle: "Plan. Prove. Improve.";
   trustLine: "Non-custodial. Paper-first. Human-authorized. No profit promises.";
@@ -328,10 +328,10 @@ const MATURITY: Record<LocaleCode, Record<LandingMaturity, string>> = {
 };
 
 /**
- * RYN-LAND-001 five-section landing copy for the public locales only.
+ * Five-section landing copy for the public locales only.
  * The legacy 12-locale LANDING_COPY below stays intact: methodology still
  * renders from it and the hidden translations are preserved for a future
- * human-edited return (MASTER-PLAN §6.1).
+ * human-edited return.
  */
 export type HomeCopy = {
   nav: { now: string; how: string; trust: string; methodology: string; beta: string; menu: string; language: string };

@@ -11,16 +11,15 @@ import { PATH_WORDS, sourceLine, stepLines, stepName, swapLines, swapRuleLine, t
 type Lang = "en" | "uk";
 
 /**
- * «Шлях компанії» (`RYN-COMPANY-PATH-001`, canon v5.2 В27, §7) — one strip on
- * the company page, under the company's name: Приватна · PreStocks → IPO →
- * Біржа → Solana, each step passed, current or not announced, with its day.
- * The token of this page stands at its step as «цей токен»; the company's
- * other token stands at its own step as a link to its page — SPACEX and
- * SPCXx are one company at two steps, each leading to the other, each saying
- * what it is. Under the steps the one line that matters to a holder: the
- * private token's swap deadline with the issuer's minute, or, for a company
- * still private, the issuer's rule after an IPO. Where each fact was read sits
- * one press deeper, under «Джерела».
+ * «Шлях компанії» — one strip on the company page, under the company's name:
+ * Приватна · PreStocks → IPO → Біржа → Solana, each step passed, current or
+ * not announced, with its day. The token of this page stands at its step as
+ * «цей токен»; the company's other token stands at its own step as a link to
+ * its page — SPACEX and SPCXx are one company at two steps, each leading to
+ * the other, each saying what it is. Under the steps the one line that
+ * matters to a holder: the private token's swap deadline with the issuer's
+ * minute, or, for a company still private, the issuer's rule after an IPO.
+ * Where each fact was read sits one press deeper, under «Джерела».
  *
  * `footer` replaces the line under the steps where the page has more to say
  * there — the private token's own page puts the holder's swap in it.

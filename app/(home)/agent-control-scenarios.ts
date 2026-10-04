@@ -9,7 +9,7 @@
  * only way a demo of a policy engine can be honest about being a policy engine:
  * a page that rolled dice would be showing the opposite of the product.
  *
- * **The precedence is the canon's.** Mandate scope, then hard limits, then
+ * **The precedence is fixed.** Mandate scope, then hard limits, then
  * budget, then counterparty, then evidence freshness, then market state — in
  * that order, so the first reason returned is the one that actually decided.
  * Changing the order here changes the product's meaning, not its presentation.

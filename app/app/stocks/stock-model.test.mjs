@@ -162,7 +162,7 @@ test("the session tone is a state, never a caution, and every word exists in bot
 test("an issuer reference that did not arrive is unavailable right now, never «publishes none»", async () => {
   /* Seen on production 2026-09-23 11:45 UTC: SPYx's xStocks reference timed out and the page said the issuer publishes no reference. */
   const { readFileSync } = await import("node:fs");
-  /* The Market card moved out of the page into the cards both depths share (RYN-INVEST-SIMPLE-001, session 2). */
+  /* The Market card moved out of the page into the cards both depths share. */
   const page = readFileSync(new URL("./[ticker]/asset-facts.tsx", import.meta.url), "utf8");
   const outage = page.indexOf('row.reference.source.id === "issuer-xstocks"');
   const none = page.indexOf("the issuer publishes no reference");

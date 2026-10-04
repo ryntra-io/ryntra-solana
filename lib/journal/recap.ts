@@ -1,4 +1,4 @@
-/* Daily discipline recap — the calm end-of-day digest (market-playbook-journal §4: "Recap as a
+/* Daily discipline recap — the calm end-of-day digest (the journal playbook: "Recap as a
    calm daily digest … 4-6 lines, one number that matters (adherence %), one constructive
    next-step. Never a guilt-trip; 'best trade tomorrow' register").
 

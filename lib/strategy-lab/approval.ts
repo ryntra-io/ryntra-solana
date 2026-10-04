@@ -133,11 +133,11 @@ function unsignedArtifact(approval: StrategyApprovalArtifact): UnsignedStrategyA
 /**
  * Who an approval is bound to.
  *
- * An account id when the session knows it (RYN-ACCESS-002), otherwise the
- * legacy Telegram id. The MAC input keeps the legacy shape byte-for-byte for
- * a Telegram subject, so approvals issued before accounts existed still
- * verify; verification tries the account form first and the Telegram form
- * second for a session that carries both.
+ * An account id when the session knows it, otherwise the legacy Telegram id.
+ * The MAC input keeps the legacy shape byte-for-byte for a Telegram subject,
+ * so approvals issued before accounts existed still verify; verification
+ * tries the account form first and the Telegram form second for a session
+ * that carries both.
  */
 export type ApprovalSubject = Readonly<{ telegramId?: number | null; accountId?: string | null }>;
 

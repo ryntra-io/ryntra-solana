@@ -11,10 +11,10 @@ import { useAccount } from "./account-context";
  * The account, inside the wallet's own panel.
  *
  * The header used to carry two controls — the wallet and a separate *Sign in*
- * that opened the login sheet. Since the Owner's decision of 2026-09-11 the
- * wallet is the account, and on 2026-09-12 the Owner asked for the second
- * control to go: with email and Google shut there is nothing it opens that
- * the wallet does not. So this block sits at the top of the wallet panel:
+ * that opened the login sheet. Since 2026-09-11 the wallet is the account,
+ * and since 2026-09-12 the second control is gone: with email and Google shut
+ * there is nothing it opens that the wallet does not. So this block sits at
+ * the top of the wallet panel:
  *
  *   signed out   one sentence on what signing in opens and one button that
  *                asks the connected wallet for one signature — the same
@@ -40,8 +40,8 @@ export function WalletAccountIdentity() {
           <Check size={14} weight="bold" aria-hidden />
           {other ? `${copy.identity.signedInOther} ${other}` : copy.identity.signedIn}
         </p>
-        {/* Settings is one row of the menu this block stands in (canon v5.4
-            В31), under the address — not a second link here. */}
+        {/* Settings is one row of the menu this block stands in, under the
+            address — not a second link here. */}
         <button type="button" className="rs-menu-action" disabled={logoutPending} onClick={() => void logout("this")}>{copy.menu.logout}</button>
         <button type="button" className="rs-menu-action" disabled={logoutPending} onClick={() => void logout("all")}>{copy.menu.logoutAll}</button>
       </>
@@ -70,7 +70,7 @@ export function WalletAccountIdentity() {
   return (
     <>
       <p className="rs-menu-hint">{copy.identity.lead}</p>
-      {/* Quiet, not orange: the page under the menu keeps its one orange action (canon §2, rule 1). */}
+      {/* Quiet, not orange: the page under the menu keeps its one orange action. */}
       <button type="button" className="rs-menu-action" disabled={signing} onClick={() => void signIn()}>
         {signing ? copy.identity.signing : copy.identity.signIn}
       </button>

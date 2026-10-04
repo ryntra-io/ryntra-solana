@@ -8,11 +8,11 @@
  *
  * ## Why a "write tool" is a safe phrase here
  *
- * Canon `12 §10` gives Ryntra's MCP surface three roles — READ, PROPOSE, and
- * EXECUTE **only** behind a separate release gate and a bounded mandate
- * contract. That gate has not opened. So a write here writes to Ryntra's own
- * decision record and to nothing else: no provider, no chain, no facilitator,
- * no wallet. The record it produces sits at `PROPOSE` and waits for a person.
+ * Ryntra's MCP surface has three roles — READ, PROPOSE, and EXECUTE **only**
+ * behind a separate release gate and a bounded mandate contract. That gate has
+ * not opened. So a write here writes to Ryntra's own decision record and to
+ * nothing else: no provider, no chain, no facilitator, no wallet. The record it
+ * produces sits at `PROPOSE` and waits for a person.
  *
  * ## The effect vocabulary has one member, and that is the design
  *
@@ -20,10 +20,10 @@
  * something would need an effect value to carry, and there is none — so a
  * generic signing tool is not *forbidden* here, it is **unrepresentable**.
  *
- * That distinction is the packet's whole argument and it is not pedantry.
- * `RYN-BIN-AOS-003` proved the alternative fails: the Binance MCP server ships
- * a meta-tool that takes a tool name as a string, so a client-side blocklist of
- * names blocks nothing. The MCP specification says the same thing about itself
+ * That distinction is this module's whole argument and it is not pedantry.
+ * The Binance MCP server shows the alternative fails: it ships a meta-tool
+ * that takes a tool name as a string, so a client-side blocklist of names
+ * blocks nothing. The MCP specification says the same thing about itself
  * — *"clients MUST consider tool annotations to be untrusted"* — and splits its
  * own security guidance so that every hard control is a server `MUST` while
  * every human-in-the-loop control is a client `SHOULD`. A boundary that depends
@@ -43,8 +43,8 @@ import { A2A_ADAPTER_REF, A2A_INBOUND_TASK_ACTION_REF } from "../adapters/a2a.ts
 /**
  * Everything an MCP write may do in this product.
  *
- * One member. Adding a second is a canon change with its own founder decision,
- * not a code edit, and the test that pins the length says so.
+ * One member. Adding a second is a product decision of its own, not a code
+ * edit, and the test that pins the length says so.
  */
 export const MCP_WRITE_EFFECTS = ["PROPOSAL_ONLY"] as const;
 

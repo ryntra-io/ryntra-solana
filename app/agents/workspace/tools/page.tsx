@@ -111,9 +111,9 @@ const COPY = {
       explainBody: (
         <>
           <p>
-            Canon <code>12 §10</code> gives this surface READ and PROPOSE, and puts EXECUTE behind a
-            separate release gate and a bounded mandate contract. That gate has not opened, so a write
-            writes to Ryntra&rsquo;s own decision record and to nothing else.
+            This surface is given READ and PROPOSE, and EXECUTE sits behind a separate release gate
+            and a bounded mandate contract. That gate has not opened, so a write writes to
+            Ryntra&rsquo;s own decision record and to nothing else.
           </p>
           <ul>
             <li>
@@ -158,7 +158,7 @@ const COPY = {
       proposal: "proposal",
       promotes: (what) => `promotes ${what}`,
       promotesTitle: "What it promotes elsewhere in the product",
-      eventTitle: "The canonical internal event, canon 12 §9",
+      eventTitle: "The canonical internal event",
       explainLabel: "Why completed promotes nothing",
       explainBody: (
         <>
@@ -206,8 +206,8 @@ const COPY = {
       explainBody: (
         <p>
           A ladder that stopped at <em>requested</em> would read as a product where nobody ever
-          authorizes anything. The step exists; it is closed by the owner, out of band, and this
-          packet did not build that path.
+          authorizes anything. The step exists; it is closed by the owner, out of band, and no path
+          to it is built here.
         </p>
       ),
     },
@@ -248,9 +248,9 @@ const COPY = {
       explainBody: (
         <>
           <p>
-            Канон <code>12 §10</code> дає цій поверхні READ і PROPOSE, а EXECUTE ставить за окремий
-            реліз-гейт і обмежений контракт мандата. Той гейт не відкрився, тож запис пише у власний
-            журнал рішень Ryntra і більше нікуди.
+            Ця поверхня має READ і PROPOSE, а EXECUTE стоїть за окремим реліз-гейтом і обмеженим
+            контрактом мандата. Той гейт не відкрився, тож запис пише у власний журнал рішень Ryntra
+            і більше нікуди.
           </p>
           <ul>
             <li>
@@ -295,7 +295,7 @@ const COPY = {
       proposal: "пропозиція",
       promotes: (what) => (what === "nothing" ? "нічого не просуває" : `просуває ${what}`),
       promotesTitle: "Що це просуває деінде в продукті",
-      eventTitle: "Канонічна внутрішня подія, канон 12 §9",
+      eventTitle: "Канонічна внутрішня подія",
       explainLabel: "Чому completed нічого не просуває",
       explainBody: (
         <>

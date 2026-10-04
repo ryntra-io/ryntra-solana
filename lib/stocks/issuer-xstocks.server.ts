@@ -1,7 +1,7 @@
 /**
  * The xStocks (Backed Finance) public API — an issuer source, read on the
  * server, cached, and never treated as a second independent confirmation of a
- * price (canon v4.0 §7.4).
+ * price.
  *
  * Read on 2026-09-14 from `https://docs.xstocks.fi/developers` and by probing
  * the endpoints: no authentication for the public routes, `x-ratelimit-limit`
@@ -41,7 +41,7 @@ const PAGE_BATCH = 12;
  * catalogue grew to 1,026 assets on eleven pages, the eleventh — TSLAx, NVDAx,
  * AAPLx among others — was never read, and those stocks left the universe
  * (`/app/stocks/NVDAx` answered 404, a plan could not name NVDAx). Past this
- * ceiling the read is refused, never cut (`RYN-API-CONTRACT-002`).
+ * ceiling the read is refused, never cut.
  */
 export const XSTOCKS_MAX_PAGES = 50;
 const MAX_CONCURRENT = 16;
@@ -87,7 +87,7 @@ export function resetXStocksCaches(): void {
 }
 
 /**
- * The quote endpoint's circuit (`RYN-STOCKS-RESILIENCE-001`, 2026-09-20).
+ * The quote endpoint's circuit (2026-09-20).
  *
  * On 2026-09-19/20 `GET /assets/{symbol}/price-data` stopped answering —
  * every call ran to its timeout — while `/assets`, `/multiplier` and

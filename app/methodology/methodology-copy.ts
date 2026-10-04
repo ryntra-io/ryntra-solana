@@ -1,9 +1,7 @@
 import { AUTOINVEST, FEES, FEES_UK } from "../docs/content/facts.ts";
 
 /**
- * «Звідки цифри» — the words of `/methodology`, English and Ukrainian together
- * (the new site of canon v5.5, `RYN-SITE-V5-001` subtask 3; the plan's §3 for
- * the title and the description).
+ * «Звідки цифри» — the words of `/methodology`, English and Ukrainian together.
  *
  * Every row names a figure a person sees, the source the product reads it
  * from, and when — each one checked against the code that reads it: the

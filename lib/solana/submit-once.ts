@@ -1,9 +1,9 @@
 /**
  * Submit-once for one intent.
  *
- * Canon §24.1: no automatic duplicate submit. The cluster's `maxRetries: 0`
- * only stops the RPC from retrying a send; it does not stop this process from
- * POSTing the same signed bytes twice. This ledger does.
+ * No automatic duplicate submit. The cluster's `maxRetries: 0` only stops the
+ * RPC from retrying a send; it does not stop this process from POSTing the
+ * same signed bytes twice. This ledger does.
  *
  * The key is the compiled message hash — the fingerprint of the exact bytes
  * that were built. A second plan (new blockhash) is a new intent. A second

@@ -25,7 +25,7 @@ export const metadata: Metadata = sitePageMetadata({
   path: HREF,
   title: `${entryFor(HREF)?.label} — Ryntra Documentation`,
   description:
-    "Every Agent Control surface, what it refuses, the one write path that is not a page, and what the canon designed that is not built.",
+    "Every Agent Control surface, what it refuses, the one write path that is not a page, and what was designed but is not built.",
 });
 
 /**
@@ -85,17 +85,16 @@ export default function Page() {
         lead="Control and proof for economic actions proposed by AI agents. Exactly three public artifacts — Agent Passport, Action Passport, Outcome Receipt — and no fourth."
         bare
         source={[
-          "Owner: lib/product/agent-control-surfaces.ts",
+          "Source: lib/product/agent-control-surfaces.ts",
           "Rendered from the register, not written here",
           "Checked by lib/agent-control/finish-battery.test.mjs",
         ]}
       >
         <div className="rx-prose">
           <p>
-            Each row names the module that owns what its facts mean and the delivery wave that
-            built it. The <em>refuses</em> column is the useful half: it is where the product
-            states what it will not do, which is the part a reader cannot check by looking at a
-            screenshot.
+            Each row names a surface, the route that serves it and the question it answers. The{" "}
+            <em>refuses</em> column is the useful half: it is where the product states what it
+            will not do, which is the part a reader cannot check by looking at a screenshot.
           </p>
           <p>
             No surface listed here writes, signs, authorizes, executes or moves anything. The
@@ -112,7 +111,6 @@ export default function Page() {
                 <th scope="col">Surface</th>
                 <th scope="col">The question it answers</th>
                 <th scope="col">Refuses</th>
-                <th scope="col">Wave</th>
               </tr>
             </thead>
             <tbody>
@@ -129,7 +127,6 @@ export default function Page() {
                       {surface.refuses.map((line) => <li key={line}>{line}</li>)}
                     </ul>
                   </td>
-                  <td><code>{surface.wave}</code></td>
                 </tr>
               ))}
             </tbody>
@@ -145,9 +142,9 @@ export default function Page() {
         lead="Every capability is judged on its own canary. Nothing is promoted because another capability ran, and nothing is promoted because a chain opened."
         bare
         source={[
-          "Owner: lib/agent-control/mainnet-promotion.ts",
+          "Source: lib/agent-control/mainnet-promotion.ts",
           "Computed while this page renders",
-          "Decision: FD-02, 2026-08-21",
+          "Rail: Base Sepolia, testnet only",
         ]}
       >
         <div className="rx-prose">
@@ -158,9 +155,9 @@ export default function Page() {
             table below is produced by that gate rather than restated beside it.
           </p>
           <p>
-            Founder decision FD-02 makes Base Sepolia the default execution rail for this phase &mdash;
-            testnet only, no mainnet execution &mdash; so there is no mainnet run to record and every
-            row is refused. That refusal is computed, not written: when a canary exists, the row
+            Base Sepolia is the default execution rail for this phase &mdash; testnet only, no
+            mainnet execution &mdash; so there is no mainnet run to record and every row is
+            refused. That refusal is computed, not written: when a canary exists, the row
             changes because the record changed.
           </p>
         </div>
@@ -187,8 +184,8 @@ export default function Page() {
                     {/* The row header carries the name and the chain and nothing
                         else. This template renders `th` uppercase and bold, so a
                         sentence put here came out as a wall of capitals — which
-                        is the one thing rule 6 of the journal asks a surface not
-                        to do. Prose belongs in the cell. */}
+                        is the one thing a surface should never show a reader.
+                        Prose belongs in the cell. */}
                     <th scope="row">
                       {verdict.label}
                       <br />
@@ -214,11 +211,11 @@ export default function Page() {
         n="12"
         heading="What is not built"
         meta={`${AGENT_CONTROL_DEFERRED.length} deferred`}
-        lead="Everything the canon designed that this product has not built, each with the exact condition that would open it."
+        lead="Everything designed for this product that it has not built, each with the exact condition that would open it."
         bare
         source={[
-          "Owner: lib/product/agent-control-surfaces.ts",
-          "Canon: docs/products/agent-control.md",
+          "Source: lib/product/agent-control-surfaces.ts",
+          "Rendered from the register, not written here",
         ]}
       >
         <div className="rx-prose">

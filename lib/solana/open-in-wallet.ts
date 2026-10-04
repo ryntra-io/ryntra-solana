@@ -7,9 +7,8 @@
  * path for exactly this — a link that opens the page inside its own in-app
  * browser, where the wallet is present: `https://phantom.app/ul/browse/<url>
  * ?ref=<ref>`, both parts URL-encoded (docs.phantom.com, «Browse», read
- * 2026-09-24). The payment page has used it since `RYN-PAY-REQUEST-001`; the
- * top-up and the connection panel use it since `RYN-INVEST-SIMPLE-001`
- * session 5 (canon v5.1 §4 «Почати з картки»: «Відкрити в Phantom»).
+ * 2026-09-24). The payment page uses it, and so do the top-up and the
+ * connection panel («Почати з картки»: «Відкрити в Phantom»).
  *
  * A computer is different: a wallet there is an extension, and the one honest
  * step is to install one.

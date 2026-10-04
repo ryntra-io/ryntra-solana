@@ -22,9 +22,8 @@ import { WRAPPED_SOL_MINT } from "@/lib/solana/send-kinds";
 import styles from "./top-up.module.css";
 
 /**
- * «Поповнити» — the money a first purchase needs, and three ways to bring it
- * (canon v5.1 §4 «Почати з картки», В5, В12; `RYN-INVEST-SIMPLE-001`,
- * session 5). Drawn for 390 px first.
+ * «Поповнити» — the money a first purchase needs, and three ways to bring it.
+ * Drawn for 390 px first.
  *
  * **What is needed** is said once, in two lines the wallet itself answers:
  * USDC for purchases, from $1, and a little SOL for the network — each

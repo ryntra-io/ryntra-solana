@@ -1,5 +1,5 @@
 /**
- * The company's own facts, from its SEC filings (`RYN-COMPANY-PAGE-001`).
+ * The company's own facts, from its SEC filings.
  *
  * `company-facts.data.ts` is written by `scripts/stocks/company-facts.mjs`
  * from EDGAR — public-domain filings, read with the product's contact in the

@@ -17,7 +17,6 @@ test("INVARIANT: while billing is disabled, every tier resolves to full beta —
 
 test("billing remains gated on its own evidence", () => {
   assert.deepEqual(BILLING_READINESS, {
-    gateTask: "RYN-BILL-001",
     northStar: "Weekly Risk-Reviewed Decisions (WRRD)",
     requiredEvidence: ["retained_wrrd", "willingness_to_pay"],
     numericThresholds: null,

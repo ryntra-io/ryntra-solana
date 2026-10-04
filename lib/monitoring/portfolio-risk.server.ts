@@ -1,9 +1,9 @@
 /**
- * Reads what «Ризик портфеля» stands on and judges it (`portfolio-risk.ts`;
- * `RYN-PROTECT-SIGNAL-001`, subtask 2): the wallet's company positions as
- * Нагляд judged them (`readPositions`), every other token the chain says the
- * wallet holds — dollars at a dollar, the rest at the catalogue's price — and
- * the SOL balance, so each share is of the whole wallet.
+ * Reads what «Ризик портфеля» stands on and judges it (`portfolio-risk.ts`):
+ * the wallet's company positions as Нагляд judged them (`readPositions`),
+ * every other token the chain says the wallet holds — dollars at a dollar,
+ * the rest at the catalogue's price — and the SOL balance, so each share is
+ * of the whole wallet.
  *
  * Nothing unread is guessed. A token program that did not answer, a market
  * that did not, an exit, a SOL balance or a price that could not be read is a

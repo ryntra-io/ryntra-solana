@@ -7,10 +7,9 @@ import styles from "./workflow.module.css";
 /**
  * The six product cards inside the third block's frame — one illustrative
  * purchase of NVDAx for $1, from the company to the rule that repeats it
- * (canon v5.5; the Owner's word of 2026-09-26: the Owner's own design, the
- * new road).
+ * (the original design, the new road).
  *
- * They are drawn in HTML on the Owner's frame, not screenshots, so one
+ * They are drawn in HTML on the block's frame, not screenshots, so one
  * story's figures sit in one file (workflow-trade.ts) and render crisp at
  * every width and in both languages: the frame sets `--u` to one canvas pixel
  * on the desktop and to `1px` where the cards stand full-width. The words are

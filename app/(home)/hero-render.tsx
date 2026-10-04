@@ -7,24 +7,24 @@ import heroArt from "./hero-art.png";
 import styles from "./hero-render.module.css";
 
 /**
- * PARKED — the Owner's render as the hero, unmounted on 2026-09-14.
+ * PARKED — the finished render as the hero, unmounted on 2026-09-14.
  *
- * On the Owner's *«Роби»* the hero was rebuilt in code (`hero.tsx`): the
- * same composition — the words, the Spot workspace in a tilted device, the
- * two cards, the rail and the strip — with the atmosphere painted by the
- * page instead of the render's landscape, so that the top of the site and
- * the blocks below it are one fabric, the type is crisp at every width and
- * the figures are the page's own one story. This file keeps the render
+ * That day the hero was rebuilt in code (`hero.tsx`): the same composition
+ * — the words, the Spot workspace in a tilted device, the two cards, the
+ * rail and the strip — with the atmosphere painted by the page instead of
+ * the render's landscape, so that the top of the site and the blocks below
+ * it are one fabric, the type is crisp at every width and the figures are
+ * the page's own one story. This file keeps the render
  * version as it was, with `hero-art.png`, so it can be mounted again by
  * pointing `homepage.tsx` at `Hero` from here.
  *
- * What it was. The hero — the Owner's render, mounted as the hero itself.
+ * What it was. The hero — the finished render, mounted as the hero itself.
  *
- * On the evening of 2026-09-13 the Owner replaced the drawn hero
- * (`hero-drawn.tsx`, parked) with a finished render of the same composition:
- * the headline, the Spot workspace with NVDAx open, the Portfolio and Rewards
- * cards, the Solana rail and the strip of four — *«Постав ось цю картинку,
- * велику як Захеро. І зроби її активною там де Open App … зайти в кабінет.»*
+ * On the evening of 2026-09-13 the drawn hero (`hero-drawn.tsx`, parked) was
+ * replaced with a finished render of the same composition: the headline, the
+ * Spot workspace with NVDAx open, the Portfolio and Rewards cards, the Solana
+ * rail and the strip of four — to stand large as the hero, and to be live
+ * where its *Open App* leads into the cabinet.
  *
  * So the picture is the hero from 1024 px up, as large as the first screen
  * allows without leaving it, and one thing on it is live: the *Open App*

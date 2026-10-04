@@ -3,18 +3,18 @@
 /**
  * The way back into a transfer that is still in the air.
  *
- * Product Canon v1.0 §3.1 takes Bridge out of the menu and §4.1 says why that
- * is safe — a cross-network route is chosen by picking assets and networks
- * inside Swap, so there was never a second product to remove. What the menu
- * entry *also* was, and what nothing else replaced, is the door back to an
- * unfinished transfer: the CCTP and Mayan engines remember a run across a
- * closed tab, but each of them only reads its own memory **while it is
- * mounted**, and each is mounted only for its own pair. Open Swap on the
- * default SOL → USDC and a burn that already happened on Base is invisible.
+ * Bridge is out of the menu, and that is safe — a cross-network route is
+ * chosen by picking assets and networks inside Swap, so there was never a
+ * second product to remove. What the menu entry *also* was, and what nothing
+ * else replaced, is the door back to an unfinished transfer: the CCTP and
+ * Mayan engines remember a run across a closed tab, but each of them only
+ * reads its own memory **while it is mounted**, and each is mounted only for
+ * its own pair. Open Swap on the default SOL → USDC and a burn that already
+ * happened on Base is invisible.
  *
- * That is the exact failure canon §4.1 names — *completing the first
- * transaction does not mark the whole operation complete* — arriving through
- * the navigation rather than through the money. So this reads both memories
+ * That is exactly the failure the rule *completing the first transaction does
+ * not mark the whole operation complete* exists for — arriving through the
+ * navigation rather than through the money. So this reads both memories
  * unconditionally, on any pair, and offers the one thing that fixes it: the
  * pair that mounts the engine which owns the run.
  *
@@ -125,10 +125,10 @@ export function ResumeUnfinished() {
         <span>{uk ? "Повернутися до нього" : "Go back to it"}</span>
         <ArrowRight size={17} weight="bold" aria-hidden />
       </Link>
-      {/* No second link. The owner's instruction of 2026-09-08 removes the
-          transfer's own page — the cross-chain swap replaces it — so the full
-          evidence panel now renders inside Swap itself, under the engine that
-          owns the run. Pressing the line above is the whole way back. */}
+      {/* No second link. Since 2026-09-08 the transfer has no page of its
+          own — the cross-chain swap replaces it — so the full evidence panel
+          now renders inside Swap itself, under the engine that owns the run.
+          Pressing the line above is the whole way back. */}
     </aside>
   );
 }

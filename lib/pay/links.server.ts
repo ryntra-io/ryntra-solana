@@ -1,5 +1,5 @@
 /**
- * Payment links for the v1 routes (contract 1.22.0, `RYN-MOBILE-MONEY-API-001`).
+ * Payment links for the v1 routes (contract 1.22.0).
  *
  * The same engine the web's `/api/pay/requests` and `/pay/<id>` run — the
  * record, the owner row, the reference index and the observation of

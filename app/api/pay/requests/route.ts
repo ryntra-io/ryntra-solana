@@ -27,11 +27,11 @@ export const dynamic = "force-dynamic";
 /**
  * `/api/pay/requests` — a proven wallet creates and lists its own requests.
  *
- * Both verbs sit behind proof of ownership of the connected wallet (canon
- * §0.6: payment requests are private wallet-scoped data). The recipient of a
- * new request is the proven address — never a body field — so a request can
- * only ever ask money for the wallet that signed in. The public page reads
- * none of this; it has its own route.
+ * Both verbs sit behind proof of ownership of the connected wallet (payment
+ * requests are private wallet-scoped data). The recipient of a new request is
+ * the proven address — never a body field — so a request can only ever ask
+ * money for the wallet that signed in. The public page reads none of this; it
+ * has its own route.
  */
 function json(body: Record<string, unknown>, status = 200) {
   return NextResponse.json(body, { status, headers: privateNoStoreHeaders() });

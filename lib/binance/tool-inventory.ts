@@ -1,8 +1,8 @@
-/* Binance MCP tool registry (RYN-BIN-AOS-002, read-only verification).
+/* Binance MCP tool registry (read-only verification).
 
-   `RYN-BIN-AOS-001` could not reach the tool list: `tools/list` returned 401 and authorizing an
-   account is a founder action. The founder authorized it, so the inventory is now captured — and
-   the two things it settles are worth more than the list itself.
+   The first read-only discovery could not reach the tool list: `tools/list` returned 401 and
+   authorizing an account is the account holder's action. The account holder authorized it, so the
+   inventory is now captured — and the two things it settles are worth more than the list itself.
 
    First, the withdrawal claim stops being a sentence in Binance's documentation and becomes a
    checkable property: five tools match /withdraw/ and every one of them reads. There is no
@@ -12,7 +12,7 @@
    pattern as `{verb}_{product}_{operation}` and offers `create_spot_newOrder` as an example. No
    exposed tool is named that way. A blocklist written from that documentation — blocking
    `create_*`, `cancel_*`, `delete_*` — matches nothing and fails OPEN on every order and transfer
-   tool. That is not hypothetical: it is what this packet's own first probe did, and only the
+   tool. That is not hypothetical: it is what the discovery's own first probe did, and only the
    prompt instruction stopped the nested client from being able to trade. Classification here is
    by operation, never by prefix. */
 

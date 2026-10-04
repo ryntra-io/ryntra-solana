@@ -13,8 +13,8 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 /**
- * Daily discipline recap DM (market-playbook-journal §4). One calm digest per active paper-trader:
- * adherence % leads, one constructive next-step, discipline register — never profit.
+ * Daily discipline recap DM. One calm digest per active paper-trader: adherence % leads, one
+ * constructive next-step, discipline register — never profit.
  * Trigger: Vercel cron / manual — via `Authorization: Bearer CRON_SECRET` only (Vercel cron
  * sends that header natively). Legacy `?key=` → 401 migration error, never accepted.
  * Scope note: iterates account_watch (verified users who submitted a wallet) — the engaged cohort;

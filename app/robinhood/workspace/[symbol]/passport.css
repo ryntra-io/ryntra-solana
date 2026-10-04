@@ -7,7 +7,7 @@
  * exactly the judgement this page refuses to make for them.
  *
  * Every fact carries a source line under it in the same rhythm, because the
- * canon's rule is that a Passport is facts and evidence rather than a score.
+ * rule is that a Passport is facts and evidence rather than a score.
  */
 
 .pp section + section {
@@ -24,7 +24,7 @@
 }
 
 /* Both links sat at 22px against the 44px floor, measured at 375px. `← Radar`
-   had been there since RYN-TM-002 and nothing saw it, because a target size is
+   had been there all along and nothing saw it, because a target size is
    rendered geometry and no source-level gate has an opinion about it. */
 @media (width <= 640px) {
   .pp-back a {

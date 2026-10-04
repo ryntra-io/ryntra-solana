@@ -312,9 +312,9 @@
 }
 
 /* Standard against Fast, and what each costs.
-   Canon 25.5 wants both tiers and every fee readable before the Review, and
-   Fast never described as instant. The chosen tier is the one with weight; the
-   other is present so declining it is visible as a decision rather than as an
+   Both tiers and every fee are readable before the Review, and Fast is never
+   described as instant. The chosen tier is the one with weight; the other is
+   present so declining it is visible as a decision rather than as an
    absence. */
 .speedChoice {
   margin: 0;

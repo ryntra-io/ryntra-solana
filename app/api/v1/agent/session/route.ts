@@ -13,9 +13,9 @@ export const maxDuration = 30;
 
 /**
  * `POST /api/v1/agent/session` — open or resume the proven wallet's
- * conversation for a context (`RYN-AGENT-TEXT-001`, contract 1.8.0). One
- * route for the web (proof cookie) and the phone (bearer). The session is
- * durable: it needs a store that outlives the instance, and says so.
+ * conversation for a context (contract 1.8.0). One route for the web (proof
+ * cookie) and the phone (bearer). The session is durable: it needs a store
+ * that outlives the instance, and says so.
  */
 export async function POST(request: Request) {
   const refused = apiMajorRefusal(request.headers);

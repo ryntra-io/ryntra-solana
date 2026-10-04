@@ -8,10 +8,9 @@ import { unstable_cache } from "next/cache.js";
  * the chart is drawn from — and each instance kept them only in its own
  * memory, so every cold instance paid the chain and two providers again:
  * measured on 2026-09-27, 1.2–2.5 s for a first visit against 0.3–0.4 s for a
- * second (`RYN-SITE-V5-001`, subtask 4: «факти кешувати, ціна жива»). The
- * platform's data cache holds them for every instance; the price is not
- * among them — it comes from the catalogue's minute-fresh row and the page's
- * own live read.
+ * second. The facts are cached and the price stays live: the platform's data
+ * cache holds the facts for every instance; the price is not among them — it
+ * comes from the catalogue's minute-fresh row and the page's own live read.
  *
  * Only an answer `ok` accepts is kept: the callback throws on anything else,
  * so a provider's silence is never served for minutes, and the caller gets

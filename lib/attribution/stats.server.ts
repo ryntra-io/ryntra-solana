@@ -87,7 +87,7 @@ async function readLedger(env: NodeJS.ProcessEnv): Promise<Readonly<{ ledger: Le
     }
     return { ledger: { actions, orders, burns, internalWallets: internal.wallets }, internalWallets: internal.wallets };
   } catch {
-    /* The store did not answer; the deployment's own list still names the Owner's wallets. */
+    /* The store did not answer; the deployment's own list still names Ryntra's internal wallets. */
     return { ledger: null, internalWallets: new Set(internalWalletsFromEnv(env)) };
   }
 }

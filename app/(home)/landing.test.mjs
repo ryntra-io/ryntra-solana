@@ -22,27 +22,26 @@ import { REWARD_RATE_BPS } from "../../lib/rewards/model.ts";
 import { needsDevelopmentRepository } from "../../lib/development-repository.mjs";
 
 /*
- * The landing of canon v5.5 (`RYN-SITE-V5-001`, subtask 2; the Owner's word of
- * 2026-09-26, «Веб 5», and «Твій дизайн + v5.5» the same day): the Owner's
- * hero, orbit, workflow and Rewards with the new words, and the new blocks in
- * the same design. What these tests hold is what the page may say:
+ * The landing of the new site (2026-09-26): the original hero, orbit,
+ * workflow and Rewards with the new words, and the new blocks in the same
+ * design. What these tests hold is what the page may say:
  *
- *   - the first screen — the Owner's line word for word and one action;
+ *   - the first screen — the landing's line word for word and one action;
  *   - «Працює зараз» — every item tied to the code that does it on production;
  *   - «Будуємо» and «Далі» — every item tied to a row of the queue that is not
- *     done, failing the day it is, so the item moves rather than lingering
- *     (canon В40); the ties live here, never in the page's code, so no task id
- *     reaches a browser;
+ *     done, failing the day it is, so the item moves rather than lingering;
+ *     the ties live here, never in the page's code, so no task id reaches a
+ *     browser;
  *   - the pictures — every one a file of `ryntra.io` screens, at its size;
  *   - the words — both languages the same shape, the product's own names,
- *     nothing canon §5.5 forbids, nothing internal.
+ *     no forbidden word, nothing internal.
  */
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
 const exists = (path) => existsSync(new URL(path, import.meta.url));
 const withoutComments = (source) => source.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^[ \t]*\/\/.*$/gm, "");
 const LOCALES = ["en", "uk"];
-/* The Owner's blocks and the new ones, as `homepage.tsx` mounts them. */
+/* The original blocks and the new ones, as `homepage.tsx` mounts them. */
 const BLOCK_FILES = ["./hero.tsx", "./universe.tsx", "./workflow.tsx", "./workflow-cards.tsx", "./rewards.tsx", "./landing-blocks.tsx", "./autoinvest-block.tsx"];
 
 function shape(value) {
@@ -67,7 +66,7 @@ function renderedHomepageWords(locale) {
   };
 }
 
-test("the first screen is the Owner's line and one action, in both languages", () => {
+test("the first screen is the landing's line and one action, in both languages", () => {
   assert.equal(HOMEPAGE_COPY.uk.titleLines.join(" ").replace(/ /g, " "), "Купи частинку компанії від $1 — у своєму гаманці.");
   assert.equal(HOMEPAGE_COPY.en.titleLines.join(" "), "Buy a piece of a company from $1 — in your own wallet.");
   assert.equal(HOMEPAGE_COPY.uk.hero.open, "Відкрити застосунок");
@@ -92,7 +91,7 @@ test("the first screen is the Owner's line and one action, in both languages", (
   }
   assert.match(read("./hero.tsx"), /\{index > 0 \? " " : null\}\{line\}/);
   /* Every «Відкрити застосунок» opens the app at Home, at the address of the page's language
-     (`/uk/app/home` from `/uk`, RYN-SITE-V5-001 subtask 4); the header's stays quiet under the hero's orange one. */
+     (`/uk/app/home` from `/uk`); the header's stays quiet under the hero's orange one. */
   for (const file of ["./hero.tsx", "./workflow.tsx", "./rewards.tsx"]) {
     assert.match(withoutComments(read(file)), /className=\{styles\.(?:primary|open)\} href=\{localizedPath\("\/app\/home", locale\)\}/, `${file}: the one action opens the app`);
   }
@@ -120,13 +119,13 @@ test("both languages carry the same page, in the product's own words", () => {
   assert.match(read("./landing-blocks.tsx"), /head: INVEST_WORDS\.timeToBuy\[locale\],[\s\S]*?action: buyByRuleWord\(locale, 1\),/);
 });
 
-test("the landing's metadata fits a search result and the share card carries the Owner's line", () => {
+test("the landing's metadata fits a search result and the share card carries the landing's line", () => {
   for (const locale of LOCALES) {
     const meta = LANDING_META[locale];
     assert.equal(LANDING_COPY[locale].meta, meta);
     assert.ok(meta.title.length <= 60, `${locale} title ${meta.title.length}`);
     assert.ok(meta.description.length > 100 && meta.description.length <= 160, `${locale} description ${meta.description.length}`);
-    assert.equal(meta.ogTitle, HOMEPAGE_COPY[locale].seoTitle, "the Owner's line of 2026-09-26, word for word");
+    assert.equal(meta.ogTitle, HOMEPAGE_COPY[locale].seoTitle, "the landing's line, word for word");
     assert.equal(meta.ogAlt, HOMEPAGE_COPY[locale].ogAlt);
     assert.match(meta.title, /\$1/);
     assert.match(meta.description, /\$1/);
@@ -160,7 +159,7 @@ const WORKS_NOW = {
     const sheet = read("../app/stocks/[ticker]/buy-sheet.tsx");
     assert.match(sheet, /data-sheet="review"/);
     assert.match(sheet, /data-sheet="receipt"/);
-    /* RYN-BUY-FLOW-001 subtask 1: the sale from a position, on the company page and in Portfolio — the purchase's Review and receipt on the sale's side. */
+    /* The sale from a position, on the company page and in Portfolio — the purchase's Review and receipt on the sale's side. */
     const sale = read("../app/stocks/[ticker]/sell-sheet.tsx");
     assert.match(sale, /side: SPOT_SALE_SIDE/);
     assert.match(sale, /data-sheet="review"/);
@@ -201,7 +200,7 @@ const WORKS_NOW = {
     assert.ok(exists("../api/v1/notifications/telegram/route.ts"));
   },
   rewards: () => {
-    /* The Owner's word of 2026-09-26: half the fee back and the referrals stay on the page. */
+    /* Half the fee back and the referrals stay on the page. */
     assert.equal(readinessOf("rewards"), "available");
     assert.equal(REWARD_RATE_BPS.CASHBACK, 5000, "up to half of the fee back");
     assert.ok(REWARD_RATE_BPS.REFERRAL_L1 > 0 && REWARD_RATE_BPS.REFERRAL_L2 > 0, "two levels of referral");
@@ -222,7 +221,7 @@ test("«Працює зараз» — every item is tied to the code that does i
   for (const [key, check] of Object.entries(WORKS_NOW)) {
     assert.doesNotThrow(check, `«${key}» is not proven by the code`);
   }
-  /* The Android app is not released (no signing key; `assetlinks.json` is `[]`): «Будуємо» only, never «Працює зараз» (plan decision 2). */
+  /* The Android app is not released (no signing key; `assetlinks.json` is `[]`): «Будуємо» only, never «Працює зараз». */
   for (const locale of LOCALES) {
     assert.doesNotMatch(JSON.stringify(LANDING_COPY[locale].status.now), /Android|Seeker/);
   }
@@ -230,15 +229,14 @@ test("«Працює зараз» — every item is tied to the code that does i
 
 /**
  * «Будуємо» and «Далі»: each item and the row of the queue that builds it —
- * the web registry (`docs/tasks/INDEX.md`) or the phone's (`apps/mobile/docs/
- * TASKS.md`, read-only from this line). When a row closes, this fails: the item
- * moves to «Працює зараз» with a proof above, or leaves the page — or, while the
- * thing it names is still being built, passes to the row that builds it now.
- * The Android app: M8 «Реліз» (the release signed, 2026-09-28) and M17 «Пакет»
- * (the dApp Store package, 2026-09-29) closed, and the app is not in a store
- * yet — the submission is the Owner's act — so the item stays in «Будуємо» on
- * the row that builds the app on, M9 «Polish» (merged into line A on
- * 2026-09-29). It moves to «Працює зараз» once a store lists the app.
+ * the web app's task list or the phone app's. When a row closes, this
+ * fails: the item moves to «Працює зараз» with a proof above, or leaves the
+ * page — or, while the thing it names is still being built, passes to the row
+ * that builds it now. The Android app: M8 «Реліз» (the release signed,
+ * 2026-09-28) and M17 «Пакет» (the dApp Store package, 2026-09-29) closed,
+ * and the app is not in a store yet, so the item stays in «Будуємо» on the
+ * row that builds the app on, M9 «Polish» (merged on 2026-09-29). It moves to
+ * «Працює зараз» once a store lists the app.
  */
 const ROWS = {
   android: { registry: "mobile", row: "M9" },
@@ -259,12 +257,12 @@ function rowStatus({ registry, row }) {
   return match?.[1] ?? null;
 }
 
-test("«Будуємо» and «Далі» — every item is a row of the queue that is not done yet", { skip: needsDevelopmentRepository("the task registry under docs/tasks/ and the phone app's task list") }, () => {
+test("«Будуємо» and «Далі» — every item is a row of the queue that is not done yet", { skip: needsDevelopmentRepository("the web and phone apps' task lists") }, () => {
   for (const locale of LOCALES) {
     const items = [...LANDING_COPY[locale].status.building.items, ...LANDING_COPY[locale].status.next.items];
     assert.deepEqual(new Set(items.map((item) => item.key)), new Set(Object.keys(ROWS)), `${locale}: every item has its row`);
     for (const item of items) {
-      /* Canon В40: no dates, no ids, no per cents on the page. */
+      /* No dates, no ids, no per cents on the page. */
       assert.doesNotMatch(item.text, /\d|RYN-|\bM\d/u, `${locale}: «${item.text}» carries a date, an id or a figure`);
     }
   }
@@ -273,14 +271,14 @@ test("«Будуємо» and «Далі» — every item is a row of the queue t
     assert.ok(status, `«${key}»: ${binding.row} is not in the ${binding.registry} registry`);
     assert.ok(!["DONE", "CANCELLED"].includes(status), `«${key}»: ${binding.row} is ${status} — move the item to «Працює зараз» with its proof, or take it off the page`);
   }
-  /* Nowhere but the landing: the app draws no roadmap (canon rule 10, amended by В40 for `/` and `/uk` only). */
+  /* Nowhere but the landing: the app draws no roadmap; only `/` and `/uk` show one. */
   assert.doesNotMatch(read("../app/home/page.tsx"), /status\.building|status\.next|landing-copy/);
 });
 
 /* A word, not a part of one: Cyrillic letters are not `\w`, so `\b` cannot bound them. */
 const word = (source) => new RegExp(`(?<![\\p{L}\\p{N}])(?:${source})(?![\\p{L}\\p{N}])`, "iu");
 
-test("the words: nothing canon §5.5 forbids, nothing internal, no typed fee", () => {
+test("the words: nothing forbidden, nothing internal, no typed fee", () => {
   const text = JSON.stringify([LANDING_COPY, LOCALES.map(renderedHomepageWords)]);
   const forbidden = [
     word("скоро|soon|coming soon|у планах"),

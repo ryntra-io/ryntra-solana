@@ -27,7 +27,7 @@ import { POST as mcpRoute } from "./route.ts";
  *
  * This is the machine half of the Grok criterion. The half that is a property
  * of somebody else's product — a connector added inside a Grok account — is a
- * founder step and is recorded as not performed rather than assumed.
+ * manual step and is recorded as not performed rather than assumed.
  */
 
 const ORIGIN = "https://ryntra.io";
@@ -338,9 +338,10 @@ test("a write produces a proposal at PROPOSE and nothing that could authorize it
 
 test("a tool absent from the caller's list is refused by the gate, not by the filter", async () => {
   /*
-   * The `RYN-BIN-AOS-003` property, end to end. The client below never saw
-   * `propose_action` in `tools/list`; it calls it by name anyway, which is
-   * exactly what a generic execute indirection would do.
+   * End to end, the gate and not the filter refuses a tool outside the
+   * token's scopes. The client below never saw `propose_action` in
+   * `tools/list`; it calls it by name anyway, which is exactly what a generic
+   * execute indirection would do.
    */
   const readOnly = await connect(["evidence:read"]);
   const client = await mcpClient(readOnly.tokens.access_token, readOnly.caller);

@@ -1,7 +1,6 @@
 /**
  * «Шлях компанії» — where a company stands on its way from a private token to
- * its stock on Solana, and which step this token is (canon v5.2 В27, §7;
- * `RYN-COMPANY-PATH-001`).
+ * its stock on Solana, and which step this token is.
  *
  * Four steps, always in this order: **private** (the company's token through
  * PreStocks) → **ipo** (the day its shares first traded, at the price they

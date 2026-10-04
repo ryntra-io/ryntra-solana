@@ -1,6 +1,6 @@
 {
   "capturedAt": "2026-08-23T12:22:55Z",
-  "note": "Verbatim (trimmed) responses captured by the RYN-BIN-AOS-001 read-only discovery probe. Public endpoints only, no credentials, no order or transfer call.",
+  "note": "Verbatim (trimmed) responses captured by a read-only discovery probe. Public endpoints only, no credentials, no order or transfer call.",
   "mcpInitialize": {
     "endpoint": "https://agent.binance.com/mcp/agentic",
     "httpStatus": 200,

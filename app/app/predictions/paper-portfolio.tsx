@@ -10,11 +10,11 @@ import { usePaperAccount } from "./use-paper-account";
 import { wordsFor } from "./words";
 
 /**
- * *Paper Predictions* on the Portfolio page (`RYN-PREDICTIONS-001` item 18):
- * the paper account in its own section, under its own heading, with the one
- * sentence that matters — nothing here is part of the real portfolio total.
- * A guest sees nothing (the page above already asks for the wallet); a
- * proven wallet without a paper account sees how to enable one.
+ * *Paper Predictions* on the Portfolio page: the paper account in its own
+ * section, under its own heading, with the one sentence that matters —
+ * nothing here is part of the real portfolio total. A guest sees nothing (the
+ * page above already asks for the wallet); a proven wallet without a paper
+ * account sees how to enable one.
  */
 export function PaperPortfolioSection({ locale }: { locale: WorkspaceLocale }) {
   const word = wordsFor(locale);

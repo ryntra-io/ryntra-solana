@@ -12,7 +12,7 @@ import {
  *
  * ## The problem this exists for
  *
- * `resolveSolanaCanaryPolicy` reads the founder's own experiment configuration
+ * `resolveSolanaCanaryPolicy` reads the operator's own experiment configuration
  * and fails when any of it is malformed. Five customer-path routes resolved it
  * and refused `503` on failure, so a typo in a variable that describes a
  * twenty-dollar internal experiment refused **every stranger's transfer**. The
@@ -20,11 +20,11 @@ import {
  *
  * ## The answer, and the two halves it must keep apart
  *
- * A deterministic closed policy — owner decision of 2026-09-03, taking the
- * fallback over a new verdict schema version so no signed artifact is
- * re-versioned for this. But a fallback that quietly stands in for a healthy
- * policy would be worse than the refusal it replaces, so it is a **declared
- * degraded state** with a hard line through the middle:
+ * A deterministic closed policy — decided on 2026-09-03, taking the fallback
+ * over a new verdict schema version so no signed artifact is re-versioned for
+ * this. But a fallback that quietly stands in for a healthy policy would be
+ * worse than the refusal it replaces, so it is a **declared degraded state**
+ * with a hard line through the middle:
  *
  * - **CUSTOMER** — proceeds. Admission is decided by the safety, support and
  *   capability contracts, exactly as it already was; the canary verdict is
@@ -106,7 +106,7 @@ export type CanaryRuntime = Readonly<{
   mode: CanaryRuntimeMode;
   policy: SolanaCanaryPolicy;
   policyDigest: string;
-  /** The exact parse failure, for the founder's own surface and the log. */
+  /** The exact parse failure, for the operator's own surface and the log. */
   reason: string | null;
   checkedAt: string;
 }>;
@@ -148,9 +148,9 @@ export type CanaryFlowDecision =
 /**
  * The line between the two halves.
  *
- * A customer is never refused for the state of the founder's configuration. An
+ * A customer is never refused for the state of the operator's configuration. An
  * owner canary is never permitted while that configuration is unreadable —
- * because the fallback's empty allowlists would place his own action outside
+ * because the fallback's empty allowlists would place its own action outside
  * the envelope, which is exactly how a real canary would spend real money with
  * no reservation, no ceiling and no ledger entry behind it.
  */
@@ -181,7 +181,7 @@ export type CanaryRuntimeReport = Readonly<{
 }>;
 
 /**
- * What the founder's own surface shows, and what the log line carries.
+ * What the operator's own surface shows, and what the log line carries.
  *
  * `customerMoneyFlows` is a constant rather than a computation, and that is the
  * claim being made: no state of this runtime changes what a customer can do.
@@ -249,11 +249,11 @@ export const CANARY_FLOW_HEADER = "x-ryntra-canary-flow";
  * Deliberately not derived from the policy, the allowlists or the verdict. Under
  * a closed fallback every action reads `OUTSIDE_ENVELOPE`, so a mode inferred
  * from scope would call an owner canary a customer and let it spend real money
- * with no reservation behind it — the exact substitution the owner decision of
+ * with no reservation behind it — the exact substitution the closed policy of
  * 2026-09-03 forbids.
  *
  * Absent or unrecognised means `CUSTOMER`. That is the safe default in this
- * direction: a customer is never refused for the founder's configuration, and a
+ * direction: a customer is never refused for the operator's configuration, and a
  * caller that wants owner-canary accounting has to say so, which is the only
  * request this can refuse.
  */

@@ -5,20 +5,20 @@
  * is a mechanical projection of it and is edited only to track that file
  * (Enforcement §PROJECTION RULE).
  *
- * Brand Canon v1.0 (Owner, 2026-09-11): one brand orange `#FF681C` on a
- * graphite ground with a navy undertone; a cool neutral light theme; green
- * and red for the market, amber for caution, orange only for the brand, the
- * primary action, the selected and the active. Dark is the presentation
- * theme and lives on :root; light activates via [data-theme="light"] on the
- * application shell, [data-ry-theme="light"] on a public band, or locally via
- * .rt-light so a control surface can show both worlds on one page.
+ * Brand v1.0 (2026-09-11): one brand orange `#FF681C` on a graphite ground
+ * with a navy undertone; a cool neutral light theme; green and red for the
+ * market, amber for caution, orange only for the brand, the primary action,
+ * the selected and the active. Dark is the presentation theme and lives on
+ * :root; light activates via [data-theme="light"] on the application shell,
+ * [data-ry-theme="light"] on a public band, or locally via .rt-light so a
+ * control surface can show both worlds on one page.
  *
  * Three layers of names resolve onto the same values:
  *   --ry-*   the runtime tokens (brand, surfaces, semantics, type, shape);
  *   --rt-*   the compatibility names 5,000+ declarations still read
  *            (action-blue is the brand, reconciled-green is success, …);
  *   the semantic layer at the end (--surface, --brand, --text-primary, …)
- *   the Owner asked for, for new components.
+ *   for new components.
  * A legacy NAME in a stylesheet is not a legacy COLOUR; the chain is what is
  * trusted, and the gate checks the chain.
  */
@@ -86,9 +86,9 @@
   --rt-chart-grid: color-mix(in srgb, var(--ry-border) 60%, transparent);
   --rt-site-grid: rgba(135, 146, 168, 0.055);
   /* The network's own light — Solana's brand gradient, for the light on and
-     around the Solana object in the public market universe (Owner,
-     2026-09-13). Never a surface, a text or an action colour; the same on
-     both grounds, because it is the network's, not the theme's. */
+     around the Solana object in the public market universe. Never a surface,
+     a text or an action colour; the same on both grounds, because it is the
+     network's, not the theme's. */
   --ry-sol-green: #00FFA3;
   --ry-sol-purple: #DC1FFF;
   --ry-sol-violet: #9945FF;
@@ -175,16 +175,16 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   Brand Canon v1.0 — the runtime tokens. Projection of the frontmatter keys
-   in DESIGN.md; design-check enforces that every canon value appears here.
+   Brand v1.0 — the runtime tokens. Projection of the frontmatter keys in
+   DESIGN.md; design-check enforces that every brand value appears here.
    ═══════════════════════════════════════════════════════════════════════════ */
 :root {
   /* Brand */
   --ry-midnight: #080D13;   --ry-mist: #F5F7FA;   --ry-stone: #EEF2F6;
   --ry-iris: #FF681C;       --ry-iris-deep: #F24C0C;
   --ry-iris-hover: #FF7A2F; --ry-iris-pressed: #E0430A;
-  /* Pure white, and only on the filled action: the reference the Owner
-     approved carries white on the orange gradient at 600 weight. */
+  /* Pure white, and only on the filled action: the approved reference
+     carries white on the orange gradient at 600 weight. */
   --ry-on-iris: #FFFFFF;
   /* Two reading values for the one brand hue: a lift for text on dark
      (7.8:1 on the surface), a sink for text on light (5.1:1 on white). */
@@ -284,8 +284,8 @@
   --ry-ctx-bd: #22303E;   --ry-desc-bg: #131E2A;
   /* A very delicate ground: graphite in the centre, a navy undertone at the
      edges, and one faint warm light behind the focal zone where the working
-     card sits — 7% orange at its centre, gone by 72% of its radius — the
-     Owner's pick (B) on 2026-09-12. Never a halo across the page. */
+     card sits — 7% orange at its centre, gone by 72% of its radius —
+     variant B, picked on 2026-09-12. Never a halo across the page. */
   --ry-ground: radial-gradient(52% 38% at 50% 22%, rgba(255, 104, 28, 0.07) 0%, rgba(255, 104, 28, 0.025) 45%, transparent 72%), radial-gradient(120% 80% at 50% 0%, #0C141D 0%, #080D13 55%, #070B10 100%);
 }
 
@@ -324,7 +324,7 @@
   --ry-ground: radial-gradient(120% 80% at 50% 0%, #FFFFFF 0%, #F5F7FA 60%, #F1F4F8 100%);
 }
 
-/* Inside the cabinet every heading is Geist, one weight up — Brand Canon
+/* Inside the cabinet every heading is Geist, one weight up — Brand
    v1.0 (Шрифти): a display face on a working screen tires the reader in
    twenty minutes, so Unbounded stays on the public landing. Set on <html>
    by the cabinet layout so the sheets and dialogs that mount outside the
@@ -356,7 +356,7 @@ html[data-ry-app="cabinet"] {
   --ry-lh-body: 1.6;
   --ry-ls-display: -0.02em;
   --ry-ls-head: -0.01em;
-  /* The product scale — the Owner's decision of 2026-09-15 (Premium Product
+  /* The product scale — set on 2026-09-15 (Premium Product
      UI Pass): a customer screen is read from a chair, not a loupe. Page title
      28, the key figure 28, a section 17, a value 16, running copy 15; the
      labels stay compact. Fixed rem steps, because a product screen is viewed
@@ -376,10 +376,10 @@ html[data-ry-app="cabinet"] {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   SEMANTIC LAYER — the names the Owner asked for. New components read these;
-   they resolve onto the runtime tokens above and flip with them. `--bg`,
-   `--border`, `--border-strong`, `--success`, `--danger`, `--warning` and the
-   `-soft` pair are the same names app/globals.css already forwards.
+   SEMANTIC LAYER — plain role names. New components read these; they resolve
+   onto the runtime tokens above and flip with them. `--bg`, `--border`,
+   `--border-strong`, `--success`, `--danger`, `--warning` and the `-soft`
+   pair are the same names app/globals.css already forwards.
    ═══════════════════════════════════════════════════════════════════════════ */
 :root {
   --surface: var(--ry-card);

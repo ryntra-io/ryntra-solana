@@ -1,9 +1,9 @@
 /**
- * The one line of truth about what a company's token is (canon v5.1 §7, v5.2
- * §7) — said on the company's page, before a purchase or a sale, and in
- * «Перевірка»'s «Що це». Pure and client-safe: the page and the server's
- * «Перевірка» (`check.ts`, contract 1.20.0) say it from the same function, so
- * the web and the phone read the same words.
+ * The one line of truth about what a company's token is — said on the
+ * company's page, before a purchase or a sale, and in «Перевірка»'s «Що це».
+ * Pure and client-safe: the page and the server's «Перевірка» (`check.ts`,
+ * contract 1.20.0) say it from the same function, so the web and the phone
+ * read the same words.
  */
 
 import type { StockIssuerId } from "./representations.ts";
@@ -12,13 +12,12 @@ type Lang = "en" | "uk";
 
 /**
  * One line, from the issuer's documents, about what the person actually
- * buys (canon §7 and the help topics that carry the long form). A listed
- * company's token tracks the share's price; a private company's token is
- * not a share at all, and its line leads with that — it stands before the
- * figures on the page and in the purchase. A PreStocks token's line says the
- * three things canon v5.2 §7 names: not a share, the issuer's fee on every
- * transfer — the figure the chain states for the mint, in `feeBps` — and
- * that the issuer can freeze or take the token.
+ * buys (the help topics carry the long form). A listed company's token tracks
+ * the share's price; a private company's token is not a share at all, and its
+ * line leads with that — it stands before the figures on the page and in the
+ * purchase. A PreStocks token's line says three things: not a share, the
+ * issuer's fee on every transfer — the figure the chain states for the mint,
+ * in `feeBps` — and that the issuer can freeze or take the token.
  */
 export function truthLine(issuer: StockIssuerId, company: string, lang: Lang, feeBps: number | null = null): string {
   const uk = lang === "uk";

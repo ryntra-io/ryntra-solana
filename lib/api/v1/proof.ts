@@ -1,13 +1,13 @@
 /**
- * The proven wallet behind a v1 route both clients call (`RYN-STRATEGY-PLAN-001`).
+ * The proven wallet behind a v1 route both clients call.
  *
- * The plan routes are one set of routes for the web and the phone (canon
- * §19.2: no parallel addresses for a function that exists once). The phone
- * proves its wallet with the native bearer; the web with the `rw` proof
- * cookie the wallet signed. A bearer that is present and fails is a refusal
- * with its own code and never falls through to a cookie (`lib/session.ts`);
- * a cookie carrier is ambient, so a mutation on it keeps the site's origin
- * check, while a bearer needs none.
+ * The plan routes are one set of routes for the web and the phone (no
+ * parallel addresses for a function that exists once). The phone proves its
+ * wallet with the native bearer; the web with the `rw` proof cookie the
+ * wallet signed. A bearer that is present and fails is a refusal with its
+ * own code and never falls through to a cookie (`lib/session.ts`); a cookie
+ * carrier is ambient, so a mutation on it keeps the site's origin check,
+ * while a bearer needs none.
  *
  * Server only.
  */

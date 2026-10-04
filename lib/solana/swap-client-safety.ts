@@ -21,7 +21,7 @@ const REQUIRED_RULES = SWAP_POLICY_RULES;
  * The floor under a Review a person is asked to act on.
  *
  * A window that has not expired is not the same as a window somebody can use.
- * `RYN-SOL-M3` recorded the difference: *a Review lives about ninety seconds,
+ * A recorded run showed the difference: *a Review lives about ninety seconds,
  * so reading it carefully produced a refusal after the wallet prompt.* The
  * check below used to be `now >= expiry`, which is true only once the order is
  * already dead — so at one second left the card still opened the wallet, the

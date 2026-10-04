@@ -1,5 +1,5 @@
 /**
- * Canon §16.4 Send Receipt facts — structured, not a paragraph.
+ * Send Receipt facts — structured, not a paragraph.
  *
  * The signed envelope remains the Outcome Receipt the existing verifier
  * already knows. These facts are one observedEffect whose description is the
@@ -178,7 +178,7 @@ export const SolanaSendReceiptFactsSchema = z.discriminatedUnion("schemaVersion"
   CurrentSolanaSendReceiptFactsSchema,
 ]);
 
-/** Facts minted by this code path; the union above also parses pre-M0C receipts. */
+/** Facts minted by this code path; the union above also parses older receipt versions. */
 export type SolanaSendReceiptFacts = z.output<typeof CurrentSolanaSendReceiptFactsSchema>;
 export type ParsedSolanaSendReceiptFacts = z.output<typeof SolanaSendReceiptFactsSchema>;
 

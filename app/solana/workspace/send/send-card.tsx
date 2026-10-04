@@ -592,9 +592,9 @@ export function SendCard() {
       const fresh = refreshed.data;
       setPlan(fresh);
 
-      /* Canon §9.4. The authorization was given over one exact world; if the
-         wallet, network, amount, mint, provider or recipient is not that world
-         any more, the action returns to Review instead of to a wallet. */
+      /* The authorization was given over one exact world; if the wallet,
+         network, amount, mint, provider or recipient is not that world any
+         more, the action returns to Review instead of to a wallet. */
       const lock = checkEnvironmentLock({
         authorized: authorizedContext,
         current: environmentOf(fresh),
@@ -947,7 +947,7 @@ export function SendCard() {
                     `spendableRaw` — the balance with the network-fee reserve
                     already withheld — so a wallet holding 0.06046201 SOL read
                     `Balance 0.05996201 SOL` here and matched nothing the person
-                    could see in their own wallet. Canon 4.1 asks for the
+                    could see in their own wallet. The person needs the
                     *available* balance, which is exactly what this is. */}
                     <span className={styles.balanceLabel}>{text("Available")}</span>
                     <button
@@ -1072,7 +1072,7 @@ export function SendCard() {
             </div>
           </div>
 
-          {/* The recipient check (RYN-DDXYZ-RISK-001): once the address is a real one and the person has stopped typing, what an external security source knows about it — one line, the details a press away, never a block. Not asked for the person's own wallet. */}
+          {/* The recipient check: once the address is a real one and the person has stopped typing, what an external security source knows about it — one line, the details a press away, never a block. Not asked for the person's own wallet. */}
           {recipientOk && !sendingToSelf ? <RecipientCheck address={(parsedRecipient as { address: string }).address} locale={locale} /> : null}
 
           {/* Only the case that costs money. A recipient who is already able to

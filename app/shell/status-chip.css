@@ -20,7 +20,7 @@
 /* One chip, five families. See `app/shell/status-chip.tsx` for why the tone
    attribute exists on exactly one of them.
 
-   Every value below is a component token the frozen UX System §08 already
+   Every value below is a component token the frozen UX System already
    declares — `--ry-st-*` for maturity, `--ry-env-*` for environment,
    `--ry-ctx-bd` and `--ry-desc-bg` for the two neutral families, and the risk
    semantics with their paired `on-` inks. Nothing here is a new shade. */

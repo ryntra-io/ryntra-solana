@@ -4,8 +4,7 @@ import { AUTOINVEST, FEES, FEES_UK, LOSS_LIMITS, LOSS_TARGETS, PURCHASE, SALE, u
 import { facts, list, note, p, section, steps, table, type DocPage } from "./model.ts";
 
 /**
- * Invest — the section of the menu where a person buys (canon v5.4 В30; the
- * new site of canon v5.5, `RYN-SITE-V5-001` subtask 3): a piece of a company
+ * Invest — the section of the menu where a person buys: a piece of a company
  * from $1, «Автоінвест», the company's page, private companies through
  * PreStocks, and what a token actually is. The five pages are what the old
  * Stocks page said in one scroll, laid out one question a page; its address

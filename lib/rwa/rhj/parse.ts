@@ -21,8 +21,8 @@
  *      *not tradable*. `allDayTradability` adds a third state — `""`, a
  *      deliberate blank — which is neither of those.
  *   3. `dailyTradingVolume` is `"0"` **when unavailable**. So a zero here is a
- *      missing figure wearing a number's clothes. `RYN-TM-001` recorded the
- *      same trap on `USDG`, where a zero reads as *worthless* on a stablecoin.
+ *      missing figure wearing a number's clothes. The same trap appears on
+ *      `USDG`, where a zero reads as *worthless* on a stablecoin.
  *      It parses to `null` with a reason, never to `0`.
  *
  * Nothing here throws on a malformed payload. A row that cannot be trusted is

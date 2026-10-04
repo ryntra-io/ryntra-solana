@@ -10,10 +10,9 @@ import { MCP_WRITE_TOOLS } from "./write-tools.ts";
 /**
  * The hosted MCP inventory, and the gate that answers before any handler runs.
  *
- * `013` shipped twelve tools on a local stdio server, where the only caller is
- * the person who started the process. This endpoint is reachable from the
- * internet by anyone holding a token, so two things change and nothing else
- * does.
+ * The stdio server carries twelve tools, and its only caller is the person who
+ * started the process. This endpoint is reachable from the internet by anyone
+ * holding a token, so two things change and nothing else does.
  *
  * **The inventory is smaller, and the cut is a property rather than a
  * preference.** Four of the seven read tools reach an upstream provider —
@@ -24,18 +23,18 @@ import { MCP_WRITE_TOOLS } from "./write-tools.ts";
  * tools that touch nothing outside this process: three local previews and the
  * five writes, each of which produces a proposal and reaches no provider by
  * construction. **The hosted endpoint makes no outbound call on a caller's
- * behalf**, which is the same sentence `013` wrote about endpoints in tool
+ * behalf**, which is the same rule the write gate applies to endpoints in tool
  * input, one layer out.
  *
  * **Scope is enforced at call time, not by filtering a list.** `tools/list` is
  * filtered because an inventory a caller cannot use is noise, but the filter is
- * an ergonomic, never the control. `RYN-BIN-AOS-003` is the recorded proof:
- * Binance's own MCP server publishes a `tool_execute` that takes a tool name as
- * a string, so any client-side list of forbidden names is defeated by one
- * indirection. A caller who has read this source, guessed a name, or kept a
- * name from a token with wider scope calls it and is refused here.
+ * an ergonomic, never the control. Binance's own MCP server is the proof: it
+ * publishes a `tool_execute` that takes a tool name as a string, so any
+ * client-side list of forbidden names is defeated by one indirection. A caller
+ * who has read this source, guessed a name, or kept a name from a token with
+ * wider scope calls it and is refused here.
  *
- * **The precedence is the one `013` recorded.** *Nobody can* outranks *you may
+ * **The precedence is the write gate's.** *Nobody can* outranks *you may
  * not*: a name this endpoint does not host is `TOOL_NOT_HOSTED` even for a
  * token holding every scope, because telling a caller they lack a scope for a
  * tool that exists nowhere says a tool exists.

@@ -1,6 +1,5 @@
 /**
- * «Продати з позиції» — the pure half (`RYN-BUY-FLOW-001`, subtask 1; canon
- * v5.6 §4 «Купити за 60 с · продати», §6.2 and §7).
+ * «Продати з позиції» — the pure half.
  *
  * What a sale of a company a person holds is decided here once and tested:
  * how much of the position a sum in dollars or a share of it sells — in the
@@ -18,9 +17,9 @@ import { MIN_BUY_USD, truthLine } from "./company-model.ts";
 type Lang = "en" | "uk";
 
 /**
- * The least a sale typed in dollars is — a dollar, as a purchase (canon v5.5
- * В35, the Owner's word «будь-який мінімум суми — $1»). Selling the whole
- * position is never held to it: a person may always leave a position.
+ * The least a sale typed in dollars is — a dollar, as for a purchase. Selling
+ * the whole position is never held to it: a person may always leave a
+ * position.
  */
 export const MIN_SALE_USD = MIN_BUY_USD;
 
@@ -47,7 +46,7 @@ export type SaleAsset = Readonly<{
   multiplier: number | null;
   unit: "share" | "token";
   preIpo: boolean;
-  /** The one line of truth about what the token is (canon §7). */
+  /** The one line of truth about what the token is. */
   truth: string;
   /** The fee the mint withholds on every transfer, basis points, as the chain states it — a PreStocks token's; null where it charges none. */
   issuerFeeBps: number | null;

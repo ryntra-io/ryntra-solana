@@ -1,4 +1,4 @@
-/* The hero — the Owner's render as the hero itself (hero.tsx).
+/* The hero — the finished render as the hero itself (hero.tsx).
 
    The section is the render's own dark ground in both themes, the way a
    product shot stays what it is on a light page; every colour is a token and
@@ -7,7 +7,7 @@
    stand above the picture, because the render's type would be too small. */
 
 .hero {
-  /* The render's own edge tone — a shade under the canon's midnight. The
+  /* The render's own edge tone — a shade under the brand's midnight. The
      landing paints it on `main` as one continuous ground, so the section
      itself is transparent and no seam can show between it and the next. */
   --hero-ground: var(--landing-ground, color-mix(in srgb, var(--ry-midnight) 40%, black));

@@ -82,16 +82,16 @@ export async function POST(request: Request) {
   const input = parsed.data;
 
   /* A token its issuer no longer offers for purchase — redemption open, the
-     window closed — is not quoted as a buy, whatever a pool still routes
-     (RYN-STOCKS-PROVIDERS-001). The registry is a map lookup; a chain pause
-     is caught below by the preflight, as it always was. */
+     window closed — is not quoted as a buy, whatever a pool still routes. The
+     registry is a map lookup; a chain pause is caught below by the preflight,
+     as it always was. */
   const lifecycle = lifecycleEventFor(input.outputMint);
   /* Read with the clock (`eventStateAt`): a conversion window past its cut-off is closed, whatever the registry still says. */
   const lifecycleState = lifecycle ? eventStateAt(lifecycle, Date.now()) : null;
   if (lifecycle && lifecycleState !== "conversion-open") {
     return failure(409, "ASSET_NOT_OFFERED", lifecycle.note, rate, { lifecycle: { state: lifecycleState, url: lifecycle.url } });
   }
-  /* A token Ryntra no longer supports (canon v5.2 В26) is quoted on neither side: no purchase, and no sale here — its holder sells in their own wallet. */
+  /* A token Ryntra no longer supports is quoted on neither side: no purchase, and no sale here — its holder sells in their own wallet. */
   if (isRetiredMint(input.inputMint) || isRetiredMint(input.outputMint)) {
     return failure(409, "ASSET_NOT_OFFERED", RETIRED_REASON, rate);
   }

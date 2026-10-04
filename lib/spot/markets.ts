@@ -4,10 +4,10 @@
  * Pure. Every number on a Spot row is the provider's own figure, carried as
  * its claim: a token Jupiter does not price has `price: null`, a stat it does
  * not state is `null`, and the page prints *Not available* rather than a zero.
- * The category comes from Jupiter's own tags and from nothing else — the Owner
- * ruled out classifying a token by heuristic for the sake of a pretty menu, so
- * a token without a deciding tag is simply uncategorised and appears in `All`
- * and in search.
+ * The category comes from Jupiter's own tags and from nothing else — a token
+ * is never classified by heuristic for the sake of a pretty menu, so a token
+ * without a deciding tag is simply uncategorised and appears in `All` and in
+ * search.
  *
  * Nothing in this module reads the network; `markets.server.ts` does, and the
  * API routes call that. Tests exercise this file against recorded rows.
@@ -39,7 +39,7 @@ const STOCK_TAGS: ReadonlySet<string> = new Set(["stocks", "xstocks", "equities"
 const MEME_TAG = "meme";
 
 /**
- * A token Ryntra no longer supports (canon v5.2 В26, `lib/stocks/retired.ts`)
+ * A token Ryntra no longer supports (`lib/stocks/retired.ts`)
  * names no issuer: its row says, in the issuer's place, that it is no longer
  * supported. It stays readable by its address — a holder's Portfolio, a
  * watchlist, an old plan — and is offered nowhere: no list, no search, no
@@ -194,7 +194,7 @@ export function categoryOfTags(tags: readonly string[]): SpotCategory | null {
 export function issuerOfTags(tags: readonly string[]): SpotIssuer | null {
   if (tags.includes("xstocks")) return { label: "xStocks · Backed Finance", tag: "xstocks" };
   if (tags.includes("ondo")) return { label: "Ondo Global Markets", tag: "ondo" };
-  /* An issuer is named by its own tag, never by a category: `pre-ipo` alone names nobody (RYN-STOCKS-PROVIDERS-001). */
+  /* An issuer is named by its own tag, never by a category: `pre-ipo` alone names nobody. */
   if (tags.includes("prestocks")) return { label: "PreStocks", tag: "prestocks" };
   if (tags.includes("backpack")) return { label: "Backpack Securities", tag: "backpack" };
   return null;
@@ -214,7 +214,7 @@ export function normalizeSpotMarket(raw: unknown): SpotMarket | null {
   const venueTags = Array.isArray(row.tags)
     ? row.tags.filter((tag): tag is string => typeof tag === "string" && tag.length > 0 && tag.length <= 32).slice(0, 24)
     : [];
-  /* A token Ryntra no longer supports keeps its identity and its figures, and carries neither the disconnected issuer's tag, nor its icon, nor its links (canon v5.2 В26). */
+  /* A token Ryntra no longer supports keeps its identity and its figures, and carries neither the disconnected issuer's tag, nor its icon, nor its links. */
   const retired = isRetiredToken({ mint, tags: venueTags });
   const tags = retired ? venueTags.filter((tag) => !isRetiredVenueTag(tag)) : venueTags;
   const decimals = asFiniteNumber(row.decimals);
@@ -292,7 +292,7 @@ export function rankMarkets(markets: readonly SpotMarket[], view: Exclude<SpotVi
   const rows: SpotMarket[] = [];
   for (const market of markets) {
     if (seen.has(market.mint)) continue;
-    /* A token Ryntra no longer supports is on no list (canon v5.2 В26). */
+    /* A token Ryntra no longer supports is on no list. */
     if (isUnsupportedMarket(market)) continue;
     if (view !== "all" && market.category !== view) continue;
     seen.add(market.mint);
@@ -313,7 +313,7 @@ export function rankMarkets(markets: readonly SpotMarket[], view: Exclude<SpotVi
  * unverified, so `NVDAx` finds NVIDIA xStock above the pump.fun copies that
  * borrowed its name. Nothing is dropped — a copy is shown, labelled unverified,
  * with its address one disclosure away — except a token Ryntra no longer
- * supports, which no search offers (canon v5.2 В26).
+ * supports, which no search offers.
  */
 export function rankSearch(markets: readonly SpotMarket[], query: string, limit: number): SpotMarketListRow[] {
   const needle = query.trim().toLowerCase();
@@ -337,15 +337,15 @@ export type SpotTradingAvailability =
 /**
  * May this market be bought and sold here?
  *
- * Owner decision 2026-09-12: every market in the terminal trades. A tokenized
- * stock or RWA trades on the same engine as everything else — the quote route
+ * Since 2026-09-12 every market in the terminal trades. A tokenized stock or
+ * RWA trades on the same engine as everything else — the quote route
  * accepted every stock mint tried, at the same fee — and the ticket names its
  * issuer in one line, because the issuer's terms are the one fact about such a
  * token that the chain does not carry. The earlier *not yet* for the whole
- * category (2026-09-11) is withdrawn by the Owner; the route's own refusal
- * still applies on top of this. The one exception is a token Ryntra no longer
- * supports (canon v5.2 В26): no side of it trades here, and the ticket says
- * where it can be sold instead — the routes refuse it too.
+ * category (2026-09-11) is withdrawn; the route's own refusal still applies
+ * on top of this. The one exception is a token Ryntra no longer supports: no
+ * side of it trades here, and the ticket says where it can be sold instead —
+ * the routes refuse it too.
  */
 export function tradingAvailability(market: Pick<SpotMarket, "category"> & Partial<Pick<SpotMarket, "mint" | "issuer">>): SpotTradingAvailability {
   if (market.mint !== undefined && isUnsupportedMarket({ mint: market.mint, issuer: market.issuer ?? null })) return { allowed: false, reason: "NO_LONGER_SUPPORTED" };

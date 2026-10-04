@@ -38,7 +38,7 @@ import styles from "./research.module.css";
  * info control, and a second implementation of them would be two surfaces
  * drifting apart one commit at a time.
  *
- * Two presentation rules carry the canon here:
+ * Two presentation rules apply here:
  *
  *   **Unknown is neutral.** Never green, never zero, never absent.
  *

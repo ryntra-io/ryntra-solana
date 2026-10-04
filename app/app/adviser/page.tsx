@@ -389,7 +389,7 @@ export async function generateMetadata(): Promise<Metadata> {
 /**
  * Ryntra Home — the Ryn workbench.
  *
- * Home canon §7 describes this surface in one clause: *a first-class contextual
+ * Home describes this surface in one clause: *a first-class contextual
  * workbench, not an empty chat box*, with a fixed output structure. Both halves
  * are load-bearing and both are visible here.
  *

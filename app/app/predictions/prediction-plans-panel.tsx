@@ -12,12 +12,12 @@ import { usePaperAccount } from "./use-paper-account";
 import { wordsFor } from "./words";
 
 /**
- * The wallet's Prediction Plans on My strategies (`RYN-PREDICTIONS-001` item
- * 13): each on the version it stands on, with what its rules imply and
- * where it is in its life, beside the trading plans and never mixed with
- * them — a prediction plan has no share, no reference price, only an
- * amount that is the whole principal at risk. Activate a draft or cancel
- * from here; the plan itself is edited from the market it is about.
+ * The wallet's Prediction Plans on My strategies: each on the version it
+ * stands on, with what its rules imply and where it is in its life, beside
+ * the trading plans and never mixed with them — a prediction plan has no
+ * share, no reference price, only an amount that is the whole principal at
+ * risk. Activate a draft or cancel from here; the plan itself is edited from
+ * the market it is about.
  */
 export function PredictionPlansPanel({ locale }: { locale: WorkspaceLocale }) {
   const word = wordsFor(locale);

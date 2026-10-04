@@ -1,6 +1,6 @@
-/* The analysis card — RYN-NANSEN-EVIDENCE-001. One card in the product's own
-   grammar (the stock desk's card, head and facts), three facts, a line of
-   time and attribution, two actions, the technical part under Details. */
+/* The analysis card. One card in the product's own grammar (the stock desk's
+   card, head and facts), three facts, a line of time and attribution, two
+   actions, the technical part under Details. */
 
 .card {
   display: grid;

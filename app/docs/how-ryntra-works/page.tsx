@@ -29,7 +29,7 @@ export default function Page() {
           meta="One kernel · One surface"
           lead="There is one Evidence Kernel. Everything a person sees is a surface over it, which is why a fact cannot be true on one page and false on another."
           bare
-        source={["Owner: docs/MASTER-PLAN.md §14", "Surface: /"]}
+        source={["Surface: /"]}
         >
           <div className="rx-scroll">
             <table className="rx-table">

@@ -16,7 +16,7 @@ import styles from "./ryn.module.css";
 import { rynWordsFor, type RynWord } from "./ryn-words";
 
 /**
- * Ryn's surface (`RYN-AGENT-TEXT-001`; the Owner's rule of 2026-09-22 §15):
+ * Ryn's surface:
  * one conversation, a context badge, suggested questions, the structured
  * answer with its citations, the typed cards, and the handoffs to the
  * builder, the Review, a plan and Monitoring. Ask → Understand → Prepare →
@@ -24,7 +24,7 @@ import { rynWordsFor, type RynWord } from "./ryn-words";
  * cards sit inside the turn they belong to, and every action is a link to
  * the surface where the person decides — Ryn acted on nothing.
  *
- * The conversation is the proven wallet's (canon §0.6): the gate asks for
+ * The conversation is the proven wallet's: the gate asks for
  * the connection and the one signature before anything is read.
  */
 
@@ -305,7 +305,7 @@ function Card({ card, locale, word }: { card: AgentCard; locale: WorkspaceLocale
 /**
  * The sentences as a person reads them. The citation ids each one carries
  * stay in the record, not on the line — «1,3» after a sentence is the
- * engine's bookkeeping (canon v5.0 §0.0 rule 10); what a sentence stands on
+ * engine's bookkeeping; what a sentence stands on
  * is under *Sources*, one press deep.
  */
 function Sentences({ sentences }: { sentences: readonly { text: string; cites: readonly string[] }[] }) {
@@ -340,7 +340,7 @@ function Sources({ citations, locale, word }: { citations: readonly AgentCitatio
 }
 
 /**
- * The two formats inside a turn (`RYN-BRIEF-CRITIC-001`). The person asked
+ * The two formats inside a turn. The person asked
  * for one of them by name; the six-section answer is written beside it and
  * stays below, so nothing is lost by asking for the short read. The
  * sentences arrive already in the reader's language and already cited — the

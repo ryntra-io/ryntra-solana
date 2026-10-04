@@ -239,7 +239,7 @@ export type AgentToolsSurface = Readonly<{
 
 export const AGENT_TOOLS_BLOCKERS = Object.freeze([
   "The proposal ledger lives in the MCP server process. Stopping the server loses it, and there is no durable queue, no database and no shared state behind it.",
-  "No owner can authorize anything from this surface or from any tool. AUTHORIZE is closed elsewhere, by a person, and this packet did not build that path.",
+  "No owner can authorize anything from this surface or from any tool. AUTHORIZE is closed elsewhere, by a person, and no path to it is built here.",
   "Nothing here calls another agent. A2A ingestion reads a payload a caller supplies; no Agent Card is fetched, no task is created, no stream is opened.",
   "No Agent Card signature is checked. A2A 1.0 §8.4 allows a JWS block and Ryntra records only whether one is present, because verifying it needs an issuer key and a reason to trust it.",
 ]);

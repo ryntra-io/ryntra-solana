@@ -221,9 +221,9 @@ function crossSwapFacts(receipt: ReceiptRecord): CrossSwapFacts | null {
  * What a cross-chain receipt says, in the fields a card renders.
  *
  * Exported so the receipts page reads the signed facts rather than the
- * receipt's own id — canon `§0.5`. `outcome_solana_cross_swap_9f2c…` above a
- * status word tells a person with three bridges nothing about which is which,
- * and it is internal text on a customer screen besides.
+ * receipt's own id. `outcome_solana_cross_swap_9f2c…` above a status word
+ * tells a person with three bridges nothing about which is which, and it is
+ * internal text on a customer screen besides.
  */
 export function crossSwapReceiptSummary(receipt: ReceiptRecord): Readonly<{
   sent: Readonly<{ amountRaw: string; symbol: string | null; decimals: number | null }>;
@@ -267,11 +267,11 @@ function chainRef(receipt: ReceiptRecord): string | null {
  * Every chain a receipt in this product can name, keyed by its own reference.
  *
  * Built from the swap catalogue rather than written out again. The four
- * networks `RYN-SWAP-BRIDGE-SPLIT-001` added — Arbitrum, Optimism, Polygon and
- * BNB Chain — are chains a cross-chain receipt can legitimately be about, and a
- * hand-written ladder of three `if`s would have silently offered no link for
- * any of them. The compiler now names a new network in `EVM_EXPLORER_TX` or the
- * file does not build.
+ * networks added later — Arbitrum, Optimism, Polygon and BNB Chain — are
+ * chains a cross-chain receipt can legitimately be about, and a hand-written
+ * ladder of three `if`s would have silently offered no link for any of them.
+ * The compiler now names a new network in `EVM_EXPLORER_TX` or the file does
+ * not build.
  */
 const EXPLORER_BY_CHAIN_REF: Readonly<Record<string, { chain: string; tx: (hash: string) => string }>> = Object.freeze(
   Object.fromEntries([

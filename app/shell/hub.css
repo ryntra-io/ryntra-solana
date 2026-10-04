@@ -191,7 +191,7 @@
 }
 
 /* `MAINNET_DATA` is the Stellar hub's word for the same fact, `MAINNET` the
-   Solana hub's after its vocabulary moved to the canon's five axes; both mean
+   Solana hub's after its vocabulary moved to the product's five axes; both mean
    "reads a live mainnet", and both read as evidence. */
 .sh-map-env[data-env="MAINNET_DATA"],
 .sh-map-env[data-env="MAINNET"],

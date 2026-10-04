@@ -12,11 +12,11 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 /**
- * The proven wallet's trading plans (`RYN-STRATEGY-PLAN-001`, contract 1.1.0):
- * `GET` lists them newest first, `POST` creates one — the rules validated and
- * sized the one way, the asset resolved from the confirmed universe, the plan
- * stored for this wallet and no other. One set of routes for the web (proof
- * cookie) and the phone (bearer); see `lib/api/v1/proof.ts`.
+ * The proven wallet's trading plans (contract 1.1.0): `GET` lists them newest
+ * first, `POST` creates one — the rules validated and sized the one way, the
+ * asset resolved from the confirmed universe, the plan stored for this wallet
+ * and no other. One set of routes for the web (proof cookie) and the phone
+ * (bearer); see `lib/api/v1/proof.ts`.
  */
 
 export async function GET(request: Request) {

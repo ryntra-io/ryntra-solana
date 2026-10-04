@@ -16,7 +16,7 @@ import styles from "./lab.module.css";
  * `HomePage` with its own header, search and category tabs; `EventMarketPage`
  * with the hero chart, the market list, the orderbook and their order panel;
  * their profile page fed from their hooks. Nothing here is restyled: the point
- * of the tab is that the Owner sees the original AGG UX and decides from it.
+ * of the tab is that an admin sees the original AGG UX and decides from it.
  * The only Ryntra parts are the three view switches under the bar and the
  * routing between the pages, which their app does with its own router.
  */

@@ -7,7 +7,7 @@ import type { PublicClient } from "viem";
  * This module proves one fact and refuses to imply any other: **the browser
  * that produced this signature controls this address, right now, for this
  * site.** It mints no session, reads no account, and writes nothing. Those
- * belong to the packet that has somewhere to put an account; see
+ * belong to the code that has somewhere to put an account; see
  * `supabase/prepared/20260812_wallet_identity_v1.sql` and the note at the end
  * of this comment for why they cannot land yet.
  *

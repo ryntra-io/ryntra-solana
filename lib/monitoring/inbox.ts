@@ -1,7 +1,7 @@
 /**
  * The inbox reads the routes and the deep link use: mark a note read, resolve
- * a note to the owned record as it stands now. Owner-checked; a note that is
- * not this wallet's is not found.
+ * a note to the owned record as it stands now. Ownership-checked; a note that
+ * is not this wallet's is not found.
  */
 
 import { BUDGET_HREF, companyHref, dueOfIdentity, rulePurchaseHref, symbolOfIdentity } from "../autoinvest/links.ts";

@@ -9,11 +9,10 @@
    Tokens only. The ground is the landing's one ground, painted on `main`;
    this section adds a faint grid and, pinned with the stage, the two lights
    the hero stands in — an orange trajectory and a warm horizon — so the top
-   of the site and this block are one fabric (Owner, 2026-09-15: *«зверху є
-   підсвітки, знизу вже їх немає… зробити як одне ціле»*); no light meets the
-   section's edges, so nothing marks the joins. The
+   of the site and this block are one fabric, lit above and below as one
+   whole; no light meets the section's edges, so nothing marks the joins. The
    frame is a picture of the dark terminal in both themes, so its palette is
-   the canon's own dark environment, named once as `--wf-*`, the way the
+   the brand's own dark environment, named once as `--wf-*`, the way the
    parked hero's stage does it. Sizes inside the frame are multiples of `--u`
    — one canvas pixel of a 1120 × 560 frame on the desktop, `1px` where the
    cards stand full-width — capped by the ramp. */
@@ -26,7 +25,7 @@
   /* The rail and its gap above the frame, for centring the stage on a tall screen. */
   --stage-h: calc(var(--frame-h) + 90px);
   --fill: 0;
-  /* The dark environment of the canon, fixed for the frame. */
+  /* The dark environment of the brand, fixed for the frame. */
   --wf-bg: #0B121A;
   --wf-surface: #0E1620;
   --wf-elevated: #131E2A;
@@ -252,7 +251,7 @@
 }
 /* Plan and Review are the two that make Ryntra more than a terminal: more
    room, and one small line of the brand at the head. */
-/* The purchase's six cards (canon v5.5): the Review and the rule carry the brand's edge. */
+/* The purchase's six cards: the Review and the rule carry the brand's edge. */
 .card[data-card="company"] { width: min(100%, calc(620 * var(--u))); }
 .card[data-card="sum"] { width: min(100%, calc(480 * var(--u))); }
 .card[data-card="review"] { width: min(100%, calc(560 * var(--u))); }
@@ -291,7 +290,7 @@
 .listToken[data-small] { width: calc(26 * var(--u)); height: calc(26 * var(--u)); opacity: .82; }
 .listToken img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .listBody { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-/* The chosen company's label is the issuer's whole label (canon §7) — on a narrow card it wraps, never an ellipsis. */
+/* The chosen company's label is the issuer's whole label — on a narrow card it wraps, never an ellipsis. */
 .listBody .listName { white-space: normal; overflow: visible; }
 .listPrice { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; font-variant-numeric: tabular-nums; }
 .listPrice b { font-weight: 500; font-size: min(var(--ry-fs-title), calc(18 * var(--u))); }

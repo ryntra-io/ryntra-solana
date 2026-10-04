@@ -760,13 +760,13 @@ const DecisionSettlementPayoutSchema = z
  * stop being false.
  *
  * **`SOURCE_IMPLEMENTED_LIVE_PAYOUT_NOT_VERIFIED` was the fifth and is gone.**
- * It was a maturity claim rather than a boundary, and on 2026-08-24 the
- * founder signed a payout that settled `MATCHED` on the public testnet and
+ * It was a maturity claim rather than a boundary, and on 2026-08-24 a person
+ * signed a payout that settled `MATCHED` on the public testnet and
  * finalized receipt `rcp_62a901894bac4b9cbdd335445e101635` — a document
  * carrying, in its own sealed bytes, the statement that the thing it records
  * had not happened. A receipt is immutable, so that one keeps its bytes and
  * its false line forever; what changes is that no later receipt repeats it.
- * The public-testnet boundary takes the slot: the service already appended it
+ * The public-testnet boundary takes its place: the service already appended it
  * to every receipt of that kind, and a boundary every receipt carries anyway
  * belongs in the list that guarantees it.
  */
@@ -939,9 +939,9 @@ export const PAYOUT_RECEIPT_REQUIRED_LIMITATIONS = [
  *
  * ## Why the lifecycle state is inside the sealed bytes
  *
- * Canon §16's rule is that one chain's finality is not crosschain completion. A receipt
- * that carried amounts and hashes without the state they belong to would let a
- * reader supply the missing half themselves, and the half they supply is
+ * One chain's finality is not crosschain completion. A receipt that carried
+ * amounts and hashes without the state they belong to would let a reader
+ * supply the missing half themselves, and the half they supply is
  * "so it worked". `lifecycleState` is `RECEIPT_ISSUED` — there is no other
  * state a receipt can exist in — and `recovery` states where the value ended
  * up in the same breath.
@@ -1022,12 +1022,13 @@ const DecisionSettlementBridgeSchema = z
 /**
  * The five statements a bridge receipt must carry.
  *
- * Three are the boundaries every Ryntra receipt has. The fourth is canon §16's
- * rule, in the sealed bytes rather than on a page — a receipt is the artifact
- * most likely to be read years later by somebody who never saw the screen it
- * came from. The fifth names who actually moved the value, because a document
- * describing a burn and a mint that Ryntra recorded reads, to a hurried
- * reader, like a document describing a burn and a mint Ryntra performed.
+ * Three are the boundaries every Ryntra receipt has. The fourth is the rule
+ * that one chain's finality is not crosschain completion, in the sealed bytes
+ * rather than on a page — a receipt is the artifact most likely to be read
+ * years later by somebody who never saw the screen it came from. The fifth
+ * names who actually moved the value, because a document describing a burn and
+ * a mint that Ryntra recorded reads, to a hurried reader, like a document
+ * describing a burn and a mint Ryntra performed.
  */
 export const BRIDGE_RECEIPT_REQUIRED_LIMITATIONS = [
   "RYNTRA_DID_NOT_SIGN_OR_BROADCAST",

@@ -1,12 +1,12 @@
 /**
  * Mayan price API — the read-only quote boundary of the cross-chain swap lane.
  *
- * `RYN-SOL-MONEY-FLOWS-001F`, Unified Swap V1 (Owner decision 2026-09-07):
- * Mayan is the single cross-asset provider. This module asks
- * `price-api.mayan.finance/v3/quote` and turns the answer into the one shape
- * the card, the plan route and the receipt all speak. It builds nothing, signs
- * nothing and never sees a wallet; every network call takes an injected
- * `fetchImpl` so tests run against a recorded fixture, not the internet.
+ * Unified Swap V1, since 2026-09-07: Mayan is the single cross-asset provider.
+ * This module asks `price-api.mayan.finance/v3/quote` and turns the answer into
+ * the one shape the card, the plan route and the receipt all speak. It builds
+ * nothing, signs nothing and never sees a wallet; every network call takes an
+ * injected `fetchImpl` so tests run against a recorded fixture, not the
+ * internet.
  *
  * Two of Mayan's mechanisms carry V1, and each is tied to a direction on
  * purpose:

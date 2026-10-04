@@ -19,8 +19,8 @@ import styles from "./bridge-surface.module.css";
 
 /**
  * The cross-chain swap engine of the unified Swap surface — Mayan or Relay,
- * whichever the approved tuple names, for the
- * four Owner-approved pairs of Unified Swap V1.
+ * whichever the approved tuple names, for the four approved pairs of Unified
+ * Swap V1.
  *
  * Quote → Review → one wallet signature → status, read back until the money
  * has landed or come back. The surface above owns FROM, TO and the amount; this
@@ -106,13 +106,13 @@ const QUOTE_REFRESH_AT_SECONDS = 45;
 /**
  * Past this the figures on screen are history, not an offer.
  *
- * Relay states 60 seconds and this is that number, not a margin of our own. What
- * happens at it is the Owner's rule of 2026-09-10: the amounts **stay** — blanking
- * them turns a short wait into an apparent outage, and a person mid-decision
- * loses the context they were reading — but they are dimmed, marked, and the
- * button stops offering to act on them. Review is never built from a quote this
- * old; the plan route re-quotes server-side and would refuse it anyway, and being
- * refused after pressing is a worse experience than not being offered the press.
+ * Relay states 60 seconds and this is that number, not a margin of our own. At
+ * it the amounts **stay** — blanking them turns a short wait into an apparent
+ * outage, and a person mid-decision loses the context they were reading — but
+ * they are dimmed, marked, and the button stops offering to act on them. Review
+ * is never built from a quote this old; the plan route re-quotes server-side and
+ * would refuse it anyway, and being refused after pressing is a worse
+ * experience than not being offered the press.
  */
 const QUOTE_EXPIRES_AT_SECONDS = 60;
 /** Bounded, and it ends: three steps and then the person asks, not the code. */
@@ -213,7 +213,7 @@ export function CrossSwapEngine({
   /** The surface shows the expected amount in its own TO leg; this is the engine's number, nothing new. */
   /* `expired` travels with the figures rather than replacing them: the surface
      above keeps showing the amount for context and stops presenting it as an
-     offer, which is the Owner's rule of 2026-09-10. */
+     offer. */
   onQuote?: (facts: Readonly<{ expectedRaw: string; decimals: number; rentRaw: string | null; expired: boolean }> | null) => void;
   /** The largest amount this pair can actually sign, reserves already withheld; null while no balance is known. */
   offerableRaw?: string | null;
@@ -223,9 +223,9 @@ export function CrossSwapEngine({
    * How the surface is told the amount had to come down.
    *
    * The engine cannot lower it itself — the surface owns the field — and it must
-   * not be the person's job either. Owner rule 2026-09-10: *«Перерахуй
-   * максимально допустиму суму один раз і чітко скажи»*. Raw units, because the
-   * surface knows the decimals and this side knows the arithmetic.
+   * not be the person's job either: the largest allowed amount is recalculated
+   * once, and the person is told so plainly. Raw units, because the surface
+   * knows the decimals and this side knows the arithmetic.
    */
   onAmountCorrected?: (amountRaw: string) => void;
   onLocked?: (locked: boolean) => void;
@@ -702,7 +702,7 @@ export function CrossSwapEngine({
         }
         /* An approval is only useful once it is on chain, and the allowance the
            next plan reads does not exist a moment earlier. Waiting here is the
-           difference between one approval and two: the founder's Base canary
+           difference between one approval and two: on the Base canary a person
            approved, was told to press Review again, and guessed for nearly four
            minutes. Nothing is signed while this waits. */
         const landed = await waitForEvmReceipt(sent.transactionHash);
@@ -924,7 +924,7 @@ export function CrossSwapEngine({
    * saying so is a relief; at `ACTION` claiming it would be a lie on the one
    * occasion it matters. The default carried exactly that lie — *Nothing was
    * sent twice*, printed under a quote that had never been priced — which is
-   * what the founder read on production on 2026-09-10.
+   * what a person read on production on 2026-09-10.
    */
   const failureCopy = (entry: Failure, stage: "QUOTE" | "ACTION"): string => {
     const code = entry.code;

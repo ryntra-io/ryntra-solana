@@ -6,8 +6,7 @@ import { MIN_BUY_USD } from "./company-model.ts";
 
 /**
  * Every word «Простий»'s Home, Markets, company page and purchase say, in
- * both languages (canon v5.0 §2–§4, v5.1 §4; `RYN-INVEST-SIMPLE-001`,
- * sessions 1–2). The words a beginner reads: a company by its name, a price
+ * both languages. The words a beginner reads: a company by its name, a price
  * in dollars, one action — never a ticker as a title, a candle, a clock in UTC
  * or a source's name at rest.
  */
@@ -15,7 +14,7 @@ import { MIN_BUY_USD } from "./company-model.ts";
 type Bi = Readonly<{ en: string; uk: string }>;
 const bi = (en: string, uk: string): Bi => ({ en, uk });
 
-/** «$1» — the least a purchase is, read from the one constant so no sentence keeps an old minimum (canon v5.5 В35). */
+/** «$1» — the least a purchase is, read from the one constant so no sentence keeps an old minimum. */
 const FROM = `$${MIN_BUY_USD}`;
 
 export const INVEST_WORDS = {
@@ -34,13 +33,13 @@ export const INVEST_WORDS = {
   emptyWallet: bi("Nothing here yet — top up and buy your first piece.", "Поки порожньо — поповни й купи першу частинку."),
   walletUnread: bi("Your wallet could not be read right now.", "Гаманець зараз не вдалося прочитати."),
   tryAgain: bi("Try again", "Спробувати ще"),
-  /* Home beside the balance (RYN-WIDTH-PREMIUM-001): what the money is in, and a guest's three steps */
+  /* Home beside the balance: what the money is in, and a guest's three steps */
   allocation: bi("Allocation", "Розподіл"),
   other: bi("Other", "Інше"),
   stepConnect: bi("Connect a wallet", "Під'єднай гаманець"),
   stepTopUp: bi(`Top up from ${FROM}`, `Поповни від ${FROM}`),
   stepBuy: bi("Buy a piece of a company", "Купи частинку компанії"),
-  /* Home's right column (RYN-WIDTH-PREMIUM-001): notes, «Автоінвест», «Спитати Ryntra», what moves today */
+  /* Home's right column: notes, «Автоінвест», «Спитати Ryntra», what moves today */
   asideLabel: bi("At a glance", "Коротко"),
   autoinvestGuest: bi(`Buy a company every day, every week, or when its price falls — from ${FROM}.`, `Купуй компанію щодня, щотижня або коли ціна впаде — від ${FROM}.`),
   howItWorks: bi("How it works", "Як це працює"),
@@ -63,19 +62,19 @@ export const INVEST_WORDS = {
   forExperienced: bi("for experienced investors", "для досвідчених"),
   privateLine: bi("PreStocks tokens, not shares. Selling may not be possible.", "Токени PreStocks, а не акції. Продати може не вийти."),
   notAShare: bi("Not a share", "Це не акція"),
-  /* The time the private shelf's one number was read — the issuer's valuation and the price beside it (canon v5.2 В27). */
+  /* The time the private shelf's one number was read — the issuer's valuation and the price beside it. */
   valuationAt: bi("PreStocks' valuation as of", "Оцінка PreStocks на"),
   valuationAtShort: bi("as of", "на"),
   dollars: bi("Dollars", "Долари"),
   crypto: bi("Crypto", "Крипта"),
-  /* Markets' «Для досвідчених» (canon v5.3 В28): the tools «Профі» held, a tap deeper in the same place. */
+  /* Markets' «Для досвідчених»: the tools «Профі» held, a tap deeper in the same place. */
   experienced: bi("For experienced investors", "Для досвідчених"),
   experiencedLine: bi("The same checks before every signature.", "Ті самі перевірки перед кожним підписом."),
   spotLine: bi("Candlestick chart, every market, buy and sell", "Свічковий графік, усі ринки, купівля й продаж"),
   stocksLine: bi("Every tokenized stock, with filters and sorting", "Усі токенізовані акції з фільтрами й сортуванням"),
   trendsLine: bi("Crypto and memes moving today", "Крипта й меми, що рухаються сьогодні"),
   showMore: bi("Show more", "Показати ще"),
-  /* Markets' tabs (canon v5.4 В33): Усі · Компанії · Приватні · Крипта · Меми · Долари */
+  /* Markets' tabs: Усі · Компанії · Приватні · Крипта · Меми · Долари */
   marketsTabs: bi("Markets", "Ринки"),
   tabAll: bi("All", "Усі"),
   tabCompanies: bi("Companies", "Компанії"),
@@ -94,7 +93,7 @@ export const INVEST_WORDS = {
   reload: bi("Reload", "Оновити"),
   coinsDown: bi("Dollars and crypto are not answering right now.", "Долари й крипта зараз не відповідають."),
   dayChange: bi("today", "за день"),
-  /* The company (session 2): a name, a price, a line, one action */
+  /* The company: a name, a price, a line, one action */
   range1d: bi("1D", "1Д"),
   range1w: bi("1W", "1Т"),
   range1m: bi("1M", "1М"),
@@ -120,7 +119,7 @@ export const INVEST_WORDS = {
   quickAmounts: bi("Quick amounts", "Швидкі суми"),
   quickShares: bi("A share of your USDC", "Частка твоїх USDC"),
   minimum: bi(`The minimum is ${FROM}`, `Мінімум — ${FROM}`),
-  /* A company whose live route starts above the sum asked says its own minimum, read from the quote (canon v5.5 В35). */
+  /* A company whose live route starts above the sum asked says its own minimum, read from the quote. */
   findingMinimum: bi("Finding the least this company can be bought for…", "Шукаємо, від якої суми купується ця компанія…"),
   allCosts: bi("all costs", "усі витрати"),
   pricing: bi("Pricing…", "Рахуємо ціну…"),
@@ -148,7 +147,7 @@ export const INVEST_WORDS = {
   rowCosts: bi("All costs", "Усі витрати"),
   rowWhat: bi("What it is", "Що це"),
   atLeast: bi("at least", "щонайменше"),
-  /* The token's own fee on the transfer, inside «Усі витрати» (canon v5.2 §7, §12): «з них комісія емітента 1% ≈ $0,10». */
+  /* The token's own fee on the transfer, inside «Усі витрати»: «з них комісія емітента 1% ≈ $0,10». */
   issuerFeeOfWhich: bi("of which the issuer's fee", "з них комісія емітента"),
   priceHolds: bi("The price holds for", "Ціна діє ще"),
   seconds: bi("s", "с"),
@@ -175,7 +174,7 @@ export const INVEST_WORDS = {
   notFilled: bi("The network rejected the purchase. Only the network fee was spent.", "Мережа відхилила купівлю. Списано лише плату мережі."),
   walletDeclined: bi("The wallet did not sign — nothing was sent.", "Гаманець не підписав — нічого не надіслано."),
   unavailableNow: bi("Buying is not available right now.", "Купівля зараз недоступна."),
-  /* «Автоінвест» (session 3, canon v5.1 §4.1): a rule reminds, the person signs every purchase */
+  /* «Автоінвест»: a rule reminds, the person signs every purchase */
   autoinvest: bi("Autoinvest", "Автоінвест"),
   howOften: bi("How often", "Як часто"),
   when: bi("When", "Коли"),
@@ -210,7 +209,7 @@ export const INVEST_WORDS = {
   ruleGone: bi("This rule is no longer in your wallet.", "Цього правила вже немає у твоєму гаманці."),
   ruleReadFailed: bi("Your rule could not be read right now.", "Правило зараз не вдалося прочитати."),
   reading: bi("Reading…", "Читаємо…"),
-  /* «Якщо впаде» and «Бюджет місяця» (session 4, canon v5.1 §4.1, §11) */
+  /* «Якщо впаде» and «Бюджет місяця» */
   regularly: bi("Regularly", "Регулярно"),
   ifFalls: bi("If it falls", "Якщо впаде"),
   ruleKind: bi("Kind of rule", "Яке правило"),
@@ -248,7 +247,7 @@ export const INVEST_WORDS = {
   heldShort: bi("Budget spent · until the 1st", "Бюджет вичерпано · до 1-го числа"),
   budgetBlocks: bi("This purchase does not fit what is left of the month's budget.", "Ця купівля не вміщається в залишок бюджету місяця."),
   pickFromMarkets: bi("Pick a company on Markets and press «Autoinvest» there.", "Обери компанію на Ринках і натисни там «Автоінвест»."),
-  /* «Автоінвест» made clear (canon v5.3 В29; `RYN-NAV-V5-001`, session 2): the rule's sum is each purchase, the budget its own line, a rule's purchase first while its reminder is open. */
+  /* «Автоінвест» made clear: the rule's sum is each purchase, the budget its own line, a rule's purchase first while its reminder is open. */
   eachPurchase: bi("Each purchase", "Кожна купівля"),
   atMostPerMonth: bi("At most per month", "Не більше на місяць"),
   budgetNotSet: bi("No budget set", "Бюджет не задано"),
@@ -258,7 +257,7 @@ export const INVEST_WORDS = {
   reminderStaysOpen: bi("Your rule's reminder stays open", "Нагадування правила лишиться відкритим"),
   reminderOpenHere: bi("Your rule's reminder is open", "Нагадування правила відкрите"),
   plainHereLeavesOpen: bi("A purchase here does not close it — the rule counts only a purchase by the rule.", "Купівля тут його не закриває — правило рахує лише купівлю за правилом."),
-  /* «Умова ціни» (canon v5.5 В37, §4.1, §11; `RYN-PRICE-GUARD-001`): the rule buys only while the price is within the person's limit of its reference and the data are fresh. */
+  /* «Умова ціни»: the rule buys only while the price is within the person's limit of its reference and the data are fresh. */
   priceCondition: bi("Price condition", "Умова ціни"),
   noCondition: bi("No condition", "Без умови"),
   purchaseDeferred: bi("Purchase deferred", "Купівлю відкладено"),
@@ -267,7 +266,7 @@ export const INVEST_WORDS = {
   deferredShort: bi("Purchase deferred · the rule checks again", "Купівлю відкладено · правило перевірить знову"),
   conditionNow: bi("Now", "Зараз"),
   conditionRefused: bi("The price condition is not met right now — the rule's purchase waits.", "Умова ціни зараз не виконана — купівля за правилом чекає."),
-  /* «З кожної оплати» (canon v5.5 В38, §4.1; `RYN-PAY-TRIGGERS-001`): the wallet's own USDC payments and incoming transfers, gathered to the minimum, then one reminder. */
+  /* «З кожної оплати»: the wallet's own USDC payments and incoming transfers, gathered to the minimum, then one reminder. */
   fromPayments: bi("From payments", "З оплат"),
   whatToSetAside: bi("What to set aside", "Що відкладати"),
   modeRoundup: bi("Round-up", "Округлення"),
@@ -295,7 +294,7 @@ export const INVEST_WORDS = {
   myAccountYes: bi("Yes, it's mine", "Так, мій"),
   readPartial: bi("Not every payment could be checked — Ryntra checks again.", "Не всі оплати вдалося перевірити — Ryntra перевірить знову."),
   readUnavailable: bi("The wallet can't be read right now — Ryntra checks again.", "Гаманець зараз не прочитати — Ryntra перевірить знову."),
-  /* «Поповнити» and the first step without crypto (session 5, canon §4 «Почати з картки», В5, В12) */
+  /* «Поповнити» and the first step without crypto */
   fundFirst: bi("Top up — and buy your first piece", "Поповни — і купи першу частинку"),
   connectToBuy: bi(`Connect a wallet — and buy a piece of a company from ${FROM}`, `Під'єднай гаманець — і купи частинку компанії від ${FROM}`),
   openInPhantom: bi("Open in Phantom", "Відкрити в Phantom"),
@@ -338,7 +337,7 @@ export const INVEST_WORDS = {
   exchangeStepsUsdc: bi("On the exchange: Withdraw → USDC → the Solana network → paste this address.", "На біржі: Вивести → USDC → мережа Solana → встав цю адресу."),
   exchangeStepsSol: bi("On the exchange: Withdraw → SOL → the Solana network → paste this address.", "На біржі: Вивести → SOL → мережа Solana → встав цю адресу."),
   exchangeAddSol: bi("Withdraw a little SOL too — for the network fee.", "Виведи й трохи SOL — на плату мережі."),
-  /* The IPO and conversion watch (RYN-PRESTOCKS-001, session 2; canon v5.2 В27, §7): the swap before the issuer's deadline, and the quiet sale */
+  /* The IPO and conversion watch: the swap before the issuer's deadline, and the quiet sale */
   howMuch: bi("How much", "Скільки"),
   shareAll: bi("All", "Усе"),
   shareHalf: bi("Half", "Половина"),
@@ -358,12 +357,12 @@ export const INVEST_WORDS = {
   swapIsTrade: bi("The swap is an ordinary trade at the live price — no fixed ratio is promised.", "Обмін — звичайна угода за живою ціною; фіксованого курсу ніхто не обіцяє."),
   nothingSwapped: bi("Nothing happened — your tokens did not move. You can try again.", "Нічого не сталося — токени не рухались. Можна спробувати ще раз."),
   swapRejected: bi("The network rejected the swap. Only the network fee was spent.", "Мережа відхилила обмін. Списано лише плату мережі."),
-  /* «Продати з позиції» (`RYN-BUY-FLOW-001`, subtask 1; canon v5.6 §4, §6.2, §7): a sale of what the wallet holds, in dollars or as a share of the position, on the purchase's own path */
+  /* «Продати з позиції»: a sale of what the wallet holds, in dollars or as a share of the position, on the purchase's own path */
   sell: bi("Sell", "Продати"),
   quickPositionShares: bi("A share of your position", "Частка твоєї позиції"),
   rowSell: bi("You sell", "Спишеться"),
   overPosition: bi("More than your position", "Більше, ніж твоя позиція"),
-  /* A PreStocks token (canon §6.2, §7): «Продати може не вийти» — said before the sum and in «Перевірка», in the documentation's own words. */
+  /* A PreStocks token: «Продати може не вийти» — said before the sum and in «Перевірка», in the documentation's own words. */
   /* One sentence with the server's «Що це» on a private company's sale (contract 1.20.0). */
   saleMayFail: bi(SALE_MAY_FAIL.en, SALE_MAY_FAIL.uk),
   nothingToSell: bi("There is none of this company in your wallet now.", "Цієї компанії зараз немає в гаманці."),
@@ -372,7 +371,7 @@ export const INVEST_WORDS = {
   saleUnknownTx: bi("The outcome is not known yet. Do not sell again until it is.", "Результат ще невідомий. Не продавай ще раз, доки він не з'ясується."),
   saleUnavailable: bi("Selling is not available right now.", "Продаж зараз недоступний."),
   companyUnread: bi("This company could not be read right now. Try again in a moment.", "Компанію зараз не вдалося прочитати. Спробуй за мить."),
-  /* The company page, complete (RYN-COMPANY-PAGE-001): the company's facts at rest — figures with their source and time, never a paragraph */
+  /* The company page, complete: the company's facts at rest — figures with their source and time, never a paragraph */
   keyStats: bi("Key statistics", "Ключові показники"),
   aboutCompany: bi("About the company", "Про компанію"),
   aboutFund: bi("About the fund", "Про фонд"),
@@ -432,13 +431,13 @@ export function numberLocale(locale: WorkspaceLocale): string {
   return locale === "uk" ? "uk-UA" : "en-US";
 }
 
-/** «Купити $20 за правилом» · «Buy $20 by your rule» — a rule's purchase, never mistaken for an ordinary one (canon v5.3 В29). */
+/** «Купити $20 за правилом» · «Buy $20 by your rule» — a rule's purchase, never mistaken for an ordinary one. */
 export function buyByRuleWord(locale: WorkspaceLocale, amountUsd: number): string {
   const usd = usdWord(amountUsd, locale);
   return locale === "uk" ? `Купити ${usd} за правилом` : `Buy ${usd} by your rule`;
 }
 
-/** «Продати на $10» · «Sell $10» — the sale's one action on the sum chosen; «Продати все · $12,50» when it is the whole position (`RYN-BUY-FLOW-001`). */
+/** «Продати на $10» · «Sell $10» — the sale's one action on the sum chosen; «Продати все · $12,50» when it is the whole position. */
 export function sellForWord(locale: WorkspaceLocale, sum: string, whole = false): string {
   if (whole) return locale === "uk" ? `Продати все · ${sum}` : `Sell all · ${sum}`;
   return locale === "uk" ? `Продати на ${sum}` : `Sell ${sum}`;
@@ -450,7 +449,7 @@ export function heldLine(locale: WorkspaceLocale, units: string, usd: string | n
   return locale === "uk" ? `У тебе ${units}${worth}` : `You hold ${units}${worth}`;
 }
 
-/** «Накопичено $0,60 · нагадаю від $1» · «$0.60 gathered · reminder from $1» — what a «З кожної оплати» rule waits with (canon v5.5 В38). */
+/** «Накопичено $0,60 · нагадаю від $1» · «$0.60 gathered · reminder from $1» — what a «З кожної оплати» rule waits with. */
 export function gatheredLine(locale: WorkspaceLocale, gatheredUsd: number, minimumUsd: number): string {
   return locale === "uk" ? `Накопичено ${usdWord(gatheredUsd, locale)} · нагадаю від ${usdWord(minimumUsd, locale)}` : `${usdWord(gatheredUsd, locale)} gathered · reminder from ${usdWord(minimumUsd, locale)}`;
 }
@@ -460,13 +459,13 @@ export function gatheredShort(locale: WorkspaceLocale, gatheredUsd: number, mini
   return locale === "uk" ? `Накопичено ${usdWord(gatheredUsd, locale)} з ${usdWord(minimumUsd, locale)}` : `${usdWord(gatheredUsd, locale)} of ${usdWord(minimumUsd, locale)} gathered`;
 }
 
-/** «Оплата $3,40 → $0,60 в Apple» · «A $3.40 payment → $0.60 into Apple» — what the rule would set aside, on an example (canon v5.5 В38). */
+/** «Оплата $3,40 → $0,60 в Apple» · «A $3.40 payment → $0.60 into Apple» — what the rule would set aside, on an example. */
 export function setAsideExample(locale: WorkspaceLocale, direction: "out" | "in", amountUsd: number, addUsd: number, name: string): string {
   const what = locale === "uk" ? (direction === "out" ? "Оплата" : "Надходження") : direction === "out" ? "payment" : "incoming transfer";
   return locale === "uk" ? `${what} ${usdWord(amountUsd, locale)} → ${usdWord(addUsd, locale)} в ${name}` : `A ${usdWord(amountUsd, locale)} ${what} → ${usdWord(addUsd, locale)} into ${name}`;
 }
 
-/** «Це звичайна купівля: нагадування правила на $20 лишиться відкритим.» — said by an ordinary purchase while a rule's reminder is open (canon v5.3 В29). */
+/** «Це звичайна купівля: нагадування правила на $20 лишиться відкритим.» — said by an ordinary purchase while a rule's reminder is open. */
 export function plainLeavesOpenLine(locale: WorkspaceLocale, amountUsd: number): string {
   const usd = usdWord(amountUsd, locale);
   return locale === "uk" ? `Це звичайна купівля: нагадування правила на ${usd} лишиться відкритим.` : `This is a one-off purchase: your rule's ${usd} reminder stays open.`;
@@ -474,22 +473,22 @@ export function plainLeavesOpenLine(locale: WorkspaceLocale, amountUsd: number):
 
 /**
  * The one-time reserve that opens the token's account, on its own line under
- * «Усі витрати» (canon v5.5 В35) — «≈ $0,24 у SOL разово лишаються в гаманці
- * на рахунку токена». It stays in the person's wallet, so it is never counted
- * among the costs.
+ * «Усі витрати» — «≈ $0,24 у SOL разово лишаються в гаманці на рахунку
+ * токена». It stays in the person's wallet, so it is never counted among the
+ * costs.
  */
 export function reserveLine(locale: WorkspaceLocale, usd: string): string {
   return locale === "uk" ? `${usd} у SOL разово лишаються в гаманці на рахунку токена` : `${usd} in SOL, once — it stays in your wallet, on the token's account`;
 }
 
-/** Said first in «Перевірка» when that reserve is more than the purchase itself (canon v5.5 В35). */
+/** Said first in «Перевірка» when that reserve is more than the purchase itself. */
 export function reserveFirstLine(locale: WorkspaceLocale, reserveUsd: string, spendUsd: string): string {
   return locale === "uk"
     ? `Разовий резерв ${reserveUsd} у SOL більший за саму покупку (${spendUsd}). Він лишиться в гаманці на рахунку токена — це не витрата.`
     : `The one-time reserve, ${reserveUsd} in SOL, is more than the purchase itself (${spendUsd}). It stays in your wallet, on the token's account — it is not a cost.`;
 }
 
-/** «На $1 маршруту зараз немає. IREN — від $5.» — a company's own minimum, the least sum its live quote routes (canon v5.5 В35). */
+/** «На $1 маршруту зараз немає. IREN — від $5.» — a company's own minimum, the least sum its live quote routes. */
 export function routeMinimumLine(locale: WorkspaceLocale, asked: string, name: string, minimum: string): string {
   return locale === "uk" ? `На ${asked} маршруту зараз немає. ${name} — від ${minimum}.` : `No route for ${asked} right now. ${name} from ${minimum}.`;
 }
@@ -499,7 +498,7 @@ export function setMinimumWord(locale: WorkspaceLocale, minimum: string): string
   return locale === "uk" ? `Поставити ${minimum}` : `Use ${minimum}`;
 }
 
-/** «Вистачить ≈0,01 SOL (≈ $2) — …»: how much SOL is enough, in SOL and, with a price, in dollars (session 5). */
+/** «Вистачить ≈0,01 SOL (≈ $2) — …»: how much SOL is enough, in SOL and, with a price, in dollars. */
 export function solEnoughLine(locale: WorkspaceLocale, sol: string, usd: number | null): string {
   const dollars = usd === null ? "" : ` (≈ $${usd})`;
   return locale === "uk"

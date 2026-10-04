@@ -1,5 +1,5 @@
 /**
- * The drafts a turn prepared (`RYN-AGENT-TEXT-001`).
+ * The drafts a turn prepared.
  *
  * A draft is a card in the contract's own shape — a plan's rules, a
  * condition, a trade intention — kept for a bounded time under the wallet

@@ -82,7 +82,7 @@ export type WorkspaceKind = "home" | "ecosystem_pack" | "domain";
  *   > beside the other chains on the day it has a workspace of its own.
  *
  * Each was about a *desk* that settled on a chain, and a desk is not a chain.
- * `RYN-RHC-002` did not file the desk under ECOSYSTEMS; it made **the chain**
+ * The 2026-08-19 rename did not file the desk under ECOSYSTEMS; it made **the chain**
  * the workspace, with the desk as one surface inside it — which is the row the
  * second sentence reserved, on the day it names. The multi-venue objection is
  * not answered by a heading and is answered by `opens`: this workspace opens
@@ -188,10 +188,10 @@ const REGISTERED: Workspace[] = [
      * the id keys the stored layout preference. It was performed: `app/shell/layout-store.ts`
      * carries the rename, so a person who had set Pro mode and a panel
      * arrangement on this desk still has both. A silent reset was the thing
-     * that rule exists to prevent, not a cost this packet was allowed to pay.
+     * that rule exists to prevent, not a cost this rename was allowed to pay.
      *
      * The id is now the manifest's own id. Workspace and manifest row are one
-     * object named once, which is the thing this packet existed to do.
+     * object named once, which is the thing this rename existed to do.
      */
     id: "robinhood-chain",
     name: "Robinhood Chain",
@@ -219,8 +219,8 @@ const REGISTERED: Workspace[] = [
     href: "/robinhood/workspace",
     match: ["/robinhood/workspace"],
     opens: ["robinhood-chain", "arcus-spot", "arcus-perps", "uniswap"],
-    /* Out of the active public product story on 2026-09-04
-       (RYN-PUBLIC-SITE-PRODUCT-MAP-001). Not deleted and not closed: the
+    /* Out of the active public product story on 2026-09-04.
+       Not deleted and not closed: the
        workspace, its adapters, its evidence and its route all stay exactly
        where they are and open by direct URL. What ends is presenting it as one
        of several current Ryntra products, which is the model the One Ryntra
@@ -249,8 +249,8 @@ const REGISTERED: Workspace[] = [
      * screen where confusing two networks has consequences, the chrome was
      * asserting the wrong one while the page said TESTNET twice beneath it.
      *
-     * A route-aware environment chip belongs to the workspace kernel
-     * (`RYN-WS-KERNEL-001`); until then this states both halves, which is true
+     * A route-aware environment chip belongs to the workspace kernel;
+     * until then this states both halves, which is true
      * everywhere in the workspace rather than true on most of it.
      */
     environment: "Mainnet reads · Testnet actions",
@@ -259,8 +259,8 @@ const REGISTERED: Workspace[] = [
     href: "/stellar/workspace",
     match: ["/stellar/workspace"],
     opens: ["stellar"],
-    /* Out of the active public product story on 2026-09-04
-       (RYN-PUBLIC-SITE-PRODUCT-MAP-001). Not deleted and not closed: the
+    /* Out of the active public product story on 2026-09-04.
+       Not deleted and not closed: the
        workspace, its adapters, its evidence and its route all stay exactly
        where they are and open by direct URL. What ends is presenting it as one
        of several current Ryntra products, which is the model the One Ryntra
@@ -286,10 +286,10 @@ const REGISTERED: Workspace[] = [
      * This chip has been wrong twice in opposite directions. It said "Mainnet ·
      * read only" while `/send` was building transfers, then "Mainnet reads ·
      * Devnet actions" — which fixed the read-only half and enshrined a devnet
-     * ladder as the model. The Solana Mainnet Product Canon v5.0 removed that
+     * ladder as the model. The move to a Solana mainnet product removed that
      * ladder: mainnet is the release target for every action family, devnet is
      * an optional internal regression fixture, and the Send path's remaining
-     * devnet wiring is a rewrite in flight (`RYN-SOL-M0C`) rather than a second
+     * devnet wiring is a rewrite in flight rather than a second
      * network this workspace offers. So the chip states the environment and
      * nothing else. It does not claim a transfer has happened; each page
      * resolves its own maturity from its module record, and Send reads
@@ -420,7 +420,7 @@ export type NavEntry = Readonly<{
   tag?: string;
   /**
    * A quiet word beside the label saying what the row is, where its name alone
-   * does not — «Ryntra · ШІ-помічник» (canon v5.4 В30). Not a tag: it names,
+   * does not — «Ryntra · ШІ-помічник». Not a tag: it names,
    * it does not grade.
    */
   caption?: string;
@@ -516,8 +516,8 @@ export const CABINET_SETTINGS: NavEntry = {
 };
 
 /**
- * `MARKETS_NAV` is gone, and the reason is the whole of `RYN-RHC-002`'s
- * unfinished half.
+ * `MARKETS_NAV` is gone, and the reason is the whole of the `robinhood-chain`
+ * rename's unfinished half.
  *
  * It listed six Markets entries and then a second group titled `Ryntra Home` —
  * `Portfolio & Markets`, `Journal`, `Connections` — inside a chain's rail. A

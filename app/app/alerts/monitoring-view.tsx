@@ -72,7 +72,7 @@ export function MonitoringPanel({ locale }: { locale: Locale }) {
   const [devices, setDevices] = useState<readonly DeviceRow[]>([]);
   const [quietStart, setQuietStart] = useState("22:00");
   const [quietEnd, setQuietEnd] = useState("07:00");
-  /* Нагляд over the wallet's positions (RYN-PROTECT-SIGNAL-001): every company it holds, its state and one action — the plan's «Виконано» stops nothing. */
+  /* Нагляд over the wallet's positions: every company it holds, its state and one action — the plan's «Виконано» stops nothing. */
   const positions = usePositions();
   const [warning, setWarning] = useState<PositionWatchView | null>(null);
 
@@ -190,8 +190,8 @@ export function MonitoringPanel({ locale }: { locale: Locale }) {
     );
   }
 
-  /* The prediction demo's paper cards and notes left the surface with the demo (canon v5.4 В32); the service still keeps them. */
-  /* A position is shown once, as a position: its plan's card and its «Ryntra попередить» card fold into «Твої позиції» (RYN-PROTECT-SIGNAL-001). */
+  /* The prediction demo's paper cards and notes left the surface with the demo; the service still keeps them. */
+  /* A position is shown once, as a position: its plan's card and its «Ryntra попередить» card fold into «Твої позиції». */
   const held = positions.body?.positions ?? [];
   const positionPlans = new Set(held.flatMap((view) => (view.exit?.planId ? [view.exit.planId] : [])));
   const asPosition = (card: SurfaceCard) => card.subject?.kind === "position" || (card.subject?.kind === "trading-plan" && positionPlans.has(card.subject.id));
@@ -200,7 +200,7 @@ export function MonitoringPanel({ locale }: { locale: Locale }) {
   const recent = (surface?.recent ?? []).filter((row) => !row.paper);
   const prefs = surface?.preferences;
   const now = Date.now();
-  /* One orange action on the screen (canon §2, rule 1): the first card that needs attention, else the newest unread note that still has an action; every other action stays quiet. */
+  /* One orange action on the screen: the first card that needs attention, else the newest unread note that still has an action; every other action stays quiet. */
   /* The one orange action: a note that still buys or asks for something before one that only says a purchase waits (1.18.0). */
   /* A position in «Дія» — its limit or its target reached — holds the orange: the sale comes first. */
   const actNow = held.find((view) => view.state === "action") ?? null;
@@ -247,7 +247,7 @@ export function MonitoringPanel({ locale }: { locale: Locale }) {
                   <div className={styles.cardTop}>
                     <span className={styles.label}>{row.context}</span>
                     {row.paper ? <span className={styles.paper}>{w.paper}</span> : null}
-                    {/* A rule's reminder and the month's budget say their state (canon §11): «Час покупки за правилом», «Пропущено», «Бюджет вичерпано». */}
+                    {/* A rule's reminder and the month's budget say their state: «Час покупки за правилом», «Пропущено», «Бюджет вичерпано». */}
                     {state ? <span className={styles.status} data-status={state.tone}>{state.label}</span> : null}
                     <span className={styles.meta}>{relativeTime(row.createdAt, now, locale)}</span>
                   </div>
@@ -256,7 +256,7 @@ export function MonitoringPanel({ locale }: { locale: Locale }) {
                   {/* The note's actions in one row, wrapping on a phone: its own, then «Спитати Ryntra», then «Позначити прочитаним». */}
                   <div className={styles.noteActions}>
                     {noteActs(row) ? <Link className={row.id === primaryNote ? "rw-btn rw-btn--primary" : "rw-btn"} href={row.href}>{row.cta}</Link> : null}
-                    {/* Why this note, in Ryntra's words — the exact record, the finding, the market now (RYN-AGENT-TEXT-001). Autoinvest's notes and an issuer's event say why themselves: the rule's day or fall came, the budget is spent, the issuer's deadline nears. */}
+                    {/* Why this note, in Ryntra's words — the exact record, the finding, the market now. Autoinvest's notes and an issuer's event say why themselves: the rule's day or fall came, the budget is spent, the issuer's deadline nears. */}
                     {row.subject?.kind === "autoinvest-rule" || row.subject?.kind === "autoinvest-budget" || row.subject?.kind === "issuer-event" ? null : (
                       <Link className="rw-btn" href={rynHref({ kind: "note", inboxId: row.id }, locale === "uk" ? "Чому мені прийшло це сповіщення?" : "Why did I get this alert?")} prefetch={false}>{locale === "uk" ? "Спитати Ryntra" : "Ask Ryntra"}</Link>
                     )}
@@ -327,10 +327,10 @@ export function MonitoringPanel({ locale }: { locale: Locale }) {
 }
 
 /**
- * «Твої позиції» — every company the wallet holds, as Нагляд sees it
- * (RYN-PROTECT-SIGNAL-001, canon §11): its name and worth over the state's
- * one line and one action. A position that needs the person comes first; a
- * read that failed says so and never an empty list.
+ * «Твої позиції» — every company the wallet holds, as Нагляд sees it: its
+ * name and worth over the state's one line and one action. A position that
+ * needs the person comes first; a read that failed says so and never an
+ * empty list.
  */
 function PositionsSection({ positions, locale, actNow, onWarn }: Readonly<{ positions: ReturnType<typeof usePositions>; locale: Locale; actNow: PositionWatchView | null; onWarn: (view: PositionWatchView) => void }>) {
   const lang = langOf(locale);
@@ -366,10 +366,10 @@ function PositionsSection({ positions, locale, actNow, onWarn }: Readonly<{ posi
 
 /**
  * What a rule's reminder or the month's budget note says of itself now
- * (canon §11, 1.13.0): the reminder still open — «Час покупки за правилом»,
- * its one action; bought, on its way or missed — said, with no action; the
- * budget spent — «Бюджет вичерпано», its action «Змінити бюджет». Every other
- * note says nothing here.
+ * (1.13.0): the reminder still open — «Час покупки за правилом», its one
+ * action; bought, on its way or missed — said, with no action; the budget
+ * spent — «Бюджет вичерпано», its action «Змінити бюджет». Every other note
+ * says nothing here.
  */
 function noteState(row: InboxRecord, w: ReturnType<typeof words>): Readonly<{ key: string; label: string; tone: MonitorStatus }> | null {
   if (row.subject?.kind === "autoinvest-budget") return { key: "budget", label: w.budgetSpent, tone: "needs_attention" };

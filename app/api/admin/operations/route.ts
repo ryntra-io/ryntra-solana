@@ -49,12 +49,12 @@ async function probeDatabase(): Promise<ProbeResult> {
 /**
  * How close Relay's rate limit is, from Relay's own accounting.
  *
- * Owner instruction 2026-09-10, given after reading the Dashboard: the key meters
- * `/quote` at **50 requests a minute** for the whole integration, and that is a
- * ceiling shared by everybody using Bridge at once. The point of this row is to
- * see the wall before hitting it, so it reports the **peak minute** rather than
- * an average — fifty-nine quiet minutes and one at the ceiling average to
- * nothing while somebody was being refused.
+ * Per Relay's Dashboard, the key meters `/quote` at **50 requests a minute**
+ * for the whole integration, and that is a ceiling shared by everybody using
+ * Bridge at once. The point of this row is to see the wall before hitting it,
+ * so it reports the **peak minute** rather than an average — fifty-nine quiet
+ * minutes and one at the ceiling average to nothing while somebody was being
+ * refused.
  *
  * It reads `GET /metrics/usage` rather than counting locally, because serverless
  * instances do not share memory: a local counter would see a fraction of the

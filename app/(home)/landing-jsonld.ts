@@ -3,8 +3,8 @@ import { SITE } from "../seo.ts";
 import { landingCopy, type LandingLocale } from "./landing-copy.ts";
 
 /**
- * The landing's structured data (plan §5): the app and the page's own
- * questions, in the page's language.
+ * The landing's structured data: the app and the page's own questions, in
+ * the page's language.
  *
  * `SoftwareApplication` says what the app is and that it is free to open —
  * Ryntra's fee is a line of the Review, not a price of the app. No
@@ -13,7 +13,7 @@ import { landingCopy, type LandingLocale } from "./landing-copy.ts";
  * зараз», each item of which `landing.test.mjs` ties to the code that does it —
  * the graph can say no more than the page. `FAQPage` is the questions the page
  * shows, word for word; Google stopped drawing FAQ results in May 2026, so it
- * describes the page and promises nothing (plan decision 6).
+ * describes the page and promises nothing.
  */
 export function landingJsonLd(locale: LandingLocale) {
   const copy = landingCopy(locale);

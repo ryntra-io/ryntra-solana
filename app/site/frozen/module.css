@@ -4,9 +4,9 @@
  * `/developers` describes the kernel as eight steps, each with what it takes,
  * what it creates, who is accountable and what it must never do. Those four
  * are a definition list, and without these rules they rendered as bare
- * alternating lines with no columns and no hierarchy — the founder's screenshot
- * of it is why this file exists. The step bar rendered the same way: numbers
- * welded to labels, chips crammed against them, wrapping mid-row.
+ * alternating lines with no columns and no hierarchy — a screenshot of it is
+ * why this file exists. The step bar rendered the same way: numbers welded to
+ * labels, chips crammed against them, wrapping mid-row.
  *
  * The lesson is recorded rather than just fixed: the class inventory for a
  * migrating page has to include the components it *renders*, not only the
@@ -182,9 +182,9 @@
  * so it gets a dense row and no card chrome at all.
  *
  * The Workspace Map had both as the same card, and eleven identical cards after
- * six identical cards is what made the page read as one undifferentiated wall
- * — the founder's word for it was «портянка». Same content, same registry
- * bindings, same sentences; the difference is entirely which shape carries it.
+ * six identical cards is what made the page read as one undifferentiated wall.
+ * Same content, same registry bindings, same sentences; the difference is
+ * entirely which shape carries it.
  */
 
 .rx-grid {

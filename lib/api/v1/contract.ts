@@ -1,13 +1,13 @@
 /**
  * The versioned API contract for native clients — v1.
  *
- * `RYN-API-CONTRACT-001`. One place says what the contract is: its version,
- * its headers, its error shape, and the schema of every message the native
- * client sends or receives on the v1 routes. The routes validate with these
- * schemas, the examples under `docs/api/examples/` are checked against them by
- * a test, the OpenAPI document mirrors them, and the client package's types are
- * inferred from them — so a change here is a change everywhere, and a shape the
- * mobile line reads is never a guess.
+ * One place says what the contract is: its version, its headers, its error
+ * shape, and the schema of every message the native client sends or receives
+ * on the v1 routes. The routes validate with these schemas, the examples under
+ * `docs/api/examples/` are checked against them by a test, the OpenAPI
+ * document mirrors them, and the client package's types are inferred from
+ * them — so a change here is a change everywhere, and a shape the native
+ * client reads is never a guess.
  *
  * Pure and client-safe: no clock, no store, no `process.env`.
  *
@@ -44,16 +44,16 @@
  *
  * ## 1.1.0 — the plan, its review, its execution binding, the device registry
  *
- * Additive. The Trading Plan (canon Part A §9.3–§9.5, spot-long without
- * leverage) is one shape for the web and the phone: rules that make a
- * version, a deterministic size computed from them, a journal of decisions,
- * and the executions bound to a version before signing. The Review's Strategy
- * block (`PlanReview`) is the list of checks a plan's version passes or fails
- * on the quote in front of the person; an unknown is never a pass. An order
- * names the plan version it executes under (`ExecutionPlanBinding`) and the
- * issuer-signed bundle carries it, so the operation row is bound to the
- * version that existed before the signature. The notification device
- * registry is a schema here and a route with `RYN-MONITORING-PUSH-001`.
+ * Additive. The Trading Plan (spot-long without leverage) is one shape for
+ * the web and the phone: rules that make a version, a deterministic size
+ * computed from them, a journal of decisions, and the executions bound to a
+ * version before signing. The Review's Strategy block (`PlanReview`) is the
+ * list of checks a plan's version passes or fails on the quote in front of
+ * the person; an unknown is never a pass. An order names the plan version it
+ * executes under (`ExecutionPlanBinding`) and the issuer-signed bundle
+ * carries it, so the operation row is bound to the version that existed
+ * before the signature. The notification device registry is a schema here;
+ * its route comes with push monitoring.
  *
  * ## 1.2.0 — the plan routes are live
  *
@@ -136,22 +136,22 @@
  *
  * ## 1.7.0 — a plan on a token: crypto and memes, the planning price with its time
  *
- * Additive (`RYN-PLAN-CRYPTO-001`). The same plan engine reaches the verified,
- * tradable crypto and meme assets of the Spot catalogue. `PlanAsset.kind`
- * says what the asset is — `stock` (every plan written before this version,
- * where the field is absent), `crypto` or `meme` (the catalogue's own
- * category, on a token Jupiter's verified list carries). A token plan is
- * priced per token (`unitBasis: "token"`) and carries no reference, no
- * session, no issuer mark and no multiplier; `issuer` and `underlying` stay
- * present on it with their honest token meaning — `underlying` is the token
- * itself (a plan on SOL is a plan on SOL) and `issuer` names the list that
- * confirms the token (`jupiter-verified`), because such a token has no
- * tokenizing issuer — so a 1.x reader that prints them keeps rendering;
- * `kind` is the way to know. On a token plan the reference rule cannot be
- * required and no deviation bound can be set (`PLAN_INVALID`, the path named);
- * its Review answers `quote.unit: "token"` with `multiplier: null`, judges the
- * reference and the deviation as not applicable (advisory, passing) and the
- * liquidity from the catalogue.
+ * Additive. The same plan engine reaches the verified, tradable crypto and
+ * meme assets of the Spot catalogue. `PlanAsset.kind` says what the asset is
+ * — `stock` (every plan written before this version, where the field is
+ * absent), `crypto` or `meme` (the catalogue's own category, on a token
+ * Jupiter's verified list carries). A token plan is priced per token
+ * (`unitBasis: "token"`) and carries no reference, no session, no issuer mark
+ * and no multiplier; `issuer` and `underlying` stay present on it with their
+ * honest token meaning — `underlying` is the token itself (a plan on SOL is a
+ * plan on SOL) and `issuer` names the list that confirms the token
+ * (`jupiter-verified`), because such a token has no tokenizing issuer — so a
+ * 1.x reader that prints them keeps rendering; `kind` is the way to know. On
+ * a token plan the reference rule cannot be required and no deviation bound
+ * can be set (`PLAN_INVALID`, the path named); its Review answers
+ * `quote.unit: "token"` with `multiplier: null`, judges the reference and the
+ * deviation as not applicable (advisory, passing) and the liquidity from the
+ * catalogue.
  *
  * Every version records the **planning price** the server read when the
  * version was written (`PlanVersion.planningPrice`): the figure, its source
@@ -171,57 +171,55 @@
  *
  * ## 1.8.0 — Ryn, the agent: a durable conversation that researches and prepares, never executes
  *
- * Additive (`RYN-AGENT-TEXT-001`). One agent, Ryn, server-side and
- * text-first, over the product's own reads. `POST /api/v1/agent/session`
- * opens (or resumes) the proven wallet's conversation for a context — an
- * asset, a plan, the portfolio, a monitoring note, a page — and answers the
- * session with its budget state and suggested questions; `GET
- * /api/v1/agent/session/{id}` reads it back; `POST /api/v1/agent/message`
- * sends the person's words and answers the two turns the exchange made.
- * Ryn's turn is structured (`AgentAnswer`: *observation → what it means →
- * counter-argument → risks and unknowns → what to check → possible next
- * actions*), every sentence citing the `AgentCitation` it stands on —
- * source, observed time, state (`current`, `stale`, `unavailable`,
- * `unknown`) and the reference id where one exists — with typed cards
- * (`AgentCard`: a market, a stock, an observation, the holdings, a plan, a
- * note, a comparison, and the drafts) and handoffs (`AgentHandoff`: the
- * builder, the Review, a plan, Monitoring, a market). A **draft** is never
- * a write to the product: a plan draft is the contract's own `PlanRules`
- * with the size the engine computes and the issues it names, read by `GET
- * /api/v1/agent/drafts/{id}` and opened in the builder; a monitoring draft
- * is a condition the builder carries; a trade draft is a side, a mint and a
- * sum that open the Spot ticket — the Review, the confirmation and the
+ * Additive. One agent, Ryn, server-side and text-first, over the product's
+ * own reads. `POST /api/v1/agent/session` opens (or resumes) the proven
+ * wallet's conversation for a context — an asset, a plan, the portfolio, a
+ * monitoring note, a page — and answers the session with its budget state and
+ * suggested questions; `GET /api/v1/agent/session/{id}` reads it back; `POST
+ * /api/v1/agent/message` sends the person's words and answers the two turns
+ * the exchange made. Ryn's turn is structured (`AgentAnswer`: *observation →
+ * what it means → counter-argument → risks and unknowns → what to check →
+ * possible next actions*), every sentence citing the `AgentCitation` it
+ * stands on — source, observed time, state (`current`, `stale`,
+ * `unavailable`, `unknown`) and the reference id where one exists — with
+ * typed cards (`AgentCard`: a market, a stock, an observation, the holdings,
+ * a plan, a note, a comparison, and the drafts) and handoffs (`AgentHandoff`:
+ * the builder, the Review, a plan, Monitoring, a market). A **draft** is
+ * never a write to the product: a plan draft is the contract's own
+ * `PlanRules` with the size the engine computes and the issues it names, read
+ * by `GET /api/v1/agent/drafts/{id}` and opened in the builder; a monitoring
+ * draft is a condition the builder carries; a trade draft is a side, a mint
+ * and a sum that open the Spot ticket — the Review, the confirmation and the
  * wallet's signature stay where they are. There is no execute tool. The
  * agent's budget (`AgentBudgetState`, `GET /api/v1/agent/budget`) is per
  * wallet per day and per month with an in-flight limit, metered in the
  * durable store; a call over it is `AGENT_BUDGET_EXHAUSTED` (429) with the
  * reason, a second question while one is answered `AGENT_BUSY` (409). A
- * deployment without a model composes every answer deterministically from
- * the same reads (`composedBy: "deterministic"`); `capabilities.agent.model`
- * says which. `GET /api/v1/agent/suggestions?context=` is public. Every
- * figure Ryn states is a figure a tool read, never one the model wrote.
+ * deployment without a model composes every answer deterministically from the
+ * same reads (`composedBy: "deterministic"`); `capabilities.agent.model` says
+ * which. `GET /api/v1/agent/suggestions?context=` is public. Every figure Ryn
+ * states is a figure a tool read, never one the model wrote.
  *
  * ## 1.9.0 — Results beyond the entry: the exit, the position, the cost parts, a no-trade outcome, and a memory that cites
  *
- * Additive (`RYN-RESULTS-MEMORY-001`). A plan's result stopped at the
- * entry; it now answers *what actually happened against what I planned*.
- * `PlanExecutionRef.side` carries the side off the signed bundle's origin,
- * so a sell under a plan is a sell rather than a buy read backwards from
- * the order of two legs, and `PlanActual.leg` says what the execution did
- * to the position — `entry` establishes it, `exit` reduces it. A sell's
- * `proceedsUsd` and `unitsOut` are read off the leg that arrived and the
- * leg that left, with `valueBasis` naming how the dollars were
- * established (`PAR`, `PROVIDER_STATED`) and `feeBasis` how the fee was.
- * `PlanResult.costs` keeps three parts apart and never adds them into one
- * number: the market's own move between the plan being written and the
- * Review, what execution added between the Review and the fill, and the
- * service fee the settled row recorded — each with `basis` (`known`,
- * `estimated`, `unknown`) and a reason where nothing was established;
- * `costs.expected` holds what the Review modelled before the signature and
- * is never spoken of as paid. `PlanResult.exit` judges an exit only
- * against the rules that existed before it (`ruledByVersion` is the newest
- * version written at or before the exit's own time; `notBackdated` says a
- * later rule was not applied backwards), with the three exit checks
+ * Additive. A plan's result stopped at the entry; it now answers *what
+ * actually happened against what I planned*. `PlanExecutionRef.side` carries
+ * the side off the signed bundle's origin, so a sell under a plan is a sell
+ * rather than a buy read backwards from the order of two legs, and
+ * `PlanActual.leg` says what the execution did to the position — `entry`
+ * establishes it, `exit` reduces it. A sell's `proceedsUsd` and `unitsOut`
+ * are read off the leg that arrived and the leg that left, with `valueBasis`
+ * naming how the dollars were established (`PAR`, `PROVIDER_STATED`) and
+ * `feeBasis` how the fee was. `PlanResult.costs` keeps three parts apart and
+ * never adds them into one number: the market's own move between the plan
+ * being written and the Review, what execution added between the Review and
+ * the fill, and the service fee the settled row recorded — each with `basis`
+ * (`known`, `estimated`, `unknown`) and a reason where nothing was
+ * established; `costs.expected` holds what the Review modelled before the
+ * signature and is never spoken of as paid. `PlanResult.exit` judges an exit
+ * only against the rules that existed before it (`ruledByVersion` is the
+ * newest version written at or before the exit's own time; `notBackdated`
+ * says a later rule was not applied backwards), with the three exit checks
  * `exitTarget`, `exitInvalidation` and `exitTime`.
  *
  * A plan that never traded is a result too. `PlanResultsResponse.outcomes`
@@ -275,39 +273,38 @@
  * proven equal to the type its route builds its answer from
  * (`route-types.test.ts`) and parsed against its route's answers in the
  * tests; `RouteErrorSchema` is their error, and the older bodies are named
- * where a route answers another. Three additive changes answer the mobile
- * line: the slim stock row names a pending multiplier with its time and when
- * the session next changes (request 26); the Telegram channel is a v1 path
- * over the bearer, `/api/v1/notifications/telegram` (request 17); and the
- * recovery of a swap the server had already receipted carries the same
- * `observation` and `facts` as a fresh recovery (request 14).
+ * where a route answers another. Three additive changes answer the native
+ * client: the slim stock row names a pending multiplier with its time and
+ * when the session next changes; the Telegram channel is a v1 path over the
+ * bearer, `/api/v1/notifications/telegram`; and the recovery of a swap the
+ * server had already receipted carries the same `observation` and `facts` as
+ * a fresh recovery.
  *
- * **1.12.0 — «Автоінвест»: a rule that reminds, a purchase the person signs.**
- * Additive (`RYN-INVEST-SIMPLE-001`, session 3; canon v5.1 §4.1, B.3). An
- * `AutoinvestRule` is the proven wallet's «Регулярно»: a company (network +
- * mint, a confirmed stock representation), a sum in dollars, how often
- * (`daily`, `weekly`, `monthly`) and when — the day and the time in the
- * person's own time zone, an IANA name — and whether it is `active` or
- * `paused`. `GET /api/v1/rules` lists the wallet's rules, `POST` writes one,
- * `POST /api/v1/rules/{id}/status` pauses or resumes it, `GET` and `DELETE
- * /api/v1/rules/{id}` read and remove one — one set of routes for the phone's
- * bearer and the web's proof cookie, like the plan routes. A rule is never a
- * mandate and never an authorization: it only schedules a reminder. When a
- * rule falls due, the monitoring tick writes one note (`subject.kind:
- * "autoinvest-rule"`) and, where the channel is confirmed, a Telegram message;
- * the note opens a fresh Review on the rule's sum. The order names the rule and
- * the occurrence (`origin.rule` on `POST /api/solana/swap/order`, the proven
- * wallet the taker); the order route refuses a reminder that is not open
- * (`RULE_NOT_DUE`) or an order that is not the rule's purchase (`RULE_MISMATCH`)
- * before any bytes are built; the issuer-signed bundle and the History row
- * carry the binding, and the rule reads each occurrence's state from History:
- * `due` (the reminder is open), `pending` (a signed purchase not yet
- * settled), `bought` (settled, with its signature and the dollars spent) or
- * `missed` (the reminder's day passed without a signature — never caught up).
- * `capabilities.rules` names the routes and the bounds.
+ * **1.12.0 — «Автоінвест»: a rule that reminds, a purchase the person
+ * signs.** Additive. An `AutoinvestRule` is the proven wallet's «Регулярно»:
+ * a company (network + mint, a confirmed stock representation), a sum in
+ * dollars, how often (`daily`, `weekly`, `monthly`) and when — the day and
+ * the time in the person's own time zone, an IANA name — and whether it is
+ * `active` or `paused`. `GET /api/v1/rules` lists the wallet's rules, `POST`
+ * writes one, `POST /api/v1/rules/{id}/status` pauses or resumes it, `GET`
+ * and `DELETE /api/v1/rules/{id}` read and remove one — one set of routes for
+ * the phone's bearer and the web's proof cookie, like the plan routes. A rule
+ * is never a mandate and never an authorization: it only schedules a
+ * reminder. When a rule falls due, the monitoring tick writes one note
+ * (`subject.kind: "autoinvest-rule"`) and, where the channel is confirmed, a
+ * Telegram message; the note opens a fresh Review on the rule's sum. The
+ * order names the rule and the occurrence (`origin.rule` on `POST
+ * /api/solana/swap/order`, the proven wallet the taker); the order route
+ * refuses a reminder that is not open (`RULE_NOT_DUE`) or an order that is
+ * not the rule's purchase (`RULE_MISMATCH`) before any bytes are built; the
+ * issuer-signed bundle and the History row carry the binding, and the rule
+ * reads each occurrence's state from History: `due` (the reminder is open),
+ * `pending` (a signed purchase not yet settled), `bought` (settled, with its
+ * signature and the dollars spent) or `missed` (the reminder's day passed
+ * without a signature — never caught up). `capabilities.rules` names the
+ * routes and the bounds.
  *
- * **1.13.0 — «Якщо впаде» and «Бюджет місяця».** Additive
- * (`RYN-INVEST-SIMPLE-001`, session 4; canon v5.1 §4.1, §11). A rule may be
+ * **1.13.0 — «Якщо впаде» and «Бюджет місяця».** Additive. A rule may be
  * `kind: "dip"`: «Якщо {компанія} впаде на N % — докупити $X», with `dip`
  * (the fall in whole per cent, the reference point — the price when the rule
  * was turned on, or what the last purchase under it paid — and the trigger)
@@ -322,15 +319,14 @@
  * unknown counts as spent, and a purchase that does not fit what is left is
  * not reminded of — the occurrence is `held`, one note says the budget is
  * spent (`subject.kind: "autoinvest-budget"`), and the rules stand until the
- * 1st; the order route refuses such a purchase (`RULE_BUDGET_EXHAUSTED`).
- * A rule's reminder on the monitoring surface carries `ruleState`, what became
+ * 1st; the order route refuses such a purchase (`RULE_BUDGET_EXHAUSTED`). A
+ * rule's reminder on the monitoring surface carries `ruleState`, what became
  * of it (`due`, `pending`, `bought`, `missed`).
  *
- * **1.14.0 — private companies through PreStocks only.** Additive
- * (`RYN-PRESTOCKS-001`, session 1; canon v5.2 В25–В27). The other pre-IPO
- * issuer is disconnected: no answer carries its tokens any more, and its
- * values stay in the enums only so that a record written before — a plan, a
- * note, an agent card — still parses (`issuer.id` `tessera`,
+ * **1.14.0 — private companies through PreStocks only.** Additive. The other
+ * pre-IPO issuer is disconnected: no answer carries its tokens any more, and
+ * its values stay in the enums only so that a record written before — a plan,
+ * a note, an agent card — still parses (`issuer.id` `tessera`,
  * `issuerMark.source.id` `issuer-tessera`, `instrument.rights`
  * `loan-participation`). The universe's `issuerCatalogues.tessera` is
  * optional and absent from every new answer. A quote or an order that buys or
@@ -342,10 +338,9 @@
  * and the screener draw — and `markAt`, when the issuer's mark was read; both
  * null on a listed row.
  *
- * **1.15.0 — the IPO and conversion watch.** Additive (`RYN-PRESTOCKS-001`,
- * session 2; canon v5.2 В27, §7, §11). A note's subject may be
- * `issuer-event`, `id` a token's mint: the wallet holds a token whose issuer
- * opened a window to swap it before a cut-off, after which it expires
+ * **1.15.0 — the IPO and conversion watch.** Additive. A note's subject may
+ * be `issuer-event`, `id` a token's mint: the wallet holds a token whose
+ * issuer opened a window to swap it before a cut-off, after which it expires
  * worthless (PreStocks SPACEX, until 23:59 UTC on 12 March 2027). One such
  * note the day Ryntra first sees the wallet hold the token, then 90, 30, 7
  * and 1 days before the cut-off, never more than one a day about one token;
@@ -357,145 +352,144 @@
  * by the clock, whatever the registry still says.
  *
  * **1.16.0 — from $1.** A relaxation, and nothing a client sends today stops
- * being valid (`RYN-MIN-ONE-DOLLAR-001`; canon v5.5 В35). A rule's
- * `amountUsd` and the month's budget `capUsd` start at one dollar, not ten:
- * `capabilities.rules.minimumUsd` and `capabilities.rules.budget.minimumUsd`
- * say 1, and a client that reads its bounds from them needs no release. The
- * $10 came from the v5.0 draft, which had copied Jupiter's own minimums for
- * its DCA vault, Trigger orders and the gasless swap; a plain Swap v2 order has
- * none. A purchase is from a dollar too — where the live quote finds no route
- * for the sum, the client asks the same read-only quote
- * (`POST /api/solana/swap/quote`) at larger sums and says the least that
- * routes. No route, field or error changes shape.
+ * being valid. A rule's `amountUsd` and the month's budget `capUsd` start at
+ * one dollar, not ten: `capabilities.rules.minimumUsd` and
+ * `capabilities.rules.budget.minimumUsd` say 1, and a client that reads its
+ * bounds from them needs no release. The $10 had been copied from Jupiter's
+ * own minimums for its DCA vault, Trigger orders and the gasless swap; a
+ * plain Swap v2 order has none. A purchase is from a dollar too — where the
+ * live quote finds no route for the sum, the client asks the same read-only
+ * quote (`POST /api/solana/swap/quote`) at larger sums and says the least
+ * that routes. No route, field or error changes shape.
  *
- * **1.17.0 — «Шлях компанії».** Additive (`RYN-COMPANY-PATH-001`; canon v5.2
- * В27, §7). A stock row gains `companyPath`, null where there is nothing to
- * say: the company's way from a private token to its stock on Solana, four
- * steps always in order — `private` (the token through PreStocks), `ipo` (the
- * first trading day and the offering price), `exchange` (the exchange and the
- * ticker), `solana` (the listed share's token) — each `passed`, `current` or
- * `unannounced`, with its day where one is recorded; `at` is the step this
- * token stands at. SpaceX: every step passed, SPACEX at `private` and SPCXx at
- * `solana`, each naming the other in its step's `token`, and `swap` — the
- * private token's cut-off, `open` judged by the clock at answer time. A
- * PreStocks company that announced nothing: `private` current, the rest
- * `unannounced`, and `swapMonths` — after an IPO, up to nine months to swap.
- * `sources` name each document with its date and Ryntra's read. The facts are
- * the registry's (`lib/stocks/lifecycle-events.ts`), never a parser's. Served on
- * `GET /api/stocks/universe` and `GET /api/stocks/asset`; a client that does
- * not read it needs no release.
+ * **1.17.0 — «Шлях компанії».** Additive. A stock row gains `companyPath`,
+ * null where there is nothing to say: the company's way from a private token
+ * to its stock on Solana, four steps always in order — `private` (the token
+ * through PreStocks), `ipo` (the first trading day and the offering price),
+ * `exchange` (the exchange and the ticker), `solana` (the listed share's
+ * token) — each `passed`, `current` or `unannounced`, with its day where one
+ * is recorded; `at` is the step this token stands at. SpaceX: every step
+ * passed, SPACEX at `private` and SPCXx at `solana`, each naming the other in
+ * its step's `token`, and `swap` — the private token's cut-off, `open` judged
+ * by the clock at answer time. A PreStocks company that announced nothing:
+ * `private` current, the rest `unannounced`, and `swapMonths` — after an IPO,
+ * up to nine months to swap. `sources` name each document with its date and
+ * Ryntra's read. The facts are the registry's
+ * (`lib/stocks/lifecycle-events.ts`), never a parser's. Served on `GET
+ * /api/stocks/universe` and `GET /api/stocks/asset`; a client that does not
+ * read it needs no release.
  *
- * **1.18.0 — «Умова ціни».** Additive (`RYN-PRICE-GUARD-001`; canon v5.5
- * В37, §4.1, §11). A rule may carry `priceCondition: { limitPct }` — «Не
- * купувати, якщо дорожче за орієнтир більш ніж на N %», whole per cent 1–50;
- * null — every rule written before, and a request that names none — is no
- * condition. The reference is PreStocks' valuation of one token for a private
- * company, and the reference per share for a listed one (the issuer's quote,
- * or the market feed where one is configured), set against the token's own
- * price on the same basis. When a rule falls due (a «Регулярно» due, a «Якщо
- * впаде» crossing) the tick judges the condition: `met` reminds as before;
- * otherwise the occurrence is `deferred` — a new state: nothing is to be
- * bought, one note says why («Купівлю відкладено» with the reason, the figure
- * and the data's time), and every pass while the occurrence is open judges it
- * again — met in time, it becomes `due` and reminds; never met, it is `missed`
- * at its end. Every judged occurrence carries `condition`: the verdict
- * (`met` · `above` · `stale` · `unavailable`), the reference, the limit, the
- * price and the reference figure, the deviation to a tenth of a per cent, the
- * data's time (the older of the two) and when it was judged; null where the
- * rule has none. Data older than `capabilities.rules.priceCondition.maxAgeMinutes`
- * or a missing figure never pass. `POST /api/solana/swap/order` under a rule
+ * **1.18.0 — «Умова ціни».** Additive. A rule may carry
+ * `priceCondition: { limitPct }` — «Не купувати, якщо дорожче за орієнтир
+ * більш ніж на N %», whole per cent 1–50; null — every rule written before,
+ * and a request that names none — is no condition. The reference is
+ * PreStocks' valuation of one token for a private company, and the reference
+ * per share for a listed one (the issuer's quote, or the market feed where
+ * one is configured), set against the token's own price on the same basis.
+ * When a rule falls due (a «Регулярно» due, a «Якщо впаде» crossing) the tick
+ * judges the condition: `met` reminds as before; otherwise the occurrence is
+ * `deferred` — a new state: nothing is to be bought, one note says why
+ * («Купівлю відкладено» with the reason, the figure and the data's time), and
+ * every pass while the occurrence is open judges it again — met in time, it
+ * becomes `due` and reminds; never met, it is `missed` at its end. Every
+ * judged occurrence carries `condition`: the verdict (`met` · `above` ·
+ * `stale` · `unavailable`), the reference, the limit, the price and the
+ * reference figure, the deviation to a tenth of a per cent, the data's time
+ * (the older of the two) and when it was judged; null where the rule has
+ * none. Data older than `capabilities.rules.priceCondition.maxAgeMinutes` or
+ * a missing figure never pass. `POST /api/solana/swap/order` under a rule
  * with a condition judges it again on the server's own row and refuses
- * `RULE_PRICE_CONDITION` (409) unless it is met now; a `deferred` occurrence is
- * `RULE_NOT_DUE`. `capabilities.rules.priceCondition` names the default, the
- * bounds and the freshness. A client that reads occurrence states as a closed
- * list adds `deferred`; one that reads neither new field needs no release.
+ * `RULE_PRICE_CONDITION` (409) unless it is met now; a `deferred` occurrence
+ * is `RULE_NOT_DUE`. `capabilities.rules.priceCondition` names the default,
+ * the bounds and the freshness. A client that reads occurrence states as a
+ * closed list adds `deferred`; one that reads neither new field needs no
+ * release.
  *
- * **1.19.0 — «З кожної оплати».** Additive (`RYN-PAY-TRIGGERS-001`; canon
- * v5.5 В38, §4.1). A rule may be `kind: "payments"`: money goes into a
- * company from the wallet's own USDC on Solana — `payments.mode` `roundup`
- * (every payment rounded up to the next `roundToUsd`, $1 or $5), `fixed`
- * (`fixedUsd` from every payment) or `percent` (`percent` of every USDC that
- * comes in); `schedule` and `dip` are null on it, and `amountUsd` is the least
- * sum a reminder opens at. A payment is a transfer of the wallet's USDC to
- * another owner, signed by the wallet; money that came in is USDC from another
- * owner the wallet did not sign for; a swap, Ryntra's own purchase, a bridge
- * and a transfer between the person's own accounts never count, and each
- * event counts once — from the instant the rule was turned on (`since`). The
- * monitoring tick reads the wallet's USDC account every five minutes; each
- * counted event adds its share in whole cents to what waits (`gatheredUsd`,
- * `gatheredCount`), the money staying in the wallet; once it reaches
- * `amountUsd`, one reminder opens on that sum — an occurrence's new
- * `amountUsd` (null on the other kinds: the rule's sum) with `events`, how
- * many events it gathered — and it goes the way every rule's purchase goes:
- * the month's budget, the price condition, a fresh Review, the signature, the
- * receipt. `POST /api/solana/swap/order` under such an occurrence must buy
- * exactly its `amountUsd` (`RULE_MISMATCH` otherwise). `payments.events` lists
- * the newest counted events — the sum, the share, the time, the Solana Pay
- * label where the transfer carried one, and the reminder that took it — never
- * the other side's name; `payments.read` says when the wallet was last read
- * and whether that read proved itself. `POST /api/v1/rules/payments/own`
- * names an event's other side as the person's own account: no transfer to or
- * from it counts from then on, and the event leaves what waits.
- * `capabilities.rules.payments` names the modes and the bounds. A client that
- * reads rule kinds as a closed list adds `payments`; a client that buys under
- * a reminder reads its `amountUsd` before the rule's.
+ * **1.19.0 — «З кожної оплати».** Additive. A rule may be `kind: "payments"`:
+ * money goes into a company from the wallet's own USDC on Solana —
+ * `payments.mode` `roundup` (every payment rounded up to the next
+ * `roundToUsd`, $1 or $5), `fixed` (`fixedUsd` from every payment) or
+ * `percent` (`percent` of every USDC that comes in); `schedule` and `dip` are
+ * null on it, and `amountUsd` is the least sum a reminder opens at. A payment
+ * is a transfer of the wallet's USDC to another owner, signed by the wallet;
+ * money that came in is USDC from another owner the wallet did not sign for;
+ * a swap, Ryntra's own purchase, a bridge and a transfer between the person's
+ * own accounts never count, and each event counts once — from the instant the
+ * rule was turned on (`since`). The monitoring tick reads the wallet's USDC
+ * account every five minutes; each counted event adds its share in whole
+ * cents to what waits (`gatheredUsd`, `gatheredCount`), the money staying in
+ * the wallet; once it reaches `amountUsd`, one reminder opens on that sum —
+ * an occurrence's new `amountUsd` (null on the other kinds: the rule's sum)
+ * with `events`, how many events it gathered — and it goes the way every
+ * rule's purchase goes: the month's budget, the price condition, a fresh
+ * Review, the signature, the receipt. `POST /api/solana/swap/order` under
+ * such an occurrence must buy exactly its `amountUsd` (`RULE_MISMATCH`
+ * otherwise). `payments.events` lists the newest counted events — the sum,
+ * the share, the time, the Solana Pay label where the transfer carried one,
+ * and the reminder that took it — never the other side's name;
+ * `payments.read` says when the wallet was last read and whether that read
+ * proved itself. `POST /api/v1/rules/payments/own` names an event's other
+ * side as the person's own account: no transfer to or from it counts from
+ * then on, and the event leaves what waits. `capabilities.rules.payments`
+ * names the modes and the bounds. A client that reads rule kinds as a closed
+ * list adds `payments`; a client that buys under a reminder reads its
+ * `amountUsd` before the rule's.
  *
- * **1.20.0 — «Перевірка» from the server, and «Популярне».** Additive
- * (`RYN-BUY-FLOW-001`, subtask 2; canon v5.6 §4). The four lines a person
- * reads before the signature — Спишеться · Отримаєш · Усі витрати · Що це —
- * and the account's reserve are counted by the server, for a company bought
- * with USDC and for a company sold into USDC: `POST /api/solana/swap/quote`
- * and `POST /api/solana/swap/order` answer `check` (`SwapCheckSchema`), null
- * on any other pair or when the company cannot be read. `side` says which;
- * `basis` says where the figures stand — `quote`, the live quote before a
- * Review, or `order`, the exact order the wallet will sign. `spend` and `get`
- * are what leaves and what arrives (`get.atLeast` the chain's minimum) in the
- * unit the wallet shows — `usdc`, or the company's `share` or `token` through
- * the Scaled UI Amount multiplier — each with its dollars where known;
- * `costs.usd` is «Усі витрати» (the venue's dollar values of what leaves and
- * what arrives, never less than the stated fees and impact, and the network's
- * fee at SOL's price), with `costs.issuerFee` — the issuer's fee inside it at
- * the rate the chain states — said alone; null when a figure it needs is
- * unknown, never a smaller number. `reserve` is the one-time rent an account
- * the transaction opens keeps in the wallet — the figure the simulation
- * proved, so on the order only — never a cost, with `first` when a purchase's
- * reserve is more than the purchase (canon v5.5 В35). `what` is «Що це» in
- * both languages: the truth line, and under it the issuer's event said to a
- * buyer (`issuer-event`) or, on a private company's sale, «Продати може не
- * вийти» (`sale-may-fail`); `caution` marks a private company. `sol` is the
- * price the network's fee and the reserve were counted at. A client draws
- * these figures and counts none of them: the same sum shows the same lines on
- * the web and the phone. `GET /api/v1/stocks/popular` is «Популярні компанії»
- * — the listed companies, one card each, by the day's trading across their
- * representations (the order `volume-24h`, the same for everyone), `limit`
- * 1–24 (12 by default) and `exclude` a company's mint to leave that company
- * out beside its own page; `capabilities.stocks` names it. A client that does
- * not read the new fields needs no release.
+ * **1.20.0 — «Перевірка» from the server, and «Популярне».** Additive. The
+ * four lines a person reads before the signature — Спишеться · Отримаєш · Усі
+ * витрати · Що це — and the account's reserve are counted by the server, for
+ * a company bought with USDC and for a company sold into USDC:
+ * `POST /api/solana/swap/quote` and `POST /api/solana/swap/order` answer
+ * `check` (`SwapCheckSchema`), null on any other pair or when the company
+ * cannot be read. `side` says which; `basis` says where the figures stand —
+ * `quote`, the live quote before a Review, or `order`, the exact order the
+ * wallet will sign. `spend` and `get` are what leaves and what arrives
+ * (`get.atLeast` the chain's minimum) in the unit the wallet shows — `usdc`,
+ * or the company's `share` or `token` through the Scaled UI Amount multiplier
+ * — each with its dollars where known; `costs.usd` is «Усі витрати» (the
+ * venue's dollar values of what leaves and what arrives, never less than the
+ * stated fees and impact, and the network's fee at SOL's price), with
+ * `costs.issuerFee` — the issuer's fee inside it at the rate the chain states
+ * — said alone; null when a figure it needs is unknown, never a smaller
+ * number. `reserve` is the one-time rent an account the transaction opens
+ * keeps in the wallet — the figure the simulation proved, so on the order
+ * only — never a cost, with `first` when a purchase's reserve is more than
+ * the purchase. `what` is «Що це» in both languages: the truth line, and
+ * under it the issuer's event said to a buyer (`issuer-event`) or, on a
+ * private company's sale, «Продати може не вийти» (`sale-may-fail`);
+ * `caution` marks a private company. `sol` is the price the network's fee and
+ * the reserve were counted at. A client draws these figures and counts none
+ * of them: the same sum shows the same lines on the web and the phone.
+ * `GET /api/v1/stocks/popular` is «Популярні компанії» — the listed
+ * companies, one card each, by the day's trading across their representations
+ * (the order `volume-24h`, the same for everyone), `limit` 1–24 (12 by
+ * default) and `exclude` a company's mint to leave that company out beside
+ * its own page; `capabilities.stocks` names it. A client that does not read
+ * the new fields needs no release.
  *
- * **1.21.0 — «Ryntra попередить»: the states of Нагляд.** Additive
- * (`RYN-PROTECT-SIGNAL-001`, subtask 1; canon v5 §6.1, §11). `GET
- * /api/v1/positions` is the proven wallet's company positions as Нагляд sees
- * them — every listed or private company the chain says the wallet holds, dust
- * under a cent left out — each with its exit, the state it is in and its one
- * action, decided on the server by deterministic rules and prices
+ * **1.21.0 — «Ryntra попередить»: the states of Нагляд.** Additive.
+ * `GET /api/v1/positions` is the proven wallet's company positions as Нагляд
+ * sees them — every listed or private company the chain says the wallet
+ * holds, dust under a cent left out — each with its exit, the state it is in
+ * and its one action, decided on the server by deterministic rules and prices
  * (`lib/monitoring/watch-state.ts`): `issuer-paused` («Пауза емітента» — the
- * issuer halted or paused the token, or froze the wallet's account; `details`:
- * selling is impossible now), `action` («Дія» — the price reached the loss
- * limit or the target; `open-sale`), `exit-not-set` («Увага: куплено — вихід
- * не налаштований» — no plan watched as the position and no «Ryntra
+ * issuer halted or paused the token, or froze the wallet's account;
+ * `details`: selling is impossible now), `action` («Дія» — the price reached
+ * the loss limit or the target; `open-sale`), `exit-not-set` («Увага: куплено
+ * — вихід не налаштований» — no plan watched as the position and no «Ryntra
  * попередить»; `warn` with a connected Telegram, `connect-telegram` without),
  * `unknown` (an exit, but no price observed within half an hour; no action),
  * `attention` («Увага»: `near-limit` ≤2 % above the limit, `issuer-event` a
  * swap window the holder must act in, `above-exchange` >1 % above the
- * exchange's current reference, `exchange-closed` the issuer says its exchange
- * is closed; `look`) and `on-plan` («Все за планом», no action). `exit` says
- * where the exit comes from — `plan`, the executed plan the position was bought
- * under while it is watched as the position, or `watch`, «Ryntra попередить»
- * with its preset — whichever was written last. `read` says whether both token
- * programs answered (`holdings`) and the universe did (`market`): a position
- * that could not be read is never called unprotected. `PUT
- * /api/v1/positions/watch` turns «Ryntra попередить» on for a company the
- * wallet holds with a preset (`careful` −5 % / +10 %, `balanced` −10 % /
+ * exchange's current reference, `exchange-closed` the issuer says its
+ * exchange is closed; `look`) and `on-plan` («Все за планом», no action).
+ * `exit` says where the exit comes from — `plan`, the executed plan the
+ * position was bought under while it is watched as the position, or `watch`,
+ * «Ryntra попередить» with its preset — whichever was written last. `read`
+ * says whether both token programs answered (`holdings`) and the universe did
+ * (`market`): a position that could not be read is never called unprotected.
+ * `PUT /api/v1/positions/watch` turns «Ryntra попередить» on for a company
+ * the wallet holds with a preset (`careful` −5 % / +10 %, `balanced` −10 % /
  * +20 %): the server counts the loss limit and the target from the token's
  * price now, never from a client's figure, and afresh on every call; it needs
  * a connected Telegram (409 `CHANNEL_REQUIRED`) and a fresh price (503
@@ -505,60 +499,60 @@
  * target writes one note (`subject.kind` `position`, its action «Відкрити
  * продаж») to the inbox and Telegram, whose link opens the company with the
  * sale's sheet; a position sold in full closes its watch. A bought plan's
- * target is watched too (`plan.target`, `facts.target`). `capabilities.positions`
- * names the routes, the presets and the thresholds. A client that reads monitor
- * or note subjects, condition kinds or error codes as closed lists adds
- * `position`, `plan.target`, `CHANNEL_REQUIRED` and `PRICE_UNAVAILABLE`; one
- * that does not read the new routes needs no release.
+ * target is watched too (`plan.target`, `facts.target`).
+ * `capabilities.positions` names the routes, the presets and the thresholds.
+ * A client that reads monitor or note subjects, condition kinds or error
+ * codes as closed lists adds `position`, `plan.target`, `CHANNEL_REQUIRED`
+ * and `PRICE_UNAVAILABLE`; one that does not read the new routes needs no
+ * release.
  *
- * **1.22.0 — «Гроші» for the phone.** Additive (`RYN-MOBILE-MONEY-API-001`;
- * canon v5.8 В47). What the web's «Отримати» and «Надіслати» do, the phone
- * does through the contract and counts nothing itself. Payment links are v1
- * routes over the engine of the web's `/api/pay/requests` and `/pay/{id}`:
- * `POST /api/v1/pay/requests` makes one for the proven wallet — the recipient
- * is always that wallet, never a field — with a token (`mint`, null for SOL),
- * an amount in the token's units or none (the payer chooses), a note and how
- * long it stays open (`1h`, `24h`, `7d`, `30d`); `GET /api/v1/pay/requests`
- * lists the wallet's own, newest first, in the state the last observation
- * left; `GET /api/v1/pay/requests/{id}` reads one as its page does — observed
- * on the chain by its reference when the last read is older than eight
- * seconds, paid for good once paid — for anyone with the link. A `PayLink`
- * carries the page's address (`url`), the Solana Pay request a wallet scans
- * (`payUrl`), the state (`AWAITING`, `PAID`, `EXPIRED`, `CHECKING`,
- * `UNKNOWN`, with `note` when less, more or another token came) and what
- * arrived. `GET /api/v1/money/recipient?to=&mint=&from=` is the recipient
- * check before a transfer: it reads what was typed, pasted or scanned — an
- * address, a Solana Pay request or a Ryntra link — says why it is not an
- * address or that it is the sender's own, and what the chain says of it for
- * the asset (the transfer builder's own classifier: a wallet, a token account
- * entered on purpose, an account that opens, or the refusal), and answers
- * `next`: `transfer`, `pay-link` (a Ryntra link, or a request whose reference
- * is one and whose terms are the link's own — paid through the link so that
- * its reference goes in) or `none`; a reference is public, so a request that
- * names a link by it but states other terms learns nothing of the link
- * (`LINK_MISMATCH`), and a link the chain could not be read about is not
- * payable (`LINK_UNCONFIRMED`); the security source's read stays
- * `research/address-evidence`. Send is the
+ * **1.22.0 — «Гроші» for the phone.** Additive. What the web's «Отримати» and
+ * «Надіслати» do, the phone does through the contract and counts nothing
+ * itself. Payment links are v1 routes over the engine of the web's
+ * `/api/pay/requests` and `/pay/{id}`: `POST /api/v1/pay/requests` makes one
+ * for the proven wallet — the recipient is always that wallet, never a field
+ * — with a token (`mint`, null for SOL), an amount in the token's units or
+ * none (the payer chooses), a note and how long it stays open (`1h`, `24h`,
+ * `7d`, `30d`); `GET /api/v1/pay/requests` lists the wallet's own, newest
+ * first, in the state the last observation left;
+ * `GET /api/v1/pay/requests/{id}` reads one as its page does — observed on
+ * the chain by its reference when the last read is older than eight seconds,
+ * paid for good once paid — for anyone with the link. A `PayLink` carries the
+ * page's address (`url`), the Solana Pay request a wallet scans (`payUrl`),
+ * the state (`AWAITING`, `PAID`, `EXPIRED`, `CHECKING`, `UNKNOWN`, with
+ * `note` when less, more or another token came) and what arrived. `GET
+ * /api/v1/money/recipient?to=&mint=&from=` is the recipient check before a
+ * transfer: it reads what was typed, pasted or scanned — an address, a Solana
+ * Pay request or a Ryntra link — says why it is not an address or that it is
+ * the sender's own, and what the chain says of it for the asset (the transfer
+ * builder's own classifier: a wallet, a token account entered on purpose, an
+ * account that opens, or the refusal), and answers `next`: `transfer`,
+ * `pay-link` (a Ryntra link, or a request whose reference is one and whose
+ * terms are the link's own — paid through the link so that its reference goes
+ * in) or `none`; a reference is public, so a request that names a link by it
+ * but states other terms learns nothing of the link (`LINK_MISMATCH`), and a
+ * link the chain could not be read about is not payable (`LINK_UNCONFIRMED`);
+ * the security source's read stays `research/address-evidence`. Send is the
  * web's own routes, described as consumed: `POST /api/solana/transfer/plan`
  * and `…/adopt` answer `check` — «Перевірка» counted by the server (what
  * leaves, the issuer's fee, what arrives, the network's fee, the account that
  * opens — its figures null when the rent could not be read — whether the
- * wallet may be opened, why not, and the card's warnings in its words, English
- * and Ukrainian; every amount an exact decimal with no separator); `POST /api/v1/money/send/returned` reads
- * what the wallet signed against the Review and says `settle`, `adopt` (the
- * wallet added only its fee guards) or `stop`, with the transaction's
- * signature; `…/settle` submits once and answers the receipt; `…/recover`
- * takes the bearer in place of the site's origin. A Ryntra link is paid from
- * the phone through `/api/pay/{id}/transaction` and `…/submit`, which take
- * the bearer too — the payer is the session's wallet (`WALLET_MISMATCH`
- * otherwise). `capabilities.money` names the routes and the bounds. New error
- * codes `AMOUNT_INVALID`, `MINT_UNREADABLE` and `PAY_LINK_NOT_FOUND`; a
- * client that reads error codes as a closed list adds them; one that does not
- * call the new routes needs no release.
+ * wallet may be opened, why not, and the card's warnings in its words,
+ * English and Ukrainian; every amount an exact decimal with no separator);
+ * `POST /api/v1/money/send/returned` reads what the wallet signed against the
+ * Review and says `settle`, `adopt` (the wallet added only its fee guards) or
+ * `stop`, with the transaction's signature; `…/settle` submits once and
+ * answers the receipt; `…/recover` takes the bearer in place of the site's
+ * origin. A Ryntra link is paid from the phone through
+ * `/api/pay/{id}/transaction` and `…/submit`, which take the bearer too — the
+ * payer is the session's wallet (`WALLET_MISMATCH` otherwise).
+ * `capabilities.money` names the routes and the bounds. New error codes
+ * `AMOUNT_INVALID`, `MINT_UNREADABLE` and `PAY_LINK_NOT_FOUND`; a client that
+ * reads error codes as a closed list adds them; one that does not call the
+ * new routes needs no release.
  *
- * **1.23.0 — «Ризик портфеля».** Additive (`RYN-PROTECT-SIGNAL-001`, subtask
- * 2; canon v5 §11 with the caps of §5.3). `GET /api/v1/positions/risk` is one
- * word for the proven wallet as a whole, decided on the server by
+ * **1.23.0 — «Ризик портфеля».** Additive. `GET /api/v1/positions/risk` is
+ * one word for the proven wallet as a whole, decided on the server by
  * deterministic rules and prices (`lib/monitoring/portfolio-risk.ts`):
  * `normal` («Нормальний» — no position in «Дія», no asset above 25 % of the
  * wallet, the private companies together at most 10 %, no listed company
@@ -567,18 +561,17 @@
  * `action` a position reached its loss limit or target (`watchReason`),
  * `weekend-no-limit` a listed company with no loss limit from Friday through
  * Sunday in New York or while its exchange is closed for more than a night,
- * `concentration` one asset — a company
- * across its tokens, a coin — above `capPct` with its `sharePct`,
- * `private-share` the private companies together) or `unknown` («Не вдалося
- * перевірити» — `gaps` names what could not be read: `holdings`, `market`,
- * `exits` (the plans and the watches that hold the positions' limits),
- * `balance`, `prices`). «Нормальний» is never answered on incomplete data; a
- * rule broken on what was read is answered even then, a share never is. The
- * one-asset cap holds from a wallet of $500 (`capsApplied`), the private
- * companies' cap at any size; dollars (USDC, USDT, PYUSD, USDS) are in `totalUsd` and
- * outside the caps; only a token the catalogue verifies counts in the total.
- * `capabilities.positions` names the route and the caps. A client that does
- * not call the route needs no release.
+ * `concentration` one asset — a company across its tokens, a coin — above
+ * `capPct` with its `sharePct`, `private-share` the private companies
+ * together) or `unknown` («Не вдалося перевірити» — `gaps` names what could
+ * not be read: `holdings`, `market`, `exits` (the plans and the watches that
+ * hold the positions' limits), `balance`, `prices`). «Нормальний» is never
+ * answered on incomplete data; a rule broken on what was read is answered
+ * even then, a share never is. The one-asset cap holds from a wallet of $500
+ * (`capsApplied`), the private companies' cap at any size; dollars (USDC,
+ * USDT, PYUSD, USDS) are in `totalUsd` and outside the caps; only a token the
+ * catalogue verifies counts in the total. `capabilities.positions` names the
+ * route and the caps. A client that does not call the route needs no release.
  */
 
 import {
@@ -768,14 +761,14 @@ export const ERROR_STATUS: Readonly<Record<ApiErrorCode, number>> = {
 
 /* ------------------------------------------------------------ capabilities */
 
-/** 1.21.0: the presets «Ryntra попередить» offers — the published ones of the purchase with a loss limit (В11). */
+/** 1.21.0: the presets «Ryntra попередить» offers — the published ones of the purchase with a loss limit. */
 /** 1.22.0: how long a payment link stays open — the server clamps to these, never a free timestamp (`lib/pay/model.ts`). */
 export const PAY_LINK_EXPIRATIONS = ["1h", "24h", "7d", "30d"] as const;
 export const POSITION_WATCH_PRESETS_V1 = ["careful", "balanced"] as const;
 
 export const MODULE_READINESS = ["available", "building", "planned"] as const;
 
-/** The one submitter (canon Part A §10.3): the mode a client may use to execute. */
+/** The one submitter: the mode a client may use to execute. */
 export const SIGNING_MODES = [
   /** The app signs the server-built transaction; the server submits and observes. Live. */
   "APP_SIGNS_SERVER_SUBMITS",
@@ -1256,7 +1249,7 @@ export type WatchlistMergeResponse = z.infer<typeof WatchlistMergeResponseSchema
 /* ------------------------------------------------------------ plans (1.1.0) */
 
 /**
- * Trading Plan v1 — canon Part A §9.3–§9.5.
+ * Trading Plan v1.
  *
  * Spot-long only, without leverage: the person buys a confirmed stock
  * representation with their own USD and states, before the Review, the rules
@@ -1268,8 +1261,8 @@ export type WatchlistMergeResponse = z.infer<typeof WatchlistMergeResponseSchema
  *
  * `sizing` is computed by the server from the rules and stored on the
  * version; it is a planning model under stated assumptions, never a
- * guaranteed maximum loss (§9.4): gaps, slippage, missing liquidity or a
- * missed manual exit change what is lost. The client shows the assumptions.
+ * guaranteed maximum loss: gaps, slippage, missing liquidity or a missed
+ * manual exit change what is lost. The client shows the assumptions.
  */
 
 export const PLAN_STATUSES = ["draft", "active", "executed", "cancelled", "expired"] as const;
@@ -1434,12 +1427,12 @@ export const PlanExecutionRulesSchema = z
   .strict();
 
 /**
- * A typed evidence condition (§9.3). Accepted empty in 1.1.0; served since
- * 1.5.0: `metric` and `window` are the registry's (`capabilities.research`),
+ * A typed evidence condition. Accepted empty in 1.1.0; served since 1.5.0:
+ * `metric` and `window` are the registry's (`capabilities.research`),
  * `threshold` is in the metric's unit, `mode` decides whether the check
  * blocks (`required`, which then always blocks on unknown) or names
- * (`advisory`, which warns on unknown). The server validates the pairing
- * and the metric's allowed modes and answers `PLAN_INVALID` with the path.
+ * (`advisory`, which warns on unknown). The server validates the pairing and
+ * the metric's allowed modes and answers `PLAN_INVALID` with the path.
  */
 export const EvidenceConditionSchema = z
   .object({
@@ -1468,7 +1461,7 @@ export const PlanRulesSchema = z
 export type PlanRules = z.infer<typeof PlanRulesSchema>;
 
 /**
- * The deterministic size (§9.4), computed by the server from the rules:
+ * The deterministic size, computed by the server from the rules:
  *
  *   lossPerShare        = entry − invalidation + entry × costBufferBps / 10 000
  *   riskLimitedUnits    = plannedRiskUsd / lossPerShare
@@ -1510,7 +1503,7 @@ export const PlanVersionSummarySchema = z.object({ version: z.number().int().min
 
 export const PLAN_EVENTS = ["created", "edited", "activated", "cancelled", "reviewed", "executed", "expired"] as const;
 
-/** One decision or transition, with its time and the version it happened on (§9.5). */
+/** One decision or transition, with its time and the version it happened on. */
 export const PlanJournalEntrySchema = z
   .object({
     at: Iso,
@@ -1668,7 +1661,7 @@ export const PLAN_CHECKS = [
   "liquidity",
   /** The multiplier is known and not inside an activation window, so the units are the units. */
   "units",
-  /* 1.3.0 — the money at this price, on the sizing's own model (§9.4) */
+  /* 1.3.0 — the money at this price, on the sizing's own model */
   /** The executable per-share price is above `risk.invalidationPerShare`: the thesis is not already wrong at this price. */
   "invalidation",
   /** The USD amount is within `capital.budgetUsd − capital.reserveForCostsUsd`, what the plan may actually spend. */
@@ -1680,7 +1673,7 @@ export const PLAN_CHECKS = [
   /* 1.5.0 — the evidence conditions */
   /** One per condition of the version, in its order: the observation against the person's rule; required blocks on unmet or unknown, advisory names. */
   "evidence",
-  /* 1.9.0 — the exit, judged only against rules that existed before it (`RYN-RESULTS-MEMORY-001`) */
+  /* 1.9.0 — the exit, judged only against rules that existed before it */
   /** The exit price against `exit.targetPerShare`, when the version in force at the exit named one. */
   "exitTarget",
   /** The exit price against `risk.invalidationPerShare` — whether the position was left at or below the level the thesis called wrong. */
@@ -1702,7 +1695,7 @@ export const PlanCheckSchema = z
   .strict();
 export type PlanCheck = z.infer<typeof PlanCheckSchema>;
 
-/** The Strategy block of the one Review (§10.1): a plan version judged on the quote in front of the person. */
+/** The Strategy block of the one Review: a plan version judged on the quote in front of the person. */
 export const PlanReviewSchema = z
   .object({
     planId: z.string().regex(PLAN_ID),
@@ -1984,11 +1977,11 @@ export type PlanPosition = z.infer<typeof PlanPositionSchema>;
 
 
 /**
- * Plan · Before signing · Actual for one execution (§9.5). `plan` is the
- * version the execution was bound to; `beforeSigning` the Strategy block
- * that stood before the signature (null only when the plan kept no copy);
- * `actual` the settled row; `checks` the money checks re-judged on the fill.
- * `verdict` speaks of the entry only — no exit adherence, no realised profit.
+ * Plan · Before signing · Actual for one execution. `plan` is the version the
+ * execution was bound to; `beforeSigning` the Strategy block that stood
+ * before the signature (null only when the plan kept no copy); `actual` the
+ * settled row; `checks` the money checks re-judged on the fill. `verdict`
+ * speaks of the entry only — no exit adherence, no realised profit.
  */
 export const PlanResultSchema = z
   .object({
@@ -2242,7 +2235,7 @@ export type RuleOccurrenceState = (typeof RULE_OCCURRENCE_STATES)[number];
 export const NOTIFICATION_CATEGORIES = ["plan", "operation", "market", "system"] as const;
 const ClockTime = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
 
-/** A device that may be sent notifications; the route lands with `RYN-MONITORING-PUSH-001`. */
+/** A device that may be sent notifications; the route comes with push monitoring. */
 export const DeviceRegistrationRequestSchema = z
   .object({
     platform: z.literal("android"),
@@ -2573,12 +2566,12 @@ export const AgentSentenceSchema = z.object({ text: Sentence, cites: z.array(Cit
 export type AgentSentence = z.infer<typeof AgentSentenceSchema>;
 
 /**
- * The canonical structure of a substantive answer (canon §9.2; the Owner's
- * rule of 2026-09-22): what is actually known now, what it means for the
- * person's question or plan, what could make that reading wrong, what is
- * missing or stale, what is worth checking, and neutral next steps — never a
- * command to buy or sell. `insufficient` is true when the reads did not give
- * enough to judge, and the answer says so instead of inventing.
+ * The fixed structure of a substantive answer: what is actually known now,
+ * what it means for the person's question or plan, what could make that
+ * reading wrong, what is missing or stale, what is worth checking, and
+ * neutral next steps — never a command to buy or sell. `insufficient` is true
+ * when the reads did not give enough to judge, and the answer says so instead
+ * of inventing.
  */
 export const AGENT_ANSWER_SECTIONS = ["observation", "meaning", "counter", "risks", "checks", "actions"] as const;
 export const AgentAnswerSchema = z
@@ -2853,15 +2846,14 @@ export type AgentCriticResponse = z.infer<typeof AgentCriticResponseSchema>;
 /* ------------------------------------------------------------ the consumed routes: shared parts (1.11.0) */
 
 /**
- * 1.11.0 (`RYN-API-CONTRACT-002`): the routes the web and the native client
- * already consume outside `/api/v1` — markets, stocks, holdings, activity,
- * receipts, rewards, monitoring, predictions and the swap — described as they
- * are served. Nothing about a route changed to be described; the schemas are
- * the routes' own shapes, proven equal to the types the routes build their
- * answers from (`lib/api/v1/route-types.test.ts`) and parsed against their
- * answers in the routes' tests. They are not v1 paths: they do not take the
- * `X-Ryntra-API` major or answer the version header, and their errors are
- * their own (below).
+ * 1.11.0: the routes the web and the native client already consume outside
+ * `/api/v1` — markets, stocks, holdings, activity, receipts, rewards,
+ * monitoring, predictions and the swap — described as they are served.
+ * Nothing about a route changed to be described; the schemas are the routes'
+ * own shapes, proven equal to the types the routes build their answers from
+ * (`lib/api/v1/route-types.test.ts`) and parsed against their answers in the
+ * routes' tests. They are not v1 paths: they do not take the `X-Ryntra-API`
+ * major or answer the version header, and their errors are their own (below).
  */
 
 /** A time as a provider stated it — an issuer, a feed, the chain — kept verbatim, not guaranteed ISO. */
@@ -2883,16 +2875,15 @@ export type RouteError = z.infer<typeof RouteErrorSchema>;
 /* ------------------------------------------------------------ the consumed routes: holdings (1.11.0) */
 
 /**
- * 1.11.0 (`RYN-API-CONTRACT-002`): the answer of `POST /api/solana/holdings`
- * — the route the web's Portfolio, the phone's Portfolio and Trade, and the
- * agent's holdings tool all read. Described as it is served since contract
- * 1.1.0; nothing about the route changed. Two facts a client must not
- * assume away: the native SOL row is `kind: "NATIVE_SOL"` with **`mint:
- * null`** (native SOL has no mint; the route prices it through wrapped
- * SOL's catalogue entry), and `tokenRead` decides whether an empty list
- * means *nothing held* (`COMPLETE`) or *nothing known* (`PARTIAL`,
- * `UNAVAILABLE`). Amounts are the chain's raw integers as decimal text and
- * are never summed here.
+ * 1.11.0: the answer of `POST /api/solana/holdings` — the route the web's
+ * Portfolio, the phone's Portfolio and Trade, and the agent's holdings tool
+ * all read. Described as it is served since contract 1.1.0; nothing about the
+ * route changed. Two facts a client must not assume away: the native SOL row
+ * is `kind: "NATIVE_SOL"` with **`mint: null`** (native SOL has no mint; the
+ * route prices it through wrapped SOL's catalogue entry), and `tokenRead`
+ * decides whether an empty list means *nothing held* (`COMPLETE`) or *nothing
+ * known* (`PARTIAL`, `UNAVAILABLE`). Amounts are the chain's raw integers as
+ * decimal text and are never summed here.
  */
 const RawAmount = z.string().regex(/^[0-9]{1,40}$/);
 
@@ -3150,7 +3141,7 @@ export type SpotCandlesResponse = z.infer<typeof SpotCandlesResponseSchema>;
  * universe does not hold is a 404 `UNKNOWN_ASSET` — *not a confirmed
  * representation*, which is not the same as *does not exist*.
  */
-/** 1.14.0: `tessera` stays for records written before canon v5.2 В26; no new answer carries it. */
+/** 1.14.0: `tessera` stays for records written before 1.14.0; no new answer carries it. */
 export const STOCK_ISSUER_IDS_V1 = ["xstocks", "backpack", "ondo", "prestocks", "tessera"] as const;
 export const STOCK_REFERENCE_STATES_V1 = ["current", "last-available", "confirmed-close", "stale", "unavailable"] as const;
 export const STOCK_SESSION_PERIODS_V1 = ["market", "extended", "overnight", "closed", "unknown"] as const;
@@ -3343,14 +3334,13 @@ export type StockUniverseResponse = z.infer<typeof StockUniverseResponseSchema>;
  * to six significant digits, a percent to two decimals, a sum in whole
  * dollars) and the states. `referenceState` is judged at answer time from the
  * reference's own observation; a client judges it again from `referenceAt`.
- * 1.11.0 adds the issuer events a list can name without a read per asset —
- * the mobile line's request 26: `multiplierPending` and `multiplierPendingAt`
- * (the published multiplier not yet in force, judged at answer time) and
- * `sessionNextChangeAt` (when `period` next changes, as its source stated it).
- * 1.14.0 adds `markPremium` — a pre-IPO token's price against the issuer's
- * own mark, per cent to two decimals, context and never a deviation from a
- * market reference — and `markAt`, when the issuer's mark was read; both null
- * on a listed row.
+ * 1.11.0 adds the issuer events a list can name without a read per asset:
+ * `multiplierPending` and `multiplierPendingAt` (the published multiplier not
+ * yet in force, judged at answer time) and `sessionNextChangeAt` (when
+ * `period` next changes, as its source stated it). 1.14.0 adds `markPremium`
+ * — a pre-IPO token's price against the issuer's own mark, per cent to two
+ * decimals, context and never a deviation from a market reference — and
+ * `markAt`, when the issuer's mark was read; both null on a listed row.
  */
 export const StockSlimRowSchema = z
   .object({
@@ -3518,17 +3508,16 @@ export type PopularCompaniesResponse = z.infer<typeof PopularCompaniesResponseSc
 /* ------------------------------------------------------------ notifications: the Telegram channel over the bearer (1.11.0) */
 
 /**
- * 1.11.0 — the mobile line's request 17: the proven wallet's Telegram channel
- * as a v1 path, `GET · POST · DELETE /api/v1/notifications/telegram`, over
- * the bearer or the web's proof cookie. The same channel Settings connects on
- * ryntra.io: an account is the wallet that signed, Telegram is a place to be
- * told something and never a way in. `GET` never creates anything; `POST`
- * resolves the wallet's account the way the web's sign-in does (creating it
- * on the first connect) and answers the bot link with a signed code that dies
- * at `expiresAt`; the binding is written only by the bot when the person
- * presses Start. `DELETE` removes the binding and nothing else. Whether a note
- * goes to Telegram at all stays the wallet's own preference on
- * `POST /api/monitoring { telegram }`.
+ * 1.11.0 — the proven wallet's Telegram channel as a v1 path, `GET · POST ·
+ * DELETE /api/v1/notifications/telegram`, over the bearer or the web's proof
+ * cookie. The same channel Settings connects on ryntra.io: an account is the
+ * wallet that signed, Telegram is a place to be told something and never a
+ * way in. `GET` never creates anything; `POST` resolves the wallet's account
+ * the way the web's sign-in does (creating it on the first connect) and
+ * answers the bot link with a signed code that dies at `expiresAt`; the
+ * binding is written only by the bot when the person presses Start. `DELETE`
+ * removes the binding and nothing else. Whether a note goes to Telegram at all
+ * stays the wallet's own preference on `POST /api/monitoring { telegram }`.
  */
 export const TelegramChannelViewSchema = z
   .object({ connected: z.boolean(), username: z.string().min(1).max(64).nullable(), connectedAt: Iso.nullable() })
@@ -4153,13 +4142,13 @@ export type MonitoringWriteResponse = z.infer<typeof MonitoringWriteResponseSche
 /* ------------------------------------------------------------ the consumed swap routes: quote, order, execute, cancel-review, recover (1.11.0) */
 
 /**
- * 1.11.0 (`RYN-API-CONTRACT-002`): the five swap routes the web's Swap and
- * Spot cards and the phone's Trade use for real trades, described as they
- * serve today; nothing about a route changed. They are not `/api/v1` routes:
- * they send no `X-Ryntra-API-Version`, and their error is
- * `{ error: { code, message, …extra } }` with route-specific codes and extra
- * fields (each route's error schema below lists both). An unexpected
- * exception inside a handler is the platform's bodyless 500, not this shape.
+ * 1.11.0: the five swap routes the web's Swap and Spot cards and the phone's
+ * Trade use for real trades, described as they serve today; nothing about a
+ * route changed. They are not `/api/v1` routes: they send no
+ * `X-Ryntra-API-Version`, and their error is `{ error: { code, message,
+ * …extra } }` with route-specific codes and extra fields (each route's error
+ * schema below lists both). An unexpected exception inside a handler is the
+ * platform's bodyless 500, not this shape.
  *
  * Two rules shape the schemas that travel both ways. The execute request
  * echoes the order answer's `bundle` and `proof`; the parts of the bundle
@@ -5312,13 +5301,12 @@ export const SWAP_RECOVER_STATES_V1 = [
  * server never recorded answers `PENDING` (202), `SEEN_WITHOUT_RECORD` (202)
  * or `UNKNOWN_TO_CHAIN` (200); a recorded one answers `PENDING` (202) or,
  * with 200, `FAILED`, `EXPIRED_BEFORE_SUBMIT`, `EXPIRED_AFTER_SUBMIT`,
- * `ALREADY_RECEIPTED` (the stored Receipt and its hash, and — since 1.11.0,
- * the mobile line's request 14 — the `observation` and `facts` read back
- * from the facts the Receipt sealed, never from a second chain read; null only
- * for a Receipt that seals none; the finality is
- * `facts.independentObservation.finality`) or `RECOVERED` (a fresh chain
- * read, the facts and the Receipt). A refused recovery is the 409 of
- * `SwapRecoverErrorSchema`.
+ * `ALREADY_RECEIPTED` (the stored Receipt and its hash, and — since 1.11.0 —
+ * the `observation` and `facts` read back from the facts the Receipt sealed,
+ * never from a second chain read; null only for a Receipt that seals none;
+ * the finality is `facts.independentObservation.finality`) or `RECOVERED` (a
+ * fresh chain read, the facts and the Receipt). A refused recovery is the 409
+ * of `SwapRecoverErrorSchema`.
  */
 export const SwapRecoverResponseSchema = z.discriminatedUnion("state", [
   z.object({ state: z.literal("PENDING"), signature: SwapSignature, reason: SwapText }).strict(),
@@ -5779,16 +5767,16 @@ export type TransferCheck = z.infer<typeof TransferCheckSchema>;
 /* ------------------------------------------------------------ the consumed transfer routes: plan, adopt, settle, recover (1.22.0) */
 
 /**
- * 1.22.0 (`RYN-MOBILE-MONEY-API-001`): the four routes the web's «Надіслати»
- * card and the phone's «Гроші» use to send SOL or a token — one address per
- * function — described as they serve. Nothing about a route changed to be
- * described except the 1.22.0 additions: `check`, «Перевірка» counted by the
- * server (`TransferCheckSchema`), on the plan and adopt answers, and the
- * native bearer on recover. They are not `/api/v1` routes: they send no
+ * 1.22.0: the four routes the web's «Надіслати» card and the phone's «Гроші»
+ * use to send SOL or a token — one address per function — described as they
+ * serve. Nothing about a route changed to be described except the 1.22.0
+ * additions: `check`, «Перевірка» counted by the server
+ * (`TransferCheckSchema`), on the plan and adopt answers, and the native
+ * bearer on recover. They are not `/api/v1` routes: they send no
  * `X-Ryntra-API-Version`, and their error is `{ error: { code, message } }`
  * with route-specific codes (settle adds `signature`; each route's error
- * schema below lists every code). An unexpected exception inside a handler
- * is the platform's bodyless 500, not this shape.
+ * schema below lists every code). An unexpected exception inside a handler is
+ * the platform's bodyless 500, not this shape.
  *
  * The flow: `plan` answers the Review and the unsigned bytes → the wallet
  * signs `plan.unsignedWireBase64` → `POST /api/v1/money/send/returned` says
@@ -5872,7 +5860,7 @@ export type TransferPlanRequest = z.infer<typeof TransferPlanRequestSchema>;
 
 /* ---- the plan and its support verdict */
 
-/** Canon §10.3: the shape the transaction was built as. */
+/** The shape the transaction was built as. */
 export const TRANSFER_ACTION_KINDS_V1 = ["NATIVE_SOL", "SPL_TRANSFER_CHECKED", "TOKEN_2022", "TOKEN_ATA_CREATE"] as const;
 export const TRANSFER_SUPPORT_DECISIONS_V1 = ["SUPPORTED", "REVIEW_REQUIRED", "BLOCKED", "UNKNOWN"] as const;
 
@@ -6825,14 +6813,14 @@ export type TransferRecoverError = z.infer<typeof TransferRecoverErrorSchema>;
 /* ------------------------------------------------------------ the consumed routes: predictions (1.11.0) */
 
 /**
- * Ryntra Predictions in paper mode (`RYN-PREDICTIONS-001`) — every route
- * under `/api/predictions/*`, described as it is served; nothing about a
- * route changed. The market figures are the aggregator's, read through the
- * provider boundary (`lib/predictions/provider.ts`) and passed on as the
- * provider states them: a figure it does not state is `null`, and its text
- * and ids are not checked for form or length by the code (the bounds below
- * are generous ceilings, not the provider's promises). Nothing here moves
- * funds: every order is a paper order.
+ * Ryntra Predictions in paper mode — every route under `/api/predictions/*`,
+ * described as it is served; nothing about a route changed. The market
+ * figures are the aggregator's, read through the provider boundary
+ * (`lib/predictions/provider.ts`) and passed on as the provider states them:
+ * a figure it does not state is `null`, and its text and ids are not checked
+ * for form or length by the code (the bounds below are generous ceilings, not
+ * the provider's promises). Nothing here moves funds: every order is a paper
+ * order.
  *
  * The market reads (discover, engine, events, markets, outcomes) are public;
  * with a wallet proof, discover and one event also answer the wallet's watch
@@ -7960,13 +7948,12 @@ export type PredictionsWatchlistResponse = z.infer<typeof PredictionsWatchlistRe
 /* ------------------------------------------------------------ autoinvest rules (1.12.0) */
 
 /**
- * «Автоінвест» — «Регулярно» (canon v5.1 §4.1, B.3): a company, a sum in
- * dollars, how often and when, in the person's own time zone. Ryntra reminds
- * on the day and at the time; the person confirms every purchase with one
- * signature on a fresh Review; the money stays in the wallet. A rule is never
- * a mandate and never an authorization — it schedules a reminder, nothing
- * more — and a reminder whose day passed without a signature is `missed`,
- * never caught up.
+ * «Автоінвест» — «Регулярно»: a company, a sum in dollars, how often and
+ * when, in the person's own time zone. Ryntra reminds on the day and at the
+ * time; the person confirms every purchase with one signature on a fresh
+ * Review; the money stays in the wallet. A rule is never a mandate and never
+ * an authorization — it schedules a reminder, nothing more — and a reminder
+ * whose day passed without a signature is `missed`, never caught up.
  */
 export { RULE_CADENCES, RULE_REMINDER_HOURS, isTimeZone } from "../../autoinvest/schedule.ts";
 /** `schedule` — «Регулярно»; 1.13.0: `dip` — «Якщо впаде»; 1.19.0: `payments` — «З кожної оплати». */
@@ -8022,10 +8009,9 @@ export type RuleTrigger = z.infer<typeof RuleTriggerSchema>;
 export { PRICE_CONDITION_DEFAULT_PCT, PRICE_CONDITION_MAX_AGE_MINUTES, PRICE_CONDITION_MAX_PCT, PRICE_CONDITION_MIN_PCT, PRICE_CONDITION_VERDICTS, PRICE_REFERENCES };
 
 /**
- * 1.18.0: «Умова ціни» (canon v5.5 В37) — «Не купувати, якщо дорожче за
- * орієнтир більш ніж на N %»: the most, in whole per cent, the token's price
- * may stand above its reference for the rule to offer its purchase. A
- * discount always passes.
+ * 1.18.0: «Умова ціни» — «Не купувати, якщо дорожче за орієнтир більш ніж на
+ * N %»: the most, in whole per cent, the token's price may stand above its
+ * reference for the rule to offer its purchase. A discount always passes.
  */
 export const RulePriceConditionSchema = z.object({ limitPct: z.number().int().min(PRICE_CONDITION_MIN_PCT).max(PRICE_CONDITION_MAX_PCT) }).strict();
 export type RulePriceCondition = z.infer<typeof RulePriceConditionSchema>;
@@ -8094,15 +8080,15 @@ export const RuleDipRequestSchema = z
 export type RuleDipRequest = z.infer<typeof RuleDipRequestSchema>;
 
 /**
- * 1.13.0: a «Якщо впаде» rule as it stands (canon v5.1 §4.1). `anchorUsd` is
- * the reference point per unit as the wallet shows it — the price when the
- * rule was turned on (`anchorFrom: "enabled"`, again whenever it is turned on
- * after a pause) or what the last purchase under it paid (`"purchase"`);
- * `triggerUsd` is the point less `dropPct` %. One note per crossing: `armed`
- * is false from the reminder of a crossing until the price is read back above
- * the trigger. `heldAt` is when the month's budget held the crossing that
- * stands now — nothing is reminded until the purchase fits again (the 1st, or
- * a larger budget); null otherwise.
+ * 1.13.0: a «Якщо впаде» rule as it stands. `anchorUsd` is the reference
+ * point per unit as the wallet shows it — the price when the rule was turned
+ * on (`anchorFrom: "enabled"`, again whenever it is turned on after a pause)
+ * or what the last purchase under it paid (`"purchase"`); `triggerUsd` is the
+ * point less `dropPct` %. One note per crossing: `armed` is false from the
+ * reminder of a crossing until the price is read back above the trigger.
+ * `heldAt` is when the month's budget held the crossing that stands now —
+ * nothing is reminded until the purchase fits again (the 1st, or a larger
+ * budget); null otherwise.
  */
 export const RuleDipSchema = z
   .object({
@@ -8270,17 +8256,17 @@ export type RuleResponse = z.infer<typeof RuleResponseSchema>;
 const BudgetUsd = z.number().finite().min(BUDGET_MINIMUM_USD).max(BUDGET_MAXIMUM_USD).refine(cents, { message: "Dollars and cents, never less than a cent." });
 
 /**
- * 1.13.0: «Бюджет місяця» (canon v5.1 §4.1, В19) — the wallet's own ceiling
- * for every rule's purchases in a calendar month, from the 1st at 00:00 to
- * the next 1st on `timeZone`'s clock. Only proof counts: `spentUsd` is the
- * USDC that left the wallet on the month's settled purchases under rules;
- * `unknownUsd` the purchases signed and not settled yet — counted as spent
- * until their outcome is known; a reminder nobody bought counts nothing.
- * `remainingUsd` is the ceiling less both. A rule's purchase is reminded of
- * only when it fits what is left; `exhausted` is true when no active rule's
- * purchase fits — the rules stand until `monthEndsAt`. `capUsd` null: no
- * ceiling (the month is still counted, `remainingUsd` null, never
- * `exhausted`). Only the person sets or changes it; Ryntra never raises it.
+ * 1.13.0: «Бюджет місяця» — the wallet's own ceiling for every rule's
+ * purchases in a calendar month, from the 1st at 00:00 to the next 1st on
+ * `timeZone`'s clock. Only proof counts: `spentUsd` is the USDC that left the
+ * wallet on the month's settled purchases under rules; `unknownUsd` the
+ * purchases signed and not settled yet — counted as spent until their outcome
+ * is known; a reminder nobody bought counts nothing. `remainingUsd` is the
+ * ceiling less both. A rule's purchase is reminded of only when it fits what
+ * is left; `exhausted` is true when no active rule's purchase fits — the
+ * rules stand until `monthEndsAt`. `capUsd` null: no ceiling (the month is
+ * still counted, `remainingUsd` null, never `exhausted`). Only the person
+ * sets or changes it; Ryntra never raises it.
  */
 export const RuleBudgetSchema = z
   .object({
@@ -8466,7 +8452,7 @@ export const PortfolioRiskFindingSchema = z
   .strict();
 export type PortfolioRiskFinding = z.infer<typeof PortfolioRiskFindingSchema>;
 
-/** «Ризик портфеля» — one word for the wallet as a whole (canon v5 §11). */
+/** «Ризик портфеля» — one word for the wallet as a whole. */
 export const PortfolioRiskSchema = z
   .object({
     /** `normal` «Нормальний» · `attention` «Увага: <причина>» · `unknown` «Не вдалося перевірити». */
@@ -8699,10 +8685,10 @@ export type SendReturnedResponse = z.infer<typeof SendReturnedResponseSchema>;
  * 1.22.0: the three routes the payment page `/pay/{id}` runs, described as
  * they serve — so a phone that scanned or was sent a Ryntra link pays it
  * through the link, with its reference, exactly as the page does. Not
- * `/api/v1` routes: no version header; the error is `{ error: { code,
- * message } }` with each route's own codes. `…/transaction` and `…/submit`
- * take the native bearer in place of the page's origin (the swap routes' rule
- * since the mobile line's request 13): the payer is the session's wallet,
+ * `/api/v1` routes: no version header; the error is
+ * `{ error: { code, message } }` with each route's own codes. `…/transaction`
+ * and `…/submit` take the native bearer in place of the page's origin (the
+ * swap routes' own rule): the payer is the session's wallet,
  * `WALLET_MISMATCH` otherwise; a browser's refusal keeps `FORBIDDEN`.
  */
 

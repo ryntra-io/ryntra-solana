@@ -2,9 +2,9 @@
  * What one unit of an asset is worth in dollars — a display figure, and never
  * anything else.
  *
- * `RYN-SWAP-PREMIUM-001`. A person typing `5` on the Swap form sees `5`.
- * Whether that is five dollars or five hundred was on no surface at all, on any
- * of the four networks. This is the number that goes under the amount.
+ * A person typing `5` on the Swap form sees `5`. Whether that is five dollars
+ * or five hundred was on no surface at all, on any of the four networks. This
+ * is the number that goes under the amount.
  *
  * ## Why a fourth provider, and why this one
  *

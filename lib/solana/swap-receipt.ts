@@ -62,9 +62,9 @@ const IndependentObservationSchema = z
      * Raw base units of the fee mint that reached Ryntra's referral account in
      * this transaction, read from its own token balances.
      *
-     * Optional so every receipt written before
-     * `RYN-SOL-SWAP-MONETIZATION-001` still parses. `"0"` means the fee was
-     * asked for and nothing arrived, which is a fact worth keeping.
+     * Optional so every receipt written before the service fee existed still
+     * parses. `"0"` means the fee was asked for and nothing arrived, which is a
+     * fact worth keeping.
      */
     serviceFeeCollectedRaw: RawAmount.nullable().optional(),
   })
@@ -100,11 +100,11 @@ export const SwapReceiptFactsSchema = z
       .object({
         platform: FeeSchema,
         /**
-         * Ryntra's fee, kept in the three-field shape every receipt written
-         * before `RYN-SOL-SWAP-MONETIZATION-001` used, so old receipts still
-         * verify. `serviceFee` beside it carries the whole truth — mechanism,
-         * where it accrues, and above all whether it was actually **collected**.
-         * The narrow row is a projection of the wide one, never a second source.
+         * Ryntra's fee, kept in the three-field shape every older receipt
+         * used, so old receipts still verify. `serviceFee` beside it carries
+         * the whole truth — mechanism, where it accrues, and above all whether
+         * it was actually **collected**. The narrow row is a projection of the
+         * wide one, never a second source.
          */
         referral: FeeSchema,
         serviceFee: ServiceFeeSchema.optional(),

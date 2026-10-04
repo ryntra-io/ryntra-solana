@@ -2,16 +2,16 @@
  * What the Team surface draws, computed from the modules that decide it.
  *
  * "Team" is the Pro depth's answer to a question the Guided depth never asks:
- * *who else can reach this, holding what, and how much of it?* Founder decision
- * A retail Consumer Pro tier is out of scope — Ryntra Home is the
- * surface for a person and Agent Control is the surface for a team — so this
- * page is about shared access, never about a plan or a price.
+ * *who else can reach this, holding what, and how much of it?* A retail
+ * Consumer Pro tier is out of scope — Ryntra Home is the surface for a person
+ * and Agent Control is the surface for a team — so this page is about shared
+ * access, never about a plan or a price.
  *
- * **It reads and issues nothing.** `RYN-AGENT-CONTROL-008` shipped real tenancy:
- * tenants, keys, scopes, durable quotas and a revocation that is checked before
- * expiry. Issuing a key is deliberately not self-service, so there is no button
- * here and no mutation path for one to call. The surface says that in its own
- * words rather than showing a disabled control, because a disabled control is a
+ * **It reads and issues nothing.** Real tenancy exists — tenants, keys,
+ * scopes, durable quotas and a revocation that is checked before expiry.
+ * Issuing a key is deliberately not self-service, so there is no button here
+ * and no mutation path for one to call. The surface says that in its own words
+ * rather than showing a disabled control, because a disabled control is a
  * promise with a tooltip.
  *
  * **No secret reaches this module.** A key's secret is never persisted — only

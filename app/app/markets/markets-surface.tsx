@@ -18,11 +18,11 @@ import type { ShelfCard } from "@/lib/stocks/shelf";
 import { MARKETS_TABS, type MarketsTab } from "./tabs";
 
 /**
- * Markets (canon v5.4 В33, 2026-09-24): tabs on top — Усі · Компанії ·
- * Приватні · Крипта · Меми · Долари — and on the same top the «Для
- * досвідчених» row: Spot, the screener, Trends. «Усі» shows a few of each,
- * companies first and crypto right after them, so crypto is on the first
- * screen of a desk and of a phone; each other tab is one list whole.
+ * Markets: tabs on top — Усі · Компанії · Приватні · Крипта · Меми · Долари —
+ * and on the same top the «Для досвідчених» row: Spot, the screener, Trends.
+ * «Усі» shows a few of each, companies first and crypto right after them, so
+ * crypto is on the first screen of a desk and of a phone; each other tab is
+ * one list whole.
  *
  * Each list streams in on its own, so a cold catalogue never holds the coins
  * or the memes; the lists stand in one board whose order the tab decides
@@ -40,9 +40,9 @@ const TAB_WORDS: Readonly<Record<MarketsTab, InvestWord>> = {
 };
 
 /**
- * How many of each list «Усі» carries: two full rows of four from 1600 px
- * (`RYN-WIDTH-PREMIUM-001`); the board shows two rows of three below that and
- * three rows on a phone, so a list never ends on a half-empty row.
+ * How many of each list «Усі» carries: two full rows of four from 1600 px;
+ * the board shows two rows of three below that and three rows on a phone, so
+ * a list never ends on a half-empty row.
  */
 const OVERVIEW = { companies: 8, private: 4, crypto: 8, memes: 4 } as const;
 
@@ -103,7 +103,7 @@ export function MarketsTabs({ locale, tools, initialTab, children }: { locale: W
             ))}
           </div>
           {tools.length > 0 ? (
-            /* «Для досвідчених» (canon v5.3 В28, v5.4 В33): the tools «Профі» held, on the same top as the tabs. */
+            /* «Для досвідчених»: the tools «Профі» held, on the same top as the tabs. */
             <nav className={styles.tools} aria-label={word("experienced")} data-experienced-tools>
               <span className={styles.toolsLabel}>{word("experienced")}</span>
               {tools.map((tool) => (
@@ -260,7 +260,7 @@ function CompaniesView({ data, locale, updating = false }: { data: CompaniesData
   const [shown, setShown] = useState(COMPANIES_SHOWN);
   const lang = locale === "uk" ? "uk" : "en";
   const companies = useMemo(() => data.companies.map((card) => companyItem(card)), [data.companies]);
-  /* A private company's card: «Це не акція» and its one number — the price against PreStocks' valuation (canon v5.2 В27). */
+  /* A private company's card: «Це не акція» and its one number — the price against PreStocks' valuation. */
   const privates = useMemo(() => data.privateCompanies.map((card) => companyItem(card, { note: word("notAShare"), premium: premiumLine(card.premiumPct, "PreStocks", lang) })), [data.privateCompanies, word, lang]);
   /* The valuation's time, once for the shelf: every card's number was read from the same answer of the issuer. */
   const valuationAt = useMemo(() => data.privateCompanies.map((card) => card.premiumAt ?? null).find((at): at is string => at !== null) ?? null, [data.privateCompanies]);
@@ -487,7 +487,7 @@ function MemesView({ data, locale }: { data: MemesData; locale: WorkspaceLocale 
   if (!inTab(tab, "memes") || memes.length === 0) return null;
   return (
     <section className={styles.section} aria-labelledby="memes-title" data-section="memes">
-      {/* The risk before a single figure (canon §3, v5.4 В33). */}
+      {/* The risk before a single figure. */}
       <SectionHead id="memes-title" title={word("memes")} note={word("memesRisk")} all="memes" locale={locale} />
       <Rows items={memes} locale={locale} shown={overview ? OVERVIEW.memes : shown} onMore={overview ? undefined : () => setShown((count) => count + CRYPTO_SHOWN * 3)} moreLabel={word("showMore")} />
     </section>

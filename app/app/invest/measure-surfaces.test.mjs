@@ -3,13 +3,13 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 /**
- * «Замір 60 секунд» (`RYN-BUY-FLOW-001`, subtask 5; canon §15, measures
- * 1 · 2 and 11): from a company's page to the wallet's signature in at most
- * six taps and sixty seconds, one transaction — for a purchase and a sale.
- * What stood in the way on production (2026-09-28): a sum the sheet opened on
- * had to be erased key by key, a phone's keyboard covered the one action, and
- * the shared Jupiter window answered a quote or an order «Забагато запитів».
- * These pin the fixes; `scripts/buy-flow-qa/measure-walk.mjs` counts the taps.
+ * «Замір 60 секунд»: from a company's page to the wallet's signature in at
+ * most six taps and sixty seconds, one transaction — for a purchase and a
+ * sale. What stood in the way on production (2026-09-28): a sum the sheet
+ * opened on had to be erased key by key, a phone's keyboard covered the one
+ * action, and the shared Jupiter window answered a quote or an order
+ * «Забагато запитів». These pin the fixes;
+ * `scripts/buy-flow-qa/measure-walk.mjs` counts the taps.
  */
 
 const source = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
@@ -72,7 +72,7 @@ test("both sheets stand above a phone's keyboard, their one action in sight", ()
 test("the swap's quote and its signable order are asked once more after the provider's own pause; /execute never", () => {
   /* A quote — a read — waits at most 2.5 s (the rule of 2026-09-15). */
   assert.match(QUOTE_ROUTE, /askOnceMoreAfterRate\(\(\) =>\s*fetchJupiterOrder\(\{[^}]*\}, selection\),\s*\);/);
-  /* A person's order waits for the window itself, up to its ten seconds: the Owner's $1 purchase was refused with the reset 4 s away (2026-09-28). */
+  /* A person's order waits for the window itself, up to its ten seconds: a $1 purchase on production was refused with the reset 4 s away (2026-09-28). */
   assert.match(ORDER_ROUTE, /askOnceMoreAfterRate\(\s*\(\) =>\s*fetchJupiterExecutableOrder\(/);
   assert.match(ORDER_ROUTE, /\{ maxWaitMs: JUPITER_ORDER_RETRY_WAIT_MAX_MS \},\s*\);/);
   /* Asked before the order is locked or stored: the Review is reserved only after the provider's answer. */

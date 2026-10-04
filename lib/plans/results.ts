@@ -1,6 +1,5 @@
 /**
- * Plan vs Actual — canon Part A §9.5 (`RYN-STRATEGY-PLAN-001` stage B,
- * `RYN-RESULTS-MEMORY-001` beyond the entry).
+ * Plan vs Actual — for the entry and beyond it.
  *
  * Three columns for one execution: **Plan** — the version the execution was
  * bound to before the signature; **Before signing** — the Strategy block the

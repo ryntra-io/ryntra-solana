@@ -17,15 +17,13 @@ import type { BudgetWrite } from "./use-rules";
 
 /**
  * «Бюджет місяця» — the person's own ceiling for every rule in a calendar
- * month (canon v5.1 §4.1, В19; `RYN-INVEST-SIMPLE-001`, session 4), a sheet
- * like the purchase's: from the bottom of a phone, in the middle of a wide
- * screen. A sum in dollars under «Не більше на місяць» — typed, or $50 ·
- * $100 · $200 · $500 — what the month has taken so far, one line on what the
- * ceiling does, «Зберегти»; and «Прибрати бюджет» when there is one. It opens
- * from the budget's own line on Home, in Portfolio and in a rule's sheet
- * (canon v5.3 В29). Only the person sets it; saving asks
- * the wallet's proof — a signed message, never a transaction — when the page
- * has none.
+ * month, a sheet like the purchase's: from the bottom of a phone, in the
+ * middle of a wide screen. A sum in dollars under «Не більше на місяць» —
+ * typed, or $50 · $100 · $200 · $500 — what the month has taken so far, one
+ * line on what the ceiling does, «Зберегти»; and «Прибрати бюджет» when there
+ * is one. It opens from the budget's own line on Home, in Portfolio and in a
+ * rule's sheet. Only the person sets it; saving asks the wallet's proof — a
+ * signed message, never a transaction — when the page has none.
  */
 
 type Props = Readonly<{
@@ -151,7 +149,7 @@ function BudgetFlow({ budget, locale, titleId, onBusy, onClose, onSave, onClear 
         </button>
       </div>
 
-      {/* The budget's sum is the month's ceiling for all rules — never one purchase (canon v5.3 В29). */}
+      {/* The budget's sum is the month's ceiling for all rules — never one purchase. */}
       <p className={company.amountLabel} aria-hidden="true">
         {word("atMostPerMonth")}
       </p>

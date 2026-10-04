@@ -1,10 +1,10 @@
 /**
  * Mainnet promotion, one capability at a time, on that capability's own canary.
  *
- * `docs/products/ROADMAP.md` states the second finish condition as prose:
- * *mainnet, not testnet — and every capability earned its own canary. No
- * maturity is inherited because the chain opened.* This module is that sentence
- * with a return value.
+ * The product's second finish condition is stated as prose: *mainnet, not
+ * testnet — and every capability earned its own canary. No maturity is
+ * inherited because the chain opened.* This module is that sentence with a
+ * return value.
  *
  * **The failure it exists to prevent is inheritance.** A network goes live, a
  * transfer settles, somebody reads that as "we are on mainnet", and six
@@ -16,11 +16,11 @@
  * submitted it, reconciled, unexpired, and with an owner decision attached.
  *
  * **Today it promotes nothing, and that is computed rather than written.**
- * Founder decision FD-02 (2026-08-21) makes Base Sepolia the default execution
- * rail for this phase, testnet only, no mainnet execution. `AGENT_CONTROL_CANARIES`
- * is therefore empty and every capability answers `BLOCKED` / `NO_CANARY`. When
- * that changes it changes by a record being added here, not by a paragraph
- * being edited somewhere else.
+ * Since 2026-08-21 Base Sepolia is the default execution rail for this phase,
+ * testnet only, no mainnet execution. `AGENT_CONTROL_CANARIES` is therefore
+ * empty and every capability answers `BLOCKED` / `NO_CANARY`. When that
+ * changes it changes by a record being added here, not by a paragraph being
+ * edited somewhere else.
  *
  * The gate is deliberately capable of saying yes. A promotion gate that can
  * never open is a wall with a test attached, and the suite proves the open path
@@ -91,7 +91,7 @@ export const PROMOTABLE_CAPABILITIES: readonly PromotableCapability[] = Object.f
     module: "lib/agent-control/adapters/base-evm.ts",
     mainnetChainRef: BASE_MAINNET,
     opensWith:
-      "A founder decision superseding FD-02, plus an execution adapter packet: today the adapter entry is READ_ONLY and the mainnet chain id is deliberately absent from BASE_SEPOLIA_CAIP2.",
+      "A decision that replaces the testnet-only rule, plus an execution adapter: today the adapter entry is READ_ONLY and the mainnet chain id is deliberately absent from BASE_SEPOLIA_CAIP2.",
   }),
   Object.freeze({
     id: "settlement-observation",
@@ -118,7 +118,7 @@ export const PROMOTABLE_CAPABILITIES: readonly PromotableCapability[] = Object.f
     module: "lib/agent-control/artifacts.ts",
     mainnetChainRef: BASE_MAINNET,
     opensWith:
-      "A finalized mainnet outcome plus an issuer attestation: a preview that states OUTCOME_NOT_OBSERVED is a preview, and canon v5.2 §24 forbids calling it a receipt.",
+      "A finalized mainnet outcome plus an issuer attestation: a preview that states OUTCOME_NOT_OBSERVED is a preview, and calling it a receipt would claim an outcome nobody observed.",
   }),
   Object.freeze({
     id: "x402-service-payment",
@@ -154,7 +154,7 @@ export const PROMOTABLE_CAPABILITIES: readonly PromotableCapability[] = Object.f
     module: "lib/agent-control/adapters/solana-token-2022.ts",
     mainnetChainRef: SOLANA_MAINNET,
     opensWith:
-      "A Solana mainnet canary of its own: the ecosystem's own first owner-signed mainnet action is `RYN-SOL-M1`, which has not run, and Agent Control has no executed Solana action or Receipt at all. An ecosystem canary would not promote this row by itself — the Agent Control identity has to be bound to the action.",
+      "A Solana mainnet canary of its own: the ecosystem's owner-signed mainnet Send canary is a separate record, and Agent Control has no executed Solana action or Receipt at all. An ecosystem canary would not promote this row by itself — the Agent Control identity has to be bound to the action.",
   }),
 ]);
 
@@ -189,9 +189,10 @@ export type MainnetCanary = Readonly<{
 /**
  * The canaries this product actually has.
  *
- * Empty, and empty on purpose. FD-02 keeps Base Sepolia the only rail this
- * phase, so there is no mainnet run to record. Every surface that wants to
- * state Agent Control's mainnet maturity reads this and gets the same answer.
+ * Empty, and empty on purpose. Base Sepolia is the only rail this phase and
+ * Base mainnet is closed, so there is no mainnet run to record. Every surface
+ * that wants to state Agent Control's mainnet maturity reads this and gets the
+ * same answer.
  */
 export const AGENT_CONTROL_CANARIES: readonly MainnetCanary[] = Object.freeze([]);
 

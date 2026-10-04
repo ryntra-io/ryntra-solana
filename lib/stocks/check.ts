@@ -1,7 +1,5 @@
 /**
- * «Перевірка», counted once — on the server (`RYN-BUY-FLOW-001`, subtask 2
- * «Контракт «Перевірки»»; canon v5.6 §4 «Купити за 60 с · продати»; contract
- * 1.20.0).
+ * «Перевірка», counted once — on the server (contract 1.20.0).
  *
  * The four lines a person reads before the signature — **Спишеться ·
  * Отримаєш · Усі витрати · Що це** — and the account's reserve, for a company
@@ -28,13 +26,13 @@
  *   Without SOL's price the figure is unknown — never a smaller one.
  * - **The reserve** — the one-time rent an account the transaction opens keeps
  *   in the wallet: never a cost, a line of its own under «Усі витрати», and
- *   said before the four lines when it is more than the purchase (canon v5.5
- *   В35). Stated on the order only: the figure the simulation proved; the
- *   venue's estimate on a quote is short of every Token-2022 account.
+ *   said before the four lines when it is more than the purchase. Stated on
+ *   the order only: the figure the simulation proved; the venue's estimate on
+ *   a quote is short of every Token-2022 account.
  * - **Що це** — the one line of truth about the token (`truth.ts`) in both
  *   languages, and under it the issuer's event said to a buyer (the IPO and
  *   conversion watch) or, on a private company's sale, «Продати може не
- *   вийти» (canon v5.2 §6.2, §7).
+ *   вийти».
  *
  * Pure and client-safe: the facts come in — the order, the company as the
  * universe states it, SOL's price — and the lines go out.
@@ -48,7 +46,7 @@ import { scaledAmountString } from "./units.ts";
 /** USDC's decimals on Solana — the dollars a purchase is paid with and a sale is paid in. */
 export const USDC_DECIMALS = 6;
 
-/** A private company's sale, said before any sum and again in «Що це» (canon v5.2 §6.2, §7) — the documentation's own words. */
+/** A private company's sale, said before any sum and again in «Що це» — the documentation's own words. */
 export const SALE_MAY_FAIL = {
   en: "Selling may not be possible: the issuer promises no liquidity.",
   uk: "Продати може не вийти: емітент ліквідності не обіцяє.",
@@ -89,10 +87,10 @@ export type BuyCostInput = Readonly<{
   solUsd: number | null;
   /**
    * The fee the token's own mint withholds on the transfer to the buyer, basis
-   * points, as the chain states it — a PreStocks token's 1 % (canon v5.2 §7,
-   * §12). Absent or 0 where the mint charges none. The venue quotes what
-   * arrives after it, so it is already inside the two dollar values: it only
-   * raises the floor, and «Перевірка» says it on its own line.
+   * points, as the chain states it — a PreStocks token's 1 %. Absent or 0
+   * where the mint charges none. The venue quotes what arrives after it, so
+   * it is already inside the two dollar values: it only raises the floor, and
+   * «Перевірка» says it on its own line.
    */
   issuerFeeBasisPoints?: number | null;
 }>;
@@ -117,7 +115,7 @@ const lamports = (value: string | null | undefined): bigint => (value && /^\d+$/
 const positive = (value: number | null | undefined): value is number => typeof value === "number" && Number.isFinite(value) && value > 0;
 
 /**
- * «Усі витрати» — what the purchase costs beyond what it buys (canon §4):
+ * «Усі витрати» — what the purchase costs beyond what it buys:
  * the venue's own dollar values of what leaves and what arrives, whose
  * difference already holds every fee inside the route, Ryntra's too, the
  * issuer's fee on a token whose mint withholds one, and the price impact;
@@ -125,8 +123,8 @@ const positive = (value: number | null | undefined): value is number => typeof v
  * person's favour is not a negative cost); and the network's fee in SOL at
  * SOL's price. The reserve that opens a new token account is said apart: it
  * stays in the wallet's account rather than going to anyone. The issuer's
- * fee is also given alone — «з них комісія емітента 1% ≈ $0,10» (canon
- * v5.2 §7, §12) — the share of the sum the mint withholds.
+ * fee is also given alone — «з них комісія емітента 1% ≈ $0,10» — the share
+ * of the sum the mint withholds.
  */
 export function buyCosts(input: BuyCostInput): BuyCosts {
   const spend = Math.max(0, input.spendUsd);
@@ -147,8 +145,8 @@ export function buyCosts(input: BuyCostInput): BuyCosts {
 
 /**
  * Whether the one-time reserve that opens the token's account is more than the
- * purchase itself — then «Перевірка» says so before anything else (canon v5.5
- * В35). The reserve stays in the person's wallet; it is never a cost.
+ * purchase itself — then «Перевірка» says so before anything else. The
+ * reserve stays in the person's wallet; it is never a cost.
  */
 export function reserveOverPurchase(accountUsd: number | null, spendUsd: number): boolean {
   return accountUsd !== null && Number.isFinite(accountUsd) && Number.isFinite(spendUsd) && accountUsd > spendUsd;
@@ -270,7 +268,7 @@ export function buildSwapCheck(input: SwapCheckInput): SwapCheck {
         });
   const costs: SwapCheck["costs"] = counted ? { usd: counted.totalUsd, issuerFee: fee !== null && counted.issuerFeeUsd !== null ? { basisPoints: fee, usd: counted.issuerFeeUsd } : null } : null;
 
-  /* The reserve the simulation proved, on the order only; said first when it is more than the purchase (canon v5.5 В35). */
+  /* The reserve the simulation proved, on the order only; said first when it is more than the purchase. */
   const rent = basis === "order" ? lamports(order.rentFeeLamports) : 0n;
   const reserveUsd = rent > 0n && solUsd !== null ? (Number(rent) / 1e9) * solUsd : null;
   const reserve: SwapCheck["reserve"] = rent > 0n ? { lamports: rent.toString(), usd: reserveUsd, first: buying && paid !== null && reserveOverPurchase(reserveUsd, paid) } : null;

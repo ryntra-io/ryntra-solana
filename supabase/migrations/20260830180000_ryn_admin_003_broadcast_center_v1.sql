@@ -1,6 +1,6 @@
--- RYN-ADMIN-003 Broadcast Center.
--- NOT applied to production. Founder applies in the SQL Editor on
--- project lbphobwqzwdkbmyedlwb. Never against Neon Guard.
+-- Admin Broadcast Center.
+-- NOT applied to production. Applied by hand in the SQL Editor on
+-- project lbphobwqzwdkbmyedlwb, and on no other database.
 --
 -- Invariants:
 --   * private tables; ENABLE + FORCE RLS; no policies; ACL revoked

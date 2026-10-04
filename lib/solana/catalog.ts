@@ -6,7 +6,7 @@
  * Jupiter's. A mint Jupiter omits has no USD; that absence is the fact,
  * not a zero. Never retried: a price is a quote in all but name.
  *
- * Swap execution stays `RYN-SOL-M0D`. This module does not build a swap.
+ * Swap execution lives elsewhere. This module does not build a swap.
  */
 
 import { noteJupiterResponse } from "./jupiter-budget.ts";

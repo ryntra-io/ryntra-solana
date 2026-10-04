@@ -22,15 +22,15 @@ export const ALL_LOCALES = PUBLIC_LOCALE_CODES;
 export const ROOT_LOCALE = "en" as const;
 /**
  * The languages the public landing answers in: English at `/`, Ukrainian at
- * `/uk` — the new site of canon v5.5 (the Owner's word of 2026-09-26, plan
- * decision 4). The address decides the language, so each is a page a search
- * engine can index, and the two name each other as `hreflang` alternates.
+ * `/uk` — the new site of 2026-09-26. The address decides the language, so
+ * each is a page a search engine can index, and the two name each other as
+ * `hreflang` alternates.
  *
  * The history this list carries: from 2026-09-13 the landing was English and
- * dark only and `/uk` went to `/`; from 2026-09-26 (`RYN-SITE-NOW-001`) `/`
- * led into the app by a temporary 307 while the new site was built. An
- * `hreflang` naming a locale that redirects away is worse than none, so the
- * alternates are derived from this list, not from `ALL_LOCALES`.
+ * dark only and `/uk` went to `/`; from 2026-09-26 `/` led into the app by a
+ * temporary 307 while the new site was built. An `hreflang` naming a locale
+ * that redirects away is worse than none, so the alternates are derived from
+ * this list, not from `ALL_LOCALES`.
  */
 export const LANDING_LOCALES = ["en", "uk"] as const;
 export type SeoLocale = (typeof ALL_LOCALES)[number];
@@ -85,29 +85,28 @@ export const OG_LOCALE: ParkedByLocale<string> = {
 type Copy = Readonly<{ title: string; description: string; keywords: readonly string[] }>;
 
 /* The landing is the company entry point, so its title carries the brand line
-   the Owner fixed for it (Positioning v3, `lib/site/homepage-copy.ts`). The
-   developer descriptor belongs to the developer artifacts, which build their
-   own metadata. */
+   fixed for it (Positioning v3, `lib/site/homepage-copy.ts`). The developer
+   descriptor belongs to the developer artifacts, which build their own
+   metadata. */
 const LANDING_TITLE: ParkedByLocale<string> = {
   en: HOMEPAGE_COPY.en.seoTitle,
   uk: HOMEPAGE_COPY.uk.seoTitle,
   ru: "Ryntra — инвестируй в токенизированные акции от $1, в своём кошельке, на Solana",
 };
 
-/* What the product is now (the Owner's word of 2026-09-26): what a person
-   buys and from how much, the second way in — a rule — and the one boundary
-   that matters in a search snippet: what is bought stays in the person's own
-   wallet and every purchase is theirs to sign. */
+/* What the product is now (2026-09-26): what a person buys and from how
+   much, the second way in — a rule — and the one boundary that matters in a
+   search snippet: what is bought stays in the person's own wallet and every
+   purchase is theirs to sign. */
 const COMPACT_LANDING_DESCRIPTION: ParkedByLocale<string> = {
   en: HOMEPAGE_COPY.en.description,
   uk: HOMEPAGE_COPY.uk.description,
   ru: "Покупай токенизированные акции от $1 на Solana или настрой правило, чтобы инвестировать регулярно. Купленное остаётся в твоём кошельке, каждую покупку подписываешь ты.",
 };
 
-/* The words a person looking for this product uses (the Owner's word of
-   2026-09-26): tokenized stocks, from a dollar, a rule that buys regularly,
-   one's own wallet. Nothing here names a provider, a venue or a feature that
-   is not live. */
+/* The words a person looking for this product uses (2026-09-26): tokenized
+   stocks, from a dollar, a rule that buys regularly, one's own wallet.
+   Nothing here names a provider, a venue or a feature that is not live. */
 const KEYWORDS = [
   "tokenized stocks",
   "tokenized stocks on Solana",
@@ -172,18 +171,18 @@ function safeLocale(locale: string): SeoLocale {
 /**
  * The share card of each landing address, carrying the card's fingerprint:
  * the English card at `/opengraph-image`, the Ukrainian one at
- * `/uk/opengraph-image` (plan §6 — until now only English existed), whose
- * file sits in `app/uk/`, outside the landing's route group, so the address
- * is this plain one and not a hashed one.
+ * `/uk/opengraph-image` (earlier only English existed), whose file sits in
+ * `app/uk/`, outside the landing's route group, so the address is this plain
+ * one and not a hashed one.
  */
 export function landingOgImage(localeInput: string): string {
   return safeLocale(localeInput) === "uk" ? `${SITE}/uk/opengraph-image?v=${HOMEPAGE_OG_VERSION}` : OG_IMAGE;
 }
 
 /**
- * The landing's metadata, per address (plan §3–§4): the title within 60
- * characters for a result and a tab, the description within 160, the Owner's
- * full line on the share card; canonical to itself, and English, Ukrainian and
+ * The landing's metadata, per address: the title within 60 characters for a
+ * result and a tab, the description within 160, the product's full line on
+ * the share card; canonical to itself, and English, Ukrainian and
  * `x-default` naming each other.
  */
 export function buildLandingMetadata(localeInput: string): Metadata {
@@ -223,10 +222,9 @@ export function buildLandingMetadata(localeInput: string): Metadata {
 
 /**
  * Home's metadata — the app's first place, in words of its own as the app's
- * page (the plan of `RYN-SITE-V5-001` §3, subtask 4); until then it carried
- * the site's line, from the days `ryntra.io/` led here (`RYN-SITE-NOW-001`).
- * Its address in each language — `/app/home` and `/uk/app/home` — names the
- * other, and the share card is the landing's in the page's language (§6).
+ * page; it used to carry the site's line, from the days `ryntra.io/` led
+ * here. Its address in each language — `/app/home` and `/uk/app/home` — names
+ * the other, and the share card is the landing's in the page's language.
  * Home, Markets and the companies' pages are the cabinet's addresses offered
  * to the index (`robots.ts`); nothing deeper is.
  */

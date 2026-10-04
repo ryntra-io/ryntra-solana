@@ -1,10 +1,10 @@
 /**
  * Where a cross-chain swap is, in the one shape every provider answers in.
  *
- * Moved out of `lib/mayan/explorer-api.ts` by `RYN-SOL-MONEY-FLOWS-001H` for
- * the same reason the quote shape moved: a second provider has to produce this
- * shape, and a shape that lives inside one provider is one the other must
- * import from its competitor. `explorer-api.ts` re-exports it, so nothing that
+ * Moved out of `lib/mayan/explorer-api.ts` when Relay joined, for the same
+ * reason the quote shape moved: a second provider has to produce this shape,
+ * and a shape that lives inside one provider is one the other must import
+ * from its competitor. `explorer-api.ts` re-exports it, so nothing that
  * already imported it from there had to change.
  *
  * `clientStatus` is the only tri-state a person is ever shown. Everything else

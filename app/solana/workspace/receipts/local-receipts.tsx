@@ -172,7 +172,7 @@ function bridgeFacts(receipt: Record<string, unknown>): Record<string, unknown> 
  * Its id is not that line. An `outcome_solana_bridge_…` id was the primary
  * identifier on this screen in production on 2026-09-04, above a status word
  * and nothing else — no amount, no direction, no chains. That is internal text
- * on a customer page, which canon `§0.5` does not allow, and it is also simply
+ * on a customer page, where it does not belong, and it is also simply
  * useless: a person with three bridge receipts could not tell which was which.
  *
  * The chain names are proper nouns and stay in both locales.

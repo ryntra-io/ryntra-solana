@@ -7,7 +7,7 @@ import "./docs.css";
  *
  * It used to load three faces of its own — Onest, IBM Plex Mono and
  * Unbounded — under the root's variable names, so `/docs` rendered in a
- * different typeface from every other page. Brand Canon v1.0 (Owner,
+ * different typeface from every other page. The brand's typography (v1.0,
  * 2026-09-11) puts Geist, Geist Mono and Unbounded on the root layout with
  * the Cyrillic subsets; this segment now loads nothing and inherits them,
  * which is what the projection's `--ry-font-*` tokens read.

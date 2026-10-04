@@ -2,9 +2,8 @@
  * The destination half of a CCTP transfer, observed on Base.
  *
  * A burn on Solana proves that value left. It proves nothing about arrival, and
- * canon §25.5 asks for the arrival to be read independently rather than
- * inferred from the attestation service saying the transfer completed. This
- * module is that read.
+ * the arrival is read independently rather than inferred from the attestation
+ * service saying the transfer completed. This module is that read.
  *
  * ## Two questions, deliberately asked in this order
  *
@@ -22,7 +21,7 @@
  * and the log is outside every reachable window. That is not a failure and it
  * is emphatically not permission to burn again; it is an honest "the money
  * arrived and this product cannot yet show you the transaction", which is
- * exactly the sentence canon §25.5's recovery rule is written around.
+ * exactly the sentence the recovery rule is written around.
  *
  * ## Why detection keys on logs rather than on the transaction
  *
@@ -107,10 +106,10 @@ export type EvmCctpAddresses = Readonly<{
  */
 export function evmCctpAddresses(chain: EvmChainId): EvmCctpAddresses {
   /* An RPC handle can name an EVM chain the CCTP registry has never heard of
-     since `RYN-SOL-MONEY-FLOWS-001H` put Robinhood Chain behind one for the
-     swap lane. The registry would answer `undefined` and every address below
-     would read off it; refusing here is the only honest answer, because there
-     is no Circle deployment on that chain to return. */
+     since Robinhood Chain got one for the swap lane. The registry would answer
+     `undefined` and every address below would read off it; refusing here is
+     the only honest answer, because there is no Circle deployment on that
+     chain to return. */
   if (!isEvmChain(chain)) throw new TypeError(`${chain} has no Circle domain; USDC does not bridge there.`);
   const entry = SOLANA_CCTP_MAINNET_REGISTRY.chains[chain];
   const find = (role: "MESSAGE_TRANSMITTER_V2" | "TOKEN_MESSENGER_V2"): string => {

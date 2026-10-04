@@ -26,10 +26,10 @@ import "./landing/raven.css";
 /**
  * PARKED — this component is no longer mounted on any route.
  *
- * The public homepage moved to `app/site/` with the site redesign. Canon keeps
- * superseded work in source rather than deleting it, so this landing and
- * everything under `app/landing/` stay here, intact and translated, and can be
- * restored by pointing `app/page.tsx` back at them.
+ * The public homepage moved to `app/site/` with the site redesign. Superseded
+ * work is kept in source rather than deleted, so this landing and everything
+ * under `app/landing/` stay here, intact and translated, and can be restored
+ * by pointing `app/page.tsx` back at them.
  *
  * Do not treat an assertion against this file as evidence about the live
  * homepage. Tests that guard what a visitor actually sees read `app/site/`.

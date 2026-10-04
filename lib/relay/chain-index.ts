@@ -1,10 +1,10 @@
 /**
  * Which networks Relay can actually carry right now, in Relay's own words.
  *
- * Owner instruction 2026-09-10: *«Relay network/asset selectors — живі, але не
- * величезний каталог… Не показувати мережу/актив як доступні лише тому, що вони
- * є в currencies index»*, and the rule that goes with it — **Relay knowing about
- * a network is not Relay having an executable route.**
+ * The network and asset selectors are live but never a huge catalogue, and a
+ * network or asset is never shown as available only because it appears in the
+ * currencies index — **Relay knowing about a network is not Relay having an
+ * executable route.**
  *
  * `GET /chains` carries every per-network fact this product used to keep by hand:
  * the chain id, the display name, an RPC, an explorer, the native currency, the

@@ -28,7 +28,7 @@ import type { AdapterResult } from "./adapters/types.ts";
 /**
  * The Home portfolio read model.
  *
- * One deterministic projection between the released `RYN-HOME-002` foundation
+ * One deterministic projection between the released portfolio foundation
  * and the two Home surfaces. It owns *presentation state* — what is knowable,
  * what is degraded, what needs attention, what may be shown beside what — and
  * it owns no arithmetic of its own: value comes from `calculateValuationCoverage`,
@@ -52,7 +52,7 @@ export const HOME_RISK_CATEGORIES = [
 export type HomeRiskCategoryId = (typeof HOME_RISK_CATEGORIES)[number];
 
 /**
- * The five cash buckets, in the canon's order.
+ * The five cash buckets, in their fixed order.
  *
  * They are exclusive because a `PositionRecord` carries exactly one
  * `cashState`, so one economic amount cannot be counted twice however the

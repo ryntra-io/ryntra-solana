@@ -176,9 +176,9 @@ export function candlesDescribe(
  * one base token stands for `multiplier` scaled units). Candles are brought
  * onto the page's unit by dividing each price by the multiplier — the dollar
  * volume is a dollar volume and does not move. A multiplier of one, or none,
- * leaves the candles as they came (`RYN-STOCKS-PROVIDERS-001`: NFLXx at ×10
- * and OPENAI at ×1.486 had no chart, because the raw-unit close was ten times
- * the price on screen).
+ * leaves the candles as they came (before this, NFLXx at ×10 and OPENAI at
+ * ×1.486 had no chart, because the raw-unit close was ten times the price on
+ * screen).
  */
 export function rescaleCandles(candles: readonly NormalizedCandle[], multiplier: number | null): NormalizedCandle[] {
   if (multiplier === null || !Number.isFinite(multiplier) || multiplier <= 0 || Math.abs(multiplier - 1) < 1e-9) return [...candles];

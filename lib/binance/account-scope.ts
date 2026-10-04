@@ -1,4 +1,4 @@
-/* What the Binance account-scoped reads established (RYN-BIN-AOS-003).
+/* What the Binance account-scoped reads established.
 
    One conclusion dominates this module and it is not about balances.
 
@@ -42,7 +42,7 @@ export type GrantedCapabilities = {
  *
  * This reports what the ENVELOPE says. It is not proof of what the agent's OAuth authorization
  * granted: `getApiKeyPermission` describes the account the session is bound to, and whether the
- * per-agent scope grant narrows it further was not established by any read in this packet. Naming
+ * per-agent scope grant narrows it further was not established by any read made here. Naming
  * the function `grantedCapabilities` and meaning "the envelope permits" would be the kind of
  * quiet promotion this repository fails builds over — so the distinction lives in the type's
  * documentation and in the capability matrix, and the caller is expected to carry it.

@@ -12,23 +12,22 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Results" };
 
 /**
- * Results — plan against outcome, canon §5.3 and Part A §11.
+ * Results — plan against outcome.
  *
- * Owner decision of 2026-09-11: Results owns **Plan vs Actual, the execution
- * outcome, costs, no-trade outcomes and Strategy Memory**. With
- * `RYN-RESULTS-MEMORY-001` all five are real: every operation made under a
- * plan as an entry or an exit, what the plan's own executions add up to, an
- * exit judged only against rules that existed before it, the plans that made
- * no trade with the rule that refused them, and a memory of facts that each
- * cite the record they stand on. The *Being built* chip is gone with them —
- * the page no longer promises anything it does not draw.
+ * Results owns **Plan vs Actual, the execution outcome, costs, no-trade
+ * outcomes and Strategy Memory**, and all five are real: every operation
+ * made under a plan as an entry or an exit, what the plan's own executions
+ * add up to, an exit judged only against rules that existed before it, the
+ * plans that made no trade with the rule that refused them, and a memory of
+ * facts that each cite the record they stand on. The *Being built* chip is
+ * gone with them — the page no longer promises anything it does not draw.
  */
 export default async function ResultsPage() {
   const locale = await solanaServerLocale();
   const word = planWordsFor(locale);
   return (
     <section className={styles.page} aria-labelledby="results-title">
-      {/* Results is Portfolio's (canon v5.3 В28): its tabs, this one current. */}
+      {/* Results is Portfolio's: its tabs, this one current. */}
       <PortfolioTabs locale={locale} />
       <header className={styles.head}>
         <div className={styles.title}>
@@ -41,7 +40,7 @@ export default async function ResultsPage() {
           <AskRynLens subject={{ kind: "page", page: "results" }} locale={locale} />
         </div>
       </header>
-      {/* The Brief over the wallet's own record, and the Critic on request — the memory of what was decided is what it argues from (RYN-BRIEF-CRITIC-001); closed until *Ask Ryn* is pressed (RYN-FIRST-SCREEN-001). */}
+      {/* The Brief over the wallet's own record, and the Critic on request — the memory of what was decided is what it argues from; closed until *Ask Ryn* is pressed. */}
       <LensPanel subject={{ kind: "page", page: "results" }} locale={locale} trigger="page" />
       <ResultsPanel locale={locale} />
     </section>

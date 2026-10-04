@@ -16,14 +16,14 @@ export type { Prose } from "./prose";
 
 /*
  * The furniture of the public pages around the landing — About, Security,
- * Where the figures come from, Open source, Contact, Verify (the new site of
- * canon v5.5). Small on purpose: a page is its words (each page's copy module,
- * English and Ukrainian together) laid into these few shapes, so every page
- * reads the same way and no page grows a shape of its own.
+ * Where the figures come from, Open source, Contact, Verify. Small on
+ * purpose: a page is its words (each page's copy module, English and
+ * Ukrainian together) laid into these few shapes, so every page reads the
+ * same way and no page grows a shape of its own.
  *
  * One rule the shapes enforce: a technical paragraph never stands at rest on
  * the page. At rest a block is a title, one line and short items; the detail
- * sits in a disclosure, a tap deeper (canon §0.0 rule 1).
+ * sits in a disclosure, a tap deeper.
  */
 
 export type InfoLink = Readonly<{ href: string; label: string; external?: boolean }>;
@@ -36,7 +36,7 @@ export function InfoPage({
 }: {
   locale: PublicLocale;
   children: ReactNode;
-  /** The page's own orange action is the one on the screen — the header's «Open the app» steps back (canon §2, rule 1). */
+  /** The page's own orange action is the one on the screen — the header's «Open the app» steps back. */
   quietHeaderAction?: boolean;
 }) {
   return (

@@ -2,7 +2,7 @@ import type { DomainLabel } from "@/app/shell/domains";
 import type { SpotView } from "@/lib/spot/markets";
 
 /**
- * The modes of Trends, as the Owner fixed them on 2026-09-11.
+ * The modes of Trends.
  *
  * Trends owns discovery: `Trending · New · Memes · Stocks/RWA · My Screeners`,
  * and the flow is *Discover → Watch → Open Spot → Create strategy*. A mode
@@ -10,16 +10,16 @@ import type { SpotView } from "@/lib/spot/markets";
  * prices, the day's change, volume, liquidity and verification — and every
  * row opens Spot.
  *
- * **A mode with no source is not drawn** (canon v5.0 §0.0 rule 10, adopted
- * 2026-09-23: only what is built reaches a customer screen). New and My
- * Screeners stay registered here as the Owner's modes and stay off the mode
- * bar until a list stands behind them — no *Soon* tag, no card describing a
- * list that does not exist. A saved link to one opens Trending.
+ * **A mode with no source is not drawn**: since 2026-09-23 only what is built
+ * reaches a customer screen. New and My Screeners stay registered here as
+ * modes and stay off the mode bar until a list stands behind them — no *Soon*
+ * tag, no card describing a list that does not exist. A saved link to one
+ * opens Trending.
  *
  * Screeners belong here and nowhere else in the rail; Memes are a mode here
- * and a category in Spot. **Stocks/RWA moved out** (canon v4.0 §5.1, adopted
- * 2026-09-14): tokenized stocks have their own page, and a saved link to this
- * mode leads there rather than into a second screener of the same class.
+ * and a category in Spot. **Stocks/RWA moved out** on 2026-09-14: tokenized
+ * stocks have their own page, and a saved link to this mode leads there rather
+ * than into a second screener of the same class.
  */
 
 export const TREND_MODES = ["trending", "new", "memes", "stocks", "screeners"] as const;
@@ -72,8 +72,8 @@ export const TREND_MODE_SPECS: readonly TrendModeSpec[] = [
       uk: "Токенізовані акції та реальні активи за добовим обсягом. Показані тут і в Споті; торгуються лише там, де можна підтвердити право.",
     },
     source: "stock",
-    /* The Stocks page — the screener since canon v5.3 (В28): Trends is a tool
-       of the experienced, and so is the one it hands stocks to. */
+    /* The Stocks page — the screener: Trends is a tool of the experienced, and
+       so is the one it hands stocks to. */
     movedTo: "/app/stocks/screener",
   },
   {

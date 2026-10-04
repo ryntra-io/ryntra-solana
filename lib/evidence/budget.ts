@@ -17,9 +17,9 @@
  * the provider's dashboard by arithmetic rather than by memory.
  *
  * The ceilings come from the environment and are absent by default. Absent
- * means paid calls are off — the canon's rule that a budget nobody agreed is
- * no budget. The daily ceiling stops new spend at the ceiling; nothing here
- * tops up, purchases or retries a refused reservation.
+ * means paid calls are off — a budget nobody agreed is no budget. The daily
+ * ceiling stops new spend at the ceiling; nothing here tops up, purchases or
+ * retries a refused reservation.
  *
  * Fail closed: a ledger that cannot be reached refuses the call. A governor
  * that allows when it cannot count is not a governor, and the cost of a
@@ -99,7 +99,7 @@ export function utcMonth(nowMs: number): string {
   return new Date(nowMs).toISOString().slice(0, 7);
 }
 
-/** The period name of a `total` record under a policy: the packet, or the UTC month. */
+/** The period name of a `total` record under a policy: the credit packet, or the UTC month. */
 export function totalPeriodOf(policy: EvidenceBudgetPolicy | null, nowMs: number): string {
   return policy?.totalPeriod === "month" ? utcMonth(nowMs) : "packet";
 }

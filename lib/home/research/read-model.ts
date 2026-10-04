@@ -16,7 +16,7 @@ import type { RunProjection } from "./scheduler.ts";
  * all it does. That boundary is what keeps two Home surfaces from disagreeing
  * about the same change.
  *
- * The views are the canon's own six, in its order. Three of them are cuts by
+ * The views are Home's own six, in a fixed order. Three of them are cuts by
  * scope kind — *For me*, *Watchlist*, *Market* — and they partition: every
  * visible change lands in exactly one, which a test pins, because a change that
  * appears twice reads as two changes and a change that appears nowhere is the

@@ -20,21 +20,20 @@ export { COMPANY_PAGES_UPDATED, DOCS_UPDATED, HOME_UPDATED, LANDING_UPDATED, MAR
  * page that answers 200 with `index, follow`, and a test refuses any entry
  * that `CUSTOMER_REDIRECTS` sends elsewhere.
  *
- * Since the technical subtask of the new site (`RYN-SITE-V5-001`, subtask 4,
- * the plan's §4) every page offered to the index is listed at both of its
- * addresses — English without a prefix, Ukrainian at `/uk` and the same path —
- * each entry naming the pair and `x-default` as `xhtml:link`: the landing,
- * Home, Markets, the public pages, the documentation and the companies' pages
- * the shelf opens. The legal texts are English only until a lawyer's word.
+ * Since the new site's technical pass every page offered to the index is
+ * listed at both of its addresses — English without a prefix, Ukrainian at
+ * `/uk` and the same path — each entry naming the pair and `x-default` as
+ * `xhtml:link`: the landing, Home, Markets, the public pages, the
+ * documentation and the companies' pages the shelf opens. The legal texts are
+ * English only until a lawyer's word.
  *
  * What is deliberately absent: the rest of the cabinet (`/app/*`, `noindex`);
- * older pages kept for whoever holds their link, not offered to the index
- * (Master Plan §4); the open-source page
- * `/developers` and the developer references for Guard and Agent Control
- * (reachable, `noindex`: not the product the site describes); the legal
- * review candidates (`noindex`). `lastModified` is the date the page's
- * content last changed (`lib/site/page-dates.ts`) — not a build time, which
- * would tell a crawler every page changed on every deploy.
+ * older pages kept for whoever holds their link, not offered to the index;
+ * the open-source page `/developers` and the developer references for Guard
+ * and Agent Control (reachable, `noindex`: not the product the site
+ * describes); the legal review candidates (`noindex`). `lastModified` is the
+ * date the page's content last changed (`lib/site/page-dates.ts`) — not a
+ * build time, which would tell a crawler every page changed on every deploy.
  */
 
 type PublicPage = Readonly<{

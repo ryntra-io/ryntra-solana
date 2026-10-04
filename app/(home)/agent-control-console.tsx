@@ -373,7 +373,7 @@ function ProPanel({
   const blocked = rows.filter((row) => row.outcome.decision === "BLOCK").length;
 
   /* Four, not six. A fifth number on a landing costs more attention than it
-     returns, and the canon caps the row at four for exactly that reason. */
+     returns, and the row is capped at four for exactly that reason. */
   const kpis: readonly (readonly [string, string, string])[] = [
     ["ACTIVE ACTIONS", String(rows.length), styles.toneNeutral],
     ["PENDING APPROVALS", String(pending), pending ? styles.toneWarn : styles.toneNeutral],

@@ -1,13 +1,13 @@
 import { list, note, p, section, type DocPage } from "./model.ts";
 
 /**
- * Ryntra, the AI assistant — the menu's «Ryntra · ШІ-помічник» (canon v5.4
- * В30), documented once, in the words the canon holds it to (§5, B.1, B.12):
- * it explains and prepares; published rules compute and check; the person
- * decides and signs. What reaches the model's provider is stated plainly —
- * the question and the facts it needs, never the wallet's address, the
- * request not stored by the provider — and nothing it cannot do is dressed as
- * a feature. The name is Ryntra wherever a person reads: no «Ryn».
+ * Ryntra, the AI assistant — the menu's «Ryntra · ШІ-помічник», documented
+ * once, in the words it is held to: it explains and prepares; published rules
+ * compute and check; the person decides and signs. What reaches the model's
+ * provider is stated plainly — the question and the facts it needs, never the
+ * wallet's address, the request not stored by the provider — and nothing it
+ * cannot do is dressed as a feature. The name is Ryntra wherever a person
+ * reads: no «Ryn».
  */
 
 export const ASSISTANT: DocPage = {

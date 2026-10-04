@@ -148,9 +148,9 @@ const COPY = {
       explainBody: (
         <>
           A caller that never sees a tool in <code>tools/list</code> can still name it, which is
-          exactly what a generic execute indirection does. <code>RYN-BIN-AOS-003</code> found
-          that empirically on somebody else&rsquo;s server. So the same gate runs again at call
-          time, and a hidden name is refused with the reason the filter was expressing.
+          exactly what a generic execute indirection does. We found that empirically on
+          somebody else&rsquo;s server. So the same gate runs again at call time, and a hidden
+          name is refused with the reason the filter was expressing.
         </>
       ),
     },
@@ -275,9 +275,9 @@ const COPY = {
       explainBody: (
         <>
           Викликач, який ніколи не бачить інструмент у <code>tools/list</code>, усе одно може його
-          назвати — саме це робить генерична execute-індирекція. <code>RYN-BIN-AOS-003</code>{" "}
-          виявив це емпірично на чужому сервері. Тож той самий гейт запускається знову в момент
-          виклику, і приховану назву відхиляють із причиною, яку виражав фільтр.
+          назвати — саме це робить генерична execute-індирекція. Ми виявили це емпірично на
+          чужому сервері. Тож той самий гейт запускається знову в момент виклику, і приховану
+          назву відхиляють із причиною, яку виражав фільтр.
         </>
       ),
     },

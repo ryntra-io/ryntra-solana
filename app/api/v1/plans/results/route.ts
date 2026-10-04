@@ -14,7 +14,7 @@ export const maxDuration = 30;
  * static segment wins over `{id}` in the router, and `results` is not a
  * plan id anyway.
  *
- * 1.9.0 (`RYN-RESULTS-MEMORY-001`): the feed is no longer only the trades.
+ * 1.9.0: the feed is no longer only the trades.
  * `outcomes` carries the plans that made none and why — a maximum price
  * never met, a liquidity floor never cleared, a window that closed — as
  * first-class results rather than an absence; `positions` says what each

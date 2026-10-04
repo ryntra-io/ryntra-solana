@@ -4,15 +4,15 @@
  * Two rules shape this file, and both are recorded elsewhere in the repository
  * because both were learned by getting them wrong.
  *
- * **No importance number.** `docs/JOURNAL.md` rule 6 asks that a reader see
- * what changed, where the risk is and what needs action within two seconds. A
- * single invented magnitude looks like it serves that and does the opposite: it
- * merges incomparable things — a person waiting, a credential lapsing, a store
- * being down — into one axis nobody can audit, and the first time it ranks
- * something wrongly the fix is to tune a constant rather than to fix a rule.
- * So rank here is *the index of a frozen category table*, exactly as Home's
- * Attention does it. Two items of the same category are equally important and
- * the surface says so by leaving them side by side.
+ * **No importance number.** A reader should see what changed, where the risk
+ * is and what needs action within two seconds. A single invented magnitude
+ * looks like it serves that and does the opposite: it merges incomparable
+ * things — a person waiting, a credential lapsing, a store being down — into
+ * one axis nobody can audit, and the first time it ranks something wrongly the
+ * fix is to tune a constant rather than to fix a rule. So rank here is *the
+ * index of a frozen category table*, exactly as Home's Attention does it. Two
+ * items of the same category are equally important and the surface says so by
+ * leaving them side by side.
  *
  * **A calm queue says it is calm.** An empty list and a failed load render
  * identically, and of the two readings the reassuring one is the dangerous one.
@@ -76,13 +76,12 @@ export type AttentionQueue = Readonly<{
 }>;
 
 /**
- * The founder actions Agent Control is genuinely waiting on.
+ * The owner actions Agent Control is genuinely waiting on.
  *
- * Two rows, both open, both the founder's, and neither one Ryntra's to close.
- * They are declared here rather than read out of the task registry because a
- * rendering surface has no business parsing a markdown table — but they are
- * asserted against that registry in the finish battery, so the two cannot drift
- * apart quietly.
+ * Two rows, both open, both the owner's, and neither one Ryntra's to close.
+ * They are declared here rather than parsed out of a markdown table, because a
+ * rendering surface has no business parsing one — but a test asserts them
+ * against that table, so the two cannot drift apart quietly.
  */
 export const AGENT_CONTROL_OWNER_ACTIONS = Object.freeze([
   Object.freeze({
@@ -226,10 +225,10 @@ export function attentionQueue(input: AttentionInput): AttentionQueue {
         category: "OPERATIONAL_NOTE" as const,
         priority: rank("OPERATIONAL_NOTE"),
         title: "No capability is promotable to a mainnet",
-        detail: `${blocked} capabilities are refused, each on its own missing canary. This is the boundary founder decision FD-02 chose on 2026-08-21 — Base Sepolia only, no mainnet execution this phase — not a fault.`,
+        detail: `${blocked} capabilities are refused, each on its own missing canary. This is the boundary chosen on 2026-08-21 — Base Sepolia only, no mainnet execution this phase — not a fault.`,
         recovery: Object.freeze({
           actor: "OWNER" as const,
-          step: "A founder decision superseding FD-02, and then one canary packet per capability. Nothing here is promoted by another capability's evidence.",
+          step: "A decision that replaces the testnet-only rule, and then one canary per capability. Nothing here is promoted by another capability's evidence.",
         }),
       }),
     );
@@ -249,7 +248,7 @@ export function attentionQueue(input: AttentionInput): AttentionQueue {
     calm: items.length === 0,
     calmReason:
       items.length === 0
-        ? "Nothing is waiting on a person. Checked: open founder actions, proposals at PROPOSE, actions with no observed outcome, the quota store, and the mainnet promotion perimeter."
+        ? "Nothing is waiting on a person. Checked: open owner actions, proposals at PROPOSE, actions with no observed outcome, the quota store, and the mainnet promotion perimeter."
         : null,
     asOf: input.asOf,
   });

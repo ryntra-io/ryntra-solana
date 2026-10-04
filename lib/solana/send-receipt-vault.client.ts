@@ -1,22 +1,21 @@
 /**
  * A person's own Send receipts, in their own browser.
  *
- * **Canon §0.6 reversed the position this comment used to argue.** It read:
+ * **The product reversed the position this comment used to argue.** It read:
  * *this browser and nowhere else, which is the design rather than a limitation
  * to route around — a server-side archive of who paid whom is a database this
- * product has no reason to hold and every reason not to.* The owner decision of
- * 2026-09-03 says the opposite and gives the reason: a cabinet that lives in
+ * product has no reason to hold and every reason not to.* Since 2026-09-03 the
+ * product holds the opposite, for a reason: a cabinet that lives in
  * `localStorage` belongs to a device, so the same wallet shows different history
- * on a phone and a laptop, and *«приватну квитанцію бачить лише власник»* is a
+ * on a phone and a laptop, and *a private receipt only its owner can see* is a
  * wish rather than a fact. The argument above was about the wrong risk — the
  * question is not whether to hold receipts, it is who may open them.
  *
  * So this is now a **cache with a known gap**, not the design. The server
- * archive it should become waits on one thing: a receipt is private data in
- * canon §0.6's sense, opened only after proof of ownership, and this repository
- * has no Solana sign-in — `/api/auth/wallet` is EVM SIWE and refuses
- * wallet-only accounts on purpose. Until that row lands this stays the receipt
- * journal.
+ * archive it should become waits on one thing: a receipt is private data,
+ * opened only after proof of ownership, and this repository has no Solana
+ * sign-in — `/api/auth/wallet` is EVM SIWE and refuses wallet-only accounts on
+ * purpose. Until that sign-in exists this stays the receipt journal.
  *
  * What did move meanwhile: the wallet-scoped action ledger records *that* a
  * transfer happened, keyed by the wallet, and is public by address because

@@ -3,7 +3,7 @@
 /**
  * The stock context Spot and Portfolio show beside a tokenized stock — the
  * issuer's reference and session, the multiplier, and the deviation of what
- * a person is about to do from that reference (canon v4.0 §7.4–§7.6).
+ * a person is about to do from that reference.
  *
  * Read from `/api/stocks/asset` and `/api/stocks/universe`, the same server
  * reads the Stocks page uses, cached in the module for the life of the tab so
@@ -175,13 +175,13 @@ export function StockHeaderLine({ mint, symbol }: { mint: string; symbol: string
  * quote, the minimum received or the fees above it, and it says so when the
  * reference is not there.
  *
- * Three cuts of the same facts (`RYN-UX-CLARITY-001` §5.3): *essential* is
- * what Simple keeps open — the price of this order per share and the
- * reference with the deviation; *details* is what Simple folds — the
- * underlying units, the session, the units and the reference's source;
- * *full* is Pro, everything at once. With a plan's price bound the block
- * says plainly, beside the figure, when this order's per-share price is
- * above it — before the Review, which still decides.
+ * Three cuts of the same facts: *essential* is what Simple keeps open — the
+ * price of this order per share and the reference with the deviation;
+ * *details* is what Simple folds — the underlying units, the session, the
+ * units and the reference's source; *full* is Pro, everything at once. With a
+ * plan's price bound the block says plainly, beside the figure, when this
+ * order's per-share price is above it — before the Review, which still
+ * decides.
  */
 export function StockReviewBlock({
   mint,
@@ -323,13 +323,13 @@ export function StockReviewBlock({
   );
 }
 
-/** A token this far from the exchange's reference, per cent, is worth a chip in a row (canon §8, «Дорого» past 1 %). */
+/** A token this far from the exchange's reference, per cent, is worth a chip in a row («Дорого» past 1 %). */
 const ROW_DEVIATION_PCT = 1;
 
 /**
  * What a Portfolio row of a stock says of its market, when it is not the
  * ordinary: a session other than the regular one, and a token more than 1 %
- * from the exchange's reference (the premium canon §8 calls «Дорого»). The
+ * from the exchange's reference (the premium the product calls «Дорого»). The
  * regular session and a price in line with the exchange say nothing — the row
  * stays the position's own; the company's page keeps every figure.
  */

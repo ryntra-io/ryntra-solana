@@ -1,14 +1,14 @@
 /**
  * The strategy lifecycle, as a table rather than as a paragraph.
  *
- * Home canon §10: *Strategy is versioned: Idea → Draft → Backtest → Forward
+ * Home's rule: *Strategy is versioned: Idea → Draft → Backtest → Forward
  * paper → Approved → Active → Review, plus Paused, Invalidated, Expired and
  * Archived where relevant. Material rule changes create a new version.*
  *
  * Written as prose that is a sequence somebody has to respect. Written here it
  * is a graph, and the two edges that matter most are the ones that **do not
  * exist**: `DRAFT → APPROVED` and `BACKTEST → ACTIVE`. Those are the shortcuts
- * a strategy takes when a curve looks good, and the canon's whole point is that
+ * a strategy takes when a curve looks good, and the rule's whole point is that
  * an in-sample curve is never proof. They are absent from the table, so they
  * cannot be taken by a caller in a hurry — only by editing this file beside the
  * test that names them.

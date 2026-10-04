@@ -56,7 +56,7 @@ export const MONITORING_WORDS = {
   couldNotLoad: bi("Monitoring could not be read right now.", "Нагляд зараз не вдалося прочитати."),
   tryAgain: bi("Try again", "Спробувати ще раз"),
   loading: bi("Reading your plans…", "Читаємо твої плани…"),
-  /* «Автоінвест» on the surface (canon §11): a reminder's state, and the month's budget spent */
+  /* «Автоінвест» on the surface: a reminder's state, and the month's budget spent */
   ruleDue: bi("Time to buy by your rule", "Час покупки за правилом"),
   rulePending: bi("Purchase on its way", "Купівля в дорозі"),
   ruleBought: bi("Bought", "Куплено"),

@@ -3,8 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 /**
- * The search's index route (canon v5.4 В31) is the one API route
- * `RYN-NAV-VISIBLE-001` added: read-only, wallet-free, rate-limited like the
+ * The search's index route is read-only, wallet-free, rate-limited like the
  * other Solana reads, and cached at the edge only when every list answered —
  * a partial index is never served to the next visitor as if it were whole.
  */

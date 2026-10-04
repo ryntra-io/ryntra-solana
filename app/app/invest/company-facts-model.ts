@@ -1,9 +1,9 @@
 /**
- * The company page's facts at rest — the pure half (`RYN-COMPANY-PAGE-001`).
+ * The company page's facts at rest — the pure half.
  *
  * Every figure the page shows about a company and its token is shaped here
- * once and tested: money in the canon's one formatter («$5,44 трлн»,
- * «$16,3 млн» — rule 2), counts, ratios, the period a figure covers, the
+ * once and tested: money in the product's one formatter («$5,44 трлн»,
+ * «$16,3 млн»), counts, ratios, the period a figure covers, the
  * date of a report, the exchange's short name, the issuer's label and what it
  * says of dividends, the year's range and where the price sits in it, the
  * share of buying in a day's trading. No fetch, no clock, no React: the page
@@ -134,7 +134,7 @@ export function exchangeShort(exchange: Readonly<{ mic: string; name: string }> 
   return secExchange ?? null;
 }
 
-/** The label from the issuer's documents (canon §7) — the help topic that carries it and its line. */
+/** The label from the issuer's documents — the help topic that carries it and its line. */
 export function truthTopic(issuer: StockIssuerId): "truthXStocks" | "truthOndo" | "truthBackpack" | "truthPreStocks" {
   switch (issuer) {
     case "xstocks":
@@ -148,7 +148,7 @@ export function truthTopic(issuer: StockIssuerId): "truthXStocks" | "truthOndo" 
   }
 }
 
-/** What happens to the company's dividends for the holder of this token, by the issuer's documents (canon §7). */
+/** What happens to the company's dividends for the holder of this token, by the issuer's documents. */
 export function dividendWord(issuer: StockIssuerId, lang: Lang): string {
   const uk = lang === "uk";
   switch (issuer) {

@@ -6,10 +6,10 @@
 .ry-account-link { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; min-width: 44px; padding: 8px 12px; border-radius: 12px; color: var(--ry-text); text-decoration: none; }
 .ry-account-link:hover { background: var(--ry-hover); }
 /* The wordmark at a size the bar can carry: the lockup is 1em tall, and at
-   the shell's 15px it measured 70 × 15 on the Owner's 2560px screen — a mark
-   nobody could see (Owner, 2026-09-12). The flat lockup of 2026-09-13 sets
-   YNTRA at 55% of the R's height, so the R stands 32px in the 64px bar and
-   the letters read at 17px beside the 44px controls. */
+   the shell's 15px it measured 70 × 15 on a 2560px screen — a mark nobody
+   could see (2026-09-12). The flat lockup of 2026-09-13 sets YNTRA at 55% of
+   the R's height, so the R stands 32px in the 64px bar and the letters read
+   at 17px beside the 44px controls. */
 .ry-product .rs-brand .ryntra-brand { font-size: var(--ry-fs-h2); }
 .ry-product .rs-page, .ry-product .so-head { margin-bottom: 24px; }
 .ry-product .rs-page h1, .ry-product .so-title { font-family: var(--ry-font-sans); font-size: clamp(1.5rem, 2.5vw, 2rem); line-height: 1.2; letter-spacing: -0.02em; }
@@ -17,7 +17,7 @@
 .ry-product .rs-canvas { padding-bottom: 32px; }
 .ry-product .rs-canvas > * { min-width: 0; }
 /* Secondary is the default control: surface, a subtle border, primary ink;
-   hover lightens the surface and the border (Brand Canon v1.0 §5). */
+   hover lightens the surface and the border. */
 .ry-product .rw-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 10px 16px; border: 1px solid var(--ry-border); border-radius: var(--ry-r-btn); background: var(--ry-card); color: var(--ry-text); font: inherit; font-weight: 500; text-decoration: none; cursor: pointer; transition: background-color var(--rt-duration-fast) var(--rt-ease), border-color var(--rt-duration-fast) var(--rt-ease), color var(--rt-duration-fast) var(--rt-ease), transform var(--rt-duration-fast) var(--rt-ease), box-shadow var(--rt-duration-fast) var(--rt-ease); }
 .ry-product .rw-btn:hover { background: var(--ry-hover); border-color: var(--ry-border-strong); }
 .ry-product .rw-btn:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -35,13 +35,13 @@
 .ry-product .btn-ghost { background: transparent; border-color: var(--ry-border); color: var(--ry-text); }
 .ry-product .btn-ghost:hover { background: var(--ry-hover); border-color: var(--ry-border-strong); color: var(--ry-text); }
 /* Every control shares one focus: an orange border and a small controlled
-   ring, never a large light around the field (Brand Canon v1.0 §9). */
+   ring, never a large light around the field. */
 .ry-product :is(input, select, textarea, button, a, [role="button"], [tabindex]):focus-visible { outline: none; box-shadow: var(--ry-focus); border-color: var(--ry-iris); }
 .ry-product :is(input, select, textarea)::placeholder { color: var(--ry-text-muted); opacity: 1; }
 .ry-product :is(input, select, textarea) { color-scheme: inherit; }
 /* A native select's list is painted by the browser from the control's own
    colours: left transparent, Chrome painted it white over the dark cabinet
-   (the Owner, Spot, 2026-09-14). The control and its options carry the
+   (seen in Spot, 2026-09-14). The control and its options carry the
    surface and ink explicitly, in both themes. */
 .ry-product select { background-color: var(--ry-card); color: var(--ry-text); }
 .ry-product select option { background-color: var(--ry-card); color: var(--ry-text); }

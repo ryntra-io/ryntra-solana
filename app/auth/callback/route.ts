@@ -60,8 +60,8 @@ export async function GET(req: NextRequest) {
   /* A door that is off is closed on the server, not only in the sheet that
      draws the buttons. Someone holding an old provider URL, or calling this
      route directly, must meet the same refusal as someone who sees no button
-     at all. The customer doors (RYN-ACCESS-WALLET-ONLY-001) are the ones
-     read here: this route only ever finishes a customer's trip. */
+     at all. The customer doors are the ones read here: this route only ever
+     finishes a customer's trip. */
   const methods = customerMethods();
   const tripMethod = trip?.method === "google" || trip?.method === "telegram" ? trip.method : "email";
   if (!methods[tripMethod]) return redirect(url.origin, withAuthMarker(next, "error", "method_off"));

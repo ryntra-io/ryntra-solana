@@ -9,7 +9,7 @@ export const metadata: Metadata = sitePageMetadata({
   description: "Typed client, HTTP and local MCP reference for Ryntra Agent Control.",
   keywords: ["ryntra agent control", "action evidence sdk", "mcp"],
   /* Agent Control is not the product the site describes: reachable, not offered
-     to the index (`RYN-SITE-NOW-001`, 2026-09-26). */
+     to the index (since 2026-09-26). */
   index: false,
 });
 

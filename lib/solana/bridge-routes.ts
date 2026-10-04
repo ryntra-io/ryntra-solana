@@ -2,9 +2,9 @@
  * The bridge route matrix: which networks and assets a person may actually
  * move between, and why the others are not offered.
  *
- * `RYN-SOL-MONEY-FLOWS-001E` (2026-09-05) researched three candidate pairs and
- * three assets across LI.FI, Relay and Circle CCTP and found, on the live
- * provider endpoints of that day, exactly this:
+ * Route research on 2026-09-05 covered three candidate pairs and three assets
+ * across LI.FI, Relay and Circle CCTP and found, on the live provider
+ * endpoints of that day, exactly this:
  *
  * - **Solana ↔ Base, USDC** — Circle CCTP V2. Four founder-signed mainnet
  *   transfers settled and reconciled MATCHED. Open to people.
@@ -19,12 +19,12 @@
  *   canonical bridge to Ethereum and partner routes and never mentions Solana.
  *   The one thing a provider *will* do is turn Solana USDC into Robinhood USDG
  *   through Layerswap, which is a different asset and therefore a cross-chain
- *   swap — `RYN-SOL-MONEY-FLOWS-001F`'s territory, never quietly offered here
- *   as if it were the same money on another chain. Since 2026-09-09 that swap
- *   exists: `RYN-SOL-MONEY-FLOWS-001H` opened six Solana ↔ Robinhood Chain
- *   pairs through Relay in the cross-swap lane. Nothing about this row changed
- *   — there is still no USDC on chain 4663 and still no Circle domain for it —
- *   only where a person is sent to find the thing that does work.
+ *   swap — a different lane's territory, never quietly offered here as if it
+ *   were the same money on another chain. Since 2026-09-09 that swap exists:
+ *   the cross-swap lane opened six Solana ↔ Robinhood Chain pairs through
+ *   Relay. Nothing about this row changed — there is still no USDC on chain
+ *   4663 and still no Circle domain for it — only where a person is sent to
+ *   find the thing that does work.
  * - **ETH and SOL** — on Solana, "ETH" is Wormhole-wrapped Ether with eight
  *   decimals; on Ethereum and Base, "SOL" is a wrapped or bridged token. CCTP
  *   is a USDC rail. Moving native SOL to native ETH is a swap, and the product

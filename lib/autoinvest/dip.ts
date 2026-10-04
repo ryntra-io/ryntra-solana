@@ -1,6 +1,6 @@
 /**
  * «Якщо впаде» — a rule that reminds when a company's price falls N % below
- * its reference point (canon v5.1 §4.1; `RYN-INVEST-SIMPLE-001`, session 4).
+ * its reference point.
  *
  * **The reference point** is the price when the rule was turned on, or what
  * the last purchase under it paid per unit: after a purchase the point moves

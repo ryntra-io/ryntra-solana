@@ -1,10 +1,9 @@
 // Run from repo root: node --test app/app/invest/price-condition-view.test.mjs
 /**
- * The price condition's words on the company page (`RYN-PRICE-GUARD-001`;
- * canon v5.5 В37, §4.1): the Review's line — the deviation, the reference,
- * the limit, the data's time — why a purchase waits, how the price stands now
- * under a rule being written; both languages; PreStocks' valuation never a
- * fair price.
+ * The price condition's words on the company page: the Review's line — the
+ * deviation, the reference, the limit, the data's time — why a purchase waits,
+ * how the price stands now under a rule being written; both languages;
+ * PreStocks' valuation never a fair price.
  */
 import assert from "node:assert/strict";
 import test from "node:test";

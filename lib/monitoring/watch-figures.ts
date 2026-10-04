@@ -2,7 +2,7 @@
  * The figures «Ryntra попередить» sets on a position — client-safe, so the
  * sheet previews exactly what the server will count (`position-watch.ts`
  * counts them again from its own price on save). The presets are the
- * published ones of the purchase with a loss limit (В11): «Обережно» −5 % /
+ * published ones of the purchase with a loss limit: «Обережно» −5 % /
  * +10 %, «Збалансовано» −10 % / +20 %. Pure.
  */
 

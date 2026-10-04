@@ -296,11 +296,11 @@ export async function generateMetadata(): Promise<Metadata> {
  * evidence, and what happened next** — the half of the loop the product could
  * describe and could not show.
  *
- * `/app/action-cases` is the canon's own path for it, and the planned-route
- * register set the contract before the route existed: project the ActionCases
- * that already exist rather than creating a second action source. Agent
- * Control's own cases live in one browser tab's `sessionStorage`, so they are
- * named and linked here, never restated.
+ * `/app/action-cases` is its own path, and the planned-route register set the
+ * contract before the route existed: project the ActionCases that already
+ * exist rather than creating a second action source. Agent Control's own cases
+ * live in one browser tab's `sessionStorage`, so they are named and linked
+ * here, never restated.
  *
  * **Nothing on this page is a Ryntra recommendation.** Before a provider-led
  * advice gate exists the case carries facts, alternatives including doing

@@ -92,7 +92,7 @@ test("the new surface stays inside the frozen design system and mobile contract"
 
 test("the retained Financial Twin remains owner-scoped without replacing the overview", () => {
   /* The source stays available to the legacy connection flow, but the overview
-     — Portfolio, since canon 9.1 folded Home into it — reports the connected
+     — Portfolio, since Home was folded into it — reports the connected
      wallet through the shared read provider instead. */
   assert.doesNotMatch(OVERVIEW, /<FinancialTwinSummary/);
   assert.match(OVERVIEW, /useWalletData\(\)/);

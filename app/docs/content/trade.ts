@@ -3,12 +3,12 @@ import { facts, list, note, p, section, steps, table, type DocPage } from "./mod
 
 /**
  * Trade — Swap, Spot, the stock screener and Trends, as the menu's «Торгувати»
- * draws them (canon v5.4 В30), each documented as what it does today. Bridge
- * is documented under Money, where the product keeps it; what you buy and how
- * a company is bought live under Invest since the new site of canon v5.5
- * (`RYN-SITE-V5-001` subtask 3), and the old Stocks page's address leads there.
- * A page that is not built has no documentation page (canon v5.0 §0.0 rule 10):
- * Perps is registered and drawn nowhere, and its old address leads to Spot.
+ * draws them, each documented as what it does today. Bridge is documented
+ * under Money, where the product keeps it; what you buy and how a company is
+ * bought live under Invest since the site's redesign, and the old Stocks
+ * page's address leads there. A page that is not built has no documentation
+ * page: Perps is registered and drawn nowhere, and its old address leads to
+ * Spot.
  */
 
 export const SWAP: DocPage = {
@@ -279,9 +279,9 @@ export const TRENDS: DocPage = {
   related: ["trade/spot", "trade/screener", "strategies/overview"],
 };
 
-/* The prediction demo left the surface with canon v5.4 (В32, 2026-09-24), so
-   its page is not documented to a person; its text stays below, beside the
-   demo's code, and its address leads to the menu's page. */
+/* The prediction demo left the surface on 2026-09-24, so its page is not
+   documented to a person; its text stays below, beside the demo's code, and
+   its address leads to the menu's page. */
 export const PREDICTIONS: DocPage = {
   slug: "trade/predictions",
   group: "trade",

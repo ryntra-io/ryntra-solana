@@ -1,7 +1,6 @@
 /**
- * The agent's budget — durable, per wallet, metered in the Guard store
- * (`RYN-AGENT-TEXT-001`; the Owner's rule of 2026-09-22 §14; the allowance
- * and the usage receipt `RYN-AI-001` describes).
+ * The agent's budget — durable, per wallet, metered in the Guard store: an
+ * allowance per wallet and a usage receipt for every model call.
  *
  * What is counted is a question that reaches the model. A deterministic
  * answer costs nothing and is never refused for budget. The counters are one
@@ -36,12 +35,12 @@ export type AgentBudgetConfig = Readonly<{
   monthlyCalls: number;
   /** Questions being answered at once, per wallet. */
   inFlight: number;
-  /** The deployment's own ceilings — the Owner's key is one key. */
+  /** The deployment's own ceilings — one provider key serves every wallet. */
   globalDailyCalls: number;
   globalMonthlyCalls: number;
   /** How long an in-flight lease lives when the answer never settled (a crashed instance). */
   leaseMs: number;
-  /** Whether a model is configured to be called at all — the Owner's explicit switch plus the key. */
+  /** Whether a model is configured to be called at all — an explicit switch plus the key. */
   modelEnabled: boolean;
 }>;
 
@@ -51,7 +50,7 @@ export const AGENT_BUDGET_ENV = {
   inFlight: "RYNTRA_AGENT_IN_FLIGHT",
   globalDaily: "RYNTRA_AGENT_GLOBAL_DAILY_CALLS",
   globalMonthly: "RYNTRA_AGENT_GLOBAL_MONTHLY_CALLS",
-  /** `1` switches the model on; absent, every answer is deterministic and nothing is spent. The Owner's word, not a default. */
+  /** `1` switches the model on; absent, every answer is deterministic and nothing is spent. An explicit choice, never a default. */
   modelEnabled: "RYNTRA_AGENT_MODEL_ENABLED",
 } as const;
 
@@ -263,7 +262,7 @@ export type AgentUsage = Readonly<{
   observedAt: string;
 }>;
 
-/** The Owner's view of what the agent spent, from the durable meter and the receipts; wallets are counted, never listed. */
+/** The admin's view of what the agent spent, from the durable meter and the receipts; wallets are counted, never listed. */
 export async function readAgentUsage(store: GuardStore, config: AgentBudgetConfig, nowMs: number, days = 14): Promise<AgentUsage> {
   const dayCalls = await readCount(store, globalDayKey(nowMs));
   const monthCalls = await readCount(store, globalMonthKey(nowMs));

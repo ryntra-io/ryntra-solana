@@ -10,7 +10,7 @@ before every signature, a portfolio and a history with receipts. It runs at
 This repository is the product's source code as released — the web app, the
 Android app, the Evidence Kernel and the database schema, with their tests. It
 is private and shared read-only with invited reviewers. Every update is one
-commit, named for what it released; the latest is from 2026-09-29.
+commit, named for what it released; the latest is from 2026-10-04.
 
 ## What is here
 
@@ -51,7 +51,7 @@ API key (`RYNTRA_JUPITER_API_KEY`), accounts and saved plans for Supabase
 ever committed here.
 
 A few tests hold the code to documents the development repository keeps beside
-it — the product specification, the task registry, the evidence archive. Here
+it — the product specification, the work tracker, the evidence archive. Here
 they are reported as skipped, each naming what it reads.
 
 ## The Android app
@@ -91,9 +91,9 @@ that come from the development repository:
 | Since the tag | Files |
 |---|---|
 | New | 991 |
-| Changed | 480 |
-| Unchanged | 1,259 |
-| Lines added / removed | +241,436 / −15,681 |
+| Changed | 804 |
+| Unchanged | 935 |
+| Lines added / removed | +244,022 / −18,638 |
 
 [BOUNDARY.md](BOUNDARY.md) lists every new and every changed file. Shipped since
 then, as the public build log records it:
@@ -138,9 +138,8 @@ then, as the public build log records it:
   Token-2022 on Solana, with a build log of every shipped slice — is public:
   [ryntra-io/ryntra-solana-evidence](https://github.com/ryntra-io/ryntra-solana-evidence).
 - Internal documents stay in the development repository: the product
-  specification and the task tracker. Comments cite them — a section of the
-  specification («canon §4.1»), a ticket id (`RYN-…`), the founder's decision
-  («the Owner's word») — so a reader can see why a line is the way it is.
+  specification and the task tracker. The code's comments give their reasons in
+  their own words.
 - Secrets and keys: environment only.
 
 ## Licence

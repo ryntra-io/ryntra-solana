@@ -1,7 +1,7 @@
 /**
  * Suggested questions — the ones a person can ask without learning the
- * product's vocabulary (`RYN-AGENT-TEXT-001`; the Owner's rule of 2026-09-22
- * §18). Deterministic, free, by the context the conversation was opened from.
+ * product's vocabulary. Deterministic, free, by the context the
+ * conversation was opened from.
  */
 
 import type { AgentContext, AgentSuggestion } from "../api/v1/contract.ts";

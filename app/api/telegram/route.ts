@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 /**
  * Ryntra Beta bot ( @RyntraBeta_bot ) — Beta Access Gate webhook.
  *
- * Flow (demo-first, master plan §3): /start → checklist keyboard →
+ * Flow (demo-first): /start → checklist keyboard →
  * Telegram check (getChatMember) → Arcus wallet submit → X proof-code →
  * statuses Pending → Telegram Verified → Arcus Submitted → X Verified → Beta Approved → Priority.
  *
@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
 }
 
 /**
- * Founder ops diagnostics/setup. Auth via `Authorization: Bearer <TELEGRAM_WEBHOOK_SECRET>`;
+ * Operator diagnostics/setup. Auth via `Authorization: Bearer <TELEGRAM_WEBHOOK_SECRET>`;
  * the action is a NON-secret query flag: `?action=info` or `?action=setup`.
  * Legacy `?info=<secret>` / `?setup=<secret>` → 401 migration error (secrets never ride URLs).
  *   curl -H "Authorization: Bearer $TELEGRAM_WEBHOOK_SECRET" "https://ryntra.io/api/telegram?action=info"

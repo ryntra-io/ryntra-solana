@@ -2,11 +2,11 @@
  * Admin business analytics — the owner's answer to one question:
  * *is anybody using the product, and is it becoming a business?*
  *
- * `RYN-ADMIN-BUSINESS-001`. Pure and client-safe: no clock, no store, no
- * `process.env`. Everything here is a projection over records the product
- * already keeps for its own reasons — the wallet action ledger, the cross-chain
- * order book, the rewards ledger, the referral graph and the wallet presence
- * index — so there is no second bookkeeping to drift from the first.
+ * Pure and client-safe: no clock, no store, no `process.env`. Everything here
+ * is a projection over records the product already keeps for its own reasons —
+ * the wallet action ledger, the cross-chain order book, the rewards ledger, the
+ * referral graph and the wallet presence index — so there is no second
+ * bookkeeping to drift from the first.
  *
  * ## The four rules every number here follows
  *
@@ -153,7 +153,7 @@ export type BusinessFeedItem = Readonly<{
 /**
  * One fee-bearing operation, every share of its fee named — the row the
  * owner reads when the question is *what did this one trade make* rather
- * than *what did the window make*. `RYN-ADMIN-FEEDBACK-LOOP-001`.
+ * than *what did the window make*.
  */
 export type BusinessFeeRow = Readonly<{
   at: string;
@@ -276,11 +276,10 @@ export type BusinessModel = Readonly<{
 
 /* --------------------------------------------------------------- valuation */
 
-/* The valuation rule itself lives in `lib/solana/action-value.ts` since
-   `RYN-PRE-HACKATHON-FOUNDATION-001`, where the Points ledger reads the same
-   one — a trade is worth the same dollars on the dashboard and in Points, so
-   there is no second bookkeeping to drift from the first. Re-exported under
-   the names this module has always had. */
+/* The valuation rule itself lives in `lib/solana/action-value.ts`, where the
+   Points ledger reads the same one — a trade is worth the same dollars on the
+   dashboard and in Points, so there is no second bookkeeping to drift from the
+   first. Re-exported under the names this module has always had. */
 export {
   ACTION_PAR_MINTS as BUSINESS_PAR_MINTS,
   ACTION_PAR_SYMBOLS as BUSINESS_PAR_SYMBOLS,

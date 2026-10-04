@@ -1,10 +1,10 @@
 /**
  * The one controlled operation the cross-swap lane may perform under `CANARY`.
  *
- * Owner instruction, 2026-09-09. Proving a new rail needs exactly one real
- * signed transaction, and the only way to build one used to be setting the
- * route `OPEN` — opening it for everyone, to any amount, in order to move five
- * dollars once. `CANARY` exists so that is no longer the trade.
+ * Proving a new rail needs exactly one real signed transaction, and the only
+ * way to build one used to be setting the route `OPEN` — opening it for
+ * everyone, to any amount, in order to move five dollars once. `CANARY`
+ * exists so that is no longer the trade.
  *
  * Everything below is **pinned by the owner and compared literally**. Not "at
  * most", not "of this kind": these exact values. Any deviation is refused with
@@ -28,8 +28,8 @@ export const CROSS_SWAP_CANARY_SOURCE_ENV = "RYNTRA_SOLANA_CROSS_SWAP_CANARY_SOU
 export const CROSS_SWAP_CANARY_DESTINATION_ENV = "RYNTRA_SOLANA_CROSS_SWAP_CANARY_DESTINATION";
 
 /**
- * The pinned operation. Owner-set 2026-09-09; changing any line is an owner
- * decision, not a refactor.
+ * The pinned operation, set by the owner on 2026-09-09; changing any line is
+ * an owner decision, not a refactor.
  */
 export const CROSS_SWAP_CANARY = {
   from: { network: "solana" as SwapNetwork, asset: "SOL", native: true },

@@ -1,4 +1,4 @@
--- PREPARED RYN-SLAB-002 forward correction.
+-- PREPARED Strategy Lab forward correction.
 -- Replaces only the append-run function: child versions cannot mint root runs,
 -- and UTC compile-window bounds no longer depend on the database/session TimeZone.
 

@@ -5,7 +5,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 /**
- * RWS panel-system contract (docs/archive/design-pre-reset-2026-08-18/workspace-system.md §11).
+ * RWS panel-system contract.
  *
  * The approved workspace spec is enforced the way the brand is: a test that
  * fails when a migrated surface drifts. Scope is the migrated set — it widens
@@ -41,7 +41,7 @@ test("migrated workspace CSS carries no hex color literals — tokens only", () 
     assert.deepEqual(
       hexes,
       [],
-      `${path} contains hex literals ${JSON.stringify(hexes)}; use the globals.css tokens (spec §4).`,
+      `${path} contains hex literals ${JSON.stringify(hexes)}; use the globals.css tokens.`,
     );
   }
 });
@@ -61,7 +61,7 @@ test("migrated workspace CSS never sets type below the 12px floor", () => {
     assert.deepEqual(
       offenders,
       [],
-      `${path} sets text below the 12px floor (spec §5): ${JSON.stringify(offenders)}`,
+      `${path} sets text below the 12px floor: ${JSON.stringify(offenders)}`,
     );
   }
 });
@@ -147,7 +147,7 @@ test("the shell aliases its palette into the one token authority", () => {
     for (const value of declarations) {
       assert.ok(
         value.startsWith("var("),
-        `shell.css declares ${name}: ${value} as a literal; alias it to a globals.css token (spec §4).`,
+        `shell.css declares ${name}: ${value} as a literal; alias it to a globals.css token.`,
       );
     }
   }
@@ -155,40 +155,40 @@ test("the shell aliases its palette into the one token authority", () => {
 
 test("the panel grid is the 12-column / 80px-row contract", () => {
   const css = read("app/shell/panel.css");
-  assert.match(css, /\.rw-grid\s*{[^}]*repeat\(12,/, "PanelGrid must keep 12 columns (spec §3)");
+  assert.match(css, /\.rw-grid\s*{[^}]*repeat\(12,/, "PanelGrid must keep 12 columns");
   assert.match(
     css,
     /\.rw-grid\s*{[^}]*grid-auto-rows:\s*var\(--rw-row\)/,
-    "PanelGrid must take its row unit from the --rw-row token (spec §3)",
+    "PanelGrid must take its row unit from the --rw-row token",
   );
   const globals = stripComments(read("app/globals.css"));
-  assert.match(globals, /--rw-row:\s*80px/, "the row unit token is 80px (spec §2)");
+  assert.match(globals, /--rw-row:\s*80px/, "the row unit token is 80px");
   /* Since the site ladder rung (2026-08-11) the legacy name projects from
      DESIGN.md; the 8px value the spec fixes now lives one hop away, and both
      hops are asserted so neither can drift silently. */
   assert.match(
     globals,
     /--radius-xs:\s*var\(--rt-radius-xs\)/,
-    "control radius token projects from DESIGN.md (spec §4)",
+    "control radius token projects from DESIGN.md",
   );
   assert.match(
     read("app/design/tokens.css"),
     /--rt-radius-xs:\s*8px/,
-    "the projection keeps the 8px control radius (spec §4)",
+    "the projection keeps the 8px control radius",
   );
 });
 
 test("panel anatomy: fixed header band and sentence-case 14px/600 title", () => {
   const css = read("app/shell/panel.css");
-  assert.match(css, /\.rw-h\s*{[^}]*flex:\s*0 0 4[02]px/, "panel header is a fixed band (spec §4)");
+  assert.match(css, /\.rw-h\s*{[^}]*flex:\s*0 0 4[02]px/, "panel header is a fixed band");
   assert.match(
     css,
     /\.rw-h h2\s*{[^}]*font-size:\s*var\(--fs-14\)/,
-    "panel title is 14px via the type scale (founder correction 5)",
+    "panel title is 14px via the type scale",
   );
   assert.ok(
     !/\.rw-h h2\s*{[^}]*text-transform:\s*uppercase/.test(css),
-    "panel titles are sentence case, never uppercase (founder correction 5)",
+    "panel titles are sentence case, never uppercase",
   );
 });
 
@@ -214,7 +214,7 @@ test("panel and scrollport expose valid, non-duplicate accessibility semantics",
 
 test("the panel neutralises the landing-page section padding", () => {
   /*
-   * The regression for the defect that shipped the first pass to the founder.
+   * The regression for the defect that shipped in the first pass.
    *
    * `globals.css` sets `section { padding: 78px 0 }` for landing rhythm, and
    * `<Panel>` renders a `<section>`. Without an explicit reset the header was
@@ -307,7 +307,7 @@ test("no CSS-module section inherits the landing-page padding", () => {
 
 test("panels draw no settings control of their own", () => {
   /*
-   * Founder direction on the rendered screen: the per-panel `⋮` menu was
+   * Seen on the rendered screen, the per-panel `⋮` menu was
    * incomprehensible and is off until the surface itself is good. The
    * mechanism stays — panels still register as widgets and per-panel prefs are
    * still read — but the panel renders no control.

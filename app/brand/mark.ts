@@ -1,19 +1,19 @@
 /**
  * The canonical Ryntra mark — the single source of the geometry.
  *
- * Brand Canon v1.0 (Owner, 2026-09-11, `LOGO/Брендбук2/Палітра.txt` §13) with
- * the Owner's masters of 2026-09-13: the master symbol is the orange R, and
- * its geometry never changes by hand — proportions, the arrow, the inner
- * notch, the top bar, the slant of the leg, the negative space are the
- * Owner's. Only the material treatment changes with the task: flat for small
- * UI, the master's own ramp for branding, monochrome for print.
+ * The brand palette (2026-09-11, `LOGO/Брендбук2/Палітра.txt`) with the
+ * masters of 2026-09-13: the master symbol is the orange R, and its geometry
+ * never changes by hand — proportions, the arrow, the inner notch, the top
+ * bar, the slant of the leg, the negative space are the master's. Only the
+ * material treatment changes with the task: flat for small UI, the master's
+ * own ramp for branding, monochrome for print.
  *
  * The geometry is *measured*, not drawn: `scripts/render-brand-assets.mjs`
  * traces the flat standalone master (`Лого.png`, a transparent PNG) on its
  * 50%-alpha line and fits the ramp across the letter's interior, and writes
  * `./generated/mark-geometry.ts`. This module re-exports that measurement
  * and derives the few values consumers need from it. The mark was once
- * measured from a tile master the Owner later replaced, and the share card,
+ * measured from a tile master that was later replaced, and the share card,
  * the favicon and the phone bar carried a different letter from the header
  * for two days; re-tracing from the current master on every render is what
  * keeps that from happening again.
@@ -53,13 +53,12 @@ export const RYNTRA_GRADIENT = {
 } as const;
 
 /**
- * Core brand palette — Brand Canon v1.0, Owner-fixed 2026-09-11
- * (`LOGO/Брендбук2/Палітра.txt`).
+ * Core brand palette — fixed 2026-09-11 (`LOGO/Брендбук2/Палітра.txt`).
  *
  * Orange is the brand; graphite with a navy undertone is the dark ground;
  * cool neutral white is the light ground. The older names (`navy`, `heat`,
  * `sand`, `ink`, `blue`, `cyan`, `white`, `paper`) stay as call-site aliases
- * so no consumer breaks; every one resolves to a canon value.
+ * so no consumer breaks; every one resolves to a brand value.
  */
 export const RYNTRA_COLORS = {
   /** brand — the mark, the primary action, the selected state. */

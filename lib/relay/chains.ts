@@ -1,5 +1,5 @@
 /**
- * How Relay names the chains this product already names — `RYN-SOL-MONEY-FLOWS-001H`.
+ * How Relay names the chains this product already names.
  *
  * Relay identifies every chain by a number, including Solana, which it gives
  * the synthetic id 792703809 because Solana has no EIP-155 chain id. That

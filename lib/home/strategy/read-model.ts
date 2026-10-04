@@ -21,11 +21,11 @@ import { STRATEGY_STATE_LABEL, materialDiff, type StrategyState } from "./lifecy
  * carries `quality`, `verdict` and a numeric `score`. Those are meaningful
  * inside the lab, where they describe *evidence completeness* against a fixed
  * rubric. Carried onto a Home surface beside a portfolio they would read as a
- * judgement about the strategy, which is exactly the universal score frozen
- * decision 20 refuses. Home shows which requirements are satisfied and which
+ * judgement about the strategy, which is exactly the universal score the
+ * product refuses. Home shows which requirements are satisfied and which
  * are not, and lets the reader do the judging.
  *
- * **A version that changed no rule is shown as one.** The canon's rule is that
+ * **A version that changed no rule is shown as one.** The versioning rule is that
  * a material change creates a new version; the readable consequence is that a
  * version which changed nothing material is a rename, and saying so is what
  * stops a version list from reading as a history of rule changes when half of

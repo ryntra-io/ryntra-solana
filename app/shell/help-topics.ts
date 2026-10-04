@@ -1,8 +1,8 @@
 import type { WorkspaceLocale } from "./locale";
 
 /**
- * What the product's `?` says, in both languages — the Owner's decision of
- * 2026-09-15 (Premium Product UI Pass §3): one help primitive, one shape of
+ * What the product's `?` says, in both languages:
+ * one help primitive, one shape of
  * text. Every topic is *what it is* in one or two plain sentences, a simple
  * example with real-looking figures, and the one limitation a person must
  * know. No formula by default; the size module's arithmetic lives in
@@ -29,7 +29,7 @@ export type HelpTopic = Readonly<{
 }>;
 
 export const HELP_TOPICS = {
-  /* What a person actually buys — one label per issuer from the issuer's own documents, the line behind it one press deeper (canon v5.0 §7). No asset here is "a real share". */
+  /* What a person actually buys — one label per issuer from the issuer's own documents, the line behind it one press deeper. No asset here is "a real share". */
   truthXStocks: {
     title: bi("Backed tracker", "Трекер із забезпеченням"),
     short: bi("Tracks the share price. A custodian holds the share. No voting.", "Відстежує ціну акції. Акцію тримає кастодіан. Голосу немає."),
@@ -73,7 +73,7 @@ export const HELP_TOPICS = {
     example: [bi("The company is not listed: the token's price is what the pool pays, not a stock-exchange price.", "Компанія не на біржі: ціна токена — те, що платить пул, а не біржова ціна.")],
     important: bi("A full loss is possible and liquidity is not guaranteed. Not for U.S. persons.", "Можлива повна втрата, ліквідність не гарантована. Не для осіб із США."),
   },
-  /* The warning a purchase with a loss limit stands on, in full one press deep (canon v5.0 §5.4). */
+  /* The warning a purchase with a loss limit stands on, in full one press deep. */
   lossLimitWarning: {
     title: bi("Before you sign", "Перед підписом"),
     short: bi("Ryntra is an AI assistant, not an adviser. You can lose part or all of the money.", "Ryntra — ШІ-помічник, не радник. Можна втратити частину або всі гроші."),
@@ -263,7 +263,7 @@ export const HELP_TOPICS = {
     example: [bi("Order $1,000 into a $1.8M pool → a small price move. The same order into a $60K pool → a large one.", "Ордер $1 000 у пул $1,8M → малий зсув ціни. Той самий ордер у пул $60K → великий.")],
     important: bi("The venue's figure at the time of the list; it changes with every trade.", "Цифра майданчика на момент списку; змінюється з кожною угодою."),
   },
-  /* Where the stock page's Meteora figures come from — the note that used to sit under the liquidity card (RYN-FIRST-SCREEN-001, S4). */
+  /* Where the stock page's Meteora figures come from — the note that used to sit under the liquidity card. */
   meteoraPools: {
     title: bi("Where it trades on Meteora", "Де торгується на Meteora"),
     short: bi("Meteora's own figures for the pools that hold this token, as of the time shown.", "Власні цифри Meteora про пули з цим токеном — на вказаний час."),
@@ -354,7 +354,7 @@ export const HELP_TOPICS = {
     example: [bi("v1 planned risk $100 → v2 planned risk $0.50 for a first live check.", "v1 плановий ризик $100 → v2 плановий ризик $0,50 для першої живої перевірки.")],
     important: bi("A trade under an older version is refused; the Review checks the version you are on.", "Угода за старішою версією відхиляється; Review перевіряє версію, на якій ти стоїш."),
   },
-  /* The evidence — an external source's observations of the token, and the person's own rule on them (RYN-NANSEN-EVIDENCE-001). */
+  /* The evidence — an external source's observations of the token, and the person's own rule on them. */
   onchainActivity: {
     title: bi("Onchain activity", "Активність у мережі"),
     short: bi("What the market did with this token in the window — trades and movements, from an external source.", "Що ринок робив із цим токеном за вікно — угоди й переміщення, із зовнішнього джерела."),
@@ -385,7 +385,7 @@ export const HELP_TOPICS = {
     example: [bi("Require: 24h DEX trading volume at least $250,000 — a day with $180,000 blocks the order; a day the source cannot answer blocks it too.", "Вимагати: обсяг торгів на DEX за 24 год не менше ніж $250 000 — день із $180 000 блокує заявку; день, коли джерело не відповідає, теж блокує.")],
     important: bi("A met condition says the rule held at that moment — not that the trade is safe or the price fair. Movements of labelled groups can only warn, never require.", "Виконана умова означає, що правило трималося в ту мить — не що угода безпечна чи ціна справедлива. Рухи позначених груп можуть лише попереджати, ніколи не вимагати."),
   },
-  /* The token's structure and the recipient check — the security and due-diligence source (RYN-DDXYZ-RISK-001). */
+  /* The token's structure and the recipient check — the security and due-diligence source. */
   riskDueDiligence: {
     title: bi("Risk & due diligence", "Ризик і перевірка"),
     short: bi("How the token is built, from an external security source: who holds it, whether its supply can still change, whether it taxes transfers.", "Як збудований токен, із зовнішнього джерела безпеки: хто його тримає, чи може ще змінитися пропозиція, чи бере він податок із переказів."),
@@ -444,8 +444,8 @@ export type HelpTopicId = keyof typeof HELP_TOPICS;
  * A rate a topic names is the token's own, read from the chain and formatted
  * by the page that draws it — the same text as the fact beside it — never a
  * figure typed here. `{fee}` marks where it stands: the PreStocks line said
- * «1% today» while the issuer set 3 % on seven of its tokens from epoch 1043
- * (the Owner's word of 2026-09-26, `RYN-SITE-NOW-001`). Without a reading the
+ * «1% today» while the issuer set 3 % on seven of its tokens from epoch
+ * 1043. Without a reading the
  * sentence names no rate at all.
  */
 export type HelpFacts = Readonly<{ fee?: string | null }>;

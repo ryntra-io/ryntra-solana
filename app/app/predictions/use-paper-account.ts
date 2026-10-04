@@ -10,8 +10,8 @@ import type { WatchEntry } from "@/lib/predictions/watchlist";
 import { bytesToBase64, signMessageWithWallet } from "@/lib/solana/wallet-signin.client";
 
 /**
- * The paper account as the browser sees it (`RYN-PREDICTIONS-001`): one read
- * of `/api/predictions/account`, the link flow (the server's message → one
+ * The paper account as the browser sees it: one read of
+ * `/api/predictions/account`, the link flow (the server's message → one
  * wallet signature → the server's verify), the revoke, and a re-read on
  * demand. The browser never sees a provider token: the answer is a link
  * state and the account's figures.

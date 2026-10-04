@@ -1,7 +1,6 @@
 /**
- * A payment link as the v1 contract serves it (contract 1.22.0,
- * `RYN-MOBILE-MONEY-API-001`) — the phone's view of what the web's «Отримати»
- * creates and `/pay/<id>` shows.
+ * A payment link as the v1 contract serves it (contract 1.22.0) — the phone's
+ * view of what the web's «Отримати» creates and `/pay/<id>` shows.
  *
  * It is the payer page's own projection (`projectPublicPaymentRequest`) plus
  * the two addresses a client shares — the link a person opens and the Solana

@@ -8,10 +8,10 @@ export const dynamic = "force-dynamic";
 /**
  * Whether the Robinhood Trading MCP answers Ryntra's own egress.
  *
- * `RYN-RHC-001` closed with this exact unknown recorded in `docs/STATE.md`: the
+ * An earlier check closed with this exact unknown on record: the
  * development machine receives a regional `403` from `api.robinhood.com`, the surfaces that would have shown the deployment's
  * answer are account-gated, and so nobody had measured whether Vercel's egress
- * gets a different one. `RYN-RH-MCP-001` found the same refusal on
+ * gets a different one. A later check found the same refusal on
  * `agent.robinhood.com` — the transport and both OAuth discovery documents alike
  * — and this route is how the second half of that question gets an answer that is
  * measured rather than assumed.
@@ -19,7 +19,7 @@ export const dynamic = "force-dynamic";
  * **It reads nothing from the request.** The three URLs are module constants in
  * `lib/robinhood-mcp/reachability.ts`; there is no host, path, header or query
  * parameter a caller can supply. That is the property every write schema in
- * `RYN-AGENT-CONTROL-013` holds, applied to the one outbound call this packet
+ * the agent-control layer holds, applied to the one outbound call this route
  * makes, and it is what keeps a public reachability record from becoming an open
  * relay for whoever finds it.
  *

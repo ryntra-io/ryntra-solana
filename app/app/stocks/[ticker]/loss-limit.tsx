@@ -20,8 +20,7 @@ import styles from "../stocks.module.css";
 import { announceBuyActions } from "./buy-actions";
 
 /**
- * The purchase with a loss limit on the buy card — the loop made visible
- * (canon v5.0 §1, §4, §5.2; RYN-FIRST-SCREEN-001, S3):
+ * The purchase with a loss limit on the buy card — the loop made visible:
  *
  * - **Намір · intent** — the person's amount on the card and one preset;
  * - **Межі · limits** — the published rules (`lib/plans/purchase.ts`) turn

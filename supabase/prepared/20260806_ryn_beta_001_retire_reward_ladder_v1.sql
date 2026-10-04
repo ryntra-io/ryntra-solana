@@ -1,4 +1,4 @@
--- RYN-BETA-001 · prepared, NOT APPLIED to production.
+-- Reward ladder retirement · prepared, NOT APPLIED to production.
 --
 -- Retires the reward ladder at its source.
 --

@@ -1,4 +1,4 @@
-/* Mock ExecutionIntent preflight for the Robinhood Trading MCP (RYN-RH-MCP-001).
+/* Mock ExecutionIntent preflight for the Robinhood Trading MCP.
 
    This module decides and does not act. There is no client, no endpoint, no
    credential and no dispatch function in this file — `dispatch` is a constant
@@ -70,7 +70,7 @@ export type IntentDecision = {
 };
 
 export const DISPATCH_IS_NOT_IMPLEMENTED =
-  "Dispatch is not implemented: RYN-RH-MCP-001 is read-only discovery and sends nothing to Robinhood.";
+  "Dispatch is not implemented: this package is read-only discovery and sends nothing to Robinhood.";
 
 const KNOWN_EFFECTS: readonly IntentEffect[] = [
   "OBSERVE_LOCAL",
@@ -115,7 +115,7 @@ export function evaluateMockIntent(
   const reachesProvider = effect !== "OBSERVE_LOCAL";
   const writes = effect === "WRITE_NO_ASSET" || effect === "WRITE_ORDER";
 
-  /* The door. Checked first because it is the fact this packet measured, and
+  /* The door. Checked first because it is the fact a live probe measured, and
      stated in the provider's terms rather than as a generic failure. */
   if (reachesProvider && context.reachability !== "REACHABLE") {
     reasons.push({

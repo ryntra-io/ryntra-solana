@@ -10,8 +10,8 @@
  * and no cookie jar; it carries the session itself (`Authorization: Bearer`,
  * `lib/auth/native-session.ts`), and a bearer is not ambient — a browser never
  * attaches one on its own — so a request carrying one needs no origin check.
- * This is the rule the watchlist and the private reads already follow
- * (contract §3a); the mobile line's request 13 brings it to the swap routes.
+ * This is the rule the watchlist and the private reads already follow; the
+ * phone app's request brings it to the swap routes.
  *
  * The bearer's wallet is then the only wallet the route acts for: the taker
  * of an order, the taker of a signed bundle, the owner of a Review or of a

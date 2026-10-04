@@ -1,5 +1,5 @@
 /**
- * Building the exact transaction the founder's wallet will be asked to sign.
+ * Building the exact transaction the sender's wallet will be asked to sign.
  *
  * **This module is deliberately outside the public evidence kit.** The kit
  * reads; this writes, and `packages/solana-evidence-sdk/boundaries.test.mjs`
@@ -19,7 +19,7 @@
  *
  * **Nothing here holds or wants a key.** The fee payer enters as a noop signer
  * — an address with no signing ability — so the compiled transaction carries an
- * empty signature slot that only the founder's wallet can fill. There is no
+ * empty signature slot that only the sender's wallet can fill. There is no
  * code path in this repository that produces a Solana signature.
  */
 
@@ -157,7 +157,7 @@ export type WalletAugmentationPlan = Readonly<{
 }>;
 
 export type TransferPlan = Readonly<{
-  /** Canon §10.3. Set at build time so a later reader cannot re-derive a different case. */
+  /** The Send action type. Set at build time so a later reader cannot re-derive a different case. */
   actionKind: SendActionKind;
   network: SplTransferInput["network"];
   mint: string;
@@ -202,7 +202,7 @@ export type TransferPlan = Readonly<{
   senderBalanceRaw: string;
   /** Base signature fee returned by getFeeForMessage for these exact message bytes. */
   baseFeeLamports: string;
-  /** M0C adds no compute-unit-price instruction, so this is exactly zero. */
+  /** The built message adds no compute-unit-price instruction, so this is exactly zero. */
   priorityFeeLamports: string;
   /** Present only after the server adopts and re-reviews a bounded wallet modification. */
   walletAugmentation?: WalletAugmentationPlan;
@@ -418,11 +418,11 @@ export async function buildTransferTransaction(args: {
   memo?: string | null;
   now?: Date;
   /**
-   * Solana Pay reference keys (RYN-PAY-REQUEST-001): read-only, non-signer
-   * accounts appended to the last transfer leg so the transaction that paid
-   * one request is findable by `getSignaturesForAddress(reference)`. The token
-   * program ignores trailing accounts it does not name; nothing moves through
-   * them. Omitted by every Send caller, whose bytes are therefore unchanged.
+   * Solana Pay reference keys: read-only, non-signer accounts appended to the
+   * last transfer leg so the transaction that paid one request is findable by
+   * `getSignaturesForAddress(reference)`. The token program ignores trailing
+   * accounts it does not name; nothing moves through them. Omitted by every
+   * Send caller, whose bytes are therefore unchanged.
    */
   references?: readonly string[];
 }): Promise<TransferBuildResult> {

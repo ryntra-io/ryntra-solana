@@ -11,12 +11,12 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 /**
- * Strategy memory for the proven wallet (1.9.0, `RYN-RESULTS-MEMORY-001`):
- * what the product remembers about how this person decides, as facts over
- * the records they already own — the plans written on an asset, the Reviews
- * judged, the rule that refused every one of them, how an actual entry stood
- * against the planned one, a position still open, an exit against the rules
- * that existed before it, and what Monitoring wrote.
+ * Strategy memory for the proven wallet (1.9.0): what the product remembers
+ * about how this person decides, as facts over the records they already own —
+ * the plans written on an asset, the Reviews judged, the rule that refused
+ * every one of them, how an actual entry stood against the planned one, a
+ * position still open, an exit against the rules that existed before it, and
+ * what Monitoring wrote.
  *
  * Every fact is derived at read time and cites the plan, the version, the
  * Review, the signature or the note it stands on, so nothing here can drift

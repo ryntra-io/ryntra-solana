@@ -23,8 +23,8 @@ import { reconcile, type Reconciliation } from "./reconcile.ts";
  * claim to check, never as a source.
  *
  * **What this receipt deliberately does not contain.** There is no strategy
- * version, no policy version and no route plan, because `RYN-STELLAR-005` and
- * `RYN-STELLAR-006` are not built. They appear as `null` with a reason rather
+ * version, no policy version and no route plan, because the strategy and
+ * policy layers are not built. They appear as `null` with a reason rather
  * than being omitted: a field that is absent looks like an oversight, and a
  * field that is absent from a receipt looks like something removed.
  */
@@ -165,7 +165,7 @@ export async function finalizeReceipt(input: FinalizeInput): Promise<StellarLife
       policyDecision: null,
       routePlanHash: null,
       reason:
-        "This lifecycle ran without strategy, policy or route evidence. Those layers are registered as RYN-STELLAR-005 and RYN-STELLAR-006 and are not built, so no decision was evaluated and none is claimed here.",
+        "This lifecycle ran without strategy, policy or route evidence. Those layers are not built, so no decision was evaluated and none is claimed here.",
     },
     authorization: {
       hash: authorizationHash,

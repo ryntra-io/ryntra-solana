@@ -1,7 +1,6 @@
 /**
- * The monitoring tick's autoinvest step (`RYN-INVEST-SIMPLE-001`, sessions
- * 3–4; canon v5.1 §4.1, §11 «Час покупки за правилом» · «Пропущено» ·
- * «Бюджет вичерпано»).
+ * The monitoring tick's autoinvest step («Час покупки за правилом» ·
+ * «Пропущено» · «Бюджет вичерпано»).
  *
  * Every five minutes, for every rule of every wallet: an occurrence that
  * History shows settled is marked bought; one whose day passed with no
@@ -18,18 +17,18 @@
  * and ceiling — says the budget is spent and the rules stand until the 1st.
  * A spend nobody could read opens nothing on this pass; the next one decides.
  *
- * A rule with a price condition (1.18.0, canon v5.5 В37) judges it when it
- * falls due, on the facts the company's page reads: not met, or the data not
- * fresh, and the purchase is deferred — one note in the inbox, the bell and
- * Home's notifications say why, with the figure and the data's time — and
- * every pass judges it again while the occurrence is open.
+ * A rule with a price condition (1.18.0) judges it when it falls due, on the
+ * facts the company's page reads: not met, or the data not fresh, and the
+ * purchase is deferred — one note in the inbox, the bell and Home's
+ * notifications say why, with the figure and the data's time — and every
+ * pass judges it again while the occurrence is open.
  *
- * A «З кожної оплати» rule (1.19.0, canon v5.5 В38) reads its wallet's watch:
- * once per wallet and pass, while one of its rules of that kind is on, the
- * transactions that touched the wallet's USDC since the last read are read and
- * numbered (`./payment-watch.ts`), and each rule takes its share of the new
- * events; a sum that reached the rule's minimum opens one reminder on exactly
- * that sum — «З оплат: $1,30 → Apple».
+ * A «З кожної оплати» rule (1.19.0) reads its wallet's watch: once per wallet
+ * and pass, while one of its rules of that kind is on, the transactions that
+ * touched the wallet's USDC since the last read are read and numbered
+ * (`./payment-watch.ts`), and each rule takes its share of the new events; a
+ * sum that reached the rule's minimum opens one reminder on exactly that sum
+ * — «З оплат: $1,30 → Apple».
  *
  * The note opens a fresh Review on the rule's sum; it is never permission to
  * trade, and nothing here reads a quote, builds an order or touches a wallet.
@@ -282,7 +281,7 @@ export async function tickAutoinvest(store: GuardStore, nowMs: number, deps: Tic
     }
     let heldHere = false;
     for (const listed of list) {
-      /* A rule on a token Ryntra no longer supports (canon v5.2 В26) is history: it opens nothing and reminds of nothing. */
+      /* A rule on a token Ryntra no longer supports is history: it opens nothing and reminds of nothing. */
       if (isRetiredMint(listed.asset.mint)) continue;
       try {
         await withBoundedCasRetry(async () => {

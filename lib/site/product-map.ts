@@ -8,18 +8,18 @@ import type { PublicLocale } from "./locale.ts";
 /**
  * The public Product Map, projected from the capability registry.
  *
- * Working navigation and this are different questions, and the owner decision
- * of 2026-09-04 says so in one line: *working app navigation is only usable
- * routes; the Product Map is the whole accepted direction.* The rail throws
- * rather than render a destination with no page; this page exists precisely to
- * describe the things that have no page yet, so that removing them from the
- * rail did not remove them from the product.
+ * Working navigation and this are different questions, and the product's rule
+ * says so in one line: *working app navigation is only usable routes; the
+ * Product Map is the whole accepted direction.* The rail throws rather than
+ * render a destination with no page; this page exists precisely to describe
+ * the things that have no page yet, so that removing them from the rail did
+ * not remove them from the product.
  *
  * ## It is projected, never written
  *
- * Canon §0.7 names a hand-written list beside the registry as the root cause of
- * the `Soon` defect — rows that looked like product somebody forgot to finish.
- * A hand-written *public* list is the same defect with a larger audience, so
+ * A hand-written list beside the registry was the root cause of the `Soon`
+ * defect — rows that looked like product somebody forgot to finish. A
+ * hand-written *public* list is the same defect with a larger audience, so
  * every card here comes from `SOLANA_MODULES` and nothing may be added to this
  * file to make the map look fuller.
  *
@@ -27,12 +27,12 @@ import type { PublicLocale } from "./locale.ts";
  *
  * The registry carries four independent axes — environment, mode, maturity and
  * `lastVerifiedAt`. A reader with no registry needs one word, so maturity is
- * projected onto the vocabulary the owner settled. This is a **presentation**
+ * projected onto the vocabulary the product settled. This is a **presentation**
  * of the internal axes and never a second operational status system: nothing
  * reads these words back, and changing one changes what a visitor sees and
  * nothing else.
  *
- * `RESEARCH` is in the vocabulary because the owner named it and because the
+ * `RESEARCH` is in the vocabulary because it was chosen for it and because the
  * ecosystem manifest has a `research` state, and it is **absent from the
  * derivation on purpose**: no Solana capability is in it today, and emitting a
  * word nothing maps to would be a label looking for a meaning.
@@ -86,9 +86,9 @@ export type ProductMapEntry = Readonly<{
  * now, then what is being built, then what is accepted and not started.
  *
  * Deliberately absent from every card: the registry's `gate`, `exists` and
- * `missing` fields. `gate` carries task ids like `RYN-SOL-M4` — canon §0.5
- * keeps internal vocabulary off customer surfaces, and a public page is the
- * most customer-facing surface there is.
+ * `missing` fields. `gate` carries internal task ids; internal vocabulary
+ * stays off customer surfaces, and a public page is the most customer-facing
+ * surface there is.
  */
 const ORDER: readonly ProductMapLabel[] = ["AVAILABLE", "LIMITED", "BUILDING", "PLANNED", "PARKED", "RESEARCH"];
 
@@ -112,9 +112,9 @@ const PUBLIC_DETAILS: Readonly<Record<string, Readonly<Record<PublicLocale, { na
     en: { name: "SDK & MCP", blurb: "Use documented Solana SDK and MCP interfaces in your own application.", href: "/docs" },
     uk: { name: "SDK та MCP", blurb: "Використовуйте документовані інтерфейси Solana SDK та MCP у власному застосунку.", href: "/docs" },
   },
-  /* The two TRADE pages the Owner's structure decision of 2026-09-11 names on
-     the map: Spot, live, and Predictions, visible and locked. Customer paths,
-     because the registry's own route field predates the one-product shell. */
+  /* The two TRADE pages the product's structure names on the map: Spot, live,
+     and Predictions, visible and locked. Customer paths, because the
+     registry's own route field predates the one-product shell. */
   spot: {
     en: { name: "Spot", blurb: "Find an asset, see its real price and chart, and buy or sell it with your own signature.", href: "/app/spot" },
     uk: { name: "Спот", blurb: "Знайдіть актив, побачте його справжню ціну й графік, купіть або продайте його власним підписом.", href: "/app/spot" },

@@ -27,8 +27,8 @@ export function homepageModel(
     const route = routes.find((entry) => entry.id === id);
     return route ? FROM_ROUTE[route.readiness] ?? "UNAVAILABLE" : "UNAVAILABLE";
   };
-  /* Markets and «Автоінвест» are the menu's own destinations (canon v5.4 В30),
-     not pages of the route registry: drawn in the menu means open. */
+  /* Markets and «Автоінвест» are the menu's own destinations, not pages of
+     the route registry: drawn in the menu means open. */
   const destination = (id: (typeof MENU_DESTINATION_IDS)[number]): HomepageStatus =>
     (MENU_DESTINATION_IDS as readonly string[]).includes(id) ? "AVAILABLE" : "UNAVAILABLE";
   const swap = status("swap");
@@ -42,7 +42,7 @@ export function homepageModel(
       { id: "rwa", status: tokenized },
       { id: "stables", status: supported },
     ] as readonly Readonly<{ id: HomepageAssetId; status: HomepageStatus }>[],
-    /* Swap first because it is the one that works; the rest follow the canon's
+    /* Swap first because it is the one that works; the rest follow the product's
        own Trade order. Each status is read from the route registry, never
        written here — a marketing table that outranks the registry is exactly
        how a planned surface starts reading as a shipped one. */
@@ -51,11 +51,11 @@ export function homepageModel(
        storyline: a reader asking "what else is already there?" gets an answer
        without the page growing another section. */
     workspace: (["portfolio", "send", "receive", "activity"] as const).map((id) => ({ id, status: status(id) })),
-    /* The hero's four ways in (canon v5.5): a company from $1 and the private
-       companies open on the company pages (the `stocks` route family), the
-       rules on «Автоінвест», the fee back on Rewards. The strip shows a status
-       only when a page is not available, so a building surface can never
-       stand in the hero as a shipped one. */
+    /* The hero's four ways in: a company from $1 and the private companies
+       open on the company pages (the `stocks` route family), the rules on
+       «Автоінвест», the fee back on Rewards. The strip shows a status only
+       when a page is not available, so a building surface can never stand in
+       the hero as a shipped one. */
     hero: [
       { id: "invest", status: destination("markets") === "AVAILABLE" ? status("stocks") : "UNAVAILABLE" },
       { id: "autoinvest", status: destination("autoinvest") },

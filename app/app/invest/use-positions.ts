@@ -8,7 +8,7 @@ import type { PositionsResponse, PositionWatchView } from "@/lib/api/v1/contract
 
 /**
  * Нагляд over the wallet's positions, read once for the page
- * (`RYN-PROTECT-SIGNAL-001`; `GET /api/v1/positions`, contract 1.21.0): the
+ * (`GET /api/v1/positions`, contract 1.21.0): the
  * company page, Portfolio and Нагляд read the same answer, so a position never
  * says one state in one place and another in the next. Behind the wallet's
  * proof — a position's exit is the wallet's own record — and kept per wallet;

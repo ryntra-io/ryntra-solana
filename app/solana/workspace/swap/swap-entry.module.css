@@ -8,10 +8,10 @@
  * It is not a second call to action. The card's own button is the action on this
  * page and the action colour appears exactly once on a surface (Brandbook v1.2),
  * so this sits on `--rt-ink-low` with an underline that says "link" without
- * competing for the press. Owner instruction 2026-09-10: *«А не так: користувач
- * думав, що робить Solana Swap, а наш router тихо почав cross-chain операцію»* —
- * the way to another network is a door the person opens, never one that opens
- * under them.
+ * competing for the press. A person who thinks they are making a Solana Swap
+ * must never find that the router has quietly started a cross-chain operation
+ * — the way to another network is a door the person opens, never one that
+ * opens under them.
  */
 
 .out {

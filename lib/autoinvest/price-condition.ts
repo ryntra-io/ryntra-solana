@@ -1,7 +1,6 @@
 /**
  * «Умова ціни» — a rule buys only when the price is not above its reference
- * by more than the person's limit and the data are fresh (canon v5.5 В37,
- * §4.1, §11; `RYN-PRICE-GUARD-001`).
+ * by more than the person's limit and the data are fresh.
  *
  * **The reference** is the one Ryntra already reads for the company: for a
  * private company, PreStocks' own valuation of one token (`issuerMark`,
@@ -18,7 +17,7 @@
  * **Fresh or nothing.** The price and the reference each carry the time they
  * stand for; either older than `PRICE_CONDITION_MAX_AGE_MS`, a copy the
  * source itself calls stale, or a figure that is missing makes the rule wait
- * — an unknown is never a pass (B.11). The data's time is the older of the
+ * — an unknown is never a pass. The data's time is the older of the
  * two: the facts are only as new as their oldest part.
  *
  * Pure and client-safe: the rule's tick, the order route and the company
@@ -230,9 +229,9 @@ export function standingWords(check: Pick<PriceCheck, "deviationPct" | "referenc
 export type DeferralWords = Readonly<Record<RuleLocale, Readonly<{ title: string; reason: string; cta: string }>>>;
 
 /**
- * «Купівлю відкладено» — the reason, the figure and the data's time (canon
- * §4.1, §11): «Купівлю відкладено: OpenAI на 30 % дорожча за оцінку PreStocks
- * (твій ліміт 5 %)»; the rule checks again; the one action is to look.
+ * «Купівлю відкладено» — the reason, the figure and the data's time:
+ * «Купівлю відкладено: OpenAI на 30 % дорожча за оцінку PreStocks (твій
+ * ліміт 5 %)»; the rule checks again; the one action is to look.
  */
 export function deferralWords(input: Readonly<{ name: string; check: PriceCheck; timeZone: string; nowMs: number }>): DeferralWords {
   const { name, check } = input;

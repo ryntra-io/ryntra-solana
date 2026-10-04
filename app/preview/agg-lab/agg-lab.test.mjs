@@ -4,10 +4,10 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 /*
- * The AGG product lab (`RYN-AGG-LAB-001`) is an internal decision surface.
- * These are the properties that make it one, pinned so that a later edit
- * cannot quietly turn it into a product page, a live trading surface or a
- * leak of the server key.
+ * The AGG product lab is an internal decision surface. These are the
+ * properties that make it one, pinned so that a later edit cannot quietly
+ * turn it into a product page, a live trading surface or a leak of the
+ * server key.
  */
 
 const LAB = new URL(".", import.meta.url);

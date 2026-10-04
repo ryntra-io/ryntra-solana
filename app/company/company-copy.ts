@@ -1,16 +1,14 @@
 import { FEES, FEES_UK, REWARDS } from "../docs/content/facts.ts";
 
 /**
- * «Про Ryntra» — the words of `/company`, English and Ukrainian together (the
- * new site of canon v5.5, `RYN-SITE-V5-001` subtask 3; the plan's §3 for the
- * title and the description).
+ * «Про Ryntra» — the words of `/company`, English and Ukrainian together.
  *
  * What the page may say is what production does today: a company from $1,
  * «Автоінвест», what you buy in the issuer's words, Ryntra the AI assistant —
  * and the rules and the one fee behind them, every rate read from the policy
- * the product charges with. No roadmap (canon §0.0 rule 10, В40 keeps
- * «Будуємо · Далі» on the landing only), no team the company does not have,
- * no partner it has not signed, no word from canon §5.5.
+ * the product charges with. No roadmap («Будуємо · Далі» stays on the
+ * landing only), no team the company does not have,
+ * no partner it has not signed, no internal vocabulary.
  */
 
 export type CompanyLocale = "en" | "uk";

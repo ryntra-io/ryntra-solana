@@ -10,8 +10,8 @@ import type { ActionPassportPreview } from "./contracts";
  * truth that drifts. This module reads the artifact and answers the questions a
  * screen asks; it invents nothing and it stores nothing.
  *
- * That is the canon's own arrangement (v5.2 §3): one immutable envelope, and
- * the Passport and the Receipt as projections of it. What was missing was the
+ * That is the product's own arrangement: one immutable envelope, and the
+ * Passport and the Receipt as projections of it. What was missing was the
  * projection a *workspace* needs — stage by stage, with the responsible party
  * and the limitation attached to each — so Simple, Pro, the Actions list and
  * the Inspector stop being four independent readings of the same artifact.

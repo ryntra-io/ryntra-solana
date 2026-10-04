@@ -12,7 +12,7 @@ import styles from "./feedback.module.css";
 /**
  * Feedback, where the people are.
  *
- * `RYN-ADMIN-FEEDBACK-LOOP-001`. A row in the rail's foot, beside Settings, on
+ * A row in the rail's foot, beside Settings, on
  * every page of the cabinet and in the phone's More drawer, opening one small
  * dialog: what kind of message, the message, a way to reach the person if
  * they want one. The page it was written from and the connected wallet travel

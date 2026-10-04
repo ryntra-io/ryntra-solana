@@ -1,6 +1,6 @@
--- RYN-ADMIN-001 Admin Control Center wave 1.
+-- Admin Control Center, first stage.
 -- APPLIED to production project lbphobwqzwdkbmyedlwb via SQL Editor on
--- 2026-08-29 by the founder. Result: Success. No rows returned.
+-- 2026-08-29. Result: Success. No rows returned.
 -- Live RPC probe the same day: admin_operator_status kind=none
 -- operator_count=0; audit/access lists empty; wrong secret denied.
 --

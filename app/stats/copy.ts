@@ -3,9 +3,9 @@
  *
  * Every sentence states a fact the page can back or names a limit; nothing
  * here promises, estimates or persuades. Internal vocabulary — task ids,
- * canon, gates — never appears: a test pins it. The page is an operations
- * dashboard first: figures, filters and the feed carry it; how the counting
- * works sits behind one disclosure at the end.
+ * specification references, gates — never appears: a test pins it. The page
+ * is an operations dashboard first: figures, filters and the feed carry it;
+ * how the counting works sits behind one disclosure at the end.
  */
 
 import type { OperationProduct, OperationRange, OperationVerification } from "@/lib/analytics/operations";

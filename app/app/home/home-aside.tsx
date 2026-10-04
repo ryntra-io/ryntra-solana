@@ -22,10 +22,10 @@ import { moversOf, type Mover } from "@/lib/search/movers";
 import home from "./home.module.css";
 
 /**
- * Home's right column (`RYN-WIDTH-PREMIUM-001`, the Owner's word «Ширина й
- * преміум»): from 1280 px — every desk from 1440 up — it stands beside the
- * main one so no half of a wide screen is empty; on a phone its blocks come
- * under the main ones, in the same order. Four blocks, each reading only what exists:
+ * Home's right column: from 1280 px — every desk from 1440 up — it stands
+ * beside the main one so no half of a wide screen is empty; on a phone its
+ * blocks come under the main ones, in the same order. Four blocks, each
+ * reading only what exists:
  *
  * - **Сповіщення** — the latest notes, from the page's one read of the
  *   monitoring surface the bell shares (`useNotes`), behind the wallet's proof;

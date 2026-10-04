@@ -1,9 +1,9 @@
 /**
- * How the price condition is said on the company page (canon v5.5 В37, §4.1;
- * `RYN-PRICE-GUARD-001`): in the rule's sheet, over the rule's purchase and
- * in the Review. The figures are the judgement's own — the rule's tick, the
- * order route and this page judge the same facts with the same function
- * (`lib/autoinvest/price-condition.ts`); these are only its words.
+ * How the price condition is said on the company page: in the rule's sheet,
+ * over the rule's purchase and in the Review. The figures are the
+ * judgement's own — the rule's tick, the order route and this page judge the
+ * same facts with the same function (`lib/autoinvest/price-condition.ts`);
+ * these are only its words.
  *
  * Pure and client-safe.
  */
@@ -46,7 +46,7 @@ export function conditionNowLine(check: PriceCheck, lang: RuleLocale): string {
 /**
  * The condition's line in the Review and over a rule's purchase: «+2,1 % до
  * оцінки PreStocks $1 000,00 · ліміт 5 % · дані 10:32» — the deviation, the
- * reference and its figure, the limit, the data's time (canon §4.1).
+ * reference and its figure, the limit, the data's time.
  */
 export function conditionReviewLine(check: PriceCheck, nowMs: number, timeZone: string, lang: RuleLocale): string {
   const time = at(check, nowMs, timeZone, lang);

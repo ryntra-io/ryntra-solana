@@ -51,7 +51,7 @@ test("Research is a third direct route beside Today and Portfolio, and none redi
   assert.match(RESEARCH, /href="\/app\/portfolio"/);
 });
 
-test("the six canon views are the only ones the route serves", () => {
+test("the six defined views are the only ones the route serves", () => {
   assert.match(RESEARCH, /RESEARCH_VIEW_IDS\.includes/);
   /* An unknown `?view=` falls back rather than 404s: a reader who typed a URL
      is not an error condition. */
@@ -98,7 +98,7 @@ test("no reconciled value is computed anywhere on this surface", () => {
   }
 });
 
-test("no model call, provider write, wallet or execution path enters this wave", () => {
+test("no model call, provider write, wallet or execution path enters the research surface", () => {
   for (const source of [RESEARCH, DETAIL, DETAIL_BODY, TILES, READ, LOADING]) {
     for (const forbidden of [
       "eth_requestAccounts",
@@ -114,7 +114,7 @@ test("no model call, provider write, wallet or execution path enters this wave",
       "openai",
       "anthropic",
     ]) {
-      assert.equal(source.includes(forbidden), false, `${forbidden} is outside this packet`);
+      assert.equal(source.includes(forbidden), false, `${forbidden} has no place on the research surface`);
     }
   }
 });
@@ -165,8 +165,8 @@ test("the detail route refuses an id it cannot resolve instead of inventing one"
 });
 
 test("every explanation on both routes lives behind the info control", () => {
-  /* The founder's standing rule: a workspace prints no documentation. Prose
-     belongs to `info={...}`, which `Section` renders inside `InfoControl`. */
+  /* The standing rule: a workspace prints no documentation. Prose belongs to
+     `info={...}`, which `Section` renders inside `InfoControl`. */
   for (const [name, source] of [["research", RESEARCH], ["detail", DETAIL], ["detail body", DETAIL_BODY]]) {
     const sections = [...source.matchAll(/<Section\b/g)].length;
     const infos = [...source.matchAll(/\n\s+info=\{/g)].length;

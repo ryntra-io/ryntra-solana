@@ -1,13 +1,12 @@
 /**
- * What the Brief and the Critic reason over (`RYN-BRIEF-CRITIC-001`).
+ * What the Brief and the Critic reason over.
  *
  * Both formats stand on the **same engine** as the conversation: the
- * Research tools of `RYN-AGENT-TEXT-001` read through the product's own
- * services and return `ToolRun`s — facts with citations, typed cards, and
- * sentences. Nothing here reads a store, calls a provider, or computes a
- * figure the tools did not state; it is a projection of what was already
- * read, so a Brief can never disagree with the conversation about the same
- * number.
+ * Research tools read through the product's own services and return
+ * `ToolRun`s — facts with citations, typed cards, and sentences. Nothing
+ * here reads a store, calls a provider, or computes a figure the tools did
+ * not state; it is a projection of what was already read, so a Brief can
+ * never disagree with the conversation about the same number.
  *
  * The projection exists because the two formats must *compare across* tools
  * — a plan's own bound against the market read, a memory fact against the

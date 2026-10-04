@@ -2,13 +2,13 @@
  * The facts a person checks immediately before signing, taken from the build
  * that produced the bytes they are about to sign.
  *
- * `RYN-SOL-MONEY-FLOWS-001H`, owner instruction 2026-09-09: the snapshot a
- * person is shown and the transaction they sign **must come from one quote**.
- * Showing figures from one quote and building from another is the defect this
- * exists to make impossible — not unlikely, impossible — because the two are
- * now the same object. The plan route re-quotes once, builds from that quote,
- * and this function reads the snapshot off the same `quote`, the same
- * `destination`, the same built transaction. There is no second read.
+ * The snapshot a person is shown and the transaction they sign **must come
+ * from one quote**. Showing figures from one quote and building from another
+ * is the defect this exists to make impossible — not unlikely, impossible —
+ * because the two are now the same object. The plan route re-quotes once,
+ * builds from that quote, and this function reads the snapshot off the same
+ * `quote`, the same `destination`, the same built transaction. There is no
+ * second read.
  *
  * ## Why every field is spelled out in full
  *

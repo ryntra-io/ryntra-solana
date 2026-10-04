@@ -1,8 +1,8 @@
 /**
- * The person's watchlist of events (`RYN-PREDICTIONS-001`): one row per
- * proven wallet in Guard `predictionWatchlists`, compare-and-set. Each entry
- * remembers the leading probability at the moment it was watched, so *what
- * changed since you watched it* is a fact the store holds, not a guess.
+ * The person's watchlist of events: one row per proven wallet in Guard
+ * `predictionWatchlists`, compare-and-set. Each entry remembers the leading
+ * probability at the moment it was watched, so *what changed since you
+ * watched it* is a fact the store holds, not a guess.
  *
  * Server only.
  */

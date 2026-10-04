@@ -13,7 +13,7 @@
    otherwise have shown the site's own ground as a band under the last block. */
 .root {
   --landing-ground: color-mix(in srgb, var(--ry-midnight) 30%, black);
-  /* The landing's own ink, dust, shade and panel (Owner, 2026-09-14: the
+  /* The landing's own ink, dust, shade and panel (since 2026-09-14 the
      theme switch works on every page, the landing included). The blocks are
      drawn on these five rather than on the static mist, so the light theme is
      the same drawing on a light ground: the ink turns graphite, the dust

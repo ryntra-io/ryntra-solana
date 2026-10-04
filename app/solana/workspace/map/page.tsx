@@ -25,8 +25,8 @@ export const metadata = { title: "Hub Map" };
  * detail paragraph and a four-row Exists / Missing / Gate / Last verified table
  * for each of sixteen modules, then two legends defining nine more words —
  * around eleven paragraphs of registry prose before anything could be scanned.
- * That is an architecture document rendered as a product screen, and the
- * founder's word for it is the right one: портянка.
+ * That is an architecture document rendered as a product screen: a wall of
+ * text, where a reader came for a map.
  *
  * So the resting page is a map: group, name, state, and the way in. The prose
  * is one disclosure deep, which is where PRODUCT.md has always put proof —
@@ -65,7 +65,7 @@ export default async function SolanaHubMapPage() {
      and a person opening this page is not reading about our test programme;
      they are asking whether the thing works. So the evidence word stays in the
      data and in the receipts, and the screen says what a reader actually needs:
-     it is available. Owner decision, 2026-09-03. */
+     it is available. */
   const maturityLabel = (value: string) => {
     const shown = value === "OWNER_CANARY_VERIFIED" ? "AVAILABLE" : value;
     const english = shown.replace(/_/g, " ").toLowerCase().replace(/^./, (first) => first.toUpperCase());

@@ -8,17 +8,17 @@ import { STELLAR_MODULES as REGISTRY } from "./modules.ts";
 const BASE_ROUTE = "/stellar/workspace";
 
 /**
- * The enforcement matrix of `docs/archive/design-pre-reset-2026-08-18/stellar-DESIGN.md` §8, as tests.
+ * The workspace design's enforcement matrix, as tests.
  *
  * The contract listed twelve gates and shipped none of them, which is how a
  * document that says "a design regression is a release blocker" ends up
- * blocking nothing. Each test below names the row it enforces.
+ * blocking nothing. Each section below is headed by the gate it enforces.
  *
- * Rows 8, 9 and 11 — rendered geometry, contrast and screenshot evidence — are
+ * Gates 8, 9 and 11 — rendered geometry, contrast and screenshot evidence — are
  * deliberately absent. They need a browser, and a test that pretends to measure
  * a rendered box from source would be worse than an honest gap: it would report
- * green on exactly the class of defect that reached the founder. They stay
- * live-measurement obligations on the task card.
+ * green on exactly the class of defect that once reached a person's screen.
+ * They stay obligations measured on the live page.
  */
 
 const WORKSPACE = join("app", "stellar", "workspace");
@@ -43,9 +43,9 @@ const read = (path) => readFileSync(path, "utf8").replace(/\r\n/g, "\n");
 const stripJs = (source) => source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
 const stripCss = (source) => source.replace(/\/\*[\s\S]*?\*\//g, "");
 
-// ---------------------------------------------------------------- row 1 --
+// --------------------------------------------------------------- gate 1 --
 
-test("§8.1 every railed module has a page that exists", async () => {
+test("every railed module has a page that exists", async () => {
   const registry = read(join(WORKSPACE, "hub", "modules.ts"));
 
   /* The registry throws at construction for a railed module with no route.
@@ -138,7 +138,7 @@ function parseRegistry() {
       if (!match) return null;
       const value = match[1] ?? match[2] ?? match[3] ?? match[4] ?? match[5] ?? null;
       /* `route: BASE` is the Overview and `route: ${BASE}/x` is everything else.
-         Both are normalised to the suffix the §8.1 route check already uses. */
+         Both are normalised to the suffix the railed-module route check already uses. */
       return value === "BASE" ? "" : value === null ? null : value.replace("${BASE}", "");
     };
     entries.push({
@@ -247,10 +247,10 @@ test("no surface labels the whole workspace mainnet read-only", () => {
 
 test("every internal Stellar destination in the markup resolves to a mounted route", () => {
   /*
-   * The rename is the reason this exists. A registry `route` is checked by
-   * §8.1; a hand-written `href` in a panel footer is not, and one of those is
-   * how `/stellar/asset/{CODE:ISSUER}` reached four documents and a form
-   * without ever being served.
+   * The rename is the reason this exists. A registry `route` is checked by the
+   * railed-module test; a hand-written `href` in a panel footer is not, and one
+   * of those is how `/stellar/asset/{CODE:ISSUER}` reached four documents and a
+   * form without ever being served.
    */
   const dead = [];
   for (const path of COMPONENTS) {
@@ -267,9 +267,9 @@ test("every internal Stellar destination in the markup resolves to a mounted rou
   assert.deepEqual(dead, [], `These destinations are linked and not mounted:\n${dead.join("\n")}`);
 });
 
-// ---------------------------------------------------------------- row 3 --
+// --------------------------------------------------------------- gate 3 --
 
-test("§8.3 five evidence states, and no composite score anywhere", () => {
+test("five evidence states, and no composite score anywhere", () => {
   /* The vocabulary moved to the chain-neutral envelope on 2026-09-14 (the
      public projection); `lib/stellar/evidence.ts` re-exports it. */
   const evidence = stripJs(read(join("lib", "evidence", "envelope.ts")));
@@ -298,9 +298,9 @@ test("§8.3 five evidence states, and no composite score anywhere", () => {
   }
 });
 
-// ---------------------------------------------------------------- row 4 --
+// --------------------------------------------------------------- gate 4 --
 
-test("§8.4 no surface prints its explanation permanently", () => {
+test("no surface prints its explanation permanently", () => {
   /*
    * The rule, stated exactly: a paragraph on a workspace page is either the
    * explanation — in which case it belongs inside the info control — or it is
@@ -360,7 +360,7 @@ test("§8.4 no surface prints its explanation permanently", () => {
   }
 });
 
-test("§8.4 PageHead really does put its lead behind the control", () => {
+test("PageHead really does put its lead behind the control", () => {
   /* The test above exempts `lead={…}` on the grounds that PageHead hides it.
      If that ever stopped being true, the exemption would turn into a hole big
      enough to drive every paragraph on the workspace through. */
@@ -381,9 +381,9 @@ test("§8.4 PageHead really does put its lead behind the control", () => {
   );
 });
 
-// ---------------------------------------------------------------- row 5 --
+// --------------------------------------------------------------- gate 5 --
 
-test("§8.5 a read that fails renders its reason, never a blank", () => {
+test("a read that fails renders its reason, never a blank", () => {
   /*
    * The honest half of row 5.
    *
@@ -440,7 +440,7 @@ test("§8.5 a read that fails renders its reason, never a blank", () => {
   }
 });
 
-test("§8.5 the negative scenario is on the surface, not only in the fixtures", () => {
+test("the negative scenario is on the surface, not only in the fixtures", () => {
   /*
    * On Stellar the negative case *is* the product. A destination without a
    * trustline, a revoked authorization, a clawback-enabled asset: these are the
@@ -469,9 +469,9 @@ test("§8.5 the negative scenario is on the surface, not only in the fixtures", 
   );
 });
 
-// ---------------------------------------------------------------- row 6 --
+// --------------------------------------------------------------- gate 6 --
 
-test("§8.6 every class used in markup resolves to a rule", () => {
+test("every class used in markup resolves to a rule", () => {
   /*
    * `.tally` fell back to `display: block` on an earlier hub and produced a 173px
    * column inside a 224px sticky toolbar. A class with no rule is invisible to
@@ -507,7 +507,7 @@ test("§8.6 every class used in markup resolves to a rule", () => {
   assert.deepEqual(missing, [], `These classes are in the markup and in no stylesheet:\n${missing.join("\n")}`);
 });
 
-test("§8.6 every CSS-module class used resolves in its own module", () => {
+test("every CSS-module class used resolves in its own module", () => {
   for (const path of COMPONENTS) {
     const source = stripJs(read(path));
     if (!source.includes("styles.")) continue;
@@ -525,9 +525,9 @@ test("§8.6 every CSS-module class used resolves in its own module", () => {
   }
 });
 
-// ---------------------------------------------------------------- row 7 --
+// --------------------------------------------------------------- gate 7 --
 
-test("§8.7 no landing element rule reaches a workspace surface", () => {
+test("no landing element rule reaches a workspace surface", () => {
   /*
    * `globals.css` gives a bare `<section>` 78px of vertical padding for landing
    * rhythm. It has bitten three surfaces: every `<Panel>` at once, the swap
@@ -549,9 +549,9 @@ test("§8.7 no landing element rule reaches a workspace surface", () => {
   assert.match(panel, /\.rw\s*\{[^}]*padding:\s*0/, "The panel's own reset is gone; its header will be pushed onto its body.");
 });
 
-// --------------------------------------------------------------- row 10 --
+// -------------------------------------------------------------- gate 10 --
 
-test("§8.10 a page's primary content cannot be hidden", () => {
+test("a page's primary content cannot be hidden", () => {
   /*
    * `essential` is inverted from an earlier hub's reading: there, the flag let
    * customization empty the only panel on a page. Here the primary panel of
@@ -571,7 +571,7 @@ test("§8.10 a page's primary content cannot be hidden", () => {
   }
 });
 
-test("§8.10 the unknowns rail is essential, because it is the honesty", () => {
+test("the unknowns rail is essential, because it is the honesty", () => {
   const passport = stripJs(read(join(WORKSPACE, "assets", "[asset]", "page.tsx")));
   const rail = passport.match(/id="passport-unknowns"[\s\S]{0,400}/);
   assert.ok(rail, "The unknowns rail panel is gone from the Passport.");

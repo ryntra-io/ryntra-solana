@@ -1,5 +1,5 @@
 /**
- * A fixture world for the agent — the stand and the tests (`RYN-AGENT-TEXT-001`).
+ * A fixture world for the agent — the stand and the tests.
  *
  * Nothing here reaches the network: the Spot catalogue is three rows (SOL a
  * verified major, BONK a verified meme priced in fractions of a cent, COPY an

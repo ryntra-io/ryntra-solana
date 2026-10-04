@@ -17,10 +17,9 @@
  * a state that cannot change. The window it closes is exactly the dangerous
  * one: signed, submitted, outcome unknown.
  *
- * Wallet-scoped, per the owner decision of 2026-09-03 that history follows the
- * wallet rather than the browser. A signature belongs to whoever signed it, and
- * a second wallet on the same device must never inherit the first one's
- * unfinished transfer.
+ * Wallet-scoped, because history follows the wallet rather than the browser. A
+ * signature belongs to whoever signed it, and a second wallet on the same
+ * device must never inherit the first one's unfinished transfer.
  *
  * Never throws. A private window, blocked site data or a full quota must
  * degrade to *no pending transfer known*, never to a page that fails to render
@@ -119,7 +118,7 @@ export function readPendingSend(storage: StorageLike, wallet: string): PendingSe
  * the wallet connection — the card comes back showing its connect tiles — so a
  * resume path that asks "what did *the connected wallet* leave unfinished"
  * asks a question with no answer at exactly the moment it matters. The first
- * version of this feature did that, and the founder's reload produced a card
+ * version of this feature did that, and a person's reload produced a card
  * that had forgotten a transfer it had just written down.
  *
  * A record is device-local and was written by whoever was sitting here. Telling

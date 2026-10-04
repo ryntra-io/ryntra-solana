@@ -27,7 +27,7 @@ import home from "./home.module.css";
 import { PortfolioRisk } from "./portfolio-risk";
 
 /**
- * «Простий»'s Home (canon v5.0 §3; `RYN-INVEST-SIMPLE-001`, session 1).
+ * «Простий»'s Home.
  *
  * **A guest** reads one promise — «Купи частинку компанії від $1» — one
  * orange action, «Під'єднати гаманець», and the popular companies, each one
@@ -35,21 +35,20 @@ import { PortfolioRisk } from "./portfolio-risk";
  * the positions by the companies' names — with «Купити» the one orange action
  * and «Поповнити» beside it, and «Автоінвест» for every connected wallet: the
  * month's budget as its own line, the rules with their switches and their
- * next purchases, «Додати правило» (session 4; canon v5.3 В29).
+ * next purchases, «Додати правило».
  *
- * **Width** (`RYN-WIDTH-PREMIUM-001`): from 1280 px up a main column and a
- * right one (`HomeAside`) — notifications, «Автоінвест», «Спитати Ryntra»,
- * what moves today — so no half of a wide screen stands empty; on a phone
- * the right column's blocks come under the main ones. The head uses its own
- * width too: what the money is in beside the balance, a guest's three steps
- * beside the promise.
+ * **Width**: from 1280 px up a main column and a right one (`HomeAside`) —
+ * notifications, «Автоінвест», «Спитати Ryntra», what moves today — so no
+ * half of a wide screen stands empty; on a phone the right column's blocks
+ * come under the main ones. The head uses its own width too: what the money
+ * is in beside the balance, a guest's three steps beside the promise.
  *
- * **The first step without crypto** (session 5, canon §4 «Почати з картки»):
- * the orange action is always the step that works next. A wallet with nothing
- * to buy with reads «Поповни — і купи першу частинку» and «Поповнити»; one
- * with dollars and no SOL for the network reads «Потрібно трохи SOL на
- * мережу» and «Поповнити SOL»; a phone whose browser has no wallet is offered
- * this page inside Phantom instead of a wallet panel that has nothing to list.
+ * **The first step without crypto**: the orange action is always the step
+ * that works next. A wallet with nothing to buy with reads «Поповни — і купи
+ * першу частинку» and «Поповнити»; one with dollars and no SOL for the network
+ * reads «Потрібно трохи SOL на мережу» and «Поповнити SOL»; a phone whose
+ * browser has no wallet is offered this page inside Phantom instead of a
+ * wallet panel that has nothing to list.
  *
  * The balance is the one reader Portfolio uses (`wallet-data.tsx`), so the
  * two places can never disagree about a wallet; an unknown price is left out
@@ -136,9 +135,9 @@ function GuestHead({ locale, settled }: { locale: WorkspaceLocale; settled: bool
   );
 }
 
-type OwnedRow = Readonly<{ key: string; name: string; href: string; mint: string; icon: string | null; value: bigint; change: number | null; symbol: string; stock: boolean; /** A token Ryntra no longer supports (canon v5.2 В26): the row says so; its page says where it can be sold. */ retired: boolean }>;
+type OwnedRow = Readonly<{ key: string; name: string; href: string; mint: string; icon: string | null; value: bigint; change: number | null; symbol: string; stock: boolean; /** A token Ryntra no longer supports: the row says so; its page says where it can be sold. */ retired: boolean }>;
 
-/** A holding's issuer event in a few words — «Обміняй до 12 березня 2027» (the IPO and conversion watch, canon v5.2 В27); the note in «що потребує уваги» and the token's page say the rest. */
+/** A holding's issuer event in a few words — «Обміняй до 12 березня 2027» (the IPO and conversion watch); the note in «що потребує уваги» and the token's page say the rest. */
 function ownedEventOf(mint: string, locale: WorkspaceLocale): string | undefined {
   const event = lifecycleEventFor(mint);
   return isWatched(event) ? shortEventLine(event, locale === "uk" ? "uk" : "en", Date.now()) : undefined;
@@ -184,7 +183,7 @@ function WalletHead({ locale }: { locale: WorkspaceLocale }) {
   }, [holdings]);
   const totals = useMemo(() => (holdings.status === "ready" ? walletValue(holdings.data) : null), [holdings]);
   const day = useMemo(() => (holdings.status === "ready" && holdings.complete && totals ? dayChangeOf(holdings.data, totals.total) : null), [holdings, totals]);
-  /* What stands between this wallet and a purchase (session 5): dollars first, then the network's SOL. */
+  /* What stands between this wallet and a purchase: dollars first, then the network's SOL. */
   const funds = useMemo(() => (holdings.status === "ready" ? fundsOf(holdings.data, holdings.complete) : null), [holdings]);
   const need = funds ? fundingNeed(funds) : "unknown";
   const firstStep = need === "usdc" && funds !== null && !funds.ownsCompany;
@@ -203,7 +202,7 @@ function WalletHead({ locale }: { locale: WorkspaceLocale }) {
                   {usdValueIn(BigInt(Math.round(Math.abs(day.usd) * 1_000_000)), locale)} · {formatPercent(day.pct, numbers)} {word("dayChange")}
                 </p>
               ) : null}
-              {/* «Ризик портфеля» (canon §11): the server's one word for the wallet, once there is something in it — here on a narrow head, under «Розподіл» on a wide one. */}
+              {/* «Ризик портфеля»: the server's one word for the wallet, once there is something in it — here on a narrow head, under «Розподіл» on a wide one. */}
               {owned.length > 0 ? <PortfolioRisk locale={locale} place="main" /> : null}
             </>
           ) : holdings.status === "error" ? (
@@ -230,7 +229,7 @@ function WalletHead({ locale }: { locale: WorkspaceLocale }) {
         {holdings.status === "ready" && totals && owned.length > 0 ? <Allocation rows={owned} totalMicro={totals.total} locale={locale} /> : null}
       </section>
 
-      {/* «Автоінвест» stands in the right column (`HomeAside`): the rules and their next purchases beside the money (RYN-WIDTH-PREMIUM-001). */}
+      {/* «Автоінвест» stands in the right column (`HomeAside`): the rules and their next purchases beside the money. */}
 
       {/* An empty wallet's first step is said once, in the head — not again under «У тебе є». */}
       {firstStep && owned.length === 0 ? null : (

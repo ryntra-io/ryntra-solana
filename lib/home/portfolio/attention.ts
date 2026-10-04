@@ -4,13 +4,13 @@ import { parseExplicitInstant } from "./freshness.ts";
 /**
  * Needs Attention — the canonical order, and nothing else.
  *
- * Home canon §7 fixes eleven kinds in one sequence, and the sequence is the
- * product: a surface that sorts by recency puts a strategy trigger above a
- * signature request the moment the trigger is newer, and the reader learns to
- * distrust the top of the list. So priority is this array's index, severity
- * breaks a priority tie, age breaks a severity tie, and the stable id breaks
- * the rest. Every comparison is total, which is what makes the output
- * independent of the order the callers happened to collect facts in.
+ * Home fixes eleven kinds in one sequence, and the sequence is the product: a
+ * surface that sorts by recency puts a strategy trigger above a signature
+ * request the moment the trigger is newer, and the reader learns to distrust
+ * the top of the list. So priority is this array's index, severity breaks a
+ * priority tie, age breaks a severity tie, and the stable id breaks the rest.
+ * Every comparison is total, which is what makes the output independent of
+ * the order the callers happened to collect facts in.
  *
  * What may not enter: news, promotion, education, engagement filler. An item
  * exists because a typed fact about this reader's own money changed.
@@ -41,7 +41,7 @@ export const ATTENTION_FRESHNESS = ["CURRENT", "STALE", "UNKNOWN", "INVALID"] as
 export type AttentionFreshness = (typeof ATTENTION_FRESHNESS)[number];
 
 /**
- * One item, carrying everything the canon requires a reader to be told.
+ * One item, carrying everything a reader must be told.
  *
  * `detailHref` is nullable on purpose. A missing destination is a real state —
  * the fact is true and the route for it does not exist yet — and the honest
@@ -121,7 +121,7 @@ export function rankAttention(items: readonly AttentionItem[]): readonly Attenti
  * The dominant item, for a surface that has room for one line.
  *
  * `null` for an empty list rather than a placeholder row: calm is a state Today
- * has to be able to say, and a filler item is exactly what the canon forbids.
+ * has to be able to say, and a filler item is exactly what it must never show.
  */
 export function dominantAttention(items: readonly AttentionItem[]): AttentionItem | null {
   const ranked = rankAttention(items);

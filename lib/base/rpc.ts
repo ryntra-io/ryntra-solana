@@ -1,17 +1,17 @@
 /**
  * Base mainnet, read-only.
  *
- * Base did not exist anywhere in this repository until RYN-SOL-M3 — no RPC, no
- * ABI, no chain entry — and its absence was a recorded decision rather than an
- * oversight. It enters now for one reason: a CCTP burn on Solana is only half a
- * transfer, and the other half lands on Base. A bridge that cannot read the
- * destination cannot say the money arrived; it can only repeat what a provider
- * told it, which canon §3.5 does not accept as evidence.
+ * Base did not exist anywhere in this repository until the bridge to Base — no
+ * RPC, no ABI, no chain entry — and its absence was a recorded decision rather
+ * than an oversight. It enters now for one reason: a CCTP burn on Solana is
+ * only half a transfer, and the other half lands on Base. A bridge that cannot
+ * read the destination cannot say the money arrived; it can only repeat what a
+ * provider told it, and a provider's word is not evidence.
  *
  * **Nothing here writes.** There is no signer, no `eth_sendRawTransaction` and
  * no account. Every method below is a read, and the module exports no way to
- * express anything else — the destination mint of the M3 canary is submitted
- * from the founder's own wallet, not from this process.
+ * express anything else — the destination mint of a canary transfer is
+ * submitted from the signer's own wallet, not from this process.
  *
  * ## Three operators, and they are not interchangeable
  *
@@ -44,13 +44,12 @@
  *
  * ## Ethereum, on the same handle
  *
- * `RYN-SOL-MONEY-FLOWS-001E` (2026-09-05) made the module serve a second EVM
- * chain rather than copying it. A handle now carries a *chain profile* — id,
- * chain id, CAIP-2 reference, label — and every read is the same read against
- * whichever chain the handle names. Nothing Base-specific changed: the default
- * Base endpoints, their measured limits and the `RYNTRA_BASE_RPC_*` overrides
- * are exactly what they were, and `createBaseRpcHandle()` with no chain still
- * returns a Base handle.
+ * Since 2026-09-05 the module serves a second EVM chain rather than copying
+ * it. A handle now carries a *chain profile* — id, chain id, CAIP-2 reference,
+ * label — and every read is the same read against whichever chain the handle
+ * names. Nothing Base-specific changed: the default Base endpoints, their
+ * measured limits and the `RYNTRA_BASE_RPC_*` overrides are exactly what they
+ * were, and `createBaseRpcHandle()` with no chain still returns a Base handle.
  *
  * The keyless Ethereum endpoints were measured the same way on 2026-09-05,
  * against `MessageTransmitterV2` logs, because Ethereum's free tier is far
@@ -94,12 +93,12 @@ export const BNB_MAINNET_CHAIN_REF = "eip155:56" as const;
  * The EVM chains a handle can name.
  *
  * For two chains this was also "the ids the CCTP registry uses", and the two
- * facts were one sentence. `RYN-SOL-MONEY-FLOWS-001H` separated them:
- * Robinhood Chain is read over RPC like any EVM chain, and it is **not** a
- * CCTP chain — Circle has no domain for 4663 and the chain carries no USDC.
- * The bridge's own list is `CCTP_EVM_CHAINS` in `lib/solana/cctp-direction.ts`
- * and is deliberately not this one, so adding a chain a handle can read never
- * adds a chain the bridge believes it can move USDC to.
+ * facts were one sentence. They are separate now: Robinhood Chain is read over
+ * RPC like any EVM chain, and it is **not** a CCTP chain — Circle has no
+ * domain for 4663 and the chain carries no USDC. The bridge's own list is
+ * `CCTP_EVM_CHAINS` in `lib/solana/cctp-direction.ts` and is deliberately not
+ * this one, so adding a chain a handle can read never adds a chain the bridge
+ * believes it can move USDC to.
  */
 export type EvmChainId = "base" | "ethereum" | "arbitrum" | "optimism" | "polygon" | "bnb" | "robinhood";
 export const EVM_CHAIN_IDS: readonly EvmChainId[] = ["base", "ethereum", "arbitrum", "optimism", "polygon", "bnb", "robinhood"];

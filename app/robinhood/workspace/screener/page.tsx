@@ -24,8 +24,8 @@ export const dynamic = "force-dynamic";
  * The Screener — the discovery surface a person drives.
  *
  * Radar is pushed: the product decides what is worth showing. This is queried:
- * the person states conditions and gets the set that matches them. The canon
- * keeps the two apart because collapsing discovery into one "markets screen"
+ * the person states conditions and gets the set that matches them. The two
+ * are kept apart because collapsing discovery into one "markets screen"
  * with three presets is what makes every competitor's surface interchangeable.
  *
  * **The conditions live in the URL.** That makes "saved as a named screen,

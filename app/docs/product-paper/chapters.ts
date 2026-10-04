@@ -1,15 +1,15 @@
 /**
  * The Product & Architecture Paper, as data.
  *
- * Twenty-nine chapters in the founder's frozen order. They live here rather than in
- * JSX for one reason that matters: a test can count them, check the order, and
- * assert that no chapter carries a status badge — which is the single rule that
- * keeps this document a paper instead of a roadmap.
+ * Twenty-nine chapters in a fixed order. They live here rather than in JSX for
+ * one reason that matters: a test can count them, check the order, and assert
+ * that no chapter carries a status badge — which is the single rule that keeps
+ * this document a paper instead of a roadmap.
  *
- * Every chapter is drawn from a canon document in `docs/products/`, from
- * `PRODUCT.md`, or from the security boundary — not written fresh here. The
- * paper is a projection of what was already established, which is why it can be
- * this short and still be complete.
+ * Every chapter is drawn from a product document, from `PRODUCT.md`, or from
+ * the security boundary — not written fresh here. The paper is a projection of
+ * what was already established, which is why it can be this short and still be
+ * complete.
  */
 
 /**

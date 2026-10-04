@@ -36,9 +36,8 @@ export type DocSection = Readonly<{
 }>;
 
 /**
- * The documentation's sections are the menu's (canon v5.4 В30; the new site of
- * canon v5.5, `RYN-SITE-V5-001` subtask 3): Start, then Invest · Trade · Money
- * · Portfolio · Ryntra · Rewards as the app draws them, then Reference and
+ * The documentation's sections are the menu's: Start, then Invest · Trade ·
+ * Money · Portfolio · Ryntra · Rewards as the app draws them, then Reference and
  * Developers. A page keeps its address when it changes section — `money/rewards`
  * stands under Rewards, `strategies/*` and `manage/*` under Portfolio — so no
  * link anyone holds moves; a page that moved address answers by a 308.
@@ -58,7 +57,7 @@ export type DocPage = Readonly<{
   /** A place of the menu that is not a registered page — Markets, Autoinvest, Top up, Ryntra — that «Open in Ryntra» leads to. */
   destination?: MenuDestinationId;
   title: Localized;
-  /** The title a search result and a browser tab show, when it says more than the heading does (the plan's §3); else «{title} — Ryntra Docs». */
+  /** The title a search result and a browser tab show, when it says more than the heading does; else «{title} — Ryntra Docs». */
   seoTitle?: Localized;
   /** One sentence for the index, the card and the search. */
   summary: Localized;

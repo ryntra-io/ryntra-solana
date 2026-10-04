@@ -330,7 +330,7 @@ export const STELLAR_MODULES: readonly StellarModule[] = [
     /* Guided too, and deliberately. It is the surface that states the product's
        central claim — a signature is not an authorization — and a page reachable
        only by switching to Pro is a page most people never find. Guided shows
-       five destinations, which is what DESIGN.md §5 allows. */
+       five destinations, the most the workspace design allows. */
     guided: true,
   }),
   mapped({
@@ -536,7 +536,7 @@ export const STELLAR_MODULES: readonly StellarModule[] = [
     purpose: "What a program may do on your behalf, and what it may never do.",
     detail: "An agent surface is only honest if the boundary is structural: no key, a scoped mandate, an explicit human authorization for anything that settles, and a kill switch that is not a preference. Registered here to name that boundary, not to promise the feature.",
     exists: "The boundary itself: authorization is a separate artifact from a signature, and this product has no key to delegate.",
-    missing: "Everything else, and it is gated behind the security review the shared canon requires.",
+    missing: "Everything else, and it is gated behind a required security review.",
     gate: "The registered automation gates — a bounded mandate is never a feature decision alone.",
     environment: "FUTURE_MAINNET",
     mode: "NONE",
@@ -589,8 +589,8 @@ export const STELLAR_MODULES: readonly StellarModule[] = [
     mode: "READ_ONLY",
     maturity: "TESTNET_VERIFIED",
     lastVerifiedAt: LIFECYCLE_PROVEN,
-    /* Guided as well, which takes it to the five destinations DESIGN.md §5
-       allows and no further. Send without a way to check the receipt it
+    /* Guided as well, which takes it to the five destinations the workspace
+       design allows and no further. Send without a way to check the receipt it
        produces is half a story, and the half that asks for trust. */
     guided: true,
   }),

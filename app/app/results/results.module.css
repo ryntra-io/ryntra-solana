@@ -1,5 +1,5 @@
 /*
- * Results — RYN-RESULTS-MEMORY-001.
+ * Results — plan against outcome.
  *
  * The page a plan returns to. Its shape follows what a person actually asks,
  * in order: how did this end, what is still open, what did not trade, and
@@ -7,10 +7,9 @@
  * drawn as an em dash in the muted colour, never as a zero, so an unknown
  * looks like an unknown at a glance.
  *
- * Progressive disclosure is the rule here (the Premium Product UI Pass of
- * 2026-09-15 §1): the surface carries the sentence and the two or three
- * figures a decision needs; the ledger's own fields live behind a
- * disclosure that says what it holds before it is opened.
+ * Progressive disclosure is the rule here: the surface carries the sentence
+ * and the two or three figures a decision needs; the ledger's own fields
+ * live behind a disclosure that says what it holds before it is opened.
  */
 
 .stack {

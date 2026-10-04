@@ -1,5 +1,5 @@
 /**
- * Canon §10.5 Send states, as a function of facts rather than of UI steps.
+ * Send states, as a function of facts rather than of UI steps.
  *
  * The numbered wizard on the page was a different list from this one, and
  * that is how LANDED_FAILED, EXPIRED and UNKNOWN collapsed into "something
@@ -43,7 +43,7 @@ export type RecoveryFacts = Readonly<{
 }>;
 
 /**
- * Classify a submit/observe outcome into one §10.5 state.
+ * Classify a submit/observe outcome into one Send state.
  *
  * Order is the product: signature status first, then confirmation, then
  * expiry vs unknown. A missing transaction after its blockhash has expired

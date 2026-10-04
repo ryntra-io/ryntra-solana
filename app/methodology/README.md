@@ -1,6 +1,6 @@
 # `/methodology` — where the figures come from
 
-Since 2026-09-26 (the new site of canon v5.5) `/methodology` is a page again:
+Since 2026-09-26 (the new site) `/methodology` is a page again:
 every figure a person sees in Ryntra, the source the product reads it from, and
 when. `page.tsx` renders it; `methodology-copy.ts` holds its words in English
 and Ukrainian, each row checked against the code that reads the figure.

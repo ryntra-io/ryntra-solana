@@ -35,21 +35,21 @@ export const SECURITY_ASSURANCE: Assurance = {
 
 /**
  * The date the boundary was last checked against the code it describes —
- * 2026-09-26, the day the page was rewritten for the product of canon v5.5
- * (`RYN-SITE-V5-001` subtask 3): a purchase from $1 through the Review and
- * the person's signature, «Автоінвест» rules that only remind, the wallet's
- * own USDC payments read to count a rule's sum and never moved, Ryntra the AI
- * assistant with no tool that buys or signs. The 2026-09-14 check had found
- * the venue trading key, the agent mandate and the testnet lifecycle gone.
+ * 2026-09-26, the day the page was rewritten for the current product: a
+ * purchase from $1 through the Review and the person's signature, «Автоінвест»
+ * rules that only remind, the wallet's own USDC payments read to count a
+ * rule's sum and never moved, Ryntra the AI assistant with no tool that buys
+ * or signs. The 2026-09-14 check had found the venue trading key, the agent
+ * mandate and the testnet lifecycle gone.
  */
 export const SECURITY_AS_OF = "2026-09-26";
 
 /**
  * The sentence that renders when `independentAudit` is `null`.
  *
- * Fixed wording, from the founder's specification: *"Do not replace it with
- * vague enterprise-grade security."* Keeping it as a constant means a copy edit
- * cannot soften it without failing a test.
+ * Fixed wording, never to be replaced with vague enterprise-grade security.
+ * Keeping it as a constant means a copy edit cannot soften it without failing
+ * a test.
  */
 export const NO_AUDIT_STATEMENT = "Ryntra has not completed an independent security audit.";
 

@@ -13,14 +13,14 @@ import { publicCopy } from "@/lib/site/public-copy";
 import styles from "./chrome.module.css";
 
 /**
- * The one public footer (Owner, 2026-09-14: *«як нижні меню, так і верхні
- * меню»* — one and the same on every page): the wordmark, the five ways into
- * the product and the docs, the two places the company speaks, the legal
- * pair and the year, in the reader's language, from the same list the
- * header's menu reads. On the landing it is folded into the last block's
- * ground rather than a band of its own; everywhere else it stands on the
- * site's ground under a hairline. The destinations of the company's
- * accounts stay in `lib/site/contacts.ts`, the one place that knows them.
+ * The one public footer — one and the same on every page, as the header's
+ * menu is: the wordmark, the five ways into the product and the docs, the
+ * two places the company speaks, the legal pair and the year, in the
+ * reader's language, from the same list the header's menu reads. On the
+ * landing it is folded into the last block's ground rather than a band of
+ * its own; everywhere else it stands on the site's ground under a hairline.
+ * The destinations of the company's accounts stay in `lib/site/contacts.ts`,
+ * the one place that knows them.
  */
 export function PublicFooter({ locale: localeProp, landing = false }: { locale?: PublicLocale; landing?: boolean }) {
   const [locale, setLocale] = useState<PublicLocale>(localeProp ?? "en");
@@ -39,7 +39,7 @@ export function PublicFooter({ locale: localeProp, landing = false }: { locale?:
     <footer className={landing ? `${styles.footer} ${styles.footerLanding}` : styles.footer}>
       <div className={`${styles.wrap} ${styles.landingInner}`}>
         <Link href={landingHref(locale)} className={styles.footerLogoLink} aria-label={copy.brandHome}>
-          {/* The Owner's wordmark, one file per theme: silver lettering on the
+          {/* The brand's wordmark, one file per theme: silver lettering on the
               dark ground, graphite lettering on the light one. */}
           <img src="/brand/ryntra-wordmark-dark.svg" alt="" width={118} height={30} className={`${styles.landingLogo} ${styles.logoDark}`} />
           <img src="/brand/ryntra-wordmark-light.svg" alt="" width={118} height={30} className={`${styles.landingLogo} ${styles.logoLight}`} />

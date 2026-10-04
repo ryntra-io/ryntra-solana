@@ -5,8 +5,7 @@
  * statement derived from the row's facts, the chain's or the issuer's
  * published terms, or a dated report with its source, each with the date it
  * was read. Nothing here is a verdict, a rating or advice; it is what the
- * issuer, the chain and the press say, and what they do not (canon v5.2 §7,
- * C.8).
+ * issuer, the chain and the press say, and what they do not.
  */
 
 import type { WorkspaceLocale } from "@/app/shell/locale";
@@ -196,7 +195,7 @@ type RiskItem = Readonly<{ key: keyof typeof WORDS; body: string; sources?: read
  * the company, the issuer's control of the mint, the pool, the fee, a company
  * event, the mark, the reserve reports. Numbers are the row's own; nothing is
  * scored. The sources of a report are here, one press below the line the
- * page shows (canon v5.2 C.8).
+ * page shows.
  */
 export function StructureRisks({ asset, locale }: { asset: StockAsset; locale: WorkspaceLocale }) {
   const { row } = asset;

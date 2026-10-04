@@ -1,4 +1,4 @@
-/* Adherence-vs-outcome — the journal's hero signal (market-playbook-journal §4): does following
+/* Adherence-vs-outcome — the journal's hero signal: does following
    your own pre-trade plan correlate with winning, in YOUR data? Splits closed trades into two
    cohorts by the plan-adherence flag and reports each cohort's win-rate.
 

@@ -6,23 +6,22 @@
  * native share images and the landing JSON-LD. One source, so a positioning
  * change cannot land on the page and miss the share card.
  *
- * Positioning v3 (owner instruction, 2026-09-08): Ryntra is a professional
- * trading and strategy platform for Solana. The claim is that a person can
- * reduce avoidable mistakes, define risk before execution, keep the strategy
- * context after the trade and improve from real results — never that Ryntra
- * preserves capital, prevents losses or predicts a market.
+ * Positioning v3 (2026-09-08): Ryntra is a professional trading and strategy
+ * platform for Solana. The claim is that a person can reduce avoidable
+ * mistakes, define risk before execution, keep the strategy context after the
+ * trade and improve from real results — never that Ryntra preserves capital,
+ * prevents losses or predicts a market.
  *
- * The Owner's word of 2026-09-26 (`RYN-SITE-NOW-001`) replaced that line on
- * everything the outside world reads: the title, the description, the share
- * card, the manifest and the structured data say what Ryntra is now — «Ryntra —
- * invest in tokenized stocks from $1, in your own wallet, on Solana» — and `/`
- * leads into the app until the new site of `RYN-SITE-V5-001` is built. The
- * landing's own words below are parked with the landing, and the
- * professional-platform line is gone from them too.
+ * On 2026-09-26 that line was replaced on everything the outside world reads:
+ * the title, the description, the share card, the manifest and the structured
+ * data say what Ryntra is now — «Ryntra — invest in tokenized stocks from $1,
+ * in your own wallet, on Solana» — and `/` leads into the app until the new
+ * site is built. The landing's own words below are parked with the landing,
+ * and the professional-platform line is gone from them too.
  *
- * Edit pass (owner review, 2026-09-09): the page explained our method more
- * than it showed the product. Three rules came out of that review and this file
- * is where they are kept.
+ * Edit pass (review, 2026-09-09): the page explained our method more than it
+ * showed the product. Three rules came out of that review and this file is
+ * where they are kept.
  *
  *   1. Say the philosophy **once**. The pipeline sentence lives in the hero and
  *      nowhere else; every later section must add something new or go.
@@ -44,11 +43,11 @@ export type RiskTone = "ok" | "attention" | "neutral" | "unknown";
 
 export const HOMEPAGE_COPY = {
   en: {
-    /* The slogan the canon keeps in tests and code (canon §1 «Назви»); the
-       listing pack reads it, the landing no longer shows it. */
+    /* The slogan kept in tests and code; the listing pack reads it, the
+       landing no longer shows it. */
     title: "Trade with a plan. Control the risk.",
-    /* The landing's first screen since the new site of canon v5.5 (the Owner's
-       word of 2026-09-26, «Веб 5»): the line word for word, one action. */
+    /* The landing's first screen since the new site (2026-09-26): the line
+       word for word, one action. */
     titleLines: ["Buy a piece of a company", "from $1 — in your own wallet."],
     /* The one place the whole cycle is spelled out. Nothing below repeats it. */
     lead: "Ryntra lets you invest in tokenized stocks from $1, in your own wallet, on Solana. Research an idea, challenge it before you act, set the conditions you will trade on, and keep the reasoning after the trade so the next version starts from what you learned.",
@@ -60,12 +59,12 @@ export const HOMEPAGE_COPY = {
     /* The one line that says what Ryntra is — the manifest's description and the structured data's slogan. */
     tagline: "Invest in tokenized stocks from $1, in your own wallet, on Solana.",
 
-    /* Hero v2 — the Owner's design handoff of 2026-09-13 and the ten
-       corrections given with it. One product-first composition: the Spot
-       workspace with NVDAx open is the focal point, the copy stands beside
-       it, and nothing is added — the existing pieces are made stronger. The
-       headline stays `titleLines`; the body was shortened on the Owner's
-       words; the right rail is three proof lines; the strip is four items. */
+    /* Hero v2 — the design handoff of 2026-09-13 and the ten corrections
+       given with it. One product-first composition: the Spot workspace with
+       NVDAx open is the focal point, the copy stands beside it, and nothing is
+       added — the existing pieces are made stronger. The headline stays
+       `titleLines`; the body was shortened; the right rail is three proof
+       lines; the strip is four items. */
     hero: {
       eyebrow: "Solana / Stocks / Private companies / Autoinvest / Rewards",
       sub: "Tokenized stocks on Solana — NVIDIA, Apple, the S&P 500 and private companies like OpenAI.",
@@ -80,14 +79,14 @@ export const HOMEPAGE_COPY = {
       tag: "Same markets. A smarter way to trade.",
       builtOn: "Built on",
       rail: ["From $1", "Onchain, 24/7", "Solana mainnet"],
-      /* The two cards that grow out of the workspace. The portfolio is the
-         Owner's own small canary position, not a staged balance. */
+      /* The two cards that grow out of the workspace. The portfolio is a real
+         small canary position, not a staged balance. */
       portfolio: { title: "Portfolio", view: "View", today: "today", value: "$13.51", change: "−1.53%",
         rows: [["SOL", 48.2], ["Stocks", 27.6], ["Memes", 12.4], ["USDC", 11.8]] },
       rewards: { title: "Rewards", view: "View",
         rows: [["50%", "Fee cashback", "Eligible fees"], ["10% · 5%", "Referrals", "Two levels"], ["Points", "Points program", "Levels · Rank"]] },
-      /* The four ways in along the hero's foot (canon v5.5): a company from $1,
-         the rules, the private companies, the fee back. */
+      /* The four ways in along the hero's foot: a company from $1, the rules,
+         the private companies, the fee back. */
       strip: [
         { id: "invest", big: "$1", title: "A piece of a company", body: "From $1, in dollars, in your own wallet." },
         { id: "autoinvest", big: "", title: "Autoinvest", body: "Every day, if it falls, from payments." },
@@ -99,7 +98,7 @@ export const HOMEPAGE_COPY = {
       /* What a screen reader gets instead of the picture. */
       productNote: "The Spot workspace with NVDAx (NVIDIA xStock) open — an illustrative view; the figures are a snapshot, not a live quote.",
       solana: "Solana",
-      /* The Owner's render of the hero (2026-09-13 evening), mounted as the
+      /* The design render of the hero (2026-09-13 evening), mounted as the
          hero itself. The alt carries what the picture says; the figures in it
          are the render's own and illustrative. */
       imageAlt: "Trade with a plan. Control the risk. Tokenized stocks from $1, in your own wallet, on Solana — the Ryntra Spot workspace with NVDAx (NVIDIA xStock) open, a Portfolio card and a Rewards card, built on Solana; illustrative figures.",
@@ -107,7 +106,7 @@ export const HOMEPAGE_COPY = {
     },
 
     /* Section 2 — the market universe: Solana at the centre, the assets that
-       trade on Spot in orbit around it. The Owner's words (2026-09-13). */
+       trade on Spot in orbit around it. */
     universe: {
       eyebrow: "Built on Solana",
       titleLines: ["Wall Street closes.", "Solana doesn’t."],
@@ -119,16 +118,16 @@ export const HOMEPAGE_COPY = {
       openCompany: "open the company",
       core: "Solana",
     },
-    /* The third block — from opportunity to outcome (Owner's brief,
+    /* The third block — from opportunity to outcome (design brief,
        2026-09-13, late): the six steps of one trade, told once. The words
        are here; the figures in the frame are one illustrative NVDAx trade
        and live in app/(home)/workflow-trade.ts. `surfaces` are the pages of
        the product each step lives on — the frame's first crumb — and the
        readiness beside it comes from the route registry through
        `homepageModel`, in the words of `statuses`. */
-    /* How it works, since the new site of canon v5.5: one purchase from $1 on
-       the app's own road — the company, the sum, the Review, the signature,
-       the receipt — and the rule that repeats it. */
+    /* How it works, since the new site: one purchase from $1 on the app's
+       own road — the company, the sum, the Review, the signature, the receipt
+       — and the rule that repeats it. */
     workflow: {
       eyebrow: "How it works",
       titleLines: ["From a dollar", "to a receipt."],
@@ -148,7 +147,7 @@ export const HOMEPAGE_COPY = {
       closingLines: ["Every purchase has its Review.", "Every purchase has its receipt."],
       open: "Open the app",
     },
-    /* The fourth and last block — Ryntra Rewards and the close (Owner's
+    /* The fourth and last block — Ryntra Rewards and the close (design
        brief, 2026-09-14). The three rates are not written here: the fee
        sentence carries `{rate}` and the page fills it from
        app/(home)/rewards-facts.ts, so the words can never say a rate the
@@ -194,7 +193,7 @@ export const HOMEPAGE_COPY = {
     },
 
     /* What a search result, a shared link and the browser's tab say — the
-       Owner's line of 2026-09-26, word for word. */
+       line of 2026-09-26, word for word. */
     seoTitle: "Ryntra — invest in tokenized stocks from $1, in your own wallet, on Solana",
     description: "Buy tokenized stocks from $1 on Solana, or set a rule to invest regularly. What you buy stays in your own wallet, and you sign every purchase.",
     ogLines: ["Invest in tokenized", "stocks from $1."],
@@ -470,10 +469,10 @@ export const HOMEPAGE_COPY = {
 } as const;
 
 /**
- * The site's one menu (Owner, 2026-09-14): the footer's five ways in across
- * the middle of every public page's bar and one *Open Ryntra* on its right —
- * on the landing, on the documentation, on every page the public header
- * draws. One list, so the bar and the footer cannot name different doors.
+ * The site's one menu: the footer's five ways in across the middle of every
+ * public page's bar and one *Open Ryntra* on its right — on the landing, on
+ * the documentation, on every page the public header draws. One list, so the
+ * bar and the footer cannot name different doors.
  */
 export type SiteMenu = Readonly<{
   nav: string;

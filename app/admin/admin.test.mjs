@@ -63,9 +63,9 @@ test("бізнес-аналітика: вікно і режим угорі, га
 test("Control Center і Академія — одна сім'я на AdminShellV2", { skip: needsDevelopmentRepository("app/admin/academy/") }, () => {
   assert.match(page, /AdminShellV2/);
   assert.match(shell, /AdminShellV2/);
-  /* Owner instruction 2026-09-13: the Academy joins the admin family — the
-     same gate, the same 401 screen and the same shell as every sibling. The
-     old AdminChrome header is gone with its only consumer. */
+  /* The Academy joins the admin family — the same gate, the same 401 screen
+     and the same shell as every sibling. The old AdminChrome header is gone
+     with its only consumer. */
   assert.match(academyPage, /getAdminSession/);
   assert.match(academyPage, /AdminUnauthorized surface="Академія"/);
   assert.match(academyPage, /<AdminShellV2 active="academy">/);
@@ -208,7 +208,7 @@ test("Академія не тримає власної шапки й не ви�
   assert.doesNotMatch(academy, /logout|Вийти|href="\/admin"/);
 });
 
-test("жодна адмін-поверхня не показує внутрішні ідентифікатори задач чи канон", () => {
+test("жодна адмін-поверхня не показує внутрішні ідентифікатори задач чи службову лексику", () => {
   for (const file of [
     "app/admin/overview-panel.tsx",
     "app/admin/users/users-panel.tsx",

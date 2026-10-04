@@ -1,21 +1,19 @@
 /**
  * One more ask of Jupiter after a refusal for rate alone.
  *
- * The rule of 2026-09-15 (DECISIONS, `RYN-STOCKS-PRO-001`): a person's own
- * request is never refused to protect the budget, and a read that moves
- * nothing may be asked once more after the provider's own pause, when that
- * pause is short enough to be worth it (`retryWaitMs`, at most
- * `JUPITER_RETRY_WAIT_MAX_MS`). Only once: a longer reset, or a second
- * refusal, is answered as it is — no loop, no storm.
+ * The rule: a person's own request is never refused to protect the budget, and
+ * a read that moves nothing may be asked once more after the provider's own
+ * pause, when that pause is short enough to be worth it (`retryWaitMs`, at most
+ * `JUPITER_RETRY_WAIT_MAX_MS`). Only once: a longer reset, or a second refusal,
+ * is answered as it is — no loop, no storm.
  *
- * Since `RYN-BUY-FLOW-001` subtask 5 (2026-09-28, «Замір 60 секунд») the
- * signable order is asked the same way: the order route crosses no lock and
- * stores no Review before the provider answers, so a second ask can build at
- * most the one Review the first would have — and the person's press is not
- * lost to the shared window. The order may wait longer than a read
- * (`JUPITER_ORDER_RETRY_WAIT_MAX_MS`, the window's own ten seconds): the
- * Owner's $1 purchase that day was refused with the reset 4 s away.
- * `/execute` is never asked again.
+ * Since 2026-09-28 the signable order is asked the same way: the order route
+ * crosses no lock and stores no Review before the provider answers, so a second
+ * ask can build at most the one Review the first would have — and the person's
+ * press is not lost to the shared window. The order may wait longer than a read
+ * (`JUPITER_ORDER_RETRY_WAIT_MAX_MS`, the window's own ten seconds): a $1
+ * purchase that day was refused with the reset 4 s away. `/execute` is never
+ * asked again.
  */
 
 import { JUPITER_RETRY_WAIT_MAX_MS } from "./jupiter-budget.ts";

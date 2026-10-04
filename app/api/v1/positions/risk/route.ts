@@ -10,11 +10,10 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 /**
- * «Ризик портфеля» of the proven wallet (`RYN-PROTECT-SIGNAL-001`, subtask 2,
- * contract 1.23.0; canon v5 §11): «Нормальний», «Увага» with every rule broken,
- * or «Не вдалося перевірити» with what could not be read — decided here, by
- * the same rules for the web and the phone, and never «Нормальний» on
- * incomplete data.
+ * «Ризик портфеля» of the proven wallet (contract 1.23.0): «Нормальний»,
+ * «Увага» with every rule broken, or «Не вдалося перевірити» with what could
+ * not be read — decided here, by the same rules for the web and the phone, and
+ * never «Нормальний» on incomplete data.
  */
 export async function GET(request: Request) {
   const refused = apiMajorRefusal(request.headers);

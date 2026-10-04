@@ -3,7 +3,7 @@
 import { useEffect, useRef, type ReactNode } from "react";
 
 /**
- * A landing block that knows when it is seen — the same rule the Owner's
+ * A landing block that knows when it is seen — the same rule the landing's
  * orbit, workflow and Rewards follow: once the script has the block it says
  * so (`data-js`), the block rises into place the first time a share of it is
  * on screen (`data-seen`), and its light moves only while some of it is

@@ -94,10 +94,10 @@ export default async function SolanaSettingsPage() {
             This page opened with a single panel called "What this workspace
             cannot do" whose five values were paragraphs — a key policy, a CCTP
             signing exception, a retention policy and a records policy, printed
-            in full at rest. DESIGN.md's rule, and the founder's of 2026-09-03:
-            a resting surface shows a value and a state, and the prose lives one
-            disclosure deep. Not a sentence of it was deleted; every one moved
-            into the hint beside the row it explains. */}
+            in full at rest. DESIGN.md's rule: a resting surface shows a value
+            and a state, and the prose lives one disclosure deep. Not a sentence
+            of it was deleted; every one moved into the hint beside the row it
+            explains. */}
         <Panel id="settings-network" title={text("Network")} w={6} h={5} badge={text("Solana mainnet")} tone="evidence">
           <KeyValue
             label={text("Reads")}
@@ -167,7 +167,7 @@ export default async function SolanaSettingsPage() {
 
         {/* Operator controls. A customer settings page is for a person's own
             preferences; endpoint hostnames, environment variable names, the
-            founder experiment budget and a durable-store boundary are none of
+            canary experiment budget and a durable-store boundary are none of
             their business and were never useful to them. They are still here,
             behind the session that means an operator is looking. */}
         {operator ? (
@@ -213,7 +213,7 @@ export default async function SolanaSettingsPage() {
             headerExtra={
               <InfoControl label={text("Why there is no network switch")}>
                 <p>
-                  {text("Every read here is Solana mainnet, because that is where the real mints are, and mainnet is the only network this product treats as a release target. A devnet endpoint stays configured only as an internal regression fixture; RYN-SOL-M0C moved Send to mainnet semantics — a fixture is not a step, and a switch between the two would offer a choice that means nothing to a reader. There are two mainnet endpoints rather than one because a single public endpoint is not production infrastructure: the primary is asked first and an independent operator answers when it does not, and the workspace says which one answered instead of substituting quietly.")}
+                  {text("Every read here is Solana mainnet, because that is where the real mints are, and mainnet is the only network this product treats as a release target. A devnet endpoint stays configured only as an internal regression fixture; Send has moved to mainnet semantics — a fixture is not a step, and a switch between the two would offer a choice that means nothing to a reader. There are two mainnet endpoints rather than one because a single public endpoint is not production infrastructure: the primary is asked first and an independent operator answers when it does not, and the workspace says which one answered instead of substituting quietly.")}
                 </p>
               </InfoControl>
             }

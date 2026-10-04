@@ -31,8 +31,8 @@ export type Multiplier = Readonly<{
 
 /**
  * Example amounts for orientation; the Review always quotes the real amount.
- * They are the sums a first purchase is made of — $1, $5, $10 and $25 (canon
- * v5.5 В35: a purchase from a dollar).
+ * They are the sums a first purchase is made of — $1, $5, $10 and $25: a
+ * purchase starts from a dollar.
  */
 export const STOCK_QUOTE_PRESETS_USD = [1, 5, 10, 25] as const;
 

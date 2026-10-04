@@ -140,7 +140,7 @@ export function sendSupportInputFromFacts(args: {
     defaultAccountStateFrozen:
       structural?.defaultAccountStateFrozen ?? blockers.includes("DEFAULT_ACCOUNT_STATE_FROZEN"),
     /* Configured is a fact; whether a proof is required for *this* transfer is
-       decided by the account's own confidential state, which this packet does
+       decided by the account's own confidential state, which this code does
        not read. Treating "configured" as "proof required" would block every
        ordinary transparent transfer of such a mint, so the proof question is
        answered only where it is actually read. */
@@ -253,7 +253,7 @@ export function classifySendSupport(input: SendSupportInput): SendSupportVerdict
         ? finding(
             "CONFIDENTIAL_TRANSFER_PROOF_REQUIRED",
             "BLOCK",
-            "This mint's confidential-transfer state requires proof material this packet does not produce. A transparent transfer is not assumed in its place.",
+            "This mint's confidential-transfer state requires proof material Ryntra does not produce. A transparent transfer is not assumed in its place.",
           )
         : finding(
             "CONFIDENTIAL_TRANSFER_CONFIGURED",

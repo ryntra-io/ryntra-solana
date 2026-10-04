@@ -9,8 +9,7 @@ import { STRATEGY_PAGES } from "./strategies.ts";
 import { SCREENER, SPOT, SWAP, TRENDS } from "./trade.ts";
 
 /**
- * Every documentation page, in reading order — the menu's order (canon v5.4
- * В30; the new site of canon v5.5, `RYN-SITE-V5-001` subtask 3): Start,
+ * Every documentation page, in reading order — the menu's order: Start,
  * Invest, Trade, Money, Portfolio, Ryntra, Rewards, then Reference. The
  * overview (slug "") is `/docs`; every other slug answers at `/docs/<slug>`.
  */

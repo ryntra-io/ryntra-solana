@@ -12,8 +12,7 @@ import { fmtUnits, fmtUsd, fmtWhen, planWordsFor } from "./plan-words";
 import styles from "./plans.module.css";
 
 /**
- * Plan · Before signing · Actual for one execution — canon §9.5
- * (`RYN-STRATEGY-PLAN-001` stage B).
+ * Plan · Before signing · Actual for one execution.
  *
  * Three columns of the same four figures: the entry per share, the spend,
  * the shares, the modelled loss to the invalidation — the version the

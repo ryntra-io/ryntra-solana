@@ -10,8 +10,7 @@ import { isPhoneUserAgent, phantomBrowseUrl } from "@/lib/solana/open-in-wallet"
 const REGISTRY_SETTLE_MS = 800;
 
 /**
- * How «Простий» reaches a wallet (canon v5.1 §4 «Почати з картки»;
- * `RYN-INVEST-SIMPLE-001`, session 5). Where the browser has a wallet, the
+ * How «Простий» reaches a wallet. Where the browser has a wallet, the
  * header's own panel connects it — one way to connect, as everywhere. A phone
  * whose browser has none is offered the one path that works there: this very
  * page, opened inside Phantom.

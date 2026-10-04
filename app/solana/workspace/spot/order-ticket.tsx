@@ -54,15 +54,15 @@ function holdingOf(holdings: HoldingsState, mint: string): SpotHolding | null {
  * fee, Ryntra's own fee — is on the screen where they decide.
  *
  * Simple and Pro show the same order and the same rules; they differ in what
- * is open (`RYN-UX-CLARITY-001` §5.3). Simple keeps the money on the screen —
- * the price of this order, the minimum, the network fee and the reserve,
- * Ryntra's fee, the slippage — and folds the provider, the route, a small
- * impact and the stock's secondary facts under *Details*. Pro opens them.
- * A price impact worth a caution is never folded. Under a plan, a stock
- * order whose per-share price is above the plan's bound is said so beside
- * the action before the Review runs; the Review still decides. While an
- * autoinvest rule's reminder is open for the token, a purchase here is said
- * to leave it open, with the way to the rule's own purchase (canon v5.3 В29).
+ * is open. Simple keeps the money on the screen — the price of this order,
+ * the minimum, the network fee and the reserve, Ryntra's fee, the slippage —
+ * and folds the provider, the route, a small impact and the stock's secondary
+ * facts under *Details*. Pro opens them. A price impact worth a caution is
+ * never folded. Under a plan, a stock order whose per-share price is above
+ * the plan's bound is said so beside the action before the Review runs; the
+ * Review still decides. While an autoinvest rule's reminder is open for the
+ * token, a purchase here is said to leave it open, with the way to the rule's
+ * own purchase.
  */
 export function OrderTicket({
   market,
@@ -157,9 +157,9 @@ export function OrderTicket({
               : "ready";
   const underPlan = planState === "ready";
 
-  /* Every market trades (Owner, 2026-09-12). A tokenized stock or RWA carries
-     its issuer in one line under the action, because whose terms apply is the
-     one fact about it the chain does not say. */
+  /* Every market trades. A tokenized stock or RWA carries its issuer in one
+     line under the action, because whose terms apply is the one fact about it
+     the chain does not say. */
   const availability = tradingAvailability({ category: market?.category ?? fallback?.category ?? null, mint: market?.mint ?? fallback?.mint ?? undefined, issuer: market?.issuer ?? null });
   const issuerLine = availability.allowed && availability.notice === "ISSUER_TERMS" ? (market?.issuer?.label ?? null) : null;
   const baseMint = market?.mint ?? fallback?.mint ?? null;
@@ -171,8 +171,8 @@ export function OrderTicket({
      venue's price and every figure on the Stocks page count the scaled unit
      (one base token stands for `multiplier` of them). The ticket says the base
      leg in that unit — what a person gets, holds, is guaranteed and types —
-     and hands the venue the raw amount behind it (RYN-STOCKS-PROVIDERS-001:
-     NFLXx at ×10 read "you get 0.13" for a wallet that would show 1.3). */
+     and hands the venue the raw amount behind it (without this, NFLXx at ×10
+     read "you get 0.13" for a wallet that would show 1.3). */
   const isStockMarket = market?.category === "stock";
   const stockAsset = useStockAsset(isStockMarket ? baseMint : null);
   const unitMultiplier = stockAsset?.chainMultiplier?.current ?? stockAsset?.row.multiplier?.current ?? null;
@@ -340,7 +340,7 @@ export function OrderTicket({
     }
   })();
 
-  /* A token Ryntra no longer supports (canon v5.2 В26): no side of it trades here — the ticket says where it can be sold, and nothing else. A settled or recovering trade still shows its answer. */
+  /* A token Ryntra no longer supports: no side of it trades here — the ticket says where it can be sold, and nothing else. A settled or recovering trade still shows its answer. */
   if (!availability.allowed && phase !== "SETTLED" && action !== "RECOVER") {
     return (
       <section className={`${styles.panel} ${styles.ticket}`} aria-label={text("Order ticket")} data-retired>
@@ -388,7 +388,7 @@ export function OrderTicket({
             </div>
           ) : null}
           {settledSentence ? <p className={styles.settledSentence}>{settledSentence}</p> : null}
-          {/* The loop's last step (canon v5.0 §1, §11; RYN-FIRST-SCREEN-001, S3): a purchase made under a plan is watched from here on for its loss limit. */}
+          {/* The loop's last step: a purchase made under a plan is watched from here on for its loss limit. */}
           {outcome.kind === "FILLED" && filledSide === "BUY" && underPlan && plan ? (
             <p className={styles.settledWatch}>
               <span>
@@ -577,11 +577,11 @@ export function OrderTicket({
           {serviceFee?.mechanism === "JUPITER_REFERRAL" && serviceFee.basisPoints > 0 ? (
             <p className={styles.note}>{text("Includes Jupiter's share. Already included in the quote.")}</p>
           ) : null}
-          {/* A tokenized stock's Review carries the Market and Asset blocks of
-              canon v4.0 §7.5: the reviewed amount in underlying units, the
-              executable per-share price against the issuer's reference, the
-              session and the units. They never replace the quote, the minimum
-              received or the fees above. */}
+          {/* A tokenized stock's Review carries a Market and an Asset block:
+              the reviewed amount in underlying units, the executable per-share
+              price against the issuer's reference, the session and the units.
+              They never replace the quote, the minimum received or the fees
+              above. */}
           {isStock && order && baseMint ? (
             <StockReviewBlock mint={baseMint} side={side} order={order} tokenDecimals={market.decimals} variant={pro ? "full" : "essential"} planMaxPerShare={planMaxPerShare} />
           ) : null}
@@ -618,11 +618,11 @@ export function OrderTicket({
               <span>{ticket.reviewSecondsLeft === null ? "…" : ticket.reviewSecondsLeft > 0 ? `${ticket.reviewSecondsLeft}s` : text("expired")}</span>
             </div>
           ) : null}
-          {/* The four answers of the Review at its first level (the Owner's directive of
-              2026-09-22): what leaves the wallet, what arrives at least, what it all
-              costs, and whether the order fits the plan — before any provider, route
-              or check row. The figures are the exact Review's own; the rows above and
-              the folds below keep every detail. */}
+          {/* The four answers of the Review at its first level: what leaves the
+              wallet, what arrives at least, what it all costs, and whether the
+              order fits the plan — before any provider, route or check row. The
+              figures are the exact Review's own; the rows above and the folds
+              below keep every detail. */}
           {phase === "REVIEW" && prepared && order && inputDecimals !== null && outputDecimals !== null ? (
             <dl className={styles.reviewAnswers} aria-label={text("Review in four answers")}>
               <div>
@@ -658,7 +658,7 @@ export function OrderTicket({
             <p className={styles.note}>{text("Some balances could not be read.")} <button className={styles.ghost} type="button" onClick={onRefresh} disabled={busy}>{text("Read again")}</button></p>
           ) : null}
           {phase === "RECOVERY" && settled?.recovery ? <p className={styles.warning}>{settled.recovery}</p> : null}
-          {/* A rule's reminder open for this token: a purchase here leaves it open — said before the action, with the way to the rule's own purchase (canon v5.3 В29). */}
+          {/* A rule's reminder open for this token: a purchase here leaves it open — said before the action, with the way to the rule's own purchase. */}
           {connection && side === "BUY" ? <RuleReminderNotice mint={baseMint} proven={proven} locale={locale} className={styles.ruleReminder} /> : null}
 
           {!connection && !attempt ? (

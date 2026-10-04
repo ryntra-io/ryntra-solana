@@ -1,5 +1,5 @@
 /*
- * The Brief and the Critic on a surface (RYN-BRIEF-CRITIC-001).
+ * The Brief and the Critic on a surface.
  *
  * One block, the product's own scale and tokens. The two questions a person
  * reads first are open; the data, the gaps and the checks are folded, and
@@ -180,7 +180,7 @@
   color: var(--ry-caution);
 }
 
-/* ── Closed: the block waits behind Ask Ryn (RYN-FIRST-SCREEN-001) ───── */
+/* ── Closed: the block waits behind Ask Ryn ─────────────────────────── */
 
 .closed {
   display: flex;

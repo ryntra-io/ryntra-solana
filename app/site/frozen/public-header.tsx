@@ -26,14 +26,14 @@ import styles from "./chrome.module.css";
  * Locale follows the Hub cookie so a language chosen here is the language a
  * workspace opens in. Theme follows `app/app/theme.ts` — one writer.
  *
- * One menu (Owner, 2026-09-14): the landing's five ways in across the middle
- * of the bar and one *Open Ryntra* on the right — on the landing, on the
- * documentation, on every public page — in place of the Product ·
- * Documentation pair the other pages used to carry. The words come from the
- * landing's copy in the reader's language. The language and theme switches
- * stand beside the button on every page but the landing, which is English
- * and dark by the Owner's decision of 2026-09-13; the language switch is a
- * menu of every public language, since more are coming than a pair can show.
+ * One menu: the landing's five ways in across the middle of the bar and one
+ * *Open Ryntra* on the right — on the landing, on the documentation, on every
+ * public page — in place of the Product · Documentation pair the other pages
+ * used to carry. The words come from the landing's copy in the reader's
+ * language. The language and theme switches stand beside the button on every
+ * page but the landing, which is always English and dark; the language switch
+ * is a menu of every public language, since more are coming than a pair can
+ * show.
  */
 export function PublicHeader({
   mainId = "main",
@@ -46,8 +46,8 @@ export function PublicHeader({
 }: {
   mainId?: string;
   locale?: PublicLocale;
-  /** The locale and theme switches. The landing shows neither: it is English
-   *  and dark, by the Owner's decision of 2026-09-13. */
+  /** The locale and theme switches. The landing shows neither: it is always
+   *  English and dark. */
   controls?: boolean;
   /** The landing's look: the bar lets the ground through and the menu is
    *  drawn in the landing's mist rather than the theme's ink. */
@@ -55,17 +55,15 @@ export function PublicHeader({
   /**
    * *Open the app* in the brand's orange, or quiet where the page below has
    * its own one orange action — the landing's «Відкрити застосунок», the reviewer
-   * page's *Verify a receipt* — so a screen never shows two (canon v5.0 §2,
-   * rule 1; RYN-FIRST-SCREEN-001).
+   * page's *Verify a receipt* — so a screen never shows two.
    */
   ctaTone?: "primary" | "quiet";
   /**
    * Where each language lives, when the page names it — the landing, `/` and
-   * `/uk` (plan of `RYN-SITE-V5-001` §4). Every page offered to the index has
-   * the same pair without naming it (`/docs` and `/uk/docs`,
-   * `lib/site/localized.ts`); choosing a language goes to that address, the
-   * cookie written on the way. A page with one address for both asks the
-   * server for it again in the cookie's language.
+   * `/uk`. Every page offered to the index has the same pair without naming
+   * it (`/docs` and `/uk/docs`, `lib/site/localized.ts`); choosing a language
+   * goes to that address, the cookie written on the way. A page with one
+   * address for both asks the server for it again in the cookie's language.
    */
   languageHrefs?: Readonly<Record<PublicLocale, string>>;
   /** Where the wordmark leads: the landing in the page's language by default. */

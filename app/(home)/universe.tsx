@@ -14,7 +14,7 @@ import styles from "./universe.module.css";
  *
  * Solana at the centre, the assets that trade on Spot in orbit around it:
  * eight tokenized stocks on the two inner rings, SOL with them, and Jupiter,
- * USDC and the two memes on the outer one. The Owner's brief of 2026-09-13:
+ * USDC and the two memes on the outer one. The brief of 2026-09-13:
  * a cinematic 3D market universe, not a schematic — a large graphite core
  * with the real Solana mark, orange only as light and trajectories, large
  * recognisable logos, true depth, slow continuous motion, parallax to the
@@ -241,7 +241,7 @@ export function Universe({ locale }: { locale: PublicLocale }) {
               {ASSETS.filter((asset) => asset.ring === ring.id).map((asset) => {
                 const label = `${asset.name} · ${asset.symbol} · ${u.kinds[asset.kind]}`;
                 /* A company opens on its own page — the purchase from $1 lives
-                   there (canon v5.5); a coin opens where coins trade, in Spot. */
+                   there; a coin opens where coins trade, in Spot. */
                 const company = asset.kind === "stock";
                 return (
                   <li

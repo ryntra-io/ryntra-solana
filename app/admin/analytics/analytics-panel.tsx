@@ -187,10 +187,10 @@ export function AnalyticsPanel() {
     <div>
       <BusinessPanel />
       <OperationsPanel />
-      {/* The evidence layer's spend, reconciled with the provider's dashboard (RYN-NANSEN-EVIDENCE-001). */}
+      {/* The evidence layer's spend, reconciled with the provider's dashboard. */}
       <div className={styles.grid}>
         <EvidencePanel />
-        {/* Ryn's spend and the boundary said as a fact (RYN-AGENT-TEXT-001). */}
+        {/* Ryn's spend and the boundary said as a fact. */}
         <AgentPanel />
       </div>
       <TrafficSources />

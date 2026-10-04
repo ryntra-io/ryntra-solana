@@ -1,11 +1,10 @@
 import type { WorkspaceLocale } from "@/app/shell/locale";
 
 /**
- * Every word the Predictions surfaces say, in both languages
- * (`RYN-PREDICTIONS-001`). The product's own vocabulary — paper balance,
- * paper order, paper position, Review, plan — and never the provider's:
- * venues are named where identity matters (a fill, a book, a rule), the
- * provider is named once, in Sources.
+ * Every word the Predictions surfaces say, in both languages. The product's
+ * own vocabulary — paper balance, paper order, paper position, Review, plan —
+ * and never the provider's: venues are named where identity matters (a fill,
+ * a book, a rule), the provider is named once, in Sources.
  */
 
 const EN = {

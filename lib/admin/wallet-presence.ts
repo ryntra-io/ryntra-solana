@@ -5,10 +5,10 @@ import { withBoundedCasRetry, type GuardStore } from "../guard/store.ts";
 /**
  * Wallet presence — the two facts that happen before any money moves.
  *
- * `RYN-ADMIN-BUSINESS-001`. The action ledger begins when money moves, so it
- * cannot say how many wallets opened the cabinet and never traded, nor which
- * of them proved ownership. Those are the first two steps of the funnel the
- * owner asked for, and this is the one row per wallet that records them:
+ * The action ledger begins when money moves, so it cannot say how many wallets
+ * opened the cabinet and never traded, nor which of them proved ownership.
+ * Those are the first two steps of the business funnel, and this is the one
+ * row per wallet that records them:
  *
  * - **seen** — the cabinet read this wallet's history, which is the request a
  *   connected wallet always makes. A read within thirty minutes of the last

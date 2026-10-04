@@ -1,13 +1,13 @@
 /**
- * Provenance — what every figure Ryn states stands on (`RYN-AGENT-TEXT-001`).
+ * Provenance — what every figure Ryn states stands on.
  *
- * The Owner's rule of 2026-09-22 §6: any market, risk or portfolio number the
- * agent shows carries its source, its observed time, its freshness and the
- * reference id where one applies; `current`, `stale`, `unavailable` and
- * `unknown` are distinguished; an unavailable figure is never turned into a
- * zero and no reference price is ever invented. This module is the one place
- * those words are decided and the one place a figure is turned into text —
- * the composer and the cards print what it returns and nothing else.
+ * The rule: any market, risk or portfolio number the agent shows carries its
+ * source, its observed time, its freshness and the reference id where one
+ * applies; `current`, `stale`, `unavailable` and `unknown` are distinguished;
+ * an unavailable figure is never turned into a zero and no reference price is
+ * ever invented. This module is the one place those words are decided and the
+ * one place a figure is turned into text — the composer and the cards print
+ * what it returns and nothing else.
  *
  * Pure: no clock of its own (every judgement takes `nowMs`), no store.
  */

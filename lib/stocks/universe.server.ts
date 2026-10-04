@@ -8,7 +8,7 @@
  * exchange, the session and the reference quote where the issuer publishes
  * one (xStocks); the units — the Scaled UI Amount multiplier — from the chain
  * itself, for every issuer alike, in one batched read. A representation an
- * issuer does not list is not here (canon v4.0 §7.1, §7.2).
+ * issuer does not list is not here.
  *
  * A screener row's reference is a cached issuer quote with its fetch time; it
  * is never presented as an executable price. The executable, size-aware
@@ -73,15 +73,15 @@ const LIST_LIMIT = 400;
 const MINT_LOOKUP_LIMIT = 100;
 /**
  * How long one build waits for the issuers' references, all rows together
- * (`RYN-STOCKS-RESILIENCE-001`, 2026-09-20). The reference is context on a
- * row; the universe is the list of confirmed representations, and a list
- * whose issuer went silent is still the list. Inside the budget a row asks
- * the issuer with whatever window is left; past it a row takes the cached
- * answer if one is fresh and otherwise states that the reference did not
- * arrive in time — never a figure from anywhere else. Fifteen seconds
- * covers a cold instance on an ordinary day (about a hundred and twenty
- * xStocks rows, eight at a time, well under a second each) and leaves the
- * route's thirty seconds room for the venue, the catalogues and the chain.
+ * (since 2026-09-20). The reference is context on a row; the universe is the
+ * list of confirmed representations, and a list whose issuer went silent is
+ * still the list. Inside the budget a row asks the issuer with whatever window
+ * is left; past it a row takes the cached answer if one is fresh and otherwise
+ * states that the reference did not arrive in time — never a figure from
+ * anywhere else. Fifteen seconds covers a cold instance on an ordinary day
+ * (about a hundred and twenty xStocks rows, eight at a time, well under a
+ * second each) and leaves the route's thirty seconds room for the venue, the
+ * catalogues and the chain.
  */
 export const ISSUER_QUOTE_BUDGET_MS = 15_000;
 /** Less than this left of the budget is not worth an ask; the cache decides. */
@@ -118,7 +118,7 @@ export type StockRow = Readonly<{
   multiplierState: MultiplierState | null;
   reference: Reference;
   session: Session;
-  /** Canon §7.5 on the *list* basis: token per-share against the reference. An estimate for orientation, not a quote. */
+  /** The deviation on the *list* basis: token per-share against the reference. An estimate for orientation, not a quote. */
   deviationPct: number | null;
   /** The issuer's own mark of the token and the company, for a pre-IPO instrument; null for the listed issuers. */
   issuerMark: IssuerMark | null;
@@ -412,8 +412,8 @@ export async function buildStockUniverse(deps: Readonly<{ now?: () => Date; quot
      the feed calendar; the chain's epoch beside them. The pre-IPO catalogue
      is not the universe's condition — a slow PreStocks leaves its own rows
      absent (or served stale under grace) and the universe says so, never the
-     whole market. Private companies come through PreStocks only (canon v5.2
-     В25–В26): no other pre-IPO issuer is read. */
+     whole market. Private companies come through PreStocks only: no other
+     pre-IPO issuer is read. */
   const [listed, catalogue, feeds, prestocks, epoch] = await Promise.all([listSpotMarkets("stock", LIST_LIMIT), readXStocksAssets(), readPythEquityCatalogue(), readPreStocksCatalogueShared(), readCurrentEpoch()]);
   if (!listed.ok) return { ok: false, code: `MARKETS_${listed.code}`, reason: listed.reason };
   /* The ranked lists alone are not the universe. When the venue's verified
@@ -546,10 +546,9 @@ export async function buildSharedUniverse(deps: Readonly<{ now?: () => number; b
 
 /* The platform layer. The callback throws on a failed build so nothing false
    is ever kept; the key names the shape's version so a changed row shape is
-   a new entry rather than an old one read into new code. v4 (canon v5.2
-   В26): a copy built while a disconnected issuer's rows were still in the
-   universe is never served again — the platform's data cache outlives a
-   deployment. */
+   a new entry rather than an old one read into new code. v4: a copy built
+   while a disconnected issuer's rows were still in the universe is never
+   served again — the platform's data cache outlives a deployment. */
 const readSharedUniverse = unstable_cache(
   (): Promise<StockUniverse> => buildSharedUniverse(),
   ["stock-universe", "v4"],

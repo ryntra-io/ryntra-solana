@@ -27,17 +27,17 @@ export default async function SolanaHoldingsPage() {
   const locale = await solanaServerLocale();
   return (
     <>
-      {/* Portfolio's four, one tap apart: the positions, Strategies, Results, History (canon v5.3 В28). */}
+      {/* Portfolio's four, one tap apart: the positions, Strategies, Results, History. */}
       <PortfolioTabs locale={locale} />
-      {/* Ask Ryntra about the portfolio: what changed, which positions have a plan, what needs attention (RYN-AGENT-TEXT-001) — opens the Brief below, the conversation one press further (RYN-FIRST-SCREEN-001). */}
+      {/* Ask Ryntra about the portfolio: what changed, which positions have a plan, what needs attention — opens the Brief below, the conversation one press further. */}
       <PageHead title="Portfolio" aside={<AskRynLens subject={{ kind: "portfolio" }} locale={locale} />} />
       <section aria-label={text("Portfolio")}>
-        {/* One version (canon v5.3 В28): the empty states speak to a beginner, for everyone. */}
+        {/* One version: the empty states speak to a beginner, for everyone. */}
         <HoldingsCard />
       </section>
-      {/* The Brief on the portfolio, and the Critic on request (RYN-BRIEF-CRITIC-001) — closed until *Ask Ryn* is pressed (RYN-FIRST-SCREEN-001). */}
+      {/* The Brief on the portfolio, and the Critic on request — closed until *Ask Ryn* is pressed. */}
       <LensPanel subject={{ kind: "portfolio" }} locale={locale} trigger="page" />
-      {/* The paper predictions section left with the demo (canon v5.4 В32): its component stays in `app/app/predictions/paper-portfolio`. */}
+      {/* The paper predictions section left with the demo: its component stays in `app/app/predictions/paper-portfolio`. */}
     </>
   );
 }

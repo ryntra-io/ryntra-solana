@@ -1,5 +1,5 @@
 -- ============================================================================
--- RYN-SLAB-002 reviewed forward recovery after non-destructive containment.
+-- Strategy Lab reviewed forward recovery after non-destructive containment.
 -- Production drill executed successfully 2026-07-21; this remains the recovery runbook.
 -- Restores only the five anon PostgREST RPC entry points. It does not grant
 -- direct table access, mutate persisted evidence, change RLS, or touch secrets.

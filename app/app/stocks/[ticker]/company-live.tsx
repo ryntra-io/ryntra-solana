@@ -20,11 +20,11 @@ import company from "./company.module.css";
 import { SellSheet } from "./sell-sheet";
 
 /**
- * The two facts of the company page that are read in the browser
- * (`RYN-COMPANY-PAGE-001`): the price over the year — the same daily closes the
- * chart's year draws, anchored to the page's price, with the low, the high and
- * where the price stands between them — and the reader's own position, when
- * the connected wallet holds the token.
+ * The two facts of the company page that are read in the browser: the price
+ * over the year — the same daily closes the chart's year draws, anchored to
+ * the page's price, with the low, the high and where the price stands between
+ * them — and the reader's own position, when the connected wallet holds the
+ * token.
  */
 
 /** «30.03.2026» — short enough to sit under a figure on a phone. */
@@ -82,17 +82,17 @@ export function YearRange({ mint, price, locale }: { mint: string; price: number
 
 /**
  * The reader's own position in the company, from the connected wallet: its
- * value and how much of the company it is — and, beside it, «Продати»
- * (`RYN-BUY-FLOW-001`, subtask 1), quiet: the page's one orange action stays
- * «Купити». The sale opens its own sheet on the purchase's path. A page whose
- * issuer event already offers the holder a sale passes no `sale`, so the
- * holder never sees two. Nothing without a holding.
+ * value and how much of the company it is — and, beside it, «Продати», quiet:
+ * the page's one orange action stays «Купити». The sale opens its own sheet
+ * on the purchase's path. A page whose issuer event already offers the holder
+ * a sale passes no `sale`, so the holder never sees two. Nothing without a
+ * holding.
  *
- * Under it, Нагляд over the position (`RYN-PROTECT-SIGNAL-001`, canon §11):
- * the state the server judged and its one action — «Відкрити продаж» opens
- * the sale here, «Увімкнути „Ryntra попередить“» its sheet — and a warning's
- * link (`?sell=1`) arrives with the sale open; Home's «Налаштувати» for a
- * position with no loss limit (`?watch=1`), with the sheet open.
+ * Under it, Нагляд over the position: the state the server judged and its one
+ * action — «Відкрити продаж» opens the sale here, «Увімкнути „Ryntra
+ * попередить“» its sheet — and a warning's link (`?sell=1`) arrives with the
+ * sale open; Home's «Налаштувати» for a position with no loss limit
+ * (`?watch=1`), with the sheet open.
  */
 export function YourPosition({ mint, name, price, unit, locale, sale = null }: { mint: string; name: string; price: number | null; unit: "share" | "token"; locale: WorkspaceLocale; sale?: SaleAsset | null }) {
   const word = investWords(locale);
@@ -123,7 +123,7 @@ export function YourPosition({ mint, name, price, unit, locale, sale = null }: {
   })();
   const canSell = sale?.sellable === true;
   const held = position !== null;
-  /* «Дія» (canon §11): the watch's «Відкрити продаж» is the block's one sale — the quiet «Продати» steps aside for it; «Пауза емітента»: nothing can be sold now, «Деталі» says why. */
+  /* «Дія»: the watch's «Відкрити продаж» is the block's one sale — the quiet «Продати» steps aside for it; «Пауза емітента»: nothing can be sold now, «Деталі» says why. */
   const saleInLine = canSell && (watch?.action === "open-sale" || watch?.state === "issuer-paused");
   /* A warning's link lands with the sale open (`?sell=1`, «Відкрити продаж»): once, when the position is read and the sale is this block's — an issuer's event keeps its own. */
   useEffect(() => {

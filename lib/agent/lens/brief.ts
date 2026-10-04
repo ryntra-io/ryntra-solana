@@ -1,5 +1,5 @@
 /**
- * The Brief — five questions and no more (`RYN-BRIEF-CRITIC-001`).
+ * The Brief — five questions and no more.
  *
  * *What changed · what matters for this thesis or plan · which data supports
  * it · what is unknown · what to check next.* It is a **format over the

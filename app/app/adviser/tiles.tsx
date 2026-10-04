@@ -25,7 +25,7 @@ import styles from "@/app/app/home-surface.module.css";
  * arithmetic, no re-derivation, no second opinion about what a fact means —
  * `lib/home/workbench` decided all of that with tests on it.
  *
- * Three presentation rules carry the canon here:
+ * Three presentation rules hold here:
  *
  *   **A section that is empty still renders**, with its reason. That is the
  *   whole point of a fixed structure, and a display layer that hides the empty

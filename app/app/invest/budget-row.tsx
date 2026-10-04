@@ -9,13 +9,13 @@ import styles from "./autoinvest.module.css";
 import { investWords } from "./invest-words";
 
 /**
- * The month's budget as its own line (canon v5.3 В29; `RYN-NAV-V5-001`,
- * session 2) — in the «Автоінвест» block on Home and in Portfolio, and in a
- * rule's sheet: «Бюджет не задано · Задати», or «Бюджет місяця $10 з $50 ·
- * Змінити» over the month's bar; spent — «Бюджет вичерпано · Правила стоять
- * до 1-го числа». One press opens the budget's own sheet, where the sum reads
- * «Не більше на місяць». A rule's sum never stands in this line: it is each
- * purchase, the budget is the month's ceiling for all rules.
+ * The month's budget as its own line — in the «Автоінвест» block on Home and
+ * in Portfolio, and in a rule's sheet: «Бюджет не задано · Задати», or
+ * «Бюджет місяця $10 з $50 · Змінити» over the month's bar; spent —
+ * «Бюджет вичерпано · Правила стоять до 1-го числа». One press opens the
+ * budget's own sheet, where the sum reads «Не більше на місяць». A rule's sum
+ * never stands in this line: it is each purchase, the budget is the month's
+ * ceiling for all rules.
  */
 export function BudgetRow({ budget, locale, variant, onEdit }: Readonly<{ budget: RuleBudget | null; locale: WorkspaceLocale; variant: "block" | "sheet"; onEdit: () => void }>) {
   const word = investWords(locale);

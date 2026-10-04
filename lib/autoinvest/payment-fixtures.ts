@@ -1,10 +1,9 @@
 /**
  * Chain transactions as `getTransaction` states them, trimmed — the fixtures
- * the «З кожної оплати» tests and the contract's examples read
- * (`RYN-PAY-TRIGGERS-001`). Every one is built the way the chain builds it:
- * the token balances before and after with their owners, the lamports of
- * every key, the signers, the memo instructions. Nothing here reaches a
- * network.
+ * the «З кожної оплати» tests and the contract's examples read. Every one is
+ * built the way the chain builds it: the token balances before and after with
+ * their owners, the lamports of every key, the signers, the memo
+ * instructions. Nothing here reaches a network.
  */
 
 import { PAYMENTS_USDC_MINT, type ChainTokenBalance, type ChainTransaction } from "./payments.ts";

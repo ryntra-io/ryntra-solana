@@ -6,10 +6,11 @@
  * A receipt is addressed differently by every lane — a cross-chain operation by
  * the intent its plan was written against, a swap by the signature it settled
  * under — and those are the lanes' own words. `app/solana/workspace/hub`
- * enforces that they stop at the ledger and never reach a surface, which is
- * canon §0.5 made mechanical: a screen that speaks a lane's vocabulary is one
- * keystroke from printing it. So the vocabulary lives here, and History asks
- * for *the receipt for this row* without knowing how it is addressed.
+ * enforces that they stop at the ledger and never reach a surface, which keeps
+ * internal vocabulary off the screen mechanically: a screen that speaks a
+ * lane's vocabulary is one keystroke from printing it. So the vocabulary lives
+ * here, and History asks for *the receipt for this row* without knowing how it
+ * is addressed.
  *
  * ## Which lanes can answer, and why the other two cannot
  *

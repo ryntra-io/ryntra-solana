@@ -25,7 +25,7 @@ export const metadata: Metadata = {
  * should look most like the product.
  *
  * The document typography is unchanged. `.legal` was already written against
- * the canon tokens, so dropping the forced light theme is what darkens it —
+ * the design tokens, so dropping the forced light theme is what darkens it —
  * the measure, the hairline section rules and the reading sizes all stay.
  *
  * Nothing in the documents themselves is touched by this file. Their wording is
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
 export default async function LegalLayout({ children }: { children: React.ReactNode }) {
   /* The published documents are English until a lawyer gives the Ukrainian
      text; the chrome and this line follow the reader's language, and the
-     review candidates render in it (the new site of canon v5.5). */
+     review candidates render in it. */
   const locale = await publicServerLocale();
   return (
     <div className="rx public-info-surface">

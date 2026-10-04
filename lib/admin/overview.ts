@@ -200,7 +200,7 @@ export function projectOverview(input: {
   broadcasts: BroadcastListRow[] | null;
   activity: ActivityRead;
   services?: readonly ServiceCell[];
-  /** Attention rows from sources the overview does not read itself — the money's (RYN-ADMIN-FEEDBACK-LOOP-001). */
+  /** Attention rows from sources the overview does not read itself — the money's. */
   extraAttention?: readonly AttentionItem[];
   now?: Date;
 }): OverviewModel {

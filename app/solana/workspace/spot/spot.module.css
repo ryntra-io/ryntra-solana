@@ -5,7 +5,7 @@
    same panels in the order a person acts. */
 
 .workspace {
-  /* Measured on the Owner's 2 300 px screen (2026-09-11): 296 and 344 px
+  /* Measured on a 2 300 px screen (2026-09-11): 296 and 344 px
      beside a 1 600 px chart read as two gutters, the category switch
      clipped and every second line truncated. The side columns now follow
      the screen and the chart grows with the window, within bounds. */
@@ -34,7 +34,7 @@
     "state ticket";
 }
 
-/* The two sensors of the selected token (RYN-NANSEN-EVIDENCE-001, RYN-DDXYZ-RISK-001): their own row between the chart and the wallet's state — side by side where the column is wide enough, stacked where it is not. */
+/* The two sensors of the selected token: their own row between the chart and the wallet's state — side by side where the column is wide enough, stacked where it is not. */
 .evidence {
   grid-area: evidence;
   display: grid;
@@ -44,7 +44,7 @@
   min-width: 0;
 }
 
-/* The Brief and the Critic, once asked for: one full-width row under the two sensors, inside their area (RYN-FIRST-SCREEN-001). */
+/* The Brief and the Critic, once asked for: one full-width row under the two sensors, inside their area. */
 .lensRow {
   grid-column: 1 / -1;
   min-width: 0;
@@ -293,7 +293,7 @@
 }
 
 /* A narrow column carries the identity and drops the day's volume; the wide
-   column the Owner's screen gives it carries both. */
+   column a wide screen gives it carries both. */
 @container markets (max-width: 339px) {
   .rowVol {
     display: none;
@@ -1210,7 +1210,7 @@
   line-height: var(--ry-lh-body);
 }
 
-/* A rule's reminder is open for this token (canon v5.3 В29): a purchase here does not close it — the line says so and leads to the rule's own purchase. The brand's colour as a line, never a second orange button. */
+/* A rule's reminder is open for this token: a purchase here does not close it — the line says so and leads to the rule's own purchase. The brand's colour as a line, never a second orange button. */
 .ruleReminder {
   display: grid;
   gap: 2px;
@@ -1447,7 +1447,7 @@
   line-height: var(--ry-lh-body);
 }
 
-/* The watch that follows a purchase made under a plan: one line, the limit, the way to the plan (RYN-FIRST-SCREEN-001, S3). */
+/* The watch that follows a purchase made under a plan: one line, the limit, the way to the plan. */
 .settledWatch {
   display: flex;
   align-items: baseline;
@@ -1490,7 +1490,7 @@
   text-align: center;
 }
 
-/* A token Ryntra no longer supports (canon v5.2 В26): the ticket's place says so, and where it can be sold. */
+/* A token Ryntra no longer supports: the ticket's place says so, and where it can be sold. */
 .retiredNotice {
   display: grid;
   gap: var(--ry-s1);
@@ -1788,7 +1788,7 @@
     overflow-x: auto;
   }
 
-  /* Tap targets: 44px on a phone, canon §3. */
+  /* Tap targets: 44px on a phone. */
   .details > summary,
   .view,
   .star,
@@ -1833,7 +1833,7 @@
 .stockChips .chip[data-tone="up"] { color: var(--ry-pnl-pos); }
 .stockChips .chip[data-tone="down"] { color: var(--ry-pnl-neg); }
 
-/* ── The plan on the ticket (RYN-STRATEGY-PLAN-001 stage B) ─────────────────
+/* ── The plan on the ticket ─────────────────────────────────────────────────
    One chip above the amount says which plan and version the order is under
    and what that version sized; the Strategy block inside the Review is the
    server's own judgement — the verdict, the open checks in full, the passed
@@ -2100,7 +2100,7 @@
   margin-bottom: var(--ry-s2);
 }
 
-/* One line per evidence source the Review read — when, how far behind it may be, whose data (RYN-DDXYZ-RISK-001). */
+/* One line per evidence source the Review read — when, how far behind it may be, whose data. */
 .planSources {
   display: grid;
   gap: 2px;
@@ -2124,7 +2124,7 @@
   border-bottom: 1px solid color-mix(in srgb, var(--ry-text) 25%, transparent);
 }
 
-/* Simple folds the provider, the route, a small impact and the stock's secondary facts — RYN-UX-CLARITY-001 §5.3. */
+/* Simple folds the provider, the route, a small impact and the stock's secondary facts. */
 .ticketDetails summary {
   display: inline-flex;
   align-items: center;

@@ -13,7 +13,7 @@ import styles from "./rewards.module.css";
 /**
  * Ryntra Rewards and the close — the fourth and last block of the landing.
  *
- * The Owner's brief of 2026-09-14: the site is four screens and no more —
+ * The brief of 2026-09-14: the site is four screens and no more —
  * what Ryntra is, where it works, how it leads a trade, and why to stay and
  * open it. This block is the last of those: one rewards panel in the
  * centre, not ten cards — three segments for the three things the

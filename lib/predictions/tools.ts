@@ -1,6 +1,6 @@
 /**
- * The prediction-market tools for Ryn (`RYN-PREDICTIONS-001` item 16, canon
- * v4.3 §6.5, §20.11): provider-neutral, permissioned, read and prepare only.
+ * The prediction-market tools for the assistant: provider-neutral,
+ * permissioned, read and prepare only.
  *
  * Every tool takes a `ToolContext` — who is asking (the proven wallet, or
  * nobody) — and answers the same view models the pages read. The public
@@ -9,7 +9,7 @@
  * the Review and the person's own action (`paper.ts`), never by an agent.
  *
  * The registry (`PREDICTION_TOOLS`) is what the one Ryntra Agent will
- * register later (`RYN-AGENT-TEXT-001`); the names are the Owner's.
+ * register later, under exactly these names.
  *
  * Server only.
  */

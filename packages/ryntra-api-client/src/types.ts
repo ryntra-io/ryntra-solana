@@ -21,8 +21,8 @@
  * (`plans.*` below) and so are the results (`plans.results`, Plan · Before
  * signing · Actual); the Review's Strategy block is judged by the order
  * route on `origin.plan` and refused as `PLAN_REVIEW_BLOCKED` when a
- * required check fails; the device registry's routes are live since
- * `RYN-MONITORING-PUSH-001` (`/api/v1/notifications/devices`).
+ * required check fails; the device registry's routes are live too
+ * (`/api/v1/notifications/devices`).
  */
 
 export const API_MAJOR = 1 as const;
@@ -997,19 +997,19 @@ export type AgentCriticResponse = AgentLensShape & Readonly<{ format: "critic"; 
 /* ============================================================ 1.11.0 — the consumed routes, described */
 
 /**
- * 1.11.0 (`RYN-API-CONTRACT-002`): the routes the web and the phone already
- * read outside `/api/v1`, typed exactly as they are served — the Spot
- * markets, one market and its candles; the stock universe (whole and slim),
- * one stock and its quote; the holdings. They are not v1 paths: no contract
- * major is checked and no version header is answered; a refusal is
- * `RouteError`, thrown by the client as `RyntraRouteError`. Beside them, the
- * Telegram channel over the bearer is a v1 path (the mobile line's request 17).
+ * 1.11.0: the routes the web and the phone already read outside `/api/v1`,
+ * typed exactly as they are served — the Spot markets, one market and its
+ * candles; the stock universe (whole and slim), one stock and its quote; the
+ * holdings. They are not v1 paths: no contract major is checked and no
+ * version header is answered; a refusal is `RouteError`, thrown by the client
+ * as `RyntraRouteError`. Beside them, the Telegram channel over the bearer is
+ * a v1 path.
  */
 export const SPOT_CATEGORIES = ["crypto", "meme", "stock"] as const;
 export type SpotCategory = (typeof SPOT_CATEGORIES)[number];
 export const SPOT_TIMEFRAMES = ["1m", "5m", "15m", "1h", "4h", "1d"] as const;
 export type SpotTimeframe = (typeof SPOT_TIMEFRAMES)[number];
-/** 1.14.0: the last value stays for records written before canon v5.2 В26 (private companies through PreStocks only); no new answer carries it. */
+/** 1.14.0: the last value stays for records written before private companies moved to PreStocks only; no new answer carries it. */
 export const STOCK_ISSUER_IDS = ["xstocks", "backpack", "ondo", "prestocks", "tessera"] as const;
 export type StockIssuerId = (typeof STOCK_ISSUER_IDS)[number];
 export const STOCK_REFERENCE_STATES = ["current", "last-available", "confirmed-close", "stale", "unavailable"] as const;
@@ -1278,7 +1278,7 @@ export type StockUniverseResponse = Readonly<{
   fetchedAt: string;
 }>;
 
-/** The row as the stock surfaces draw it. 1.11.0 adds `multiplierPending`, `multiplierPendingAt` (judged at answer time) and `sessionNextChangeAt` — the mobile line's request 26. */
+/** The row as the stock surfaces draw it. 1.11.0 adds `multiplierPending`, `multiplierPendingAt` (judged at answer time) and `sessionNextChangeAt`. */
 export type StockSlimRow = Readonly<{
   mint: string;
   symbol: string;
@@ -1557,7 +1557,7 @@ export type MonitorFindingOutcome = (typeof MONITOR_FINDING_OUTCOMES)[number];
 
 /* 1.21.0 — Нагляд over positions and «Ryntra попередить» */
 
-/** The state a company position is in (canon §11): «Все за планом», «Увага», «Дія», «Пауза емітента», «Увага: куплено — вихід не налаштований», or «Не вдалося перевірити». */
+/** The state a company position is in: «Все за планом», «Увага», «Дія», «Пауза емітента», «Увага: куплено — вихід не налаштований», or «Не вдалося перевірити». */
 export const WATCH_STATES = ["on-plan", "attention", "action", "issuer-paused", "exit-not-set", "unknown"] as const;
 export type WatchState = (typeof WATCH_STATES)[number];
 /** Why: `between` the limit and the target; `near-limit` ≤2 % above the limit; `issuer-event` a swap window; `above-exchange` >1 % above the exchange; `exchange-closed`; `limit` or `target` reached; `issuer-paused`; `no-exit`; `no-price`. */
@@ -2627,7 +2627,7 @@ export type SwapCancelReviewError = Readonly<{ error: Readonly<{ code: SwapCance
 
 export type SwapRecoverError = Readonly<{ error: Readonly<{ code: SwapRecoverErrorCode; message: string }> }>;
 
-/* ------------------------------------------------------------ 1.11.0 — Ryntra Predictions in paper mode (the mobile line's request 18) */
+/* ------------------------------------------------------------ 1.11.0 — Ryntra Predictions in paper mode */
 
 /**
  * Every route under `/api/predictions/*`, typed as it is served. The market
@@ -3250,11 +3250,11 @@ export type PredictionsWatchlistResponse = Readonly<{ wallet: string; entries: r
 /* ============================================================ 1.12.0 — «Автоінвест» */
 
 /**
- * 1.12.0 (`RYN-INVEST-SIMPLE-001`): an autoinvest rule — «Регулярно» — is the
- * proven wallet's company, a sum in dollars, how often and when on the
- * person's own clock. It only schedules a reminder; every purchase is the
- * wallet's own signature on a fresh Review. `GET`/`POST /api/v1/rules`,
- * `GET`/`DELETE /api/v1/rules/{id}`, `POST /api/v1/rules/{id}/status`.
+ * 1.12.0: an autoinvest rule — «Регулярно» — is the proven wallet's company,
+ * a sum in dollars, how often and when on the person's own clock. It only
+ * schedules a reminder; every purchase is the wallet's own signature on a
+ * fresh Review. `GET`/`POST /api/v1/rules`, `GET`/`DELETE /api/v1/rules/{id}`,
+ * `POST /api/v1/rules/{id}/status`.
  */
 export type RuleCadence = "daily" | "weekly" | "monthly";
 /** `schedule` — «Регулярно»; 1.13.0: `dip` — «Якщо впаде»; 1.19.0: `payments` — «З кожної оплати». */

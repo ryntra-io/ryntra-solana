@@ -1,10 +1,10 @@
 /**
  * The chain read behind the public statistics — server only.
  *
- * `RYN-ATTRIBUTION-DUNE-001`. This module answers one question from the chain
- * alone: *which transactions credited Ryntra's referral token accounts, and what
- * did each of them do?* The rule that turns a transaction into an operation is
- * `rule.ts`; this file only fetches and remembers.
+ * This module answers one question from the chain alone: *which transactions
+ * credited Ryntra's referral token accounts, and what did each of them do?*
+ * The rule that turns a transaction into an operation is `rule.ts`; this file
+ * only fetches and remembers.
  *
  * ## Why more than one endpoint, and why the balance check
  *

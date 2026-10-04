@@ -1,9 +1,9 @@
 import type { WorkspaceLocale } from "@/app/shell/locale";
 
 /**
- * The bell's words, in both languages (canon v5.4 В31, §11): what a person
- * reads in the top bar's notifications panel. The notes themselves arrive in
- * the reader's language from the monitoring surface.
+ * The bell's words, in both languages: what a person reads in the top bar's
+ * notifications panel. The notes themselves arrive in the reader's language
+ * from the monitoring surface.
  */
 
 type Bi = Readonly<{ en: string; uk: string }>;

@@ -3,9 +3,9 @@
  *
  * Wrapped SOL (`So111…112`) is a different asset: an SPL token whose supply
  * is SOL that someone wrapped. Sending native SOL does not touch that mint,
- * does not create an ATA, and has no transfer fee or hook. Canon §10.3
- * makes that its own action type so a token-transfer proof cannot be read
- * as a SOL-transfer proof.
+ * does not create an ATA, and has no transfer fee or hook. Send makes that
+ * its own action type so a token-transfer proof cannot be read as a
+ * SOL-transfer proof.
  *
  * Outside the public evidence kit, like `transaction.ts`.
  */
@@ -51,10 +51,10 @@ export function nativeSolTransferInstruction(args: {
   destination: Address;
   lamports: bigint;
   /**
-   * Solana Pay reference keys (RYN-PAY-REQUEST-001): read-only, non-signer
-   * accounts appended to the transfer so `getSignaturesForAddress(reference)`
-   * finds exactly the transaction that paid one request. They move nothing and
-   * are never the recipient; the System Program ignores extra accounts.
+   * Solana Pay reference keys: read-only, non-signer accounts appended to the
+   * transfer so `getSignaturesForAddress(reference)` finds exactly the
+   * transaction that paid one request. They move nothing and are never the
+   * recipient; the System Program ignores extra accounts.
    */
   references?: readonly Address[];
 }): Instruction {
@@ -328,7 +328,7 @@ export function buildNativeSolPreflight(args: {
     computeBudget:
       simulation.status === "PRESENT" && simulation.unitsConsumed ? simulation.unitsConsumed : null,
     unfilledReason:
-      "The exact base fee is priced from the reviewed message; M0C adds no priority-fee instruction, so priority fee is zero.",
+      "The exact base fee is priced from the reviewed message; no priority-fee instruction is added, so priority fee is zero.",
     simulation,
     observedAt: args.observedAt ?? plan.builtAt,
   };

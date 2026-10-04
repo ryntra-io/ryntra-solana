@@ -15,9 +15,9 @@ const withoutComments = (source) => source.replace(/\/\*[\s\S]*?\*\//g, " ").rep
 const manifest = JSON.parse(read("app/(home)/universe-assets.json"));
 
 /*
- * How it works — the third block of the landing: the Owner's pinned stage and
- * frame (2026-09-13, late), since canon v5.5 (the Owner's word of 2026-09-26,
- * «$1 → «Перевірка» → підпис») the road of one purchase. What these pin: the
+ * How it works — the third block of the landing: the pinned stage and frame
+ * (2026-09-13, late), since the new site of 2026-09-26 («$1 → «Перевірка» →
+ * підпис») the road of one purchase. What these pin: the
  * six steps and their words in both languages; that every step stands on a
  * real place of the product and carries its readiness from the registry or
  * the menu, never a word of its own; that the illustrative $1 of NVDAx tells
@@ -49,7 +49,7 @@ test("the workflow carries the six steps of one purchase in both languages, in t
   assert.equal(en.eyebrow, "How it works");
   assert.deepEqual(en.titleLines, ["From a dollar", "to a receipt."]);
   assert.deepEqual(en.steps.map((step) => step.label), ["Company", "$1", "Review", "Signature", "Receipt", "Autoinvest"]);
-  /* The Owner's road, word for word in Ukrainian: $1 → «Перевірка» → підпис. */
+  /* The purchase's road, word for word in Ukrainian: $1 → «Перевірка» → підпис. */
   assert.deepEqual(HOMEPAGE_COPY.uk.workflow.steps.slice(1, 4).map((step) => step.label), ["$1", "Перевірка", "Підпис"]);
   const words = JSON.stringify([HOMEPAGE_COPY.en.workflow, HOMEPAGE_COPY.uk.workflow]);
   for (const forbidden of [/\b\d{3,}\+/, /Diamond/i, /RYN token/i, /win[- ]rate/i, /guarantee/i, /profit/i, /Jupiter|Relay/, /AI signal/i, /one signature|один підпис/i]) {
@@ -68,12 +68,12 @@ test("every step stands on a place of the product and shows its readiness, read 
     assert.ok(page, `${id} stands on a registered page`);
     assert.equal(model.find((entry) => entry.id === id).status, STATUS_OF[page.readiness], `${id} carries the registry's readiness of ${page.id}`);
   }
-  /* Markets and «Автоінвест» are the menu's own destinations (canon v5.4 В30). */
+  /* Markets and «Автоінвест» are the menu's own destinations. */
   for (const [id, destination] of [["company", "markets"], ["autoinvest", "autoinvest"]]) {
     assert.ok(MENU_DESTINATION_IDS.includes(destination), `${id} stands on the menu's ${destination}`);
   }
   assert.deepEqual(model.map((entry) => entry.surface), ["markets", "company", "company", "wallet", "history", "autoinvest"]);
-  /* Canon v5.0 §0.0 rule 10: only what is built reaches a screen — every step stands on a place that works. */
+  /* Only what is built reaches a screen — every step stands on a place that works. */
   for (const entry of model) assert.equal(entry.status, "AVAILABLE", `${entry.id} shows the landing an unfinished page`);
   const copy = JSON.stringify([HOMEPAGE_COPY.en.workflow, HOMEPAGE_COPY.uk.workflow]);
   assert.doesNotMatch(copy, /in development|being built|у розробці|ще будується/i, "the landing speaks of an unfinished step");
@@ -161,13 +161,13 @@ test("the block is one piece with the page and moves honestly: pinned only where
   assert.match(source, /className=\{styles\.open\} href=\{localizedPath\("\/app\/home", locale\)\}/);
   assert.doesNotMatch(source, /framer-motion|gsap|lenis|locomotive/);
   assert.doesNotMatch(source, /#[0-9A-Fa-f]{6}\b/, "no hex literal in the component");
-  /* The frame's fixed dark palette is the canon's own, declared once. */
+  /* The frame's fixed dark palette is the brand's own, declared once. */
   const palette = /\.workflow \{[\s\S]*?\n\}/.exec(css)[0];
   const literals = css.match(/#[0-9A-Fa-f]{6}\b|rgba?\([^)]*\)/g) ?? [];
   const declared = palette.match(/#[0-9A-Fa-f]{6}\b|rgba?\([^)]*\)/g) ?? [];
   assert.equal(literals.length, declared.length, "every colour literal in the stylesheet is in the `--wf-*` block");
   for (const value of ["#0B121A", "#0E1620", "#131E2A", "#22303E", "#2F4052", "#F5F7FA", "#91A0B2", "#7A8899", "#19C77A", "#FF4D55", "#F5A524", "#FF681C", "#FF7A2F"]) {
-    assert.ok(declared.includes(value), `${value} is a canon value`);
+    assert.ok(declared.includes(value), `${value} is a brand value`);
     assert.match(read("app/design/tokens.css"), new RegExp(value, "i"), `${value} is projected`);
   }
 });

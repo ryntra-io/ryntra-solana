@@ -20,9 +20,8 @@ import { announceBuyActions, BUY_PANEL_ID, BUY_REVIEW_ID } from "./buy-actions";
 import { LossLimitCard, LossLimitPresets } from "./loss-limit";
 
 /**
- * The estimate for an amount, and the representations compared — canon v4.0
- * §7.5 and §7.7 (`RYN-STOCKS-CHOICE-001`), read the way a person reads money
- * since the clarity pass of 2026-09-16 (`RYN-UX-CLARITY-001` §5.4).
+ * The estimate for an amount, and the representations compared, read the way
+ * a person reads money since the clarity pass of 2026-09-16.
  *
  * One amount, one side, one read: `/api/stocks/compare` quotes the open token
  * and every other confirmed representation of the same underlying together,
@@ -44,18 +43,18 @@ import { LossLimitCard, LossLimitPresets } from "./loss-limit";
  * plan only after the person pressed or typed it. The Review in Spot quotes
  * the real amount again before anything is signed.
  *
- * The first-screen pass of 2026-09-23 (`RYN-FIRST-SCREEN-001`): the page's
- * one orange action is *Buy* (`BuyJump`), which brings the person to this
- * card rather than away to Spot; the presets are the sums a first purchase
- * is made of; the estimate shows what goes out, what comes back and the
- * fees, and every other line of it — the price per share, the minimum, the
- * deviation, the impact, the units, the time — waits one press deep under
- * *Details*. Nothing in the Review path changes.
+ * The first-screen pass of 2026-09-23: the page's one orange action is *Buy*
+ * (`BuyJump`), which brings the person to this card rather than away to Spot;
+ * the presets are the sums a first purchase is made of; the estimate shows
+ * what goes out, what comes back and the fees, and every other line of it —
+ * the price per share, the minimum, the deviation, the impact, the units, the
+ * time — waits one press deep under *Details*. Nothing in the Review path
+ * changes.
  *
- * One version since canon v5.3 (2026-09-24, В28): the stock desk's asset page
- * is gone into the company page, and this block lives under its *Деталі*,
- * `quiet` — the company's *Купити* is the page's one orange action and its
- * sheet owns the loss limit.
+ * One version since 2026-09-24: the stock desk's asset page is gone into the
+ * company page, and this block lives under its *Деталі*, `quiet` — the
+ * company's *Купити* is the page's one orange action and its sheet owns the
+ * loss limit.
  */
 
 export { BUY_PANEL_ID } from "./buy-actions";
@@ -65,7 +64,7 @@ type State = Readonly<{ status: "loading" | "ready" | "failed"; comparison: Stoc
 
 const DEFAULT_USD = STOCK_QUOTE_PRESETS_USD[1];
 
-/* The figures in the reader's own number style — `0,025797` and `0,10%` in Ukrainian — through the product's one amount formatter (canon v5.0 §2, rule 2). */
+/* The figures in the reader's own number style — `0,025797` and `0,10%` in Ukrainian — through the product's one amount formatter. */
 const amountOf = (scaled: string, numberLocale: string): string => formatAmount(Number(scaled), numberLocale);
 const basisPointsOf = (bps: number, numberLocale: string): string => `${new Intl.NumberFormat(numberLocale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(bps / 100)}%`;
 const multiplierOf = (value: number, numberLocale: string): string => new Intl.NumberFormat(numberLocale, { minimumFractionDigits: 6, maximumFractionDigits: 6 }).format(value);
@@ -88,10 +87,10 @@ export function DealBlock({
   /** False when the issuer does not offer a new purchase — the block opens on Sell and says why. */
   tradable?: boolean;
   /**
-   * Under a company page's *Деталі* (canon v5.3 В28: what the stock desk's
-   * asset page held, a tap deeper): the page's own *Купити* is its one orange
-   * action and its sheet owns the loss limit, so here the estimate, the
-   * representations compared and the way into Spot or a plan stay, quiet.
+   * Under a company page's *Деталі* (what the stock desk's asset page held, a
+   * tap deeper): the page's own *Купити* is its one orange action and its
+   * sheet owns the loss limit, so here the estimate, the representations
+   * compared and the way into Spot or a plan stay, quiet.
    */
   quiet?: boolean;
   /** The card's width in the page's grid. */
@@ -105,16 +104,16 @@ export function DealBlock({
   /* The field shows the sum being quoted; `chosen` says whether the person picked it (a press or a typed sum) or it is still the example. */
   const [custom, setCustom] = useState(String(DEFAULT_USD));
   const [chosen, setChosen] = useState(false);
-  /* The loss limit the person chose for this purchase, or none — then the plain Review (RYN-FIRST-SCREEN-001, S3). */
+  /* The loss limit the person chose for this purchase, or none — then the plain Review. */
   const [limit, setLimit] = useState<LossLimitPreset | null>(null);
   const [state, setState] = useState<State>({ status: "loading", comparison: null, reason: null });
   const cardRef = useRef<HTMLElement | null>(null);
   /*
-   * Quoted only once it is seen (`RYN-BUY-FLOW-001`, subtask 5): under the
-   * company page's closed «Деталі» the comparison asked Jupiter for up to five
-   * quotes on every visit — of the key's shared window of about ten requests
-   * in ten seconds — and the person's own order, pressed a minute later, was
-   * refused for rate (2026-09-28). Opened once, it stays read.
+   * Quoted only once it is seen: under the company page's closed «Деталі» the
+   * comparison asked Jupiter for up to five quotes on every visit — of the
+   * key's shared window of about ten requests in ten seconds — and the
+   * person's own order, pressed a minute later, was refused for rate
+   * (2026-09-28). Opened once, it stays read.
    */
   const [seen, setSeen] = useState(false);
   useEffect(() => {
@@ -329,7 +328,7 @@ function Terms({ quote, side, ticker, underlying, unitBasis, locale }: { quote: 
           </div>
         ) : null}
       </dl>
-      {/* Every other line of the estimate, one press deep (RYN-FIRST-SCREEN-001): the same facts, nothing dropped. */}
+      {/* Every other line of the estimate, one press deep: the same facts, nothing dropped. */}
       <details className={styles.dealDetails}>
         <summary>{word("details")}</summary>
         <dl className={styles.facts}>
@@ -549,7 +548,7 @@ function RepresentationRow({ row, compared, amountLabel, batchAt, locale }: { ro
           <Link className="rw-btn rw-btn--sm" href={planHref} prefetch={false}>
             {word("plan")}
           </Link>
-          {/* Quiet: the screen's one orange action is the buy card's own (canon v5.0 §2, rule 1). */}
+          {/* Quiet: the screen's one orange action is the buy card's own. */}
           <Link className="rw-btn rw-btn--sm" href={spotHref} prefetch={false}>
             {word("trade")}
           </Link>

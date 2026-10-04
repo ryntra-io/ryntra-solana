@@ -4,7 +4,7 @@
    card, a bot/signal config, or a Trading Defense verdict. It always answers four
    questions: what is the plan · what is the risk · what is missing · what is the next
    safe action. Dark-premium, locked palette (globals.css vars), mono numbers,
-   Phosphor icons (never emoji), semantic status color. See docs/archive/design-pre-reset-2026-08-18/ryntra-design-bar.md §4. */
+   Phosphor icons (never emoji), semantic status color. */
 
 import { Check, Circle, Warning, Lock, ShieldCheck, ArrowRight } from "@phosphor-icons/react";
 

@@ -12,13 +12,12 @@ import type { LiveState } from "./live";
 import { VenueTable } from "./research";
 
 /**
- * Market depth (`RYN-PREDICTIONS-001` items 6 and 19): the aggregated book
- * with each level's venue breakdown, the books by venue, the live trades over
- * the socket (or the REST book every few seconds where the socket is not
- * available here), the venue prices, the provider's arbitrage return where
- * it computes one, the provider's state, and the technical identifiers one
- * disclosure deep. Everything the aggregator's own page shows, in Ryntra's
- * frame.
+ * Market depth: the aggregated book with each level's venue breakdown, the
+ * books by venue, the live trades over the socket (or the REST book every few
+ * seconds where the socket is not available here), the venue prices, the
+ * provider's arbitrage return where it computes one, the provider's state,
+ * and the technical identifiers one disclosure deep. Everything the
+ * aggregator's own page shows, in Ryntra's frame.
  */
 
 type BookState = Readonly<{ status: "loading" | "ready" | "failed"; book: PredictionBook | null }>;

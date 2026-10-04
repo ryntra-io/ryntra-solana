@@ -11,15 +11,15 @@ import { localizedSolanaModules, type SolanaModule } from "./modules.ts";
  * the registry and the label comes from the registry, so the rail cannot name
  * or point at anything the registry does not declare.
  *
- * The claim above used to be aspirational. Until canon §0.7 on 2026-09-03 this
- * file also typed nineteen rows by hand with their own labels and its own
- * placeholder word, and the paragraph that stood here described that as
- * honesty: *a future capability is described honestly where a person looks for
- * it, never faked and never silently missing.* The intent was right and the
- * place was wrong. A rail row has room for a label and a badge; "described
- * honestly" needs what exists, what does not, and the condition that moves it —
- * which is what a registry entry has room for, and what those nineteen rows
- * never carried.
+ * The claim above used to be aspirational. Until 2026-09-03 this file also
+ * typed nineteen rows by hand with their own labels and its own placeholder
+ * word, and the paragraph that stood here described that as honesty: *a
+ * future capability is described honestly where a person looks for it, never
+ * faked and never silently missing.* The intent was right and the place was
+ * wrong. A rail row has room for a label and a badge; "described honestly"
+ * needs what exists, what does not, and the condition that moves it — which is
+ * what a registry entry has room for, and what those nineteen rows never
+ * carried.
  */
 
 const BASE = "/solana/workspace";
@@ -81,12 +81,12 @@ function routed(
 /**
  * The rail carries routes. Everything else is registered, not advertised.
  *
- * Owner decision, 2026-09-03 (`docs/DECISIONS.md`), superseding the rule this
- * workspace was built on: **a future capability stays registered — in the
- * capability registry, and later on a public Product Map — and does not occupy
- * primary working navigation until it has a real user route.**
+ * The rule since 2026-09-03, superseding the one this workspace was built on:
+ * **a future capability stays registered — in the capability registry, and
+ * later on a public Product Map — and does not occupy primary working
+ * navigation until it has a real user route.**
  *
- * What it replaces, and why the replacement is not a retreat. `CANON.md` §4.2
+ * What it replaces, and why the replacement is not a retreat. The old rule
  * fixed a seven-block menu and required Pro to show the whole end-state IA at
  * once with `Soon` placeholders for the absent parts. The intent was honesty:
  * describe a future capability where a person looks for it rather than hide it.
@@ -122,10 +122,10 @@ function routed(
  * The names are the ones already authoritative. `Transfers → Money` and
  * `Journal → Activity` were proposed and are deliberately not made here: those
  * belong to a navigation contract shared by five workspaces, and the authority
- * over it is itself unresolved — canon §0.2 ranks Shell v2 above the Solana
- * canon while `docs/design/README.md` calls the same files superseded, and the
- * v2.1 successor defines no navigation skeleton. Naming that gap is not the
- * same as licensing a Solana row to close it.
+ * over it is itself unresolved — Shell v2 is ranked above the Solana rules in
+ * one place and called superseded in another, and the v2.1 successor defines
+ * no navigation skeleton. Naming that gap is not the same as licensing a
+ * Solana row to close it.
  */
 export function solanaNavigation(
   locale: WorkspaceLocale,

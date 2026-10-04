@@ -1,6 +1,6 @@
 /**
- * «З кожної оплати» — reading a wallet's USDC movements from the chain
- * (`RYN-PAY-TRIGGERS-001`, canon v5.5 В38) — server only.
+ * «З кожної оплати» — reading a wallet's USDC movements from the chain —
+ * server only.
  *
  * The one question: which transactions touched the wallet's USDC account
  * since the last one read, and what did each do? The answer feeds the watch

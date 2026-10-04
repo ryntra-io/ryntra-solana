@@ -108,10 +108,10 @@ export const MCP_TOOLS: readonly McpTool[] = [
     purpose: "Read one known BNB APEX BSC Testnet job and transaction reference.",
     boundary: "Exact jobId + txHash and allowlisted contracts only; never scans broadly.",
   },
-  /* The five write tools RYN-AGENT-CONTROL-013 added. Each writes one record in
-     the local server process and produces the same kind of thing every time: a
-     proposal at PROPOSE. None of them is in the published kit, which is why the
-     surface separates the counts rather than adding five to seven. */
+  /* The five write tools. Each writes one record in the local server process
+     and produces the same kind of thing every time: a proposal at PROPOSE.
+     None of them is in the published kit, which is why the surface separates
+     the counts rather than adding five to seven. */
   {
     name: "propose_action",
     purpose: "Record a proposed action against one allowlisted registry reference.",

@@ -17,7 +17,7 @@ const REGISTRY_MATURITY_BY_ID: ReadonlyMap<string, LandingCapability["maturity"]
 );
 
 /**
- * Fail-closed truth rules for the landing "works today" cards (RYN-LAND-001).
+ * Fail-closed truth rules for the landing "works today" cards.
  *
  * Each card accepts the honest steady state of its registry capability:
  * Arcus spot and the RWA risk pack legitimately sit at `caution` because
@@ -51,7 +51,7 @@ export function isHomeCardConfirmed(
 
 /**
  * The maturity a public block is allowed to display, read from the registry
- * rather than written by hand (RYN-LAND-002).
+ * rather than written by hand.
  *
  * Hand-written badges drift: a block keeps saying "Live" long after the
  * capability behind it moved, and nobody notices until a user clicks into

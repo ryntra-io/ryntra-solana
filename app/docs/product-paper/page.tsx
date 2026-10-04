@@ -27,9 +27,9 @@ export const metadata: Metadata = sitePageMetadata({
  *
  * Named a paper rather than a whitepaper, a litepaper or a protocol paper, all
  * of which carry a token connotation this company has nothing to attach it to.
- * Twenty-nine chapters in the founder's frozen order, each drawn from a canon
- * document rather than written fresh — which is why it can be this compact and
- * still describe the whole system.
+ * Twenty-nine chapters in a fixed order, each drawn from a product document
+ * rather than written fresh — which is why it can be this compact and still
+ * describe the whole system.
  */
 export default function Page() {
   return (

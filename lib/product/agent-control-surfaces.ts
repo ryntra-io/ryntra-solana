@@ -12,10 +12,10 @@
  * They answer different questions and neither can answer the other's. That file
  * owns *rendering* facts — the heading, the scope chip, the state word, the
  * "instead" link — and is read by pages. This one owns *product* facts — what
- * the surface is for, what it refuses, which capability rows it depends on,
- * which wave built it — and is read by the documentation page and the finish
- * battery. The battery asserts that every workspace route in that file appears
- * here, so the two cannot quietly disagree about what the product has.
+ * the surface is for, what it refuses, which capability rows it depends on —
+ * and is read by the documentation page and the finish battery. The battery
+ * asserts that every workspace route in that file appears here, so the two
+ * cannot quietly disagree about what the product has.
  *
  * **`writeAuthority` is the constant `NONE` on every row and is not read from
  * an input.** No page under `/agents` writes, signs, authorizes, executes or
@@ -33,10 +33,9 @@ export const AGENT_CONTROL_WRITE_AUTHORITY = "NONE" as const;
  * stated here so that "every surface is read-only" cannot be read as "nothing
  * writes".
  *
- * It is not reachable from any page. `RYN-AGENT-CONTROL-013` made a generic
- * signer unrepresentable rather than forbidden: the effect vocabulary the write
- * tools are typed against has exactly one member, so there is no value a
- * signing tool could carry.
+ * It is not reachable from any page. A generic signer is unrepresentable rather
+ * than forbidden: the effect vocabulary the write tools are typed against has
+ * exactly one member, so there is no value a signing tool could carry.
  */
 export const AGENT_CONTROL_WRITE_PATH = Object.freeze({
   where: "The five MCP write tools, admitted by lib/agent-control/mcp/write-gate.ts",
@@ -56,8 +55,6 @@ export type AgentControlSurfaceRecord = Readonly<{
   question: string;
   /** The module that owns what this surface's facts mean. */
   module: string;
-  /** The delivery wave that built it. */
-  wave: string;
   /** What this surface refuses to do, stated where a reader will see it. */
   refuses: readonly string[];
   /** Registry rows whose truth this surface depends on. Empty is a real answer. */
@@ -74,7 +71,6 @@ export const AGENT_CONTROL_SURFACES: readonly AgentControlSurfaceRecord[] = Obje
     href: "/agents/workspace",
     question: "What is this workspace, and what can it actually do today?",
     module: "app/agents/workspace/workbench.tsx",
-    wave: "RYN-AGENT-WS-001",
     refuses: ["Shows a route with no backend carrying its real state word rather than hiding it."],
     capabilities: [],
     writeAuthority: NONE,
@@ -85,7 +81,6 @@ export const AGENT_CONTROL_SURFACES: readonly AgentControlSurfaceRecord[] = Obje
     href: "/agents/workspace/actions",
     question: "What has been proposed, what did the policy say, and what did a person decide?",
     module: "lib/agent-control/action-case.ts",
-    wave: "RYN-AGENT-WS-001",
     refuses: [
       "Keeps the list tab-local and says so: there is no durable Action Case queue behind it.",
       "Never treats a policy verdict as an authorization.",
@@ -99,7 +94,6 @@ export const AGENT_CONTROL_SURFACES: readonly AgentControlSurfaceRecord[] = Obje
     href: "/agents/workspace/lab",
     question: "What exactly does this agent propose, and what does the policy answer?",
     module: "lib/agent-control/core.ts",
-    wave: "RYN-AGENT-CONTROL-002",
     refuses: [
       "The policy decides deterministically; no language model contributes to a verdict.",
       "Records a local demo acknowledgement, never a product authorization.",
@@ -113,7 +107,6 @@ export const AGENT_CONTROL_SURFACES: readonly AgentControlSurfaceRecord[] = Obje
     href: "/agents/workspace/reviews",
     question: "What is waiting on a person, and what would invalidate the approval?",
     module: "app/agents/workspace/reviews/page.tsx",
-    wave: "RYN-AGENT-WS-001",
     refuses: ["States that no authenticated approval workflow exists rather than showing an empty queue."],
     capabilities: [],
     writeAuthority: NONE,
@@ -124,7 +117,6 @@ export const AGENT_CONTROL_SURFACES: readonly AgentControlSurfaceRecord[] = Obje
     href: "/agents/workspace/agents",
     question: "Which agents have been inspected, and where does claimed disagree with observed?",
     module: "lib/agent-control/passport-directory.ts",
-    wave: "RYN-AGENT-CONTROL-009",
     refuses: [
       "Issues no score, no rank and no trust leaderboard.",
       "Keeps provider declaration and Ryntra observation as separate facts per capability.",
@@ -138,7 +130,6 @@ export const AGENT_CONTROL_SURFACES: readonly AgentControlSurfaceRecord[] = Obje
     href: "/agents/workspace/passport",
     question: "Who is this agent, and what is actually known about it?",
     module: "lib/agent-control/agent-passport.ts",
-    wave: "RYN-AGENT-CONTROL-009",
     refuses: [
       "Every reading is a point-in-time public read with its own freshness, never a standing fact.",
       "A capability nobody observed stays unknown rather than being inferred from a declaration.",
@@ -152,7 +143,6 @@ export const AGENT_CONTROL_SURFACES: readonly AgentControlSurfaceRecord[] = Obje
     href: "/agents/workspace/policies",
     question: "Which rules is an action judged against, and what has already been committed?",
     module: "lib/agent-control/owner-control.ts",
-    wave: "RYN-AGENT-CONTROL-010",
     refuses: [
       "BOUNDED_MANDATE fails closed without an active, exact-path, revocable technical binding.",
       "Pending and escrowed commitments reduce the available budget before the next action is reviewed.",
@@ -166,9 +156,8 @@ export const AGENT_CONTROL_SURFACES: readonly AgentControlSurfaceRecord[] = Obje
     href: "/agents/workspace/evidence",
     question: "What artifacts exist for this action, and which of them is not a receipt?",
     module: "lib/agent-control/artifacts.ts",
-    wave: "RYN-AGENT-WS-001",
     refuses: [
-      "A preview that states OUTCOME_NOT_OBSERVED is a preview; calling it a receipt is the claim the canon forbids.",
+      "A preview that states OUTCOME_NOT_OBSERVED is a preview, and it is never called a receipt.",
       "Keeps six artifact kinds apart rather than merging them into one document.",
     ],
     capabilities: ["agent-decision-passport-preview"],
@@ -180,7 +169,6 @@ export const AGENT_CONTROL_SURFACES: readonly AgentControlSurfaceRecord[] = Obje
     href: "/agents/workspace/verify",
     question: "Does this artifact recompute to the hashes it claims?",
     module: "lib/agent-control/verify.ts",
-    wave: "RYN-AGENT-CONTROL-002",
     refuses: ["Reports three proof axes separately and never merges them into a single pass or fail."],
     capabilities: ["agent-decision-passport-preview"],
     writeAuthority: NONE,
@@ -191,7 +179,6 @@ export const AGENT_CONTROL_SURFACES: readonly AgentControlSurfaceRecord[] = Obje
     href: "/agents/workspace/authorize",
     question: "What does an owner signature over this exact action look like?",
     module: "lib/agent-control/authorization.ts",
-    wave: "RYN-AGENT-CONTROL-005",
     refuses: [
       "Signs an artifact in the reader's own wallet without that signature becoming a product authorization.",
       "Never requests a seed phrase, a private key or a withdrawal scope.",
@@ -205,7 +192,6 @@ export const AGENT_CONTROL_SURFACES: readonly AgentControlSurfaceRecord[] = Obje
     href: "/agents/workspace/integrations",
     question: "How does one action identity read on Solana and Stellar at once?",
     module: "lib/agent-control/adapter-projection.ts",
-    wave: "RYN-AGENT-CONTROL-011",
     refuses: [
       "One Action and Receipt core across every adapter; never a second Agent Control per chain.",
       "Keeps provider capability, Ryntra maturity, route capability and user eligibility as four independent axes.",
@@ -219,7 +205,6 @@ export const AGENT_CONTROL_SURFACES: readonly AgentControlSurfaceRecord[] = Obje
     href: "/agents/workspace/commerce",
     question: "Which payment route is declarable here, and what did paying actually prove?",
     module: "lib/agent-control/payments/x402-engine.ts",
-    wave: "RYN-AGENT-CONTROL-012",
     refuses: [
       "Binds a payment outcome and a service outcome separately: paying is not evidence of delivery.",
       "Mirrors both Draft standards behind a content digest and integrates neither.",
@@ -233,7 +218,6 @@ export const AGENT_CONTROL_SURFACES: readonly AgentControlSurfaceRecord[] = Obje
     href: "/agents/workspace/tools",
     question: "What can a tool call do here, and what does the gate refuse?",
     module: "lib/agent-control/mcp/write-gate.ts",
-    wave: "RYN-AGENT-CONTROL-013",
     refuses: [
       "Five write tools share one effect value, so a generic signer has nothing to carry.",
       "An A2A task in a terminal state promotes nothing and never becomes a Receipt.",
@@ -247,7 +231,6 @@ export const AGENT_CONTROL_SURFACES: readonly AgentControlSurfaceRecord[] = Obje
     href: "/agents/workspace/adoption",
     question: "Who can reach the hosted endpoint, holding what, and how much of it?",
     module: "lib/agent-control/adoption-current.ts",
-    wave: "RYN-AGENT-CONTROL-008",
     refuses: [
       "Every matrix cell is a real gate call at render time, so the page cannot disagree with the server.",
       "No tenant or key can be created from any screen.",
@@ -261,7 +244,6 @@ export const AGENT_CONTROL_SURFACES: readonly AgentControlSurfaceRecord[] = Obje
     href: "/agents/workspace/operations",
     question: "What is this system doing, and what is it deliberately not counting?",
     module: "lib/agent-control/analytics/operations.ts",
-    wave: "RYN-AGENT-CONTROL-014",
     refuses: [
       "Never totals a measured count with a catalogue size: the two are different quantities and the helper throws.",
       "Counts per warm instance and computes no fleet total, stated on the snapshot rather than in a footnote.",
@@ -276,7 +258,6 @@ export const AGENT_CONTROL_SURFACES: readonly AgentControlSurfaceRecord[] = Obje
     href: "/agents/workspace/attention",
     question: "What needs a person right now, and who can actually fix it?",
     module: "lib/agent-control/attention.ts",
-    wave: "RYN-AGENT-CONTROL-014",
     refuses: [
       "Ranks by a frozen category table and issues no importance number.",
       "An item nobody can act on names the record that would change that.",
@@ -291,7 +272,6 @@ export const AGENT_CONTROL_SURFACES: readonly AgentControlSurfaceRecord[] = Obje
     href: "/agents/workspace/team",
     question: "Who holds access to this tenant, with which scopes and which budget?",
     module: "lib/agent-control/team-current.ts",
-    wave: "RYN-AGENT-CONTROL-014",
     refuses: [
       "Reads tenancy and issues nothing: no key is created, rotated or revoked from this screen.",
       "Never renders a secret, a key body or any part of one.",
@@ -306,7 +286,6 @@ export const AGENT_CONTROL_SURFACES: readonly AgentControlSurfaceRecord[] = Obje
     href: "/agents/workspace/settings",
     question: "How is this workspace configured, and where does each setting take effect?",
     module: "app/agents/workspace/settings/page.tsx",
-    wave: "RYN-AGENT-WS-001",
     refuses: ["States that Agent Control has no workspace-scoped settings of its own rather than inventing some."],
     capabilities: [],
     writeAuthority: NONE,
@@ -314,7 +293,7 @@ export const AGENT_CONTROL_SURFACES: readonly AgentControlSurfaceRecord[] = Obje
 ]);
 
 /**
- * Everything the canon designed that this product has not built.
+ * Everything designed for Agent Control that this product has not built.
  *
  * A finish line is only honest if the unfinished parts are enumerated. A silent
  * omission and a deliberate deferral render identically in a feature list and
@@ -338,7 +317,8 @@ export const AGENT_CONTROL_DEFERRED: readonly AgentControlDeferral[] = Object.fr
     id: "mainnet-execution",
     label: "Mainnet execution and Outcome Receipts over a real effect",
     gate:
-      "A founder decision superseding FD-02, then one canary per capability through lib/agent-control/mainnet-promotion.ts. "
+      "Base mainnet is closed and execution runs on Base Sepolia, testnet only. Opening mainnet takes a decision by a "
+      + "person with authority, then one canary per capability through lib/agent-control/mainnet-promotion.ts. "
       + "Every capability is refused today on its own missing canary, and no capability inherits another's.",
     nearest: "lib/agent-control/mainnet-promotion.ts",
   }),
@@ -378,7 +358,7 @@ export const AGENT_CONTROL_DEFERRED: readonly AgentControlDeferral[] = Object.fr
     id: "remaining-adapter-projections",
     label: "Base/EVM, Starknet and Robinhood/Arcus adapter projections",
     gate:
-      "Each needs its own ecosystem surface to project from. Solana and Stellar shipped in wave 3; the rest "
+      "Each needs its own ecosystem surface to project from. Solana and Stellar projections already ship; the rest "
       + "have no shared action identity to expose yet, and Robinhood/Arcus comes after safer commerce adapters mature.",
     nearest: "lib/agent-control/adapter-projection.ts",
   }),
@@ -387,22 +367,22 @@ export const AGENT_CONTROL_DEFERRED: readonly AgentControlDeferral[] = Object.fr
     label: "A mobile Agent Control layout",
     gate:
       "The workspace collapses correctly at 375 and is verified there, but a mobile layout of its own is a separate "
-      + "design packet rather than a breakpoint, and none is registered.",
+      + "design rather than a breakpoint, and none exists.",
     nearest: "app/agents/workspace/agent-workspace.css",
   }),
   Object.freeze<AgentControlDeferral>({
     id: "demo-video",
     label: "A demo video cut from real footage",
     gate:
-      "Finish condition 5 asks for footage of the product working; the founder records it, and no video exists yet.",
-    nearest: "docs/products/agent-control.md",
+      "Finish condition 5 asks for footage of the product working; an operator records it, and no video exists yet.",
+    nearest: "app/agent-control/page.tsx",
   }),
   Object.freeze<AgentControlDeferral>({
     id: "external-b2b-name",
     label: "An external B2B product name",
     gate:
       "No external product name is published anywhere: the module ships under its internal name, and no package takes one.",
-    nearest: "docs/agent-control/README.md",
+    nearest: "app/developers/agent-control/page.tsx",
   }),
   Object.freeze<AgentControlDeferral>({
     id: "enforced-pilot",
@@ -417,7 +397,7 @@ export const AGENT_CONTROL_DEFERRED: readonly AgentControlDeferral[] = Object.fr
     gate:
       "Publishing needs an npm sign-in with a password and a one-time code, and the @ryntra scope has zero "
       + "published packages.",
-    nearest: "docs/agent-control/DEVELOPER-KIT-EXTRACTION-MANIFEST.json",
+    nearest: "packages/agent-control-sdk/package.json",
   }),
   Object.freeze<AgentControlDeferral>({
     id: "bnb-signed-lifecycle",

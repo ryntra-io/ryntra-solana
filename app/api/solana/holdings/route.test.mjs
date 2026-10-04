@@ -109,7 +109,7 @@ test('detail batches stay inside the measured provider limit and never truncate 
  assert.equal(batches.length,2);assert.ok(batches.every(c=>c.params[0].length<=6));
 });
 
-/* RYN-API-CONTRACT-002 — the route's own answer parses with the contract's v1 schema, whole and partial,
+/* The route's own answer parses with the contract's v1 schema, whole and partial,
    and the native SOL row is what the contract says it is: NATIVE_SOL with no mint. */
 test('the answer parses with HoldingsResponseSchema, and native SOL carries no mint',async t=>{
  const { HoldingsResponseSchema } = await import('../../../../lib/api/v1/contract.ts');

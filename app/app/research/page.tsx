@@ -226,10 +226,10 @@ const COPY = {
  * are separate routes and none redirects to another.
  *
  * `/app/radar` is deliberately not created. It was frozen intent from Home
- * Workspace v1.0 and this packet is where the canon said a later task would
- * decide: the Changes Radar lives here, as the views of this route, and no
- * second URL exists to redirect from. A route whose only behaviour is to send
- * a reader somewhere else is a dead route with a redirect attached.
+ * Workspace v1.0, left for a later decision, and this route is that decision:
+ * the Changes Radar lives here, as the views of this route, and no second URL
+ * exists to redirect from. A route whose only behaviour is to send a reader
+ * somewhere else is a dead route with a redirect attached.
  */
 export default async function ResearchPage({
   searchParams,

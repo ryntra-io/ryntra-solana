@@ -5,23 +5,23 @@ import { helpTopic } from "../shell/help-topics.ts";
 import { LANDING_META, type LandingMeta } from "./landing-meta.ts";
 
 /**
- * The words of the landing's new blocks (the new site of canon v5.5; the
- * Owner's word of 2026-09-26, «Веб 5»: «Твій дизайн + v5.5» — the Owner's own
- * hero, orbit, workflow and Rewards, whose words live in `HOMEPAGE_COPY`, and
- * beside them «Автоінвест», what you buy with the company's path, the phone,
- * security, where Ryntra is today and the questions people ask first).
+ * The words of the landing's new blocks (the new site of 2026-09-26: the
+ * original hero, orbit, workflow and Rewards, whose words live in
+ * `HOMEPAGE_COPY`, and beside them «Автоінвест», what you buy with the
+ * company's path, the phone, security, where Ryntra is today and the
+ * questions people ask first).
  *
  * Three rules hold every line here.
  *
  *   1. Only what production does. Each «Працює зараз» item is tied in
  *      `landing.test.mjs` to the code that does it, and each «Будуємо» and
- *      «Далі» item to the next rows of the queue — the test fails the day one
- *      of them ships, so the item moves rather than lingering. No dates, no
- *      per cents and nothing internal in those items (canon В40).
+ *      «Далі» item to work not yet shipped — the test fails the day one of
+ *      them ships, so the item moves rather than lingering. No dates, no
+ *      per cents and nothing internal in those items.
  *   2. The product's own words. The kinds of rule, the budget, the price
  *      condition and the issuers' labels are read from the strings the app
  *      itself shows, so the landing cannot call a thing by another name.
- *   3. «Ти», short sentences, no word from canon §5.5 — no «safe», no
+ *   3. «Ти», short sentences, no forbidden word — no «safe», no
  *      «guaranteed», no «DCA», no «one signature», no assistant named Ryn.
  */
 
@@ -345,5 +345,5 @@ export function landingCopy(locale: LandingLocale): LandingCopy {
   return LANDING_COPY[locale];
 }
 
-/** The landing's address in each language: English at the root, Ukrainian under `/uk` (plan decision 4). */
+/** The landing's address in each language: English at the root, Ukrainian under `/uk`. */
 export const LANDING_PATH: Readonly<Record<LandingLocale, "/" | "/uk">> = { en: "/", uk: "/uk" };

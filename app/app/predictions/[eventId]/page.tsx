@@ -23,13 +23,12 @@ export async function generateMetadata({ params }: { params: Promise<{ eventId: 
 }
 
 /**
- * One event (`RYN-PREDICTIONS-001` item 6): the question, the outcomes and
- * their live probabilities, the change, the volume, the time to resolution,
- * the person's paper position and the three acts — Ask Ryntra, Build plan,
- * Paper Yes / Paper No — on the first screen; Research and Market depth one
- * tap deeper, with nothing the provider gives thrown away. The event is
- * read on the server from the provider boundary; everything live is the
- * browser's.
+ * One event: the question, the outcomes and their live probabilities, the
+ * change, the volume, the time to resolution, the person's paper position and
+ * the three acts — Ask Ryntra, Build plan, Paper Yes / Paper No — on the first
+ * screen; Research and Market depth one tap deeper, with nothing the provider
+ * gives thrown away. The event is read on the server from the provider
+ * boundary; everything live is the browser's.
  */
 export default async function PredictionEventPage({ params }: { params: Promise<{ eventId: string }> }) {
   const { eventId } = await params;

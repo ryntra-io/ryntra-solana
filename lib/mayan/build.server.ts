@@ -15,11 +15,10 @@
  *
  * ## The half of the referrer fee that lives here
  *
- * `RYN-SOL-SWAP-MONETIZATION-001`: a Mayan quote's `referrerBps` sets the rate,
- * and `referrerAddresses` at **build** time decides where — and whether — the fee
- * is actually collected. Both builders passed `null` for it, so a fee could have
- * been quoted, shown to a person and then collected by nobody. They now pass the
- * configured address.
+ * A Mayan quote's `referrerBps` sets the rate, and `referrerAddresses` at
+ * **build** time decides where — and whether — the fee is actually collected.
+ * Both builders passed `null` for it, so a fee could have been quoted, shown to
+ * a person and then collected by nobody. They now pass the configured address.
  *
  * One Solana address covers both of this product's routes — and it does so for
  * **two different reasons**, which is why `referrer.ts` records the reasons

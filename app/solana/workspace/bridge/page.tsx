@@ -18,10 +18,10 @@ export async function generateMetadata() {
 /**
  * Bridge — value moving between Solana and another network.
  *
- * A page again, by Owner decision of 2026-09-10, and deliberately not the
- * classical crypto bridge it was the first time. Nobody is asked for a source
- * chain, a destination chain, a protocol, a route and a solver: they say what
- * they have and where they want it, and Relay finds an executable route.
+ * A page again since 2026-09-10, and deliberately not the classical crypto
+ * bridge it was the first time. Nobody is asked for a source chain, a
+ * destination chain, a protocol, a route and a solver: they say what they have
+ * and where they want it, and Relay finds an executable route.
  *
  * ## It opens on the direction that is actually used
  *

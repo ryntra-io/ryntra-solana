@@ -1,8 +1,8 @@
-/* Нагляд over a position (RYN-PROTECT-SIGNAL-001): the state, its figures, its one action — in one language
-   wherever a position is drawn. In a Portfolio row, a line of the position itself: no panel, no tall button.
-   On the company page and in Нагляд, a panel: the state over the range its exit makes. Amber is the missing
-   exit; «Дія» speaks in the risk's colour at the loss limit and the verified one at the target; the rest stay
-   quiet. Colours are the roles measured for text on both grounds (`--rt-*-fg`), never a raw hue. */
+/* Нагляд over a position: the state, its figures, its one action — in one language wherever a position is
+   drawn. In a Portfolio row, a line of the position itself: no panel, no tall button. On the company page and
+   in Нагляд, a panel: the state over the range its exit makes. Amber is the missing exit; «Дія» speaks in the
+   risk's colour at the loss limit and the verified one at the target; the rest stay quiet. Colours are the
+   roles measured for text on both grounds (`--rt-*-fg`), never a raw hue. */
 
 .watchIcon {
   flex: none;

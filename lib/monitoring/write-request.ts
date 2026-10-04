@@ -1,6 +1,6 @@
 /**
  * What `POST /api/monitoring` was asked to do — read against the contract
- * (1.11.0, `RYN-API-CONTRACT-002`).
+ * (1.11.0).
  *
  * The route used to cast its body and check no field's type: a non-boolean
  * `telegram` or `push`, a falsy `quietHours`, a window with array times or

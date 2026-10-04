@@ -51,9 +51,9 @@ export default function AgentsLandingPage() {
       <section className="ag-hero">
         <div className="rx-shell ag-hero-grid">
           <div className="ag-hero-copy">
-            {/* Canon v5.2 replaced "Understand the agent" — the product's
-                first move is verifying the intent, and the old line described
-                the surface rather than the act. */}
+            {/* This replaced "Understand the agent" — the product's first
+                move is verifying the intent, and the old line described the
+                surface rather than the act. */}
             <h1>
               Verify the intent.
               <span> Control the action. Prove the outcome.</span>

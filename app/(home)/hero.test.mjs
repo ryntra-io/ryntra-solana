@@ -12,15 +12,15 @@ const withoutComments = (source) => source.replace(/\/\*[\s\S]*?\*\//g, " ").rep
 /*
  * The hero. Three things live here.
  *
- * The mounted hero (`hero.tsx`) is the Owner's render's composition drawn in
- * code (2026-09-14, on the Owner's *«Роби»*): the words, the Spot workspace
- * in a tilted device, the two cards, the rail and the strip as HTML on the
- * page's own light (hero-atmosphere.tsx). The render it replaced
- * (`hero-render.tsx`, with `hero-art.png`) and the first drawn hero before
- * it (`hero-drawn.tsx`) are parked, not deleted, and keep their tests below
- * so either can be mounted again as it was.
+ * The mounted hero (`hero.tsx`) is the finished render's composition drawn
+ * in code (2026-09-14): the words, the Spot workspace in a tilted device,
+ * the two cards, the rail and the strip as HTML on the page's own light
+ * (hero-atmosphere.tsx). The render it replaced (`hero-render.tsx`, with
+ * `hero-art.png`) and the first drawn hero before it (`hero-drawn.tsx`) are
+ * parked, not deleted, and keep their tests below so either can be mounted
+ * again as it was.
  *
- * What these pin is the shape the Owner asked for and the honesty rules the
+ * What these pin is the shape the design asks for and the honesty rules the
  * page lives by, not the pixels: the pixels were looked at on rendered pages
  * at 2560, 1440 and 390 px before release.
   */
@@ -35,7 +35,7 @@ test("the mounted hero is drawn in code: the words, the workspace in a device, t
   assert.match(hero, /<h1 id="homepage-title"/);
   assert.match(hero, /c\.titleLines\.map/);
   assert.match(hero, /\{h\.sub\}[\s\S]*?\{h\.lead\}/);
-  assert.match(hero, /className=\{styles\.primary\} href=\{localizedPath\("\/app\/home", locale\)\}[\s\S]*?\{h\.open\}/, "«Відкрити застосунок» opens the app at Home, the first of its places — `/uk/app/home` from `/uk` (RYN-SITE-V5-001 subtask 4)");
+  assert.match(hero, /className=\{styles\.primary\} href=\{localizedPath\("\/app\/home", locale\)\}[\s\S]*?\{h\.open\}/, "«Відкрити застосунок» opens the app at Home, the first of its places — `/uk/app/home` from `/uk`");
   /* The device holds the drawn workspace and a note for the reader who cannot see it. */
   assert.match(hero, /<div className=\{styles\.screen\}>\s*<span className=\{styles\.srOnly\}>\{h\.productNote\}<\/span>\s*<HeroTerminal locale=\{locale\} \/>/);
   /* The two cards, the rail of three and the strip of four, all from the copy. */
@@ -46,7 +46,7 @@ test("the mounted hero is drawn in code: the words, the workspace in a device, t
   assert.match(hero, /\{h\.strip\.map\(/);
   assert.match(hero, /\{h\.motto\}/);
   assert.match(hero, /status !== "AVAILABLE" \? <span className=\{styles\.stripStatus\}>\{c\.statuses\[status\]\}<\/span> : null/, "a status chip appears exactly when the route is not available");
-  /* The strip's four ways in (canon v5.5): a company from $1, the rules, the private companies, the fee back. */
+  /* The strip's four ways in: a company from $1, the rules, the private companies, the fee back. */
   assert.match(hero, /invest: "\/app\/markets"/);
   assert.match(hero, /autoinvest: "\/app\/autoinvest"/);
   assert.match(hero, /private: "\/app\/markets\?tab=private"/);
@@ -85,7 +85,7 @@ test("the hero's light is the page's own, stays inside the section, and the scen
      cards keep their turn after the animation ends. */
   assert.match(css, /@keyframes heroRise \{ from \{ opacity: 0; translate: 0 24px; \} to \{ opacity: 1; translate: 0 0; \} \}/);
   assert.match(css, /@keyframes heroDevice \{ from \{ opacity: 0; translate: 0 28px; \} to \{ opacity: 1; translate: 0 0; \} \}/);
-  /* The headline is sized to its column: canon v5.5's line is two long lines,
+  /* The headline is sized to its column: the first screen's line is two long lines,
      each may wrap once, balanced, and never runs out of its column. */
   assert.match(css, /\.copy \{[^}]*container-type: inline-size;/);
   assert.match(css, /\.h1 \{[\s\S]*?font-size: min\(clamp\(var\(--ry-fs-h2\), 3vw, var\(--ry-fs-display\)\), 8\.2cqw\);/);
@@ -114,18 +114,18 @@ test("the render is parked as it was and can be mounted again", () => {
 
 /* ── the parked drawn hero (hero-drawn.tsx), kept as it was ─────────────── */
 
-test("the drawn hero keeps the Owner's composition: one headline, four proof points, three rail lines", () => {
+test("the drawn hero keeps its composition: one headline, four proof points, three rail lines", () => {
   for (const locale of ["en", "uk"]) {
     const c = HOMEPAGE_COPY[locale];
     assert.equal(c.titleLines.length, 2, "two headline lines, the second in orange");
     assert.deepEqual(c.hero.strip.map((item) => item.id), ["invest", "autoinvest", "private", "rewards"]);
     assert.equal(c.hero.rail.length, 3, "Built on Solana and three proof lines, nothing else");
     assert.equal(c.hero.features.length, 3);
-    /* The body was shortened on the Owner's words: one breath, not a paragraph. */
+    /* The body is kept short: one breath, not a paragraph. */
     assert.ok(c.hero.lead.length <= 160, `the lead stays short (${c.hero.lead.length})`);
     assert.ok(c.hero.lead.split(". ").length <= 2, "at most two sentences");
   }
-  /* Canon v5.5 (the Owner's word of 2026-09-26): the first screen's line word for word, one action. */
+  /* The first screen's line word for word, one action. */
   assert.deepEqual(HOMEPAGE_COPY.en.titleLines, ["Buy a piece of a company", "from $1 — in your own wallet."]);
   assert.deepEqual(HOMEPAGE_COPY.uk.titleLines.map((line) => line.replace(/ /g, " ")), ["Купи частинку компанії", "від $1 — у своєму гаманці."]);
   assert.equal(HOMEPAGE_COPY.en.hero.open, "Open the app");
@@ -173,7 +173,7 @@ test("the drawn strip reads its statuses from the registry and never calls a bui
 
 test("every destination in the drawn hero is a real page", () => {
   const hero = withoutComments(read("app/(home)/hero-drawn.tsx"));
-  assert.match(hero, /href="\/app\/swap"/, "the parked hero's Open App opens the page the Owner named then");
+  assert.match(hero, /href="\/app\/swap"/, "the parked hero's Open App opens the page chosen for it then");
   assert.match(hero, /href="\/app\/stocks"/, "Explore Stocks opens the stock desk, where Buy comes first");
   /* Its strip reads the same four ways in as the mounted one. */
   assert.match(hero, /invest: "\/app\/markets"/);
@@ -184,9 +184,9 @@ test("every destination in the drawn hero is a real page", () => {
 
 test("the product in the drawn hero comes from the registry and the Spot page's own words, and says it is a picture", () => {
   const terminal = withoutComments(read("app/(home)/hero-terminal.tsx"));
-  assert.match(terminal, /menuNavigation\(PRODUCT_ROUTES, locale\)/, "the rail is the product's own menu, from the page registry (canon v5.4 В30)");
+  assert.match(terminal, /menuNavigation\(PRODUCT_ROUTES, locale\)/, "the rail is the product's own menu, from the page registry");
   assert.match(terminal, /data-active=\{row\.id === "spot" \|\| undefined\}/, "the picture is Spot, so Spot is the lit row");
-  assert.doesNotMatch(terminal, /readiness === "planned"|tSoon/, "the rail draws no locked row since canon v4.0, so the picture cannot either");
+  assert.doesNotMatch(terminal, /readiness === "planned"|tSoon/, "the rail draws no locked row, so the picture cannot either");
   assert.match(terminal, /aria-hidden="true"/);
   assert.match(read("app/(home)/hero-drawn.tsx"), /<span className=\{styles\.srOnly\}>\{h\.productNote\}<\/span>/, "a screen reader gets the note instead of the picture");
   /* Every catalogue key the mock asks for exists in Ukrainian, because the
@@ -213,17 +213,16 @@ test("the drawn hero is written on the projection and moves once", () => {
   assert.match(css, /--u: calc\(100cqw \/ 900\)/, "one canvas pixel");
   assert.doesNotMatch(css, /animation-iteration-count|infinite/, "nothing perpetual");
   assert.doesNotMatch(css, /Onest|Plex|Space Grotesk/);
-  /* The home segment inherits the root's Brand Canon faces; it loads none of its own. */
+  /* The home segment inherits the root's brand faces; it loads none of its own. */
   assert.doesNotMatch(read("app/(home)/layout.tsx"), /next\/font/);
   assert.ok(existsSync(new URL("../../public/site/solana-mark.svg", import.meta.url)), "the network's mark is an asset, not a palette value");
 });
 
 test("the landing is back at its addresses: `/` in English, `/uk` in Ukrainian, the address deciding the language", () => {
-  /* Owner, 2026-09-26 (`RYN-SITE-NOW-001`): the old landing's story was
-     retired and `/` led into the app by a temporary 307 until the new site
-     took `/` back. `RYN-SITE-V5-001` subtask 2 is that site: the Owner's
-     design with canon v5.5's words, English at `/` and Ukrainian at `/uk`
-     (plan §4), the temporary redirect gone. */
+  /* On 2026-09-26 the old landing's story was retired and `/` led into the
+     app by a temporary 307 until the new site took `/` back. This is that
+     site: the landing's design with its new words, English at `/` and
+     Ukrainian at `/uk`, the temporary redirect gone. */
   const routing = withoutComments(read("lib/product/customer-routing.ts"));
   assert.doesNotMatch(routing, /\["\/", "\/app\/swap"\]/, "`/` never goes to Swap");
   const config = withoutComments(read("next.config.ts"));
@@ -237,15 +236,15 @@ test("the landing is back at its addresses: `/` in English, `/uk` in Ukrainian, 
     assert.match(route, new RegExp(`landingJsonLdScript\\("${locale}"\\)`), `${file}: its own structured data, in its own language`);
     assert.match(route, new RegExp(`<Homepage locale="${locale}" />`), `${file}: the landing`);
   }
-  /* The header, handed the page's language, writes it to the language cookie on arrival (plan §4),
+  /* The header, handed the page's language, writes it to the language cookie on arrival,
      so «Відкрити застосунок» on `/uk` opens the app in Ukrainian and on `/` in English. */
   assert.match(withoutComments(read("app/site/frozen/public-header.tsx")), /if \(localeProp\) \{\s*writePublicLocaleCookie\(localeProp\);/);
   assert.match(read("app/(home)/homepage.tsx"), /<PublicHeader locale=\{locale\}/);
 });
 
 test("the landing follows the reader's language and theme like every page — one chrome, one switch", () => {
-  /* Owner, 2026-09-14, reopening the English-and-dark decision of the day
-     before: the landing carries the language menu and the theme switch and
+  /* On 2026-09-14 the English-and-dark decision of the day before was
+     reopened: the landing carries the language menu and the theme switch and
      renders in the reader's language and theme. Nothing forces dark, nothing
      forces English, nothing hides the switches. */
   const page = withoutComments(read("app/(home)/homepage.tsx"));

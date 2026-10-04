@@ -12,20 +12,20 @@
  * A row written before this field existed has `origin: null`, which reads as
  * a Swap — every earlier row was one.
  *
- * **The plan (`RYN-STRATEGY-PLAN-001` stage B).** An order made under a
- * Trading Plan names the plan and the version the client read
- * (`ExecutionPlanBinding`, the contract's shape). The server judges that
- * version on the order, refuses a blocked one before any bytes are built, and
- * writes the binding into the bundle with `reviewId` — the operation's own id,
- * which the plan's Review and the Receipt carry too. The binding on the row is
- * what makes History the durable source for Plan vs Actual: a plan that lost
- * the execution's write finds it again by this field, never by guessing.
+ * **The plan.** An order made under a Trading Plan names the plan and the
+ * version the client read (`ExecutionPlanBinding`, the contract's shape). The
+ * server judges that version on the order, refuses a blocked one before any
+ * bytes are built, and writes the binding into the bundle with `reviewId` —
+ * the operation's own id, which the plan's Review and the Receipt carry too.
+ * The binding on the row is what makes History the durable source for Plan vs
+ * Actual: a plan that lost the execution's write finds it again by this field,
+ * never by guessing.
  *
- * **The rule (`RYN-INVEST-SIMPLE-001`, session 3).** A purchase made under an
- * autoinvest reminder names the rule and the occurrence (`RuleBinding`); the
- * order route refuses a reminder that is not open, and the binding travels
- * into the bundle and onto the row unchanged. The row is how the rule learns
- * it was bought — the rule is never written from the purchase path.
+ * **The rule.** A purchase made under an autoinvest reminder names the rule
+ * and the occurrence (`RuleBinding`); the order route refuses a reminder that
+ * is not open, and the binding travels into the bundle and onto the row
+ * unchanged. The row is how the rule learns it was bought — the rule is never
+ * written from the purchase path.
  */
 
 import { z } from "zod";

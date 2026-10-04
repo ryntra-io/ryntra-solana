@@ -1,7 +1,7 @@
 /**
  * The PreStocks public API — an issuer source for pre-IPO exposure tokens,
  * read on the server, validated, cached, and never treated as a market
- * reference (`RYN-STOCKS-PROVIDERS-001`, stage 2).
+ * reference.
  *
  * Read on 2026-09-16 from `https://prestocks.com/api/prestocks` (no key,
  * `cache-control: public, max-age=0, must-revalidate`, served by Vercel):
@@ -23,14 +23,14 @@
  * so a slow issuer does not delist nine tokens; when no copy exists the
  * issuer's rows are absent and the universe says why.
  *
- * Since canon v5.2 (В25, 2026-09-24) PreStocks is the one source of private
- * companies, so the universe reads it through the deployment's shared data
- * cache as well (`readPreStocksCatalogueShared`): an instance's own grace
- * copy does not outlive the instance, and a cold build against a failing
- * API would otherwise take every private company off every instance at once
- * (the failure seen on 2026-09-23 with the other pre-IPO issuer). The shared
- * copy does: a failing API leaves the last complete copy served everywhere,
- * marked stale by its own age.
+ * Since 2026-09-24 PreStocks is the one source of private companies, so the
+ * universe reads it through the deployment's shared data cache as well
+ * (`readPreStocksCatalogueShared`): an instance's own grace copy does not
+ * outlive the instance, and a cold build against a failing API would otherwise
+ * take every private company off every instance at once (the failure seen on
+ * 2026-09-23 with the other pre-IPO issuer). The shared copy does: a failing
+ * API leaves the last complete copy served everywhere, marked stale by its own
+ * age.
  */
 
 import { unstable_cache } from "next/cache.js";

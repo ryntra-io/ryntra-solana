@@ -6,7 +6,7 @@ import { loadResearchReads, projectResearchSurface } from "@/app/app/research/re
 import { loadDecisionReads, projectDecisionSurface } from "@/app/app/action-cases/read";
 
 /**
- * The three projections every wave-7 surface stands on.
+ * The three projections Home's summary surfaces stand on.
  *
  * The Brief, Alerts, Coverage and Operations all need some subset of the
  * Portfolio, the Radar and the decision queue, and all four would otherwise

@@ -1,5 +1,5 @@
 /**
- * Ryn's service — one question in, two turns out (`RYN-AGENT-TEXT-001`).
+ * Ryn's service — one question in, two turns out.
  *
  * The exchange: the person's words become an intent (`intent.ts`); the
  * intent and the session's context decide which tools run and with which
@@ -280,7 +280,7 @@ export async function handleAgentMessage(deps: AgentDeps, input: Readonly<{ owne
 
   const packet: AnswerPacket = { intent: finalIntent, personText: text, runs, citations, locale };
 
-  /* The words: the model under the budget where the Owner switched it on and the question is one the model improves; deterministic otherwise. */
+  /* The words: the model under the budget where the deployment switched it on and the question is one the model improves; deterministic otherwise. */
   let answer: AgentAnswer = composeDeterministic(packet);
   let composedBy: "model" | "deterministic" = "deterministic";
   const modelWorthy = deps.model !== null && deps.budget.modelEnabled && !["secret", "help", "unknown"].includes(klass) && runs.some((run) => run.facts.length > 0);
@@ -311,10 +311,10 @@ export async function handleAgentMessage(deps: AgentDeps, input: Readonly<{ owne
   }
 
   /*
-   * The formats, when the words asked for one (`RYN-BRIEF-CRITIC-001`).
-   * The same runs carry them: no extra read, no extra call, no second
-   * budget — and the six-section answer is written beside them, so a client
-   * that knows nothing of either still reads a whole answer.
+   * The formats, when the words asked for one. The same runs carry them: no
+   * extra read, no extra call, no second budget — and the six-section answer
+   * is written beside them, so a client that knows nothing of either still
+   * reads a whole answer.
    */
   const wantsLens = finalIntent.lens;
   const lensReads = wantsLens ? projectReads(runs, finalIntent.planId ?? (session.context?.kind === "plan" ? session.context.planId : null)) : null;

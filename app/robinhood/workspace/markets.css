@@ -12,7 +12,7 @@
  *
  * 1280px was a reading measure carried over from a page of prose, and on a
  * 2560px display it left a third of the window empty beside a six-tile grid —
- * the founder's third complaint, and correct. Prose still gets a measure:
+ * a person's third complaint, and correct. Prose still gets a measure:
  * `.rm-sub` and the tile facts cap themselves in `ch`. The grid does not. */
 .rm {
   display: grid;
@@ -226,7 +226,7 @@
   outline-offset: 2px;
 }
 
-/* ---------------------------------------------- Screener and Scanner (RYN-RHC-003)
+/* ---------------------------------------------- Screener and Scanner
  *
  * Every colour here is an `--rt-*` token with no literal fallback, which is
  * what the rest of this file and the whole workspace shell do.
@@ -453,8 +453,8 @@
 
 /* -------------------------------------------------- the tile-system surface
  *
- * `RYN-CHART-001`. The page ground, the title row that carries its explanation
- * behind an icon, and the two table tones the tiles do not own.
+ * The page ground, the title row that carries its explanation behind an icon,
+ * and the two table tones the tiles do not own.
  */
 
 .rm-head {

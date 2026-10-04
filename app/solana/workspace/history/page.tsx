@@ -32,13 +32,13 @@ export default async function SolanaHistoryPage({
   const filter = query.filter === "pending" ? "NEEDS_YOU" : "ALL";
   return (
     <>
-      {/* History is Portfolio's (canon v5.3 В28): its tabs, this one current. */}
+      {/* History is Portfolio's: its tabs, this one current. */}
       <PortfolioTabs locale={locale} />
       <PageHead title="History" />
       <PanelGrid label={text("History")}>
         <HistoryCard key={filter} selectedAction={selected} initialFilter={filter} />
       </PanelGrid>
-      {/* The paper operations left with the demo (canon v5.4 В32): their component stays in `app/app/predictions/paper-history`. */}
+      {/* The paper operations left with the demo: their component stays in `app/app/predictions/paper-history`. */}
     </>
   );
 }

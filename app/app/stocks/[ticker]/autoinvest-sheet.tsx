@@ -39,43 +39,40 @@ import { SheetTruth } from "./buy-sheet";
 import company from "./company.module.css";
 
 /**
- * «Автоінвест» on a company (canon v5.1 §4.1; `RYN-INVEST-SIMPLE-001`,
- * sessions 3–4), a sheet like the purchase's: from the bottom of a phone, in
- * the middle of a wide screen.
+ * «Автоінвест» on a company, a sheet like the purchase's: from the bottom of
+ * a phone, in the middle of a wide screen.
  *
  * **Намір.** Two rules: «Регулярно» — a sum in dollars from $1, every day,
  * week or month, the day and the time on the person's own clock, and at once
  * when the first reminder comes («Перша купівля: чт, 24 вер. о 19:00») from
  * the same schedule functions the server reminds with. The sheet opens on
  * «Щотижня · $10» — a default, not advice: the sum and how often are the
- * person's own, on their own budget, from a dollar (the Owner's word,
- * 2026-09-25). From a receipt's «Купувати щотижня» it opens weekly on the sum
- * just bought. A company whose live route
- * starts above the sum says its own minimum from the quote before the rule is
- * turned on, and the one action puts it in; and «Якщо впаде» — the
- * sum and how far the price must fall below the price now («Ryntra нагадає
- * при $319,15 або нижче»). The sum reads «Кожна купівля» — it is each
- * purchase, never the month's budget (canon v5.3 В29). **Межі.** The month's
- * budget for every rule, the person's own choice, as its own line — «Бюджет
- * не задано · Задати» or «Бюджет місяця $10 з $50 · Змінити» — that opens the
- * budget's own sheet («Не більше на місяць»). Under it, always: «Ryntra
- * нагадає — ти підтвердиш одним дотиком. Гроші лишаються у твоєму гаманці.»
- * **Дозвіл** is not asked
- * here: a rule only schedules a reminder (B.3); «Увімкнути» writes it behind
- * the wallet's proof — a signed message, never a transaction — and every
- * purchase later is its own signature.
+ * person's own, on their own budget, from a dollar. From a receipt's
+ * «Купувати щотижня» it opens weekly on the sum just bought. A company whose
+ * live route starts above the sum says its own minimum from the quote before
+ * the rule is turned on, and the one action puts it in; and «Якщо впаде» —
+ * the sum and how far the price must fall below the price now («Ryntra
+ * нагадає при $319,15 або нижче»). The sum reads «Кожна купівля» — it is each
+ * purchase, never the month's budget. **Межі.** The month's budget for every
+ * rule, the person's own choice, as its own line — «Бюджет не задано ·
+ * Задати» or «Бюджет місяця $10 з $50 · Змінити» — that opens the budget's
+ * own sheet («Не більше на місяць»). Under it, always: «Ryntra нагадає — ти
+ * підтвердиш одним дотиком. Гроші лишаються у твоєму гаманці.» **Дозвіл** is
+ * not asked here: a rule only schedules a reminder; «Увімкнути» writes it
+ * behind the wallet's proof — a signed message, never a transaction — and
+ * every purchase later is its own signature.
  *
  * A company that already has a rule opens it instead: what it is, when the
  * next purchase is or the line its price must fall to, what became of the
  * last one, and pause, turn on again or delete. When its reminder is open,
  * the one orange action buys it: «Купити $20 за правилом».
  *
- * **Умова ціни** (canon v5.5 В37; `RYN-PRICE-GUARD-001`): a company with a
- * reference — PreStocks' valuation for a private one, the reference per share
- * for a listed one — offers «Не купувати, якщо дорожче за орієнтир більш ніж
- * на N %», 5 % unless the person picks 2 %, 10 % or «Без умови», with how the
- * price stands now. A rule that has it says so, and a purchase it deferred
- * says why — the reason, the figure and the data's time.
+ * **Умова ціни**: a company with a reference — PreStocks' valuation for a
+ * private one, the reference per share for a listed one — offers «Не
+ * купувати, якщо дорожче за орієнтир більш ніж на N %», 5 % unless the person
+ * picks 2 %, 10 % or «Без умови», with how the price stands now. A rule that
+ * has it says so, and a purchase it deferred says why — the reason, the
+ * figure and the data's time.
  */
 
 /** A new rule — on a sum (a receipt's), and how often it opens: daily unless said (a receipt's «Купувати щотижня» says weekly) — or an existing rule to manage. */
@@ -99,7 +96,7 @@ const API_HEADERS = { accept: "application/json", "X-Ryntra-API": "1" } as const
 const CADENCES: readonly RuleCadence[] = ["daily", "weekly", "monthly"];
 const KINDS: readonly RuleKind[] = ["schedule", "dip", "payments"];
 const DEFAULT_DROP = RULE_DIP_PRESETS_PCT[0];
-/* «З кожної оплати» opens on the round-up to $1 — the canon's own example (В38), a default, not advice. */
+/* «З кожної оплати» opens on the round-up to $1 — a default, not advice. */
 const DEFAULT_PERCENT = PAYMENT_PERCENT_PRESETS[1];
 /** The payment an example line reads — «Оплата $3,40 → $0,60 в Apple» — and the incoming transfer. */
 const EXAMPLE_PAYMENT_USD = 3.4;
@@ -115,7 +112,7 @@ export type AutoinvestSheetProps = Readonly<{
   icon: string | null;
   preIpo: boolean;
   truth: string;
-  /** The issuer's event before a rule's first purchase (the IPO and conversion watch, canon v5.2 В27): the token bought must be swapped by the deadline. */
+  /** The issuer's event before a rule's first purchase (the IPO and conversion watch): the token bought must be swapped by the deadline. */
   eventLine?: string | null;
   /** The price the page shows now — the reference point a «Якщо впаде» rule would start from. */
   priceUsd: number | null;
@@ -132,7 +129,7 @@ export type AutoinvestSheetProps = Readonly<{
   onCreate: (request: RuleCreateRequest) => Promise<RuleWrite>;
   onSetStatus: (ruleId: string, status: RuleStatus) => Promise<RuleWrite>;
   onRemove: (ruleId: string) => Promise<RuleWrite>;
-  /** The budget's own sheet, over this one — the month's budget is set there, never beside the rule's sum (canon v5.3 В29). */
+  /** The budget's own sheet, over this one — the month's budget is set there, never beside the rule's sum. */
   onEditBudget: () => void;
   /** An open reminder, bought now: the purchase sheet on the rule's sum. */
   onBuyNow: (rule: AutoinvestRule, occurrence: RuleOccurrence) => void;
@@ -241,7 +238,7 @@ function AutoinvestFlow({
   }, []);
   const [kind, setKind] = useState<RuleKind>("schedule");
   const [dropPct, setDropPct] = useState<number>(DEFAULT_DROP);
-  /* «З кожної оплати» (canon v5.5 В38): the mode and its one figure — the round-up to $1 unless the person picks another. */
+  /* «З кожної оплати»: the mode and its one figure — the round-up to $1 unless the person picks another. */
   const [payMode, setPayMode] = useState<RulePaymentMode>("roundup");
   const [roundTo, setRoundTo] = useState<number>(PAYMENT_ROUNDUP_STEPS_USD[0]);
   const [fixedText, setFixedText] = useState(String(RULE_MINIMUM_USD));
@@ -250,10 +247,10 @@ function AutoinvestFlow({
   const [thresholdUsd, setThresholdUsd] = useState<number>(RULE_MINIMUM_USD);
   const [ownAsk, setOwnAsk] = useState<string | null>(null);
   /*
-   * «Умова ціни» (canon v5.5 В37): 5 % unless the person picks another limit or
-   * «Без умови» — offered only where the company has a reference. A sheet
-   * opened without the company's row (Home's «Додати правило») reads it, and
-   * turns nothing on until it knows whether there is a reference to offer.
+   * «Умова ціни»: 5 % unless the person picks another limit or «Без умови» —
+   * offered only where the company has a reference. A sheet opened without
+   * the company's row (Home's «Додати правило») reads it, and turns nothing
+   * on until it knows whether there is a reference to offer.
    */
   const [limitPct, setLimitPct] = useState<number | null>(conditionReference === null ? null : PRICE_CONDITION_DEFAULT_PCT);
   const conditionRead = useConditionFacts(mint, conditionReference !== null && (mode.kind === "compose" || mode.rule.priceCondition !== null), conditionFacts);
@@ -261,7 +258,7 @@ function AutoinvestFlow({
   const reference: PriceReference | null = conditionReference ?? conditionFresh?.reference ?? null;
   const referencePending = conditionReference === undefined && conditionRead.status !== "ready" && conditionRead.status !== "failed";
   const [amountText, setAmountText] = useState(String(mode.kind === "compose" && mode.amountUsd !== null ? Math.max(MIN_BUY_USD, Math.round(mode.amountUsd * 100) / 100) : RULE_DEFAULT_USD));
-  /* «Щодня · $1» unless the sheet was opened for another cadence: «щодня по $1» is two taps (canon v5.5 В35). */
+  /* «Щодня · $1» unless the sheet was opened for another cadence: «щодня по $1» is two taps. */
   const [schedule, setSchedule] = useState<RuleSchedule>(() => openingSchedule(Date.now(), browserTimeZone(), mode.kind === "compose" ? mode.cadence : undefined));
   const [step, setStep] = useState<Step>("idle");
   const [failure, setFailure] = useState<string | null>(null);
@@ -276,7 +273,7 @@ function AutoinvestFlow({
   useEffect(() => () => onBusy(false), [onBusy]);
 
   useEffect(() => {
-    /* Whether a reminder can reach Telegram — read only for a proven wallet; a sheet never says a channel it has not read (canon §4.1). */
+    /* Whether a reminder can reach Telegram — read only for a proven wallet; a sheet never says a channel it has not read. */
     if (!proven) return undefined;
     let live = true;
     fetch("/api/v1/notifications/telegram", { headers: API_HEADERS })
@@ -292,7 +289,7 @@ function AutoinvestFlow({
     };
   }, [proven]);
 
-  /* Whether the rule's sum routes into the company now, and if not, the company's own minimum from the same quote (canon v5.5 В35) — asked before the rule is turned on, never after. */
+  /* Whether the rule's sum routes into the company now, and if not, the company's own minimum from the same quote — asked before the rule is turned on, never after. */
   const composing = mode.kind === "compose" && made === null;
   const typed = parseDollars(amountText, lang);
   const typedValid = typed !== null && typed >= MIN_BUY_USD && typed <= RULE_MAX_USD;
@@ -617,7 +614,7 @@ function AutoinvestFlow({
       </div>
 
       {kind === "payments" ? (
-        /* «З кожної оплати» (canon v5.5 В38): what to set aside from the wallet's own USDC, an example on live figures, the minimum a reminder opens at, and what never counts behind the «?». */
+        /* «З кожної оплати»: what to set aside from the wallet's own USDC, an example on live figures, the minimum a reminder opens at, and what never counts behind the «?». */
         <>
           <div className={company.ruleWhenGroup}>
             <span className={company.limitLabel} id={`${titleId}-what`}>
@@ -693,7 +690,7 @@ function AutoinvestFlow({
         </>
       ) : (
         <>
-          {/* The rule's sum is each purchase — never the month's budget, which is its own line below (canon v5.3 В29). */}
+          {/* The rule's sum is each purchase — never the month's budget, which is its own line below. */}
           <p className={company.amountLabel} aria-hidden="true">
             {word("eachPurchase")}
           </p>
@@ -713,7 +710,7 @@ function AutoinvestFlow({
               aria-describedby={`${titleId}-first`}
             />
           </label>
-          {/* No quick sums: a rule's sum is the person's own, typed (the Owner's word, 2026-09-25: «на авто — якусь певну суму, довільну»). */}
+          {/* No quick sums: a rule's sum is the person's own, typed — a fixed sum of their choosing. */}
           {minimumLine ? (
             <p className={company.estimate} data-route-minimum aria-live="polite">
               {minimumLine}
@@ -804,7 +801,7 @@ function AutoinvestFlow({
         </>
       )}
 
-      {/* «Умова ціни» (canon v5.5 В37): the most the price may stand above the company's reference, 5 % unless the person picks another — and how it stands now. */}
+      {/* «Умова ціни»: the most the price may stand above the company's reference, 5 % unless the person picks another — and how it stands now. */}
       {reference ? (
         <>
           <div className={company.ruleRow}>
@@ -832,7 +829,7 @@ function AutoinvestFlow({
         </>
       ) : null}
 
-      {/* The month's budget for every rule — its own line, its own sheet over this one; the rule's sum above is never it (canon v5.3 В29). */}
+      {/* The month's budget for every rule — its own line, its own sheet over this one; the rule's sum above is never it. */}
       <BudgetRow budget={budget} locale={locale} variant="sheet" onEdit={onEditBudget} />
 
       <p className={company.rulePromise}>{word("autoinvestPromise")}</p>
@@ -849,11 +846,11 @@ function AutoinvestFlow({
 }
 
 /**
- * The newest counted events of a «З кожної оплати» rule (canon v5.5 В38): the
- * sum, the rule's share, the time and — where the transfer carried one — its
- * Solana Pay label; never the other side's name. An event still waiting can
- * be named the person's own account: «Мій рахунок», asked once more before it
- * is written.
+ * The newest counted events of a «З кожної оплати» rule: the sum, the rule's
+ * share, the time and — where the transfer carried one — its Solana Pay
+ * label; never the other side's name. An event still waiting can be named
+ * the person's own account: «Мій рахунок», asked once more before it is
+ * written.
  */
 function PaymentEvents({
   events,

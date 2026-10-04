@@ -455,11 +455,12 @@ export function SendConsole() {
       <Panel
         id="authorize-form"
         title="Prepare a payment"
-        /* DESIGN.md §4 fixes the Action template at FORM 4 · EVIDENCE 5 ·
-           LIFECYCLE 3, and the grid has no width token 5 — the legal set is
-           3, 4, 6, 8, 9, 12. Equal quarters rather than widening the shared
-           token set for one page: the intent panel still holds the most rows,
-           and a form with a 56-character address in it is unusable at 3. */
+        /* The workspace design fixes the Action template at FORM 4 ·
+           EVIDENCE 5 · LIFECYCLE 3, and the grid has no width token 5 — the
+           legal set is 3, 4, 6, 8, 9, 12. Equal quarters rather than widening
+           the shared token set for one page: the intent panel still holds the
+           most rows, and a form with a 56-character address in it is unusable
+           at 3. */
         w={4}
         h={rows}
         essential

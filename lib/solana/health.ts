@@ -1,5 +1,5 @@
 /**
- * Provider health for the Solana RPC pair (canon §23).
+ * Provider health for the Solana RPC pair.
  *
  * Four states and no fifth: `HEALTHY · DEGRADED · UNAVAILABLE · UNKNOWN`. The
  * one that carries the weight is `UNKNOWN` — it is what a pair is before
@@ -9,11 +9,11 @@
  *
  * ## Why a pair has health at all
  *
- * Because failover is allowed and silence about it is not. Canon §23.3 forbids
- * *silent* provider substitution, and §3.5 requires a secondary read path — the
- * two are only compatible if the substitution is stated. `DEGRADED` is that
- * statement: the answer on screen is real, and it did not come from the
- * endpoint this workspace is configured to trust first.
+ * Because failover is allowed and silence about it is not. A provider is never
+ * substituted *silently*, and a secondary read path is required — the two are
+ * only compatible if the substitution is stated. `DEGRADED` is that statement:
+ * the answer on screen is real, and it did not come from the endpoint this
+ * workspace is configured to trust first.
  *
  * The derivation is a pure function over the attempt log a handle already
  * keeps, so nothing has to be probed to know it and no extra request is spent
@@ -141,7 +141,7 @@ export function rpcPairHealth(handle: SolanaRpcHandle): RpcPairHealth {
 }
 
 /**
- * What a degraded pair means for the facts it produced (canon §23.3).
+ * What a degraded pair means for the facts it produced.
  *
  * Not decoration: a read served by the fallback is still a real read, and a
  * read nobody served is not stale — it is absent. Surfaces ask this instead of

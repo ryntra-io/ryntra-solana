@@ -10,17 +10,15 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 /**
- * Plan vs Actual for one plan of the proven wallet (`RYN-STRATEGY-PLAN-001`
- * stage B): one result per execution — the version it was bound to, the
- * Strategy block that stood before the signature, the History row the chain
- * settled — newest first. The read reconciles the plan against History
- * first, so an execution the plan missed is on it by the time it is read;
- * `sync` says whether every write landed.
+ * Plan vs Actual for one plan of the proven wallet: one result per execution
+ * — the version it was bound to, the Strategy block that stood before the
+ * signature, the History row the chain settled — newest first. The read
+ * reconciles the plan against History first, so an execution the plan missed
+ * is on it by the time it is read; `sync` says whether every write landed.
  *
- * 1.9.0 (`RYN-RESULTS-MEMORY-001`): the same answer carries `positions` —
- * what this plan's own executions add up to — and, when the plan made no
- * trade at all, the one `outcomes` entry saying why. A plan is in one or
- * the other, never both.
+ * 1.9.0: the same answer carries `positions` — what this plan's own executions
+ * add up to — and, when the plan made no trade at all, the one `outcomes`
+ * entry saying why. A plan is in one or the other, never both.
  */
 
 type Params = Readonly<{ params: Promise<{ id: string }> }>;

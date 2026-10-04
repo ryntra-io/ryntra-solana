@@ -121,8 +121,8 @@ export function WalletGate({ title }: WalletGateProps) {
   const { text } = useSolanaI18n();
   const { wallets } = useSolanaConnection();
   /* A phone's browser carries no wallet: the way on is this page inside
-     Phantom's own browser (RYN-INVEST-SIMPLE-001, session 5). Read after mount
-     — the server does not know the device. */
+     Phantom's own browser. Read after mount — the server does not know the
+     device. */
   const [phone, setPhone] = useState(false);
   useEffect(() => {
     setPhone(isPhoneUserAgent(window.navigator.userAgent));

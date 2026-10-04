@@ -1,11 +1,11 @@
 /**
- * A company page's words for a search result and a share (the plan of
- * `RYN-SITE-V5-001` §3): the company's name first, never the token's; what the
- * token is in its issuer's words; only the blocks the page actually draws —
- * «key figures from SEC filings» only where the page has them — and never a
- * price, which caches would keep for days, nor «from $1», since each company's
- * minimum is its own. The title within 60 characters, the description within
- * 160, each falling back to a shorter form rather than being cut.
+ * A company page's words for a search result and a share: the company's name
+ * first, never the token's; what the token is in its issuer's words; only the
+ * blocks the page actually draws — «key figures from SEC filings» only where
+ * the page has them — and never a price, which caches would keep for days, nor
+ * «from $1», since each company's minimum is its own. The title within 60
+ * characters, the description within 160, each falling back to a shorter form
+ * rather than being cut.
  */
 
 import type { CompanyPath } from "../stocks/company-path.ts";

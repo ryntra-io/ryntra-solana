@@ -10,15 +10,15 @@ import { projectStrategies, type StrategiesProjection } from "@/lib/home/strateg
  * Two read RPCs that already existed — `strategy_lab_list` and
  * `strategy_lab_get`. **Nothing here appends a version, a run or a proposal.**
  * The lab owns writing; this surface owns reading the same records back as the
- * lifecycle the canon describes.
+ * strategy's lifecycle.
  *
  * **Three fields are deliberately dropped on the way through.** The lab's
  * evidence report carries `quality`, `verdict` and a numeric `score`. Inside
  * the lab those describe evidence completeness against a fixed rubric; on a
  * Home surface beside a portfolio they would read as a judgement about the
- * strategy, which is the universal score frozen decision 20 refuses. What
- * crosses this boundary is the protocol — costs, out-of-sample, forward
- * evidence, sensitivity, regimes — plus the drawdown and the trade count, and
+ * strategy, which is the universal score the product refuses. What crosses this
+ * boundary is the protocol — costs, out-of-sample, forward evidence,
+ * sensitivity, regimes — plus the drawdown and the trade count, and
  * `lib/home/strategy/backtest.ts` decides what is missing from those.
  *
  * **The read is bounded.** A reader with sixty strategies gets the most

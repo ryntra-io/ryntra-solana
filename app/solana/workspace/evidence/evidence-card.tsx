@@ -13,10 +13,10 @@ import { coverageWords, evidenceWordsFor, fmtAddresses, fmtClock, fmtSignedCompa
 import styles from "./evidence.module.css";
 
 /**
- * The analysis card — the first of the three capabilities of
- * `RYN-NANSEN-EVIDENCE-001`: an external source's observations of the token,
- * read when the person asks, shown as three facts with their times and the
- * source's attribution, and one press away from becoming a rule of the plan.
+ * The analysis card — the first of the three evidence capabilities: an
+ * external source's observations of the token, read when the person asks,
+ * shown as three facts with their times and the source's attribution, and one
+ * press away from becoming a rule of the plan.
  *
  * Nothing loads until *Analysis* is pressed: opening an asset costs nothing
  * and the person decides whether the question is worth asking. The answer
@@ -115,7 +115,7 @@ export function EvidenceCard({ mint, locale, planHref, initialWindow = "24h" }: 
         {state.status === "idle" ? (
           <div className={styles.idle}>
             <p className={styles.lead}>{word("lead")}</p>
-            {/* A sensor, not the screen's action: quiet, so the page keeps one orange action (canon v5.0 §2, rule 1; RYN-FIRST-SCREEN-001). */}
+            {/* A sensor, not the screen's action: quiet, so the page keeps one orange action. */}
             <button type="button" className="rw-btn" onClick={() => void load(window)}>
               {word("analyse")}
             </button>

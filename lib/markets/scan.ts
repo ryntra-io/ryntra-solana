@@ -3,7 +3,7 @@ import type { RadarRow } from "./radar.ts";
 /**
  * The Scanner: standing conditions that watch, and the events they raise.
  *
- * The third of the canon's three discovery objects, and the one that stops
+ * The third of the product's three discovery objects, and the one that stops
  * this being a market list. Radar pushes what is happening; the Screener
  * answers a question a person asked once; the Scanner keeps asking and tells
  * you **what changed and how it knows**.
@@ -20,8 +20,8 @@ import type { RadarRow } from "./radar.ts";
  *      is what makes them two objects rather than two views over one query.
  *
  * And one property is held by data: every kind states its **coverage** — how
- * much of the universe it can actually see. Three of the canon's own listed
- * conditions have no source in any endpoint this product reads, so they are
+ * much of the universe it can actually see. Three of the conditions the
+ * product lists have no source in any endpoint this product reads, so they are
  * registered here carrying the exact thing that would end each, in the same
  * shape `ABSENT_ANALYTICS` uses. Registering them is the point: dropping them
  * would make the Scanner read complete, which is the more expensive error.
@@ -147,9 +147,9 @@ export const SCANNER_KINDS: readonly KindSpec[] = Object.freeze([
     kind: "corporate-action-scheduled" as const,
     label: "A corporate action is scheduled",
     question: "Which tokens have a multiplier change coming?",
-    /* The source is known and proven — `RYN-TM-002` reads exactly this pair on
-       the Asset Passport. What is missing is a way to sweep it: 231 separate
-       `eth_call`s is a new venue call, and this wave adds none. */
+    /* The source is known and proven — the Asset Passport reads exactly this
+       pair. What is missing is a way to sweep it: 231 separate `eth_call`s is
+       a new venue call, and this wave adds none. */
     source: null,
     gate: "The signal exists on chain — newUIMultiplier() against uiMultiplier(), read per token by the Asset Passport — and there is no public JSON API for it. Sweeping 231 tokens needs a batched on-chain read this wave does not add.",
   }),
@@ -165,14 +165,14 @@ export const SCANNER_KINDS: readonly KindSpec[] = Object.freeze([
     label: "Liquidity on a held instrument deteriorated",
     question: "Has it become harder to exit something I hold?",
     source: null,
-    gate: "Needs two things this product does not have: order-book depth, which no endpoint returns, and a position model, which is RYN-TM-003.",
+    gate: "Needs two things this product does not have: order-book depth, which no endpoint returns, and a position model, which is not built yet.",
   }),
   Object.freeze({
     kind: "route-changed" as const,
     label: "A route changed venue",
     question: "Did the way an instrument would execute change?",
     source: null,
-    gate: "There is one route provider and one allowlist, so a change here would be this repository editing its own configuration rather than an observation. It becomes real when a second adapter exists — RYN-TM-005.",
+    gate: "There is one route provider and one allowlist, so a change here would be this repository editing its own configuration rather than an observation. It becomes real when a second adapter exists.",
   }),
 ]);
 

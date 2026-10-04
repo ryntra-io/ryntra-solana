@@ -1,5 +1,5 @@
 /**
- * Push delivery — FCM when the Owner has set RYNTRA_PUSH_SERVER_KEY.
+ * Push delivery — FCM when RYNTRA_PUSH_SERVER_KEY is set.
  * Tokens and the key are never logged. A missing key is not a trigger.
  */
 

@@ -76,8 +76,8 @@ export const ISSUER_SHORT: Readonly<Record<StockIssuerId, string>> = {
 
 /**
  * What a person actually buys — one label per issuer from the issuer's own
- * documents, its line one press deeper through the product's `?` (canon v5.0
- * §7; RYN-FIRST-SCREEN-001, S2). No asset here is labelled a real share.
+ * documents, its line one press deeper through the product's `?`. No asset
+ * here is labelled a real share.
  */
 export const ISSUER_TRUTH: Readonly<Record<StockIssuerId, HelpTopicId>> = {
   xstocks: "truthXStocks",
@@ -257,7 +257,7 @@ export function stripOf(universe: StockUniverse): StockStrip {
     fetchedAt: universe.fetchedAt,
     issuerCatalogue: universe.issuerCatalogue.ok,
     preIpo: rows.filter((row) => row.representation.instrument?.class === "pre-ipo").length,
-    /* Only the catalogues Ryntra reads: a copy answered before canon v5.2 В26 may still name a disconnected one. */
+    /* Only the catalogues Ryntra reads: a copy answered before a catalogue was disconnected may still name it. */
     cataloguesDown: (Object.entries(universe.issuerCatalogues ?? {}) as Array<[string, StockUniverse["issuerCatalogues"]["xstocks"]]>)
       .filter((entry): entry is ["xstocks" | "prestocks", StockUniverse["issuerCatalogues"]["xstocks"]] => entry[0] === "xstocks" || entry[0] === "prestocks")
       .filter(([, state]) => !state.ok || state.stale)
@@ -291,7 +291,7 @@ export const STOCK_WORDS = {
   unavailableTitle: bi("The stock catalogue is not answering", "Каталог акцій не відповідає"),
   unavailable: bi("Spot still trades every listed stock from its live quote.", "Спот і далі торгує кожною акцією за живим котируванням."),
   openSpot: bi("Open Spot", "Відкрити Спот"),
-  /* An unknown ticker, inside the product (RYN-FIRST-SCREEN-001). */
+  /* An unknown ticker, inside the product. */
   notFoundTitle: bi("We couldn't find this stock", "Такої акції не знайдено"),
   notFoundBody: bi("Check the ticker or pick a stock from the list. A token that is not on the list can still be found in Spot.", "Перевір тікер або обери акцію зі списку. Токен, якого немає у списку, можна знайти у Споті."),
   browseStocks: bi("Browse stocks", "До акцій"),
@@ -409,7 +409,7 @@ export const STOCK_WORDS = {
   underlying: bi("Underlying", "Базовий актив"),
   reserves: bi("Issuer's reserves", "Резерви емітента"),
   rights: bi("Rights", "Права"),
-  /* The purchase with a loss limit, prepared by the published rules from the person's amount and preset (canon v5.0 §4, §5.2; RYN-FIRST-SCREEN-001, S3). */
+  /* The purchase with a loss limit, prepared by the published rules from the person's amount and preset. */
   lossLimit: bi("Loss limit", "Межа збитку"),
   noLimit: bi("None", "Без межі"),
   presetCareful: bi("Careful", "Обережно"),
@@ -417,7 +417,7 @@ export const STOCK_WORDS = {
   preparedBy: bi("Ryntra prepared the purchase", "Ryntra підготувала покупку"),
   fromYourFigures: bi("from your figures", "за твоїми цифрами"),
   canLose: bi("You can lose", "Можеш втратити"),
-  /* Canon §5.2/§5.3: an estimate at the limit, never «до» — a limit is not a ceiling on the loss. */
+  /* An estimate at the limit, never «до» — a limit is not a ceiling on the loss. */
   approx: bi("≈", "≈"),
   limitAt: bi("limit", "межа"),
   sellIfReaches: bi("Sell if it reaches", "Продати, якщо дійде"),
@@ -441,7 +441,7 @@ export const STOCK_WORDS = {
   loopExecution: bi("Execution", "Виконання"),
   loopProof: bi("Proof", "Доказ"),
   loopOversight: bi("Oversight", "Нагляд"),
-  /* The multiplier explained where the issuer reinvests dividends into the amount (canon v5.0 §9, B.9; RYN-FIRST-SCREEN-001, S2). */
+  /* The multiplier explained where the issuer reinvests dividends into the amount. */
   dividends: bi("Dividends", "Дивіденди"),
   dividendsInAmount: bi("Already in your amount", "Вже в твоїй кількості"),
   dividendsHow: bi("The issuer reinvests them by raising the multiplier", "Емітент реінвестує їх, збільшуючи множник"),
@@ -464,7 +464,7 @@ export const STOCK_WORDS = {
   presetsNote: bi("Example amounts for orientation; Spot's Review quotes your real amount again.", "Приклади сум для орієнтації; Review у Споті котирує твою реальну суму заново."),
   details: bi("Details", "Деталі"),
   backToStocks: bi("Stocks", "Акції"),
-  /* the terms of the deal and the comparison (RYN-STOCKS-CHOICE-001) */
+  /* the terms of the deal and the comparison */
   dealTerms: bi("Buy estimate", "Розрахунок купівлі"),
   sellEstimate: bi("Sell estimate", "Розрахунок продажу"),
   otherRepresentations: bi("Token alternatives", "Варіанти токена"),

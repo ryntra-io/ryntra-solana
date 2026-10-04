@@ -7,12 +7,11 @@ import { useWalletProof } from "@/app/solana/workspace/wallet-proof";
 import type { PortfolioRiskResponse } from "@/lib/api/v1/contract";
 
 /**
- * «Ризик портфеля» of the wallet, read for Home (`RYN-PROTECT-SIGNAL-001`,
- * subtask 2; `GET /api/v1/positions/risk`, contract 1.23.0): the server's one
- * word for the wallet as a whole, with every rule broken or what could not be
- * read. Behind the wallet's proof — the verdict stands on the wallet's own
- * exits — and kept per wallet, so a return to Home within a minute draws it
- * at once and reads it again behind.
+ * «Ризик портфеля» of the wallet, read for Home (`GET /api/v1/positions/risk`,
+ * contract 1.23.0): the server's one word for the wallet as a whole, with
+ * every rule broken or what could not be read. Behind the wallet's proof —
+ * the verdict stands on the wallet's own exits — and kept per wallet, so a
+ * return to Home within a minute draws it at once and reads it again behind.
  */
 
 /* `expired`: the route answered 401 — the proof the page held has lapsed; the person confirms again rather than retrying into the same refusal. */

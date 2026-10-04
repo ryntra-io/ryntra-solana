@@ -1,6 +1,6 @@
 -- ============================================================================
--- APPLIED 2026-07-21 as Supabase migration 20260721174101 after explicit founder approval.
--- RYN-SLAB-002 append-only Strategy Lab persistence candidate.
+-- APPLIED 2026-07-21 as Supabase migration 20260721174101 after explicit approval.
+-- Append-only Strategy Lab persistence.
 --
 -- This is a fresh, exact transaction: object collisions and reapplication fail
 -- atomically. It intentionally contains no IF NOT EXISTS or destructive repair.

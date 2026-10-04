@@ -4,9 +4,9 @@
  *
  * The sentence this module exists to make structurally true is short: **paying
  * is not evidence of delivery**. Written as a comment above a boolean it does
- * not survive the third edit, so it is enforced the way canon `03 §6.4` and
- * `06 §3` describe — two axes that multiply rather than collapse, and a closed
- * list of admissible sources per axis that **do not overlap**.
+ * not survive the third edit, so it is enforced structurally — two axes that
+ * multiply rather than collapse, and a closed list of admissible sources per
+ * axis that **do not overlap**.
  *
  * The convenient design is one `status` field with values like `PAID`,
  * `COMPLETE`, `FAILED`. It ships in an afternoon and it is a lie the first time
@@ -31,7 +31,7 @@ const DECIMAL_STRING = /^(?:0|[1-9]\d*)(?:\.\d+)?$/;
 /**
  * What a payment has done. One axis, one question: did value move?
  *
- * `UNKNOWN` is a normal terminal answer here, not a bug — canon `03 §8.5`.
+ * `UNKNOWN` is a normal terminal answer here, not a bug.
  */
 export const PAYMENT_STATUSES = [
   "NOT_ATTEMPTED",
@@ -62,12 +62,12 @@ export const SERVICE_DELIVERY_STATUSES = [
 export type ServiceDeliveryStatus = (typeof SERVICE_DELIVERY_STATUSES)[number];
 
 /**
- * How strongly any of it is established. This is canon `03 §6.4`'s evidence
- * ladder with its two honest ends attached.
+ * How strongly any of it is established. This is Ryntra's evidence ladder
+ * with its two honest ends attached.
  *
  * The top rung is `EVIDENCE_RECONCILED` and not `RECONCILED`, because
  * `RECONCILED` is a non-canonical alias for the *reconciliation state*
- * `MATCHED` and one word in two roles is the defect the canon already fixed
+ * `MATCHED` and one word in two roles is a defect this product already fixed
  * once on a different pair.
  */
 export const VERIFICATION_STATUSES = [
@@ -95,9 +95,9 @@ export const DISPUTE_STATUSES = [
 export type DisputeStatus = (typeof DISPUTE_STATUSES)[number];
 
 /**
- * What the action ended as. Canon `03 §6.4`, reproduced exactly rather than
- * re-derived — a second vocabulary for one state is what `CANON_INDEX §5.3.1`
- * forbids.
+ * What the action ended as. Ryntra's reconciliation states, reproduced exactly
+ * rather than re-derived — a second vocabulary for one state is the defect
+ * this list exists to prevent.
  */
 export const RECONCILIATION_STATUSES = [
   "PENDING",
@@ -365,7 +365,7 @@ export type SettlementPairing = Readonly<{
 }>;
 
 /**
- * The two canon `06 §3.2` reason codes, produced from the **pair**.
+ * The two reason codes, produced from the **pair**.
  *
  * Neither status alone can name either code, which is the whole reason the two
  * axes exist. An unknown half yields `UNDETERMINED` rather than a guess: a
@@ -413,8 +413,8 @@ export type PaymentTrustClass = (typeof PAYMENT_TRUST_CLASSES)[number];
  * that is the whole difference between a receipt and a marketing chip, and it
  * is why this is a derivation with no override parameter.
  *
- * The ceiling is canon `12 §4`: an x402 receipt is a server assertion about an
- * interaction. It never rises above `FACILITATOR_ASSERTION` on its own.
+ * The ceiling: an x402 receipt is a server assertion about an interaction.
+ * It never rises above `FACILITATOR_ASSERTION` on its own.
  */
 export function deriveTrustClass(outcome: CommerceOutcome): PaymentTrustClass {
   if (outcome.reconciliationStatus === "MATCHED" && outcome.verificationStatus === "EVIDENCE_RECONCILED") {

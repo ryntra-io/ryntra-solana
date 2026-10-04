@@ -14,7 +14,7 @@
  * So this boundary keys on the **intent** — who is burning, how much, to which
  * recipient, on which destination domain, at which finality — and deliberately
  * ignores everything a legitimate rebuild is allowed to change. That is the
- * property canon §25.5 actually asks for: *no duplicate burn under any
+ * property the bridge actually needs: *no duplicate burn under any
  * failure*, where "duplicate" means the same money leaving twice, not the same
  * bytes going out twice.
  *

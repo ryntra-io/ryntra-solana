@@ -6,14 +6,14 @@ import { maskWallet } from "./business.ts";
 /**
  * What a feedback thread knows about the person behind it, beside the inbox.
  *
- * `RYN-ADMIN-FEEDBACK-LOOP-001`. The inbox table (`private.feedback_threads`)
- * carries a Telegram id and nothing else about who wrote — and the product's
- * people are wallets, most of them with no account at all. So the thread gets
- * a context record in the Guard store, keyed by the thread id, no DDL: the
- * topic the person chose (a *question* is `other` in the inbox's own
- * categories and *Запитання* here), the wallet that was connected and whether
- * it had proved itself, a contact the person offered, the page they wrote
- * from. The admin list joins it by id; a thread without one reads as before.
+ * The inbox table (`private.feedback_threads`) carries a Telegram id and
+ * nothing else about who wrote — and the product's people are wallets, most of
+ * them with no account at all. So the thread gets a context record in the
+ * Guard store, keyed by the thread id, no DDL: the topic the person chose (a
+ * *question* is `other` in the inbox's own categories and *Запитання* here),
+ * the wallet that was connected and whether it had proved itself, a contact
+ * the person offered, the page they wrote from. The admin list joins it by id;
+ * a thread without one reads as before.
  *
  * Nothing here is a boundary. A lost context write costs the operator a
  * masked address on one row, never a thread.

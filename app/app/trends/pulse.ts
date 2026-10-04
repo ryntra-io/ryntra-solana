@@ -2,13 +2,13 @@ import type { SpotMarketListRow } from "@/lib/spot/markets";
 
 /**
  * The pulse of a list — four figures the list itself carries, so nothing on
- * the tiles is a number the rows do not have (canon §14.1: no decorative
- * figure). The most traded row by the day's volume, the biggest move by the
- * absolute day's change, the most liquid row by the pool, and the activity:
- * the sum of the day's volume over the rows shown, with how many rose and
- * how many fell. A row without the figure is not a candidate for that tile,
- * and the biggest move is judged among verified rows only — an unverified
- * look-alike printing +18,000% on a $70K pool is noise, not the day's move.
+ * the tiles is a number the rows do not have (no decorative figure). The most
+ * traded row by the day's volume, the biggest move by the absolute day's
+ * change, the most liquid row by the pool, and the activity: the sum of the
+ * day's volume over the rows shown, with how many rose and how many fell. A
+ * row without the figure is not a candidate for that tile, and the biggest
+ * move is judged among verified rows only — an unverified look-alike printing
+ * +18,000% on a $70K pool is noise, not the day's move.
  */
 export type Pulse = Readonly<{
   mostTraded: SpotMarketListRow | null;

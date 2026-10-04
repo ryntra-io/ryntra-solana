@@ -53,7 +53,7 @@ export type CapabilityTruthTone =
   | "neutral";
 
 /**
- * The four status axes, plus enforcement — Agent Control canon v5.2 §9.
+ * The four status axes, plus enforcement.
  *
  * `maturity` alone cannot describe a capability. There is no single word for
  * "proven by tests, not on mainnet, and shown publicly as a preview", so a
@@ -90,9 +90,9 @@ export const CAPABILITY_ENVIRONMENTS = ["MOCK", "CI", "TESTNET", "MAINNET", "PRO
 export const CAPABILITY_HEALTHS = ["UNKNOWN", "HEALTHY", "DEGRADED", "OUTAGE"] as const;
 
 /**
- * Who technically stops the action. Canon forbids the short forms
- * (`PROVIDER_ENFORCED`, `WALLET_ENFORCED`, `CONTRACT_ENFORCED`) — a rule named
- * where the vocabulary lives, so a future edit cannot reintroduce them quietly.
+ * Who technically stops the action. The short forms (`PROVIDER_ENFORCED`,
+ * `WALLET_ENFORCED`, `CONTRACT_ENFORCED`) are forbidden — a rule named where
+ * the vocabulary lives, so a future edit cannot reintroduce them quietly.
  */
 export const CAPABILITY_ENFORCEMENTS = [
   "OBSERVE_ONLY",
@@ -140,7 +140,7 @@ export type CapabilityProviderId = "arcus" | "uniswap" | "hyperliquid" | "stella
 export type CapabilityProvider<Id extends string = CapabilityProviderId> = {
   /**
    * `chain` is not a venue. A chain settles; Arcus quotes and executes.
-   * Collapsing the two is the mistake canon §7 exists to prevent, and a
+   * Collapsing the two is the mistake this field exists to prevent, and a
    * registry that can only name venues forces a chain pack to masquerade as one.
    */
   kind: "venue" | "protocol" | "chain" | "platform";
@@ -306,9 +306,9 @@ const STELLAR: CapabilityProvider = {
   label: "Stellar",
 };
 
-/* One provider, and after the Mainnet Canon v5.0 it means one network: every
-   Solana capability this registry carries reads Solana mainnet, and every one
-   that will ever move value opens on mainnet through its own owner canary.
+/* One provider, and since the product went mainnet-only it means one network:
+   every Solana capability this registry carries reads Solana mainnet, and every
+   one that will ever move value opens on mainnet through its own owner canary.
    The label still fixes no network, because each record names its own — that
    convention outlives the two-network reason it was written for. */
 const SOLANA: CapabilityProvider = {
@@ -359,7 +359,7 @@ const STELLAR_VERIFIED_AT = "2026-08-14";
 /* Solana's own review date, same rule: `lastVerifiedAt` is the last review of
    this exact Ryntra claim, and the Solana claim first existed — and was
    verified against live mainnet reads on the rendered workspace — on the day
-   RYN-SOL-A4 shipped. */
+   the Solana Asset Passport shipped. */
 const SOLANA_VERIFIED_AT = "2026-08-27";
 
 /** First exact review of the source-built Agent Control slice. */
@@ -397,9 +397,9 @@ export const PLAN_AUTHORITY: CapabilityAuthority = {
 };
 
 const INTERNAL_TASK: InternalCapabilityEvidence = {
-  id: "ryn-ux-000-task",
+  id: "surface-claims-task",
   kind: "task",
-  reference: "docs/tasks/active/RYN-UX-000.md",
+  reference: "the cross-surface claim migration that keeps landing, methodology and capability copy from overstating maturity",
 };
 
 /**
@@ -407,9 +407,9 @@ const INTERNAL_TASK: InternalCapabilityEvidence = {
  *
  * The unbuilt pair is not padding. `/stellar` states what is planned as well as
  * what works, and the alternative to a record is prose on a page, which is
- * exactly the drift `RYN-CAP-001` was opened to close: four surfaces once
- * asserted a state the registry had no way to express, and skipped the freshness
- * gate every other claim passes through.
+ * exactly the drift this registry exists to close: four surfaces once asserted
+ * a state the registry had no way to express, and skipped the freshness gate
+ * every other claim passes through.
  */
 const STELLAR_CAPABILITIES = [
   {
@@ -431,7 +431,7 @@ const STELLAR_CAPABILITIES = [
       internal: [
         { id: "stellar-passport-code", kind: "code", reference: "lib/stellar issuer, trustline and SEP-1 reads" },
         { id: "stellar-passport-tests", kind: "test", reference: "lib/stellar adapter suite and the passport route tests" },
-        { id: "stellar-passport-task", kind: "task", reference: "RYN-STELLAR-004" },
+        { id: "stellar-passport-task", kind: "task", reference: "the delivery task for the read-only Asset Passport on a mainnet RWA" },
       ],
     },
     lastVerifiedAt: STELLAR_VERIFIED_AT,
@@ -467,7 +467,7 @@ const STELLAR_CAPABILITIES = [
       internal: [
         { id: "stellar-wallet-code", kind: "code", reference: "the Freighter adapter behind Ryntra's wallet port" },
         { id: "stellar-wallet-tests", kind: "test", reference: "wallet adapter and network-guard suites" },
-        { id: "stellar-wallet-task", kind: "task", reference: "RYN-STELLAR-008 wallet layer" },
+        { id: "stellar-wallet-task", kind: "task", reference: "the wallet layer of the Stellar signed-payment delivery task" },
       ],
     },
     lastVerifiedAt: STELLAR_VERIFIED_AT,
@@ -575,7 +575,7 @@ const STELLAR_CAPABILITIES = [
     evidence: {
       public: [],
       internal: [
-        { id: "stellar-route-task", kind: "task", reference: "RYN-STELLAR-005" },
+        { id: "stellar-route-task", kind: "task", reference: "the Stellar route-evidence delivery task" },
         { id: "stellar-route-decision", kind: "decision", reference: "Soroswap Routing API selected as the route-evidence building block" },
       ],
     },
@@ -603,7 +603,7 @@ const STELLAR_CAPABILITIES = [
     evidence: {
       public: [],
       internal: [
-        { id: "stellar-policy-task", kind: "task", reference: "RYN-STELLAR-006" },
+        { id: "stellar-policy-task", kind: "task", reference: "the Stellar policy-evaluation delivery task" },
         { id: "stellar-policy-receipt", kind: "production", reference: "every Stellar receipt written so far carries policyVersion: null and names this row as the reason" },
       ],
     },
@@ -657,7 +657,7 @@ const SOLANA_CAPABILITIES = [
           kind: "test",
           reference: "lib/solana fixture suite over six live-captured mainnet mints",
         },
-        { id: "solana-passport-task", kind: "task", reference: "RYN-SOL-A4" },
+        { id: "solana-passport-task", kind: "task", reference: "the delivery task that put the Solana workspace and its Asset Passport live" },
       ],
     },
     lastVerifiedAt: SOLANA_VERIFIED_AT,
@@ -684,7 +684,7 @@ const SOLANA_CAPABILITIES = [
        quotes any mainnet pair the venue routes, and offers a fourth featured
        pair (SOL→BONK) whose quote was never captured; scope records what was
        verified, never what is offered, so a narrower list here is the honest
-       direction. Founder decision, 2026-08-18. */
+       direction. */
     scope: { provider: SOLANA, route: null, venues: [], assets: ["SOL", "USDC", "PYUSD"] },
     evidence: {
       public: [
@@ -720,9 +720,9 @@ const SOLANA_CAPABILITIES = [
           kind: "test",
           reference: "lib/solana/quotes.test.mjs over live-captured quote fixtures",
         },
-        { id: "solana-quotes-task", kind: "task", reference: "RYN-SOL-M0D" },
-        { id: "solana-m2-task", kind: "task", reference: "RYN-SOL-M2" },
-        { id: "solana-m2-chain-evidence", kind: "production", reference: "docs/tasks/evidence/RYN-SOL-M2-chain-evidence.json" },
+        { id: "solana-quotes-task", kind: "task", reference: "the Jupiter production-contract delivery task" },
+        { id: "solana-m2-task", kind: "task", reference: "the delivery task that closed one exact swap on mainnet" },
+        { id: "solana-m2-chain-evidence", kind: "production", reference: "the recorded chain evidence of that swap" },
       ],
     },
     lastVerifiedAt: SOLANA_VERIFIED_AT,
@@ -742,9 +742,9 @@ const SOLANA_CAPABILITIES = [
   {
     id: "solana-cctp-precanary",
     label: "Solana ↔ Base CCTP owner-canary verified",
-    /* Promoted by RYN-SOL-M3 on 2026-09-02: one owner-signed CCTP V2 transfer
-       of 2.000000 USDC from Solana to Base, observed on both chains and
-       reconciled MATCHED. The shape follows the Swap promotion after M2 rather
+    /* Promoted on 2026-09-02 by one owner-signed CCTP V2 transfer of 2.000000
+       USDC from Solana to Base, observed on both chains and reconciled
+       MATCHED. The shape follows the Swap promotion after M2 rather
        than inventing one — `supported_live` stays where it is, reserved for
        moving real value on a path open to users, and this path is not. What
        the canary proved is stated in the label and the limitation instead of
@@ -768,17 +768,17 @@ const SOLANA_CAPABILITIES = [
         { id: "solana-cctp-burn", kind: "code", reference: "lib/solana/cctp-burn.ts and cctp-plan.ts, the depositForBurn encoder pinned to a real mainnet burn" },
         { id: "solana-cctp-claim", kind: "code", reference: "lib/solana/cctp-burn-claim.ts, the duplicate-burn boundary keyed on the intent rather than the signed bytes" },
         { id: "solana-cctp-destination", kind: "code", reference: "lib/base/rpc.ts and lib/base/cctp-observe.ts, read-only Base with three declared operators and a consumed-but-unseen state" },
-        { id: "solana-cctp-task", kind: "task", reference: "RYN-SOL-M0F" },
-        { id: "solana-m3-task", kind: "task", reference: "RYN-SOL-M3" },
+        { id: "solana-cctp-task", kind: "task", reference: "the CCTP bridge architecture delivery task" },
+        { id: "solana-m3-task", kind: "task", reference: "the CCTP bridge canary delivery task" },
         {
           id: "solana-m3-chain-evidence",
           kind: "production",
-          reference: "docs/tasks/evidence/RYN-SOL-M3-chain-evidence.json, read back from both chains after the transfer",
+          reference: "the canary's recorded chain evidence, read back from both chains after the transfer",
         },
         {
           id: "solana-m3-receipt",
           kind: "production",
-          reference: "docs/tasks/evidence/RYN-SOL-M3-bridge-receipt.json, MATCHED and SIGNATURE_VALID under the verifier",
+          reference: "the canary's recorded bridge receipt, MATCHED and SIGNATURE_VALID under the verifier",
         },
       ],
     },
@@ -786,7 +786,7 @@ const SOLANA_CAPABILITIES = [
     freshness: LIVE_FRESHNESS,
     publicLabel: "Bridge action family owner-canary verified for one exact mainnet transfer",
     limitation:
-      "Reads and reviews native USDC routes in both Solana ↔ Base directions through Circle CCTP V2, including official domains and contracts, current public fee and Fast-allowance evidence, and the message-first recovery model. The execution path — build, burn, attestation, destination call, both-side observation, receipt and read-only recovery — has been used exactly once. On 2026-09-02 the owner signed one transfer of 2.000000 USDC from Solana to Base under RYN-SOL-M3: burn signature 2FzRq4M2…32yTP at slot 443729373, destination mint 0x1792fd89…b2cda in Base block 50786518, source balance down 2.000000 and destination balance up 2.000000, reconciled MATCHED with no deviation and no second burn. That is one transfer, one direction, one asset and one amount, and it promotes nothing else: no other direction, size or asset is verified, the transfer is not open to anyone but the owner, and the refundable rent of 0.00386976 SOL is not claimable for five days and has not been claimed.",
+      "Reads and reviews native USDC routes in both Solana ↔ Base directions through Circle CCTP V2, including official domains and contracts, current public fee and Fast-allowance evidence, and the message-first recovery model. The execution path — build, burn, attestation, destination call, both-side observation, receipt and read-only recovery — has been used exactly once. On 2026-09-02 the owner signed one transfer of 2.000000 USDC from Solana to Base: burn signature 2FzRq4M2…32yTP at slot 443729373, destination mint 0x1792fd89…b2cda in Base block 50786518, source balance down 2.000000 and destination balance up 2.000000, reconciled MATCHED with no deviation and no second burn. That is one transfer, one direction, one asset and one amount, and it promotes nothing else: no other direction, size or asset is verified, the transfer is not open to anyone but the owner, and the refundable rent of 0.00386976 SOL is not claimable for five days and has not been claimed.",
     failClosed: {
       on: ["data_unavailable", "stale_evidence", "conflicting_evidence", "authorization_missing", "feature_disabled"],
       behavior:
@@ -816,7 +816,7 @@ const AGENT_CONTROL_CAPABILITIES = [
       internal: [
         { id: "agent-intent-code", kind: "code", reference: "lib/agent-control/contracts.ts" },
         { id: "agent-intent-developer-kit", kind: "code", reference: "packages/agent-control-sdk and packages/agent-control-mcp" },
-        { id: "agent-intent-task", kind: "task", reference: "docs/tasks/active/RYN-AGENT-CONTROL-001.md" },
+        { id: "agent-intent-task", kind: "task", reference: "the Agent Control intent and preflight delivery task" },
       ],
     },
     lastVerifiedAt: AGENT_CONTROL_VERIFIED_AT,
@@ -1048,7 +1048,7 @@ const AGENT_CONTROL_CAPABILITIES = [
         { id: "agentverse-passport-code", kind: "code", reference: "lib/agent-control/agent-passport.ts and adapters/agentverse.ts" },
         { id: "agentverse-passport-developer-kit", kind: "code", reference: "packages/agent-control-sdk, packages/agent-control-mcp and examples/agent-control-builder" },
         { id: "agentverse-passport-tests", kind: "test", reference: "lib/agent-control/agent-passport.test.mjs and adapters/agentverse.test.mjs" },
-        { id: "agentverse-passport-task", kind: "task", reference: "docs/tasks/active/RYN-AGENT-CONTROL-002.md" },
+        { id: "agentverse-passport-task", kind: "task", reference: "the Agentverse Agent Passport delivery task" },
       ],
     },
     lastVerifiedAt: AGENT_CONTROL_VERIFIED_AT,
@@ -1089,7 +1089,7 @@ const AGENT_CONTROL_CAPABILITIES = [
     },
     evidence: {
       public: [],
-      internal: [{ id: "agentverse-task", kind: "task", reference: "docs/tasks/active/RYN-AGENT-CONTROL-001.md external gates" }],
+      internal: [{ id: "agentverse-task", kind: "task", reference: "the external gates recorded on the Agent Control intent and preflight delivery task" }],
     },
     lastVerifiedAt: AGENT_CONTROL_VERIFIED_AT,
     freshness: ROADMAP_FRESHNESS,
@@ -1129,7 +1129,7 @@ const AGENT_CONTROL_CAPABILITIES = [
     },
     evidence: {
       public: [],
-      internal: [{ id: "bnb-agent-task", kind: "task", reference: "docs/tasks/active/RYN-AGENT-CONTROL-001.md external gates" }],
+      internal: [{ id: "bnb-agent-task", kind: "task", reference: "the external gates recorded on the Agent Control intent and preflight delivery task" }],
     },
     lastVerifiedAt: AGENT_CONTROL_VERIFIED_AT,
     freshness: ROADMAP_FRESHNESS,
@@ -1180,7 +1180,7 @@ export const PUBLIC_CAPABILITIES = [
     evidence: {
       public: [],
       internal: [
-        { id: "arcus-spot-state", kind: "production", reference: "docs/STATE.md current Arcus spot scope" },
+        { id: "arcus-spot-state", kind: "production", reference: "the recorded production state of the current Arcus spot scope" },
         { id: "arcus-spot-code", kind: "code", reference: "lib/venues/arcus and the wallet-signed swap route" },
         { id: "arcus-spot-tests", kind: "test", reference: "wallet-signed swap and route contract test suites" },
       ],
@@ -1216,7 +1216,7 @@ export const PUBLIC_CAPABILITIES = [
     evidence: {
       public: [],
       internal: [
-        { id: "account-read-state", kind: "production", reference: "docs/STATE.md current read-only account scope" },
+        { id: "account-read-state", kind: "production", reference: "the recorded production state of the current read-only account scope" },
         { id: "account-read-code", kind: "code", reference: "app/api/arcus and Arcus account clients" },
         { id: "account-read-tests", kind: "test", reference: "Arcus account and auth contract test suites" },
       ],
@@ -1283,7 +1283,7 @@ export const PUBLIC_CAPABILITIES = [
     evidence: {
       public: [],
       internal: [
-        { id: "trade-key-state", kind: "production", reference: "docs/validation-log.md 2026-07-10 create and revoke verification" },
+        { id: "trade-key-state", kind: "production", reference: "the recorded 2026-07-10 create and revoke verification" },
         { id: "trade-key-code", kind: "code", reference: "app/app/connect and lib/arcus/client-keys" },
         { id: "trade-key-tests", kind: "test", reference: "Arcus client-key and connection test suites" },
       ],
@@ -1381,7 +1381,7 @@ export const PUBLIC_CAPABILITIES = [
     evidence: {
       public: [],
       internal: [
-        { id: "recap-state", kind: "production", reference: "docs/STATE.md current Telegram recap scope" },
+        { id: "recap-state", kind: "production", reference: "the recorded production state of the current Telegram recap scope" },
         { id: "recap-tests", kind: "test", reference: "Telegram first-use, replay, logout, and recap suites" },
       ],
     },
@@ -1474,7 +1474,7 @@ export const PUBLIC_CAPABILITIES = [
     evidence: {
       public: [],
       internal: [
-        { id: "slab-state", kind: "task", reference: "docs/tasks/active/RYN-SLAB-001.md" },
+        { id: "slab-state", kind: "task", reference: "the Strategy Lab V1 delivery task" },
         { id: "slab-code", kind: "code", reference: "app/app/strategy-lab and lib/strategy-lab" },
         { id: "slab-tests", kind: "test", reference: "Strategy Lab V1 deterministic suites" },
       ],
@@ -1507,7 +1507,7 @@ export const PUBLIC_CAPABILITIES = [
       public: [],
       internal: [
         INTERNAL_TASK,
-        { id: "loop-roadmap", kind: "decision", reference: "docs/NORTH-STAR.md and docs/ROADMAP.md minimum product loop" },
+        { id: "loop-roadmap", kind: "decision", reference: "the minimum product loop the product direction and roadmap define" },
       ],
     },
     lastVerifiedAt: VERIFIED_AT,
@@ -1537,7 +1537,7 @@ export const PUBLIC_CAPABILITIES = [
     evidence: {
       public: [],
       internal: [
-        { id: "workspace-roadmap", kind: "decision", reference: "docs/ROADMAP.md workspace and retention" },
+        { id: "workspace-roadmap", kind: "decision", reference: "the roadmap's workspace and retention direction" },
         INTERNAL_TASK,
       ],
     },
@@ -1568,8 +1568,8 @@ export const PUBLIC_CAPABILITIES = [
     evidence: {
       public: [],
       internal: [
-        { id: "venue-task", kind: "task", reference: "docs/tasks/INDEX.md row RYN-VENUE-001" },
-        { id: "venue-decision", kind: "decision", reference: "docs/VENUES.md connection ladder" },
+        { id: "venue-task", kind: "task", reference: "the venue connection-candidate selection task" },
+        { id: "venue-decision", kind: "decision", reference: "the venue connection ladder" },
       ],
     },
     lastVerifiedAt: VERIFIED_AT,
@@ -1599,7 +1599,7 @@ export const PUBLIC_CAPABILITIES = [
     evidence: {
       public: [],
       internal: [
-        { id: "heat-state", kind: "production", reference: "docs/STATE.md current scoped Stock Token holdings heat" },
+        { id: "heat-state", kind: "production", reference: "the recorded production state of the current scoped Stock Token holdings heat" },
         { id: "heat-code", kind: "code", reference: "app/robinhood/workspace/swap and lib/domain/portfolio-heat" },
         { id: "heat-tests", kind: "test", reference: "portfolio heat and swap-terminal contract test suites" },
       ],
@@ -1631,8 +1631,8 @@ export const PUBLIC_CAPABILITIES = [
     evidence: {
       public: [],
       internal: [
-        { id: "complete-heat-task", kind: "task", reference: "docs/tasks/INDEX.md row RYN-RISK-004" },
-        { id: "complete-heat-roadmap", kind: "decision", reference: "docs/ROADMAP.md risk intelligence" },
+        { id: "complete-heat-task", kind: "task", reference: "the portfolio readiness and review pack task" },
+        { id: "complete-heat-roadmap", kind: "decision", reference: "the roadmap's risk-intelligence direction" },
       ],
     },
     lastVerifiedAt: VERIFIED_AT,
@@ -1662,7 +1662,7 @@ export const PUBLIC_CAPABILITIES = [
     evidence: {
       public: [],
       internal: [
-        { id: "scanner-roadmap", kind: "decision", reference: "docs/ROADMAP.md risk intelligence" },
+        { id: "scanner-roadmap", kind: "decision", reference: "the roadmap's risk-intelligence direction" },
         INTERNAL_TASK,
       ],
     },
@@ -1693,8 +1693,8 @@ export const PUBLIC_CAPABILITIES = [
     evidence: {
       public: [],
       internal: [
-        { id: "replay-task", kind: "task", reference: "docs/tasks/INDEX.md row RYN-REPLAY-001" },
-        { id: "slab-replay-task", kind: "task", reference: "docs/tasks/INDEX.md rows RYN-SLAB-004 and RYN-SLAB-005" },
+        { id: "replay-task", kind: "task", reference: "the timestamp-correct replay task" },
+        { id: "slab-replay-task", kind: "task", reference: "the Strategy Lab walk-forward and robustness tasks" },
       ],
     },
     lastVerifiedAt: VERIFIED_AT,
@@ -1724,8 +1724,8 @@ export const PUBLIC_CAPABILITIES = [
     evidence: {
       public: [],
       internal: [
-        { id: "orderflow-task", kind: "task", reference: "docs/tasks/INDEX.md rows RYN-PRO-001 and RYN-PRO-002" },
-        { id: "orderflow-decision", kind: "decision", reference: "docs/VENUES.md market-structure truth" },
+        { id: "orderflow-task", kind: "task", reference: "the volume-profile and order-book tasks" },
+        { id: "orderflow-decision", kind: "decision", reference: "the venue market-structure truth" },
       ],
     },
     lastVerifiedAt: VERIFIED_AT,
@@ -1755,8 +1755,8 @@ export const PUBLIC_CAPABILITIES = [
     evidence: {
       public: [],
       internal: [
-        { id: "automation-task", kind: "task", reference: "docs/tasks/INDEX.md rows RYN-AUTO-001 and RYN-AUTO-002" },
-        { id: "automation-roadmap", kind: "decision", reference: "docs/ROADMAP.md guarded automation" },
+        { id: "automation-task", kind: "task", reference: "the signal-to-proposal and bounded-mandate tasks" },
+        { id: "automation-roadmap", kind: "decision", reference: "the roadmap's guarded-automation direction" },
       ],
     },
     lastVerifiedAt: VERIFIED_AT,

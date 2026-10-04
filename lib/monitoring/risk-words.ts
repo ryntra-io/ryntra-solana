@@ -1,10 +1,9 @@
 /**
- * The words of «Ризик портфеля», in both languages (canon v5 §11;
- * `RYN-PROTECT-SIGNAL-001`, subtask 2): the state's name, the reason «Увага»
- * names with the figures the server judged it on, what could not be read, and
- * the one action. Pure: a reader passes its own per-cent formatter. The state
- * itself is never decided here — it arrives from the server
- * (`portfolio-risk.ts`).
+ * The words of «Ризик портфеля», in both languages: the state's name, the
+ * reason «Увага» names with the figures the server judged it on, what could
+ * not be read, and the one action. Pure: a reader passes its own per-cent
+ * formatter. The state itself is never decided here — it arrives from the
+ * server (`portfolio-risk.ts`).
  */
 
 import type { RiskFinding, RiskGap, RiskState } from "./portfolio-risk.ts";

@@ -136,7 +136,7 @@ export type SourceIdentity = Readonly<{
   dataRightsState: DataRightsState;
 }>;
 
-/** The three surfaces this packet reads, and the two windows their docs publish. */
+/** The three surfaces this module reads, and the two windows their docs publish. */
 export const RHJ_PROVIDER_ID = "robinhood-rhj";
 export const RHJ_ECOSYSTEM_ID = "robinhood-chain";
 export const RHJ_NETWORK_ID = "robinhood-chain-4663";

@@ -44,7 +44,7 @@ import {
  *    persist only as SHA-256 digests, exactly as API keys do. A store dump is
  *    not a set of live sessions.
  *
- * Revocation is the criterion this packet was asked to prove, so it is a single
+ * Revocation is the criterion this server has to prove, so it is a single
  * durable flag read on the verification path, before expiry and before scope —
  * a revoked token must not be able to answer "you lack that scope", because
  * that reply says the token was otherwise fine.

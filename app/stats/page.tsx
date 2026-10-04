@@ -28,9 +28,9 @@ async function pageLocale() {
   return normalizePublicLocale((await cookies()).get(PUBLIC_LOCALE_COOKIE)?.value);
 }
 
-/* The search words of the plan of `RYN-SITE-V5-001` (§3): the page's own line
-   in the title, within 60 characters; the description within 160 — the
-   Ukrainian lead is longer, so the search result carries its short form. */
+/* The search words: the page's own line in the title, within 60
+   characters; the description within 160 — the Ukrainian lead is longer, so
+   the search result carries its short form. */
 const STATS_META = {
   en: { title: "Stats — every operation through Ryntra, as it confirmed", description: STATS_COPY.en.lead },
   uk: {

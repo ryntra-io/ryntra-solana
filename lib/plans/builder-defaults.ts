@@ -1,5 +1,5 @@
 /**
- * Where a new plan's starting price comes from — `RYN-UX-CLARITY-001` §3.2–3.3.
+ * Where a new plan's starting price comes from.
  *
  * The builder prefills the planned entry so a person does not retype a
  * figure the desk already knows. The figure must be a price per underlying
@@ -17,7 +17,7 @@
 /**
  * `token-price`: a token-priced instrument (the pre-IPO issuers) starts from
  * the token's own market price — the plan is per token, so the figure is on
- * the plan's own unit and no share is implied (`RYN-STOCKS-PROVIDERS-001`).
+ * the plan's own unit and no share is implied.
  */
 export type StartingPriceSource = "reference" | "token-per-share" | "token-price";
 
@@ -64,7 +64,7 @@ export function carriedBudget(text: string | null): number | null {
 }
 
 /**
- * A condition carried from the analysis card (`RYN-NANSEN-EVIDENCE-001`):
+ * A condition carried from the analysis card:
  * `metric:window:operator:figure`, the figure the card showed at the press.
  * The builder starts the row from it — the metric and the window as pressed,
  * the threshold rounded down to two significant figures so the person edits

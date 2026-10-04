@@ -1,13 +1,13 @@
 /**
- * The Prediction Plan's lifecycle (`RYN-PREDICTIONS-001`, canon v4.3 §6.5):
- * create, edit as a new version, activate or cancel, record a Review and an
- * execution, read one or all — for the wallet that proved itself and nobody
- * else. Stored in Guard `predictionPlans` keyed `<wallet>:<planId>`,
- * versioned like the trading plans (`lib/plans/store.ts`): an edit is a new
- * version, a status change is a journal entry, compare-and-set keeps two
- * clients from both writing "version 3". Server-side validation names every
- * failing field. The model (schemas, sizing, validation) is `plan-model.ts`,
- * shared with the browser. Nothing here reads a cookie. Server only.
+ * The Prediction Plan's lifecycle: create, edit as a new version, activate or
+ * cancel, record a Review and an execution, read one or all — for the wallet
+ * that proved itself and nobody else. Stored in Guard `predictionPlans` keyed
+ * `<wallet>:<planId>`, versioned like the trading plans (`lib/plans/store.ts`):
+ * an edit is a new version, a status change is a journal entry,
+ * compare-and-set keeps two clients from both writing "version 3".
+ * Server-side validation names every failing field. The model (schemas,
+ * sizing, validation) is `plan-model.ts`, shared with the browser. Nothing
+ * here reads a cookie. Server only.
  */
 
 import { randomBytes } from "node:crypto";

@@ -3,14 +3,13 @@ import { NotYet } from "../not-yet";
 export const metadata = { title: "Perps" };
 
 /**
- * Perps — leveraged positions, canon §4.3.
+ * Perps — leveraged positions.
  *
  * A separate page because a collateralised position is not a held token, which
- * is the whole reason the canon refuses to fold it into Spot. Nothing is built:
- * the canon names Jupiter Perps as a direction to verify and says in the same
- * breath that this is not proof of an integration, so no leverage ceiling,
- * funding rate or liquidation figure is promised here. The nearest thing that
- * works is holding the asset itself.
+ * is the whole reason it is not folded into Spot. Nothing is built: Jupiter
+ * Perps is a direction to verify, and naming it is not proof of an
+ * integration, so no leverage ceiling, funding rate or liquidation figure is
+ * promised here. The nearest thing that works is holding the asset itself.
  */
 export default function PerpsPage() {
   return (

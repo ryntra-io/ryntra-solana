@@ -1,19 +1,18 @@
-/* Robinhood Trading MCP capability register (RYN-RH-MCP-001, read-only discovery).
+/* Robinhood Trading MCP capability register (read-only discovery).
 
    **This direction is CANCELLED and this register is a finished artifact.** On
-   2026-08-24 the founder decided that Robinhood Trading MCP, Robinhood Brokerage
-   and the Robinhood Agentic Account are not a current product dependency and
-   will not be pursued (`resolution: OWNER_NO_GO`, DECISIONS.md same day). Where a
-   record below says that what Ryntra lacks is an account, read it as a
-   measurement rather than as an intention: nobody is obtaining one, and no
-   successor is queued.
+   2026-08-24 Ryntra decided that Robinhood Trading MCP, Robinhood Brokerage and
+   the Robinhood Agentic Account are not a current product dependency and will
+   not be pursued (`resolution: OWNER_NO_GO`). Where a record below says that
+   what Ryntra lacks is an account, read it as a measurement rather than as an
+   intention: nobody is obtaining one, and no successor is queued.
 
    Robinhood Chain Markets + Arcus is a different vertical, unaffected by that
    decision, and does not depend on anything in this file.
 
    Two things this file prevents.
 
-   First, a discovery packet promoting itself into a shipped capability. Nothing
+   First, discovery work promoting itself into a shipped capability. Nothing
    here is implemented against. Every `ryntra` axis is `planned` or `blocked`, and
    the suite fails the build if any record claims otherwise.
 
@@ -262,7 +261,7 @@ export function capabilityById(id: string): RobinhoodMcpCapability {
 /**
  * The refusal, as its own record.
  *
- * It is the one thing in this packet that was established by a live probe, and
+ * It is the one record in this register that was established by a live probe, and
  * keeping it separate is what lets every other record honestly say it was not.
  */
 export function jurisdictionRecord(): RobinhoodMcpCapability {
@@ -283,13 +282,13 @@ export type OAuthLifecycleStep = {
  * The lifecycle, measured.
  *
  * **This section said the opposite one commit earlier, and the correction is the
- * packet's most useful finding.** From the development workstation every path of
+ * register's most useful finding.** From the development workstation every path of
  * `agent.robinhood.com` is refused at the CDN edge, so the first version recorded
  * all six cells as `UNVERIFIED` and said so structurally: the documentation names
  * no OAuth detail and the metadata documents could not be read. The first half is
  * still true. The second was true only of that origin — Ryntra's production
  * egress receives `401` with a full RFC 9728 challenge on the transport and `200`
- * on both discovery documents. Rule 9: the claim is corrected in the change that
+ * on both discovery documents. The claim is corrected in the change that
  * made it false.
  *
  * Everything below comes from the two documents RFC 8414 and RFC 9728 intend to
@@ -338,7 +337,7 @@ export const OAUTH_LIFECYCLE: readonly OAuthLifecycleStep[] = [
     finding:
       "grant_types_supported is [\"authorization_code\", \"refresh_token\"], so an agent session is " +
       "durable and expiry does not force a fresh desktop authorization. This is the opposite of " +
-      "Binance, where RYN-BIN-AOS-001 found no refresh grant and concluded that any assumption of " +
+      "Binance, where its MCP discovery found no refresh grant and concluded that any assumption of " +
       "a long-lived agent session was wrong. Here that assumption holds.",
   },
   {

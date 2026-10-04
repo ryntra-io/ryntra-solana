@@ -16,8 +16,8 @@ export const metadata = { title: "Developers" };
  * attributes each is a table by nature, and a reader comparing sources should
  * not have to hold a column in their head. The evidence-state list is rendered
  * from `EVIDENCE_STATES` rather than retyped, so the page cannot claim a
- * vocabulary the code does not use — which is exactly the drift the canon
- * repaired in §12 and the one a hand-written list here would reintroduce.
+ * vocabulary the code does not use — which is exactly the drift that was
+ * repaired once already, and the one a hand-written list here would reintroduce.
  */
 
 const READS = [

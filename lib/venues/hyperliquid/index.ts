@@ -1,5 +1,5 @@
-/* Hyperliquid — venue #2, READ-ONLY implementation of the VenueAdapter contract (STEP 6).
-   Wave 1 boundary (deliberate): market catalog, candles, public account reads and risk signals
+/* Hyperliquid — venue #2, READ-ONLY implementation of the VenueAdapter contract.
+   Boundary (deliberate): market catalog, candles, public account reads and risk signals
    only. NO `exec` port — live execution is not built; it would come only behind the
    execution-safety seams (lib/domain/execution-safety.ts: wallet-signed builder-fee approval,
    revocation, kill switch, idempotency, audit log). The capability truth for the product surface
@@ -39,7 +39,7 @@ const num = (s?: string | null): number | null => {
 const toMarket = (a: HlAssetMeta): VenueMarket => ({
   symbol: a.name,
   label: `${a.name}-PERP`,
-  assetClass: "crypto-perp", // first-dex universe is crypto perps; HIP-3 equity dexes are out of scope this wave
+  assetClass: "crypto-perp", // first-dex universe is crypto perps; HIP-3 equity dexes are out of scope for now
   quoteModel: "clob",
   collateralAsset: "USDC",
   tickSize: null, // HL prices use significant-figure rules, not a fixed tick — null, never guessed
@@ -211,7 +211,7 @@ export function makeHyperliquidVenue(transport: HlTransport = makeHlTransport())
       },
     },
 
-    // exec: DELIBERATELY ABSENT this wave. When it ships it must be wallet-signed and wrapped in
+    // exec: DELIBERATELY ABSENT for now. When it ships it must be wallet-signed and wrapped in
     // the execution-safety seams (builder-fee approval, kill switch, idempotency, audit log).
   };
 }

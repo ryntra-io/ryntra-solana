@@ -108,9 +108,9 @@ export function bytesToBase64(bytes: Uint8Array): string {
 /**
  * Sign a text the server built, verbatim, through `solana:signMessage` —
  * for a sign-in a *provider* issues its own nonce for (the prediction
- * aggregator's SIWS, `RYN-PREDICTIONS-001`): the message must be signed as
- * given, so the wallet's own `signIn` (which rebuilds the text from fields)
- * is not used here. Nothing but a message is signed.
+ * aggregator's SIWS): the message must be signed as given, so the wallet's own
+ * `signIn` (which rebuilds the text from fields) is not used here. Nothing but
+ * a message is signed.
  */
 export async function signMessageWithWallet(name: string, address: string, messageText: string): Promise<SignInResult> {
   const wallet = findWallet(name);

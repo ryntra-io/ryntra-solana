@@ -1,6 +1,5 @@
 /**
- * The networks and assets one Swap form can name — `RYN-SOL-MONEY-FLOWS-001F`,
- * Unified Swap V1 (Owner decision 2026-09-07).
+ * The networks and assets one Swap form can name — Unified Swap V1.
  *
  * This module is the product's vocabulary, not a provider's: four networks,
  * the assets worth naming outright, and the pairs worth offering first. It is
@@ -9,12 +8,11 @@
  *
  * ## The named pairs stopped being the gate on 2026-09-09
  *
- * Until `RYN-SOL-MONEY-FLOWS-001I` a cross-chain pair existed only if it was
- * one of ten the Owner had written down, and everything else read "Not
- * available for this pair". That list was never the rails' limit — both
- * providers quote arbitrary tokens, verified live — it was ours, from the day
- * the lane opened with four tuples. The Owner removed it: any token to any
- * other, across these networks.
+ * Until then a cross-chain pair existed only if it was one of ten written
+ * into a fixed list, and everything else read "Not available for this pair".
+ * That list was never the rails' limit — both providers quote arbitrary
+ * tokens, verified live — it was ours, from the day the lane opened with four
+ * tuples. It is gone now: any token to any other, across these networks.
  *
  * So `CROSS_SWAP_TUPLES` is now a **shortlist**, not an allowlist. It is what
  * the surface offers first and what the tests pin; a pair outside it is
@@ -23,11 +21,10 @@
  * file. What has not changed: no provider or asset is ever substituted
  * quietly, and an unknown token is refused rather than guessed at.
  *
- * Robinhood Chain joined on 2026-09-09 (`RYN-SOL-MONEY-FLOWS-001H`) and is the
- * first network here that no existing engine could reach: it has no Circle
- * CCTP domain, no USDC, and Mayan does not serve it. It arrives with a second
- * cross-swap provider rather than with a fourth copy of anything — see
- * `CrossSwapProvider` below.
+ * Robinhood Chain joined on 2026-09-09 and is the first network here that no
+ * existing engine could reach: it has no Circle CCTP domain, no USDC, and
+ * Mayan does not serve it. It arrives with a second cross-swap provider
+ * rather than with a fourth copy of anything — see `CrossSwapProvider` below.
  *
  * The three USDC addresses are repeated from `lib/solana/cctp-registry.ts`
  * rather than imported, so the client bundle does not carry the registry and
@@ -44,11 +41,11 @@ import { solanaPreFlightReserveLamports } from "./gas-reserve.ts";
 /*
  * The networks Bridge may carry, and what it took for each to be here.
  *
- * Four became seven on 2026-09-10 (Owner: *«Додай наступні мережі тільки після
- * нормального gas/MAX handling»*). Every fact below — chain id, RPC, explorer,
- * native coin, USDC contract and its decimals — is read from Relay's own
- * `/chains`, not typed from memory, and every one of the eight new origin
- * routes was quoted live before the network was added.
+ * Four became seven on 2026-09-10, and only after gas and MAX handling were
+ * sound: a network is not added before that works. Every fact below — chain
+ * id, RPC, explorer, native coin, USDC contract and its decimals — is read
+ * from Relay's own `/chains`, not typed from memory, and every one of the
+ * eight new origin routes was quoted live before the network was added.
  *
  * Two of those live reads changed what got written. **USDC on BNB Chain has
  * eighteen decimals, not six** — reading it as six would misprice every amount
@@ -98,9 +95,9 @@ export const EVM_EXPLORER_TX: Readonly<Record<Exclude<SwapNetwork, "solana">, st
 /**
  * The order a person meets the networks in, most-reached-for first.
  *
- * Owner instruction 2026-09-10: *«Не показуй одразу 63 мережі великим списком»*.
- * This is the "popular" half of that — a curated order, not a ranking computed
- * from anything, because a menu that reorders itself between visits is a menu
+ * A person is never shown all 63 networks at once as one big list. This is
+ * the "popular" half of that — a curated order, not a ranking computed from
+ * anything, because a menu that reorders itself between visits is a menu
  * people stop being able to use from memory.
  *
  * Solana is absent on purpose: it is the fixed side of every bridge, so it is
@@ -423,7 +420,7 @@ export function defaultSwapAssetFor(network: SwapNetwork, other: SwapSideRef | n
  * going to it directly removes a hop and a trust layer rather than adding one.
  *
  * A tuple names its provider so nothing has to guess from the networks, and so
- * a pair can never silently move to a provider the Owner did not name for it.
+ * a pair can never silently move to a provider nobody named for it.
  */
 export type CrossSwapProvider = "MAYAN" | "RELAY";
 
@@ -431,8 +428,8 @@ export type CrossSwapProvider = "MAYAN" | "RELAY";
 export type CrossSwapRouteMechanism = "SWIFT" | "FAST_MCTP" | "RELAY_DEPOSIT";
 
 /**
- * The four cross-asset pairs the Owner approved on 2026-09-07, by name. Each
- * is exactly one direction; the reverse of a listed pair is not implied.
+ * The four cross-asset pairs approved on 2026-09-07, by name. Each is exactly
+ * one direction; the reverse of a listed pair is not implied.
  */
 export type MayanCrossSwapTupleId =
   | "ETHEREUM_ETH_TO_SOLANA_SOL"
@@ -441,7 +438,7 @@ export type MayanCrossSwapTupleId =
   | "SOLANA_SOL_TO_BASE_USDC";
 
 /**
- * The six Robinhood Chain pairs the Owner approved on 2026-09-09, by name.
+ * The six Robinhood Chain pairs approved on 2026-09-09, by name.
  *
  * Both of the chain's solver assets, in both directions, against the two
  * Solana assets a person here already holds. USDG is the point of the lane:
@@ -509,17 +506,16 @@ export function findCrossSwapTuple(from: ResolvedSwapAsset, to: ResolvedSwapAsse
 /**
  * Which provider carries a pair of networks. Since 2026-09-10: **Relay, always.**
  *
- * Owner decision — *«Bridge = cross-chain, Relay-only… Без Mayan/CCTP у default
- * routing»*. Bridge owns one provider so that it owns one failure and one status
+ * Bridge is cross-chain and Relay-only, with no Mayan or CCTP in default
+ * routing. Bridge owns one provider so that it owns one failure and one status
  * model, and so nothing can change rails between the quote and the signature:
  * two rails with different custody shapes would make the signed swap a different
  * swap from the reviewed one.
  *
  * Mayan is not deleted, and its absence is a routing decision rather than a
  * verdict on the rail. It stays compiled, tested and reachable as rollback —
- * `MAYAN_CROSS_SWAP_TUPLES` below is still the record of the four pairs the
- * Owner named for it — and returning it to service is this function and nothing
- * else.
+ * `MAYAN_CROSS_SWAP_TUPLES` below is still the record of the four pairs named
+ * for it — and returning it to service is this function and nothing else.
  *
  * The arguments are kept because the signature is the seam that a rollback
  * restores, and a caller that already passes both networks should not have to be
@@ -541,12 +537,12 @@ function pairSideId(asset: ResolvedSwapAsset): string {
 /**
  * The pair a person actually chose, derived rather than looked up.
  *
- * Before `RYN-SOL-MONEY-FLOWS-001I` this was a lookup in a ten-row table and a
- * pair outside it did not exist. The table is a shortlist now, so the pair is
- * built from the two sides: same shape as a shortlisted tuple, same `provider`
- * the engine reads, and an `id` that survives into the order record and the
- * receipt. A shortlisted pair keeps its written name, so nothing already
- * stored changes meaning.
+ * Originally this was a lookup in a ten-row table and a pair outside it did
+ * not exist. The table is a shortlist now, so the pair is built from the two
+ * sides: same shape as a shortlisted tuple, same `provider` the engine reads,
+ * and an `id` that survives into the order record and the receipt. A
+ * shortlisted pair keeps its written name, so nothing already stored changes
+ * meaning.
  *
  * Null only when the two sides are the same asset on the same network — the
  * one pair that is not a swap in any direction.

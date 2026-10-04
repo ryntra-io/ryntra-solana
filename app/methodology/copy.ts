@@ -1,11 +1,11 @@
 /**
  * Methodology page copy — English only.
  *
- * The public surface is English (founder decision 2026-08-06); the parked
+ * The public surface is English (since 2026-08-06); the parked
  * locales keep their existing `METHODOLOGY_SUMMARY` translations and reach this
  * page through a temporary 307. When a locale is unparked this file grows a
  * locale dimension; until then a second dictionary would be unrendered copy,
- * which is the drift earlier canon work removed.
+ * which is the drift earlier work removed.
  *
  * Nothing here states a capability. Every maturity, limitation, evidence count
  * and review date on the page is rendered from the typed registry.

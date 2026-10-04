@@ -157,7 +157,7 @@
 .ringLine[data-ring="3"], .ring[data-ring="3"] { --r: var(--r3); --size: var(--s3); --near: 1.04; --far: .8; }
 /* The line is 2.5px wide in its own plane with a soft edge on both sides:
    the far arc of a ring tilted 66deg is foreshortened to well under a
-   pixel, and a hard 2px line came through it as dashes (the Owner's
+   pixel, and a hard 2px line came through it as dashes (seen on a
    screenshot, 2026-09-14); a wider, soft line minifies to a faint
    continuous one instead — far and fainter, which is what distance looks
    like. */

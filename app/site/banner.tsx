@@ -9,9 +9,8 @@ import type { CircuitStage, EnvironmentRow } from "./truth-view";
  * lit and the rest left dim, so the band is a truthful one-line summary of what
  * works. The second says the same about chains and venues.
  *
- * They drift again — by founder direction (2026-08-09), reversing the
- * RYN-SITE-002 static bands. Every guard that made the original marquee
- * acceptable returns with it:
+ * They drift again, reversing the earlier static bands. Every guard that
+ * made the original marquee acceptable returns with it:
  *
  *   - the loop is slow and pauses under the pointer and under keyboard focus;
  *   - the track is duplicated once so the loop has no seam, and the second

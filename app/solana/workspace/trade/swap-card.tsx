@@ -387,8 +387,7 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
      field read as an amount the person had chosen, the address bar then said
      `amount=1` as though they had asked for it, and the only way to swap a
      different figure was to clear a number nobody entered. The pair still
-     defaults, because a pair is a starting point and an amount is a decision.
-     Founder decision, 2026-09-03. */
+     defaults, because a pair is a starting point and an amount is a decision. */
   const [amount, setAmount] = useState(initialAmount ?? "");
   /* Embedded under the unified surface, the pair and amount are the surface's
      decisions; this card follows them and never argues back. */
@@ -1775,7 +1774,7 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
                     `spendableRaw` — the balance with the network-fee reserve
                     already withheld — so a wallet holding 0.06046201 SOL read
                     `Balance 0.05996201 SOL` here and matched nothing the person
-                    could see in their own wallet. Canon 4.1 asks for the
+                    could see in their own wallet. A swap shows the
                     *available* balance, which is exactly what this is. */}
                     <span className={styles.balanceLabel}>{text("Available")}</span>
                     <button

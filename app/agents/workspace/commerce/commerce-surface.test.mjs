@@ -72,10 +72,9 @@ test("every panel carrying a disclosure can scroll, so nothing expands out of re
 });
 
 test("the explanation lives behind an icon and is never printed on the page", () => {
-  /* Founder rule: a workspace that reads as documentation with controls
-     attached is a failed workspace. Every explanatory paragraph on this surface
-     is inside a `<details>`; the visible text is a heading, a number or a
-     state. */
+  /* A workspace that reads as documentation with controls attached is a
+     failed workspace. Every explanatory paragraph on this surface is inside a
+     `<details>`; the visible text is a heading, a number or a state. */
   const explains = PAGE.split("<Explain").length - 1;
   assert.ok(explains >= 4, "the surface must keep its explanations behind a disclosure");
   assert.ok(CSS.includes(".explain summary"), "the disclosure must be styled as a control");
@@ -103,8 +102,8 @@ test("the page reads the projection and never decides anything itself", () => {
 });
 
 test("no status word on the surface is hand-written", () => {
-  /* Canon 08 §5 forbids editing a status into JSX. Every verdict here comes
-     from a projection field, and the words that would be a claim are absent. */
+  /* A status is never edited into JSX. Every verdict here comes from a
+     projection field, and the words that would be a claim are absent. */
   const visible = PAGE.replace(/\/\*[\s\S]*?\*\//g, " ");
   for (const forbidden of [">Live<", ">Supported<", ">Integrated<", ">Production<", ">Coming soon<"]) {
     assert.ok(!visible.includes(forbidden), `the page hand-writes ${forbidden}`);

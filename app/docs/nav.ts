@@ -4,9 +4,9 @@
  * `/docs` was one 1,028-line page with ten chapters on it. That page answered
  * two different questions in one scroll — *what are you building* and *what can
  * I rely on today* — and a reader looking for the second had to pass the first.
- * The founder's frozen Public Information Architecture separates them, and this
- * file is the separation: every documentation destination, its group, and the
- * class of thing it is.
+ * The public information architecture separates them, and this file is the
+ * separation: every documentation destination, its group, and the class of
+ * thing it is.
  *
  * One rule, inherited from `app/site/nav.ts` and worth repeating because it is
  * the one that rots: **every entry points at something that exists.** A test
@@ -116,7 +116,7 @@ export const DOCS_GROUPS: readonly DocGroup[] = [
       {
         href: "/docs/agent-control",
         label: "Agent Control",
-        note: "Every Agent Control surface, what it refuses, the one write path that is not a page, and everything the canon designed that is not built — each with the exact gate that would open it.",
+        note: "Every Agent Control surface, what it refuses, the one write path that is not a page, and everything designed but not built — each with the exact gate that would open it.",
         pageClass: "Reference",
       },
       {

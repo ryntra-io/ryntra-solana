@@ -74,7 +74,7 @@ const USDC_DECIMALS = 6;
  * reads, the Circle fee read, the simulation and the issuer signature. By the
  * time the Review is on screen a large part of its declared life is already
  * spent, so a countdown anchored to `builtAt` opened at eight seconds and a
- * signing margin subtracted from it left nothing: the founder watched the
+ * signing margin subtracted from it left nothing: a person watched the
  * number fall to zero, the card rebuilt, and pressing never reached the wallet.
  * That was measured on production, not reasoned about.
  *
@@ -1094,7 +1094,7 @@ export function BridgeCard({ embedded, onFacts }: { embedded?: BridgeCardEmbedde
       case "CONNECT":
         /* `connect()` returns silently when the registry is empty, because
            there is nothing to open. Left enabled, that is a button that does
-           nothing and explains nothing — the founder read it as the bridge
+           nothing and explains nothing — a person read it as the bridge
            being broken, which is a fair reading of a dead primary control. */
         /* A network that is not open has no wallet to connect to: the button
            says so instead of opening a wallet for a transfer that cannot be
@@ -1232,7 +1232,7 @@ export function BridgeCard({ embedded, onFacts }: { embedded?: BridgeCardEmbedde
    * panel takes a taller span rather than hiding a critical control. Seven rows
    * was six pixels short of the plain Review at 1920 — the send button was
    * already sitting on the clip — and every conditional notice above it pushed
-   * the button out of the panel entirely. That is what the founder photographed:
+   * the button out of the panel entirely. That is what a person photographed:
    * their wallet added a Lighthouse assertion notice, and the one control that
    * moves the money was cut in half by the panel beneath it.
    *
@@ -1531,9 +1531,9 @@ export function BridgeCard({ embedded, onFacts }: { embedded?: BridgeCardEmbedde
                     no integrator fee mechanism at all — `depositForBurn` takes seven
                     arguments and none of them is one, and `maxFee` is Circle's own
                     charge. Ryntra could only take a cut here by adding a transfer or
-                    a contract of its own, which the Owner decision forbids. A row
-                    that simply disappeared would leave a person to guess, and on the
-                    other two engines the same row is not zero. */}
+                    a contract of its own, and it adds neither. A row that simply
+                    disappeared would leave a person to guess, and on the other two
+                    engines the same row is not zero. */}
                 <span>
                   {text("Ryntra service fee")}
                   <b translate="no">0.00%</b>
@@ -1559,10 +1559,10 @@ export function BridgeCard({ embedded, onFacts }: { embedded?: BridgeCardEmbedde
                 </span>
               </div>
 
-              {/* Canon §25.5 asks for Standard versus Fast and every fee before
-                  the Review, with the speed claim held to what Circle actually
-                  does and no further — the word this file is forbidden to print
-                  is the one that promise would use. */}
+              {/* Standard versus Fast and every fee are shown before the Review,
+                  with the speed claim held to what Circle actually does and no
+                  further — the word this file is forbidden to print is the one
+                  that promise would use. */}
               <dl className={styles.speedChoice} aria-label={text("Speed and fees")}>
                 {speedTiers.length > 0 ? (
                   speedTiers.map((tier) => (
@@ -1720,13 +1720,13 @@ export function BridgeCard({ embedded, onFacts }: { embedded?: BridgeCardEmbedde
       {/* Where the money is, shown inside Swap too.
 
           It was `!embedded`, which was right while a transfer had a page of
-          its own to be read on. The owner's instruction of 2026-09-08 removes
-          that page — the cross-chain swap replaces it — and this panel is the
-          one place that says which side the money is on, both hashes and how
-          to pick a stalled transfer back up. Hiding it here would leave a
-          person whose USDC is already burned with a stage strip and nothing
-          else. The condition below still gates it on a transfer existing, so
-          a fresh Swap form carries no extra panel. */}
+          its own to be read on. Since 2026-09-08 that page is gone — the
+          cross-chain swap replaces it — and this panel is the one place that
+          says which side the money is on, both hashes and how to pick a
+          stalled transfer back up. Hiding it here would leave a person whose
+          USDC is already burned with a stage strip and nothing else. The
+          condition below still gates it on a transfer existing, so a fresh
+          Swap form carries no extra panel. */}
       {plan || burnSignature ? <Panel
         id="bridge-evidence"
         title={text("Details")}

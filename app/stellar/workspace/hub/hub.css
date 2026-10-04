@@ -51,10 +51,9 @@
   margin-bottom: 4px;
 }
 
-/* 22px/700 is the documented workspace page-title step —
-   `docs/design/workspace-system.md` §5. It reads as off-ramp against the public
-   site's ramp because the workspace has its own, and this surface is governed by
-   the workspace contract. */
+/* 22px/700 is the documented workspace page-title step. It reads as off-ramp
+   against the public site's ramp because the workspace has its own, and this
+   surface is governed by the workspace contract. */
 .st-title {
   margin: 0;
   font-size: 22px;

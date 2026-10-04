@@ -116,8 +116,8 @@ async function researchState(
 /**
  * The risk link of the chain, taken from the Portfolio rather than recomputed.
  *
- * The canon's chain names one `RiskCalculation`, and the Portfolio already owns
- * it. Recomputing here would produce a second deterministic answer to the same
+ * The chain names one `RiskCalculation`, and the Portfolio already owns it.
+ * Recomputing here would produce a second deterministic answer to the same
  * question, which is exactly the drift the one-object-graph rule exists to
  * stop, so this reads the digest the Portfolio produced and carries it.
  */

@@ -73,7 +73,7 @@ export function ConnectionControl({
   triggerId?: string;
   /**
    * The person's own settings, in every state of the panel — connected or
-   * not — above the way out (canon v5.4 В31: the wallet's menu carries
+   * not — above the way out (the wallet's menu carries
    * Налаштування, Мова, Тема, Від'єднати). Handed `close` so a row that
    * navigates can shut the panel it lives in.
    */
@@ -295,7 +295,7 @@ export function ConnectionControl({
           ) : null}
 
           {/* A guest's settings: the language and the theme are theirs before
-              any wallet is (canon v5.4 В31), so the rows stand under the way
+              any wallet is, so the rows stand under the way
               in. With a wallet they stand above the way out, drawn above. */}
           {!address && preferences ? (
             <section className="rs-menu-section" data-section="preferences">{preferences(close)}</section>
@@ -312,8 +312,8 @@ export function ConnectionControl({
  * The person opened the panel to connect, and connecting is done: what comes
  * next is on the page they came from — on «Простий»'s Home, «Поповнити» —
  * not in a panel that now covers it on a phone. A panel opened while already
- * connected never closes by itself. (RYN-INVEST-SIMPLE-001, session 5: the
- * beginner's walk stopped here under the panel.)
+ * connected never closes by itself. (A beginner's walk through the product
+ * stopped here, under the panel.)
  */
 function CloseOnConnect({ address, close }: { address: string | null; close: () => void }) {
   const atOpen = useRef(address);

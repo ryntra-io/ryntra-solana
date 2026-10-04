@@ -6,11 +6,10 @@ import { maskWallet, type BusinessPresence, type BusinessReferralEdge, type Busi
 /**
  * Admin Points — the owner's view of the same ledger the customer reads.
  *
- * `RYN-PRE-HACKATHON-FOUNDATION-001`. Pure and client-safe: no clock, no
- * store, no `process.env`. A projection over the points ledger, the wallet
- * presence index and the referral graph — one row per wallet, sortable the
- * four ways the Owner named, and the ledger itself one disclosure down so
- * every figure can be traced to the rows that made it.
+ * Pure and client-safe: no clock, no store, no `process.env`. A projection
+ * over the points ledger, the wallet presence index and the referral graph —
+ * one row per wallet, sortable four ways, and the ledger itself one disclosure
+ * down so every figure can be traced to the rows that made it.
  *
  * Internal wallets are out by default: out of the order, out of the counts,
  * and shown tagged only under *all activity*, the same switch the business

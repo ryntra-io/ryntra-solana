@@ -37,7 +37,7 @@ export const DEPOSIT_FOR_BURN_DISCRIMINATOR = "d73c3d2e723780b0";
  *
  * `STANDARD` waits for hard finality and is quoted at 0 bps on every route this
  * product uses. `FAST` is Circle signing earlier against its own allowance —
- * it is not a time promise and canon §12.4 forbids calling it instant.
+ * it is not a time promise and the product never calls it instant.
  */
 export const CCTP_FINALITY_THRESHOLD = Object.freeze({ FAST: 1000, STANDARD: 2000 });
 
@@ -227,7 +227,7 @@ const SOLANA_SYSTEM_PROGRAM = "11111111111111111111111111111111";
  *
  * The Send path keys its submit boundary on a signature, which proves only that
  * exact bytes were broadcast once — it is blind to a second, freshly built burn
- * of the same intent, which is the failure canon §25.5 actually forbids. This
+ * of the same intent, which is the failure the bridge actually forbids. This
  * digest covers what makes a burn *the same burn* regardless of blockhash,
  * ephemeral account or fee: who is sending what, to whom, on which domain.
  *

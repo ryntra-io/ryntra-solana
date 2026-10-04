@@ -6,7 +6,7 @@
  * HTTP 404.** Circle documents this as a normal polling state, not as a
  * refusal. A client that reads 404 as "no such burn" concludes the money never
  * left, and the next thing a person does after that conclusion is burn again —
- * which is precisely the failure canon §25.5 forbids and the one this lane can
+ * which is precisely the failure the bridge forbids and the one this lane can
  * never recover from. So 404 is `PENDING_INDEXING` here, and nothing in this
  * file can turn an unread answer into an absent burn.
  *

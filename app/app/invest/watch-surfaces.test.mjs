@@ -3,10 +3,10 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 /*
- * RYN-PROTECT-SIGNAL-001, subtask 1 — Нагляд's states where a position is
- * drawn: the company page under «Твоя позиція», Portfolio under each company
- * row, and Нагляд's own «Твої позиції». One line, one action, decided by the
- * server; never an orange of their own beside the page's one orange action.
+ * Нагляд's states where a position is drawn: the company page under «Твоя
+ * позиція», Portfolio under each company row, and Нагляд's own «Твої
+ * позиції». One line, one action, decided by the server; never an orange of
+ * their own beside the page's one orange action.
  */
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8").replace(/\r\n/g, "\n");

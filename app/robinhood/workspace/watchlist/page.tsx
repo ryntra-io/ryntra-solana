@@ -9,7 +9,7 @@ import "../markets.css";
 import "./watchlist.css";
 
 /**
- * The Watchlist — the canon's fourth Discover surface, and the one that is not
+ * The Watchlist — the fourth Discover surface, and the one that is not
  * a query at all.
  *
  * Radar pushes. The Screener answers a question asked once. The Scanner keeps

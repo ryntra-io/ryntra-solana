@@ -173,7 +173,7 @@ function DocArticle({ page, locale }: { page: DocPage; locale: PublicLocale }) {
         <h1>{page.title[locale]}</h1>
         <p className="docs-lead">{page.summary[locale]}</p>
         <div className="docs-hero-row">
-          {/* No readiness chip: a documented page is a page that works (canon v5.0 §0.0 rule 10). */}
+          {/* No readiness chip: a documented page is a page that works — only what is built reaches a person. */}
           {page.pageId ? <Link className="docs-primary" href={localizedPath(hrefOf(page.pageId), locale)}>{chrome.open}</Link> : null}
           {!page.pageId && page.destination ? <Link className="docs-primary" href={localizedPath(destinationHref(page.destination), locale)}>{chrome.open}</Link> : null}
           {isHub ? <Link className="docs-primary" href="/app">{chrome.openDocs}</Link> : null}

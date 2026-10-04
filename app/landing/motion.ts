@@ -1,5 +1,5 @@
 /**
- * Motion constants that JavaScript needs (RYN-LAND-002).
+ * Motion constants that JavaScript needs.
  *
  * CSS timings live in the `--motion-*` tokens in `landing.css`. A few cadences
  * are driven from JS instead — an interval cannot read a CSS variable — and

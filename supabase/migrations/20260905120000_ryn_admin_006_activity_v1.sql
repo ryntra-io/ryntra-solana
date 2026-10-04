@@ -1,14 +1,13 @@
--- RYN-ADMIN-006 account logins, product events and activity reads.
+-- Account logins, product events and activity reads.
 -- APPLIED to production project lbphobwqzwdkbmyedlwb on
--- 2026-09-05 through the Supabase MCP apply_migration, on the founder's
--- instruction in session («ти можеш сам робив оцю міграцію?»), without the
--- begin/commit wrapper (the tool runs the statement set atomically). Never
--- against Neon Guard. Verified immediately after against the live database:
+-- 2026-09-05 through Supabase's apply_migration, with explicit approval,
+-- without the begin/commit wrapper (the tool runs the statement set
+-- atomically), and on no other database. Verified immediately after against
+-- the live database:
 -- both tables present with RLS enabled and forced and no anon/authenticated
 -- select; the five public functions SECURITY DEFINER with execute for anon
 -- only; the private helper present; zero rows in both stores.
--- Verified locally beforehand on top of every prior migration in PGlite (see
--- the task card and docs/tasks/evidence/RYN-ADMIN-006-verification.md).
+-- Verified locally beforehand on top of every prior migration in PGlite.
 --
 -- Invariants:
 --   * private tables; ENABLE + FORCE RLS; no policies; ACL revoked

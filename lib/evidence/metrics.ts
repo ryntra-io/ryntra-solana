@@ -16,7 +16,7 @@
  * - `cohort` — the figure covers the subset of addresses the source labels
  *   (exchanges, large holders). A transfer is not a purchase and a label is
  *   the source's classification, not a fact about a person; such a figure
- *   informs, so it is advisory only. That is the canon's *flows ≠ trades*
+ *   informs, so it is advisory only. That is the rule *flows ≠ trades*
  *   written where a validator can read it.
  *
  * Two providers, one table: Nansen's figures are

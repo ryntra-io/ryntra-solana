@@ -1,19 +1,18 @@
 import type { Prose } from "../site/info/prose.ts";
 
 /**
- * «Безпека» — the words of `/security`, English and Ukrainian together (the
- * new site of canon v5.5, `RYN-SITE-V5-001` subtask 3; the plan's §3 for the
- * title and the description).
+ * «Безпека» — the words of `/security`, English and Ukrainian together,
+ * including the page's title and description.
  *
  * The twelve sections keep their ids, their numbers and their order from the
- * founder's specification, so nothing that was ever linked stops resolving;
- * what each one says is the product of v5.5 — a purchase from $1 through the
+ * original specification, so nothing that was ever linked stops resolving;
+ * what each one says is the current product — a purchase from $1 through the
  * Review and the person's signature, «Автоінвест» rules that only remind, the
  * wallet's own payments read and never moved, Ryntra the AI assistant with no
  * tool that buys or signs — checked against the code on `SECURITY_AS_OF`
  * (`lib/site/security.ts`, which also holds the boundary lines and the audit
  * sentence a copy edit cannot soften). No section says what is planned: the
- * page describes what exists (canon §0.0 rule 10).
+ * page describes what exists.
  */
 
 export type SecurityLocale = "en" | "uk";

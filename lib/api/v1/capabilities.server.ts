@@ -118,7 +118,7 @@ export function buildCapabilities(deps: Readonly<{ env?: NodeJS.ProcessEnv; now?
     /* 1.7.0: the asset read that resolves any mint the way a create will, and the kinds a plan may name here. */
     /* 1.9.0: Results and memory are routes a client may read for this wallet, so a deployment says whether it serves them. */
     plans: { list: "/api/v1/plans", limit: PLAN_LIST_LIMIT, versionsLimit: PLAN_VERSIONS_LIMIT, asset: "/api/v1/plans/asset", assetKinds: [...PLAN_ASSET_KINDS], results: "/api/v1/plans/results", memory: "/api/v1/plans/memory" },
-    /* 1.7.0: whether push delivery is switched on at all — the Owner's key on the server, or its absence, said plainly. */
+    /* 1.7.0: whether push delivery is switched on at all — the provider key on the server, or its absence, said plainly. */
     push: { provider: pushProviderConfigured(env) ? "configured" : "absent" },
     /* 1.12.0: «Автоінвест» — the rules route and its bounds; a rule reminds, the wallet signs every purchase. */
     rules: {

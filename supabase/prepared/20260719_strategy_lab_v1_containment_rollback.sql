@@ -1,5 +1,5 @@
 -- ============================================================================
--- REVIEWED RYN-SLAB-002 non-destructive containment rollback.
+-- REVIEWED Strategy Lab non-destructive containment rollback.
 -- Production drill executed 2026-07-21, then forward recovery restored access.
 --
 -- This incident action removes every client execution/data privilege introduced

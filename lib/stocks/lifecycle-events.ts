@@ -74,7 +74,7 @@ const PRESTOCKS_AFTER_IPO = { url: "https://x.com/PreStocks/status/2063623768535
  * The seven other companies' pages carried no notice on 2026-09-25
  * (`issuer-pages.ts`).
  *
- * Private companies come through PreStocks only since canon v5.2 (В25–В26);
+ * Private companies come through PreStocks only;
  * the disconnected issuer's tokens are not events here but retired tokens
  * (`retired.ts`).
  */
@@ -114,7 +114,7 @@ export function lifecycleEventFor(mint: string, events: ReadonlyMap<string, Life
 export type PathSource = Readonly<{ label: string; url: string; publishedAt: string | null; readAt: string }>;
 
 /**
- * A company that has left the private step (canon v5.2 В27, §7): the day its
+ * A company that has left the private step: the day its
  * shares first traded and the price they
  * were offered at, the exchange and the ticker, and the listed token on
  * Solana the issuer points the private token's swap to — each from the

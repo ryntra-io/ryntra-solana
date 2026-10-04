@@ -1,12 +1,12 @@
 /**
- * What a question is — the intent (`RYN-AGENT-TEXT-001`).
+ * What a question is — the intent.
  *
  * One schema, two writers. The deterministic parser below reads the person's
  * words in either language and fills it; a configured model fills the same
  * schema under a strict output format (`model.ts`). Either way the server
  * decides which tools run from the intent — the model never names a tool or
  * an argument of its own, so every argument a tool sees is one this schema
- * validated (the Owner's rule of 2026-09-22 §17).
+ * validated.
  *
  * The parser is honest about its reach: it recognises the shapes of the
  * product's own vocabulary — a symbol, a mint, a plan id, a sum, a window —
@@ -55,11 +55,11 @@ export const IntentSchema = z
     /** Whether the words ask about "this" — the context the session was opened from. */
     refersToContext: z.boolean(),
     /**
-     * 1.10.0 (`RYN-BRIEF-CRITIC-001`): the format the words asked for beside
-     * the answer — a short Brief, or the Critic's argument against the
-     * thesis. It never changes the class or which tools run: the same reads
-     * carry the six-section answer and the format, so a client that knows
-     * nothing of either still reads a whole answer.
+     * 1.10.0: the format the words asked for beside the answer — a short
+     * Brief, or the Critic's argument against the thesis. It never changes
+     * the class or which tools run: the same reads carry the six-section
+     * answer and the format, so a client that knows nothing of either still
+     * reads a whole answer.
      */
     lens: z.enum(["brief", "critic"]).nullable(),
     /** True when the words ask why something moves or what changed — the flows are read beside the price. */
@@ -383,11 +383,11 @@ function classify(text: string): AgentQuestionClass {
  * BONK.
  */
 /**
- * The format the words asked for (`RYN-BRIEF-CRITIC-001`). Explicit only:
- * *what changed in my portfolio* is an ordinary question and must not drag a
- * Brief behind it, so nothing but a word that names the format triggers one.
- * The Critic wins when both are named — a person who asks to be argued with
- * is asking for the harder read.
+ * The format the words asked for. Explicit only: *what changed in my
+ * portfolio* is an ordinary question and must not drag a Brief behind it, so
+ * nothing but a word that names the format triggers one. The Critic wins
+ * when both are named — a person who asks to be argued with is asking for
+ * the harder read.
  */
 const BRIEF_WORDS = /(?<![\p{L}\p{N}_])(brief|briefing|tl;?dr|summar(y|ise|ize)|in short|short version|catch me up|стисло|коротко|бриф|підсуму(й|вати)|резюме|стислий огляд)(?![\p{L}\p{N}_])/iu;
 const CRITIC_WORDS = /(?<![\p{L}\p{N}_])(critic|critics|critique|criticis[ez]|criticize|challenge|counter[- ]?argument|devil'?s advocate|poke holes|argue against|what'?s wrong with|what could go wrong|weak spot|weakness(es)?|критик(а|уй)?|розкритикуй|оскарж(и|ити)|контраргумент|аргументи проти|що не так|що може піти не так|слабк(е|і) (місце|місця))(?![\p{L}\p{N}_])/iu;
@@ -434,11 +434,11 @@ export function parseIntent(text: string, context: AgentContext | null): Intent 
   if (klass === "prepare_plan" && symbols.length === 0 && mints.length === 0 && context?.kind !== "asset" && context?.kind !== "plan") klass = "prepare_plan";
 
   /*
-   * A Brief or a Critic is a **format**, not a question of its own
-   * (`RYN-BRIEF-CRITIC-001`): it takes the class of whatever it is about, so
-   * the same tools read and the same six-section answer is written beside
-   * it. With no subject at all it stays unknown, and the answer says what
-   * Ryn can be asked instead of composing a format over nothing.
+   * A Brief or a Critic is a **format**, not a question of its own: it takes
+   * the class of whatever it is about, so the same tools read and the same
+   * six-section answer is written beside it. With no subject at all it stays
+   * unknown, and the answer says what Ryn can be asked instead of composing a
+   * format over nothing.
    */
   const lens = klass === "secret" ? null : extractLens(words);
   if (lens !== null && klass === "unknown") {

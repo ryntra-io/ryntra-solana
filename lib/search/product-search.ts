@@ -1,5 +1,5 @@
 /**
- * The product's search (canon v5.4 В31, 2026-09-24): one field in the top bar
+ * The product's search (since 2026-09-24): one field in the top bar
  * that finds a company, a coin or an action — «Поповнити», «Історія»,
  * «Налаштування» — from any page.
  *

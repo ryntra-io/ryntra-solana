@@ -2,14 +2,13 @@ import type { PlanRules } from "../api/v1/contract.ts";
 import { MAX_PRICE_OVER_ENTRY } from "./builder-defaults.ts";
 
 /**
- * The purchase with a loss limit — the one strategy of «Простий» (canon v5.0
- * §4, §5.2, §5.3; RYN-FIRST-SCREEN-001, S3): the person chooses the asset,
- * the amount and one of the published presets; these rules — the same for
- * everyone, never the model's — turn that choice into the plan the Review
- * checks before the signature and Monitoring watches after it.
+ * The purchase with a loss limit — the one strategy of «Простий»: the person
+ * chooses the asset, the amount and one of the published presets; these rules
+ * — the same for everyone, never the model's — turn that choice into the plan
+ * the Review checks before the signature and Monitoring watches after it.
  *
- * - The presets are the Owner's (В11): «Обережно» −5 % / +10 %,
- *   «Збалансовано» −10 % / +20 %. «Своє» is the full plan builder.
+ * - The presets: «Обережно» −5 % / +10 %, «Збалансовано» −10 % / +20 %.
+ *   «Своє» is the full plan builder.
  * - The entry is the planning price the plan's own asset read gives, in the
  *   plan's unit (a share, or a token for a pre-IPO instrument); the Review
  *   refuses above two per cent over it (the builder's protective default).

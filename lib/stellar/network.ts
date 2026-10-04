@@ -26,9 +26,9 @@ export type StellarNetwork = Readonly<{
    * Curated classic data as JSON.
    *
    * Horizon is nearing end-of-life in favour of Stellar RPC and SDF's own
-   * Portfolio APIs, and canon §12 permits it while forbidding it as a
-   * long-term sole dependency. It is here because the reads this adapter needs
-   * — issuer flags, trustlines, asset statistics — are JSON on Horizon and XDR
+   * Portfolio APIs, and it is permitted here while forbidden as a long-term
+   * sole dependency. It is here because the reads this adapter needs — issuer
+   * flags, trustlines, asset statistics — are JSON on Horizon and XDR
    * everywhere else, and XDR is what would force an SDK. Every read records
    * which source answered, so replacing this is a source change.
    */

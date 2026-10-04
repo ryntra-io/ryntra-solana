@@ -26,8 +26,8 @@
 /* A page whose whole job is one panel hands that panel the canvas.
    The fixed row height is right for a dashboard, where the rhythm between
    panels is the layout. On a single-panel page it leaves a band of dead page
-   underneath — measured at 489px below Holdings on a 1305px viewport, which is
-   the founder's own display. Opt-in, so no multi-panel screen changes.
+   underneath — measured at 489px below Holdings on a 1305px viewport.
+   Opt-in, so no multi-panel screen changes.
 
    `flex: 1`, not `min-height: 100%`. The canvas is a flex column that also
    holds the page head, and a percentage minimum is taken against the whole
@@ -67,7 +67,7 @@
   min-height: 0;
   overflow: hidden;
   /* A card separates from the ground by tone, a 1px border, the faintest
-     shadow and spacing — never by glow (Brand Canon v1.0 §8). */
+     shadow and spacing — never by glow. */
   background: var(--ry-card, var(--panel));
   border: 1px solid var(--border);
   border-radius: var(--ry-r-card, var(--radius-sm));
@@ -180,7 +180,7 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  /* Data panels scroll; action panels never do (spec §3). Either way the body
+  /* Data panels scroll; action panels never do. Either way the body
      — not the page — absorbs the excess, so a long list cannot push a footer
      or a critical control out of the panel. */
   overflow: hidden;
@@ -419,7 +419,7 @@
  *
  * `space-between` is right in a 4-column panel, where the row is 300px and the
  * value is never far from what it names. In an 8- or 12-column panel it is the
- * defect `ryntra-design-bar` §7 records from the swap surface: on the Asset
+ * defect first recorded on the swap surface: on the Asset
  * Passport the value sat roughly 800px from its label, and the eye stopped
  * reading them as one statement.
  *
@@ -487,7 +487,7 @@
  *
  * It was `background: transparent` with `--text-dim` ink on a hairline, which
  * on a panel that is itself a raised surface is a label with a rectangle round
- * it. Opening a desk, the founder could not tell which of the things on screen
+ * it. Opening a desk, a person could not tell which of the things on screen
  * were pressable — *«є якісь кнопки, що це не видно, що це кнопка»* — and the
  * two most consequential controls on the surface were among them. So the resting state now carries a fill, a
  * full-strength border and ink-high text, and hover moves the fill rather than
@@ -526,7 +526,7 @@
 /* Primary is Action Blue, not evidence cyan (DESIGN.md §Components/Buttons).
    The workspace had them merged, which left the colour that means "this is
    verified data" also meaning "press this" — the one confusion a desk about
-   evidence cannot afford. Hover deepens to the canon hover value rather than
+   evidence cannot afford. Hover deepens to the action-blue hover token rather than
    brightening the fill, so light and dark move the same way. */
 /* `data-variant` is honoured beside the modifier class, and that is a fix
    rather than a convenience. One desk marked its primary controls
@@ -539,7 +539,7 @@
 .rw-btn--primary:hover:not(:disabled),
 .rw-btn[data-variant="primary"]:hover:not(:disabled) { background: var(--rt-action-blue-hover); color: var(--blue-ink); }
 /* Violet is reserved for one thing: a person explicitly authorizing an
-   operation (DESIGN.md §Components/Buttons, Cabinet Master Plan §10). The
+   operation (DESIGN.md §Components/Buttons). The
    token existed and no control ever used it, so "continue" and "authorize this
    exact intent" were the same blue — and the single most consequential click
    in the product looked like every other one. Nothing else may take this
@@ -609,7 +609,7 @@
 .rw-auth svg { flex: 0 0 auto; color: var(--blue); margin-top: 1px; }
 .rw-auth b { color: var(--text); font-weight: 600; }
 
-/* Stepper — the guarded-action rail (spec §9). */
+/* Stepper — the guarded-action rail. */
 .rw-steps { display: flex; flex-direction: column; list-style: none; margin: 0; padding: 0; }
 .rw-step { position: relative; display: grid; grid-template-columns: 22px minmax(0, 1fr); column-gap: 10px; padding: 7px 0; }
 .rw-step-m {
@@ -838,7 +838,7 @@ a.rw-card:hover { background: var(--panel-3); border-color: var(--accent-line); 
 }
 
 /* Below the shell's drawer breakpoint the grid releases its spans: panels
-   stack full-width at content-driven heights (spec §3 mobile rule). */
+   stack full-width at content-driven heights. */
 @media (max-width: 900px) {
   .rw-grid { grid-auto-rows: auto; }
   .rw-w3, .rw-w6 { grid-column: span 12; }

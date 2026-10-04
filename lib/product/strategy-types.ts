@@ -3,24 +3,23 @@ import type { DomainLabel, PageReadiness } from "../../app/shell/domains.ts";
 /**
  * The strategy types Ryntra will offer, and how far each one is.
  *
- * Owner decision of 2026-09-11: **My strategies owns the strategy types.**
- * DCA, Grid, Free Capital / Treasury, Rebalancing, Liquidity and Spend &
- * Invest are types inside that page, beside Trading Plan — never rows of the
- * rail, and never a builder that pretends to run before its engine exists.
+ * **My strategies owns the strategy types** (since 2026-09-11). DCA, Grid,
+ * Free Capital / Treasury, Rebalancing, Liquidity and Spend & Invest are types
+ * inside that page, beside Trading Plan — never rows of the rail, and never a
+ * builder that pretends to run before its engine exists.
  *
- * **Registered, not drawn** (canon v5.0 §0.0 rule 10, adopted 2026-09-23):
- * only what is built reaches a customer screen, so the six locked types are
- * kept here as the target product and shown nowhere — no *Coming soon*, no
- * *Planned* row, no count. Deferred work lives in the registry and in canon
- * B.17, not in the interface; `RYN-SURFACE-CLEAN-001` took the folded
- * catalog off My strategies.
+ * **Registered, not drawn** (since 2026-09-23): only what is built reaches a
+ * customer screen, so the six locked types are kept here as the target product
+ * and shown nowhere — no *Coming soon*, no *Planned* row, no count. Deferred
+ * work is tracked outside the interface, and the folded catalog left My
+ * strategies with that rule.
  *
  * The one type not locked is Trading Plan: the plans a person has saved are
  * already read back from the store that wrote them, and the plan engine —
- * thesis, entry, exit, size, horizon, Review — is the next development WIP
- * by the Owner's selection. It is `building`, in the same three-word
- * vocabulary the pages use (§14.2), so the rail and this catalog can never
- * disagree about what a word means.
+ * thesis, entry, exit, size, horizon, Review — was the next piece of
+ * development work and is now live. Its readiness uses the same three-word
+ * vocabulary the pages use, so the rail and this catalog can never disagree
+ * about what a word means.
  *
  * *Spend & Invest* is a rule that connects a spending event to an investment
  * — a purchase or a round-up sends a defined amount into SOL, a basket or a
@@ -50,7 +49,7 @@ export type StrategyType = Readonly<{
 export const STRATEGY_TYPES: readonly StrategyType[] = [
   {
     id: "trading-plan",
-    /* Live since RYN-STRATEGY-PLAN-001 stage A: the plan on the server with versions, a deterministic size and check. */
+    /* Live since 2026-09-15: the plan on the server with versions, a deterministic size and check. */
     readiness: "available",
     name: { en: "Trading Plan", uk: "Торговий план" },
     blurb: {
@@ -79,7 +78,7 @@ export const STRATEGY_TYPES: readonly StrategyType[] = [
   {
     id: "free-capital",
     readiness: "planned",
-    /* The Owner's wording of 2026-09-15: the Ukrainian name is the short one, the blurb says treasury. */
+    /* The Ukrainian name is deliberately the short one; the blurb says treasury. */
     name: { en: "Free Capital / Treasury", uk: "Вільний капітал" },
     blurb: {
       en: "A treasury rule: spread idle capital across stablecoins, RWA and a trading reserve.",

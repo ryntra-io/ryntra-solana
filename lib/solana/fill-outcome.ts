@@ -6,7 +6,7 @@
  * exact and belongs in the Receipt. On the ticket they said the wrong thing:
  * a fill whose output differed from the quote by one raw unit, which is what
  * a market order does, was `DEVIATION_RECORDED` and painted amber as
- * *Finished with a note*; the Owner's first Spot fill (finalized, the fee
+ * *Finished with a note*; the first real Spot fill (finalized, the fee
  * collected) read as a warning, and an expired attempt read as a warning with
  * no sentence at all. The ledger's state machine is untouched here; this is
  * the one place that turns its states into the sentence a trader needs —

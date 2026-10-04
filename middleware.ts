@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { hasUkAddress, LANGUAGE_COOKIE, splitUkPrefix, withLanguageCookie } from "./lib/site/localized.ts";
 
 /**
- * The Ukrainian addresses of the site (the plan of `RYN-SITE-V5-001` §4).
+ * The Ukrainian addresses of the site.
  *
  * `/uk/docs/invest/buy` is the page `/docs/invest/buy` in Ukrainian: the
  * request goes on to that page with the language cookie set to `uk` — every

@@ -30,14 +30,14 @@ type Flow =
 type ApiFailure = { error?: { code?: string; message?: string } };
 
 /**
- * The paper ticket and the Review over the smart route (`RYN-PREDICTIONS-001`
- * items 9, 10, 14). The ticket asks two things — which outcome and how much
- * — and hands the rest to the server: the route is priced for the person's
- * own paper session, the Review lists what they put on the outcome, what it
- * pays if right, what they lose if wrong, the fees, the quote's age, the
- * venues that fill it, the settlement summary and every check, and the one
- * act is *Place paper order*. A refused Review names why and offers a fresh
- * price. A placed order shows what the provider reported, never more.
+ * The paper ticket and the Review over the smart route. The ticket asks two
+ * things — which outcome and how much — and hands the rest to the server: the
+ * route is priced for the person's own paper session, the Review lists what
+ * they put on the outcome, what it pays if right, what they lose if wrong,
+ * the fees, the quote's age, the venues that fill it, the settlement summary
+ * and every check, and the one act is *Place paper order*. A refused Review
+ * names why and offers a fresh price. A placed order shows what the provider
+ * reported, never more.
  */
 export function PaperTicket({
   event,

@@ -5,7 +5,7 @@ import type { EvidenceUnit } from "@/lib/evidence/metrics";
 /**
  * Every word the risk surfaces say — the card on the asset, the compact
  * state, the recipient check in Send — in both languages, and the figure
- * formats they share. The vocabulary is the canon's: a fact with its state,
+ * formats they share. The vocabulary is the product's: a fact with its state,
  * never a verdict. There is no word for "safe" here, no "scam", no "buy",
  * no "sell"; the strongest sentence about a token is which facts stand, the
  * strongest about an address is that nothing was found among what one

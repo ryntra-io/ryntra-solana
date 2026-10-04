@@ -1,5 +1,5 @@
 /**
- * Recovery reads signature status before anything else (canon §10.5).
+ * Recovery reads signature status before anything else.
  *
  * An undetermined submit is not retried from here. This module classifies.
  */

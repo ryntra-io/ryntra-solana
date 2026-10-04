@@ -1,10 +1,10 @@
 "use client";
 
 /**
- * Token orbit for the hero (RYN-LAND-002).
+ * Token orbit for the hero.
  *
- * The founder's design asked for tokens circling the brand. The honesty
- * constraint is that an orbit is a claim about coverage, so:
+ * The design asked for tokens circling the brand. The honesty constraint is
+ * that an orbit is a claim about coverage, so:
  *
  *  - Symbols are real and fixed, never invented and never fetched. A decorative
  *    ring must not become a second, unverified market feed.

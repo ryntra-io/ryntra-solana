@@ -82,24 +82,24 @@ export const AUTOINVEST = {
   rules: RULE_LIST_LIMIT,
   dipPresets: RULE_DIP_PRESETS_PCT.map((pct) => `${pct}%`).join(" · "),
   budgetMinimum: `${BUDGET_MINIMUM_USD}`,
-  /* «Умова ціни» (canon v5.5 В37): the limit a new rule opens on, the limits offered and how old the data may be. */
+  /* «Умова ціни»: the limit a new rule opens on, the limits offered and how old the data may be. */
   conditionDefault: `${PRICE_CONDITION_DEFAULT_PCT}%`,
   conditionPresets: PRICE_CONDITION_PRESETS_PCT.map((pct) => `${pct}%`).join(" · "),
   conditionMaxAgeMinutes: PRICE_CONDITION_MAX_AGE_MINUTES,
-  /* «З кожної оплати» (canon v5.5 В38): the round-up steps, the fixed sum's bounds and the per cents offered. */
+  /* «З кожної оплати»: the round-up steps, the fixed sum's bounds and the per cents offered. */
   roundupSteps: PAYMENT_ROUNDUP_STEPS_USD.map((usd) => `$${usd}`).join(" · "),
   fixedFrom: `$${PAYMENT_FIXED_MIN_USD.toFixed(2)}`,
   fixedTo: `$${PAYMENT_FIXED_MAX_USD}`,
   percentPresets: PAYMENT_PERCENT_PRESETS.map((pct) => `${pct}%`).join(" · "),
 } as const;
 
-/** The loss limits a purchase in Simple offers, per cent below the price it is bought at (the Owner's presets, В11). */
+/** The loss limits a purchase in Simple offers, per cent below the price it is bought at (the published presets). */
 export const LOSS_LIMITS = {
   careful: `${LOSS_LIMIT_PRESETS.careful.stopPct}%`,
   balanced: `${LOSS_LIMIT_PRESETS.balanced.stopPct}%`,
 } as const;
 
-/** The targets the same presets set, per cent above the price (RYN-PROTECT-SIGNAL-001: «Ryntra попередить» on a position held). */
+/** The targets the same presets set, per cent above the price («Ryntra попередить» on a position held). */
 export const LOSS_TARGETS = {
   careful: `${LOSS_LIMIT_PRESETS.careful.targetPct}%`,
   balanced: `${LOSS_LIMIT_PRESETS.balanced.targetPct}%`,
@@ -161,11 +161,10 @@ export function levelRows(locale: "en" | "uk"): readonly (readonly string[])[] {
 export type ProductPageFact = Readonly<{ id: ProductPageId; href: string; section: MenuSectionId; label: Readonly<{ en: string; uk: string }>; sectionLabel: Readonly<{ en: string; uk: string }>; readiness: PageReadiness }>;
 
 /**
- * Only the pages the menu draws, section by section in the menu's order
- * (canon v5.4 В30: the menu you can see). A planned page and a page kept off
- * the surface are registered and drawn nowhere — not in the menu, not in the
- * documentation's table (canon v5.0 §0.0 rule 10; v5.4 В32). A section that
- * holds one row names itself by that row.
+ * Only the pages the menu draws, section by section in the menu's order (the
+ * menu you can see). A planned page and a page kept off the surface are
+ * registered and drawn nowhere — not in the menu, not in the documentation's
+ * table. A section that holds one row names itself by that row.
  */
 export const PRODUCT_PAGES: readonly ProductPageFact[] = MENU_SECTION_IDS.flatMap((section) =>
   MENU_ROWS[section].flatMap((ref): ProductPageFact[] => {

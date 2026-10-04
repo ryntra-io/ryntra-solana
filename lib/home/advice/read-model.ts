@@ -85,7 +85,7 @@ export type DecisionsProjection = Readonly<{
 /**
  * Why every change-raised case is `PENDING`, spelled out where it is decided.
  *
- * This sentence is the honest half of the packet. There is no control anywhere
+ * This sentence is the honest half of this module. There is no control anywhere
  * in this release that records a disposition, so there is no store that could
  * report one, so `PENDING` is not a default that a later read might improve on
  * — it is the whole truth about this case until persistence is added.

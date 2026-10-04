@@ -5,9 +5,8 @@ import { useEffect, useRef } from "react";
 import company from "./company.module.css";
 
 /**
- * The sum of a purchase or a sale, as a person types it (`RYN-BUY-FLOW-001`,
- * subtask 5 «Замір 60 секунд»; canon §15, measures 1 · 2 and 11 — at most six
- * taps and sixty seconds from a company's page to the signature).
+ * The sum of a purchase or a sale, as a person types it (at most six taps and
+ * sixty seconds from a company's page to the signature).
  *
  * A press on the field chooses the whole sum, so the next key replaces it:
  * the sheet's $10 becomes $1 with one tap and one key, never a tap and three.

@@ -23,8 +23,8 @@
  * third is what a route through a Token-2022 hop needs: the venue passes the
  * hop through the signer's own account for that mint and leaves it open, and
  * refusing it refused every purchase whose only liquidity runs through
- * another token — every SpaceX xStock route the venue offered, the Owner's
- * $10 on 2026-09-24.
+ * another token — every SpaceX xStock route the venue offered, a $10 purchase
+ * on 2026-09-24.
  */
 
 import { getBase58Encoder } from "@solana/kit";
@@ -40,7 +40,7 @@ const SIGNED_RAW_AMOUNT = /^(0|-?[1-9][0-9]{0,39})$/;
    Token-2022 account ever counted as opened for the taker: every purchase of
    a tokenized stock — xStocks, PreStocks, the Backpack tokens are all
    Token-2022 — was refused as `RENT_UNSUPPORTED` the moment the ticket
-   offered one (the Owner, NVDAx, 2026-09-12). */
+   offered one (NVDAx, 2026-09-12). */
 const TOKEN_PROGRAMS = new Set([TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID]);
 const SYSTEM_PROGRAM = "11111111111111111111111111111111";
 const ALLOWED_PARSED_TOKEN_INSTRUCTIONS = new Set([
@@ -1029,7 +1029,7 @@ export function assessSwapSimulationEffects(args: Readonly<{
    * estimate has nothing left to bound — the venue's figure for a plain
    * 165-byte account is short of every Token-2022 account with extensions,
    * and holding a Review to it refused every tokenized stock a wallet did
-   * not already hold (the Owner, NVDAx, 2026-09-14).
+   * not already hold (NVDAx, 2026-09-14).
    */
   if (!rentProvenExact && durableRentLamports > rentFee) {
     return refusal(

@@ -163,8 +163,9 @@ export function buildCommerceReceipt({
   reputationEvidence?: readonly ReputationEvidence[];
   now: Date;
 }): CommerceReceipt {
-  /* A preview reaching this function is not a typo to tolerate. Canon 01 §24
-     is the rule and the cheapest way to break it is exactly this call. */
+  /* A preview reaching this function is not a typo to tolerate. A preview is
+     never a receipt, and the cheapest way to break that rule is exactly this
+     call. */
   if (!route || (route as unknown as { kind?: string }).kind === "X402_ROUTE_PREVIEW") {
     throw new CommerceReceiptError(
       "PREVIEW_IS_NOT_A_RECEIPT",
@@ -274,9 +275,9 @@ export function buildCommerceReceipt({
 export type CommerceReceiptVerification = Readonly<{
   valid: boolean;
   /**
-   * Three axes, reported separately and never combined. Canon `03 §7.4`: the
-   * verifier does not issue one verdict, because a single word would let a
-   * strong integrity result carry a weak trust result across the line.
+   * Three axes, reported separately and never combined. The verifier does not
+   * issue one verdict, because a single word would let a strong integrity
+   * result carry a weak trust result across the line.
    */
   axes: Readonly<{
     integrity: "VALID" | "MISMATCH";

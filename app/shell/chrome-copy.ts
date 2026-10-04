@@ -120,9 +120,9 @@ export const SHELL_STRINGS: Readonly<
  *
  * `SHELL_STRINGS` names the navigation `Workspace` / `Робочий простір`, which
  * is accurate on another hub, Stellar, Robinhood and the cabinet — they are workspaces
- * — and is exactly the word the owner decision of 2026-09-04 removed from the
- * product. A screen reader on the six-domain rail announced "Робочий простір
- * navigation" on every page of a product that has no workspaces in it.
+ * — and is exactly the word removed from the product on 2026-09-04. A screen
+ * reader on the six-domain rail announced "Робочий простір navigation" on
+ * every page of a product that has no workspaces in it.
  *
  * Only the label changes, and only for the product's own shells. The retired
  * word keeps its place where it still describes something true.

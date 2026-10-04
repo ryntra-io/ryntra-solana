@@ -24,10 +24,10 @@ const Body = z
   .strict();
 
 /**
- * The Review of a paper order (`RYN-PREDICTIONS-001` item 14): the route
- * priced in paper mode for the wallet's own session, the paper balance, the
- * plan's conditions, every check named — stored under the quote id so the
- * order placed is exactly the one reviewed.
+ * The Review of a paper order: the route priced in paper mode for the
+ * wallet's own session, the paper balance, the plan's conditions, every check
+ * named — stored under the quote id so the order placed is exactly the one
+ * reviewed.
  */
 export async function POST(request: Request) {
   const resolved = await requirePredictionActor(request, "mutation");

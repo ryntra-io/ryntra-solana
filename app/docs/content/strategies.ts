@@ -2,11 +2,11 @@ import { list, note, p, section, steps, table, type DocPage } from "./model.ts";
 
 /**
  * Strategies — My strategies, Results and the cycle behind them, under the
- * menu's «Портфель» (canon v5.4 В30), keeping their `strategies/*` addresses.
- * Documented as what is built: a page or a strategy type that is not built
- * has no documentation (canon v5.0 §0.0 rule 10) — Ideas is registered and
- * drawn nowhere, and its old address leads to the overview. The overview's
- * status table is held to the route registry by `app/docs/docs.test.mjs`.
+ * menu's «Портфель», keeping their `strategies/*` addresses. Documented as
+ * what is built: a page or a strategy type that is not built has no
+ * documentation — Ideas is registered and drawn nowhere, and its old address
+ * leads to the overview. The overview's status table is held to the route
+ * registry by `app/docs/docs.test.mjs`.
  */
 
 export const STRATEGIES_OVERVIEW: DocPage = {

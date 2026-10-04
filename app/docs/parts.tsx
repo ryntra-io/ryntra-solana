@@ -137,7 +137,7 @@ export const STATE_MEANING: Readonly<Record<PublicState, string>> = {
   planned: "Registered work that has not started. Never rendered as available, and never as under way.",
   in_build: "Designed and specified, and being built. Never rendered as available.",
   after_gate: "Deliberately behind a further gate — security, reliability or authorization work comes first.",
-  research: "A direction in the canon with no adapter and no implementation.",
+  research: "A direction named in the design, with no adapter and no implementation.",
   re_verifying:
     "The claim has aged past its review window, so it is shown as unverified rather than at its previous confidence. This happens automatically.",
 };

@@ -1,8 +1,7 @@
 /**
- * The names a reminder travels under (`RYN-INVEST-SIMPLE-001`, session 3):
- * its trigger identity, the `mon_` id its note carries, and the link one tap
- * lands on. Pure and client-safe, so the tick, the delivery and the deep link
- * read one definition.
+ * The names a reminder travels under: its trigger identity, the `mon_` id its
+ * note carries, and the link one tap lands on. Pure and client-safe, so the
+ * tick, the delivery and the deep link read one definition.
  */
 
 /**

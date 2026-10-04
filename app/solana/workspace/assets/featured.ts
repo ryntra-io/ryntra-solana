@@ -7,10 +7,10 @@
  * anyone who has not memorised one.
  *
  * Every address here is one of the six real mints whose raw account bytes were
- * captured live from mainnet as `lib/solana/fixtures/` in RYN-SOL-A1 and have
- * been decoded by the test suite ever since. The `note` states what the mint
- * **is** — never whether it is good; an asset list that editorialises becomes
- * a recommendation, and this product does not make those.
+ * captured live from mainnet as `lib/solana/fixtures/` and have been decoded by
+ * the test suite ever since. The `note` states what the mint **is** — never
+ * whether it is good; an asset list that editorialises becomes a
+ * recommendation, and this product does not make those.
  */
 
 export type FeaturedMint = Readonly<{
@@ -64,7 +64,7 @@ export const FEATURED_MINTS: readonly FeaturedMint[] = [
   featured(
     /* Labelled SOL, not wSOL. This mint IS how Solana trades its native token:
        the swap wraps and unwraps around the trade, holdings read the native
-       lamport balance through it, and canon §25.4 names this pair USDC ↔ SOL.
+       lamport balance through it, and the canary pair is named USDC ↔ SOL.
        Printing the wrapper name hid the canary pair from the one person who
        has to sign it. The note keeps the structural truth. */
     "SOL",

@@ -32,12 +32,11 @@ function projectWatch(record: PositionWatchRecord): PositionWatch {
 }
 
 /**
- * «Ryntra попередить» on a company the proven wallet holds
- * (`RYN-PROTECT-SIGNAL-001`, contract 1.21.0; canon v5 §6.1): the person
- * chooses a preset; the loss limit and the target are counted here from the
- * token's price now — never from a figure the client sends — and Нагляд warns
- * at them through Telegram, which must be connected first. Nothing is signed,
- * moved or held: the sale stays the person's own signature.
+ * «Ryntra попередить» on a company the proven wallet holds (contract 1.21.0):
+ * the person chooses a preset; the loss limit and the target are counted here
+ * from the token's price now — never from a figure the client sends — and
+ * Нагляд warns at them through Telegram, which must be connected first.
+ * Nothing is signed, moved or held: the sale stays the person's own signature.
  */
 export async function PUT(request: Request) {
   const refused = apiMajorRefusal(request.headers);

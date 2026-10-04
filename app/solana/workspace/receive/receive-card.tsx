@@ -7,9 +7,9 @@
  * screen is how both get worse. "My address" is the thing a person needs
  * ninety percent of the time and it should be one glance and one tap. "Request
  * a payment" is an invoice: a token, an amount, a note, how long it stays
- * valid — and, since RYN-PAY-REQUEST-001, a normal link. The person being
- * asked opens `https://ryntra.io/pay/<id>` in any browser and sees what they
- * are paying for, whether it has been paid, and two ways to pay.
+ * valid — and it is a normal link. The person being asked opens
+ * `https://ryntra.io/pay/<id>` in any browser and sees what they are paying
+ * for, whether it has been paid, and two ways to pay.
  *
  * The request form is a form, not a column squeezed beside an empty QR slot:
  * four fields in two rows, one primary action, and the proof-of-ownership

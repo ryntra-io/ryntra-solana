@@ -17,24 +17,24 @@
  * **clients SHOULD** prompt for user confirmation and show inputs to the user.
  * Every human-in-the-loop control in that document is a client `SHOULD`.
  *
- * `RYN-BIN-AOS-003` found the same thing empirically a session earlier: the
- * Binance MCP server ships a meta-tool that takes a tool name as a string, so
- * a client-side blocklist of tool names blocks nothing at all. The conclusion
- * both arrive at is the same one, and it is why this file exists rather than a
- * list of forbidden names in a client config.
+ * The Binance MCP server shows the same thing empirically: it ships a
+ * meta-tool that takes a tool name as a string, so a client-side blocklist of
+ * tool names blocks nothing at all. The conclusion both arrive at is the same
+ * one, and it is why this file exists rather than a list of forbidden names in
+ * a client config.
  *
  * ## The order of the checks is load-bearing
  *
  * An input shaped to grant authority is refused **first**, before schema
  * shape, before the tool is even looked up. If it were refused later it would
  * come back as "unrecognized field" — and somebody would remove the field,
- * resend, and read the success as permission to keep going. Canon `04 §6` puts
- * unsupported action above budget for the same reason, and the 402 engine puts
- * provider capability above owner policy for the same reason: report the
- * structural refusal, not the incidental one.
+ * resend, and read the success as permission to keep going. Policy evaluation
+ * puts unsupported action above budget for the same reason, and the 402
+ * engine puts provider capability above owner policy for the same reason:
+ * report the structural refusal, not the incidental one.
  *
- * A caller-supplied endpoint is refused second, on the `RYN-SOL-A6` rule —
- * where a tool reaches is an operator decision, never a tool argument.
+ * A caller-supplied endpoint is refused second, on the rule that where a tool
+ * reaches is an operator decision, never a tool argument.
  *
  * Further down, the registry resolves before the tool's own allowlist for the
  * same family of reasons: *this action does not exist* outranks *this tool may
@@ -97,12 +97,12 @@ export class McpWriteError extends Error {
  * writing prose, while a caller who sends `{ approval: true }` is trying to
  * decide something that is not theirs to decide.
  *
- * **Segments rather than whole keys, and that distinction is the packet's own
+ * **Segments rather than whole keys, and that distinction is this module's own
  * lesson turned on itself.** The first version of this list compared the whole
  * normalized key, so `authority` was refused and `ownerAuthority` sailed
- * through. A denylist that a rename defeats is precisely the shape
- * `RYN-BIN-AOS-003` proved worthless, and it was caught here by a fixture that
- * used the hyphenated spelling.
+ * through. A denylist that a rename defeats is precisely the shape the
+ * Binance MCP server's meta-tool proved worthless, and it was caught here by a
+ * fixture that used the hyphenated spelling.
  *
  * `authentication` is deliberately absent. What a caller proved about itself
  * and what the owner decided are two axes in this product, and refusing the
@@ -157,7 +157,7 @@ const AUTHORITY_SHAPED_PAIRS = [
 /**
  * Words that would let a caller choose where a tool reaches.
  *
- * The `RYN-SOL-A6` rule, restated for writes. The Solana kit asserts the same
+ * The endpoint rule, restated for writes. The Solana kit asserts the same
  * absence over every published JSON Schema; this list is the runtime half, so
  * that a payload carrying one is refused by its own name rather than falling
  * through a schema that has not been written yet.
@@ -374,8 +374,8 @@ export function admitMcpWrite(request: McpWriteRequest): AdmittedMcpWrite {
      order is deliberate. Told "this tool does not allow that action" about a
      reference that exists nowhere, a caller reasonably infers some other tool
      allows it. *Nobody can* outranks *you may not* — the same precedence the
-     402 engine gives provider capability over owner policy, and canon `04 §6`
-     gives an unsupported action over a budget. */
+     402 engine gives provider capability over owner policy, and policy
+     evaluation gives an unsupported action over a budget. */
   const action = resolveRegistryRef(AGENT_CONTROL_REGISTRY, requestedRef, "ACTION_SCHEMA");
 
   if (!tool.actionRefs.includes(requestedRef)) {

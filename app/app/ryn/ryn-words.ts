@@ -1,14 +1,14 @@
 import type { WorkspaceLocale } from "@/app/shell/locale";
 
 /**
- * Ryn's words on the web surface (`RYN-AGENT-TEXT-001`) — two languages, one
+ * Ryn's words on the web surface — two languages, one
  * table, no internal vocabulary: a person reads what the agent read, what it
  * means, what could be wrong, what to check and where to act, in their own
  * words. The answer's own sentences come from the server in the reader's
  * language; these are the chrome around them.
  */
 const WORDS = {
-  /* The assistant is Ryntra wherever a person reads, labelled as an AI where it speaks (canon v5.0 §5; RYN-FIRST-SCREEN-001). */
+  /* The assistant is Ryntra wherever a person reads, labelled as an AI where it speaks. */
   title: ["Ryntra · AI assistant", "Ryntra · ШІ-помічник"],
   who: ["Ryntra", "Ryntra"],
   lead: ["Ryntra is an AI: it researches and prepares; you decide and sign.", "Ryntra — ШІ: досліджує й готує, а рішення й підпис — твої."],

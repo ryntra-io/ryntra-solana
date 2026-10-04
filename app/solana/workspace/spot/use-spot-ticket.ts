@@ -62,9 +62,9 @@ export const SPOT_QUOTE_ASSETS = [
 
 /**
  * The side a market is bought with or sold into: Spot's two quote assets, or
- * (the IPO and conversion watch, `RYN-PRESTOCKS-001` session 2) the token an
- * issuer points a swap to — a pre-IPO token sold straight into its listed
- * token. The hook reads only the mint, the symbol and the decimals.
+ * (the IPO and conversion watch) the token an issuer points a swap to — a
+ * pre-IPO token sold straight into its listed token. The hook reads only the
+ * mint, the symbol and the decimals.
  */
 export type SpotQuoteAsset = Readonly<{ mint: string; symbol: string; decimals: number; icon?: string }>;
 

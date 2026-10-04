@@ -1,5 +1,5 @@
 /**
- * The comparison of representations — canon v4.0 §7.7 (`RYN-STOCKS-CHOICE-001`).
+ * The comparison of representations.
  *
  * One underlying, several tokens: the representation the page is open on and
  * every other confirmed representation of the same underlying

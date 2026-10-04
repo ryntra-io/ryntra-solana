@@ -11,12 +11,11 @@ import { useAccount } from "../account/account-context";
  * Settings → Wallets & notifications: the wallets that open this account,
  * the Telegram chat it may write to, and where it is signed in.
  *
- * `RYN-ACCESS-WALLET-ONLY-001`. An account is the wallet that signed; a
- * second proven wallet is the spare key. Telegram is connected here as a
- * channel and never as a way in. The legacy identity block (email, Google,
- * Telegram sign-in) renders only while the customer doors are switched on,
- * so an account that already has those methods can still tidy them; nobody
- * new is offered one.
+ * An account is the wallet that signed; a second proven wallet is the spare
+ * key. Telegram is connected here as a channel and never as a way in. The
+ * legacy identity block (email, Google, Telegram sign-in) renders only while
+ * the customer doors are switched on, so an account that already has those
+ * methods can still tidy them; nobody new is offered one.
  */
 type IdentityRow = { id: string; provider: "email" | "google" | "telegram" | "other"; label: string | null; createdAt: string | null };
 type WalletRow = { chain: "solana" | "evm"; address: string; verifiedAt: string };

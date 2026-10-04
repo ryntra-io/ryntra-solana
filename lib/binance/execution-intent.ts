@@ -1,4 +1,4 @@
-/* Mock ExecutionIntent evaluation for the Binance surface (RYN-BIN-AOS-001, read-only discovery).
+/* Mock ExecutionIntent evaluation for the Binance surface (read-only discovery).
 
    This module decides and does not act. It exists so the policy shape can be exercised against a
    real venue's vocabulary before any write path is built — and so the boundary is a property of
@@ -65,7 +65,7 @@ export type IntentDecision = {
 };
 
 export const DISPATCH_IS_NOT_IMPLEMENTED =
-  "Dispatch is not implemented: RYN-BIN-AOS-001 is read-only discovery and sends nothing to Binance.";
+  "Dispatch is not implemented: this package is read-only discovery and sends nothing to Binance.";
 
 /**
  * Builds a mock intent. A withdrawal is rejected here rather than blocked downstream, because the

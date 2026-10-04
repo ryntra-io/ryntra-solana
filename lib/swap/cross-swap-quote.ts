@@ -3,13 +3,12 @@
  *
  * This type and `crossSwapQuoteMaterialChange` were born inside
  * `lib/mayan/price-api.ts`, where they were correct for exactly as long as
- * there was one provider. `RYN-SOL-MONEY-FLOWS-001H` added a second — Relay,
- * for Robinhood Chain, which Mayan cannot reach — and a shared shape that
- * lives inside one of the two providers is a shape the other one has to import
- * from its competitor. So it moved here, to the product's own vocabulary,
- * beside the catalog that names the networks and the classifier that picks the
- * engine. `price-api.ts` re-exports it, so nothing that already imported it
- * from there had to change.
+ * there was one provider. Then a second arrived — Relay, for Robinhood Chain,
+ * which Mayan cannot reach — and a shared shape that lives inside one of the
+ * two providers is a shape the other one has to import from its competitor.
+ * So it moved here, to the product's own vocabulary, beside the catalog that
+ * names the networks and the classifier that picks the engine. `price-api.ts`
+ * re-exports it, so nothing that already imported it from there had to change.
  *
  * Amounts are raw integers as strings; USD figures are the provider's own
  * display aggregates and are labelled as such wherever they are shown.

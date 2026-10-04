@@ -1,6 +1,5 @@
 /**
- * «Перевірка» of a transfer, counted by the server (contract 1.22.0,
- * `RYN-MOBILE-MONEY-API-001`).
+ * «Перевірка» of a transfer, counted by the server (contract 1.22.0).
  *
  * The web's «Надіслати» card draws its Review from the plan answer on the
  * client: what leaves, the issuer's fee, what arrives, the network's fee, the

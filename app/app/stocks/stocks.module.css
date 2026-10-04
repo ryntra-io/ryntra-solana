@@ -645,7 +645,7 @@
   color: var(--ry-text);
 }
 
-/* A dated report's sources under its risk line — the line on the page, the sources here (canon v5.2 C.8). */
+/* A dated report's sources under its risk line — the line on the page, the sources here. */
 .termsSource {
   display: block;
   margin-top: var(--ry-s1);
@@ -778,7 +778,7 @@
   min-width: 0;
 }
 
-/* The one label of what the token is, on its own line under the symbol, its `?` after the last word — a line, not a chip, so it wraps rather than pushing into the price (canon v5.0 §7). */
+/* The one label of what the token is, on its own line under the symbol, its `?` after the last word — a line, not a chip, so it wraps rather than pushing into the price. */
 .truth {
   justify-self: start;
   min-width: 0;
@@ -921,7 +921,7 @@
   grid-column: span 12;
 }
 
-/* Two cards of facts share the row since the chain facts folded (RYN-UX-CLARITY-001). */
+/* Two cards of facts share the row since the chain facts folded. */
 .w6 {
   grid-column: span 6;
 }
@@ -1225,7 +1225,7 @@
   }
 }
 
-/* ── The terms of the deal and the representations compared (§7.7) ─────── */
+/* ── The terms of the deal and the representations compared ────────────── */
 
 /* The comparison keeps the screener's table; the first column holds the
    representation with its issuer and confirmation under the symbol, the
@@ -1342,7 +1342,7 @@
   }
 }
 
-/* ── The clarity pass (RYN-UX-CLARITY-001, 2026-09-16) ─────────────────────
+/* ── The clarity pass (2026-09-16) ─────────────────────────────────────────
    The estimate as a flow — what goes out → what comes back — the next step
    beside it, and the chain facts one press deep. */
 
@@ -1446,7 +1446,7 @@
   }
 }
 
-/* ── The first-screen pass (RYN-FIRST-SCREEN-001, 2026-09-23) ────────────
+/* ── The first-screen pass (2026-09-23) ──────────────────────────────────
    The page's Buy brings the buy card under the sticky bar, not behind it;
    the estimate's technical lines fold under one quiet Details; an unknown
    ticker gets the product's own page instead of a bare 404. */
@@ -1489,7 +1489,7 @@
   }
 }
 
-/* ── The purchase with a loss limit (canon v5.0 §5.2; RYN-FIRST-SCREEN-001, S3) ── */
+/* ── The purchase with a loss limit ── */
 
 .limitRow {
   display: grid;
@@ -1715,12 +1715,11 @@
   }
 }
 
-/* ── Liquidity: where the token actually trades (RYN-STOCKS-LIQUIDITY-001) ──
-   At rest one line (RYN-FIRST-SCREEN-001, S4): the primary pool's value and
-   its day, with Details beside it; open, the card holds what it always held.
-   Nothing here is orange — the page's one orange action is Buy. Labels in
-   normal case from 13px, figures in Geist with tabular numerals, Mono only in
-   the pool table. */
+/* ── Liquidity: where the token actually trades ─────────────────────────────
+   At rest one line: the primary pool's value and its day, with Details
+   beside it; open, the card holds what it always held. Nothing here is
+   orange — the page's one orange action is Buy. Labels in normal case from
+   13px, figures in Geist with tabular numerals, Mono only in the pool table. */
 
 .liqRest,
 .liqSummary {

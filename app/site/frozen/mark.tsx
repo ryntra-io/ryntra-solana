@@ -40,7 +40,7 @@ export function RMark({ size = 22 }: { size?: number }) {
 }
 
 /**
- * The full lockup: the Owner's wordmark, the mark being its first letter.
+ * The full lockup: the brand's wordmark, the mark being its first letter.
  * `compact` keeps the name for the callers that pass it; the raster scales.
  */
 export function Lockup({ size = 22 }: { size?: number; compact?: boolean }) {

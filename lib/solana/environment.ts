@@ -1,5 +1,5 @@
 /**
- * The mainnet environment lock (canon §9.4).
+ * The mainnet environment lock.
  *
  * One sentence, restated immediately before a signature could be asked for:
  *
@@ -27,10 +27,10 @@
  * allowed; this decides whether the answer it gave is still about the world
  * the person looked at.
  *
- * No value-moving action exists on Solana yet — `RYN-SOL-M0C` rewrites Send
- * for mainnet and `RYN-SOL-M1` is the first owner-signed transfer. This is the
- * gate those will pass through, written and proven before there is anything to
- * gate, which is the only order in which a gate is ever actually tested.
+ * No value-moving action exists on Solana yet — Send is rewritten for mainnet
+ * next and the first owner-signed transfer follows. This is the gate those
+ * will pass through, written and proven before there is anything to gate,
+ * which is the only order in which a gate is ever actually tested.
  */
 
 import type { SolanaNetwork } from "./rpc.ts";
@@ -51,8 +51,8 @@ export type SolanaEnvironmentContext = Readonly<{
   mint: string | null;
   /**
    * Anything else this action bound at authorization — recipient, route,
-   * expiry, fee ceiling. Canon §24.3 makes every one of them material, and a
-   * fixed field list would silently stop covering the next one.
+   * expiry, fee ceiling. Every one of them is material, and a fixed field
+   * list would silently stop covering the next one.
    */
   bound?: Readonly<Record<string, string>>;
 }>;

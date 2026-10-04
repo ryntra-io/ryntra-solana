@@ -188,7 +188,7 @@ const COPY = {
       thState: "State",
       noCanaryLabel: "Why every row says NO_CANARY",
       noCanaryBody:
-        "Founder decision FD-02, taken 2026-08-21, makes Base Sepolia the default execution rail for this phase: testnet only, no mainnet execution. There is no mainnet run to record, so the canary set is empty and every capability is refused by the same computation that would promote it.",
+        "Since 2026-08-21, Base Sepolia is the default execution rail for this phase: testnet only, no mainnet execution. There is no mainnet run to record, so the canary set is empty and every capability is refused by the same computation that would promote it.",
     },
     notMeasured: {
       title: "What is not measured",
@@ -292,7 +292,7 @@ const COPY = {
       thState: "Стан",
       noCanaryLabel: "Чому в кожному рядку NO_CANARY",
       noCanaryBody:
-        "Рішення засновника FD-02, ухвалене 2026-08-21, робить Base Sepolia типовою рейкою виконання на цю фазу: лише testnet, без виконання в mainnet. Немає запуску в mainnet, який можна було б записати, тож набір канарок порожній і кожна можливість відхиляється тим самим обчисленням, яке її й просувало б.",
+        "З 2026-08-21 Base Sepolia — типова рейка виконання на цю фазу: лише testnet, без виконання в mainnet. Немає запуску в mainnet, який можна було б записати, тож набір канарок порожній і кожна можливість відхиляється тим самим обчисленням, яке її й просувало б.",
     },
     notMeasured: {
       title: "Що не вимірюється",

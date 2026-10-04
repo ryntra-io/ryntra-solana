@@ -12,13 +12,12 @@ import { formatDateTime } from "../format";
 import { PlainStat } from "../stat";
 
 /**
- * Ryn's spend for the Owner (`RYN-AGENT-TEXT-001`): whether the model is
- * switched on and which one, the ceilings in force, today's and the month's
- * model calls from the durable meter, the receipts of the last fortnight by
- * day (calls, tokens, wallets counted — never listed — and outcomes) and by
- * model, and the tools the agent has with the boundary said as a fact. A
- * deterministic answer costs nothing and is not counted. Never a word of a
- * conversation, never a key.
+ * Ryn's spend for the admin: whether the model is switched on and which one,
+ * the ceilings in force, today's and the month's model calls from the durable
+ * meter, the receipts of the last fortnight by day (calls, tokens, wallets
+ * counted — never listed — and outcomes) and by model, and the tools the
+ * agent has with the boundary said as a fact. A deterministic answer costs
+ * nothing and is not counted. Never a word of a conversation, never a key.
  */
 
 type Payload = Readonly<{
@@ -64,7 +63,7 @@ export function AgentPanel() {
         <h2 className={styles.cardTitle}>Ryntra · ШІ-помічник</h2>
         <InfoControl label="Що тут рахується">
           <p>Рахуються лише запитання, що дійшли до моделі: детермінована відповідь (складена з читань) нічого не коштує і не рахується. Ліміти — на гаманець за UTC-день і за місяць, одне запитання в роботі на гаманець, і стелі розгортання; лічильники живуть у сховищі Guard і рухаються compare-and-set — не в пам&apos;яті процесу.</p>
-          <p>Модель вмикається лише перемикачем <code>RYNTRA_AGENT_MODEL_ENABLED=1</code> поруч із ключем — слово власника, не дефолт. Квитанція на кожен виклик: модель, токени (де провайдер їх повідомляє), затримка, результат — ніколи слова розмови. Гаманці рахуються, ніколи не перелічуються. Інструментів виконання немає.</p>
+          <p>Модель вмикається лише перемикачем <code>RYNTRA_AGENT_MODEL_ENABLED=1</code> поруч із ключем — свідоме рішення, не дефолт. Квитанція на кожен виклик: модель, токени (де провайдер їх повідомляє), затримка, результат — ніколи слова розмови. Гаманці рахуються, ніколи не перелічуються. Інструментів виконання немає.</p>
         </InfoControl>
         <button type="button" className={styles.btn} onClick={() => void load()} disabled={loading} aria-label="Оновити">
           <ArrowsClockwise size={14} aria-hidden="true" />

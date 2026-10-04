@@ -13,9 +13,8 @@ export const maxDuration = 30;
 
 /**
  * `GET /api/v1/research/evidence?mint=&window=[&provider=]` — the observation
- * for one mint over one window (`RYN-NANSEN-EVIDENCE-001`, contract 1.5.0;
- * the point-in-time window `now` and the second provider since 1.6.0,
- * `RYN-DDXYZ-RISK-001`).
+ * for one mint over one window (contract 1.5.0; the point-in-time window `now`
+ * and the second provider since 1.6.0).
  *
  * Public, like the asset page it serves: no wallet is needed to read what
  * the market did or how the token is built. Bounded twice — a per-address

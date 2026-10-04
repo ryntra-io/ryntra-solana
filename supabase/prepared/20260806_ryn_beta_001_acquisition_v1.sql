@@ -1,4 +1,4 @@
--- RYN-BETA-001 · prepared, NOT APPLIED to production.
+-- Beta acquisition · prepared, NOT APPLIED to production.
 --
 -- Acquisition attribution and funnel events for the X -> Telegram -> first-value path.
 --

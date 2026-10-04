@@ -162,11 +162,11 @@ export async function POST(request: Request) {
   }
 
   /* A price nobody should accept by accident.
-     Widening which assets the lane carries (`RYN-SOL-MONEY-FLOWS-001I`) made this the
-     control the ten-pair list had been providing by accident: every pair on it
-     was liquid, so a terrible quote never arrived. Arbitrary tokens produce
-     them routinely — Base DEGEN to Robinhood USDG came back at −84.8% on a
-     small amount, real and executable.
+     Widening which assets the lane carries made this the control the ten-pair
+     list had been providing by accident: every pair on it was liquid, so a
+     terrible quote never arrived. Arbitrary tokens produce them routinely —
+     Base DEGEN to Robinhood USDG came back at −84.8% on a small amount, real
+     and executable.
      So past `SEVERE` the plan refuses to build until the person has
      acknowledged **this** quote's number. Not the pair, not a session-wide
      toggle: the exact figure, so an acknowledgement cannot be inherited by a

@@ -12,8 +12,8 @@ export const maxDuration = 15;
 /**
  * What a whole unit of each named asset is worth in dollars.
  *
- * `RYN-SWAP-PREMIUM-001`. Both legs of the Swap form change together, so both
- * are asked together and one upstream request answers the screen.
+ * Both legs of the Swap form change together, so both are asked together and
+ * one upstream request answers the screen.
  *
  * **This route decides nothing.** No amount is sized by it, no button is gated
  * on it, no plan reads it and nothing signed depends on it — what gets signed

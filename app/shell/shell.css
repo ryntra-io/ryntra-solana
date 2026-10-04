@@ -21,7 +21,7 @@
 .rs {
   /* One token authority: app/globals.css `:root`. Every shell name below is an
      alias into it — the parallel literal palette this block used to carry is
-     the two-simultaneous-cyans defect the workspace spec §4 closes. Light theme
+     the two-simultaneous-cyans defect that one authority closes. Light theme
      resolves through the same aliases via the root `[data-theme="light"]`
      overrides, so the chrome and the canvas can no longer disagree. */
   --ink: var(--bg);
@@ -56,7 +56,7 @@
     "nav canvas inspector";
   min-height: 100dvh;
   /* The ground is not flat black: graphite in the centre, a navy undertone
-     at the edges, no orange anywhere on the page (Brand Canon v1.0 §2). */
+     at the edges, no orange anywhere on the page. */
   background: var(--ry-ground, var(--ink));
   color: var(--fg);
   font-family: var(--body);
@@ -135,7 +135,7 @@
   padding-inline: var(--ry-s1);
 }
 /* The wordmark where there is horizontal room; the standalone R on the phone
-   (Brand Canon v1.0 §Placements). Both are in the DOM so the swap is CSS. */
+   (the brand's placement rule). Both are in the DOM so the swap is CSS. */
 .rs-brand-mark { display: none; }
 @media (max-width: 520px) {
   .rs-brand .ryntra-brand { display: none; }
@@ -441,7 +441,7 @@
   /* The reading face, not the machine one.
      A network's name is a place, not a payload. Set in mono beside a
      wordmark and a workspace name it read as a console prompt, which is the
-     single complaint the founder opened this pass with — and it survived the
+     single complaint this pass opened with — and it survived the
      sweep that took monospace off the status chips because it lives in the
      shell rather than in any workspace. Hashes, addresses and amounts keep
      the mono face; the name of an environment never was one. */
@@ -851,9 +851,9 @@ button.rs-chip:hover { border-color: var(--cyan); }
 .rs[data-nav="collapsed"] .rs-group-title { visibility: hidden; height: var(--ry-s3); padding: 0; }
 
 /*
- * The product's four headings, in the canon's own typographic register.
+ * The product's four headings, in their own typographic register.
  *
- * Canon 3.1 writes them as TRADE, STRATEGIES, MONEY and MANAGE - a heading
+ * The product writes them as TRADE, STRATEGIES, MONEY and MANAGE - a heading
  * over a set of pages, not a row you can press. Small caps say that at a
  * glance and stop a group name from reading as a twelfth destination. Scoped
  * to the product, because every other workspace's rail groups keep the
@@ -867,7 +867,7 @@ button.rs-chip:hover { border-color: var(--cyan); }
 /*
  * A heading that is also a control.
  *
- * The founder's instruction of 2026-09-08, with Jupiter's rail on screen
+ * Decided on 2026-09-08, with Jupiter's rail on screen
  * beside ours: the groups get an arrow and close. It is still a heading — same
  * size, same muted ink, same tracking — so the rail does not grow a fifth row
  * that looks pressable; what changes is that the whole width is the target and
@@ -922,7 +922,7 @@ button.rs-group-title[data-shut="true"] .rs-group-caret {
  *
  * `product.css` puts a 44px floor under every button in the product, which
  * is the right rule for a control somebody presses to do something. Applied
- * to four headings it costs 48px of a rail the founder asked to make more
+ * to four headings it costs 48px of a rail that is meant to be more
  * compact, and buys nothing a pointer needs. The floor stays below 901px,
  * where the rail is a drawer and a thumb is what works it.
  */
@@ -960,7 +960,7 @@ button.rs-group-title[data-shut="true"] .rs-group-caret {
   padding: var(--ry-s2) var(--ry-s3);
   border-radius: var(--ry-r-btn-sm);
   /* Muted at rest, ink on hover, orange when it is the page you are on: the
-     rail says where you are without framing every row (Brand Canon v1.0 §7). */
+     rail says where you are without framing every row. */
   color: var(--ry-muted);
   font-size: var(--ry-fs-app);
   font-weight: 500;
@@ -971,7 +971,7 @@ button.rs-group-title[data-shut="true"] .rs-group-caret {
 /* A module row is a section header that happens to be a link.
  *
  * It was the same shape as the surfaces beneath it, one size larger, and the
- * founder's reading of the result was that the rail does not say what belongs
+ * result read as a rail that does not say what belongs
  * to what. Caps and tracking are the standard product-UI way to mark a group,
  * and they cost nothing here: the label is one or two words, the children stay
  * in sentence case underneath, and the difference is legible before a word is
@@ -1041,7 +1041,7 @@ button.rs-group-title[data-shut="true"] .rs-group-caret {
    PLANNED/ЗАПЛАНОВАНО badge needed a row of its own; Soon/Скоро does not, and
    stacking thirteen of them made the complete product map three screens tall. */
 /* The compact layout for an inline rail tag went with the attribute that
-   selected it: canon §0.7 ended the placeholder rows it was written for, and
+   selected it: the placeholder rows it was written for are gone, and
    no rail emits a `Soon` tag any more. */
 
 .rs-link-ic {
@@ -1101,7 +1101,7 @@ button.rs-group-title[data-shut="true"] .rs-group-caret {
 }
 
 /*
- * A short screen reads the menu first (RYN-SURFACE-CLEAN-001, 2026-09-23).
+ * A short screen reads the menu first.
  * The product's pinned foot — depth, language, theme, feedback, Settings — is
  * about 235px tall, and on a 1440 × 900 laptop it covered the lower third of
  * the menu: Bridge, Rewards, Portfolio and History sat under it until the list
@@ -1137,7 +1137,7 @@ button.rs-group-title[data-shut="true"] .rs-group-caret {
  *
  * It was three things at three widths — a bordered segmented control stretched
  * across the rail, a bare icon-and-two-letters underneath it, and a full rail
- * row — reading as leftovers rather than as a block. Canon §3.2 names these
+ * row — reading as leftovers rather than as a block. The product names these
  * four in this order, so they are laid out as one thing: two full-width rows of
  * equal halves above the Settings row, on the same inline margin every rail row
  * already uses.
@@ -1475,7 +1475,7 @@ button.rs-group-title[data-shut="true"] .rs-group-caret {
    surfaces have now paid for that one line: every `<Panel>` at once (patched by
    `.rw { padding: 0 }`), the swap statement (patched locally), and the Stellar
    Hub, where two `<section>` groups on the Overview measured 312px of dead
-   space on the live page while every source-level gate stayed green. STATE.md
+   space on the live page while every source-level gate stayed green. An earlier note
    predicted the third one in writing — "will trap the next `<section>` written
    inside any panel" — and it did.
 
@@ -1726,7 +1726,7 @@ button.rs-group-title[data-shut="true"] .rs-group-caret {
  * They keep the `hub-` prefix rather than being renamed to `rs-`, because
  * renaming them means touching every consumer for no behavioural gain and the
  * markup is asserted by the stylesheet-coverage gate. Renaming belongs to
- * `RYN-WS-KERNEL-001`, which owns this chrome becoming the kernel's.
+ * the work that makes this chrome the kernel's.
  */
 
 .hub-nav-footer {
@@ -1809,8 +1809,8 @@ button.rs-group-title[data-shut="true"] .rs-group-caret {
 /* `.hub-nav-mode-mobile` was here.
 
    It held the depth switch on a phone, because the desktop control lived in
-   the top bar and a phone top bar has no room for it. Founder decision,
-   2026-08-24: the depth control left every top bar for the layout menu at the
+   the top bar and a phone top bar has no room for it. On
+   2026-08-24 the depth control left every top bar for the layout menu at the
    foot of the rail — which is in the drawer on a phone, reachable at exactly
    the width this rule existed for. A slot with nothing to put in it is not a
    fallback; it is a hole two stylesheets keep sized. */
@@ -1818,7 +1818,7 @@ button.rs-group-title[data-shut="true"] .rs-group-caret {
 /* ─────────────────────────────────────────────────────────────────────────
    The phone's primary navigation.
 
-   Owner decision of 2026-09-04: one product, five destinations on a phone.
+   One product, five destinations on a phone.
    Before this the shell hid the identical desktop rail behind a drawer, so
    every destination cost four interactions and covered the thing you came to
    see. This bar is the only navigation surface built for a thumb.
@@ -1981,14 +1981,14 @@ button.rs-group-title[data-shut="true"] .rs-group-caret {
 }
 
 /* ======================================================= the menu you can see ==
-   Canon v5.4 (2026-09-24, В30–В31): on a desk every section of the product's
+   Since 2026-09-24: on a desk every section of the product's
    menu with its caption and nothing behind «Ще»; on top the search, the bell
    and the wallet's menu; on a phone the five places below and «Ще» opening
    the same sections above them. Scoped to the product, so every other
    workspace keeps its rail as it was. */
 
-/* A caption is a label, in the case a person writes it (canon §2, rule 7:
-   no capitals, from 13px). */
+/* A caption is a label, in the case a person writes it (no capitals,
+   from 13px). */
 .rs[data-product="true"] .rs-group-title {
   margin: 0;
   padding: var(--ry-s2) var(--ry-s4) 2px;

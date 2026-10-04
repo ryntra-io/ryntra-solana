@@ -8,7 +8,7 @@
  * channel-join requirement. A caller therefore passes both and never decides
  * for itself which door a person used.
  *
- * `accountId` is `null` for a legacy session read before the RYN-ACCESS-002
+ * `accountId` is `null` for a legacy session read before the accounts
  * migration projected the account uuid into the state; such a session keeps
  * working exactly as before through the Telegram path.
  */

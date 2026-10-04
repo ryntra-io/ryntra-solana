@@ -3,7 +3,7 @@
  * renders. Every colour, radius and size is a token from app/design/tokens.css
  * so the frame follows the site's theme; the aggregator's surfaces inside the
  * stage keep their own tokens (`--agg-*`) and are deliberately not restyled
- * on the first two tabs — the Owner asked to see the original AGG UX first.
+ * on the first two tabs — the original AGG UX is what they show first.
  */
 
 .frame {

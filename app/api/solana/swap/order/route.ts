@@ -82,8 +82,8 @@ export const dynamic = "force-dynamic";
  * What that costs when a hop is slow is not a slow answer. The platform ends
  * the invocation and returns a **bodyless 502**: the function never reaches its
  * own error handler, so nothing is logged, nothing names a code, and the card
- * falls to its catch-all sentence beside a button that is still enabled. The
- * founder met exactly this on production on 2026-09-10 — five presses in
+ * falls to its catch-all sentence beside a button that is still enabled. A
+ * person met exactly this on production on 2026-09-10 — five presses in
  * twenty-four seconds, five 502s, and not one line in the log saying why.
  *
  * 60 matches `execute`, which is the other end of the same operation.
@@ -146,12 +146,12 @@ const RequestSchema = z
      * written into the signed bundle so the Activity row can say `Spot Buy`
      * rather than a stray `Swap` for the same transaction.
      *
-     * `origin.plan` names a Trading Plan and the version the client read
-     * (`RYN-STRATEGY-PLAN-001` stage B). It is a reference for the check,
-     * never a proof of anything: the plan is read for the proven wallet, which
-     * must be the taker, and judged on this exact order; a blocked verdict
-     * refuses the order before any bytes leave, and the block goes into the
-     * signed bundle so `execute` and Plan vs Actual read what stood here.
+     * `origin.plan` names a Trading Plan and the version the client read. It
+     * is a reference for the check, never a proof of anything: the plan is
+     * read for the proven wallet, which must be the taker, and judged on this
+     * exact order; a blocked verdict refuses the order before any bytes leave,
+     * and the block goes into the signed bundle so `execute` and Plan vs
+     * Actual read what stood here.
      */
     origin: SolanaActionOriginRequestSchema.optional(),
   })
@@ -265,7 +265,7 @@ export async function POST(request: Request) {
   if (!carrier.ok) return failure(carrier.status, carrier.code, carrier.message, rate);
   /* No owner session. A swap moves the connected wallet's own funds and is
      authorized by that wallet's own signature over the reviewed bytes — an
-     admin login here only ever meant "the founder is testing", and it made the
+     admin login here only ever meant "an operator is testing", and it made the
      product unusable for the people it is for. What still stands between a
      request and a signable Review is the site origin (or the bearer's wallet,
      bound to the taker below), the rate limit, the durable per-taker lock
@@ -283,13 +283,13 @@ export async function POST(request: Request) {
   const { input, origin } = parsed.data;
   /* A native session asks for its own wallet only. */
   if (walletMismatch(carrier, input.taker)) return failure(403, "WALLET_MISMATCH", "The session's wallet is not the taker of this order.", rate);
-  /* The same refusal the quote route gives: a token the issuer no longer offers for purchase builds no order (RYN-STOCKS-PROVIDERS-001). */
+  /* The same refusal the quote route gives: a token the issuer no longer offers for purchase builds no order. */
   const lifecycle = lifecycleEventFor(input.outputMint);
   /* Read with the clock, as the quote route does: past its cut-off a conversion window is closed. */
   if (lifecycle && eventStateAt(lifecycle, Date.now()) !== "conversion-open") {
     return failure(409, "ASSET_NOT_OFFERED", lifecycle.note, rate);
   }
-  /* The quote route's refusal of a token Ryntra no longer supports (canon v5.2 В26), on either side: no order is built for it. */
+  /* The quote route's refusal of a token Ryntra no longer supports, on either side: no order is built for it. */
   if (isRetiredMint(input.inputMint) || isRetiredMint(input.outputMint)) {
     return failure(409, "ASSET_NOT_OFFERED", RETIRED_REASON, rate);
   }
@@ -315,8 +315,8 @@ export async function POST(request: Request) {
      terms as the plan: the rule must be the taker's and on, the reminder the
      order names must be open — not bought, not on its way, not missed — and
      the order must be the rule's own purchase. A rule never authorizes
-     anything (canon B.3); the check only keeps one reminder from buying twice
-     or buying something else, and it costs no quote. */
+     anything; the check only keeps one reminder from buying twice or buying
+     something else, and it costs no quote. */
   if (origin?.rule) {
     const proof = carrier.carrier === "bearer" ? carrier : await requireWalletProof(request, "mutation");
     if (!proof.ok) return failure(401, "UNAUTHORIZED", "Buying by a rule needs the proven wallet: confirm the wallet first.", rate);
@@ -369,7 +369,7 @@ export async function POST(request: Request) {
   }
 
   /* Production key only. The execution surface has no labelled keyless lane:
-     a swap that will be signed must come from the keyed contract M0D adopted. */
+     a swap that will be signed must come from the keyed swap contract. */
   const selection = resolveJupiterSwapEndpoint({ access: "production" });
   if (!selection.ok) {
     return failure(503, "PROVIDER_KEY_MISSING", selection.reason, rate);
@@ -413,10 +413,9 @@ export async function POST(request: Request) {
   /* Refused for rate alone, the order is asked once more after the provider's
      own pause — up to the window's ten seconds, the person waiting on this one
      press («Готуємо «Перевірку»…») rather than reading «Забагато запитів»
-     (`askOnceMoreAfterRate`, `JUPITER_ORDER_RETRY_WAIT_MAX_MS`; RYN-BUY-FLOW-001
-     subtask 5): nothing is locked, stored or signed before the provider
-     answers, so the second ask builds at most the one Review the first would
-     have. */
+     (`askOnceMoreAfterRate`, `JUPITER_ORDER_RETRY_WAIT_MAX_MS`): nothing is
+     locked, stored or signed before the provider answers, so the second ask
+     builds at most the one Review the first would have. */
   const orderResult = await askOnceMoreAfterRate(
     () =>
       fetchJupiterExecutableOrder(
@@ -596,13 +595,13 @@ export async function POST(request: Request) {
     },
   });
 
-  /* The Strategy block (canon §10.1): the plan's current version judged on
-     this exact order — the mint, the side, the version, the validity, the
-     money on the sizing's own model at this price, the reference, the
-     slippage, the quote's age, the liquidity, the units. A required check
-     that fails or is unknown blocks: no bytes leave this route, the block is
-     the answer. A Review that may be signed is written on the plan first,
-     so the plan holds what stood before the signature. */
+  /* The Strategy block: the plan's current version judged on this exact
+     order — the mint, the side, the version, the validity, the money on the
+     sizing's own model at this price, the reference, the slippage, the
+     quote's age, the liquidity, the units. A required check that fails or is
+     unknown blocks: no bytes leave this route, the block is the answer. A
+     Review that may be signed is written on the plan first, so the plan holds
+     what stood before the signature. */
   let planReview: PlanReview | null = null;
   let bundleOrigin: SolanaActionOrigin | undefined;
   if (origin?.plan && planRecord) {
@@ -643,12 +642,12 @@ export async function POST(request: Request) {
       nowMs,
     });
     if (planReview.verdict === "blocked") {
-      /* The refusal is written down before the refusal is answered
-         (`RYN-RESULTS-MEMORY-001`): a plan whose maximum price was never met
-         must be able to say so later, and only a recorded Review can say it
-         without inventing the reason. Non-fatal on purpose — a store that
-         did not answer must never turn a refusal into an offer to sign, so
-         the result is not read and the 409 goes out either way. */
+      /* The refusal is written down before the refusal is answered: a plan
+         whose maximum price was never met must be able to say so later, and
+         only a recorded Review can say it without inventing the reason.
+         Non-fatal on purpose — a store that did not answer must never turn a
+         refusal into an offer to sign, so the result is not read and the 409
+         goes out either way. */
       await recordPlanReview(store, { owner: input.taker, review: planReview }).catch(() => null);
       return failure(409, "PLAN_REVIEW_BLOCKED", "The plan's version refuses this order; the Strategy block names each check.", rate, { planReview });
     }

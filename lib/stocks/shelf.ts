@@ -1,6 +1,5 @@
 /**
- * The beginner's shelf of companies — «Простий»'s Markets and Home (canon
- * v5.0 §3, §4; `RYN-INVEST-SIMPLE-001`, session 1).
+ * The beginner's shelf of companies — «Простий»'s Markets and Home.
  *
  * **One company, one card.** The stock universe lists every confirmed
  * representation — Apple as xStocks' AAPLx, as Backpack's, as Ondo's — which
@@ -9,23 +8,23 @@
  * grouping rule of `underlying-group.ts`, never merely one company name) and
  * shows the one it would buy by default — the most liquid representation
  * the issuer confirms in its own catalogue, else the most liquid one the
- * venue verifies. Comparing representations stays in «Профі» (canon §7).
+ * venue verifies. Comparing representations stays in «Профі».
  *
- * **Who is on the shelf.** An issuer whose instrument the canon puts in front
- * of a beginner: xStocks and Backpack. Ondo is not on the beginner's shelf
- * (canon §3: the liquidity of its tokens is too thin for a first purchase);
- * its rows stay in the screener. A representation that is halted, not offered
- * for purchase or has no price is not a default either — a card is something
- * a person can buy now.
+ * **Who is on the shelf.** An issuer whose instrument is put in front of a
+ * beginner: xStocks and Backpack. Ondo is not on the beginner's shelf (the
+ * liquidity of its tokens is too thin for a first purchase); its rows stay in
+ * the screener. A representation that is halted, not offered for purchase or
+ * has no price is not a default either — a card is something a person can buy
+ * now.
  *
  * **The order is neutral and published:** the company's trading volume over
  * the last twenty-four hours across its representations, the same for every
- * person (canon §4: no «топ-3», no ranking by anyone's opinion).
+ * person: no «топ-3», no ranking by anyone's opinion.
  *
  * **Private companies** (pre-IPO) are a shelf of their own, «для досвідчених»,
- * and come through PreStocks only (canon v5.2 В25–В27): each of its tokens is
- * a card that says «Це не акція» and one honest number — the token's price
- * against PreStocks' own valuation, with the time that valuation was read.
+ * and come through PreStocks only: each of its tokens is a card that says
+ * «Це не акція» and one honest number — the token's price against
+ * PreStocks' own valuation, with the time that valuation was read.
  *
  * Pure: rows in, cards out. The names are the issuer's own, with the legal
  * form taken off («Applied Materials, Inc.» → «Applied Materials») and two
@@ -37,10 +36,10 @@ import type { StockIssuerId } from "./representations.ts";
 import { sameUnderlying } from "./underlying-group.ts";
 import type { StockRow, StockUniverse } from "./universe.server.ts";
 
-/** The issuers whose instruments a beginner is shown (canon v5.0 §3, §7). */
+/** The issuers whose instruments a beginner is shown. */
 export const SHELF_ISSUERS: ReadonlySet<StockIssuerId> = new Set(["xstocks", "backpack"]);
 
-/** The one issuer of the private shelf (canon v5.2 В25). */
+/** The one issuer of the private shelf. */
 export const PRIVATE_SHELF_ISSUERS: ReadonlySet<StockIssuerId> = new Set(["prestocks"]);
 
 /** Cards on Home's «Популярні компанії». */
@@ -48,8 +47,8 @@ export const POPULAR_COUNT = 8;
 
 /**
  * The same list beside Home's right column on a wide desk: three rows of four
- * rather than two, so the main column is not the shorter one
- * (`RYN-WIDTH-PREMIUM-001`). Narrower, the first `POPULAR_COUNT` stand.
+ * rather than two, so the main column is not the shorter one. Narrower, the
+ * first `POPULAR_COUNT` stand.
  */
 export const POPULAR_WIDE_COUNT = 12;
 
@@ -174,9 +173,9 @@ export function shelfCompanies(rows: readonly StockRow[]): ShelfCard[] {
 }
 
 /**
- * The private companies — PreStocks' tokens only (canon v5.2 В25), every one
- * its own card, by the day's volume, each with the one number the shelf
- * shows for it: the price against PreStocks' valuation and its time.
+ * The private companies — PreStocks' tokens only, every one its own card, by
+ * the day's volume, each with the one number the shelf shows for it: the
+ * price against PreStocks' valuation and its time.
  */
 export function shelfPrivateCompanies(rows: readonly StockRow[]): ShelfCard[] {
   return rows

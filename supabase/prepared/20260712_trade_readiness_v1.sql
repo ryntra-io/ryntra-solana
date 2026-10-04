@@ -1,5 +1,5 @@
 -- ============================================================================
--- PREPARED, NOT APPLIED — do NOT run against production without founder approval.
+-- PREPARED, NOT APPLIED — do NOT run against production without explicit approval.
 -- This file stays in supabase/prepared/ so the applied-migrations mirror remains
 -- truthful. A future rollout must copy the reviewed content into a fresh timestamped
 -- migration and receive separate explicit approval before any remote application.

@@ -13,11 +13,11 @@ import shell from "./lab.module.css";
 /*
  * Tab 2 — what "Trading agents & data" is in AGG's product today.
  *
- * In the Owner's admin it is a Get-started checklist: create an API key,
- * connect a market data feed, subscribe to WebSocket updates, go live. There
- * is no ready agent, bot template, playground, terminal or strategy anywhere
- * in the admin or the packages — the offer is the REST API, the WebSocket
- * and the SDK/hooks over them. So this tab is a console over exactly those
+ * In the AGG admin it is a Get-started checklist: create an API key, connect
+ * a market data feed, subscribe to WebSocket updates, go live. There is no
+ * ready agent, bot template, playground, terminal or strategy anywhere in
+ * the admin or the packages — the offer is the REST API, the WebSocket and
+ * the SDK/hooks over them. So this tab is a console over exactly those
  * capabilities, with the real responses, and nothing invented on top.
  */
 

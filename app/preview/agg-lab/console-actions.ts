@@ -7,7 +7,7 @@ import type { LabSelection } from "./lab-context";
  *
  * Every action is one documented SDK call with the real response rendered
  * readably (a summary line, key/value rows, a table) and the raw JSON behind
- * a disclosure. Nothing is interpreted for the Owner: the labels are the
+ * a disclosure. Nothing is interpreted for the reader: the labels are the
  * API's own fields. The actions that need a signed-in AGG user say so and
  * are built in `agents-data.tsx` as components, because they hold live
  * state (a WebSocket, a multi-step paper trade).

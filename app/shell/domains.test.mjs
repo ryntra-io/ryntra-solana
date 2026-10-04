@@ -35,7 +35,7 @@ import { PRODUCT_ROUTES } from "./product-routes.ts";
 /**
  * The navigation contract, pinned.
  *
- * Canon v5.3 (adopted 2026-09-24, MASTER-PLAN В28, §3): one version for
+ * Since 2026-09-24 the product is one version for
  * everyone — one menu of five places, Головна · Ринки · Ryntra · Портфель ·
  * Ще, the same on the web and the phone, for every person and every guest;
  * what «Профі» held a tap deeper in the same places. These tests exercise the
@@ -46,7 +46,7 @@ import { PRODUCT_ROUTES } from "./product-routes.ts";
 const BASE = "/app";
 const ROUTES = PRODUCT_ROUTES;
 
-test("the registry carries fifteen pages in the Owner's order, each of one kind", () => {
+test("the registry carries fifteen pages in the product's order, each of one kind", () => {
   assert.deepEqual(PRODUCT_PAGE_IDS, [
     "swap", "spot", "stocks", "trends", "perps", "predictions",
     "ideas", "my-strategies", "results",
@@ -68,7 +68,7 @@ test("the registry carries fifteen pages in the Owner's order, each of one kind"
   for (const id of PRODUCT_PAGE_IDS) assert.ok(PRODUCT_GROUP_IDS.includes(PAGE_GROUP[id]), `${id} has no kind`);
 });
 
-test("the menu you can see — every section with its caption, nothing behind «Ще» (canon v5.4 В30)", () => {
+test("the menu you can see — every section with its caption, nothing behind «Ще»", () => {
   assert.deepEqual([...MENU_SECTION_IDS], ["home", "invest", "trade", "money", "portfolio", "agent", "rewards"]);
   const uk = menuNavigation(ROUTES, "uk");
   const shape = (menu) => menu.sections.map((section) => [section.title, section.rows.map((row) => row.label)]);
@@ -90,7 +90,7 @@ test("the menu you can see — every section with its caption, nothing behind «
     "/app/ryn",
     "/app/rewards",
   ]);
-  /* The assistant says it is the AI (the Owner, 2026-09-24). */
+  /* The assistant says it is the AI. */
   const agent = uk.sections.find((section) => section.id === "agent").rows[0];
   assert.equal(agent.caption, "ШІ-помічник");
   assert.equal(menuNavigation(ROUTES, "en").sections.find((section) => section.id === "agent").rows[0].caption, "AI assistant");
@@ -125,13 +125,13 @@ test("the menu you can see — every section with its caption, nothing behind «
   }
 });
 
-test("the phone keeps the five places — Головна · Ринки · Ryntra · Портфель · Ще (canon v5.3 В28, v5.4 В30)", () => {
+test("the phone keeps the five places — Головна · Ринки · Ryntra · Портфель · Ще", () => {
   assert.deepEqual([...PLACE_IDS], ["home", "markets", "agent", "portfolio", "more"]);
   const uk = productNavigation(ROUTES, "uk");
   assert.deepEqual(uk.places.map((place) => place.label), ["Головна", "Ринки", "Ryntra", "Портфель"]);
   assert.deepEqual(uk.places.map((place) => place.href), ["/app/home", "/app/markets", "/app/ryn", "/app/portfolio"]);
   assert.equal(uk.more.title, "Ще");
-  /* The pages «Ще» lights on a phone; the prediction demo is not one of them (В32). */
+  /* The pages «Ще» lights on a phone; the prediction demo is not one of them. */
   assert.deepEqual(uk.more.entries.map((entry) => entry.label), ["Обмін", "Міст", "Надіслати", "Отримати", "Винагороди"]);
   assert.deepEqual(uk.more.entries.map((entry) => entry.href), ["/app/swap", "/app/bridge", "/app/send", "/app/receive", "/app/rewards"]);
 
@@ -150,7 +150,7 @@ test("the phone keeps the five places — Головна · Ринки · Ryntra
   for (const label of Object.values(PLACE_LABELS).flatMap((label) => [label.en, label.uk])) {
     assert.doesNotMatch(label, /\bRyn\b/);
   }
-  /* Predictions stays built (canon v4.3) and off the surface (v5.4 В32); Results is a real page since RYN-RESULTS-MEMORY-001. */
+  /* Predictions stays built and off the surface; Results is a real page. */
   assert.equal(ROUTES.find((entry) => entry.id === "predictions").readiness, "available");
   assert.ok(OFF_SURFACE.has("predictions"));
   const predictionsPage = readFileSync(new URL("../app/predictions/page.tsx", import.meta.url), "utf8");
@@ -187,7 +187,7 @@ test("one projection, taking nothing but the routes and a language — no depth,
   }
 });
 
-test("every page lives in exactly one place, and the places hold what canon v5.3 says", () => {
+test("every page lives in exactly one place, and each place holds its listed pages", () => {
   const listed = PLACE_IDS.flatMap((place) => PLACE_PAGES[place]);
   assert.deepEqual([...listed].sort(), [...PRODUCT_PAGE_IDS].sort(), "a page is in no place, or in two");
   assert.equal(new Set(listed).size, listed.length, "a page is listed in two places");
@@ -201,7 +201,7 @@ test("every page lives in exactly one place, and the places hold what canon v5.3
   assert.equal(PLACES.find((place) => place.id === "more").href, null, "«Ще» opens its list, not a page");
 });
 
-test("Markets: tabs on top — Усі · Компанії · Приватні · Крипта · Меми · Долари — and «Для досвідчених» there too (canon v5.4 В33)", async () => {
+test("Markets: tabs on top — Усі · Компанії · Приватні · Крипта · Меми · Долари — and «Для досвідчених» there too", async () => {
   const uk = placePages("markets", ROUTES, "uk");
   assert.deepEqual(uk.map((page) => page.label), ["Спот", "Скринер", "Тренди"]);
   assert.deepEqual(uk.map((page) => page.href), ["/app/spot", "/app/stocks/screener", "/app/trends"]);
@@ -242,7 +242,7 @@ test("Portfolio's tabs — Позиції · Стратегії · Резуль�
 });
 
 test("every page on the surface is one tap from the menu on a desk and at most two on a phone", () => {
-  /* A desk: every row of the menu is on screen, one tap away (canon v5.4 В30). */
+  /* A desk: every row of the menu is on screen, one tap away. */
   const desk = new Set(menuNavigation(ROUTES, "en").sections.flatMap((section) => section.rows.map((row) => row.href)));
   /* A phone: one tap reaches a place; «Ще» opens the same rows, so every row is two. */
   const { places } = productNavigation(ROUTES, "en");
@@ -255,7 +255,7 @@ test("every page on the surface is one tap from the menu on a desk and at most t
   assert.ok(oneTap.has("/app/home") && oneTap.has("/app/ryn"));
 });
 
-test("the prediction demo is off every surface; its code and its addresses stay (canon v5.4 В32)", async () => {
+test("the prediction demo is off every surface; its code and its addresses stay", async () => {
   assert.deepEqual([...OFF_SURFACE], ["predictions"]);
   const predictions = ROUTES.find((route) => route.id === "predictions");
   assert.equal(drawn(predictions), false);
@@ -263,7 +263,7 @@ test("the prediction demo is off every surface; its code and its addresses stay 
     assert.ok(!menuNavigation(ROUTES, locale).sections.some((section) => section.rows.some((row) => row.id === "predictions")), `the menu (${locale}) draws the demo`);
     assert.ok(!productNavigation(ROUTES, locale).more.entries.some((entry) => entry.id === "predictions"), `«Ще» (${locale}) draws the demo`);
   }
-  /* Every address of it leads to Markets, temporarily, so it can come back on the Owner's word. */
+  /* Every address of it leads to Markets, temporarily, so it can come back later. */
   const { CUSTOMER_REDIRECTS } = await import("../../lib/product/customer-routing.ts");
   for (const source of ["/app/predictions", "/app/predictions/:path*"]) {
     const row = CUSTOMER_REDIRECTS.find((candidate) => candidate.source === source);
@@ -286,8 +286,7 @@ test("the never-a-row list stays out of the rail, and a planned page is a destin
   for (const never of ["Memes", "RWA", "Screeners", "DCA", "Grid", "Liquidity", "Spend & Invest", "Research", "Critic", "Risk", "Strategy Memory", "Receipts", "Nansen", "Wallet Radar"]) {
     assert.ok(!labels.includes(never), `${never} is a sidebar row`);
   }
-  /* Canon v5.0 §0.0 rule 10 (2026-09-23, RYN-SURFACE-CLEAN-001): a planned
-     page stays registered as the Owner's target, is not a row, carries no
+  /* A planned page stays registered as a target, is not a row, carries no
      word for «not yet» and is not a place a person can land — its address
      leads to a page that works, temporarily, so it can come back when built. */
   const perps = registeredPages(ROUTES, "en").find((entry) => entry.id === "perps");
@@ -332,7 +331,7 @@ test("every page in the registry is a page the router actually serves", () => {
   }
 });
 
-test("readiness is declared once, and only in the canon's vocabulary", () => {
+test("readiness is declared once, and only in the three-status vocabulary", () => {
   for (const route of ROUTES) {
     assert.ok(
       ["available", "building", "planned"].includes(route.readiness),
@@ -346,12 +345,12 @@ test("readiness is declared once, and only in the canon's vocabulary", () => {
   }
   /* The surfaces proved to work are the ones allowed to claim they do. */
   const available = ROUTES.filter((route) => route.readiness === "available").map((route) => route.id).sort();
-  /* Trends is available since RYN-SURFACE-CLEAN-001 (2026-09-23): its two
-     modes with no list left the surface (canon v5.0 §0.0 rule 10), and every
+  /* Trends is available since 2026-09-23: its two
+     modes with no list left the surface, and every
      mode still drawn lists the provider's own figures and opens Spot. */
   assert.deepEqual(available, ["activity", "bridge", "my-strategies", "portfolio", "predictions", "receive", "results", "rewards", "send", "spot", "stocks", "swap", "trends"]);
-  /* Stocks is available since RYN-STOCKS-PRO-001 (2026-09-15); since canon
-     v5.3 (В28) the page opens on its screener — every confirmed token over the
+  /* Stocks is available since 2026-09-15; since
+     2026-09-24 the page opens on its screener — every confirmed token over the
      universe the server keeps warm, with the way into Spot — and `/app/stocks`
      itself is Markets for everyone. */
   const stocks = ROUTES.find((route) => route.id === "stocks");
@@ -488,7 +487,7 @@ test("a place is current on every route it stands for, and nowhere else", () => 
     ["/app/send", "/app/send"],
     ["/app/receive", "/app/receive"],
     ["/app/rewards", "/app/rewards"],
-    /* The demo is off the surface (canon v5.4 В32): its old address lights no place. */
+    /* The demo is off the surface: its old address lights no place. */
     ["/app/predictions/abc", null],
   ];
   for (const [path, expected] of cases) assert.equal(pageActiveHref(path, routes), expected, `${path} lights the wrong place`);
@@ -521,14 +520,14 @@ test("the retired names never reach a label", () => {
   for (const retired of ["Passport", "Agents", "Паспорт", "Агенти", "Activity", "Активність", "Operations", "Операції"]) {
     assert.ok(FORBIDDEN_NAV_WORDS.includes(retired), `${retired} is not pinned as retired`);
   }
-  /* «Ринки» and Home came back with canon v5.0 §3 as two of the five places;
-     «Гроші» with canon v5.4 (В30) as the caption of a section of the menu. */
+  /* «Ринки» and Home came back as two of the five places;
+     «Гроші» came back as the caption of a section of the menu. */
   for (const live of ["Bridge", "Міст", "History", "Історія", "Stocks", "Акції", "Ринки", "Home", "Головна", "Гроші"]) {
     assert.ok(!FORBIDDEN_NAV_WORDS.includes(live), `${live} is a live page name`);
   }
   assert.equal(PAGE_LABELS.bridge.en, "Bridge");
   assert.equal(PAGE_LABELS.bridge.uk, "Міст");
-  assert.equal(PAGE_LABELS.activity.en, "History", "English must read History since canon v4.0");
+  assert.equal(PAGE_LABELS.activity.en, "History", "English must read History, not Activity");
   assert.equal(PAGE_LABELS.activity.uk, "Історія", "Ukrainian must not read Активність");
   assert.equal(PAGE_LABELS.stocks.en, "Stocks");
   assert.equal(PAGE_LABELS.stocks.uk, "Акції");
@@ -546,7 +545,7 @@ function readSource() {
 
 test("a sub-route marks the page it belongs to, never a page it is not inside", () => {
   assert.equal(pageActiveHref(`${BASE}/bridge`, ROUTES), `${BASE}/bridge`, "Bridge is a page, and owns its own route");
-  assert.equal(pageActiveHref(`${BASE}/trade`, ROUTES), `${BASE}/swap`, "the pre-canon trade route belongs to Swap");
+  assert.equal(pageActiveHref(`${BASE}/trade`, ROUTES), `${BASE}/swap`, "the old trade route belongs to Swap");
   assert.equal(pageActiveHref(`${BASE}/receipts`, ROUTES), `${BASE}/activity`, "a receipt belongs to History");
   assert.equal(pageActiveHref(`${BASE}/assets`, ROUTES), `${BASE}/trends`, "asset detail belongs to Trends");
   assert.equal(pageActiveHref(`${BASE}/markets`, ROUTES), `${BASE}/trends`, "the old Markets landing belongs to Trends");
@@ -640,15 +639,15 @@ test("a page owns its routes, so no route the product ships is left marking noth
 });
 
 test("the Stocks/RWA mode of Trends leads to the Stocks page, and /app/history keeps its cached answer", async () => {
-  /* Canon v4.0 §5.1: saved transitions to Stocks/RWA inside Trends lead to
+  /* Saved transitions to Stocks/RWA inside Trends lead to
      the new context; there are not two screeners of one class. The Stocks
-     page is the screener since canon v5.3. */
+     page is the screener since 2026-09-24. */
   const { TREND_MODE_SPECS } = await import("../app/trends/modes.ts");
   assert.equal(TREND_MODE_SPECS.find((spec) => spec.id === "stocks").movedTo, ROUTES.find((route) => route.id === "stocks").href);
   /* `/app/history` has been a permanent redirect to `/app/activity` since the
      six-domain model; a browser that followed it will never re-ask, so the
      page keeps its address under the History label rather than moving and
-     looping those browsers (canon v4.0 §5.2 allows exactly this). */
+     looping those browsers. */
   const { customerHref } = await import("../../lib/product/customer-routing.ts");
   assert.equal(customerHref("/app/history"), "/app/activity");
   assert.equal(customerHref("/app/activity"), "/app/activity");

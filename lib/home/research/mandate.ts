@@ -7,7 +7,7 @@ import type { AttentionSeverity } from "../portfolio/attention.ts";
 /**
  * The ResearchMandate — what Ryn may watch, and nothing about what it may do.
  *
- * The canon states the boundary in one sentence — *monitoring scope never
+ * Home states the boundary in one sentence — *monitoring scope never
  * expands execution authority* — and the only reliable way to hold it is to
  * make the other answer unrepresentable. `executionAuthority` is therefore a
  * literal `"NONE"` on the compiled object, it is not read from the input, and
@@ -53,7 +53,7 @@ export type MandateScopeKind = (typeof MANDATE_SCOPE_KINDS)[number];
  * a venue's market list, an issuer's registry. It is first-party evidence and
  * is trusted as such; it is not licensed for redistribution.
  * `LICENSED_FEED` is a paid or contractually permitted feed. `PUBLIC_UNTRUSTED`
- * is anything read off the open web, which the canon treats as data that can
+ * is anything read off the open web, which Home treats as data that can
  * never carry an instruction. `NONE` exists so an unentitled source has a name
  * to be refused under, rather than arriving as an absent field.
  *

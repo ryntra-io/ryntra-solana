@@ -37,7 +37,7 @@ export function unknown<T>(reason: string): Observed<T> {
 /**
  * The product's three instrument classes.
  *
- * The venue reports five categories; the canon works in three. Indices and
+ * The venue reports five categories; the product works in three. Indices and
  * commodities join equities because they share what actually decides the
  * outcome — a real-world underlying, market hours, and a reference price that
  * can diverge from the token. The venue's own category is preserved beside the
@@ -334,7 +334,7 @@ export function summarise(rows: readonly RadarRow[]): RadarSummary {
  *
  * Kept as data so the surface states them rather than omitting them. The
  * product strategy marks this set `PROPOSED`: Robinhood, Arcus and 0x publish
- * no Pump/BullX-style dataset, and the canon's anti-scope names *full meme
+ * no Pump/BullX-style dataset, and the product's anti-scope names *full meme
  * analytics before data coverage exists*.
  */
 export const ABSENT_ANALYTICS: readonly Readonly<{ name: string; gate: string }>[] = Object.freeze([

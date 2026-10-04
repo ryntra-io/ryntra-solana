@@ -1,4 +1,4 @@
--- RYN-ACCESS-002 — a per-account cutoff for legacy stateless sessions.
+-- A per-account cutoff for legacy stateless sessions.
 --
 -- PREPARED 2026-09-06 and verified locally in PGlite against the
 -- production-equivalent set. **NOT applied to production**: applying it is a

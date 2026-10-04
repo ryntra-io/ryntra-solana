@@ -1,10 +1,9 @@
 /*
- * Predictions — the market on outcomes (`RYN-PREDICTIONS-001`, canon v4.3
- * §6.5). Tokens only (DESIGN.md → app/design/tokens.css): graphite ground,
- * one card tone, a hairline, mono figures with tabular numerals, sans for
- * every word, the orange for the one action and the one accent. No provider
- * shell, no provider colours — the venues are names in a chip, one click
- * deep where identity matters.
+ * Predictions — the market on outcomes. Tokens only (DESIGN.md →
+ * app/design/tokens.css): graphite ground, one card tone, a hairline, mono
+ * figures with tabular numerals, sans for every word, the orange for the one
+ * action and the one accent. No provider shell, no provider colours — the
+ * venues are names in a chip, one click deep where identity matters.
  *
  * Three surfaces share this sheet — the hub, the market detail, the paper
  * account — and the ticket, the Review and the plan builder inside them.

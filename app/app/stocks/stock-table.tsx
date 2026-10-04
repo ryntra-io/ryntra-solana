@@ -23,7 +23,7 @@ import styles from "./stocks.module.css";
  * Every header sorts; the sort lives in the table and resets with its rows.
  */
 
-/* The `?` beside a header names the term once, for every row under it (the Owner's Premium Product UI Pass, 2026-09-15). */
+/* The `?` beside a header names the term once, for every row under it. */
 const COLUMNS: readonly { key: StockSortKey; word: "colStock" | "colPrice" | "col24h" | "colReference" | "colDeviation" | "colSession" | "colVolume" | "colLiquidity"; className: string; help?: HelpTopicId }[] = [
   { key: "symbol", word: "colStock", className: styles.cStock },
   { key: "price", word: "colPrice", className: styles.cPrice },
@@ -167,7 +167,7 @@ function StockTableRow({ row, locale, numberLocale }: { row: SlimStockRow; local
           </>
         )}
       </td>
-      {/* A pre-IPO row has no deviation from a market reference; the column carries its one figure instead — the token against the issuer's own valuation, named as exactly that, with no tone of good or bad (canon v5.2 В27). */}
+      {/* A pre-IPO row has no deviation from a market reference; the column carries its one figure instead — the token against the issuer's own valuation, named as exactly that, with no tone of good or bad. */}
       {preIpo && row.deviation === null && row.markPremium !== null ? (
         <td className={`${styles.cDeviation} ${styles.num}`} data-tone="flat" translate="no" title={markTitle(row, locale)} data-premium>
           {formatPercent(row.markPremium, numberLocale)}

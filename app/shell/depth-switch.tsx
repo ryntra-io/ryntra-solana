@@ -15,7 +15,7 @@ import { useShell } from "./shell-state";
  *
  * Two things that look cosmetic and are not.
  *
- * **The word.** Shell v2 §18 fixes the user-facing vocabulary at `Simple | Pro`
+ * **The word.** The product fixes the user-facing vocabulary at `Simple | Pro`
  * and names the migration `guided → Simple, standard → Simple, pro → Pro`. The
  * stored value stays `guided` — it keys layout preferences people already have,
  * and renaming an id is a migration while renaming a label is copy. Agent
@@ -25,7 +25,7 @@ import { useShell } from "./shell-state";
  * depth and this control has no middle. It used to be pushed to Pro from
  * here — through `setMode`, which also marks the depth as *chosen*, so a
  * browser that had never touched the switch was locked into «Профі» for
- * good. Since canon v5.0 (§0.0 rule 9, 2026-09-23) an un-chosen depth of any
+ * good. Since 2026-09-23 an un-chosen depth of any
  * kind opens «Простий», and that one-time clean-up lives in `shell-state`,
  * where it leaves `depthChosen` alone. This control only records a press.
  */

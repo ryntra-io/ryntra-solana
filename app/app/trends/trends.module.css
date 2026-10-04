@@ -1,9 +1,9 @@
 /*
  * Trends — the market desk of discovery. Tokens only (DESIGN.md →
  * app/design/tokens.css): graphite ground, one card tone, a hairline, mono
- * figures with tabular numerals, sans for every word. No max-width: the
- * Owner's Premium Product UI Pass (2026-09-15) — an operator's screen is
- * used to its edge, and a list of six columns is what earns the width.
+ * figures with tabular numerals, sans for every word. No max-width: an
+ * operator's screen is used to its edge, and a list of six columns is what
+ * earns the width.
  *
  * Four surfaces: the head with one line and the moment of the prices, the
  * mode bar, the pulse (four real figures of the list), and the list itself —
@@ -96,7 +96,7 @@
 }
 
 /* The selected mode: the orange accent on a raised surface, and nothing that
-   reads as a gaming pill (Brand Canon v1.0 §10). */
+   reads as a gaming pill. */
 .mode[aria-current="page"] {
   color: var(--ry-accent-fg);
   background: var(--ry-elevated);

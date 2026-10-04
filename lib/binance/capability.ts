@@ -1,4 +1,4 @@
-/* Binance MCP capability register (RYN-BIN-AOS-001, read-only discovery).
+/* Binance MCP capability register (read-only discovery).
 
    Two things this file exists to prevent.
 
@@ -8,7 +8,7 @@
    false about one of them and "Binance is non-custodial" false about the other, so custody is
    recorded per SURFACE across four independent axes.
 
-   Second, a discovery packet quietly promoting itself into a shipped capability. Nothing here is
+   Second, a discovery record quietly promoting itself into a shipped capability. Nothing here is
    implemented against. The `ryntra` axis is `planned` for everything read-only and `blocked` for
    every write, and the test suite fails the build if any record claims otherwise. */
 
@@ -152,8 +152,8 @@ export type BinanceMcpCapability = {
   reachedOverMcp: boolean;
   /**
    * True only when it was reached with NO credentials. The distinction matters: the handshake is
-   * open to anyone, the tool inventory needed the founder's authorization, and conflating the two
-   * would make an owner-gated fact look like a public one.
+   * open to anyone, the tool inventory needed the account holder's authorization, and conflating
+   * the two would make an owner-gated fact look like a public one.
    */
   reachedWithoutCredentials: boolean;
   evidence: readonly string[];
@@ -173,7 +173,7 @@ const PROBED: CapabilityState = {
   reason: "Reached over the MCP transport without credentials during read-only discovery.",
 };
 
-/** Documented by the provider and gated behind an authorization this packet did not perform. */
+/** Documented by the provider and gated behind an authorization this discovery did not perform. */
 const DOCUMENTED_READ: CapabilityState = {
   protocol: "live",
   ryntra: "planned",
@@ -184,9 +184,9 @@ const DOCUMENTED_READ: CapabilityState = {
 };
 
 /**
- * Reached over MCP **with** the founder's authorization in `RYN-BIN-AOS-002`. `user: available`
- * because this account demonstrably could do it; `ryntra: planned` because Ryntra still ships
- * nothing against it.
+ * Reached over MCP **with** the account holder's authorization. `user: available` because this
+ * account demonstrably could do it; `ryntra: planned` because Ryntra still ships nothing against
+ * it.
  */
 const PROBED_AUTHORIZED: CapabilityState = {
   protocol: "live",
@@ -194,11 +194,11 @@ const PROBED_AUTHORIZED: CapabilityState = {
   user: "available",
   verifiedAt: VERIFIED,
   source: "live-probe",
-  reason: "Read over MCP under the founder-authorized connection; no account-scoped tool was called.",
+  reason: "Read over MCP under the operator-authorized connection; no account-scoped tool was called.",
 };
 
 /**
- * An account-scoped read actually performed in `RYN-BIN-AOS-003`, under the founder's instruction.
+ * An account-scoped read actually performed, with the account holder's authorization.
  * The distinction from `PROBED_AUTHORIZED` is that a tool carrying the `account` scope was called.
  */
 const PROBED_ACCOUNT: CapabilityState = {
@@ -211,7 +211,7 @@ const PROBED_ACCOUNT: CapabilityState = {
 };
 
 /**
- * A write capability this line of packets deliberately excludes.
+ * A write capability this register deliberately excludes.
  *
  * `user` stays `unknown` on purpose. `wallet.getApiKeyPermission` reports the account's envelope
  * with spot/margin trading, futures and universal transfer ENABLED — but that endpoint describes
@@ -226,16 +226,16 @@ const DOCUMENTED_WRITE: CapabilityState = {
   verifiedAt: VERIFIED,
   source: "official-docs",
   reason:
-    "Out of scope; a write path requires its own owner-gated packet. The permission envelope read " +
-    "on 2026-08-23 reports this family as enabled, which is an envelope fact, not a verified " +
-    "OAuth grant — see docs/binance/CAPABILITY-MATRIX.md.",
+    "Out of scope; a write path requires its own separately authorized change. The permission " +
+    "envelope read on 2026-08-23 reports this family as enabled, which is an envelope fact, not a " +
+    "verified OAuth grant.",
 };
 
 const DOC = "docs: developers.binance.com/en/docs/agent-native/mcp-server/agentic (2026-08-23)";
 const INIT_FIXTURE = "fixture: lib/binance/fixtures/mcp-discovery.json → mcpInitialize";
 const UNAUTH_FIXTURE = "fixture: lib/binance/fixtures/mcp-discovery.json → mcpToolsListUnauthenticated";
-const ACCOUNT_FIXTURE = "fixture: lib/binance/fixtures/account-scope.json (RYN-BIN-AOS-003)";
-const INVENTORY_FIXTURE = "fixture: lib/binance/fixtures/tool-inventory.json (RYN-BIN-AOS-002)";
+const ACCOUNT_FIXTURE = "fixture: lib/binance/fixtures/account-scope.json";
+const INVENTORY_FIXTURE = "fixture: lib/binance/fixtures/tool-inventory.json";
 
 export const BINANCE_MCP_CAPABILITIES: readonly BinanceMcpCapability[] = [
   {
@@ -287,7 +287,7 @@ export const BINANCE_MCP_CAPABILITIES: readonly BinanceMcpCapability[] = [
     reachedWithoutCredentials: false,
     evidence: [
       INVENTORY_FIXTURE,
-      "The only Binance tool this packet invoked. Its 17 categories come from its own schema enum.",
+      "The only Binance tool the discovery invoked. Its 17 categories come from its own schema enum.",
     ],
   },
   {

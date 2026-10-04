@@ -6,7 +6,7 @@
   /* Centred on both axes, and by auto margins rather than `align-items`.
      The Swap panel is the only thing on its page and the grid stretches it to
      the viewport, so a 400px card pinned to the top of an 1140px panel left
-     three quarters of the screen empty — the "nothing is here" the founder
+     three quarters of the screen empty — the "nothing is here" a person
      read as a broken page. Auto margins collapse to zero when the card
      outgrows the panel, so a Review-height card is never pushed off the top;
      `align-items: center` would clip it there, and the body does not scroll
@@ -880,7 +880,7 @@
 }
 
 
-/* ── Source split (canon §13.4) ─────────────────────────────────────────────
+/* ── Source split ───────────────────────────────────────────────────────────
    AMM spot has no orderbook to show, so the honest depth signal is which
    venues the order actually crosses and in what share. The bar renders only
    when the provider-reported shares close to 100%; a sequential route lists

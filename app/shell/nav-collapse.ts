@@ -1,9 +1,8 @@
 /**
  * Which rail groups a person has closed.
  *
- * The founder's instruction of 2026-09-08, with Jupiter's rail on the screen
- * beside ours: *«ось тут має бути воно компактно. Стрілка щоб можна було
- * сховати»* — the groups get an arrow and close.
+ * Set beside Jupiter's rail, ours had to become compact, with an arrow that
+ * hides a group — so the groups get an arrow and close.
  *
  * Two rules, and the second is the one that makes this safe.
  *

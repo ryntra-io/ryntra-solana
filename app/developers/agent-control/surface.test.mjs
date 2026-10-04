@@ -77,7 +77,7 @@ test("MCP inventory is the exact twelve-tool local stdio contract, split seven r
 
   /* The counts are separate because the published kit is the seven. Adding
      five to seven and printing twelve would say the public repository grew,
-     which it did not — RYN-AGENT-CONTROL-013 published nothing. */
+     which it did not — the write tools were never published. */
   assert.equal(MCP_READ_TOOL_COUNT + MCP_WRITE_TOOL_COUNT, MCP_TOOLS.length);
   assert.equal(MCP_READ_TOOL_COUNT, 7);
 

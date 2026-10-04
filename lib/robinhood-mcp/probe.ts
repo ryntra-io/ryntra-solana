@@ -1,16 +1,16 @@
-/* The one effectful layer in this package (RYN-RH-MCP-001).
+/* The one effectful layer in this package.
 
    Three GETs to three pinned URLs on one pinned host, with no credential, no
    caller input and no body. It asks a single question — *does this door open
    from where Ryntra actually runs* — and records the answer in the venue's own
    words.
 
-   **Why it exists at all.** `RYN-RHC-001` closed with an explicit unknown:
-   `api.robinhood.com` refuses this development machine, `/app/research` is
-   account-gated, and so whether the deployment's egress receives 200 where this
-   environment receives 403 was never measured. `docs/STATE.md` named it as the
-   first question the next packet should answer. It is a different question from
-   *is Robinhood up*, and only the deployment can answer it.
+   **Why it exists at all.** The Stock Token adapter (`lib/rwa/rhj/`) was built
+   with an explicit unknown: `api.robinhood.com` refuses this development
+   machine, `/app/research` is account-gated, and so whether the deployment's
+   egress receives 200 where this environment receives 403 was never measured.
+   That was the first open question here. It is a different question from *is
+   Robinhood up*, and only the deployment can answer it.
 
    **Why it cannot be abused.** The URLs are module constants in
    `reachability.ts`; nothing is read from the request. Results are memoized per

@@ -1,8 +1,8 @@
 /**
  * Reads what Нагляд over the wallet's positions stands on and composes it
- * (`positions.ts`; `RYN-PROTECT-SIGNAL-001`, subtask 1): what the chain says
- * the wallet holds, the universe's rows, the plans it bought under, the
- * positions «Ryntra попередить» watches, and whether a channel is connected.
+ * (`positions.ts`): what the chain says the wallet holds, the universe's
+ * rows, the plans it bought under, the positions «Ryntra попередить» watches,
+ * and whether a channel is connected.
  *
  * The chain is read here, not taken from a client: a phone and the web read
  * the same positions. Two short reads — the classic token program and

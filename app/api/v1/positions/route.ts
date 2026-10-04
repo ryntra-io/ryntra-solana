@@ -10,11 +10,11 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 /**
- * Нагляд over the proven wallet's positions (`RYN-PROTECT-SIGNAL-001`,
- * contract 1.21.0; canon v5 §11): every company the chain says the wallet
- * holds, with its exit, the state it is in and its one action — decided here,
- * by the same rules for the web and the phone. A position that could not be
- * read is not listed and never called unprotected; `read` says what answered.
+ * Нагляд over the proven wallet's positions (contract 1.21.0): every company
+ * the chain says the wallet holds, with its exit, the state it is in and its
+ * one action — decided here, by the same rules for the web and the phone. A
+ * position that could not be read is not listed and never called unprotected;
+ * `read` says what answered.
  */
 export async function GET(request: Request) {
   const refused = apiMajorRefusal(request.headers);

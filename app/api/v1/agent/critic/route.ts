@@ -13,7 +13,7 @@ export const maxDuration = 60;
 
 /**
  * `POST /api/v1/agent/critic` — the Critic on a subject for the proven
- * wallet (`RYN-BRIEF-CRITIC-001`, contract 1.10.0): the assumption that
+ * wallet (contract 1.10.0): the assumption that
  * conflicts with a figure actually read, the risk that was never
  * established, the condition of the person's own plan that is currently
  * unmet, the previous result of their own that points the other way, the

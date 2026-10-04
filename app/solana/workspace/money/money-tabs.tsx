@@ -3,13 +3,13 @@
 /**
  * Send, Receive and Rewards, side by side — on a phone, and only there.
  *
- * Two rules of the canon meet here and they pull in opposite directions.
- * §3.3 says the phone bar's **Money** opens Send *and* Receive; §3.2 says a rail
- * entry is never duplicated by an identical horizontal menu on every screen.
- * Both are satisfied by the same fact: below 900px the rail is not on the
- * screen at all — it is behind the bar's fifth item — so this switcher is the
- * only way to cross between the two, and above 900px it would be a second copy
- * of two rows a person can already see, which is exactly what §3.2 forbids.
+ * Two navigation rules meet here and they pull in opposite directions. The
+ * phone bar's **Money** opens Send *and* Receive; a rail entry is never
+ * duplicated by an identical horizontal menu on every screen. Both are
+ * satisfied by the same fact: below 900px the rail is not on the screen at
+ * all — it is behind the bar's fifth item — so this switcher is the only way
+ * to cross between the two, and above 900px it would be a second copy of two
+ * rows a person can already see, which is exactly what the second rule forbids.
  *
  * So it is one control with one job, hidden by width rather than by prop. What
  * it replaced was `MoneyJobs`, which drew Send, Receive **and Bridge** over

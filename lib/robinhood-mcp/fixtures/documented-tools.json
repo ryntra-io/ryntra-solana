@@ -1,5 +1,5 @@
 {
-  "capture": "RYN-RH-MCP-001 documented tool inventory",
+  "capture": "Robinhood Trading MCP documented tool inventory",
   "capturedAt": "2026-08-24",
   "source": "https://robinhood.com/us/en/support/articles/trading-with-your-agent/ (HTTP 200, Reference No. 5847437)",
   "boundary": "Documentation-sourced. Not one of these names was seen over the MCP transport: agent.robinhood.com refuses this egress at the CDN edge, so tools/list was never reached.",

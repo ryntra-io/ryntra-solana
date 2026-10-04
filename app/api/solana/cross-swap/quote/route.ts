@@ -21,7 +21,7 @@ export const maxDuration = 30;
  * Live quote for a cross-chain swap — read-only, wallet-free.
  *
  * The unified card classifies FROM/TO itself and asks this route only when the
- * pair is one of the four Owner-approved cross-asset tuples; the route
+ * pair is one of the four approved cross-asset tuples; the route
  * classifies again, because a client is not the gate. It reads Mayan's price
  * API, keeps the one mechanism the lane may act on for that direction (Swift
  * from Solana, Fast MCTP from Base or Ethereum), and answers with the exact

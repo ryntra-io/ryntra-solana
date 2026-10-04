@@ -1,9 +1,9 @@
 /**
- * Public projection of docs/MASTER-PLAN.md shared by landing, methodology,
+ * Public projection of the product identity shared by landing, methodology,
  * metadata, and structured-data surfaces. Product maturity lives in
  * capabilities.ts; this file contains no provider-specific live promise.
  *
- * Canon §19 positions by audience, and the two positions are not
+ * The product positions by audience, and the two positions are not
  * interchangeable: `category` is the whole company, `guardCategory` is the
  * developer/B2B surface. A surface that speaks to individual users takes the
  * company line; developer and partner artifacts take the developer line.
@@ -41,9 +41,9 @@ export const PRODUCT_CANON = {
 } as const;
 
 /**
- * Canon §3. The kernel lifecycle every surface shares. It is the company-level
- * loop; MINIMUM_PRODUCT_LOOP below is the Workspace decision loop expressed in
- * the shipped object vocabulary. Both are canonical and neither replaces the other.
+ * The kernel lifecycle every surface shares. It is the company-level loop;
+ * MINIMUM_PRODUCT_LOOP below is the Workspace decision loop expressed in the
+ * shipped object vocabulary. Both are canonical and neither replaces the other.
  */
 export const CANONICAL_LIFECYCLE = [
   "Observe",
@@ -58,8 +58,8 @@ export const CANONICAL_LIFECYCLE = [
 ] as const;
 
 /**
- * Canon §5. Four independent status axes. A UI may summarize them; an API,
- * receipt, or claim may never collapse one into another.
+ * Four independent status axes. A UI may summarize them; an API, receipt, or
+ * claim may never collapse one into another.
  */
 export const INDEPENDENT_STATE_AXES = [
   "evidenceStatus",

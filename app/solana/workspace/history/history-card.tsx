@@ -26,10 +26,10 @@ const SOLANA_SIGNATURE = /^[1-9A-HJ-NP-Za-km-z]{64,90}$/;
 
 /**
  * Activity — every operation this wallet made through Ryntra, read as a person
- * reads a statement (Owner, 2026-09-12): the page that made it, the day it
- * happened, what went out and what came in, and one row opened is a receipt
- * in words — paid, received, price, fee, when, the transaction — with the
- * signed record one link away for whoever wants the evidence.
+ * reads a statement: the page that made it, the day it happened, what went out
+ * and what came in, and one row opened is a receipt in words — paid, received,
+ * price, fee, when, the transaction — with the signed record one link away for
+ * whoever wants the evidence.
  */
 
 /** The Solana transaction a row can be opened on, wherever it is recorded. */
@@ -91,9 +91,8 @@ export function HistoryCard({ selectedAction = null, initialFilter = "ALL" }: { 
   const intl = locale === "uk" ? "uk-UA" : "en-US";
 
   /* A received payment's row carries public chain facts only. The link back to
-     the payment request it settled is private creator data (canon §0.6), so
-     it is read through the proof-gated listing and shown only when that
-     answers. */
+     the payment request it settled is private creator data, so it is read
+     through the proof-gated listing and shown only when that answers. */
   const [payLinks, setPayLinks] = useState<Readonly<Record<string, string>>>({});
   const hasReceived = useMemo(() => actions.some((action) => action.lane === "RECEIVE"), [actions]);
   useEffect(() => {
@@ -343,7 +342,7 @@ export function HistoryCard({ selectedAction = null, initialFilter = "ALL" }: { 
                                   <dd translate="no">{leg(action.in) ?? text("Not available")}</dd>
                                 </div>
                               ) : null}
-                              {/* A receipt of a token Ryntra no longer supports reads as history (canon v5.2 В26): what the asset is now, and the way out. */}
+                              {/* A receipt of a token Ryntra no longer supports reads as history: what the asset is now, and the way out. */}
                               {[action.out, action.in].some((movement) => movement !== null && isRetiredMint(movement.mint)) ? (
                                 <div data-retired>
                                   <dt>{text("Asset")}</dt>

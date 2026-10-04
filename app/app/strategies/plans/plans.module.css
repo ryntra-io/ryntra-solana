@@ -3,11 +3,11 @@
  *
  * The terminal's own cards and facts (the same tokens the stock desk uses):
  * a plan is rows of figures with their units, never a wall of text. The
- * Owner's Premium Product UI Pass (2026-09-15) set the scale and the
- * composition: the page uses the whole canvas after the rail, the title is
- * 28px, the key figures 28px, a value 16px, a label 14px; every term carries
- * a `?` and its explanation lives there, not under the number. The builder
- * keeps its one column of small groups with the size and the check beside it.
+ * premium UI pass of 2026-09-15 set the scale and the composition: the page
+ * uses the whole canvas after the rail, the title is 28px, the key figures
+ * 28px, a value 16px, a label 14px; every term carries a `?` and its
+ * explanation lives there, not under the number. The builder keeps its one
+ * column of small groups with the size and the check beside it.
  */
 
 .page {
@@ -1643,7 +1643,7 @@ a.count:hover {
   }
 }
 
-/* ── Plan vs Actual (stage B) ────────────────────────────────────────────
+/* ── Plan vs Actual ──────────────────────────────────────────────────────
    One card per execution: the same four figures in three columns — the
    version, the Review before the signature, the settled row — the verdict
    about the entry, the checks on the fill as chips. The table scrolls in
@@ -1847,7 +1847,7 @@ a.count:hover {
   }
 }
 
-/* ── The clarity pass (RYN-UX-CLARITY-001, 2026-09-16) ─────────────────────
+/* ── The clarity pass (2026-09-16) ─────────────────────────────────────────
    A bound and its own switch as one cell of the grid; the stock picker a
    plan with no stock in the address starts from; the plan page's summary,
    its folded rules and its one history. */
@@ -2067,7 +2067,7 @@ a.count:hover {
   line-height: 1.3;
 }
 
-/* ── Conditions on what the market did (RYN-NANSEN-EVIDENCE-001) ─────────
+/* ── Conditions on what the market did ───────────────────────────────────
    One row per rule: five fields across, the rule read back as a sentence
    under them with its remove control; the threshold's hint carries the
    figure as it stands now, so the number is written against a real one. */
@@ -2106,7 +2106,7 @@ a.count:hover {
   font-variant-numeric: normal;
 }
 
-/* An authority is a state, not a number: the threshold field steps aside and the state select and the mode share the row (RYN-DDXYZ-RISK-001). */
+/* An authority is a state, not a number: the threshold field steps aside and the state select and the mode share the row. */
 .conditionFields[data-flag="true"] > :nth-child(4) {
   display: none;
 }
@@ -2209,7 +2209,7 @@ a.count:hover {
   }
 }
 
-/* ── A plan on a pre-IPO token (RYN-FIRST-SCREEN-001, 2026-09-23) ─────────
+/* ── A plan on a pre-IPO token (2026-09-23) ───────────────────────────────
    One line of state with its one action, the three things to know, and the
    whole plan one press deep. The fold's own summary is styled through the
    child combinator only, so the folds inside it keep their own look. */

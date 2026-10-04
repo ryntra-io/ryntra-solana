@@ -34,12 +34,11 @@ const CRYPTO_CARRIED = 60;
 const MEMES_CARRIED = 60;
 
 /**
- * Ринки — the second of the five places (canon v5.0 §3; one version since
- * v5.3 В28; tabs since v5.4 В33), at `/app/markets` and at `/app/stocks` too:
- * the title, the tabs and «Для досвідчених» at once — the pages the registry
- * puts in Markets (`PLACE_PAGES`), drawn from it rather than written here —
- * and the companies, the coins and the memes streaming in behind fallbacks of
- * their own shape.
+ * Ринки — the second of the five places, at `/app/markets` and at
+ * `/app/stocks` too: the title, the tabs and «Для досвідчених» at once — the
+ * pages the registry puts in Markets (`PLACE_PAGES`), drawn from it rather
+ * than written here — and the companies, the coins and the memes streaming
+ * in behind fallbacks of their own shape.
  */
 export function MarketsPlace({ locale, tab = "all" }: { locale: WorkspaceLocale; tab?: string | null }) {
   const tools: ExperiencedTool[] = placePages("markets", PRODUCT_ROUTES, locale).map((page) => ({ id: page.id, label: page.label, href: page.href }));

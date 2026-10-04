@@ -36,14 +36,14 @@
  *
  * ## Terminal is not settled
  *
- * Canon `12 §9` and `03 §7`: A2A `completed` is the state of somebody else's
- * task. It is not a Ryntra `MATCHED`, it promotes no Receipt, and it changes no
- * authorization. A terminal task is a record of a terminal task.
+ * A2A `completed` is the state of somebody else's task. It is not a Ryntra
+ * `MATCHED`, it promotes no Receipt, and it changes no authorization. A
+ * terminal task is a record of a terminal task.
  *
  * ## What is stored
  *
- * Exactly the canon `12 §9` set: the Agent Card digest, task id, context id
- * where applicable, task state, skills, artifacts, the transition into
+ * Exactly this set: the Agent Card digest, task id, context id where
+ * applicable, task state, skills, artifacts, the transition into
  * auth-required, and the terminal result. The digest is **computed here from
  * the card that arrived**, never accepted from the caller — a caller-supplied
  * digest is the caller telling us what their own document hashes to.
@@ -194,7 +194,7 @@ export const A2aInboundSchema = z
 export type A2aInbound = z.output<typeof A2aInboundSchema>;
 
 /**
- * What Ryntra keeps of an A2A task — canon `12 §9`, field for field.
+ * What Ryntra keeps of an A2A task, field for field.
  *
  * `promotes` is `null` and there is no value it could take. A field that could
  * name a Receipt would be a field somebody eventually fills in.

@@ -1,8 +1,8 @@
 /**
- * Tokens Ryntra no longer supports — canon v5.2 В26 (2026-09-24): private
- * companies come through PreStocks only, and the other pre-IPO issuer's
- * tokens are disconnected from the product, the API, the phone and the
- * public projection.
+ * Tokens Ryntra no longer supports — since 2026-09-24 private companies come
+ * through PreStocks only, and the other pre-IPO issuer's tokens are
+ * disconnected from the product, the API, the phone and the public
+ * projection.
  *
  * Ryntra offers them nowhere: no list, search, page, plan, quote or order
  * names one as something to buy or sell here. What a person already has with

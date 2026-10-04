@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "My strategies" };
 
 /**
- * My strategies — canon §5.2, §9.3–§9.5.
+ * My strategies.
  *
  * One page for the plans a wallet has written: each on the version it stands
  * on, with the size those rules make and where it is in its life. A plan is
@@ -21,21 +21,20 @@ export const metadata = { title: "My strategies" };
  * for — so the list is drawn only behind that proof. The head carries the
  * one primary action, *Create plan*, which opens the builder on a stock
  * picker: the plan starts here, the person is not sent to the catalogue and
- * back (the UX audit of 2026-09-16, `RYN-UX-CLARITY-001` §5.1).
+ * back (the UX audit of 2026-09-16).
  *
- * **What stood here before.** Until `RYN-STRATEGY-PLAN-001` the page read the
+ * **What stood here before.** Until the Trading Plan, the page read the
  * Strategy Lab's records back as a list of titles and versions (`read.ts`,
  * `tiles.tsx`, `[id]/` are the lab's read model and stay where they are for
  * the lab's own pages). The Trading Plan is the product's plan; the list
  * below is the plan store's, not the lab's.
  *
- * **Owner decision of 2026-09-11: this page owns the strategy types.** The
- * six types that are not built yet — DCA, Grid, Free Capital / Treasury,
- * Rebalancing, Liquidity, Spend & Invest — stay registered in
- * `STRATEGY_TYPES`, the one source, and are drawn nowhere: canon v5.0 §0.0
- * rule 10 (2026-09-23) keeps what is not built off every customer screen, so
- * the folded *Other strategy types · planned · 6* line left this page with
- * `RYN-SURFACE-CLEAN-001`. The person's own plans are the page.
+ * **This page owns the strategy types (since 2026-09-11).** The six types
+ * that are not built yet — DCA, Grid, Free Capital / Treasury, Rebalancing,
+ * Liquidity, Spend & Invest — stay registered in `STRATEGY_TYPES`, the one
+ * source, and are drawn nowhere: since 2026-09-23 what is not built stays off
+ * every customer screen, so the folded *Other strategy types · planned · 6*
+ * line left this page. The person's own plans are the page.
  */
 export default async function MyStrategiesPage() {
   const locale = await solanaServerLocale();
@@ -43,7 +42,7 @@ export default async function MyStrategiesPage() {
 
   return (
     <section className={styles.page} aria-labelledby="my-strategies-title">
-      {/* The plans are Portfolio's, a tap deeper (canon v5.3 В28): its tabs, this one current. */}
+      {/* The plans are Portfolio's, a tap deeper: its tabs, this one current. */}
       <PortfolioTabs locale={locale} />
       <header className={styles.head}>
         <div className={styles.title}>
@@ -64,7 +63,7 @@ export default async function MyStrategiesPage() {
 
       <PlansPanel locale={locale} />
 
-      {/* The prediction plans left with the demo (canon v5.4 В32): their panel stays in `app/app/predictions/prediction-plans-panel`. */}
+      {/* The prediction plans left with the demo: their panel stays in `app/app/predictions/prediction-plans-panel`. */}
     </section>
   );
 }

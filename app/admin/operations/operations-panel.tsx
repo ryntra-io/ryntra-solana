@@ -110,7 +110,7 @@ export function OperationsPanel() {
       const r = await fetch("/api/admin/operations", { method: "POST" });
       const json = (await r.json()) as { delivery?: string; error?: string };
       setTone(r.ok && json.delivery === "sent" ? "ok" : "error");
-      setMsg(r.ok ? `Тест власнику: ${json.delivery}` : String(json.error ?? "не вдалося"));
+      setMsg(r.ok ? `Тест адміну: ${json.delivery}` : String(json.error ?? "не вдалося"));
     } catch {
       setTone("error");
       setMsg("Запит не дійшов до сервера");
@@ -241,7 +241,7 @@ export function OperationsPanel() {
         </div>
         <div className={styles.btnRow}>
           <button type="button" className={styles.btn} disabled={locked} onClick={() => void testOwner()}>
-            Тест власнику
+            Тест адміну
           </button>
           <button type="button" className={styles.btn} disabled={locked} aria-busy={busy} onClick={() => void runFillCheck()}>
             <ArrowClockwise size={14} weight="bold" aria-hidden="true" />

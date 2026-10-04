@@ -1,7 +1,6 @@
 /**
  * The prediction-market domain as Ryntra states it — provider-neutral view
- * models and the mappers from the aggregator's own shapes
- * (`RYN-PREDICTIONS-001`, canon v4.3 §6.5).
+ * models and the mappers from the aggregator's own shapes.
  *
  * Every figure keeps its provenance: a probability is the venue's own price
  * of the outcome (0–1) at the moment it was read, a volume is what the

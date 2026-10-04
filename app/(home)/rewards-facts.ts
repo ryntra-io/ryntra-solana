@@ -3,9 +3,9 @@ import { POINTS_POLICY_V1, levelFor } from "../../lib/points/policy.ts";
 /**
  * What the fourth block says in numbers, and where each number comes from.
  *
- * The three shares are the programme's own rates — the Owner's decision of
- * 2026-09-10, declared once in `lib/rewards/model.ts` as basis points of the
- * gross service fee. They are written here as percents rather than imported,
+ * The three shares are the programme's own rates, set on 2026-09-10 and
+ * declared once in `lib/rewards/model.ts` as basis points of the gross
+ * service fee. They are written here as percents rather than imported,
  * because that module carries its schemas (and zod) with it and a landing
  * page has no use for them; rewards.test.mjs holds the two in agreement, so
  * a changed rate cannot leave the page saying the old one.

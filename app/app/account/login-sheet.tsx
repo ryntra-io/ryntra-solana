@@ -302,7 +302,7 @@ export function LoginSheet({ reason, onClose, attach = false }: { reason: Intent
   const { copy, locale, customerDoors } = useAccount();
   /* The legacy sheet (email, Google, Telegram sign-in) exists only while the
      customer doors are switched on; with them shut the wallet is the one way
-     in and the sheet has nothing else to offer (RYN-ACCESS-WALLET-ONLY-001). */
+     in and the sheet has nothing else to offer. */
   const [legacy, setLegacy] = useState(attach && customerDoors);
   const titleId = useId();
   const panel = useRef<HTMLElement>(null);

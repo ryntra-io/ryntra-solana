@@ -4,16 +4,16 @@ import { R_MARK_MATERIAL, R_MARK_MATERIAL_AXIS, R_MARK_PATHS, R_MARK_VIEWBOX } f
 import "./brand.css";
 
 /**
- * The canonical Ryntra brand components — Brand Canon v1.0 (Owner, 2026-09-11):
+ * The canonical Ryntra brand components (brand palette of 2026-09-11):
  *
  *   - the mark is the orange R measured in `app/brand/mark.ts` — traced from
- *     the Owner's flat master, never redrawn; only its material changes
- *     (the master's ramp, flat, monochrome);
+ *     the flat master, never redrawn; only its material changes (the
+ *     master's ramp, flat, monochrome);
  *   - the primary logo everywhere a header or footer exists is the wordmark
  *     `[R]YNTRA` — the mark is the R, never followed by a second one;
  *   - the wordmark shows where there is horizontal room, the standalone mark
  *     on compact and mobile surfaces;
- *   - the Owner's disc (`ryntra-avatar-1024.png`) is the avatar; the favicon
+ *   - the brand disc (`ryntra-avatar-1024.png`) is the avatar; the favicon
  *     is the same R on the dark tile, simplified.
  *
  * No other component may draw an R, a wordmark or a logo of its own —
@@ -21,10 +21,10 @@ import "./brand.css";
  */
 
 /**
- * The wordmark as the Owner's flat lockup of 2026-09-13, traced from the
- * masters by scripts/render-brand-assets.mjs into one vector geometry: the R
- * with the master's own ramp, YNTRA in the ground's ink. One geometry serves
- * both grounds, so both carry the same ratio (the SVG's viewBox); the `-ui`
+ * The wordmark as the flat lockup of 2026-09-13, traced from the masters by
+ * scripts/render-brand-assets.mjs into one vector geometry: the R with the
+ * master's own ramp, YNTRA in the ground's ink. One geometry serves both
+ * grounds, so both carry the same ratio (the SVG's viewBox); the `-ui`
  * rasters of the same drawing remain for the share card and print.
  */
 const WORDMARK_RATIO = WORDMARK_BOX.width / WORDMARK_BOX.height;
@@ -65,7 +65,7 @@ export function RyntraMark({ size = 26, title }: { size?: number; title?: string
  *
  * The YNTRA letterforms are drawn, not set: no installed family reproduces
  * them, and setting them in a UI face renders a different logo. So the
- * lockup ships as the Owner's artwork — the traced SVG, one ink per ground —
+ * lockup ships as the brand's artwork — the traced SVG, one ink per ground —
  * and the standalone mark stays its own vector. The mark IS the R, so the
  * artwork reads YNTRA after it; the accessible name stays the complete word.
  */

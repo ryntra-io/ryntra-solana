@@ -20,7 +20,7 @@ import styles from "./spot.module.css";
 
 
 function categoryChip(market: SpotMarket, text: (english: string) => string): { label: string } | null {
-  /* A token Ryntra no longer supports names no issuer and wears no chip: its state is a line of its own under the name (canon v5.2 В26). */
+  /* A token Ryntra no longer supports names no issuer and wears no chip: its state is a line of its own under the name. */
   if (isUnsupportedMarket(market)) return null;
   if (market.category === "stock") return { label: market.issuer ? market.issuer.label : text("Tokenized asset") };
   if (market.category === "meme") return { label: text("Meme") };
@@ -121,7 +121,7 @@ export function MarketHeader({
       </div>
 
       {/* A tokenized stock carries its reference, its session and its deviation
-          under the price (canon v4.0 §7.4), and the way into its research page. */}
+          under the price, and the way into its research page. */}
       {market?.category === "stock" && !isUnsupportedMarket(market) ? <StockHeaderLine mint={market.mint} symbol={market.symbol} /> : null}
 
       {market ? (
@@ -276,7 +276,7 @@ function AssetDetails({ market, pool }: { market: SpotMarket; pool: SpotPool | n
             </dd>
           </div>
         ) : null}
-        {/* Ryn on this asset (RYN-AGENT-TEXT-001): the press opens the Brief and the Critic on this page, closed until asked (RYN-FIRST-SCREEN-001); the conversation is one press further inside. */}
+        {/* Ryntra on this asset: the press opens the Brief and the Critic on this page, closed until asked; the conversation is one press further inside. */}
         <div>
           <dt>Ryntra</dt>
           <dd>

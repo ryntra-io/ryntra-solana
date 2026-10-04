@@ -1,14 +1,13 @@
 /*
  * The public pages around the landing — About, Security, Where the figures
- * come from, Open source, Contact, Verify (the new site of canon v5.5,
- * `RYN-SITE-V5-001` subtask 3).
+ * come from, Open source, Contact, Verify.
  *
  * Drawn in the language of the landing's own blocks (`app/(home)/blocks.module.css`)
  * on the site's ground rather than the landing's: the eyebrow with its point
  * of orange, the heavy sans title, panels with a hairline rim, check lines in
  * the green of what works, and every technical paragraph behind a disclosure
- * — one line at rest, the detail a tap deeper (canon §0.0 rule 1). Tokens
- * only: no literal colour, no size off the ramp, no radius off the scale.
+ * — one line at rest, the detail a tap deeper. Tokens only: no literal colour,
+ * no size off the ramp, no radius off the scale.
  */
 
 .main {

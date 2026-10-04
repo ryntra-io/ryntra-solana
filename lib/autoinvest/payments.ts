@@ -1,8 +1,8 @@
 /**
- * «З кожної оплати» (`RYN-PAY-TRIGGERS-001`, canon v5.5 В38, §4.1) — what a
- * wallet's own USDC movement is, and what a rule takes from it.
+ * «З кожної оплати» — what a wallet's own USDC movement is, and what a rule
+ * takes from it.
  *
- * **Only real events of the person's own spending** (В23). The first source
+ * **Only real events of the person's own spending.** The first source
  * is the wallet itself on Solana: a transaction in which the wallet's USDC
  * went down and someone else's went up, signed by the wallet, is a payment; a
  * transaction in which the wallet's USDC went up and someone else's went

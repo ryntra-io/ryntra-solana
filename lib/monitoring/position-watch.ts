@@ -1,13 +1,12 @@
 /**
- * «Ryntra попередить» on a position (canon v5 §6.1, §11; `RYN-PROTECT-SIGNAL-001`,
- * subtask 1): the exit of a company the wallet already holds, when no plan it
- * was bought under watches it. The person picks one of the published presets
- * — «Обережно» −5 % / +10 %, «Збалансовано» −10 % / +20 % (В11) — and the
- * server counts the loss limit and the target from the token's price as the
- * product reads it now, never from a figure the client sends. From then on
- * Нагляд checks the price every five minutes and warns at the limit or the
- * target; the sale stays the person's to open and sign. Nothing here moves or
- * holds money: the tokens stay in the wallet.
+ * «Ryntra попередить» on a position: the exit of a company the wallet already
+ * holds, when no plan it was bought under watches it. The person picks one of
+ * the published presets — «Обережно» −5 % / +10 %, «Збалансовано» −10 % /
+ * +20 % — and the server counts the loss limit and the target from the
+ * token's price as the product reads it now, never from a figure the client
+ * sends. From then on Нагляд checks the price every five minutes and warns at
+ * the limit or the target; the sale stays the person's to open and sign.
+ * Nothing here moves or holds money: the tokens stay in the wallet.
  *
  * One record per wallet and token, keyed `solana:mainnet:<wallet>:<mint>` in
  * `positionWatches`, written by compare-and-set on its own version. Turning it

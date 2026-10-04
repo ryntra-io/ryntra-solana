@@ -1,6 +1,6 @@
--- RYN-ADMIN-005 premium finish.
--- NOT applied to production. Founder applies in the SQL Editor on
--- project lbphobwqzwdkbmyedlwb. Never against Neon Guard.
+-- Admin Control Center finish: notification preferences.
+-- NOT applied to production. Applied by hand in the SQL Editor on
+-- project lbphobwqzwdkbmyedlwb, and on no other database.
 --
 -- Notification preferences. Missing rows stay eligible for product updates.
 -- service_security cannot be stored as false.

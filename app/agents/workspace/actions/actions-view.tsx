@@ -115,9 +115,9 @@ const COPY = {
  *
  * The list and the inspector read the same store, so selecting a row moves the
  * inspector, and the Lab producing an artifact moves both. That is the whole of
- * Phase 2B on this screen. RYN-AGENT-CONTROL-010 adds the owner-control
- * projection without creating a second Action: policy version, budget impact
- * and required evidence are computed against the selected Action Case.
+ * Phase 2B on this screen. The owner-control projection is added without
+ * creating a second Action: policy version, budget impact and required
+ * evidence are computed against the selected Action Case.
  */
 function ownerQueueForSelected(actionCase: NonNullable<ReturnType<typeof useActionCases>["selected"]>) {
   try {

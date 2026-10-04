@@ -24,9 +24,8 @@ export const maxDuration = 60;
  * This route reads and only reads. It cannot burn, it cannot mint and it
  * exports no path that could: recovery on this lane means inspecting the burn,
  * then Circle's message, then the destination, in that order, and reporting
- * what each one says. Canon §25.5 is explicit that a second burn is never a
- * recovery action, and the way to make that true is to give recovery no way to
- * cause one.
+ * what each one says. A second burn is never a recovery action, and the way
+ * to make that true is to give recovery no way to cause one.
  *
  * Every read is allowed to fail. An unreadable answer is reported as
  * unreadable, never as an absence — "we could not ask" and "it did not happen"

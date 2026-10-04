@@ -1,5 +1,5 @@
 /**
- * The AGG aggregator behind the provider boundary (`RYN-PREDICTIONS-001`).
+ * The AGG aggregator behind the provider boundary.
  *
  * Server only. One SDK client per process for the public reads (the app id
  * and, when the environment has it, the server key), and a fresh client with
@@ -83,9 +83,9 @@ export function resetAggAdapterCache(): void {
  * lives in one process: the channel outlived the request, held the client and
  * its session in memory for as long as the instance lived, and passed one
  * wallet's sign-out (`logout` clears the token) and sign-in (`login` starts a
- * refresh) to every other wallet's client alive at that moment
- * (`RYN-API-CONTRACT-002`, 2026-09-23). `destroy()` closes that channel and
- * nothing else; the client's HTTP calls are unchanged.
+ * refresh) to every other wallet's client alive at that moment (found
+ * 2026-09-23). `destroy()` closes that channel and nothing else; the client's
+ * HTTP calls are unchanged.
  */
 export function serverAggClient(options: Parameters<typeof createAggClient>[0]): AggClient {
   const c = createAggClient(options);

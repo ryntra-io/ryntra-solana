@@ -3,7 +3,7 @@
  *
  * `SEND`, `SWAP` and the CCTP `BRIDGE` lane each end in a signed
  * `OUTCOME_RECEIPT@2.0.0`. The cross-chain lane — the one the Bridge page
- * actually uses since `RYN-SWAP-BRIDGE-SPLIT-001` — ended in nothing. Two real
+ * actually uses since Bridge split from Swap — ended in nothing. Two real
  * fills on 2026-09-11 made that concrete: both settled, both had their fee
  * collected, and both rows in Activity carried `receiptHash: null` beside a
  * same-chain swap from the same evening that carried one.
@@ -17,8 +17,8 @@
  * what the Activity row was written with. Re-minting would quietly break the
  * link between the row and the document it names.
  *
- * The consequence is the property the Owner asked for: a bridge made on a
- * laptop opens on a phone, because the document is on the order and not in a
+ * The consequence is the property that matters: a bridge made on a laptop
+ * opens on a phone, because the document is on the order and not in a
  * browser.
  *
  * ## What it structurally cannot say
@@ -292,7 +292,7 @@ export type CrossSwapReceiptMintResult =
  *
  * Built twice, exactly as the Send and Bridge lanes are: the unsigned mint
  * fixes the content hash and the signed mint reuses that hash **and** the same
- * timestamp. `RYN-AGENT-CONTROL-007` recorded what happens otherwise — a second
+ * timestamp. An earlier failure showed what happens otherwise — a second
  * `createdAt` moves the hash the signature was taken over, and the public
  * verifier answers `SIGNATURE_INVALID` for a receipt that is otherwise correct.
  *

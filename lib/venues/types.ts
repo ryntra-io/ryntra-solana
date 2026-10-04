@@ -1,4 +1,4 @@
-/* Venue adapter contract — the thin multi-venue seam (NORTH-STAR §3).
+/* Venue adapter contract — the thin multi-venue seam.
    Pure types, no runtime, no I/O. Adding a 2nd venue/partner = implementing these ports;
    the venue-agnostic core (lib/rwa/risk.ts risk engine, lib/chart charting, journal) never
    changes when a venue is added.
@@ -46,13 +46,12 @@ export type VenueMeta = {
    * Regions the venue or issuer states it does not serve.
    *
    * **Disclosure, never a gate.** Ryntra implements no geographic or IP
-   * restriction of its own — founder decision, 2026-08-19: the functionality is
-   * built, who may use it is stated in the public documentation and terms, and
-   * nothing here inspects a request's origin. This field was named
-   * `geoBlocked` and its comment read "gating + disclosure hint", which
-   * described a gate that has never existed: nothing in this repository ever
-   * read it. The name now matches the model, and `venues.test.mjs` fails the
-   * build if any code starts branching on it.
+   * restriction of its own: the functionality is built, who may use it is
+   * stated in the public documentation and terms, and nothing here inspects a
+   * request's origin. This field was named `geoBlocked` and its comment read
+   * "gating + disclosure hint", which described a gate that has never existed:
+   * nothing in this repository ever read it. The name now matches the model,
+   * and `venues.test.mjs` fails the build if any code starts branching on it.
    *
    * It is the venue's statement, not Ryntra's, and it does not predict what a
    * venue will answer — the venue answers for itself and that answer is shown

@@ -59,10 +59,9 @@ export default function Page() {
       >
         <div className="rx-prose">
           <p>
-            Each row names the module that owns what its facts mean and the delivery wave that
-            built it. The <em>refuses</em> column is the useful half: it is where the product
-            states what it will not do, which is the part a reader cannot check by looking at a
-            screenshot.
+            Each row names a surface, the route that serves it and the question it answers. The{" "}
+            <em>refuses</em> column is the useful half: it is where the product states what it
+            will not do, which is the part a reader cannot check by looking at a screenshot.
           </p>
         </div>
 
@@ -73,7 +72,6 @@ export default function Page() {
                 <th scope="col">Surface</th>
                 <th scope="col">The question it answers</th>
                 <th scope="col">Refuses</th>
-                <th scope="col">Wave</th>
               </tr>
             </thead>
             <tbody>
@@ -90,7 +88,6 @@ export default function Page() {
                       {surface.refuses.map((line) => <li key={line}>{line}</li>)}
                     </ul>
                   </td>
-                  <td><code>{surface.wave}</code></td>
                 </tr>
               ))}
             </tbody>

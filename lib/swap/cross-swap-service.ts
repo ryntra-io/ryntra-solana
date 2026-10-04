@@ -4,15 +4,15 @@
  *
  * This module used to live at `lib/mayan/cross-swap-service.ts`, which was the
  * right address for exactly as long as there was one provider. It moved here
- * with `RYN-SOL-MONEY-FLOWS-001H` because the lane now dispatches between two
- * — Mayan for the pairs it serves, Relay for the Robinhood Chain pairs it
- * cannot reach — and a dispatcher that lives inside one of its own branches is
- * a dispatcher nobody can read. The old path re-exports this one, so every
- * existing import keeps working.
+ * when Relay joined, because the lane now dispatches between two — Mayan for
+ * the pairs it serves, Relay for the Robinhood Chain pairs it cannot reach —
+ * and a dispatcher that lives inside one of its own branches is a dispatcher
+ * nobody can read. The old path re-exports this one, so every existing import
+ * keeps working.
  *
  * The engine is never inferred from the pair of networks. It is read off the
- * tuple the Owner approved (`catalog.ts`), which is the only thing that can
- * say which provider was named for which pair.
+ * approved tuple (`catalog.ts`), which is the only thing that can say which
+ * provider was named for which pair.
  */
 
 import { fetchRelayQuote, normalizeRelayQuote, relayApprovalCount, RELAY_SLIPPAGE_BPS } from "../relay/quote-api.ts";
@@ -63,13 +63,13 @@ export type CrossSwapRoute = Extract<SwapRouteClassification, { kind: "CROSS_SWA
  *
  * ## These two numbers are policy, not physics
  *
- * Owner instruction, 2026-09-09: **ten per cent is not a universally safe
- * threshold**. It is this product's current policy line for "loud enough to
- * demand a deliberate second look", chosen against the figures above, and it
- * is expected to be revisited. Nothing anywhere may read a quote under it as
- * safe, cheap or approved — only as *not yet past the line where this product
- * insists on stopping you*. The band names say what they mean and deliberately
- * avoid the word "safe" for the same reason.
+ * **Ten per cent is not a universally safe threshold.** It is this product's
+ * current policy line for "loud enough to demand a deliberate second look",
+ * chosen against the figures above, and it is expected to be revisited.
+ * Nothing anywhere may read a quote under it as safe, cheap or approved — only
+ * as *not yet past the line where this product insists on stopping you*. The
+ * band names say what they mean and deliberately avoid the word "safe" for the
+ * same reason.
  */
 export const CROSS_SWAP_IMPACT_NOTABLE_BPS = 200;
 export const CROSS_SWAP_IMPACT_SEVERE_BPS = 1_000;
@@ -97,7 +97,7 @@ export type CrossSwapRouteResolution =
  * The pair, classified, with both sides' decimals known.
  *
  * Decimals used to come from the catalog and a pair whose sides were not in it
- * did not exist. Since `RYN-SOL-MONEY-FLOWS-001I` a supported asset may be named without being in it, so
+ * did not exist. Now a supported asset may be named without being in it, so
  * the ones the catalog does not carry are read from the token index instead —
  * and a token the index cannot describe is **refused**, never defaulted.
  *
@@ -156,11 +156,11 @@ export async function resolveCrossSwapRoute(
  * and the second half is not decoration. They used to end at
  * `asset.catalog?.address`, which is `null` for every token outside the
  * catalog — fine while the lane only carried eight of them, and silently
- * wrong the moment `RYN-SOL-MONEY-FLOWS-001I` allowed a ninth supported asset: the
- * URL went out with `toToken=undefined`, the provider answered "no route",
- * and the surface reported a routing failure for a question that was never
- * asked properly. Found by quoting BONK into DEGEN, which the provider
- * answers perfectly well when it is actually told which token DEGEN is.
+ * wrong the moment the lane allowed a ninth supported asset: the URL went out
+ * with `toToken=undefined`, the provider answered "no route", and the surface
+ * reported a routing failure for a question that was never asked properly.
+ * Found by quoting BONK into DEGEN, which the provider answers perfectly well
+ * when it is actually told which token DEGEN is.
  */
 export function mayanTokenFor(asset: ResolvedSwapAsset): string {
   if (asset.catalog?.kind === "NATIVE") return MAYAN_NATIVE_TOKEN;
@@ -252,13 +252,13 @@ export async function quoteCrossSwap(route: CrossSwapRoute, amountRaw: string, o
    *
    * Until 2026-09-10 a plain *no route* from the pair's own rail let the other
    * one be asked, which was a reasonable answer to "Mayan cannot fill Ethereum
-   * PEPE into Solana JUP and Relay can". The Owner's split removes the question:
-   * Bridge is Relay-only, *«Без автоматичного fallback між ними»*, and Swap is
-   * Jupiter-only on the other page. What a second rail bought — one more pair
-   * occasionally filled — cost the property that makes this lane explainable,
-   * because a person could be shown a price from one rail and, on a later
-   * keystroke, a price from another with a different custody shape and a
-   * different failure mode.
+   * PEPE into Solana JUP and Relay can". The Swap/Bridge split removes the
+   * question: Bridge is Relay-only, with no automatic fallback between rails,
+   * and Swap is Jupiter-only on the other page. What a second rail bought —
+   * one more pair occasionally filled — cost the property that makes this lane
+   * explainable, because a person could be shown a price from one rail and, on
+   * a later keystroke, a price from another with a different custody shape and
+   * a different failure mode.
    *
    * `quoteViaMayan` stays compiled, tested and one line away. Restoring it is
    * this function; nothing else in the lane assumes it is gone.
@@ -401,8 +401,8 @@ async function quoteViaRelay(route: CrossSwapRoute, amountRaw: string, options: 
  * gate and every stored order was on it. It stopped being safe the moment the
  * list became a shortlist: an order on any other pair would find nothing, and
  * `syncHistory` returns early on nothing — so money would have moved and
- * History would have stayed silent about it, which is the exact defect
- * `RYN-SOL-MONEY-FLOWS-001D` found the hard way on the reverse bridge lane.
+ * History would have stayed silent about it, which is the exact defect found
+ * the hard way on the reverse bridge lane.
  *
  * The record already carries every fact History needs, and it carries them as
  * they were at Review rather than as some later lookup would reconstruct them.

@@ -14,14 +14,14 @@ import type { GuardStore, GuardVersionedCollection } from "../guard/store.ts";
  * may be done* by more than naming a scope, because that is the boundary the
  * whole packet exists to keep narrow.
  *
- * **The scope vocabulary is closed and carries no authority.** `013` made a
- * generic signer unrepresentable by giving the write-effect union exactly one
- * member; this is the same move one layer out. There is no scope value that
- * could mean *sign*, *authorize*, *execute* or *move value*, so a token cannot
- * be minted with one — not because a list forbids it, but because the type has
- * nothing to put there. `RYN-BIN-AOS-003` is the reason the distinction
- * matters: a name on a blocklist is defeated by any caller that can reach a
- * generic execute path, and the answer is to have no such value at all.
+ * **The scope vocabulary is closed and carries no authority.** The MCP write
+ * tools made a generic signer unrepresentable by giving the write-effect union
+ * exactly one member; this is the same move one layer out. There is no scope
+ * value that could mean *sign*, *authorize*, *execute* or *move value*, so a
+ * token cannot be minted with one — not because a list forbids it, but because
+ * the type has nothing to put there. The distinction matters because a name on
+ * a blocklist is defeated by any caller that can reach a generic execute path,
+ * and the answer is to have no such value at all.
  *
  * **The secret is never stored.** A key is presentable exactly once, at issue.
  * What persists is the key id and a SHA-256 of the secret, so a dump of the
@@ -38,7 +38,7 @@ import type { GuardStore, GuardVersionedCollection } from "../guard/store.ts";
 export const AGENT_CONTROL_SCOPES = [
   /** The read and preview tools: passports, previews, artifact verification. */
   "evidence:read",
-  /** The `013` write tools, every one of which produces a proposal at `PROPOSE`. */
+  /** The MCP write tools, every one of which produces a proposal at `PROPOSE`. */
   "proposal:write",
   /** The request counters. Never business data. */
   "metrics:read",
@@ -322,13 +322,13 @@ export type AuthenticateOptions = Readonly<{
  * Verify a presented key and, when asked, that it carries the scopes a caller
  * needs.
  *
- * The order is deliberate and is the same precedence `013` recorded for the
- * registry: *nobody can* outranks *you may not*. A malformed key never reaches
- * the store, an unknown key is refused before any digest work, a revoked key is
- * refused before expiry is read, and scope — the only refusal that says
- * something about what this caller is allowed to do — is answered last, because
- * saying "you lack that scope" about a credential that does not exist tells a
- * caller the credential exists.
+ * The order is deliberate and is the same precedence the write gate uses for
+ * the registry: *nobody can* outranks *you may not*. A malformed key never
+ * reaches the store, an unknown key is refused before any digest work, a
+ * revoked key is refused before expiry is read, and scope — the only refusal
+ * that says something about what this caller is allowed to do — is answered
+ * last, because saying "you lack that scope" about a credential that does not
+ * exist tells a caller the credential exists.
  */
 export async function authenticateAgentKey(
   tenancy: AgentTenancy,

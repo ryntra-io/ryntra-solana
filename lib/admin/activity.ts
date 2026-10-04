@@ -410,7 +410,7 @@ export async function readUserActivity(key: UserActivityKey): Promise<UserActivi
 
 export type UsersPageRow = {
   telegram_id: number | null;
-  /** Present once the RYN-ACCESS-002 migration is applied; the stable key of a row. */
+  /** Present once the account migration is applied; the stable key of a row. */
   account_id?: string;
   auth_linked?: boolean;
   telegram_username: string | null;

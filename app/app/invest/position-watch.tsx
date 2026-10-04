@@ -19,10 +19,10 @@ import { acceptPosition } from "./use-positions";
 import styles from "./watch.module.css";
 
 /**
- * Нагляд over one position, drawn (`RYN-PROTECT-SIGNAL-001`, subtask 1; canon
- * v5 §11): the state the server judged — «Все за планом», «Увага», «Дія»,
- * «Пауза емітента», or «Увага: куплено — вихід не налаштований» in amber —
- * the figures it stands on, and its one action; nothing here decides a state.
+ * Нагляд over one position, drawn: the state the server judged — «Все за
+ * планом», «Увага», «Дія», «Пауза емітента», or «Увага: куплено — вихід не
+ * налаштований» in amber — the figures it stands on, and its one action;
+ * nothing here decides a state.
  *
  * One language in every place a position is drawn. In a Portfolio row the
  * state is a line of the position itself — its word, its figures, its action
@@ -284,9 +284,9 @@ export function WatchLine({ view, locale, place, onSale, onWarn, primary = false
 type Phase = Readonly<{ status: "idle" | "writing" | "failed"; message: string | null }>;
 
 /**
- * «Ryntra попередить» for one position (canon v5 §6.1): the price now, the two
- * published presets drawn as the range each makes of it, where the warning
- * comes, and one «Увімкнути». The server counts the figures again from its
+ * «Ryntra попередить» for one position: the price now, the two published
+ * presets drawn as the range each makes of it, where the warning comes, and
+ * one «Увімкнути». The server counts the figures again from its
  * own price when it writes them; nothing is signed or moved. Turned on, the
  * sheet says so with the figures the server wrote — then «Готово».
  */

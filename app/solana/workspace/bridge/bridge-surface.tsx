@@ -85,9 +85,9 @@ function seedSide(network: string | undefined, asset: string | undefined, fallba
 
 export function BridgeSurface({ seed }: { seed?: BridgeSurfaceSeed }) {
   const { text } = useSolanaI18n();
-  /* One version (canon v5.3 В28): every fact of the quote — the route, its
-     age, the approvals — and the source transaction are shown to everyone;
-     a provider's failure code is not a customer's word and is shown to no one. */
+  /* One version of the page: every fact of the quote — the route, its age,
+     the approvals — and the source transaction are shown to everyone; a
+     provider's failure code is not a customer's word and is shown to no one. */
   const pro = true;
   const { wallets, connection, connect, disconnect } = useSolanaConnection();
 
@@ -270,7 +270,7 @@ export function BridgeSurface({ seed }: { seed?: BridgeSurfaceSeed }) {
      `robinhood` source therefore asked **Ethereum** — a chain the person does
      not hold this money on — and USDG, the asset the entire Robinhood Chain
      lane exists for, could not be read at all. No balance is no `Available`
-     line and no 25/50/75/MAX, which is exactly what the founder saw. */
+     line and no 25/50/75/MAX, which is exactly what a person saw. */
   useEffect(() => {
     if (!evmAddress || from.network === "solana") {
       setEvmBalance(null);
@@ -347,7 +347,7 @@ export function BridgeSurface({ seed }: { seed?: BridgeSurfaceSeed }) {
    * > Unsupported account — This website is trying to use Ethereum, which this
    * > Solana account doesn't support.
    *
-   * The founder met that on `ryntra.io` while doing a Solana-to-Solana swap, on
+   * A person met that on `ryntra.io` while doing a Solana-to-Solana swap, on
    * a card where no Ethereum anything was on screen. A silent read is only
    * silent in the wallets that were tested; the way to not interrupt somebody is
    * not to ask.
@@ -606,10 +606,10 @@ export function BridgeSurface({ seed }: { seed?: BridgeSurfaceSeed }) {
   /**
    * Which way the money is going, and why this is one control rather than two.
    *
-   * Owner instruction 2026-09-10: *«Bridge позиціонуємо як Solana bridge, а не як
-   * multichain exchange»*. Ryntra is a Solana platform, so the journey almost
-   * everybody makes is **bringing money in** — and a newcomer meeting two open
-   * network menus has to make two choices before the page tells them anything.
+   * Bridge is a Solana bridge, not a multichain exchange. Ryntra is a Solana
+   * platform, so the journey almost everybody makes is **bringing money in** —
+   * and a newcomer meeting two open network menus has to make two choices
+   * before the page tells them anything.
    *
    * So one side is always Solana and the direction decides which. The other side
    * keeps its full network menu, because that is the choice a person actually
@@ -868,10 +868,10 @@ export function BridgeSurface({ seed }: { seed?: BridgeSurfaceSeed }) {
               </div>
               <div className={styles.legRow}>
                 <div className={styles.amountCell}>
-                  {/* Owner rule, 2026-09-10: past its 60 s validity the figure stays
-                      for context and stops reading as an offer. Dimmed by
-                      `data-state`, and named — a dimmed number with no word beside
-                      it is a rendering bug to anyone who has not been told. */}
+                  {/* Past its 60 s validity the figure stays for context and
+                      stops reading as an offer. Dimmed by `data-state`, and
+                      named — a dimmed number with no word beside it is a
+                      rendering bug to anyone who has not been told. */}
                   <span className={styles.amountOut} data-state={quoteExpired ? "expired" : receiveDisplay ? "ready" : "waiting"} translate="no">
                     {receiveEstimated ? <span className={styles.approx}>≈</span> : null}
                     {receiveDisplay ?? "0.0"}
@@ -915,10 +915,9 @@ export function BridgeSurface({ seed }: { seed?: BridgeSurfaceSeed }) {
             />
           ) : null}
 
-          {/* The reverse journey, small and always available. Owner sketch of
-              2026-09-10: bringing funds in is the page, and moving them out is a
-              line under it rather than a second mode a newcomer has to rule out
-              before they can start. */}
+          {/* The reverse journey, small and always available: bringing funds
+              in is the page, and moving them out is a line under it rather than
+              a second mode a newcomer has to rule out before they can start. */}
           <p className={styles.direction}>
             <button className={styles.directionLink} type="button" disabled={locked} onClick={flipDirection}>
               {outbound ? text("Bring funds to Solana instead") : text("Need to move funds out of Solana?")}

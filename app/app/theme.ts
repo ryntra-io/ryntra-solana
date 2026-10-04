@@ -4,8 +4,8 @@
 // Stored in ryntra-theme-pref; the RESOLVED value is mirrored to the legacy
 // ryntra-demo-theme key so the terminal and older code keep working unchanged.
 //
-// A stored "system" value is a leftover. The founder closed that option on
-// 2026-08-25: the product is Dark or Light, never "follow the machine".
+// A stored "system" value is a leftover. That option closed on 2026-08-25:
+// the product is Dark or Light, never "follow the machine".
 // getThemePref and the boot script resolve it once and write the result back.
 
 export type ThemePref = "dark" | "light";
@@ -74,6 +74,6 @@ export const THEME_BOOT_SCRIPT = `(function(){var p=document.documentElement.get
 export const CABINET_BOOT_SCRIPT = `document.documentElement.setAttribute("data-ry-app","cabinet");`
   /* A browser that remembers a wallet is about to reconnect it silently, so
      «Простий»'s Home draws a balance's shape rather than the guest's promise
-     for the moment that takes (RYN-INVEST-SIMPLE-001). The hint is only the
-     wallet's name (`connection.tsx`), never an address. */
+     for the moment that takes. The hint is only the wallet's name
+     (`connection.tsx`), never an address. */
   + `try{if(localStorage.getItem("ryntra.solana.wallet-hint.v1"))document.documentElement.setAttribute("data-wallet-hint","1")}catch(e){}`;

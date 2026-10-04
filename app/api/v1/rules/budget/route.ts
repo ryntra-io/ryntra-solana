@@ -10,13 +10,13 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 /**
- * The proven wallet's «Бюджет місяця» (`RYN-INVEST-SIMPLE-001`, session 4,
- * contract 1.13.0): the person's own ceiling for every rule's purchases in a
- * calendar month on the person's own clock. `GET` reads the month as it
- * stands — settled purchases under rules, and signed ones whose outcome is
- * unknown counted as spent; `PUT` sets the ceiling; `DELETE` removes it. Only
- * the person writes it; a purchase that does not fit what is left is not
- * reminded of, and the rules stand until the 1st.
+ * The proven wallet's «Бюджет місяця» (contract 1.13.0): the person's own
+ * ceiling for every rule's purchases in a calendar month on the person's own
+ * clock. `GET` reads the month as it stands — settled purchases under rules,
+ * and signed ones whose outcome is unknown counted as spent; `PUT` sets the
+ * ceiling; `DELETE` removes it. Only the person writes it; a purchase that
+ * does not fit what is left is not reminded of, and the rules stand until the
+ * 1st.
  */
 
 export async function GET(request: Request) {

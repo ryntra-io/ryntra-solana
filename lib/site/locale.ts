@@ -11,9 +11,9 @@ import { PUBLIC_LOCALE_CODES, PUBLIC_LOCALES as PUBLIC_LOCALE_ROWS } from "../..
  * Nor does it invent a second list: `PUBLIC_LOCALE_CODES` in
  * `app/i18n/locales.ts` is the one switch for which languages are public,
  * and `SUPPORTED_LOCALES` there carries each language's own name and short
- * code. The header's language control (Owner, 2026-09-14: a menu of every
- * public language, not a pair — more are coming) reads `PUBLIC_LANGUAGES`,
- * so a language added to that switch appears in the menu with no edit here.
+ * code. The header's language control (a menu of every public language, not a
+ * pair — more are coming) reads `PUBLIC_LANGUAGES`, so a language added to
+ * that switch appears in the menu with no edit here.
  */
 
 export const PUBLIC_LOCALES = PUBLIC_LOCALE_CODES;
@@ -45,8 +45,8 @@ export function isPublicLocale(value: unknown): value is PublicLocale {
 
 /**
  * The landing in a language — English at the root, Ukrainian under `/uk`: the
- * address decides the landing's language (the plan of `RYN-SITE-V5-001` §4),
- * so the wordmark and the footer lead a reader to the landing in theirs.
+ * address decides the landing's language, so the wordmark and the footer lead
+ * a reader to the landing in theirs.
  */
 export function landingHref(locale: PublicLocale): "/" | "/uk" {
   return locale === "uk" ? "/uk" : "/";

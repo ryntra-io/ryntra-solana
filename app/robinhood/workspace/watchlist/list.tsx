@@ -484,9 +484,9 @@ export function Watchlist({ universe }: { universe: readonly UniverseEntry[] }) 
       <section className="rs-block">
         <h2 className="rs-h2">Conditions this surface cannot arm</h2>
         <p className="rm-note">
-          The canon names these and no endpoint or contract this product reads carries the figure. They are registered
-          with the exact thing that would end each, because an alert list missing three of its conditions reads as
-          complete.
+          These conditions are part of the design, and no endpoint or contract this product reads carries the
+          figure. They are registered with the exact thing that would end each, because an alert list missing
+          three of its conditions reads as complete.
         </p>
         <dl className="rm-gaps">
           {UNSOURCED.map((spec) => (
@@ -501,7 +501,7 @@ export function Watchlist({ universe }: { universe: readonly UniverseEntry[] }) 
       <p className="rm-note">
         This list lives in this browser and is not synced to an account, because there is no account store in this
         product to sync it to. Clearing site data clears it, and nothing here is sent anywhere on your behalf: there is
-        no delivery channel in this packet.
+        no delivery channel for it yet.
       </p>
     </>
   );

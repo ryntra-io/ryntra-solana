@@ -47,7 +47,6 @@ export function entitlementsFor(tier: Tier): Entitlements {
 }
 
 export const BILLING_READINESS = {
-  gateTask: "RYN-BILL-001",
   northStar: "Weekly Risk-Reviewed Decisions (WRRD)",
   requiredEvidence: ["retained_wrrd", "willingness_to_pay"],
   numericThresholds: null,

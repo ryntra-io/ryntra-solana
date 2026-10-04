@@ -3,7 +3,7 @@
    contract on Robinhood Chain (public, non-custodial — a plain eth_call, no keys). This turns the
    swap/terminal "multiplier · Next" placeholder into a live fact and lets us explain, honestly,
    why a Stock Token's price legitimately drifts above the headline share price (total-return:
-   dividends auto-reinvest into the multiplier). See robinhood-chain-truth §5-6.
+   dividends auto-reinvest into the multiplier). See the Robinhood Chain Stock Token docs.
 
    Function selectors are keccak256(sig)[:4], VERIFIED two ways on 2026-07-09:
    (1) self-check — the same keccak produced the known balanceOf=0x70a08231 / transfer=0xa9059cbb;

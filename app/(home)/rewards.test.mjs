@@ -26,7 +26,7 @@ const withoutComments = (source) => source.replace(/\/\*[\s\S]*?\*\//g, " ").rep
 
 const STATUS_OF = { available: "AVAILABLE", building: "BUILDING", planned: "PLANNED", limited: "LIMITED" };
 
-test("the block carries the Owner's words in both languages and claims nothing the programme does not pay", () => {
+test("the block carries its words in both languages and claims nothing the programme does not pay", () => {
   for (const locale of ["en", "uk"]) {
     const r = HOMEPAGE_COPY[locale].rewards;
     assert.equal(r.titleLines.length, 2);
@@ -43,9 +43,8 @@ test("the block carries the Owner's words in both languages and claims nothing t
     assert.deepEqual(f.legal.map((link) => link.href), ["/legal/terms", "/legal/privacy", "/support"]);
     assert.match(f.copyright, /^© 2026 Ryntra$/);
   }
-  /* Canon v5.5's words (the Owner's word of 2026-09-26): up to half the fee
-     back and the referral programme stay; the close says whose wallet and
-     whose signature it is. */
+  /* Up to half the fee back and the referral programme stay; the close says
+     whose wallet and whose signature it is. */
   const en = HOMEPAGE_COPY.en.rewards;
   assert.deepEqual(en.titleLines, ["Buy with Ryntra.", "Up to half the fee back."]);
   assert.deepEqual(en.statementLines, ["Your wallet. Your signature.", "From $1."]);
@@ -104,11 +103,11 @@ test("the panel's chip is the registry's word, the close has one primary action,
   assert.match(source, /<div className=\{styles\.levels\} aria-hidden="true">/);
   assert.doesNotMatch(source, /framer-motion|gsap|lenis|lottie|canvas-confetti/);
   assert.doesNotMatch(source, /#[0-9A-Fa-f]{6}\b/, "no hex literal in the component");
-  /* The page ends as the Owner's did: Rewards and the close, then the landing footer. */
+  /* The page ends as the original design did: Rewards and the close, then the landing footer. */
   const page = read("app/(home)/homepage.tsx");
   assert.match(page, /<Questions locale=\{locale\} \/>\s*<Rewards locale=\{locale\} \/>\s*<\/main>\s*<FrozenFooter locale=\{locale\} landing \/>/);
-  /* The bar carries the site's one menu and one Open Ryntra (Owner, 2026-09-14),
-     which the landing wears in its own look, with the language menu and the
+  /* The bar carries the site's one menu and one Open Ryntra, which the
+     landing wears in its own look, with the language menu and the
      theme switch like every page. */
   assert.match(page, /<PublicHeader locale=\{locale\} mainId="main-content" landing ctaTone="quiet" languageHrefs=\{LANDING_PATH\} homeHref=\{LANDING_PATH\[locale\]\} \/>/);
   const header = withoutComments(read("app/site/frozen/public-header.tsx"));
@@ -118,14 +117,14 @@ test("the panel's chip is the registry's word, the close has one primary action,
   const copy = withoutComments(read("lib/site/homepage-copy.ts"));
   assert.match(copy, /links: copy\.footer\.links\.map\(\(link\) => \(\{ \.\.\.link, href: localizedPath\(link\.href, locale\) \}\)\),\s*open: \{ label: copy\.open, href: localizedPath\("\/app\/home", locale\) \},/, "the bar and the footer read one list, at the addresses of the reader's language");
   const footer = withoutComments(read("app/site/frozen/public-footer.tsx"));
-  /* One footer everywhere (Owner, 2026-09-14): the landing's, from the same
+  /* One footer everywhere: the landing's, from the same
      list the header reads; `landing` is its look, folded into the ground. */
   assert.match(footer, /const footer = siteFooter\(locale\);/);
   assert.match(footer, /className=\{landing \? `\$\{styles\.footer\} \$\{styles\.footerLanding\}` : styles\.footer\}/);
   assert.doesNotMatch(footer, /footerCompany|footerContact|footerTagline|compact/);
   assert.match(footer, /href=\{CONTACTS\.companyX\}/, "the company's X account comes from contacts");
   assert.match(footer, /href=\{GITHUB_ORGANIZATION_URL\}/);
-  assert.match(footer, /src="\/brand\/ryntra-wordmark-dark\.svg"/, "the Owner's wordmark, never set type");
+  assert.match(footer, /src="\/brand\/ryntra-wordmark-dark\.svg"/, "the brand's wordmark, never set type");
   assert.match(footer, /src="\/brand\/ryntra-wordmark-light\.svg"/, "and its light file, since the landing follows the theme");
   assert.doesNotMatch(footer, />\s*R?YNTRA\s*</);
   const chrome = read("app/site/frozen/chrome.module.css");

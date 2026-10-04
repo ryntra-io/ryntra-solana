@@ -2,7 +2,7 @@
 
 import { createContext, useContext } from "react";
 
-/* What the Owner has picked, shared by the three tabs: an event opened on
+/* What the viewer has picked, shared by the three tabs: an event opened on
    the aggregator's Home, a market and an outcome chosen in the console or
    the Ryntra walk. Ids only — every tab reads the live data for itself. */
 export type LabSelection = {

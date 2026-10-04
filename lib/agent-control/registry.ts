@@ -43,8 +43,8 @@ const HEX_HASH = /^0x[0-9a-f]{64}$/;
  * The closed canonical action classes. **This vocabulary does not grow.**
  *
  * A new provider action is a new registry subtype pointing at one of these; if
- * a proposed action genuinely does not fit, that is a canon change with its own
- * decision, not a registry entry.
+ * a proposed action genuinely does not fit, that is a product change with its
+ * own decision, not a registry entry.
  */
 export const AGENT_ACTION_CLASSES = [
   "RECORD_ONLY",

@@ -18,8 +18,7 @@ import { WorkspaceWidget } from "./widget";
 import "./panel.css";
 
 /**
- * The RWS panel — the single atomic component of the workspace canvas
- * (docs/archive/design-pre-reset-2026-08-18/workspace-system.md §4).
+ * The RWS panel — the single atomic component of the workspace canvas.
  *
  * A 42px header carrying a sentence-case title and an optional status badge; a
  * body composed of the standard primitives; an optional footer. Height comes
@@ -28,8 +27,8 @@ import "./panel.css";
  * than hiding a critical control.
  *
  * **No per-panel settings menu.** The first pass put a `⋮` menu on every panel
- * — density override, section toggles, collapse, move, hide. Founder verdict on
- * the rendered screen: incomprehensible, and off until the surface itself is
+ * — density override, section toggles, collapse, move, hide. Seen on
+ * the rendered screen it was incomprehensible, and it is off until the surface itself is
  * good. So the panel renders no controls of its own. The mechanism underneath
  * is untouched — every panel still registers as a `WorkspaceWidget`, so the
  * shell's own Layout menu keeps working — and the per-panel preferences in
@@ -169,9 +168,9 @@ export function Panel({
   title: string;
   /** Render the children with no frame, header or grid cell — for an engine hosted inside another panel. */
   bare?: boolean;
-  /** Grid width token (spec §3): 3 · 4 · 6 · 8 · 9 · 12. */
+  /** Grid width token: 3 · 4 · 6 · 8 · 9 · 12. */
   w?: 3 | 4 | 6 | 8 | 9 | 12;
-  /** Grid height token (spec §3): 2 · 4 · 6 · 8. Omit for auto flow rows. */
+  /** Grid height token: 2 · 4 · 6 · 8. Omit for auto flow rows. */
   /**
    * Row span. Every step from 2 to 8, then in pairs to 16.
    *

@@ -1,5 +1,5 @@
 /**
- * Mint the signed Swap Outcome Receipt (RYN-SOL-M2).
+ * Mint the signed Swap Outcome Receipt.
  *
  * The structured Swap Receipt facts are already reconciled by
  * `buildSwapReceiptFacts`; this module seals them into the standard

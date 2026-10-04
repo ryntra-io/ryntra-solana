@@ -1,6 +1,6 @@
-/* PARKED with hero-drawn.tsx — the hero drawn in HTML from the Owner's
-   design handoff of 2026-09-13, superseded the same evening by the Owner's
-   render (hero.tsx + hero.module.css). Kept in source, not mounted.
+/* PARKED with hero-drawn.tsx — the hero drawn in HTML from the design
+   handoff of 2026-09-13, superseded the same evening by a finished render
+   (hero.tsx + hero.module.css). Kept in source, not mounted.
 
    One focal point: the product.
 
@@ -8,11 +8,11 @@
    ramp steps for every size. The product stage is the one place that keeps a
    fixed palette in both themes — it is a picture of the dark terminal, the
    way a product shot stays what it is on a light page — and those values are
-   the canon's own dark environment, named here once as `--hero-t-*`. */
+   the brand's own dark environment, named here once as `--hero-t-*`. */
 
 .hero {
   --hero-grid: rgba(135, 146, 168, 0.055);
-  /* The dark environment of the canon, fixed for the product stage. */
+  /* The dark environment of the brand, fixed for the product stage. */
   --hero-t-bg: #0B121A;
   --hero-t-surface: #0E1620;
   --hero-t-elevated: #131E2A;

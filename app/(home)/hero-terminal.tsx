@@ -14,14 +14,15 @@ import { FIGURES, TRADE } from "./workflow-trade";
  *
  * What is real and what is a snapshot. The rail is the product's own menu —
  * its sections over the page registry (`PRODUCT_ROUTES` through
- * `menuNavigation`, canon v5.4) — so it is the rail the cabinet draws and
- * nothing planned can render as open. The market header's words are the Spot page's own strings through the
- * workspace catalogue. The figures — the list, the market stats — are a
- * snapshot of `ryntra.io/app/spot` taken on 2026-09-13 with NVDAx open, not
- * invented and not live; the NVDAx price, its day's move, its liquidity and
- * volume are the page's one illustrative story (workflow-trade.ts), so the
- * hero, the workflow and the rewards never disagree about the same market;
- * the whole frame is `aria-hidden` and the copy beside it says so in words.
+ * `menuNavigation`) — so it is the rail the cabinet draws and nothing
+ * planned can render as open. The market header's words are the Spot page's
+ * own strings through the workspace catalogue. The figures — the list, the
+ * market stats — are a snapshot of `ryntra.io/app/spot` taken on 2026-09-13
+ * with NVDAx open, not invented and not live; the NVDAx price, its day's
+ * move, its liquidity and volume are the page's one illustrative story
+ * (workflow-trade.ts), so the hero, the workflow and the rewards never
+ * disagree about the same market; the whole frame is `aria-hidden` and the
+ * copy beside it says so in words.
  */
 
 type Row = Readonly<{ symbol: string; name: string; price: string; change: string; up: boolean; selected?: boolean }>;
@@ -135,7 +136,7 @@ const LAST_Y = yOf(LAST);
 
 export function HeroTerminal({ locale }: { locale: PublicLocale }) {
   const text = (english: string) => translateSolana(locale, english);
-  /* The menu you can see (canon v5.4 В30): every section with its caption,
+  /* The menu you can see: every section with its caption,
      nothing behind «Ще». The picture is Spot, so Spot is the lit row. */
   const menu = menuNavigation(PRODUCT_ROUTES, locale);
 
@@ -148,7 +149,7 @@ export function HeroTerminal({ locale }: { locale: PublicLocale }) {
           <span className={styles.tBeta}>BETA</span>
           <span className={styles.tNet}>Solana Mainnet</span>
         </span>
-        {/* A connected wallet, said as a word: no real address is ever drawn on the public page (RYN-FIRST-SCREEN-001). */}
+        {/* A connected wallet, said as a word: no real address is ever drawn on the public page. */}
         <span className={styles.tWallet}><span className={styles.tDotLive} />{text("Wallet")}</span>
       </div>
 

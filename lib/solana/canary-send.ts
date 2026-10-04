@@ -97,7 +97,7 @@ export type SendCanaryApprovalAssessment = Readonly<{
  *
  * Every comparison below is an equality against something the owner wrote down
  * before the wallet opened. There is no tolerance anywhere and no field that
- * may differ: `RYN-SOL-M4` authorizes one transfer, and a transfer that differs
+ * may differ: an approval authorizes one transfer, and a transfer that differs
  * in any of these is a different transfer that needs its own Review and its own
  * yes.
  *

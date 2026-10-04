@@ -153,10 +153,10 @@
 /* ── Send / Receive, on a phone only ─────────────────────────────────────── */
 
 /*
- * Canon 3.3 wants Money to open Send *and* Receive; canon 3.2 forbids a
- * horizontal menu that repeats the rail. Both hold because the rail is not on
- * a phone screen at all — it is behind the bar's fifth item — so this switcher
- * exists exactly where it is the only way across, and nowhere else.
+ * Money must open Send *and* Receive, and no horizontal menu may repeat the
+ * rail. Both hold because the rail is not on a phone screen at all — it is
+ * behind the bar's fifth item — so this switcher exists exactly where it is
+ * the only way across, and nowhere else.
  */
 .tabs {
   display: none;

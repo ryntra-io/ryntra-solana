@@ -20,10 +20,9 @@ import {
 import { INVEST_WORDS, solEnoughLine } from "./invest-words.ts";
 
 /**
- * «Поповнити» and «Простий»'s empty states (RYN-INVEST-SIMPLE-001, session 5):
- * what stands between a wallet and its first purchase — USDC from $1 (canon
- * v5.5 В35; it was $10), then a
- * little SOL for the network — read from the same holdings every page reads.
+ * «Поповнити» and «Простий»'s empty states: what stands between a wallet and
+ * its first purchase — USDC from $1 (it was $10), then a little SOL for the
+ * network — read from the same holdings every page reads.
  */
 
 const USDC = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
@@ -60,7 +59,7 @@ test("dollars come first, then the network's SOL, then nothing stands in the way
   assert.equal(fundingNeed(UNKNOWN_FUNDS), "unknown");
   assert.equal(fundingNeed(fundsOf([sol(0)], true)), "usdc", "an empty wallet tops up first");
   assert.equal(fundingNeed(fundsOf([sol(50_000_000), usdc(0.99)], true)), "usdc", "below the $1 minimum");
-  assert.equal(fundingNeed(fundsOf([sol(50_000_000), usdc(1)], true)), "ready", "a dollar is enough to buy (canon v5.5 В35)");
+  assert.equal(fundingNeed(fundsOf([sol(50_000_000), usdc(1)], true)), "ready", "a dollar is enough to buy");
   assert.equal(fundingNeed(fundsOf([sol(0), usdc(25)], true)), "sol", "dollars with no SOL cannot pay the network");
   assert.equal(fundingNeed(fundsOf([sol(Number(FIRST_PURCHASE_LAMPORTS) - 1), usdc(25)], true)), "sol", "a first purchase needs the new account too");
   assert.equal(fundingNeed(fundsOf([sol(Number(FIRST_PURCHASE_LAMPORTS)), usdc(25)], true)), "ready");
@@ -97,7 +96,7 @@ test("the way back after a top-up is a page of the cabinet and nothing else", ()
 });
 
 test("the card's words are the screens' words, in both languages", () => {
-  /* RYN-INVEST-SIMPLE-001 item 5: the three ways, a row each, and the three empty states — said exactly. */
+  /* The three ways, a row each, and the three empty states — said exactly. */
   const uk = (key) => INVEST_WORDS[key].uk;
   assert.equal(uk("receiveUsdc"), "Отримати USDC");
   assert.equal(uk("cardUsdc"), "Купити карткою у своєму гаманці");

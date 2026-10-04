@@ -4,8 +4,8 @@
  * This is a loop the redirect table cannot fix. Until 2026-09-08 the alias ran
  * the other way and it was **permanent**: `/app/strategies → /app/plans`, a 308
  * that every browser which ever opened the strategies URL has cached and will
- * never ask about again. Canon §5.2 puts the page at `/app/strategies` — Plans
- * is not a second system — so pointing `/app/plans` back at it would give those
+ * never ask about again. The page lives at `/app/strategies` — Plans is not a
+ * second system — so pointing `/app/plans` back at it would give those
  * browsers `/app/strategies` → *cached 308* → `/app/plans` → 307 →
  * `/app/strategies` → … on the landing page of a whole navigation group, and
  * only for the people who had used it before.

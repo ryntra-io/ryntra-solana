@@ -10,11 +10,11 @@ import { LENS_PANEL_ID, lensKey, setLensOpen, useLensOpen } from "./lens-open";
 
 /**
  * The page's own *Ask Ryn* where the page also draws the Brief and the
- * Critic (`RYN-FIRST-SCREEN-001`): the same words and the same place as
- * `AskRyn`, but the press opens the block on this page (`LensPanel` with
- * `trigger="page"`) instead of leaving it. The conversation stays one press
- * further, inside the opened block. `variant="link"` draws it as a line in a
- * list of facts, where a button would shout.
+ * Critic: the same words and the same place as `AskRyn`, but the press opens
+ * the block on this page (`LensPanel` with `trigger="page"`) instead of
+ * leaving it. The conversation stays one press further, inside the opened
+ * block. `variant="link"` draws it as a line in a list of facts, where a
+ * button would shout.
  */
 export function AskRynLens({ subject, locale, variant = "button", className }: { subject: AgentContext; locale: WorkspaceLocale; variant?: "button" | "link"; className?: string }) {
   const key = lensKey(subject);

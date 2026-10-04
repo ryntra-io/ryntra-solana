@@ -7,13 +7,12 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * The evidence layer's usage for the Owner, per provider
- * (`RYN-NANSEN-EVIDENCE-001`, `RYN-DDXYZ-RISK-001`): the two ledgers (today,
- * the packet or the month), the ceilings in force, the provider's own
- * last-reported balance — from its headers, or from its usage endpoint read
- * for reconciliation and cached ten minutes (`?reconcile=1` reads it again)
- * — and the rights the reads ran under; the figures the providers' dashboards
- * reconcile with. Admin session only; never a key.
+ * The evidence layer's usage for the admin, per provider: the two ledgers
+ * (today, and the credit packet or the month), the ceilings in force, the
+ * provider's own last-reported balance — from its headers, or from its usage
+ * endpoint read for reconciliation and cached ten minutes (`?reconcile=1`
+ * reads it again) — and the rights the reads ran under; the figures the
+ * providers' dashboards reconcile with. Admin session only; never a key.
  */
 export async function GET(request: Request) {
   const admin = await getAdminSession();

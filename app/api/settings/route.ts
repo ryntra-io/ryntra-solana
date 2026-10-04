@@ -19,10 +19,9 @@ export async function POST(req: NextRequest) {
   /* Every write in this route resolves through a Telegram id, so a wallet-only
      account is refused once here rather than at each branch. It is a 409 and
      not a 401 or 403 on purpose: the caller is authenticated and permitted —
-     the account simply has no id for these two RPCs to key on, and inventing a
-     synthetic one is the thing `RYN-ACCESS-001` refused to do. The refusal
-     names what is unavailable so the surface can say it in place instead of
-     showing a failed save. */
+     the account simply has no id for these two RPCs to key on, and a
+     synthetic one is never invented. The refusal names what is unavailable so
+     the surface can say it in place instead of showing a failed save. */
   if (!hasTelegramId(session)) {
     return NextResponse.json(
       {

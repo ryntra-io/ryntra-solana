@@ -45,15 +45,15 @@ export function SolanaHubShell({ children }: { children: ReactNode }) {
   /* The rail is the product's six domains, identical in Simple and Pro. The
      four-group Solana rail this replaced — Markets / Portfolio / Transfers /
      Journal — described one workspace among several, which is the model the
-     owner decision of 2026-09-04 retired. `solanaNavigation` is left in place
-     and unused rather than deleted: it is the record of that rail, and the Hub
+     product retired on 2026-09-04. `solanaNavigation` is left in place and
+     unused rather than deleted: it is the record of that rail, and the Hub
      Map still describes the modules it named. */
   /* The settled secondary name, read from the file that decided it rather than
      retyped here. The rail said `Solana Hub Map`: `Hub` is forbidden vocabulary
-     in this product — the owner decision of 2026-09-04 lists it among the words
-     the model it replaced used — and the destination already had a name in the
-     domain vocabulary. `SECONDARY_LABELS` carries both locales in full, so this
-     label cannot 500 a Ukrainian rail for want of a translation. */
+     in this product — it is one of the words of the workspace model the product
+     retired — and the destination already had a name in the domain vocabulary.
+     `SECONDARY_LABELS` carries both locales in full, so this label cannot 500 a
+     Ukrainian rail for want of a translation. */
   const productMapLabel = SECONDARY_LABELS.productMap[locale === "uk" ? "uk" : "en"];
 
   const product = useMemo(

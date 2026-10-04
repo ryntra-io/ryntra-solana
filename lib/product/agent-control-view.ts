@@ -40,8 +40,8 @@ export type AgentControlCard = {
  * `passed / applicable` over blocking Definition-of-Done checks.
  *
  * Deliberately not a percentage and deliberately not summed across
- * capabilities: a single number over a whole product is the thing canon §9
- * forbids, because it has no denominator a reader can check.
+ * capabilities: a single number over a whole product is never shown,
+ * because it has no denominator a reader can check.
  */
 export type VerificationCoverage = {
   passed: number;
@@ -76,7 +76,7 @@ const NETWORKS: readonly AgentControlNetwork[] = [
     name: "Base",
     environment: "MOCK",
     enforcement: "OBSERVE_ONLY",
-    note: "Selected P1 rail. No adapter is built; the rail choice is a founder decision.",
+    note: "Selected P1 rail. No adapter is built; the rail choice is made by a person with authority.",
   },
   {
     name: "Solana",
