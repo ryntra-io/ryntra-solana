@@ -19,8 +19,28 @@ const BUY_SHEET = source("../stocks/[ticker]/buy-sheet.tsx");
 const SELL_SHEET = source("../stocks/[ticker]/sell-sheet.tsx");
 const COMPANY_CSS = source("../stocks/[ticker]/company.module.css");
 const QUOTE_ROUTE = source("../../api/solana/swap/quote/route.ts");
-const ORDER_ROUTE = source("../../api/solana/swap/order/route.ts");
-const EXECUTE_ROUTE = source("../../api/solana/swap/execute/route.ts");
+/* The order's and the execute's paths since the core pipeline, each read in the order it runs: the venue, the swap's steps and the shared safety chain, then the route. */
+const ORDER_ROUTE = [
+  "../../../lib/core/venues/jupiter.ts",
+  "../../../lib/core/solana-swap/prepare.ts",
+  "../../../lib/core/solana-swap/guard.ts",
+  "../../api/solana/swap/order/route.ts",
+].map(source).join("\n");
+const VENUE = source("../../../lib/core/venues/jupiter.ts");
+const PREPARE = source("../../../lib/core/solana-swap/prepare.ts");
+const GUARD = source("../../../lib/core/solana-swap/guard.ts");
+/** One pipeline step's own text: from its `name` to the next step's. */
+const stepBody = (file, name) => {
+  const start = file.indexOf(`name: "${name}"`);
+  assert.ok(start > 0, `no step ${name}`);
+  const next = file.indexOf('name: "', start + 1);
+  return file.slice(start, next < 0 ? undefined : next);
+};
+const EXECUTE_ROUTE = [
+  "../../../lib/core/solana-swap/guard.ts",
+  "../../../lib/core/solana-swap/settle.ts",
+  "../../api/solana/swap/execute/route.ts",
+].map(source).join("\n");
 const DEAL_BLOCK = source("../stocks/[ticker]/deal-block.tsx");
 
 test("a press on the sum chooses all of it, so the next key replaces it — $1 is a tap and a key from $10", () => {
@@ -76,9 +96,16 @@ test("the swap's quote and its signable order are asked once more after the prov
   assert.match(ORDER_ROUTE, /askOnceMoreAfterRate\(\s*\(\) =>\s*fetchJupiterExecutableOrder\(/);
   assert.match(ORDER_ROUTE, /\{ maxWaitMs: JUPITER_ORDER_RETRY_WAIT_MAX_MS \},\s*\);/);
   /* Asked before the order is locked or stored: the Review is reserved only after the provider's answer. */
-  const ask = ORDER_ROUTE.indexOf("askOnceMoreAfterRate(");
-  assert.ok(ask > 0 && ask < ORDER_ROUTE.indexOf("inspectJupiterSwapTransaction({"), "the second ask comes before anything is built on the answer");
-  assert.ok(ask < ORDER_ROUTE.indexOf("reserveSwapOwnerReview({"), "and before the wallet's Review is reserved");
+  /* The ask lives in the venue's own quote; the venue's step runs in the swap's prepare half before the transaction check and the Review's reservation. */
+  const quoteMethod = VENUE.slice(VENUE.indexOf("async quote("), VENUE.indexOf("async build("));
+  assert.match(quoteMethod, /askOnceMoreAfterRate\(/, "the venue's quote asks once more after the provider's pause");
+  assert.match(stepBody(PREPARE, "venue-order"), /await venue\.quote\(intent\)/);
+  const steps = PREPARE.slice(PREPARE.indexOf("  steps: ["), PREPARE.indexOf("  ],", PREPARE.indexOf("  steps: [")));
+  const venueAt = steps.indexOf("venueOrder,");
+  assert.ok(venueAt > 0 && venueAt < steps.indexOf("transactionCheck,"), "the second ask comes before anything is built on the answer");
+  assert.ok(venueAt < steps.indexOf("ownerLockReserve,"), "and before the wallet's Review is reserved");
+  assert.match(stepBody(GUARD, "transaction-check"), /inspectJupiterSwapTransaction\(\{/);
+  assert.match(stepBody(GUARD, "owner-lock-reserve"), /reserveSwapOwnerReview\(\{/);
   assert.doesNotMatch(EXECUTE_ROUTE, /askOnceMoreAfterRate/, "a signed transaction is sent once");
 });
 

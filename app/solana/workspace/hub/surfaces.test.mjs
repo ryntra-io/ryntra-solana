@@ -982,8 +982,10 @@ test("the swap card is keyed V2, fee-honest, freshness-bound and canary-gated", 
 
 test("M2 keeps exact Review, wallet approval and submit ambiguity as three separate states", () => {
   const card = stripJs(read(join(WORKSPACE, "trade", "swap-card.tsx")));
-  const orderRoute = stripJs(read(join("app", "api", "solana", "swap", "order", "route.ts")));
-  const executeRoute = stripJs(read(join("app", "api", "solana", "swap", "execute", "route.ts")));
+  /* Each route admits and answers; between them the swap's steps of the core
+     pipeline and its shared safety chain run, so the path is read whole. */
+  const orderRoute = stripJs([join("lib", "core", "solana-swap", "prepare.ts"), join("lib", "core", "solana-swap", "guard.ts"), join("app", "api", "solana", "swap", "order", "route.ts")].map(read).join("\n"));
+  const executeRoute = stripJs([join("lib", "core", "solana-swap", "guard.ts"), join("lib", "core", "solana-swap", "settle.ts"), join("app", "api", "solana", "swap", "execute", "route.ts")].map(read).join("\n"));
 
   /* A server verdict is not display-only. Signable bytes leave `/order` only
      when every non-human rule passes and the sole remaining step is the
@@ -1239,7 +1241,7 @@ test("the asset picker is race-safe, keyboard-modal, and customer-readable", () 
 
 test("M2 recovery is a read-only signature path and cannot submit bytes", () => {
   const card = stripJs(read(join(WORKSPACE, "trade", "swap-card.tsx")));
-  const executeRoute = stripJs(read(join("app", "api", "solana", "swap", "execute", "route.ts")));
+  const executeRoute = stripJs([join("lib", "core", "solana-swap", "guard.ts"), join("lib", "core", "solana-swap", "settle.ts"), join("app", "api", "solana", "swap", "execute", "route.ts")].map(read).join("\n"));
   const recoveryPath = join("app", "api", "solana", "swap", "recover", "route.ts");
   assert.ok(existsSync(recoveryPath), "The unknown swap has no dedicated recovery endpoint.");
   const recovery = stripJs(read(recoveryPath));

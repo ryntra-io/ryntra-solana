@@ -9,10 +9,10 @@ moved counts as new. Generated at every update from the development history.
 
 | Since the tag | Files |
 |---|---|
-| New | 991 |
+| New | 1,004 |
 | Changed | 804 |
 | Unchanged | 935 |
-| Lines added / removed | +244,022 / −18,638 |
+| Lines added / removed | +262,628 / −19,688 |
 
 ## New since the tag
 
@@ -85,6 +85,9 @@ moved counts as new. Generated at every update from the development history.
 - `app/api/preview/agg-lab/paper/route.ts`
 - `app/api/search/route.test.mjs`
 - `app/api/search/route.ts`
+- `app/api/solana/swap/golden.test.mjs`
+- `app/api/solana/swap/golden/fixtures.mjs`
+- `app/api/solana/swap/golden/transcripts.json`
 - `app/api/stats/route.ts`
 - `app/api/stocks/asset/route.ts`
 - `app/api/stocks/compare/route.ts`
@@ -697,6 +700,16 @@ moved counts as new. Generated at every update from the development history.
 - `lib/autoinvest/store.ts`
 - `lib/autoinvest/tick.ts`
 - `lib/autoinvest/words.ts`
+- `lib/core/capabilities.ts`
+- `lib/core/contracts.ts`
+- `lib/core/core.test.mjs`
+- `lib/core/networks/solana.ts`
+- `lib/core/pipeline.ts`
+- `lib/core/solana-swap/guard.ts`
+- `lib/core/solana-swap/prepare.ts`
+- `lib/core/solana-swap/refusal.ts`
+- `lib/core/solana-swap/settle.ts`
+- `lib/core/venues/jupiter.ts`
 - `lib/development-repository.mjs`
 - `lib/evidence/address.ts`
 - `lib/evidence/budget.ts`

@@ -1,0 +1,324 @@
+/**
+ * The capability registry, version 2: network × venue × capability → state,
+ * fee and attribution.
+ *
+ * The core asks this registry what can be done and through which venue; it
+ * never names a protocol on its own. One row per (network, venue, capability).
+ * A row says three things and nothing else:
+ *
+ * - **state** — `LIVE` (people use it on production), `BUILDING` (code exists,
+ *   not open to people), `PLANNED` (in the product plan, no code). A `LIVE`
+ *   row whose operator stop is closed reads `PAUSED` at runtime — the stop is
+ *   the same environment switch the routes already obey, read here, never a
+ *   second switch.
+ * - **fee** — the Ryntra fee and the mechanism the venue carries it by. A live
+ *   rate is read from the fee policy (`lib/swap/service-fee.ts`), never copied
+ *   here: one number, one place. A planned row has no rate yet — `NOT_SET` —
+ *   and opens only with one.
+ * - **attribution** — how an outside counter knows the flow is Ryntra's: the
+ *   kind of identity and where its address is configured. The address itself
+ *   is a deployment fact read on the server, so this registry holds no address.
+ *
+ * The older registry of public claims (`lib/product/capabilities.ts`) answers
+ * a different question — how mature a claim on a page is — and stays as it is.
+ *
+ * Pure: no I/O and no clock. The environment is passed in.
+ */
+
+import { z } from "zod";
+
+import { SOLANA_LANE_STATE_ENV, resolveSolanaLaneState, type SolanaLane } from "../solana/lane-state.ts";
+import { SERVICE_FEE_ENV } from "../swap/service-fee.server.ts";
+import { RYNTRA_SERVICE_FEE_POLICY, type ServiceFeeConfig, type ServiceFeeMechanism } from "../swap/service-fee.ts";
+import {
+  CAPABILITY_IDS,
+  NETWORK_IDS,
+  PRODUCT_IDS,
+  VENUE_IDS,
+  type CapabilityId,
+  type FeeIdentity,
+  type NetworkId,
+  type Product,
+  type VenueId,
+} from "./contracts.ts";
+
+export const CAPABILITY_STATES = ["LIVE", "BUILDING", "PLANNED"] as const;
+export type CapabilityState = (typeof CAPABILITY_STATES)[number];
+/** What a caller sees: a live row behind a closed operator stop is paused. */
+export type ResolvedCapabilityState = CapabilityState | "PAUSED";
+
+/** The pipelines a live row may run through. One today: a Solana swap. */
+export const INTENT_PIPELINES = ["solana-swap"] as const;
+export type IntentPipelineId = (typeof INTENT_PIPELINES)[number];
+
+export type CapabilityFee =
+  /** Charged through the venue's own mechanism, at the policy's rate. */
+  | Readonly<{ kind: "MECHANISM"; mechanism: Exclude<ServiceFeeMechanism, "NONE"> }>
+  /** The route has no mechanism for an integrator fee; a true zero. */
+  | Readonly<{ kind: "NONE"; reason: string }>
+  /** Planned: the rate is set before the row opens, never guessed here. */
+  | Readonly<{ kind: "NOT_SET" }>;
+
+export type CapabilityAttribution = Readonly<{
+  kind: FeeIdentity["kind"];
+  /** The environment key that holds the address; null when none exists yet. */
+  configKey: string | null;
+  /** The products this one identity serves until each has its own. */
+  products: readonly Product[];
+}>;
+
+export type CapabilityRow = Readonly<{
+  network: NetworkId;
+  venue: VenueId;
+  capability: CapabilityId;
+  state: CapabilityState;
+  /** The operator stop a live row obeys; null when the row has none. */
+  lane: SolanaLane | null;
+  fee: CapabilityFee;
+  attribution: CapabilityAttribution | null;
+  /** The intent pipeline the row runs through; null while it runs on its own routes. */
+  pipeline: IntentPipelineId | null;
+  /** One plain line for an operator: what the row is, never a claim to a person. */
+  note: string;
+}>;
+
+const PLANNED_FEE = { kind: "NOT_SET" } as const;
+
+/**
+ * The rows. Order is the order a reader meets them: what is live, then what is
+ * planned by network.
+ */
+export const CAPABILITY_REGISTRY: readonly CapabilityRow[] = Object.freeze([
+  {
+    network: "solana",
+    venue: "jupiter",
+    capability: "swap",
+    state: "LIVE",
+    lane: "SWAP",
+    fee: { kind: "MECHANISM", mechanism: "JUPITER_REFERRAL" },
+    attribution: {
+      kind: "JUPITER_REFERRAL_ACCOUNT",
+      configKey: SERVICE_FEE_ENV.jupiterReferralAccount,
+      products: ["swap", "memes", "stocks"],
+    },
+    pipeline: "solana-swap",
+    note: "Swap, Spot and the company page: one order, one review, one wallet signature, one receipt.",
+  },
+  {
+    network: "solana",
+    venue: "relay",
+    capability: "bridge",
+    state: "LIVE",
+    lane: "CROSS_SWAP",
+    fee: { kind: "MECHANISM", mechanism: "RELAY_APP_FEE" },
+    attribution: {
+      kind: "RELAY_APP_FEE_RECIPIENT",
+      configKey: SERVICE_FEE_ENV.relayAppFeeRecipient,
+      products: ["bridge"],
+    },
+    pipeline: null,
+    note: "Cross-chain swap and bridge from Solana; runs on its own routes until it moves onto the pipeline.",
+  },
+  {
+    network: "solana",
+    venue: "pump",
+    capability: "swap",
+    state: "PLANNED",
+    lane: null,
+    fee: PLANNED_FEE,
+    attribution: { kind: "FEE_WALLET", configKey: null, products: ["memes"] },
+    pipeline: null,
+    note: "Trading on launch curves directly.",
+  },
+  {
+    network: "solana",
+    venue: "meteora-dbc",
+    capability: "launch",
+    state: "PLANNED",
+    lane: null,
+    fee: PLANNED_FEE,
+    attribution: { kind: "CURVE_CONFIG", configKey: null, products: ["launch"] },
+    pipeline: null,
+    note: "Ryntra Launch on a dynamic bonding curve: its own config, fee collector and pool creator.",
+  },
+  {
+    network: "solana",
+    venue: "launchlab",
+    capability: "launch",
+    state: "PLANNED",
+    lane: null,
+    fee: PLANNED_FEE,
+    attribution: { kind: "CURVE_CONFIG", configKey: null, products: ["launch"] },
+    pipeline: null,
+    note: "A second launch venue after the first is live.",
+  },
+  {
+    network: "solana",
+    venue: "meteora-dlmm",
+    capability: "liquidity",
+    state: "PLANNED",
+    lane: null,
+    fee: PLANNED_FEE,
+    attribution: { kind: "FEE_WALLET", configKey: null, products: ["lp"] },
+    pipeline: null,
+    note: "Pools and automatic liquidity; reading pool data is live elsewhere, opening a position is not.",
+  },
+  {
+    network: "solana",
+    venue: "meteora-damm2",
+    capability: "liquidity",
+    state: "PLANNED",
+    lane: null,
+    fee: PLANNED_FEE,
+    attribution: { kind: "FEE_WALLET", configKey: null, products: ["lp"] },
+    pipeline: null,
+    note: "Pools after a launch migrates.",
+  },
+  {
+    network: "solana",
+    venue: "phoenix",
+    capability: "perps",
+    state: "PLANNED",
+    lane: null,
+    fee: PLANNED_FEE,
+    attribution: { kind: "PARTNER_CODE", configKey: null, products: ["perps"] },
+    pipeline: null,
+    note: "Perpetuals on Solana first.",
+  },
+  {
+    network: "hyperliquid",
+    venue: "hyperliquid",
+    capability: "perps",
+    state: "PLANNED",
+    lane: null,
+    fee: PLANNED_FEE,
+    attribution: { kind: "PARTNER_CODE", configKey: null, products: ["perps"] },
+    pipeline: null,
+    note: "Perpetuals second, through a partner code.",
+  },
+  ...(["base", "bsc", "ethereum", "robinhood"] as const).map(
+    (network): CapabilityRow => ({
+      network,
+      venue: "uniswap",
+      capability: "swap",
+      state: "PLANNED",
+      lane: null,
+      fee: PLANNED_FEE,
+      attribution: { kind: "FEE_WALLET", configKey: null, products: ["swap"] },
+      pipeline: null,
+      note: "Swap on an EVM chain through the one EVM adapter.",
+    }),
+  ),
+]);
+
+const CapabilityRowSchema = z
+  .object({
+    network: z.enum(NETWORK_IDS),
+    venue: z.enum(VENUE_IDS),
+    capability: z.enum(CAPABILITY_IDS),
+    state: z.enum(CAPABILITY_STATES),
+    lane: z.enum(Object.keys(SOLANA_LANE_STATE_ENV) as [SolanaLane, ...SolanaLane[]]).nullable(),
+    fee: z.discriminatedUnion("kind", [
+      z.object({ kind: z.literal("MECHANISM"), mechanism: z.enum(["JUPITER_REFERRAL", "RELAY_APP_FEE", "MAYAN_REFERRER"]) }).strict(),
+      z.object({ kind: z.literal("NONE"), reason: z.string().min(1) }).strict(),
+      z.object({ kind: z.literal("NOT_SET") }).strict(),
+    ]),
+    attribution: z
+      .object({
+        kind: z.enum(["JUPITER_REFERRAL_ACCOUNT", "FEE_WALLET", "RELAY_APP_FEE_RECIPIENT", "PARTNER_CODE", "CURVE_CONFIG"]),
+        configKey: z.string().min(1).nullable(),
+        products: z.array(z.enum(PRODUCT_IDS)).min(1),
+      })
+      .strict()
+      .nullable(),
+    pipeline: z.enum(INTENT_PIPELINES).nullable(),
+    note: z.string().min(1).max(200),
+  })
+  .strict()
+  .superRefine((row, context) => {
+    /* A live row charges what the policy says or says why nothing; a planned
+       row has no rate until it opens. */
+    if (row.state === "LIVE" && row.fee.kind === "NOT_SET") {
+      context.addIssue({ code: "custom", path: ["fee"], message: "A live row needs its fee or the reason it has none." });
+    }
+    if (row.state !== "LIVE" && row.fee.kind === "MECHANISM") {
+      context.addIssue({ code: "custom", path: ["fee"], message: "Only a live row charges a fee." });
+    }
+    /* A live row is stoppable by an operator, and its fee is attributable. */
+    if (row.state === "LIVE" && row.lane === null) {
+      context.addIssue({ code: "custom", path: ["lane"], message: "A live row needs its operator stop." });
+    }
+    if (row.fee.kind === "MECHANISM" && (row.attribution === null || row.attribution.configKey === null)) {
+      context.addIssue({ code: "custom", path: ["attribution"], message: "A charged fee needs a configured identity." });
+    }
+    /* Only live code runs through a pipeline. */
+    if (row.pipeline !== null && row.state !== "LIVE") {
+      context.addIssue({ code: "custom", path: ["pipeline"], message: "Only a live row runs through a pipeline." });
+    }
+  });
+
+/** The key of a row: one row per (network, venue, capability). */
+export function capabilityKey(row: Pick<CapabilityRow, "network" | "venue" | "capability">): string {
+  return `${row.network}:${row.venue}:${row.capability}`;
+}
+
+/** The registry checked as a whole: every row valid, no key twice. */
+export function validateCapabilityRegistry(rows: readonly CapabilityRow[] = CAPABILITY_REGISTRY): readonly string[] {
+  const problems: string[] = [];
+  const seen = new Set<string>();
+  for (const row of rows) {
+    const key = capabilityKey(row);
+    const parsed = CapabilityRowSchema.safeParse(row);
+    if (!parsed.success) for (const issue of parsed.error.issues) problems.push(`${key}: ${issue.path.join(".")} ${issue.message}`);
+    if (seen.has(key)) problems.push(`${key}: registered twice`);
+    seen.add(key);
+  }
+  return problems;
+}
+
+export function findCapability(network: NetworkId, venue: VenueId, capability: CapabilityId): CapabilityRow | null {
+  return CAPABILITY_REGISTRY.find((row) => row.network === network && row.venue === venue && row.capability === capability) ?? null;
+}
+
+/** The state a caller acts on: a live row behind a closed operator stop is paused. */
+export function resolveCapabilityState(
+  row: CapabilityRow,
+  env: Record<string, string | undefined> = process.env,
+): ResolvedCapabilityState {
+  if (row.state !== "LIVE") return row.state;
+  return row.lane !== null && resolveSolanaLaneState(row.lane, env) === "OPEN" ? "LIVE" : "PAUSED";
+}
+
+/** The venues through which a capability is open on a network right now. */
+export function openVenues(
+  network: NetworkId,
+  capability: CapabilityId,
+  env: Record<string, string | undefined> = process.env,
+): readonly CapabilityRow[] {
+  return CAPABILITY_REGISTRY.filter(
+    (row) => row.network === network && row.capability === capability && resolveCapabilityState(row, env) === "LIVE",
+  );
+}
+
+/** The Ryntra rate a row charges, in basis points; null while it is not set. */
+export function capabilityFeeBps(row: CapabilityRow): number | null {
+  if (row.fee.kind === "NONE") return 0;
+  if (row.fee.kind === "NOT_SET") return null;
+  return RYNTRA_SERVICE_FEE_POLICY[row.fee.mechanism];
+}
+
+/**
+ * The fee identity a product's flow carries on a row, with its configured
+ * address. Null when the row has no identity for that product.
+ */
+export function resolveFeeIdentity(row: CapabilityRow, product: Product, config: ServiceFeeConfig): FeeIdentity | null {
+  const attribution = row.attribution;
+  if (!attribution || !attribution.products.includes(product)) return null;
+  const address =
+    attribution.kind === "JUPITER_REFERRAL_ACCOUNT"
+      ? config.jupiterReferralAccount
+      : attribution.kind === "RELAY_APP_FEE_RECIPIENT"
+        ? config.relayAppFeeRecipient
+        : null;
+  return { product, kind: attribution.kind, address };
+}
