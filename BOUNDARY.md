@@ -9,10 +9,10 @@ moved counts as new. Generated at every update from the development history.
 
 | Since the tag | Files |
 |---|---|
-| New | 1,004 |
+| New | 1,017 |
 | Changed | 804 |
 | Unchanged | 935 |
-| Lines added / removed | +262,628 / −19,688 |
+| Lines added / removed | +268,133 / −19,688 |
 
 ## New since the tag
 
@@ -88,6 +88,7 @@ moved counts as new. Generated at every update from the development history.
 - `app/api/solana/swap/golden.test.mjs`
 - `app/api/solana/swap/golden/fixtures.mjs`
 - `app/api/solana/swap/golden/transcripts.json`
+- `app/api/stats/registry/route.ts`
 - `app/api/stats/route.ts`
 - `app/api/stocks/asset/route.ts`
 - `app/api/stocks/compare/route.ts`
@@ -474,12 +475,16 @@ moved counts as new. Generated at every update from the development history.
 - `apps/mobile/src/features/invest/copy.ts`
 - `apps/mobile/src/features/invest/details-copy.ts`
 - `apps/mobile/src/features/invest/min-one-dollar.test.mjs`
+- `apps/mobile/src/features/invest/sale-copy.ts`
+- `apps/mobile/src/features/invest/sale-model.test.mjs`
+- `apps/mobile/src/features/invest/sale-model.ts`
 - `apps/mobile/src/features/invest/shelf.test.mjs`
 - `apps/mobile/src/features/invest/shelf.ts`
 - `apps/mobile/src/features/invest/truth-topics.ts`
 - `apps/mobile/src/features/invest/use-buy.ts`
 - `apps/mobile/src/features/invest/use-convert.ts`
 - `apps/mobile/src/features/invest/use-route-minimum.ts`
+- `apps/mobile/src/features/invest/use-sale.ts`
 - `apps/mobile/src/features/invest/use-shelf.ts`
 - `apps/mobile/src/features/journeys/journey-store.ts`
 - `apps/mobile/src/features/journeys/journeys.test.mjs`
@@ -555,6 +560,7 @@ moved counts as new. Generated at every update from the development history.
 - `apps/mobile/src/lib/chart.ts`
 - `apps/mobile/src/lib/client-identity.ts`
 - `apps/mobile/src/lib/clipboard.ts`
+- `apps/mobile/src/lib/gallery-route.test.mjs`
 - `apps/mobile/src/lib/i18n.ts`
 - `apps/mobile/src/lib/locale.test.mjs`
 - `apps/mobile/src/lib/locale.ts`
@@ -590,6 +596,8 @@ moved counts as new. Generated at every update from the development history.
 - `apps/mobile/src/screens/invest/buy-sheet.tsx`
 - `apps/mobile/src/screens/invest/convert-sheet.tsx`
 - `apps/mobile/src/screens/invest/event-ui.tsx`
+- `apps/mobile/src/screens/invest/sale-samples.tsx`
+- `apps/mobile/src/screens/invest/sell-sheet.tsx`
 - `apps/mobile/src/screens/invest/shelf-ui.tsx`
 - `apps/mobile/src/screens/markets/companies.tsx`
 - `apps/mobile/src/screens/markets/index.tsx`
@@ -673,8 +681,13 @@ moved counts as new. Generated at every update from the development history.
 - `lib/api/v1/route-types.test.ts`
 - `lib/api/v1/telegram.server.ts`
 - `lib/api/v1/telegram.test.mjs`
+- `lib/attribution/ata.ts`
 - `lib/attribution/chain.server.ts`
+- `lib/attribution/chain.test.mjs`
 - `lib/attribution/fixtures/onchain-2026-09.json`
+- `lib/attribution/registry.test.mjs`
+- `lib/attribution/registry.ts`
+- `lib/attribution/rewards.ts`
 - `lib/attribution/rule.test.mjs`
 - `lib/attribution/rule.ts`
 - `lib/attribution/stats-model.ts`

@@ -33,12 +33,30 @@
  * itself says no fee reached the referral accounts — with the reason the
  * provider gave. Bridge operations are attributed from the provider's record
  * and carry no on-chain marker by construction.
+ *
+ * ## Fees, revenue and rewards in dollars
+ *
+ * A fee is kept in its own asset and stated in dollars by one rule, never by a
+ * price read later: the provider's own dollar figure for that fee where it
+ * gave one; a stablecoin fee at par; the operation's own execution rate — the
+ * stablecoin the person paid or received against the asset the fee was taken
+ * in; otherwise the reward ledger's own valuation of the same fee at
+ * settlement. A fee none of these reaches is counted and left unvalued.
+ * Ryntra's share is the part of that figure the row says reached Ryntra.
+ * Cashback and friends' rewards are the reward ledger's own dollar figures for
+ * the same operation, matched by the operation's reference. Revenue is what
+ * Ryntra received less cashback — the same half of the fee for every trader,
+ * so it says nothing about anyone — over the operations where both are known;
+ * the rest are counted and named, never guessed. Friends' rewards say who was
+ * invited by whom: no summary carries them, nor how many there are.
  */
 
 import type { ActionFeeState, SolanaActionOutcome, SolanaWalletAction } from "../solana/action-ledger.ts";
 import type { SolanaActionLane } from "../solana/action-lanes.ts";
-import { executedUsd, type ExecutedUsdBasis } from "../solana/action-value.ts";
+import { ACTION_PAR_MINTS, ACTION_PAR_SYMBOLS, executedUsd, type ExecutedUsdBasis } from "../solana/action-value.ts";
 import { EVM_EXPLORER_TX, type SwapNetwork } from "../swap/catalog.ts";
+
+export type { SwapNetwork };
 
 export type OperationProduct = "SWAP" | "SPOT" | "STOCK" | "BRIDGE";
 export const OPERATION_PRODUCTS: readonly OperationProduct[] = ["SWAP", "SPOT", "STOCK", "BRIDGE"];
@@ -70,6 +88,22 @@ export type OperationFee = Readonly<{
   ryntra: string | null;
   providerRaw: string | null;
   usd: number | null;
+  /** The gross in dollars by the rule above; null when nothing values it. */
+  valueUsd: number | null;
+  /** How `valueUsd` was found. */
+  valueBasis: "PROVIDER_STATED" | "PAR" | "EXECUTION_RATE" | "REWARD_LEDGER" | null;
+  /** Ryntra's share in dollars; null when the gross or the split is unknown. */
+  ryntraUsd: number | null;
+}>;
+
+/** The rewards one operation earned, from the reward ledger, in dollars. */
+export type OperationRewards = Readonly<{
+  cashbackUsd: number;
+  friendsUsd: number;
+  /** Reward rows of this operation that carry no dollar figure yet. */
+  unvalued: number;
+  /** The gross fee as the reward ledger valued it at settlement (cashback over its rate); null when it did not. */
+  feeUsd: number | null;
 }>;
 
 export type OperationLink = Readonly<{ label: "Solscan" | "Source" | "Destination"; url: string; ref: string }>;
@@ -80,6 +114,8 @@ export type OperationRecord = Readonly<{
   lane: SolanaActionLane;
   product: OperationProduct;
   provider: OperationProvider;
+  /** The network the operation started on — where the person paid; null when the row cannot say. */
+  network: SwapNetwork | null;
   side: "BUY" | "SELL" | null;
   /** What the person did, in words: `USDC → SOL`, `Buy NVDAx`, `Base → Solana`. */
   action: string;
@@ -94,6 +130,8 @@ export type OperationRecord = Readonly<{
   usd: number | null;
   usdBasis: ExecutedUsdBasis | null;
   fee: OperationFee | null;
+  /** What the reward ledger credited for this operation; null when it holds nothing for it. */
+  rewards: OperationRewards | null;
   startedAt: string;
   /** The row's last write when it is confirmed; null before that. */
   confirmedAt: string | null;
@@ -143,6 +181,8 @@ export type OperationSource = Readonly<{
   internalWallets: ReadonlySet<string>;
   names: MintNames;
   chain: ChainAttribution | null;
+  /** Rewards by operation reference (a signature, or a bridge's source transaction); absent when the ledger was not read. */
+  rewards?: ReadonlyMap<string, OperationRewards>;
 }>;
 
 /* --------------------------------------------------------------- helpers */
@@ -156,7 +196,6 @@ export const KNOWN_MINTS: MintNames = {
   Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB: { symbol: "USDT", decimals: 6 },
 };
 
-const STABLE_SYMBOLS: ReadonlySet<string> = new Set(["USDC", "USDT", "USDG"]);
 
 /** Raw base units to decimal text, exact, trailing zeros dropped. */
 export function decimalText(raw: string | bigint, decimals: number): string {
@@ -198,19 +237,84 @@ function legLabel(value: OperationLeg | null): string {
   return value.symbol ?? (value.mint ? shortMint(value.mint) : "—");
 }
 
+/**
+ * A dollar at par, decided by the mint wherever the row names one: a symbol is
+ * a token's own label, and anyone can call a token "USDC". Only a cross-chain
+ * row, which names its asset by symbol alone, is read by its symbol.
+ */
+function isParAsset(mint: string | null, symbol: string | null): boolean {
+  if (mint !== null && /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(mint)) return mint in ACTION_PAR_MINTS;
+  return symbol !== null && ACTION_PAR_SYMBOLS.has(symbol.toUpperCase());
+}
+
 function isStable(value: OperationLeg | null): boolean {
-  return value !== null && value.symbol !== null && STABLE_SYMBOLS.has(value.symbol.toUpperCase());
+  return value !== null && isParAsset(value.mint, value.symbol);
 }
 
 function statusOf(outcome: SolanaActionOutcome): OperationStatus {
   return outcome === "DONE" ? "CONFIRMED" : outcome;
 }
 
-function feeOf(action: SolanaWalletAction, names: MintNames): OperationFee | null {
+function round6(value: number): number {
+  return Math.round(value * 1_000_000) / 1_000_000;
+}
+
+/** Decimal text as a number, for a dollar figure only — the raw units stay the record. */
+function amountNumber(raw: string, decimals: number): number {
+  return Number(decimalText(raw, decimals));
+}
+
+/** The fee's asset is the leg's: by mint when both name one — a symbol is only a label — by symbol otherwise. */
+function sameAsset(legValue: OperationLeg | null, asset: string | null, symbol: string | null): boolean {
+  if (legValue === null) return false;
+  const assetIsMint = asset !== null && /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(asset);
+  if (assetIsMint && legValue.mint !== null) return legValue.mint === asset;
+  return symbol !== null && legValue.symbol !== null && legValue.symbol.toUpperCase() === symbol.toUpperCase();
+}
+
+/**
+ * The fee in dollars: the provider's figure, a stablecoin at par, or the
+ * operation's own execution rate against its stablecoin leg — in that order.
+ */
+function feeValue(
+  fee: Readonly<{ collected: boolean; amountRaw: string | null; usd: number | null; asset: string | null }>,
+  named: Readonly<{ symbol: string | null; decimals: number | null }>,
+  out: OperationLeg | null,
+  inn: OperationLeg | null,
+): Readonly<{ value: number | null; basis: OperationFee["valueBasis"] }> {
+  if (!fee.collected || fee.amountRaw === null || !/^[0-9]+$/.test(fee.amountRaw)) return { value: null, basis: null };
+  if (typeof fee.usd === "number" && Number.isFinite(fee.usd) && fee.usd > 0) return { value: round6(fee.usd), basis: "PROVIDER_STATED" };
+  if (named.decimals === null) return { value: null, basis: null };
+  const amount = amountNumber(fee.amountRaw, named.decimals);
+  if (isParAsset(fee.asset, named.symbol)) return { value: round6(amount), basis: "PAR" };
+  for (const [assetLeg, moneyLeg] of [[out, inn], [inn, out]] as const) {
+    if (!sameAsset(assetLeg, fee.asset, named.symbol) || !isStable(moneyLeg)) continue;
+    if (assetLeg?.amount == null || moneyLeg?.amount == null) continue;
+    const assetAmount = Number(assetLeg.amount);
+    const money = Number(moneyLeg.amount);
+    if (assetAmount > 0 && money > 0) return { value: round6(amount * (money / assetAmount)), basis: "EXECUTION_RATE" };
+  }
+  return { value: null, basis: null };
+}
+
+/** The part of a dollar figure the raw split gives Ryntra. */
+function shareOf(value: number | null, ryntraRaw: string | null, grossRaw: string | null): number | null {
+  if (value === null || ryntraRaw === null || grossRaw === null || !/^[0-9]+$/.test(ryntraRaw) || !/^[0-9]+$/.test(grossRaw)) return null;
+  const gross = BigInt(grossRaw);
+  if (gross === 0n) return 0;
+  /* The ratio in millionths, exact in integers, then applied once. */
+  const ratio = Number((BigInt(ryntraRaw) * 1_000_000n) / gross) / 1_000_000;
+  return round6(value * ratio);
+}
+
+function feeOf(action: SolanaWalletAction, names: MintNames, out: OperationLeg | null, inn: OperationLeg | null, rewards: OperationRewards | null): OperationFee | null {
   const fee = action.fee;
   if (!fee) return null;
   const named = nameOf(fee.asset, fee.symbol, fee.decimals, names);
   const scale = named.decimals;
+  const direct = feeValue(fee, named, out, inn);
+  const valued: { value: number | null; basis: OperationFee["valueBasis"] } =
+    direct.value === null && fee.collected && rewards?.feeUsd != null ? { value: round6(rewards.feeUsd), basis: "REWARD_LEDGER" } : direct;
   return {
     collected: fee.collected,
     state: fee.state ?? (fee.collected ? "COLLECTED" : "NOT_COLLECTED"),
@@ -227,6 +331,9 @@ function feeOf(action: SolanaWalletAction, names: MintNames): OperationFee | nul
     ryntra: fee.ryntraRaw !== null && scale !== null ? decimalText(fee.ryntraRaw, scale) : null,
     providerRaw: fee.providerRaw,
     usd: fee.usd,
+    valueUsd: valued.value,
+    valueBasis: valued.basis,
+    ryntraUsd: shareOf(valued.value, fee.ryntraRaw, fee.amountRaw),
   };
 }
 
@@ -276,12 +383,16 @@ function projectOne(action: SolanaWalletAction, source: OperationSource): Operat
   const links: OperationLink[] = [];
   let product: OperationProduct;
   let provider: OperationProvider;
+  let network: SwapNetwork | null = null;
   let side: "BUY" | "SELL" | null = null;
   let actionText: string;
   let asset: string | null = null;
+  /* The references the reward ledger may know this operation by. */
+  const refs: (string | null)[] = [action.signature, action.providerRef ?? null];
 
   if (action.lane === "SWAP") {
     provider = "JUPITER";
+    network = "solana";
     const spot = action.origin !== null && action.origin.surface === "SPOT";
     const stocks = source.stockMints;
     const outStock = stocks !== null && out?.mint !== null && out?.mint !== undefined && stocks.has(out.mint);
@@ -306,9 +417,11 @@ function projectOne(action: SolanaWalletAction, source: OperationSource): Operat
     const order = source.orders.get(action.actionId) ?? null;
     provider = order?.provider === "MAYAN" ? "MAYAN" : "RELAY";
     const sourceChain = order?.sourceChain ?? null;
+    network = sourceChain;
     const destinationChain = order?.destinationChain ?? destinationOf(action.destination);
     actionText = `${sourceChain ? CHAIN_NAMES[sourceChain] : "—"} → ${destinationChain ? CHAIN_NAMES[destinationChain] : "—"}`;
     const sourceRef = action.sourceTx ?? order?.sourceTxHash ?? null;
+    refs.push(action.sourceTx, order?.sourceTxHash ?? null);
     const destinationRef = action.destinationTx ?? order?.destinationTxHash ?? null;
     const sourceLink = txLink("Source", sourceChain, sourceRef);
     const destinationLink = txLink("Destination", destinationChain, destinationRef);
@@ -324,7 +437,10 @@ function projectOne(action: SolanaWalletAction, source: OperationSource): Operat
     const chains = burn ? cctpChains(burn.direction) : null;
     const destination = destinationOf(action.destination) ?? chains?.destination ?? null;
     const sourceChain: SwapNetwork | null = chains?.source ?? (destination === "solana" ? "base" : destination ? "solana" : null);
-    actionText = `${sourceChain ? CHAIN_NAMES[sourceChain] : "—"} → ${destination ? CHAIN_NAMES[destination] : "—"}`;
+    /* Without the claim record a transfer into Solana could have come from Base or Ethereum: the row says only what it knows. */
+    network = chains?.source ?? (destination !== null && destination !== "solana" ? "solana" : null);
+    refs.push(action.sourceTx, burn?.burnTx ?? null);
+    actionText = `${network ? CHAIN_NAMES[network] : "—"} → ${destination ? CHAIN_NAMES[destination] : "—"}`;
     const sourceLink = txLink("Source", sourceChain, action.sourceTx ?? (sourceChain === "solana" ? action.signature : null) ?? burn?.burnTx ?? null);
     const destinationLink = txLink("Destination", destination, action.destinationTx ?? burn?.mintTx ?? null);
     if (sourceLink) links.push(sourceLink);
@@ -334,11 +450,20 @@ function projectOne(action: SolanaWalletAction, source: OperationSource): Operat
   const value = executedUsd(action);
   const verification = verificationOf(action, product, status, source.chain);
   const plan = action.origin?.plan ?? null;
+  let rewards: OperationRewards | null = null;
+  for (const ref of refs) {
+    const found = ref ? source.rewards?.get(ref) : undefined;
+    if (found) {
+      rewards = found;
+      break;
+    }
+  }
   return {
     id: `${action.lane}:${action.actionId}`,
     lane: action.lane,
     product,
     provider,
+    network,
     side,
     action: actionText,
     asset,
@@ -349,7 +474,8 @@ function projectOne(action: SolanaWalletAction, source: OperationSource): Operat
     in: inn,
     usd: value?.value ?? null,
     usdBasis: value?.basis ?? null,
-    fee: feeOf(action, source.names),
+    fee: feeOf(action, source.names, out, inn, rewards),
+    rewards,
     startedAt: action.startedAt,
     confirmedAt: status === "CONFIRMED" ? action.updatedAt : null,
     signature: action.signature,
@@ -422,11 +548,55 @@ export type SummaryFee = Readonly<{
   operations: number;
 }>;
 
+
+/** One line of the product × network table: every figure from the same confirmed rows. */
+export type BreakdownRow = Readonly<{
+  product: OperationProduct;
+  /** The network the operations started on; null for rows that cannot say. */
+  network: SwapNetwork | null;
+  operations: number;
+  volumeUsd: number;
+  unvalued: number;
+  wallets: number;
+  /** Gross fees people paid, in dollars, over the fees a dollar figure reaches. */
+  feesUsd: number;
+  /** Operations whose collected fee has no dollar figure: counted, not valued. */
+  feesUnvalued: number;
+  /** What reached Ryntra after the provider's share. */
+  retainedUsd: number;
+  /** Collected fees whose share for Ryntra has no dollar figure. */
+  retainedUnvalued: number;
+  /** Operations with a fee left out of revenue: their share or one of their rewards has no dollar figure yet. */
+  revenueExcluded: number;
+  /** Null when the reward ledger could not be read. */
+  cashbackUsd: number | null;
+  /** Cashback with no dollar figure yet. */
+  cashbackUnvalued: number;
+  /** What Ryntra kept: received less cashback. Null when the reward ledger could not be read. */
+  revenueUsd: number | null;
+}>;
+
 export type OperationSummary = Readonly<{
   operations: number;
   volumeUsd: number;
   unvalued: number;
   wallets: number;
+  /** Gross fees in dollars, retained, rewards and revenue — the same figures as the breakdown, summed. */
+  money: Readonly<{
+    feesUsd: number;
+    feesUnvalued: number;
+    retainedUsd: number;
+    retainedUnvalued: number;
+    /** Null when the reward ledger could not be read. */
+    cashbackUsd: number | null;
+    /** Cashback with no dollar figure yet. */
+    rewardsUnvalued: number;
+    /** Null when the reward ledger could not be read. */
+    revenueUsd: number | null;
+    revenueExcluded: number;
+  }>;
+  /** Product × network, the largest volume first. */
+  breakdown: readonly BreakdownRow[];
   fees: readonly SummaryFee[];
   /** Fees with a provider-stated dollar value, summed; null when none carried one. */
   feeUsd: number | null;
@@ -445,7 +615,9 @@ export function rangeStart(range: OperationRange, now: Date): string | null {
 }
 
 /** What the filters and the totals need of a row — the public shape carries it too. */
-export type OperationLike = Pick<OperationRecord, "product" | "status" | "confirmedAt" | "startedAt" | "wallet" | "internal" | "usd" | "verification" | "fee">;
+export type OperationLike = Pick<OperationRecord, "product" | "network" | "status" | "confirmedAt" | "startedAt" | "wallet" | "internal" | "usd" | "verification" | "fee"> &
+  /* The public row carries no rewards; the server's totals do. */
+  Readonly<{ rewards?: OperationRewards | null }>;
 
 export function filterOperations<T extends OperationLike>(
   records: readonly T[],
@@ -460,12 +632,11 @@ export function filterOperations<T extends OperationLike>(
   });
 }
 
-function round6(value: number): number {
-  return Math.round(value * 1_000_000) / 1_000_000;
-}
-
 /** Totals over the confirmed operations given — every figure from the same rows. */
-export function summarizeOperations(records: readonly OperationLike[], args: Readonly<{ product?: OperationProduct | "ALL"; range?: OperationRange; now: Date }>): OperationSummary {
+export function summarizeOperations(
+  records: readonly OperationLike[],
+  args: Readonly<{ product?: OperationProduct | "ALL"; range?: OperationRange; now: Date }>,
+): OperationSummary {
   const rows = filterOperations(records, { ...args, confirmedOnly: true });
   const wallets = new Set<string>();
   const ownWallets = new Set<string>();
@@ -486,8 +657,45 @@ export function summarizeOperations(records: readonly OperationLike[], args: Rea
   let attributableVolume = 0;
   let since: string | null = null;
   let last: string | null = null;
+  let rewardsUnvalued = 0;
+  type Line = { product: OperationProduct; network: SwapNetwork | null; operations: number; volumeUsd: number; unvalued: number; wallets: Set<string>; feesUsd: number; feesUnvalued: number; retainedUsd: number; retainedUnvalued: number; cashbackUsd: number; cashbackUnvalued: number; revenueUsd: number; revenueExcluded: number };
+  const lines = new Map<string, Line>();
   for (const record of rows) {
     wallets.add(record.wallet);
+    const network = record.network ?? null;
+    const lineKey = `${record.product}|${network ?? ""}`;
+    const line = lines.get(lineKey) ?? { product: record.product, network, operations: 0, volumeUsd: 0, unvalued: 0, wallets: new Set<string>(), feesUsd: 0, feesUnvalued: 0, retainedUsd: 0, retainedUnvalued: 0, cashbackUsd: 0, cashbackUnvalued: 0, revenueUsd: 0, revenueExcluded: 0 };
+    lines.set(lineKey, line);
+    line.operations += 1;
+    line.wallets.add(record.wallet);
+    if (record.usd === null) line.unvalued += 1;
+    else line.volumeUsd += record.usd;
+    if (record.fee?.collected) {
+      if (record.fee.valueUsd === null) line.feesUnvalued += 1;
+      else line.feesUsd += record.fee.valueUsd;
+      /* Ryntra's share in dollars where it is known; an unknown split leaves the gross counted and the share out. */
+      if (record.fee.ryntraUsd !== null) line.retainedUsd += record.fee.ryntraUsd;
+      else line.retainedUnvalued += 1;
+    }
+    if (record.rewards) {
+      line.cashbackUsd += record.rewards.cashbackUsd;
+      line.cashbackUnvalued += record.rewards.unvalued;
+      rewardsUnvalued += record.rewards.unvalued;
+    } else if (record.fee?.collected && record.fee.valueUsd === null) {
+      /* A fee with no dollar figure has a cashback with none either: unknown, never a zero. */
+      line.cashbackUnvalued += 1;
+      rewardsUnvalued += 1;
+    }
+    /* Revenue is stated only where both of its parts are known: Ryntra's share
+       in dollars and the operation's cashback. Mixing a known share with an
+       unknown cashback would overstate it; the rest are counted out, by name. */
+    if (record.fee?.collected) {
+      if (record.fee.ryntraUsd !== null && (record.rewards?.unvalued ?? 0) === 0) {
+        line.revenueUsd += record.fee.ryntraUsd - (record.rewards?.cashbackUsd ?? 0);
+      } else {
+        line.revenueExcluded += 1;
+      }
+    }
     if (record.internal) {
       ownOperations += 1;
       ownWallets.add(record.wallet);
@@ -529,11 +737,41 @@ export function summarizeOperations(records: readonly OperationLike[], args: Rea
     if (since === null || at < since) since = at;
     if (last === null || at > last) last = at;
   }
+  const breakdown: BreakdownRow[] = [...lines.values()]
+    .map((line) => ({
+      product: line.product,
+      network: line.network,
+      operations: line.operations,
+      volumeUsd: round6(line.volumeUsd),
+      unvalued: line.unvalued,
+      wallets: line.wallets.size,
+      feesUsd: round6(line.feesUsd),
+      feesUnvalued: line.feesUnvalued,
+      retainedUsd: round6(line.retainedUsd),
+      retainedUnvalued: line.retainedUnvalued,
+      revenueExcluded: line.revenueExcluded,
+      cashbackUsd: round6(line.cashbackUsd),
+      cashbackUnvalued: line.cashbackUnvalued,
+      revenueUsd: round6(line.revenueUsd),
+    }))
+    .sort((a, b) => b.volumeUsd - a.volumeUsd || b.operations - a.operations || a.product.localeCompare(b.product));
+  const sum = (pick: (row: BreakdownRow) => number | null) => round6(breakdown.reduce((total, row) => total + (pick(row) ?? 0), 0));
   return {
     operations: rows.length,
     volumeUsd: round6(volume),
     unvalued,
     wallets: wallets.size,
+    money: {
+      feesUsd: sum((row) => row.feesUsd),
+      feesUnvalued: breakdown.reduce((total, row) => total + row.feesUnvalued, 0),
+      retainedUsd: sum((row) => row.retainedUsd),
+      retainedUnvalued: breakdown.reduce((total, row) => total + row.retainedUnvalued, 0),
+      cashbackUsd: sum((row) => row.cashbackUsd),
+      rewardsUnvalued,
+      revenueUsd: sum((row) => row.revenueUsd),
+      revenueExcluded: breakdown.reduce((total, row) => total + row.revenueExcluded, 0),
+    },
+    breakdown,
     fees: [...fees.values()]
       .sort((a, b) => b.operations - a.operations || a.symbol.localeCompare(b.symbol))
       .map((entry) => ({
@@ -563,11 +801,18 @@ export function summarizeOperations(records: readonly OperationLike[], args: Rea
 
 /* ---------------------------------------------------------------- public */
 
-/** The row as the public page may show it: the wallet masked, the plan reduced to a fact. */
-export type PublicOperation = Omit<OperationRecord, "wallet" | "plan" | "receiptHash"> & Readonly<{ wallet: string; underPlan: boolean }>;
+/**
+ * The row as the public page may show it: the wallet masked, the plan reduced
+ * to a fact, and no rewards — what one trader's referrer earned on one trade
+ * is nobody else's business; the page states rewards only as totals.
+ */
+export type PublicOperation = Omit<OperationRecord, "wallet" | "plan" | "receiptHash" | "rewards"> & Readonly<{ wallet: string; underPlan: boolean }>;
 
 export function toPublicOperation(record: OperationRecord): PublicOperation {
-  const { wallet, plan, receiptHash: _receipt, ...rest } = record;
+  const { wallet, plan, receiptHash: _receipt, rewards: _rewards, ...rest } = record;
   void _receipt;
-  return { ...rest, wallet: maskWallet(wallet), underPlan: plan !== null };
+  void _rewards;
+  /* A fee valued from the reward ledger would say the trader earned cashback, and how much: its dollar figure stays in the totals. */
+  const fee = rest.fee && rest.fee.valueBasis === "REWARD_LEDGER" ? { ...rest.fee, valueUsd: null, valueBasis: null, ryntraUsd: null } : rest.fee;
+  return { ...rest, fee, wallet: maskWallet(wallet), underPlan: plan !== null };
 }

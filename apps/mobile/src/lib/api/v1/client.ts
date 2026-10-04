@@ -42,6 +42,20 @@ import {
   type PlanStatusRequest,
   type PlanUpdateRequest,
   type PlanVersionResponse,
+  type PopularCompaniesResponse,
+  type PayLinkCreateRequest,
+  type PayLinkListResponse,
+  type PayLinkResponse,
+  type PaySubmitRequest,
+  type PaySubmitResponse,
+  type PayTransactionRequest,
+  type PayTransactionResponse,
+  type PositionsResponse,
+  type PortfolioRiskResponse,
+  type PositionWatchRequest,
+  type PositionWatchResponse,
+  type RecipientCheckQuery,
+  type RecipientCheckResponse,
   type RevokeResponse,
   type RuleBudgetRequest,
   type RuleBudgetResponse,
@@ -50,6 +64,8 @@ import {
   type RuleListResponse,
   type RuleResponse,
   type RuleStatusRequest,
+  type SendReturnedRequest,
+  type SendReturnedResponse,
   type SessionResponse,
   type SpotCandlesResponse,
   type SpotCategory,
@@ -110,6 +126,13 @@ import {
   type SwapQuoteResponse,
   type SwapRecoverRequest,
   type SwapRecoverResponse,
+  type TransferAdoptResponse,
+  type TransferPlanRequest,
+  type TransferRecoverRequest,
+  type TransferRecoverResponse,
+  type TransferReviewResponse,
+  type TransferSettleRequest,
+  type TransferSettleResponse,
   type VerifyRequest,
   type VerifyResponse,
   type WatchlistMergeRequest,
@@ -299,6 +322,33 @@ export function createRyntraApiClient(options: RyntraApiClientOptions) {
         clear: () => call<RuleBudgetResponse>("DELETE", "/api/v1/rules/budget", undefined, true),
       },
     },
+    /* 1.21.0 — Нагляд over the proven wallet's company positions: each with its exit, its state and its one action, decided by the server; «Ryntra попередить» turned on with a preset (Telegram must be connected). Every call needs the bearer. */
+    positions: {
+      list: () => call<PositionsResponse>("GET", "/api/v1/positions", undefined, true),
+      watch: (request: PositionWatchRequest) => call<PositionWatchResponse>("PUT", "/api/v1/positions/watch", request, true),
+      /* 1.23.0 — «Ризик портфеля»: one word for the wallet as a whole, with every rule broken or what could not be read, decided by the server. */
+      risk: () => call<PortfolioRiskResponse>("GET", "/api/v1/positions/risk", undefined, true),
+    },
+    /* 1.22.0 — «Гроші»: payment links. Making and listing need the bearer (the recipient is always its wallet); one link reads for anyone with it. Paying a Ryntra link runs on the page's own routes, the bearer paying as its own wallet (`RyntraRouteError`). */
+    pay: {
+      create: (request: PayLinkCreateRequest) => call<PayLinkResponse>("POST", "/api/v1/pay/requests", request, true),
+      list: () => call<PayLinkListResponse>("GET", "/api/v1/pay/requests", undefined, true),
+      get: (id: string) => call<PayLinkResponse>("GET", `/api/v1/pay/requests/${encodeURIComponent(id)}`),
+      transaction: (id: string, request: PayTransactionRequest) => routeCall<PayTransactionResponse>("POST", `/api/pay/${encodeURIComponent(id)}/transaction`, request, "required"),
+      submit: (id: string, request: PaySubmitRequest) => routeCall<PaySubmitResponse>("POST", `/api/pay/${encodeURIComponent(id)}/submit`, request, "required"),
+    },
+    /* 1.22.0 — Send on the web's own transfer routes (`RyntraRouteError`): the Review with «Перевірка» counted by the server, adopt when the wallet added only its fee guards (ask `money.returned`), settle once, recover by the signature. `recover` takes the bearer in place of the site's origin; the others need no session — the review proof and the wallet's signature bind the transfer. */
+    transfer: {
+      plan: (request: TransferPlanRequest) => routeCall<TransferReviewResponse>("POST", "/api/solana/transfer/plan", request),
+      adopt: (request: TransferSettleRequest) => routeCall<TransferAdoptResponse>("POST", "/api/solana/transfer/adopt", request),
+      settle: (request: TransferSettleRequest) => routeCall<TransferSettleResponse>("POST", "/api/solana/transfer/settle", request),
+      recover: (request: TransferRecoverRequest) => routeCall<TransferRecoverResponse>("POST", "/api/solana/transfer/recover", request, "required"),
+    },
+    /* 1.22.0 — «Гроші»: the recipient check before a transfer and the reading of what the wallet returned; public, no session. */
+    money: {
+      recipient: (request: RecipientCheckQuery) => call<RecipientCheckResponse>("GET", `/api/v1/money/recipient${query({ to: request.to, mint: request.mint, from: request.from })}`),
+      returned: (request: SendReturnedRequest) => call<SendReturnedResponse>("POST", "/api/v1/money/send/returned", request),
+    },
     /* 1.8.0 — Ryn, the agent: the proven wallet's conversation; every call but the suggestions needs the bearer. */
     agent: {
       openSession: (request: AgentSessionOpenRequest = {}) => call<AgentSessionResponse>("POST", "/api/v1/agent/session", request, true),
@@ -332,6 +382,8 @@ export function createRyntraApiClient(options: RyntraApiClientOptions) {
       candles: (mint: string, timeframe: SpotTimeframe = "1h", limit?: number) => routeCall<SpotCandlesResponse>("GET", `/api/spot/candles${query({ mint, tf: timeframe, limit })}`),
     },
     stocks: {
+      /* 1.20.0 — «Популярне» as the server lists it, a v1 path: the listed companies by the day's trading; `exclude` a company's mint beside its own page. Public. */
+      popular: (options: Readonly<{ limit?: number; exclude?: string }> = {}) => call<PopularCompaniesResponse>("GET", `/api/v1/stocks/popular${query({ limit: options.limit, exclude: options.exclude })}`),
       universe: () => routeCall<StockUniverseResponse>("GET", "/api/stocks/universe"),
       slim: (options: Readonly<{ q?: string; mints?: readonly string[]; limit?: number }> = {}) =>
         routeCall<StockUniverseSlimResponse>("GET", `/api/stocks/universe${query({ shape: "slim", q: options.q, mints: options.mints?.join(","), limit: options.limit })}`),
@@ -357,7 +409,7 @@ export function createRyntraApiClient(options: RyntraApiClientOptions) {
       surface: (locale: "en" | "uk" = "en") => call<MonitoringSurfaceResponse>("GET", "/api/monitoring", undefined, true, { "accept-language": locale }),
       write: (request: MonitoringWriteRequest) => call<MonitoringWriteResponse>("POST", "/api/monitoring", request, true),
     },
-    /* The five routes a real trade goes through (APP_SIGNS_SERVER_SUBMITS): the app signs the reviewed bytes, the server submits. `quote` is public; the rest need the bearer, whose wallet must be the taker. */
+    /* The five routes a real trade goes through (APP_SIGNS_SERVER_SUBMITS): the app signs the reviewed bytes, the server submits. `quote` is public; the rest need the bearer, whose wallet must be the taker. 1.20.0: `quote` and `order` answer `check` — «Перевірка»'s four lines and the reserve, counted by the server; draw them, count none. */
     swap: {
       quote: (request: SwapQuoteRequest) => routeCall<SwapQuoteResponse>("POST", "/api/solana/swap/quote", request),
       order: (request: SwapOrderRequest) => routeCall<SwapOrderResponse>("POST", "/api/solana/swap/order", request, "required"),

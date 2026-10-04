@@ -23,6 +23,8 @@ export type HoldingSheetProps = {
   /** The issuer's window on this token (M19): its line, and the swap and the sale that replace a plain Sell. */
   event?: RowEvent | null
   onClose: () => void
+  /** A company's position sold on its own sheet, as on its page; crypto is sold in Trade. */
+  onSell?: (row: PortfolioRow) => void
 }
 
 /**
@@ -32,7 +34,7 @@ export type HoldingSheetProps = {
  * drawn (one version since canon v5.3 В28: the plan is a quiet door here for
  * everyone).
  */
-export function HoldingSheet({ row, observedAt, now, locale, copy, event = null, onClose }: HoldingSheetProps) {
+export function HoldingSheet({ row, observedAt, now, locale, copy, event = null, onClose, onSell }: HoldingSheetProps) {
   const router = useRouter()
   if (!row) return null
   const go = (href: Parameters<typeof router.push>[0]) => {
@@ -113,7 +115,12 @@ export function HoldingSheet({ row, observedAt, now, locale, copy, event = null,
             <Button title={copy.buy} variant="secondary" onPress={() => goTrade('buy')} className="flex-1" />
             {/* The watch's sale stands above, in its own words: no second Sell beside it. */}
             {row.amountRaw !== '0' && !event?.actions ? (
-              <Button title={copy.sell} variant="secondary" onPress={() => goTrade('sell')} className="flex-1" />
+              <Button
+                title={copy.sell}
+                variant="secondary"
+                onPress={() => (row.group === 'stock' && row.listed && onSell ? onSell(row) : goTrade('sell'))}
+                className="flex-1"
+              />
             ) : null}
           </>
         ) : null}

@@ -16,8 +16,10 @@
  *   here: one number, one place. A planned row has no rate yet — `NOT_SET` —
  *   and opens only with one.
  * - **attribution** — how an outside counter knows the flow is Ryntra's: the
- *   kind of identity and where its address is configured. The address itself
- *   is a deployment fact read on the server, so this registry holds no address.
+ *   kind of identity and where its address is configured. This registry holds
+ *   no address: a referral account or a Relay recipient is a deployment fact
+ *   read on the server, and a product's fee wallet is a row of the public
+ *   attribution registry (`lib/attribution/registry.ts`).
  *
  * The older registry of public claims (`lib/product/capabilities.ts`) answers
  * a different question — how mature a claim on a page is — and stays as it is.
@@ -27,6 +29,7 @@
 
 import { z } from "zod";
 
+import { feeWalletOf } from "../attribution/registry.ts";
 import { SOLANA_LANE_STATE_ENV, resolveSolanaLaneState, type SolanaLane } from "../solana/lane-state.ts";
 import { SERVICE_FEE_ENV } from "../swap/service-fee.server.ts";
 import { RYNTRA_SERVICE_FEE_POLICY, type ServiceFeeConfig, type ServiceFeeMechanism } from "../swap/service-fee.ts";
@@ -308,8 +311,10 @@ export function capabilityFeeBps(row: CapabilityRow): number | null {
 }
 
 /**
- * The fee identity a product's flow carries on a row, with its configured
- * address. Null when the row has no identity for that product.
+ * The fee identity a product's flow carries on a row, with its address: the
+ * deployment's for a referral account or a Relay recipient, the attribution
+ * registry's for a product fee wallet. Null when the row has no identity for
+ * that product.
  */
 export function resolveFeeIdentity(row: CapabilityRow, product: Product, config: ServiceFeeConfig): FeeIdentity | null {
   const attribution = row.attribution;
@@ -319,6 +324,8 @@ export function resolveFeeIdentity(row: CapabilityRow, product: Product, config:
       ? config.jupiterReferralAccount
       : attribution.kind === "RELAY_APP_FEE_RECIPIENT"
         ? config.relayAppFeeRecipient
-        : null;
+        : attribution.kind === "FEE_WALLET"
+          ? feeWalletOf(product, row.network)
+          : null;
   return { product, kind: attribution.kind, address };
 }

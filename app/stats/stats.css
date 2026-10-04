@@ -1,8 +1,9 @@
 /*
  * The public statistics page — an operations dashboard.
  *
- * Mode is Read. Four figures carry the overview, two chip rows filter it, and
- * the feed is a real table whose rows open into their execution detail. Every
+ * Mode is Read. Six figures carry the overview, two chip rows filter it, a
+ * table splits it by product and network, the feed is a real table whose rows
+ * open into their execution detail, and the public identities close it. Every
  * value is a token, and the module bar, the table, the pill and the buttons
  * are the frozen chrome's own — this sheet adds the figure grid, the chips,
  * the row detail and the methodology disclosure.
@@ -21,6 +22,30 @@
 
 .rx-stats-grid--two {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/* Six figures, three to a row: the rule between rows replaces the gap, and a
+   row starts without the column rule. */
+.rx-stats-grid--six {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+}
+
+.rx-stats-grid--six .rx-stats-figure {
+  padding-inline: var(--ry-s5);
+}
+
+.rx-stats-grid--six .rx-stats-figure:nth-child(3n + 1) {
+  border-left: 0;
+  padding-left: 0;
+}
+
+.rx-stats-grid--six .rx-stats-figure:nth-child(n + 4) {
+  border-top: 1px solid var(--ry-border);
+}
+
+.rx-stats-grid--six .rx-stats-figure[data-kind="number"] .rx-stats-value {
+  font-size: min(var(--ry-fs-data-xl), 3.4vw);
 }
 
 .rx-stats-figure {
@@ -108,6 +133,45 @@
   max-width: 72ch;
 }
 
+/* A note under a figure may carry two facts: one per line. */
+.rx-stats-figure-note {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* A second, quieter line inside a table cell: what a figure leaves out, or what kind of account a role is. */
+.rx-stats-cellnote {
+  display: block;
+  font-size: var(--ry-fs-dense);
+  line-height: 1.4;
+  color: var(--ry-muted);
+  white-space: nowrap;
+}
+
+.rx-stats-stack {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rx-stats-inline {
+  color: var(--ry-text);
+  text-decoration: underline;
+  text-decoration-color: var(--ry-border-strong);
+  text-underline-offset: 0.2em;
+}
+
+.rx-stats-inline:hover {
+  text-decoration-color: currentColor;
+}
+
+.rx-stats-inline:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+  border-radius: 2px;
+}
+
 .rx-stats-empty {
   margin: 0;
   padding-block: var(--ry-s4);
@@ -117,6 +181,7 @@
 /* ── filters ─────────────────────────────────────────────────────────────── */
 
 .rx-stats-filters {
+  flex-basis: 100%;
   display: flex;
   flex-wrap: wrap;
   gap: var(--ry-s3) var(--ry-s5);
@@ -173,14 +238,62 @@
   overscroll-behavior-x: contain;
 }
 
+/* The verified count can name two facts; on a phone it wraps inside its pill. */
+.rx-stats .rx-mod-meta {
+  min-width: 0;
+}
+
+.rx-stats .rx-mod-meta .rx-state {
+  white-space: normal;
+  text-align: start;
+  max-width: 100%;
+}
+
+/* The totals close the table on a strong rule, in the weight of a result. */
+.rx-stats-total th,
+.rx-stats-total td {
+  border-top: 1px solid var(--ry-border-strong);
+  border-bottom: none;
+  vertical-align: top;
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.rx-stats-total th {
+  font-size: inherit;
+  letter-spacing: normal;
+  text-transform: none;
+  text-align: start;
+}
+
+/* A table straight under its heading, with no lead between: the rule keeps its distance. */
+.rx-stats-feed--spaced {
+  margin-top: var(--ry-s5);
+}
+
 .rx-stats-table td,
 .rx-stats-table th {
   white-space: nowrap;
   padding-inline: var(--ry-s3);
 }
 
+/* A row's own name — the product — reads as a cell, not as a column head. */
+.rx-stats-table tbody th {
+  font-weight: 500;
+  font-size: inherit;
+  letter-spacing: normal;
+  text-transform: none;
+  text-align: start;
+  color: var(--ry-text);
+}
+
+/* A figure's column head stands over its figures, on the right. */
+.rx-stats-table th.rx-stats-num {
+  text-align: end;
+}
+
 /* The action keeps its width when a row opens beneath it: `SOL → USDC` is one line. */
-.rx-stats-table td:nth-child(4) {
+.rx-stats-table:not(.rx-stats-breakdown):not(.rx-stats-registry) td:nth-child(4) {
   white-space: normal;
   min-width: 7.5rem;
 }
@@ -453,6 +566,28 @@
     padding-left: var(--ry-s5);
   }
 
+  .rx-stats-grid--six .rx-stats-figure:nth-child(n) {
+    border-top: 0;
+  }
+
+  .rx-stats-grid--six .rx-stats-figure:nth-child(odd) {
+    border-left: 0;
+    padding-left: 0;
+  }
+
+  .rx-stats-grid--six .rx-stats-figure:nth-child(even) {
+    border-left: 1px solid var(--ry-border);
+    padding-left: var(--ry-s5);
+  }
+
+  .rx-stats-grid--six .rx-stats-figure:nth-child(n + 3) {
+    border-top: 1px solid var(--ry-border);
+  }
+
+  .rx-stats-grid--six .rx-stats-figure[data-kind="number"] .rx-stats-value {
+    font-size: min(var(--ry-fs-data-xl), 7vw);
+  }
+
   .rx-stats-detail {
     grid-template-columns: 1fr;
   }
@@ -472,7 +607,8 @@
   .rx-stats-table,
   .rx-stats-table tbody,
   .rx-stats-table tr,
-  .rx-stats-table td {
+  .rx-stats-table td,
+  .rx-stats-table tbody th {
     display: block;
   }
 
@@ -485,7 +621,8 @@
     border-bottom: 0;
   }
 
-  .rx-stats-table td {
+  .rx-stats-table td,
+  .rx-stats-table tbody th {
     display: grid;
     grid-template-columns: minmax(96px, 1fr) minmax(0, 2fr);
     gap: var(--ry-s4);
@@ -495,7 +632,87 @@
     text-align: start;
   }
 
-  .rx-stats-table td::before {
+  .rx-stats-table .rx-stats-cellnote {
+    white-space: normal;
+  }
+
+  .rx-stats-table td > .rx-stats-cellnote {
+    grid-column: 2;
+  }
+
+  /* On a phone the overview above already states the totals. */
+  .rx-stats-breakdown tfoot {
+    display: none;
+  }
+
+  /* The product × network table and the identities read as compact cards:
+     the row's name on one line, its figures two to a line with the label
+     above the value. */
+  .rx-stats-breakdown tbody tr,
+  .rx-stats-registry tbody tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--ry-s3) var(--ry-s4);
+  }
+
+  .rx-stats-breakdown tbody th,
+  .rx-stats-breakdown tbody td:nth-of-type(1),
+  .rx-stats-registry tbody td:nth-of-type(-n + 2) {
+    display: block;
+    padding: 0;
+  }
+
+  .rx-stats-table.rx-stats-breakdown tbody th::before,
+  .rx-stats-breakdown tbody td:nth-of-type(1)::before,
+  .rx-stats-registry tbody td:nth-of-type(-n + 2)::before {
+    content: none;
+  }
+
+  .rx-stats-breakdown tbody th {
+    font-size: var(--ry-fs-body);
+    font-weight: 600;
+  }
+
+  /* On an address card the role leads; the network follows it, quieter. */
+  .rx-stats-registry tbody td:nth-of-type(1) {
+    font-weight: 500;
+  }
+
+  .rx-stats-breakdown tbody td:nth-of-type(1),
+  .rx-stats-registry tbody td:nth-of-type(2) {
+    color: var(--ry-muted);
+    text-align: end;
+  }
+
+  .rx-stats-breakdown tbody td:nth-of-type(n + 2),
+  .rx-stats-registry tbody td:nth-of-type(n + 3) {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 0;
+  }
+
+  .rx-stats-registry tbody td:nth-of-type(2),
+  .rx-stats-registry tbody td:nth-of-type(3) {
+    grid-column: 1 / -1;
+  }
+
+  /* An address card leads with what the account is: three Solana rows differ only there. */
+  .rx-stats-registry tbody td:nth-of-type(3) {
+    order: -1;
+    font-weight: 600;
+  }
+
+  .rx-stats-registry tbody td:nth-of-type(3)::before {
+    content: none;
+  }
+
+  .rx-stats-registry tbody td:nth-of-type(2) {
+    text-align: start;
+  }
+
+  .rx-stats-table td::before,
+  .rx-stats-table tbody th::before {
     content: attr(data-label);
     font-family: var(--ry-font-mono);
     font-size: var(--ry-fs-dense);
@@ -520,6 +737,32 @@
 }
 
 @media (max-width: 560px) {
+  /* On a phone the figures with notes take the width; operations and users pair up. */
+  .rx-stats-grid.rx-stats-grid--six {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--ry-s4);
+  }
+
+  .rx-stats-grid--six .rx-stats-figure:nth-child(1),
+  .rx-stats-grid--six .rx-stats-figure:nth-child(n + 4) {
+    grid-column: 1 / -1;
+  }
+
+  /* Three figures to a line: a product's card is two lines of numbers, not three. */
+  .rx-stats-breakdown tbody tr {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: var(--ry-s3);
+  }
+
+  .rx-stats-breakdown tbody th {
+    grid-column: 1 / 3;
+  }
+
+  /* A label of a third of a phone keeps its word whole: «Користувачі» fits. */
+  .rx-stats-breakdown tbody td::before {
+    letter-spacing: 0;
+  }
+
   .rx-stats-grid,
   .rx-stats-grid--two {
     grid-template-columns: 1fr;
@@ -533,8 +776,18 @@
     border-top: 1px solid var(--ry-border);
   }
 
-  .rx-stats-figure:first-child {
+  .rx-stats-figure:first-child,
+  .rx-stats-grid--six .rx-stats-figure:first-child {
     border-top: 0;
+  }
+
+  .rx-stats-grid--six .rx-stats-figure:nth-child(n) {
+    border-left: 0;
+    padding-left: 0;
+  }
+
+  .rx-stats-grid--six .rx-stats-figure:nth-child(n + 2) {
+    border-top: 1px solid var(--ry-border);
   }
 
   .rx-stats-verify > div {

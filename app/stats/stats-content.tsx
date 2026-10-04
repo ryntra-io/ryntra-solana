@@ -15,12 +15,15 @@ import {
   type OperationVerification,
   type PublicOperation,
 } from "@/lib/analytics/operations";
+import type { PublicRegistryRow } from "@/lib/attribution/registry";
 import type { StatsModel } from "@/lib/attribution/stats-model";
 import { isPublicLocale, type PublicLocale } from "@/lib/site/locale";
+import { EVM_EXPLORER_TX } from "@/lib/swap/catalog";
 
 import { STATS_COPY, type StatsCopy } from "./copy";
 
 const EXPLORER_ACCOUNT = "https://solscan.io/account/";
+const EXPLORER_TX = "https://solscan.io/tx/";
 
 /* ------------------------------------------------------------ formatting */
 
@@ -54,9 +57,14 @@ function count(value: number, locale: PublicLocale): string {
 }
 
 /** A dollar figure reads `$122.01` in both languages — the product's own money notation, one token that never wraps. */
-function usd(value: number, _locale: PublicLocale): string {
+function usd(value: number | null, _locale: PublicLocale): string {
   void _locale;
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", currencyDisplay: "narrowSymbol", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
+  /* A figure the page could not read is unknown, never a zero. */
+  if (value === null) return "—";
+  /* Under ten cents the figure keeps its fourth decimal, so a fee, its share and its cashback still add up on the page; a real amount below that is never printed as a zero. */
+  const small = value !== 0 && Math.abs(value) < 0.1;
+  if (small && Math.abs(value) < 0.00005) return value > 0 ? "<$0.0001" : "−<$0.0001";
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", currencyDisplay: "narrowSymbol", minimumFractionDigits: small ? 4 : 2, maximumFractionDigits: small ? 4 : 2 }).format(value);
 }
 
 /** Up to six significant decimals, trailing zeros dropped — a fee reads as `0.0005235 SOL`, not `0.000524`. */
@@ -68,6 +76,7 @@ function amountText(text: string | null, symbol: string | null): string {
     const lead = fraction.match(/^0*/)?.[0].length ?? 0;
     trimmed = fraction.slice(0, Math.min(fraction.length, Math.max(6, lead + 4)));
   }
+  trimmed = trimmed.replace(/0+$/, "");
   const number = trimmed ? `${whole}.${trimmed}` : whole;
   return symbol ? `${number} ${symbol}` : number;
 }
@@ -75,6 +84,15 @@ function amountText(text: string | null, symbol: string | null): string {
 function shortAddress(address: string): string {
   return `${address.slice(0, 4)}…${address.slice(-4)}`;
 }
+
+/** A transaction on its network's explorer; null where the network has none we link. */
+function txUrl(network: string, tx: string): string | null {
+  if (network === "solana") return `${EXPLORER_TX}${tx}`;
+  /* The core names BNB Chain `bsc`; the swap catalogue names it `bnb`. */
+  const evm = (EVM_EXPLORER_TX as Readonly<Record<string, string>>)[network === "bsc" ? "bnb" : network];
+  return evm ? `${evm}${tx}` : null;
+}
+
 
 const VERIFICATION_TONE: Readonly<Record<OperationVerification, StateTone>> = {
   VERIFIED: "verified",
@@ -88,13 +106,18 @@ function actionText(row: PublicOperation, copy: StatsCopy): string {
   return row.action;
 }
 
+const STABLE = new Set(["USDC", "USDT", "USDG"]);
+
 function feeLines(summary: OperationSummary, key: "gross" | "ryntra"): readonly string[] {
-  return summary.fees.map((fee) => amountText(fee[key], fee.symbol)).filter((text) => text !== "—");
+  /* A summary reads a stablecoin in cents; the feed's detail keeps every unit. */
+  return summary.fees
+    .map((fee) => (STABLE.has(fee.symbol.toUpperCase()) && fee[key] !== null ? `${Number(fee[key]).toFixed(2)} ${fee.symbol}` : amountText(fee[key], fee.symbol)))
+    .filter((text) => text !== "—");
 }
 
 /* ---------------------------------------------------------------- pieces */
 
-function Figure({ label, value, note, kind = "number" }: { label: string; value: string | readonly string[]; note?: string | null; kind?: "number" | "text" | "list" }) {
+function Figure({ label, value, note, kind = "number" }: { label: string; value: string | readonly string[]; note?: ReactNode; kind?: "number" | "text" | "list" }) {
   return (
     <div className="rx-stats-figure" data-kind={kind}>
       <dt>{label}</dt>
@@ -254,18 +277,26 @@ export function StatsContent({ model, initialLocale }: { model: StatsModel; init
   const now = useMemo(() => new Date(model.generatedAt), [model.generatedAt]);
   const rows = useMemo(() => (ledger.state === "ok" ? ledger.operations : []), [ledger]);
   const visible = useMemo(() => filterOperations(rows, { product, range, now }), [rows, product, range, now]);
-  const summary = useMemo(() => summarizeOperations(rows, { product, range, now }), [rows, product, range, now]);
-  const day = useMemo(() => summarizeOperations(rows, { product, range: "24h", now }), [rows, product, now]);
-  const whole = useMemo(() => summarizeOperations(rows, { range: "all", now }), [rows, now]);
+  /* The totals are the server's, over the whole ledger; the page only picks the filter's. */
+  const empty = useMemo(() => summarizeOperations([], { now }), [now]);
+  const summary = ledger.state === "ok" ? ledger.summaries[product][range] : empty;
+  const day = ledger.state === "ok" ? ledger.summaries[product]["24h"] : empty;
+  const whole = ledger.state === "ok" ? ledger.summaries.ALL.all : empty;
 
-  const meta: string[] = [copy.meta.network];
+  const networks = [...new Set(whole.breakdown.map((line) => line.network).filter((value): value is NonNullable<typeof value> => value !== null))];
+  const meta: string[] = [networks.length > 1 ? `${copy.meta.paidOn}: ${networks.map((id) => copy.networks[id]).join(" · ")}` : copy.meta.network];
   if (ledger.state === "ok" && whole.since) meta.push(`${copy.meta.since} ${dateText(whole.since, locale)}`);
   meta.push(`${copy.meta.updated} ${dateText(model.generatedAt, locale, true)}`);
   if (chain.state === "ok") meta.push(`${copy.meta.chain} ${dateText(chain.updatedAt, locale, true)}`);
 
   const products: readonly (OperationProduct | "ALL")[] = ["ALL", ...OPERATION_PRODUCTS];
   const gross = feeLines(summary, "gross");
-  const retained = feeLines(summary, "ryntra");
+  const money = summary.money;
+  const rewardsRead = ledger.state === "ok" && ledger.rewards === "ok";
+  const registryRows = model.registry.rows;
+  /* The sections in the order a reader meets them; a section with nothing to show takes no number. */
+  const sections = ["overview", ...(ledger.state === "ok" && summary.breakdown.length > 0 ? ["breakdown"] : []), ...(registryRows.length > 0 ? ["registry"] : []), "feed", "method"];
+  const sectionIndex = (name: string) => String(sections.indexOf(name) + 1).padStart(2, "0");
 
   return (
     <main id="main" className="rx-stats" tabIndex={-1} lang={locale}>
@@ -275,12 +306,12 @@ export function StatsContent({ model, initialLocale }: { model: StatsModel; init
         index="01"
         kicker={copy.overview.kicker}
         heading={copy.overview.heading}
-        meta={ledger.state === "ok" && summary.operations > 0 ? <StatePill label={copy.overview.verified(summary.verification.VERIFIED, summary.operations)} tone={summary.verification.VERIFIED === summary.operations ? "verified" : "evidence"} /> : null}
+        meta={ledger.state === "ok" && summary.operations > 0 ? <VerifiedPill summary={summary} copy={copy} /> : null}
         headExtra={
           ledger.state === "ok" ? (
             <div className="rx-stats-filters">
               <Chips label={copy.feed.columns.product} options={products} value={product} words={copy.products} onChange={setProduct} />
-              <Chips label={copy.feed.columns.time} options={OPERATION_RANGES} value={range} words={copy.ranges} onChange={setRange} />
+              <Chips label={copy.period} options={OPERATION_RANGES} value={range} words={copy.ranges} onChange={setRange} />
             </div>
           ) : null
         }
@@ -291,11 +322,62 @@ export function StatsContent({ model, initialLocale }: { model: StatsModel; init
           <p className="rx-stats-empty">{copy.overview.empty}</p>
         ) : (
           <>
-            <dl className="rx-stats-grid">
-              <Figure label={copy.overview.volume} value={usd(summary.volumeUsd, locale)} note={range === "all" ? copy.overview.volume24h(usd(day.volumeUsd, locale)) : null} />
-              <Figure label={copy.overview.operations} value={count(summary.operations, locale)} note={summary.unvalued > 0 ? copy.overview.unvalued(summary.unvalued) : null} />
-              <Figure label={copy.overview.wallets} value={count(summary.wallets, locale)} />
-              <Figure label={copy.overview.fees} value={gross.length ? gross : copy.overview.noFees} note={retained.length ? `${copy.overview.retained}: ${retained.join(" · ")}` : null} kind={gross.length ? "list" : "text"} />
+            <dl className="rx-stats-grid rx-stats-grid--six">
+              <Figure
+                label={copy.overview.volume}
+                value={summary.unvalued === summary.operations ? "—" : usd(summary.volumeUsd, locale)}
+                note={
+                  <>
+                    {range === "all" && day.operations > 0 ? (
+                      <span>{day.unvalued === day.operations ? copy.overview.day24hUnvalued(day.unvalued) : copy.overview.volume24h(`${usd(day.volumeUsd, locale)}${day.unvalued > 0 ? ` ${copy.breakdown.unvalued(day.unvalued)}` : ""}`)}</span>
+                    ) : null}
+                    {summary.unvalued > 0 ? <span>{copy.overview.unvalued(summary.unvalued)}</span> : null}
+                  </>
+                }
+              />
+              <Figure label={copy.overview.operations} value={count(summary.operations, locale)} />
+              <Figure label={copy.overview.wallets} value={count(summary.wallets, locale)} note={copy.overview.walletsNote} />
+              <Figure
+                label={copy.overview.fees}
+                value={gross.length ? (money.feesUsd === 0 && money.feesUnvalued > 0 ? "—" : usd(money.feesUsd, locale)) : copy.overview.noFees}
+                kind={gross.length ? "number" : "text"}
+                note={
+                  gross.length ? (
+                    <>
+                      <span>{copy.overview.feesNote(gross.join(", "))}</span>
+                      {money.feesUnvalued > 0 ? <span>{copy.overview.feesUnvalued(money.feesUnvalued)}</span> : null}
+                    </>
+                  ) : null
+                }
+              />
+              <Figure
+                label={copy.overview.revenue}
+                value={rewardsRead && !(money.revenueUsd === 0 && money.revenueExcluded > 0) ? usd(money.revenueUsd, locale) : "—"}
+                note={
+                  rewardsRead ? (
+                    <>
+                      <span>{copy.overview.revenueNote}</span>
+                      {money.revenueExcluded > 0 ? <span>{copy.overview.revenueExcluded(money.revenueExcluded)}</span> : null}
+                    </>
+                  ) : (
+                    copy.overview.rewardsUnavailable
+                  )
+                }
+              />
+              <Figure
+                label={copy.overview.cashback}
+                value={rewardsRead && !(money.cashbackUsd === 0 && money.rewardsUnvalued > 0) ? usd(money.cashbackUsd, locale) : "—"}
+                note={
+                  rewardsRead ? (
+                    <>
+                      <span>{copy.overview.cashbackNote}</span>
+                      {money.rewardsUnvalued > 0 ? <span>{copy.overview.rewardsUnvalued(money.rewardsUnvalued)}</span> : null}
+                    </>
+                  ) : (
+                    copy.overview.rewardsUnavailable
+                  )
+                }
+              />
             </dl>
             <p className="rx-stats-note">
               {copy.overview.basis}
@@ -305,7 +387,119 @@ export function StatsContent({ model, initialLocale }: { model: StatsModel; init
         )}
       </Section>
 
-      <Section index="02" kicker={copy.feed.kicker} heading={copy.feed.heading} lead={copy.feed.lead}>
+      {ledger.state === "ok" && summary.breakdown.length > 0 ? (
+        <Section
+          index={sectionIndex("breakdown")}
+          kicker={copy.breakdown.kicker}
+          heading={copy.breakdown.heading}
+          meta={product !== "ALL" || range !== "all" ? <StatePill label={`${copy.products[product]} · ${copy.ranges[range]}`} tone="neutral" /> : null}
+        >
+          <div className="rx-stats-feed rx-stats-feed--spaced">
+            <table className="rx-table rx-stats-table rx-stats-breakdown">
+              <thead>
+                <tr>
+                  <th scope="col">{copy.breakdown.columns.product}</th>
+                  <th scope="col">{copy.breakdown.columns.network}</th>
+                  <th scope="col" className="rx-stats-num">{copy.breakdown.columns.operations}</th>
+                  <th scope="col" className="rx-stats-num">{copy.breakdown.columns.volume}</th>
+                  <th scope="col" className="rx-stats-num">{copy.breakdown.columns.fees}</th>
+                  <th scope="col" className="rx-stats-num">{copy.breakdown.columns.revenue}</th>
+                  <th scope="col" className="rx-stats-num">{copy.breakdown.columns.cashback}</th>
+                  <th scope="col" className="rx-stats-num">{copy.breakdown.columns.users}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {summary.breakdown.map((line) => (
+                  <tr key={`${line.product}|${line.network ?? ""}`}>
+                    <th scope="row" data-label={copy.breakdown.columns.product}>{copy.products[line.product]}</th>
+                    <td data-label={copy.breakdown.columns.network}>{line.network ? copy.networks[line.network] : copy.breakdown.noNetwork}</td>
+                    <td data-label={copy.breakdown.columns.operations} className="rx-stats-num">{count(line.operations, locale)}</td>
+                    <td data-label={copy.breakdown.columns.volume} className="rx-stats-num">
+                      {line.unvalued === line.operations ? "—" : usd(line.volumeUsd, locale)}
+                      {line.unvalued > 0 ? <span className="rx-stats-cellnote">{line.unvalued === line.operations ? copy.breakdown.allUnvalued(line.unvalued) : copy.breakdown.unvalued(line.unvalued)}</span> : null}
+                    </td>
+                    <td data-label={copy.breakdown.columns.fees} className="rx-stats-num">
+                      {line.feesUsd === 0 && line.feesUnvalued > 0 ? "—" : usd(line.feesUsd, locale)}
+                      {line.feesUnvalued > 0 ? <span className="rx-stats-cellnote">{line.feesUsd === 0 ? copy.breakdown.allUnvalued(line.feesUnvalued) : copy.breakdown.unvalued(line.feesUnvalued)}</span> : null}
+                    </td>
+                    <td data-label={copy.breakdown.columns.revenue} className="rx-stats-num">
+                      {!rewardsRead || line.revenueExcluded === line.operations ? "—" : usd(line.revenueUsd, locale)}
+                      {rewardsRead && line.revenueExcluded > 0 ? (
+                        <span className="rx-stats-cellnote">{line.revenueExcluded === line.operations ? copy.breakdown.allExcluded(line.revenueExcluded) : copy.breakdown.revenueExcluded(line.revenueExcluded)}</span>
+                      ) : null}
+                    </td>
+                    <td data-label={copy.breakdown.columns.cashback} className="rx-stats-num">
+                      {rewardsRead && !(line.cashbackUsd === 0 && line.cashbackUnvalued > 0) ? usd(line.cashbackUsd, locale) : "—"}
+                      {rewardsRead && line.cashbackUnvalued > 0 ? <span className="rx-stats-cellnote">{line.cashbackUsd === 0 ? copy.breakdown.allUnvalued(line.cashbackUnvalued) : copy.breakdown.unvalued(line.cashbackUnvalued)}</span> : null}
+                    </td>
+                    <td data-label={copy.breakdown.columns.users} className="rx-stats-num">{count(line.wallets, locale)}</td>
+                  </tr>
+                ))}
+              </tbody>
+              {summary.breakdown.length > 1 ? (
+                <tfoot>
+                  <tr className="rx-stats-total">
+                    <th scope="row">{copy.breakdown.total}</th>
+                    <td aria-hidden="true" />
+                    <td className="rx-stats-num">{count(summary.operations, locale)}</td>
+                    <td className="rx-stats-num">
+                      {summary.unvalued === summary.operations ? "—" : usd(summary.volumeUsd, locale)}
+                      {summary.unvalued > 0 ? <span className="rx-stats-cellnote">{summary.unvalued === summary.operations ? copy.breakdown.allUnvalued(summary.unvalued) : copy.breakdown.unvalued(summary.unvalued)}</span> : null}
+                    </td>
+                    <td className="rx-stats-num">
+                      {money.feesUsd === 0 && money.feesUnvalued > 0 ? "—" : usd(money.feesUsd, locale)}
+                      {money.feesUnvalued > 0 ? <span className="rx-stats-cellnote">{copy.breakdown.unvalued(money.feesUnvalued)}</span> : null}
+                    </td>
+                    <td className="rx-stats-num">
+                      {rewardsRead && !(money.revenueUsd === 0 && money.revenueExcluded > 0) ? usd(money.revenueUsd, locale) : "—"}
+                      {rewardsRead && money.revenueExcluded > 0 ? <span className="rx-stats-cellnote">{copy.breakdown.revenueExcluded(money.revenueExcluded)}</span> : null}
+                    </td>
+                    <td className="rx-stats-num">
+                      {rewardsRead && !(money.cashbackUsd === 0 && money.rewardsUnvalued > 0) ? usd(money.cashbackUsd, locale) : "—"}
+                      {rewardsRead && money.rewardsUnvalued > 0 ? <span className="rx-stats-cellnote">{copy.breakdown.unvalued(money.rewardsUnvalued)}</span> : null}
+                    </td>
+                    <td className="rx-stats-num">{count(summary.wallets, locale)}</td>
+                  </tr>
+                </tfoot>
+              ) : null}
+            </table>
+          </div>
+          <p className="rx-stats-note">{copy.breakdown.note}</p>
+        </Section>
+      ) : null}
+
+      {registryRows.length > 0 ? (
+        <Section index={sectionIndex("registry")} kicker={copy.registry.kicker} heading={copy.registry.heading} lead={copy.registry.lead}>
+          <div className="rx-stats-feed">
+            <table className="rx-table rx-stats-table rx-stats-registry">
+              <thead>
+                <tr>
+                  <th scope="col">{copy.registry.columns.network}</th>
+                  <th scope="col">{copy.registry.columns.products}</th>
+                  <th scope="col">{copy.registry.columns.role}</th>
+                  <th scope="col">{copy.registry.columns.address}</th>
+                  <th scope="col">{copy.registry.columns.start}</th>
+                  <th scope="col">{copy.registry.columns.example}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {registryRows.map((row) => (
+                  <RegistryRow key={row.id} row={row} observed={row.observed} copy={copy} locale={locale} />
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="rx-stats-note">
+            <a className="rx-stats-inline" href="/api/stats/registry">
+              {copy.registry.json}
+            </a>
+            {" · "}
+            {copy.registry.bridgeNote}
+          </p>
+        </Section>
+      ) : null}
+
+      <Section index={sectionIndex("feed")} kicker={copy.feed.kicker} heading={copy.feed.heading} lead={copy.feed.lead}>
         {ledger.state !== "ok" ? (
           <p className="rx-stats-empty">{copy.overview.unavailable}</p>
         ) : visible.length === 0 ? (
@@ -388,7 +582,8 @@ export function StatsContent({ model, initialLocale }: { model: StatsModel; init
         )}
       </Section>
 
-      <Section index="03" kicker={copy.method.kicker}>
+
+      <Section index={sectionIndex("method")} kicker={copy.method.kicker}>
         <details className="rx-stats-method">
           <summary>{copy.method.summary}</summary>
           {ledger.state === "ok" ? (
@@ -410,24 +605,6 @@ export function StatsContent({ model, initialLocale }: { model: StatsModel; init
           </ol>
           {chain.state === "ok" ? (
             <dl className="rx-stats-verify">
-              <div>
-                <dt>{copy.method.referral}</dt>
-                <dd>
-                  <a href={`${EXPLORER_ACCOUNT}${chain.referralAccount}`} target="_blank" rel="noopener noreferrer">
-                    <code>{chain.referralAccount}</code>
-                  </a>
-                </dd>
-              </div>
-              <div>
-                <dt>{copy.method.accounts}</dt>
-                <dd>
-                  {chain.tokenAccounts.map((account) => (
-                    <a key={account.address} href={`${EXPLORER_ACCOUNT}${account.address}`} target="_blank" rel="noopener noreferrer">
-                      <code>{shortAddress(account.address)}</code> {account.symbol}
-                    </a>
-                  ))}
-                </dd>
-              </div>
               {model.dashboardUrl ? (
                 <div>
                   <dt>{copy.method.dashboard}</dt>
@@ -459,6 +636,83 @@ export function StatsContent({ model, initialLocale }: { model: StatsModel; init
     </main>
   );
 }
+
+/**
+ * How much of the window the chain can vouch for. A bridge carries no marker on
+ * chain by design — it is attributed from the provider's own record — so it is
+ * named beside the count, never counted as a check that failed.
+ */
+function VerifiedPill({ summary, copy }: { summary: OperationSummary; copy: StatsCopy }) {
+  const record = summary.verification.NOT_APPLICABLE;
+  const checkable = summary.operations - record;
+  const verified = summary.verification.VERIFIED;
+  const label =
+    checkable > 0
+      ? `${copy.overview.verified(verified, checkable)}${record > 0 ? ` · ${copy.overview.providerRecord(record)}` : ""}`
+      : copy.overview.providerRecord(record);
+  return <StatePill label={label} tone={checkable > 0 && verified === checkable ? "verified" : "evidence"} />;
+}
+
+/** One public identity: where it is, what it serves, its job, its address, when it started, and a transaction. */
+function RegistryRow({ row, observed, copy, locale }: { row: PublicRegistryRow; observed: boolean; copy: StatsCopy; locale: PublicLocale }) {
+  const words = copy.registry;
+  const networkName = (id: string) => (words.networks as Readonly<Record<string, string | undefined>>)[id] ?? id;
+  const network = networkName(row.network);
+  const products = row.products.map((product) => words.products[product]).join(" · ");
+  const symbol = row.mint ? KNOWN_SYMBOL[row.mint] ?? shortAddress(row.mint) : null;
+  const kind = row.kind === "JUPITER_REFERRAL_TOKEN_ACCOUNT" && symbol ? `${words.kinds[row.kind]} · ${symbol}` : words.kinds[row.kind];
+  const address = row.address ?? "";
+  const addressUrl = row.network === "solana" ? `${EXPLORER_ACCOUNT}${address}` : null;
+  const start = row.start;
+  const exampleUrl = row.example && start ? txUrl(start.network, row.example) : null;
+  return (
+    <tr>
+      <td data-label={words.columns.network}>{network}</td>
+      <td data-label={words.columns.products}>{products || "—"}</td>
+      <td data-label={words.columns.role}>
+        <span className="rx-stats-stack">
+          <span>{words.roles[row.role]}</span>
+          <span className="rx-stats-cellnote">{kind}</span>
+        </span>
+      </td>
+      <td data-label={words.columns.address}>
+        {addressUrl ? (
+          <a href={addressUrl} target="_blank" rel="noopener noreferrer" title={address}>
+            <code>{shortAddress(address)}</code>
+          </a>
+        ) : (
+          <code title={address}>{shortAddress(address)}</code>
+        )}
+      </td>
+      <td data-label={words.columns.start}>
+        {start ? (
+          <span className="rx-stats-stack">
+            <span>{words.block(networkName(start.network), count(start.block, locale))}</span>
+            {start.time ? <span className="rx-stats-cellnote">{dateText(start.time, locale)}</span> : null}
+          </span>
+        ) : observed ? (
+          words.noTransaction
+        ) : (
+          "—"
+        )}
+      </td>
+      <td data-label={words.columns.example}>
+        {row.example && exampleUrl ? (
+          <a href={exampleUrl} target="_blank" rel="noopener noreferrer" title={row.example}>
+            <code>{shortAddress(row.example)}</code> ↗
+          </a>
+        ) : (
+          "—"
+        )}
+      </td>
+    </tr>
+  );
+}
+
+const KNOWN_SYMBOL: Readonly<Record<string, string>> = {
+  So11111111111111111111111111111111111111112: "SOL",
+  EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v: "USDC",
+};
 
 /** Two rows that belong together — the row and its opened detail — without a wrapper element a table would refuse. */
 function RowGroup({ children }: { children: ReactNode }) {

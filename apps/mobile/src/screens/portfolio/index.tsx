@@ -13,6 +13,7 @@ import { Txt } from '@/components/txt'
 import { AskRyn } from '@/features/agent/ask-ryn'
 import { RULES_KEY } from '@/features/autoinvest/use-rules'
 import { eventFor, eventLine, SELL_FOR_USDC, swapActionWord, windowOpen } from '@/features/invest/conversion-watch'
+import { shelfCardFor } from '@/features/invest/shelf'
 import { useCompanyShelf } from '@/features/invest/use-shelf'
 import { webHrefOf } from '@/features/monitoring/deep-link'
 import { PORTFOLIO_COPY } from '@/features/portfolio/copy'
@@ -31,6 +32,7 @@ import { DASH, formatClock, formatPercent, formatUsd, formatUsdSigned, shortAddr
 
 import { HoldingRow, type RowEvent } from './holding-row'
 import { HoldingSheet } from './holding-sheet'
+import { SellSheet } from '@/screens/invest/sell-sheet'
 
 function LoadingBody({ label }: { label: string }) {
   return (
@@ -162,8 +164,14 @@ export function PortfolioScreen() {
   const { query, view, heldBack } = usePortfolio(account.address)
   const [dustOpen, setDustOpen] = useState(false)
   const [picked, setPicked] = useState<PortfolioRow | null>(null)
+  // A company's position sold from here: the position's sheet closes and the sale's opens in its place.
+  const [selling, setSelling] = useState<PortfolioRow | null>(null)
   const shelf = useCompanyShelf()
   const events = shelf.shelf?.events ?? null
+  // A company sold on its own sheet: one the shelf offers — a supported issuer, trading, priced; anything else in Trade.
+  const onShelf = new Set(
+    [...(shelf.shelf?.companies ?? []), ...(shelf.shelf?.privateCompanies ?? [])].map((card) => card.mint),
+  )
   /* The issuer's window on a held token: the holder's line, and while it is open the swap and the sale on its page. */
   const eventOf = (row: PortfolioRow): RowEvent | null => {
     const event = eventFor(events, row.mint)
@@ -359,7 +367,33 @@ export function PortfolioScreen() {
         copy={copy}
         event={picked ? eventOf(picked) : null}
         onClose={() => setPicked(null)}
+        onSell={
+          // Only a movable balance is sold on the sheet; anything else goes to Trade, as before.
+          picked &&
+          onShelf.has(picked.mint) &&
+          eventFor(events, picked.mint) === null &&
+          /^\d+$/.test(picked.spendableRaw) &&
+          BigInt(picked.spendableRaw) > 0n
+            ? (row) => {
+                setPicked(null)
+                setSelling(row)
+              }
+            : undefined
+        }
       />
+      {selling ? (
+        <SellSheet
+          visible
+          mint={selling.mint}
+          hint={{
+            // The company as the shelf names it; a row carries the token's catalogue name.
+            name: shelfCardFor(shelf.shelf, selling.mint)?.name ?? selling.name ?? selling.symbol,
+            icon: selling.icon,
+            ticker: selling.symbol,
+          }}
+          onClose={() => setSelling(null)}
+        />
+      ) : null}
     </Screen>
   )
 }

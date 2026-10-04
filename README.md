@@ -23,7 +23,7 @@ commit, named for what it released; the latest is from 2026-10-04.
 | `supabase/migrations/`, `supabase/prepared/` | The database schema migration by migration, and the prepared SQL that is applied by hand (corrections and rollbacks) |
 | `public/` | Static assets |
 
-2,743 files come from the development repository as released, and each test
+2,756 files come from the development repository as released, and each test
 sits beside the code it tests (`*.test.mjs`); `README.md`, `BOUNDARY.md`,
 `LICENSE`, `.gitignore` and the scripts of `package.json` are written for this
 snapshot.
@@ -85,15 +85,15 @@ build-tools).
 
 The code as it stood before the hackathon is tagged
 `pre-hackathon-baseline-2026-09-11` in the development repository — commit `7fc5776f`,
-2026-09-11. Measured against that tag, path by path, for the 2,743 files
+2026-09-11. Measured against that tag, path by path, for the 2,756 files
 that come from the development repository:
 
 | Since the tag | Files |
 |---|---|
-| New | 1,004 |
+| New | 1,017 |
 | Changed | 804 |
 | Unchanged | 935 |
-| Lines added / removed | +262,628 / −19,688 |
+| Lines added / removed | +268,133 / −19,688 |
 
 [BOUNDARY.md](BOUNDARY.md) lists every new and every changed file. Shipped since
 then, as the public build log records it:
@@ -131,6 +131,7 @@ then, as the public build log records it:
 | 2026-09-29 | Help and privacy for the Android app |
 | 2026-09-29 | Portfolio risk on Home |
 | 2026-09-29 | Lighter Home and Portfolio |
+| 2026-10-04 | Stats by product and the public fee addresses |
 
 ## What is not here
 

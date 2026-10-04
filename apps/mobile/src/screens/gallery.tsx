@@ -70,6 +70,7 @@ import {
 } from '@/screens/invest/buy-sheet'
 import { convertReceiptFace } from '@/screens/invest/convert-sheet'
 import { EventBanner } from '@/screens/invest/event-ui'
+import { SaleSamples } from '@/screens/invest/sale-samples'
 import { HoldingRow } from '@/screens/portfolio/holding-row'
 import { type } from '@/theme'
 import { formatClock } from '@/utils/format'
@@ -332,7 +333,7 @@ const SAMPLE_RULE: AutoinvestRule = {
 /* «З кожної оплати» (M26, 1.19.0): the contract's own example — every payment rounded up to $1 into Apple; a $3,40
    payment with its Solana Pay label waits with $0,60, then a $2,30 one makes $1,30 and one reminder on exactly it. */
 const SAMPLE_PAYMENT_OUT = {
-  signature: 'ouAycT6upjJsgcWHYsHFJeMi8jWyfNsVxFkmSBtBgmYtpFkb3dC4hvQjgq9eR1g3aVzKLotXr8vytdBfpe5ExmgR',
+  signature: 'sample-payment-1',
   direction: 'out',
   amountUsd: 3.4,
   addUsd: 0.6,
@@ -371,7 +372,7 @@ const SAMPLE_PAYMENTS_DUE: AutoinvestRule = {
     events: [
       {
         ...SAMPLE_PAYMENT_OUT,
-        signature: 'ouAycT6upjJsgcWHYsHFJeMi8jD27nVjnMW7gFxq23L6i3LV7yQNXWcyTt3WystjcX8BvuE5UAafah514xDCedmn',
+        signature: 'sample-payment-2',
         amountUsd: 2.3,
         addUsd: 0.7,
         at: '2026-09-24T15:30:00.000Z',
@@ -787,6 +788,9 @@ export function GalleryScreen() {
               </Card>
             ))}
           </Section>
+          <Section title="Sale from a position · Apple and OpenAI">
+            <SaleSamples />
+          </Section>
           <Section title="IPO and swap watch · SpaceX">
             {/* Everyone reads the event before any figure; a holder reads the ask, with the swap and the quiet sale. */}
             <EventBanner line={eventLine(SAMPLE_EVENT, 'everyone', locale, eventNow)} />
@@ -1063,7 +1067,7 @@ export function GalleryScreen() {
               paid="100.00 USDC"
               received="0.1309 SPYx"
               at={SAMPLE_AT}
-              signature="5UzgQ7Y2nT9k3s1WvR8pLm4xCq6bHf2eJd7aKs9tPw3rN1cVb8yXo2mZ4qLp6tG1hJ5kR9sD3fA7wE2uY"
+              signature="sample-receipt-3"
             />
             <ReceiptCard status="pending" title="Swap SOL to USDC" paid="0.5 SOL" received="—" at={SAMPLE_AT} />
             <ReceiptCard
@@ -1072,7 +1076,7 @@ export function GalleryScreen() {
               paid="—"
               received="—"
               at={SAMPLE_AT}
-              signature="3fA7wE2uY5UzgQ7Y2nT9k3s1WvR8pLm4xCq6bHf2eJd7aKs9tPw3rN1cVb8yXo2mZ4qLp6tG1hJ5kR9sD"
+              signature="sample-receipt-4"
             />
           </Section>
 

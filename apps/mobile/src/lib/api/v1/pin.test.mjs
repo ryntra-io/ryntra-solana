@@ -42,3 +42,9 @@ test('the copies carry what 1.19.0 added — the third kind of rule and its remi
   assert.match(types, /amountUsd: number \| null;\n[^\n]*\n\s*events: number \| null;/)
   assert.match(types, /ownAccount: "\/api\/v1\/rules\/payments\/own"/)
 })
+
+test('the copies carry what 1.20.0 added — «Перевірка» counted by the server on the quote and the order', () => {
+  const types = readFileSync(join(here, 'types.ts'), 'utf8').replace(/\r\n/g, '\n')
+  assert.match(types, /export type SwapCheck = Readonly<\{/)
+  assert.equal(types.match(/^ {2}check: SwapCheck \| null;$/gm)?.length, 2)
+})

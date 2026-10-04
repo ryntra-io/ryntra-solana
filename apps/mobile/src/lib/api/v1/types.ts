@@ -21,12 +21,12 @@
  * (`plans.*` below) and so are the results (`plans.results`, Plan · Before
  * signing · Actual); the Review's Strategy block is judged by the order
  * route on `origin.plan` and refused as `PLAN_REVIEW_BLOCKED` when a
- * required check fails; the device registry's routes are live since
- * `RYN-MONITORING-PUSH-001` (`/api/v1/notifications/devices`).
+ * required check fails; the device registry's routes are live too
+ * (`/api/v1/notifications/devices`).
  */
 
 export const API_MAJOR = 1 as const;
-export const API_CONTRACT_VERSION = "1.18.0" as const;
+export const API_CONTRACT_VERSION = "1.23.0" as const;
 export const API_HEADER = "X-Ryntra-API" as const;
 export const API_VERSION_HEADER = "X-Ryntra-API-Version" as const;
 export const NETWORK = "solana:mainnet" as const;
@@ -68,7 +68,14 @@ export type ApiErrorCode =
   | "AGENT_BUSY"
   /* 1.12.0 — autoinvest rules */
   | "RULE_NOT_FOUND"
-  | "RULE_LIMIT_REACHED";
+  | "RULE_LIMIT_REACHED"
+  /* 1.21.0 — «Ryntra попередить» */
+  | "CHANNEL_REQUIRED"
+  | "PRICE_UNAVAILABLE"
+  /* 1.22.0 — «Гроші» */
+  | "AMOUNT_INVALID"
+  | "MINT_UNREADABLE"
+  | "PAY_LINK_NOT_FOUND";
 
 /** 1.7.0: the stable ids a plan issue may carry beside its message. */
 export type PlanIssueCode =
@@ -160,6 +167,34 @@ export type Capabilities = Readonly<{
     briefSections?: readonly AgentBriefSection[];
     criticKinds?: readonly AgentCriticKind[];
     limits: Readonly<{ questionChars: number; turnsKept: number }>;
+  }>;
+  /** 1.20.0: «Популярне» — the route, and how many companies it answers by default and at most. «Перевірка» travels as `check` on the swap's quote and order. */
+  stocks?: Readonly<{ popular: "/api/v1/stocks/popular"; popularLimit: number; popularMaxLimit: number }>;
+  /** 1.21.0: Нагляд over positions — the routes, the presets «Ryntra попередить» offers, and the thresholds the states are judged by. */
+  positions?: Readonly<{
+    list: "/api/v1/positions";
+    watch: "/api/v1/positions/watch";
+    presets: readonly Readonly<{ id: PositionWatchPreset; stopPct: number; targetPct: number }>[];
+    states: readonly WatchState[];
+    nearLimitPct: number;
+    aboveExchangePct: number;
+    priceMaxAgeMinutes: number;
+    /** 1.23.0: «Ризик портфеля» — its route, and the caps it judges. */
+    risk?: "/api/v1/positions/risk";
+    assetCapPct?: number;
+    privateCapPct?: number;
+    capsFromUsd?: number;
+  }>;
+  /** 1.22.0: «Гроші» — the payment links and their bounds, the recipient check, the reading of what the wallet returned, and the transfer routes Send runs on. */
+  money?: Readonly<{
+    payLinks: "/api/v1/pay/requests";
+    expirations: readonly PayLinkExpiration[];
+    defaultExpiration: PayLinkExpiration;
+    descriptionMax: number;
+    listLimit: number;
+    recipient: "/api/v1/money/recipient";
+    returned: "/api/v1/money/send/returned";
+    transfer: "/api/solana/transfer";
   }>;
   observedAt: string;
 }>;
@@ -962,19 +997,19 @@ export type AgentCriticResponse = AgentLensShape & Readonly<{ format: "critic"; 
 /* ============================================================ 1.11.0 — the consumed routes, described */
 
 /**
- * 1.11.0 (`RYN-API-CONTRACT-002`): the routes the web and the phone already
- * read outside `/api/v1`, typed exactly as they are served — the Spot
- * markets, one market and its candles; the stock universe (whole and slim),
- * one stock and its quote; the holdings. They are not v1 paths: no contract
- * major is checked and no version header is answered; a refusal is
- * `RouteError`, thrown by the client as `RyntraRouteError`. Beside them, the
- * Telegram channel over the bearer is a v1 path (the mobile line's request 17).
+ * 1.11.0: the routes the web and the phone already read outside `/api/v1`,
+ * typed exactly as they are served — the Spot markets, one market and its
+ * candles; the stock universe (whole and slim), one stock and its quote; the
+ * holdings. They are not v1 paths: no contract major is checked and no
+ * version header is answered; a refusal is `RouteError`, thrown by the client
+ * as `RyntraRouteError`. Beside them, the Telegram channel over the bearer is
+ * a v1 path.
  */
 export const SPOT_CATEGORIES = ["crypto", "meme", "stock"] as const;
 export type SpotCategory = (typeof SPOT_CATEGORIES)[number];
 export const SPOT_TIMEFRAMES = ["1m", "5m", "15m", "1h", "4h", "1d"] as const;
 export type SpotTimeframe = (typeof SPOT_TIMEFRAMES)[number];
-/** 1.14.0: the last value stays for records written before canon v5.2 В26 (private companies through PreStocks only); no new answer carries it. */
+/** 1.14.0: the last value stays for records written before private companies moved to PreStocks only; no new answer carries it. */
 export const STOCK_ISSUER_IDS = ["xstocks", "backpack", "ondo", "prestocks", "tessera"] as const;
 export type StockIssuerId = (typeof STOCK_ISSUER_IDS)[number];
 export const STOCK_REFERENCE_STATES = ["current", "last-available", "confirmed-close", "stale", "unavailable"] as const;
@@ -1243,7 +1278,7 @@ export type StockUniverseResponse = Readonly<{
   fetchedAt: string;
 }>;
 
-/** The row as the stock surfaces draw it. 1.11.0 adds `multiplierPending`, `multiplierPendingAt` (judged at answer time) and `sessionNextChangeAt` — the mobile line's request 26. */
+/** The row as the stock surfaces draw it. 1.11.0 adds `multiplierPending`, `multiplierPendingAt` (judged at answer time) and `sessionNextChangeAt`. */
 export type StockSlimRow = Readonly<{
   mint: string;
   symbol: string;
@@ -1345,6 +1380,25 @@ export type StockQuoteResponse = Readonly<{
   transferFee: StockTransferFee | null;
   lifecycle: StockLifecycle;
 }>;
+
+/** 1.20.0: how many companies «Популярне» answers when not asked (Home's wide list), and the most it answers. */
+export const POPULAR_DEFAULT_LIMIT = 12 as const;
+export const POPULAR_MAX_LIMIT = 24 as const;
+
+/** 1.20.0: one card of «Популярні компанії» — the company as a person names it, the token the card opens, its price per token, the day's move in per cent, the company's day of trading in whole dollars (the order). */
+export type PopularCompany = Readonly<{
+  name: string;
+  ticker: string;
+  mint: string;
+  icon: string | null;
+  price: number;
+  change24h: number | null;
+  volume24h: number;
+  issuer: "xstocks" | "backpack" | "ondo" | "prestocks";
+}>;
+
+/** 1.20.0: `GET /api/v1/stocks/popular[?limit=][&exclude=<mint>]` — public; the listed companies by the day's trading, the same for everyone. */
+export type PopularCompaniesResponse = Readonly<{ companies: readonly PopularCompany[]; order: "volume-24h"; fetchedAt: string }>;
 
 /** `POST /api/solana/holdings` — public: any address. */
 export type HoldingsRequest = Readonly<{ owner: string; network?: "mainnet" | "devnet" }>;
@@ -1488,16 +1542,122 @@ export type ReferralRefusal = (typeof REFERRAL_REFUSALS)[number];
 export const MONITOR_STATUSES = ["watching", "needs_attention", "paused", "unavailable"] as const;
 export type MonitorStatus = (typeof MONITOR_STATUSES)[number];
 
-export const MONITOR_SUBJECT_KINDS = ["trading-plan", "prediction-plan"] as const;
+/** 1.21.0: `position` — «Ryntra попередить» on a company the wallet holds, `id` the token's mint. */
+export const MONITOR_SUBJECT_KINDS = ["trading-plan", "prediction-plan", "position"] as const;
 export type MonitorSubjectKind = (typeof MONITOR_SUBJECT_KINDS)[number];
 /** 1.12.0: a note may also be an autoinvest rule's reminder — a note's subject, never a card's; 1.13.0: or the month's autoinvest budget, spent; 1.15.0: or an issuer's event about a token the wallet holds (`id` its mint) — a window to swap it before the issuer's cut-off. */
 export type MonitorNoteSubjectKind = MonitorSubjectKind | "autoinvest-rule" | "autoinvest-budget" | "issuer-event";
 
-export const MONITOR_CONDITION_KINDS = ["plan.price_bound", "plan.invalidation", "plan.expiry", "plan.deviation", "plan.evidence", "prediction.probability", "prediction.resolution", "prediction.signal"] as const;
+/** 1.21.0: `plan.target` — a position's target, reached. */
+export const MONITOR_CONDITION_KINDS = ["plan.price_bound", "plan.invalidation", "plan.expiry", "plan.deviation", "plan.evidence", "prediction.probability", "prediction.resolution", "prediction.signal", "plan.target"] as const;
 export type MonitorConditionKind = (typeof MONITOR_CONDITION_KINDS)[number];
 
 export const MONITOR_FINDING_OUTCOMES = ["pass", "fail", "stale", "unavailable", "unknown"] as const;
 export type MonitorFindingOutcome = (typeof MONITOR_FINDING_OUTCOMES)[number];
+
+/* 1.21.0 — Нагляд over positions and «Ryntra попередить» */
+
+/** The state a company position is in: «Все за планом», «Увага», «Дія», «Пауза емітента», «Увага: куплено — вихід не налаштований», or «Не вдалося перевірити». */
+export const WATCH_STATES = ["on-plan", "attention", "action", "issuer-paused", "exit-not-set", "unknown"] as const;
+export type WatchState = (typeof WATCH_STATES)[number];
+/** Why: `between` the limit and the target; `near-limit` ≤2 % above the limit; `issuer-event` a swap window; `above-exchange` >1 % above the exchange; `exchange-closed`; `limit` or `target` reached; `issuer-paused`; `no-exit`; `no-price`. */
+export const WATCH_REASONS = ["between", "near-limit", "issuer-event", "above-exchange", "exchange-closed", "limit", "target", "issuer-paused", "no-exit", "no-price"] as const;
+export type WatchReason = (typeof WATCH_REASONS)[number];
+/** The one action: «Подивитись», «Відкрити продаж», «Деталі», «Увімкнути „Ryntra попередить“», «Підключи Telegram». */
+export const WATCH_ACTIONS = ["look", "open-sale", "details", "warn", "connect-telegram"] as const;
+export type WatchAction = (typeof WATCH_ACTIONS)[number];
+/** Where an exit comes from: the plan the position was bought under, or «Ryntra попередить» on the position. */
+export const WATCH_SOURCES = ["plan", "watch"] as const;
+export type WatchSource = (typeof WATCH_SOURCES)[number];
+/** The presets «Ryntra попередить» offers: «Обережно» −5 % / +10 %, «Збалансовано» −10 % / +20 %. */
+export const POSITION_WATCH_PRESETS = ["careful", "balanced"] as const;
+export type PositionWatchPreset = (typeof POSITION_WATCH_PRESETS)[number];
+
+/** A position's exit: the loss limit and the target in USD per unit as the wallet shows the token. */
+export type PositionExit = Readonly<{ source: WatchSource; limit: number; target: number | null; preset: PositionWatchPreset | null; planId: string | null }>;
+
+/** One company the wallet holds, as Нагляд sees it. Draw the state and its one action; decide nothing. */
+export type PositionWatchView = Readonly<{
+  mint: string;
+  symbol: string;
+  name: string;
+  icon: string | null;
+  unitBasis: "share" | "token";
+  amountRaw: string;
+  valueUsd: number | null;
+  price: number | null;
+  observedAt: string | null;
+  deviationPct: number | null;
+  exit: PositionExit | null;
+  state: WatchState;
+  reason: WatchReason;
+  action: WatchAction | null;
+  toLimitPct: number | null;
+}>;
+
+/** `GET /api/v1/positions` — the proven wallet's company positions; `read` says what answered. Bearer. */
+export type PositionsResponse = Readonly<{
+  address: string;
+  positions: readonly PositionWatchView[];
+  channel: Readonly<{ telegram: boolean }>;
+  read: Readonly<{ holdings: "complete" | "partial" | "failed"; market: "ok" | "failed"; at: string }>;
+}>;
+
+/** `PUT /api/v1/positions/watch` — «Ryntra попередить» on a company the wallet holds. Bearer; Telegram must be connected. */
+export type PositionWatchRequest = Readonly<{ mint: string; preset: PositionWatchPreset; locale?: "en" | "uk" }>;
+
+/** «Ryntra попередить» as written: the figures the server counted from the price then. */
+export type PositionWatch = Readonly<{
+  mint: string;
+  symbol: string;
+  preset: PositionWatchPreset;
+  stopPct: number;
+  targetPct: number;
+  basisPerUnit: number;
+  basisObservedAt: string;
+  limitPerUnit: number;
+  targetPerUnit: number;
+  createdAt: string;
+  updatedAt: string;
+}>;
+
+export type PositionWatchResponse = Readonly<{ watch: PositionWatch; position: PositionWatchView | null }>;
+
+/** 1.23.0: «Ризик портфеля» — «Нормальний», «Увага: <причина>», «Не вдалося перевірити». */
+export const RISK_STATES = ["normal", "attention", "unknown"] as const;
+export type RiskState = (typeof RISK_STATES)[number];
+/** The rules «Увага» names, the most urgent first: a position in «Дія», a listed company with no loss limit over the weekend, one asset above its cap, the private companies together above theirs. */
+export const RISK_REASONS = ["action", "weekend-no-limit", "concentration", "private-share"] as const;
+export type RiskReason = (typeof RISK_REASONS)[number];
+/** What could not be read: the token accounts, the companies' market, the positions' exits (plans and «Ryntra попередить»), the SOL balance, a price. */
+export const RISK_GAPS = ["holdings", "market", "exits", "balance", "prices"] as const;
+export type RiskGap = (typeof RISK_GAPS)[number];
+export const RISK_ASSET_KINDS = ["company", "private", "crypto", "dollar"] as const;
+export type RiskAssetKind = (typeof RISK_ASSET_KINDS)[number];
+
+/** One rule «Ризик портфеля» found broken, and what it names. Draw it; decide nothing. */
+export type PortfolioRiskFinding = Readonly<{
+  reason: RiskReason;
+  kind: RiskAssetKind | null;
+  mint: string | null;
+  symbol: string | null;
+  name: string | null;
+  sharePct: number | null;
+  capPct: number | null;
+  watchReason: "limit" | "target" | null;
+}>;
+
+/** «Ризик портфеля» as the server judged it; «Нормальний» never on incomplete data. */
+export type PortfolioRisk = Readonly<{
+  state: RiskState;
+  findings: readonly PortfolioRiskFinding[];
+  gaps: readonly RiskGap[];
+  totalUsd: number | null;
+  capsApplied: boolean;
+}>;
+
+/** `GET /api/v1/positions/risk` — «Ризик портфеля» of the proven wallet. Bearer. */
+export type PortfolioRiskResponse = Readonly<{ address: string; risk: PortfolioRisk; at: string }>;
 
 /** `COLLECTED` is the only income. */
 export const SWAP_SERVICE_FEE_STATES = ["NONE", "UNCONFIGURED", "NOT_APPLIED", "QUOTED", "COLLECTED", "NOT_COLLECTED"] as const;
@@ -1701,6 +1861,8 @@ export type MonitoringCard = Readonly<{
       price?: number | null;
       bound?: number | null;
       invalidation?: number | null;
+      /** 1.21.0: a position's target. */
+      target?: number | null;
       deviationPct?: number | null;
       maxDeviationPct?: number | null;
       validUntil?: string | null;
@@ -1738,6 +1900,8 @@ export type MonitoringNote = Readonly<{
       price?: number | null;
       bound?: number | null;
       invalidation?: number | null;
+      /** 1.21.0: a position's target. */
+      target?: number | null;
       deviationPct?: number | null;
       maxDeviationPct?: number | null;
       validUntil?: string | null;
@@ -2046,6 +2210,34 @@ export type SwapAssetVerdict = Readonly<{
   evaluatedAt: string;
 }>;
 
+/** 1.20.0: which way a company goes — bought with USDC, or sold into it. */
+export type CheckSide = "buy" | "sell";
+/** 1.20.0: `quote` the live quote's figures, before a Review; `order` the exact order the wallet will sign. */
+export type CheckBasis = "quote" | "order";
+/** 1.20.0: USDC counted as dollars, or the company's share or token as the wallet shows it. */
+export type CheckUnit = "usdc" | "share" | "token";
+export type CheckWords = Readonly<{ en: string; uk: string }>;
+
+/**
+ * 1.20.0 — «Перевірка» as the server counts it: Спишеться (`spend`) · Отримаєш
+ * (`get`, with `atLeast` the chain's minimum) · Усі витрати (`costs`, the
+ * issuer's fee inside it said alone) · Що це (`what`), and the account's
+ * one-time reserve (`reserve`, on the order only; `first` — say it before the
+ * four lines). Draw these figures; count none of them. An amount that could
+ * not be counted is null, never zero.
+ */
+export type SwapCheck = Readonly<{
+  side: CheckSide;
+  basis: CheckBasis;
+  company: Readonly<{ mint: string; symbol: string; name: string; issuer: "xstocks" | "backpack" | "ondo" | "prestocks"; unit: "share" | "token"; privateCompany: boolean; decimals: number; multiplier: number | null }>;
+  spend: Readonly<{ mint: string; unit: CheckUnit; amount: number | null; usd: number | null }>;
+  get: Readonly<{ mint: string; unit: CheckUnit; amount: number | null; atLeast: number | null; usd: number | null }>;
+  costs: Readonly<{ usd: number; issuerFee: Readonly<{ basisPoints: number; usd: number }> | null }> | null;
+  reserve: Readonly<{ lamports: string; usd: number | null; first: boolean }> | null;
+  what: Readonly<{ truth: CheckWords; note: Readonly<{ kind: "issuer-event" | "sale-may-fail"; en: string; uk: string }> | null; caution: boolean }>;
+  sol: Readonly<{ usd: number | null; observedAt: string | null }>;
+}>;
+
 export type SwapQuoteResponse = Readonly<{
   order: SwapJupiterQuote;
   review: SwapReview;
@@ -2054,6 +2246,8 @@ export type SwapQuoteResponse = Readonly<{
   outputFee: Readonly<{ basisPoints: number; feeRaw: string; capApplied: boolean }>;
   passports: Readonly<Record<string, SwapPassport>>;
   expiresAt: string;
+  /** 1.20.0: «Перевірка» on the quote (no reserve); null unless a company is bought with USDC or sold into it. */
+  check: SwapCheck | null;
 }>;
 
 export type SwapInspection = Readonly<{
@@ -2193,6 +2387,8 @@ export type SwapOrderResponse = Readonly<{
   preSign: SwapPreSign;
   expiresAt: string;
   planReview: PlanReview | null;
+  /** 1.20.0: «Перевірка» on this exact order, with the reserve the simulation proved; null unless a company is bought with USDC or sold into it. */
+  check: SwapCheck | null;
 }>;
 
 /** `POST /api/solana/swap/execute` — the bundle and the proof exactly as `/order` served them, and the wallet's signed bytes (`reviewedTransactionBase64` only when the wallet changed them). */
@@ -2431,7 +2627,7 @@ export type SwapCancelReviewError = Readonly<{ error: Readonly<{ code: SwapCance
 
 export type SwapRecoverError = Readonly<{ error: Readonly<{ code: SwapRecoverErrorCode; message: string }> }>;
 
-/* ------------------------------------------------------------ 1.11.0 — Ryntra Predictions in paper mode (the mobile line's request 18) */
+/* ------------------------------------------------------------ 1.11.0 — Ryntra Predictions in paper mode */
 
 /**
  * Every route under `/api/predictions/*`, typed as it is served. The market
@@ -3054,11 +3250,11 @@ export type PredictionsWatchlistResponse = Readonly<{ wallet: string; entries: r
 /* ============================================================ 1.12.0 — «Автоінвест» */
 
 /**
- * 1.12.0 (`RYN-INVEST-SIMPLE-001`): an autoinvest rule — «Регулярно» — is the
- * proven wallet's company, a sum in dollars, how often and when on the
- * person's own clock. It only schedules a reminder; every purchase is the
- * wallet's own signature on a fresh Review. `GET`/`POST /api/v1/rules`,
- * `GET`/`DELETE /api/v1/rules/{id}`, `POST /api/v1/rules/{id}/status`.
+ * 1.12.0: an autoinvest rule — «Регулярно» — is the proven wallet's company,
+ * a sum in dollars, how often and when on the person's own clock. It only
+ * schedules a reminder; every purchase is the wallet's own signature on a
+ * fresh Review. `GET`/`POST /api/v1/rules`, `GET`/`DELETE /api/v1/rules/{id}`,
+ * `POST /api/v1/rules/{id}/status`.
  */
 export type RuleCadence = "daily" | "weekly" | "monthly";
 /** `schedule` — «Регулярно»; 1.13.0: `dip` — «Якщо впаде»; 1.19.0: `payments` — «З кожної оплати». */
@@ -3215,3 +3411,642 @@ export type RuleBudgetResponse = Readonly<{ budget: RuleBudget }>;
 /** 1.13.0: with the month's budget. */
 export type RuleListResponse = Readonly<{ address: string; rules: readonly AutoinvestRule[]; total: number; budget: RuleBudget }>;
 export type RuleDeleteResponse = Readonly<{ deleted: true; id: string }>;
+
+/* ------------------------------------------------------------ «Гроші» for the phone (1.22.0) */
+
+/** How long a payment link stays open; the server clamps to these. */
+export const PAY_LINK_EXPIRATIONS = ["1h", "24h", "7d", "30d"] as const;
+export type PayLinkExpiration = (typeof PAY_LINK_EXPIRATIONS)[number];
+
+export const PAY_LINK_STATUSES = ["AWAITING", "PAID", "EXPIRED", "CHECKING", "UNKNOWN"] as const;
+export type PayLinkStatus = (typeof PAY_LINK_STATUSES)[number];
+
+/** What a link's page says aloud: less, another token, or more came. */
+export const PAY_LINK_NOTES = ["UNDERPAID", "WRONG_TOKEN", "OVERPAID"] as const;
+export type PayLinkNote = (typeof PAY_LINK_NOTES)[number];
+
+export const RECIPIENT_INPUTS = ["address", "solana-pay", "pay-link"] as const;
+export type RecipientInput = (typeof RECIPIENT_INPUTS)[number];
+
+export const RECIPIENT_NEXT = ["transfer", "pay-link", "none"] as const;
+export type RecipientNext = (typeof RECIPIENT_NEXT)[number];
+
+export const RECIPIENT_PROBLEMS = ["EMPTY", "NOT_AN_ADDRESS", "MISREAD_CHARACTER", "WRONG_LENGTH", "REQUEST_INVALID", "REQUEST_UNSUPPORTED", "REFERENCE_UNSUPPORTED", "LINK_INVALID", "LINK_NOT_FOUND", "LINK_PAID", "LINK_EXPIRED", "LINK_MISMATCH", "LINK_UNCONFIRMED", "SELF", "MINT_UNREADABLE", "UNSAFE_SOL_RECIPIENT", "RECIPIENT_MINT_MISMATCH", "RECIPIENT_PROGRAM_MISMATCH", "RECIPIENT_ACCOUNT_MALFORMED", "OFF_CURVE_OWNER_UNSUPPORTED", "RECIPIENT_FROZEN", "RECIPIENT_UNREADABLE"] as const;
+export type RecipientProblem = (typeof RECIPIENT_PROBLEMS)[number];
+
+export const SEND_RETURNED_VERDICTS = ["BYTES_MATCH", "BYTES_FEE_ADDED", "BYTES_CHANGED", "NOT_SIGNED", "UNREADABLE"] as const;
+export type SendReturnedVerdict = (typeof SEND_RETURNED_VERDICTS)[number];
+
+/** 1.22.0 — «Перевірка» of a transfer as the server counts it, on the plan and adopt answers: the card's lines in exact decimals, whether the wallet may be opened, why not, and the warnings in the card's words (English and Ukrainian). `minimum`: SOL to an address with no account — the least it must carry, never a cost; `setup`: a token account opened for the recipient, paid by the sender. */
+export type TransferCheck = Readonly<{
+  asset: Readonly<{ mint: string | null; decimals: number }>;
+  from: string;
+  to: Readonly<{
+    address: string;
+    kind: "wallet" | "token-account";
+    owner: string;
+    account: string;
+    opensAccount: boolean;
+  }>;
+  send: Readonly<{ raw: string; amount: string }>;
+  issuerFee: Readonly<{ raw: string; amount: string; basisPoints: number }> | null;
+  receive: Readonly<{ raw: string; amount: string; less: boolean }>;
+  networkFee: Readonly<{ lamports: string; sol: string }>;
+  setup: Readonly<{ lamports: string; sol: string }> | Readonly<{ lamports: null; sol: null }> | null;
+  minimum: Readonly<{ lamports: string; sol: string }> | Readonly<{ lamports: null; sol: null }> | null;
+  signable: boolean;
+  blocked: Readonly<{ en: string; uk: string; code: string }> | null;
+  warnings: readonly Readonly<{ en: string; uk: string; code: string; stops: boolean }>[];
+}>;
+
+/** 1.22.0 — a payment link: its page (`url`), the Solana Pay request a wallet scans (`payUrl`), its state, and what arrived when paid. */
+export type PayLink = Readonly<{
+  id: string;
+  url: string;
+  payUrl: string;
+  status: PayLinkStatus;
+  note: PayLinkNote | null;
+  token: Readonly<{ symbol: string; mint: string | null; decimals: number }>;
+  amount: Readonly<{ raw: string; display: string }> | null;
+  description: string | null;
+  recipient: Readonly<{ abbreviated: string; address: string }>;
+  reference: string;
+  createdAt: string;
+  expiresAt: string;
+  paid: Readonly<{ signature: string; creditedRaw: string; credited: string; paidAt: string | null }> | null;
+}>;
+
+/** `POST /api/v1/pay/requests` — `mint` null or absent for SOL, `amount` in the token's units or absent to let the payer choose, 7 days by default. */
+export type PayLinkCreateRequest = Readonly<{
+  mint?: string | null;
+  amount?: string | null;
+  description?: string | null;
+  expiration?: PayLinkExpiration;
+}>;
+
+export type PayLinkResponse = Readonly<{ link: PayLink }>;
+
+export type PayLinkListResponse = Readonly<{ address: string; links: readonly PayLink[] }>;
+
+/** `GET /api/v1/money/recipient` — what was entered, the asset (absent for SOL) and the sending wallet. */
+export type RecipientCheckQuery = Readonly<{ to: string; mint?: string; from?: string }>;
+
+/** 1.22.0 — the recipient check: `next` is the one decision — `transfer`, `pay-link` or `none` with `problem`. */
+export type RecipientCheckResponse = Readonly<{
+  input: RecipientInput;
+  next: RecipientNext;
+  problem: RecipientProblem | null;
+  address: string | null;
+  asset: Readonly<{ mint: string | null }>;
+  destination: Readonly<{ kind: "wallet" | "token-account"; owner: string; account: string; opensAccount: boolean }> | null;
+  asked: Readonly<{ amount: string | null; mint: string | null; label: string | null; message: string | null }> | null;
+  link: PayLink | null;
+  checkedAt: string;
+}>;
+
+/** `POST /api/v1/money/send/returned` — the Review's `plan` as served (only four fields are read) and the bytes the wallet signed. */
+export type SendReturnedRequest = Readonly<{
+  plan: Readonly<{
+    actionKind: "NATIVE_SOL" | "SPL_TRANSFER_CHECKED" | "TOKEN_2022" | "TOKEN_ATA_CREATE";
+    unsignedWireBase64: string;
+    fingerprint: Readonly<{ messageHash: string; feePayer: string }>;
+  }>;
+  signedWireBase64: string;
+}>;
+
+/** `settle`, `adopt` (then settle the adopted Review) or `stop`; `signature` whenever the wallet signed — keep it before settling. */
+export type SendReturnedResponse = Readonly<{
+  verdict: SendReturnedVerdict;
+  next: "settle" | "adopt" | "stop";
+  signature: string | null;
+  detail: string;
+}>;
+
+/* ---- the consumed routes: Send on the transfer routes (1.22.0) — the web's own; echo the Review's parts, count none of them */
+
+export const TRANSFER_ACTION_KINDS = ["NATIVE_SOL", "SPL_TRANSFER_CHECKED", "TOKEN_2022", "TOKEN_ATA_CREATE"] as const;
+export type TransferActionKind = (typeof TRANSFER_ACTION_KINDS)[number];
+
+export const TRANSFER_SUPPORT_DECISIONS = ["SUPPORTED", "REVIEW_REQUIRED", "BLOCKED", "UNKNOWN"] as const;
+export type TransferSupportDecision = (typeof TRANSFER_SUPPORT_DECISIONS)[number];
+
+export const TRANSFER_SAFETY_DECISIONS = ["ALLOW", "REVIEW", "BLOCK", "PAUSE", "UNKNOWN"] as const;
+export type TransferSafetyDecision = (typeof TRANSFER_SAFETY_DECISIONS)[number];
+
+export const TRANSFER_CANARY_FAMILIES = ["SEND", "ATA_CREATE", "SWAP", "CCTP", "TOKEN_2022"] as const;
+export type TransferCanaryFamily = (typeof TRANSFER_CANARY_FAMILIES)[number];
+
+export const TRANSFER_CANARY_DECISIONS = ["ALLOW", "REVIEW", "BLOCK", "PAUSE", "UNKNOWN"] as const;
+export type TransferCanaryDecision = (typeof TRANSFER_CANARY_DECISIONS)[number];
+
+export const TRANSFER_CANARY_RULES = ["CONFIG_VALID", "EMERGENCY_STOP", "MAINNET_ONLY", "DESTINATION_ALLOWLISTED", "MINTS_ALLOWLISTED", "PROGRAMS_ALLOWLISTED", "VALUATION_CURRENT", "FAMILY_LIMIT", "TOTAL_LIMIT", "HUMAN_APPROVAL"] as const;
+export type TransferCanaryRule = (typeof TRANSFER_CANARY_RULES)[number];
+
+export const TRANSFER_SETTLE_STATES = ["RECEIPTED", "RECOVERY", "SUBMITTED", "EXPIRED", "UNKNOWN"] as const;
+export type TransferSettleState = (typeof TRANSFER_SETTLE_STATES)[number];
+
+export const TRANSFER_PLAN_ERROR_CODES = ["RATE_LIMITED", "JSON_REQUIRED", "INVALID_CONTENT_LENGTH", "BODY_TOO_LARGE", "BODY_REQUIRED", "INVALID_BODY_STREAM", "INVALID_JSON", "VALIDATION_ERROR", "ACCOUNT_NOT_FOUND", "NOT_A_MINT", "DECODE_FAILED", "RPC_FAILED", "EPOCH_UNAVAILABLE", "INPUT_MINT_MISMATCH", "SENDER_ACCOUNT_MISSING", "INSUFFICIENT_BALANCE", "INSUFFICIENT_FEE_BALANCE", "BLOCKHASH_UNAVAILABLE", "FEE_UNAVAILABLE", "ZERO_AMOUNT", "SENDER_RECIPIENT_SAME", "RECIPIENT_UNSUPPORTED", "SOURCE_TOTAL_MISMATCH", "TRANSACTION_TOO_LARGE", "HOOK_ACCOUNTS_UNAVAILABLE", "ACCOUNT_STATE_UNREADABLE", "BUILD_FAILED", "MINT_NOT_INITIALIZED", "CANARY_EVIDENCE_UNAVAILABLE"] as const;
+export type TransferPlanErrorCode = (typeof TRANSFER_PLAN_ERROR_CODES)[number];
+
+export const TRANSFER_ADOPT_ERROR_CODES = ["RATE_LIMITED", "JSON_REQUIRED", "INVALID_CONTENT_LENGTH", "BODY_TOO_LARGE", "BODY_REQUIRED", "INVALID_BODY_STREAM", "INVALID_JSON", "VALIDATION_ERROR", "SEND_NOT_PERMITTED", "REVIEW_PROOF_UNAVAILABLE", "REVIEW_PROOF_INVALID", "ORIGINAL_REVIEW_DISAGREES", "ORIGINAL_REVIEW_NOT_READY", "WALLET_MODIFICATION_REJECTED", "WALLET_SIGNATURE_REJECTED", "REVIEW_PROVIDER_CHANGED", "WALLET_TRANSACTION_UNREADABLE", "WALLET_TRANSACTION_EXPIRED", "WALLET_PRIORITY_FEE_INVALID", "WALLET_PRIORITY_FEE_TOO_HIGH", "WALLET_FEE_MISMATCH", "WALLET_SIMULATION_UNAVAILABLE", "WALLET_SIMULATION_FAILED", "WALLET_ADOPTION_OUT_OF_SCOPE"] as const;
+export type TransferAdoptErrorCode = (typeof TRANSFER_ADOPT_ERROR_CODES)[number];
+
+export const TRANSFER_SETTLE_ERROR_CODES = ["RATE_LIMITED", "OWNER_CANARY_UNAVAILABLE", "JSON_REQUIRED", "INVALID_CONTENT_LENGTH", "BODY_TOO_LARGE", "BODY_REQUIRED", "INVALID_BODY_STREAM", "INVALID_JSON", "VALIDATION_ERROR", "SEND_NOT_PERMITTED", "REVIEW_PROOF_UNAVAILABLE", "SETTLEMENT_STORE_UNAVAILABLE", "REVIEW_PROVIDER_CHANGED", "INDEPENDENT_READBACK_UNAVAILABLE", "PLAN_INVALID", "PLAN_PREFLIGHT_DISAGREE", "REVIEW_PROOF_INVALID", "NOT_READY", "SIGNED_BYTES_REJECTED", "SEND_ATTEMPT_CONFLICT", "SEND_ATTEMPT_UNAVAILABLE", "SEND_SETTLEMENT_FAILED", "SUBMISSION_UNKNOWN", "REQUEST_DEADLINE", "CURRENT_HEIGHT_UNKNOWN", "PLAN_EXPIRED", "NOT_CLEARED", "REJECTED", "DUPLICATE", "NO_EXPECTATIONS", "MINT_FAILED"] as const;
+export type TransferSettleErrorCode = (typeof TRANSFER_SETTLE_ERROR_CODES)[number];
+
+export const TRANSFER_RECOVER_ERROR_CODES = ["RATE_LIMITED", "FORBIDDEN_ORIGIN", "UNAUTHORIZED", "SESSION_EXPIRED", "SESSION_REVOKED", "UNAVAILABLE", "JSON_REQUIRED", "INVALID_CONTENT_LENGTH", "BODY_TOO_LARGE", "BODY_REQUIRED", "INVALID_BODY_STREAM", "INVALID_JSON", "VALIDATION_ERROR", "STORE_NOT_DURABLE", "SEND_ATTEMPT_UNAVAILABLE"] as const;
+export type TransferRecoverErrorCode = (typeof TRANSFER_RECOVER_ERROR_CODES)[number];
+
+export type TransferSplInput = Readonly<{
+  schemaVersion: "1.0.0";
+  actionRef: "action:solana-token-2022/spl-transfer@1";
+  network: "mainnet" | "devnet";
+  mint: string;
+  sender: string;
+  recipient: string;
+  amountRaw: string;
+}>;
+
+export type TransferNativeSolInput = Readonly<{
+  schemaVersion: "1.0.0";
+  actionRef: "action:solana-token-2022/native-sol-transfer@1";
+  network: "mainnet" | "devnet";
+  sender: string;
+  recipient: string;
+  amountRaw: string;
+}>;
+
+export type TransferInput = TransferSplInput | TransferNativeSolInput;
+
+/** `POST /api/solana/transfer/plan` — the proposal and nothing else; the policy is the server's. */
+export type TransferPlanRequest = Readonly<{ input: TransferInput }>;
+
+export type TransferSupport = Readonly<{
+  decision: TransferSupportDecision;
+  findings: readonly Readonly<{ code: string; outcome: "PASS" | "REVIEW" | "BLOCK" | "UNKNOWN"; detail: string }>[];
+}>;
+
+/** The exact transfer the wallet signs (`unsignedWireBase64`), with everything the Review states about it; echoed unchanged into adopt and settle. */
+export type TransferPlan = Readonly<{
+  actionKind: TransferActionKind;
+  network: "mainnet" | "devnet";
+  mint: string;
+  tokenProgram: string;
+  decimals: number;
+  sender: string;
+  recipient: string;
+  senderTokenAccount: string;
+  recipientTokenAccount: string;
+  sources: readonly Readonly<{ account: string; amountRaw: string; feeRaw: string }>[];
+  recipientKind: "WALLET_OWNER" | "EXISTING_TOKEN_ACCOUNT";
+  recipientOwner: string;
+  memo: string | null;
+  transferHook: Readonly<{ program: string; extraAccounts: readonly string[] }> | null;
+  support: TransferSupport;
+  createsRecipientAccount: boolean;
+  ataRentLamports: string | null;
+  amountRaw: string;
+  senderBalanceRaw: string;
+  baseFeeLamports: string;
+  priorityFeeLamports: string;
+  walletAugmentation?: Readonly<{
+    computeUnitLimit: number;
+    microLamportsPerUnit: string;
+    maximumPriorityFeeLamports: string;
+    lighthouseAssertions: readonly Readonly<{ kind: "ASSERT_ACCOUNT_INFO_MULTI" | "ASSERT_TOKEN_ACCOUNT_MULTI"; account: string }>[];
+  }>;
+  programs: readonly string[];
+  blockhash: string;
+  lastValidBlockHeight: string;
+  unsignedWireBase64: string;
+  fingerprint: Readonly<{
+    messageHash: string;
+    feePayer: string;
+    blockhash: string;
+    instructionCount: number;
+    transfer: Readonly<{
+      programAddress: string;
+      source: string;
+      mint: string;
+      destination: string;
+      authority: string;
+      amountRaw: string;
+      decimals: number;
+    }>;
+    transfers: readonly Readonly<{
+      programAddress: string;
+      source: string;
+      mint: string;
+      destination: string;
+      authority: string;
+      amountRaw: string;
+      decimals: number;
+    }>[];
+  }>;
+  builtAt: string;
+}>;
+
+export type TransferPreflight = Readonly<{
+  schema: "ryntra.solana.spl-transfer-preflight";
+  schemaVersion: "0.1.0";
+  network: "mainnet" | "devnet";
+  mint: string;
+  sender: string;
+  recipient: string;
+  amountRequestedRaw: string;
+  transferFee: Readonly<{
+    feeRaw: string;
+    basisPoints: number;
+    maximumFeeRaw: string;
+    capApplied: boolean;
+    configUsed: "NEWER" | "OLDER" | "NONE";
+    epochBasis: string | null;
+  }>;
+  estimatedReceivedRaw: string;
+  expectedBalanceDeltas: readonly Readonly<{ account: string; mint: string; rawDelta: string }>[];
+  feeWithheldRaw: string;
+  hookProgramId: string | null;
+  structuralBlockers: readonly ("NON_TRANSFERABLE" | "PAUSED" | "DEFAULT_ACCOUNT_STATE_FROZEN")[];
+  unsupportedKinds: readonly string[];
+  networkFeeLamports: string | null;
+  computeBudget: string | null;
+  unfilledReason: string;
+  simulation: Readonly<{ status: "SKIPPED"; reason: string }> | Readonly<{ status: "PRESENT"; succeeded: boolean; error: string | null; unitsConsumed: string | null }>;
+  observedAt: string;
+}>;
+
+export type TransferPolicyVerdict = Readonly<{
+  schema: "ryntra.solana.policy-verdict";
+  schemaVersion: "0.1.0";
+  verdict: "NO_KNOWN_BLOCKER" | "REVIEW_REQUIRED" | "BLOCKED" | "INCOMPLETE";
+  findings: readonly Readonly<{
+    rule: "NETWORK_ALLOWED" | "MINT_ALLOWED" | "TOKEN_PROGRAM_ALLOWED" | "NOT_STRUCTURALLY_DOOMED" | "PERMANENT_DELEGATE_ACCEPTED" | "TRANSFER_HOOK_ALLOWLISTED" | "FEE_WITHIN_CAP" | "RECIPIENT_ALLOWED" | "AMOUNT_WITHIN_LIMIT" | "DEFAULT_FROZEN_ACCEPTED" | "EVIDENCE_FRESH" | "EXTENSIONS_UNDERSTOOD" | "HUMAN_APPROVAL";
+    outcome: "ALLOWED" | "REVIEW_REQUIRED" | "BLOCKED" | "INCOMPLETE";
+    detail: string;
+  }>[];
+  evaluatedAt: string;
+}>;
+
+export type TransferProvider = Readonly<{ role: "primary" | "fallback"; host: string }>;
+
+export type TransferCanaryIntent = Readonly<{
+  schema: "ryntra.solana.canary-intent";
+  schemaVersion: "1.0.0";
+  intentId: string;
+  revision: number;
+  family: TransferCanaryFamily;
+  network: "mainnet";
+  destination: string;
+  mints: readonly string[];
+  programs: readonly string[];
+  principalUsdMicros: string | null;
+  feeReserveUsdMicros: string | null;
+  usdMicros: string | null;
+  valuation: Readonly<{
+    method: "USDC_NOMINAL" | "PROVIDER_QUOTE" | "CHAIN_READ";
+    sourceRef: string;
+    observedAt: string;
+    validUntil: string;
+  }> | null;
+  humanApproval: "NOT_RECORDED" | "RECORDED";
+}>;
+
+export type TransferCanaryVerdict = Readonly<{
+  schema: "ryntra.solana.canary-verdict";
+  schemaVersion: "1.0.0";
+  decision: TransferCanaryDecision;
+  newRiskAllowed: boolean;
+  scope: Readonly<{
+    status: "INSIDE_ENVELOPE" | "OUTSIDE_ENVELOPE";
+    decidedBy: "OWNER_CANARY" | "TRANSFER_CAPABILITY";
+    detail: string;
+  }>;
+  policyId: string;
+  policyDigest: string;
+  intentDigest: string;
+  budgetObservedAt: string;
+  findings: readonly Readonly<{
+    rule: TransferCanaryRule;
+    outcome: "PASS" | "REVIEW" | "BLOCK" | "PAUSE" | "UNKNOWN";
+    detail: string;
+  }>[];
+  evaluatedAt: string;
+}>;
+
+export type TransferSignedReviewProof = Readonly<{
+  schema: "ryntra.solana.send-review-proof";
+  schemaVersion: "2.0.0";
+  status: "SIGNED";
+  algorithm: "Ed25519";
+  digest: string;
+  keyId: string;
+  publicKey: string;
+  signature: string;
+  issuedAt: string;
+}>;
+
+export type TransferReviewProof = TransferSignedReviewProof | Readonly<{
+  schema: "ryntra.solana.send-review-proof";
+  schemaVersion: "2.0.0";
+  status: "UNSIGNED";
+  digest: string;
+  reasonCode: "NO_ISSUER_KEY_CONFIGURED";
+  issuedAt: string;
+}>;
+
+export type TransferSafety = Readonly<{
+  decision: TransferCanaryDecision;
+  findings: readonly Readonly<{ code: string; outcome: "PASS" | "REVIEW" | "BLOCK" | "PAUSE" | "UNKNOWN"; detail: string }>[];
+}>;
+
+/** The Review: the bundle to echo, and `check` — «Перевірка» counted by the server (1.22.0). */
+export type TransferReview = Readonly<{
+  passport: SwapPassport | null;
+  preflight: TransferPreflight;
+  verdict: TransferPolicyVerdict;
+  plan: TransferPlan;
+  provider: TransferProvider;
+  canaryIntent: TransferCanaryIntent;
+  canaryVerdict: TransferCanaryVerdict;
+  support: TransferSupport;
+  safety: TransferSafety;
+  check: TransferCheck;
+  reviewProof: TransferReviewProof;
+}>;
+
+export type TransferReviewResponse = Readonly<{ data: TransferReview }>;
+
+export type TransferAdoptedReview = Readonly<{
+  passport: null;
+  preflight: TransferPreflight;
+  verdict: TransferPolicyVerdict;
+  plan: TransferPlan;
+  provider: TransferProvider;
+  canaryIntent: TransferCanaryIntent;
+  canaryVerdict: TransferCanaryVerdict;
+  support: TransferSupport;
+  safety: TransferSafety;
+  check: TransferCheck;
+  reviewProof: TransferSignedReviewProof;
+}>;
+
+export type TransferAdoptResponse = Readonly<{ data: TransferAdoptedReview }>;
+
+/** `POST /api/solana/transfer/settle` and `…/adopt` — the Review's parts exactly as served, and the bytes the wallet signed. */
+export type TransferSettleRequest = Readonly<{
+  plan: TransferPlan;
+  preflight: TransferPreflight;
+  verdict: TransferPolicyVerdict;
+  provider: TransferProvider;
+  canaryIntent: TransferCanaryIntent;
+  canaryVerdict: TransferCanaryVerdict;
+  reviewProof: TransferReviewProof;
+  signedWireBase64: string;
+}>;
+
+export type TransferSignatureStatus = Readonly<{
+  confirmationStatus: "processed" | "confirmed" | "finalized" | null;
+  err: string | null;
+  seen: boolean;
+  slot: string | null;
+}>;
+
+export type TransferStatusRead = Readonly<{ state: "READ"; status: TransferSignatureStatus }> | Readonly<{ state: "UNKNOWN"; status: TransferSignatureStatus; reason: string }>;
+
+export type TransferObservation = Readonly<{
+  schemaVersion: "1.0.0";
+  actionRef: "action:solana-token-2022/spl-transfer@1" | "action:solana-token-2022/native-sol-transfer@1";
+  network: "mainnet" | "devnet";
+  signature: string;
+  slot: string;
+  blockTime: string | null;
+  feeLamports: string;
+  balanceDeltas: readonly Readonly<{ account: string; mint: string; rawDelta: string }>[];
+  lamportBalanceDeltas: readonly Readonly<{ account: string; rawDelta: string }>[];
+  sources: readonly Readonly<{ ref: string; label: string }>[];
+  observedAt: string;
+}>;
+
+export type TransferReconciliation = Readonly<{
+  status: "MATCHED" | "DEVIATION_RECORDED" | "FAILED";
+  findings: readonly Readonly<{ expectation: string; status: "MATCHED" | "NOT_OBSERVED"; matchedBy: string | null }>[];
+  unexpected: readonly string[];
+  matched: number;
+  expected: number;
+}>;
+
+export type TransferReceiptFacts = Readonly<{
+  schema: "ryntra.solana.send-receipt";
+  schemaVersion: "1.2.0";
+  reviewDigest: string;
+  augmentation: Readonly<{
+    status: "NONE";
+    summary: "The signed message matched the reviewed plan without wallet augmentation.";
+  }> | Readonly<{ status: "PRESENT"; summary: string; actualPriorityFeeLamports: string }>;
+  actionKind: TransferActionKind;
+  network: "mainnet" | "devnet";
+  mint: string;
+  sender: string;
+  recipient: string;
+  expectedDebitRaw: string;
+  expectedCreditRaw: string;
+  actualDebitRaw: string | null;
+  actualCreditRaw: string | null;
+  transferFeeRaw: string;
+  baseFeeLamports: string | null;
+  priorityFeeLamports: string | null;
+  ataRentLamports: string | null;
+  plannedAta: Readonly<{ createsRecipientAccount: boolean; rentLamports: string | null }>;
+  observedAta: Readonly<{
+    created: boolean;
+    rentLamports: string | null;
+    owner: string | null;
+    tokenProgram: string | null;
+    rentPayer: string | null;
+  }>;
+  observedPrograms: readonly string[];
+  plannedBaseFeeLamports: string;
+  actualBaseFeeLamports: string;
+  plannedPriorityFeeLamports: string;
+  actualPriorityFeeLamports: string;
+  programs: readonly string[];
+  signature: string;
+  slot: string;
+  finality: "processed" | "confirmed" | "finalized" | "unknown";
+  reconciliation: "MATCHED" | "DEVIATION_RECORDED" | "FAILED";
+}>;
+
+export type TransferVerification = Readonly<{
+  recognised: boolean;
+  generation: "v2" | "legacy-1.0.0" | null;
+  kind: "AGENT_PASSPORT" | "ACTION_PASSPORT" | "OUTCOME_RECEIPT" | "ACTION_PASSPORT_PREVIEW" | null;
+  schemaVersion: string | null;
+  integrity: Readonly<{ valid: boolean; issues: readonly string[] }>;
+  issuer: Readonly<{
+    verdict: "SIGNATURE_VALID" | "SIGNATURE_INVALID" | "UNSIGNED" | "UNTRUSTED_KEY";
+    keyId: string | null;
+    detail: string;
+  }>;
+  authorization: Readonly<{
+    verdict: "AUTHORIZED" | "NOT_AUTHORIZED" | "DEMO_ACKNOWLEDGEMENT_ONLY" | "NOT_APPLICABLE";
+    detail: string;
+  }>;
+  observation: Readonly<{ verdict: "OBSERVED" | "NOT_OBSERVED" | "NOT_APPLICABLE"; detail: string }>;
+}>;
+
+export type TransferSettled = Readonly<{
+  ok: true;
+  state: "RECEIPTED";
+  landingState: "CONFIRMED" | "FINALIZED" | "LANDED_FAILED";
+  signature: string;
+  confirmation: Readonly<{ slot: string; status: "confirmed" | "finalized"; err: string | null }>;
+  observation: TransferObservation;
+  observedEffects: readonly Readonly<{ description: string; sourceRef: string; observedAt: string }>[];
+  reconciliation: TransferReconciliation;
+  receipt: SwapReceipt;
+  sendReceiptFacts: TransferReceiptFacts;
+  verification: TransferVerification;
+}>;
+
+export type TransferSettlePending = Readonly<{ ok: true; state: "UNKNOWN"; signature: string; receipt: null }>;
+
+export type TransferSettleRecovery = Readonly<{
+  ok: true;
+  state: "SUBMITTED" | "EXPIRED" | "UNKNOWN";
+  signature: string;
+  receipt: null;
+  recovery: Readonly<{
+    signature: string;
+    status: TransferSignatureStatus;
+    statusRead: TransferStatusRead;
+    blockHeight: string | null;
+    lastValidBlockHeight: string;
+  }>;
+  effectReadback: Readonly<{
+    state: "READ";
+    value: Readonly<{
+      ok: true;
+      observation: TransferObservation;
+      transactionSucceeded: boolean;
+      transactionError: string | null;
+      invokedPrograms: readonly string[];
+      postTokenAccounts: readonly Readonly<{
+        account: string;
+        mint: string;
+        owner: string | null;
+        tokenProgram: string | null;
+        amountRaw: string;
+        decimals: number;
+      }>[];
+      observedEffects: readonly Readonly<{ description: string; sourceRef: string; observedAt: string }>[];
+    }> | Readonly<{ ok: false; code: "NOT_FOUND" | "UNREADABLE" | "RPC_FAILED"; reason: string }>;
+  }> | Readonly<{ state: "UNKNOWN"; reason: string }>;
+}>;
+
+export type TransferSettleUnobserved = Readonly<{
+  ok: true;
+  state: "RECOVERY";
+  landingState: "CONFIRMED" | "FINALIZED" | "LANDED_FAILED";
+  signature: string;
+  confirmation: Readonly<{ slot: string; status: "confirmed" | "finalized"; err: string | null }>;
+  receipt: null;
+}>;
+
+export type TransferSettleResult = TransferSettled | TransferSettlePending | TransferSettleRecovery | TransferSettleUnobserved;
+
+/** 200 with the receipt, or 202 while the outcome is open — never send again; recover by the signature. */
+export type TransferSettleResponse = Readonly<{ data: TransferSettleResult }>;
+
+export type TransferRecoverRequest = Readonly<{ network: "mainnet" | "devnet"; signature: string }>;
+
+export type TransferRecovery = Readonly<{
+  network: "mainnet" | "devnet";
+  signature: string;
+  attempt: Readonly<{
+    state: "RESERVED" | "SUBMITTED_UNKNOWN" | "CONFIRMED" | "FINALIZED" | "LANDED_FAILED" | "EXPIRED_BEFORE_SUBMIT" | "EXPIRED_AFTER_SUBMIT" | "RECOVERY_REQUIRED" | "RECEIPTED";
+    reservedAt: string;
+    updatedAt: string;
+    receiptHash: string | null;
+  }> | null;
+  primary: TransferStatusRead;
+  independent: TransferStatusRead | null;
+}>;
+
+export type TransferRecoverResponse = Readonly<{ data: TransferRecovery }>;
+
+export type TransferPlanError = Readonly<{ error: Readonly<{ code: TransferPlanErrorCode; message: string }> }>;
+
+export type TransferAdoptError = Readonly<{ error: Readonly<{ code: TransferAdoptErrorCode; message: string }> }>;
+
+export type TransferSettleError = Readonly<{ error: Readonly<{ code: TransferSettleErrorCode; message: string; signature?: string | null }> }>;
+
+export type TransferRecoverError = Readonly<{ error: Readonly<{ code: TransferRecoverErrorCode; message: string }> }>;
+
+/** The settle answer's receipt is the swap's Outcome Receipt artifact, one shape for both. */
+export type TransferReceipt = SwapReceipt;
+
+/** `POST /api/solana/transfer/adopt` takes the settle request's shape. */
+export type TransferAdoptRequest = TransferSettleRequest;
+
+
+/* ---- the consumed routes: a payment link paid (1.22.0) — the page's own routes; the bearer pays as its own wallet */
+
+export const PAY_PUBLIC_ERROR_CODES = ["RATE_LIMITED", "NOT_FOUND"] as const;
+export type PayPublicErrorCode = (typeof PAY_PUBLIC_ERROR_CODES)[number];
+
+export const PAY_TRANSACTION_ERROR_CODES = ["RATE_LIMITED", "FORBIDDEN", "UNAUTHORIZED", "SESSION_EXPIRED", "SESSION_REVOKED", "UNAVAILABLE", "JSON_REQUIRED", "INVALID_CONTENT_LENGTH", "BODY_TOO_LARGE", "BODY_REQUIRED", "INVALID_BODY_STREAM", "INVALID_JSON", "VALIDATION_ERROR", "WALLET_MISMATCH", "NOT_FOUND", "ALREADY_PAID", "EXPIRED", "PAYMENT_PENDING", "AMOUNT_REQUIRED", "AMOUNT_INVALID", "REQUEST_NOT_PAYABLE", "SELF_PAYMENT", "MINT_UNREADABLE", "EPOCH_UNAVAILABLE", "BUILD_FAILED", "SIMULATION_FAILED", "STORE_FAILED"] as const;
+export type PayTransactionErrorCode = (typeof PAY_TRANSACTION_ERROR_CODES)[number];
+
+export const PAY_SUBMIT_ERROR_CODES = ["RATE_LIMITED", "FORBIDDEN", "UNAUTHORIZED", "SESSION_EXPIRED", "SESSION_REVOKED", "UNAVAILABLE", "JSON_REQUIRED", "INVALID_CONTENT_LENGTH", "BODY_TOO_LARGE", "BODY_REQUIRED", "INVALID_BODY_STREAM", "INVALID_JSON", "VALIDATION_ERROR", "WALLET_MISMATCH", "NOT_FOUND", "INTENT_UNKNOWN", "INTENT_MISMATCH", "INTENT_EXPIRED", "ALREADY_SUBMITTED", "BYTES_UNREADABLE", "BYTES_MISMATCH", "SIGNATURE_MISSING", "SUBMIT_FAILED"] as const;
+export type PaySubmitErrorCode = (typeof PAY_SUBMIT_ERROR_CODES)[number];
+
+/** The payer page's projection of a link: what the creator put in it and what the chain publishes. */
+export type PayPublicRequest = Readonly<{
+  id: string;
+  network: "mainnet";
+  status: PayLinkStatus;
+  note: PayLinkNote | null;
+  token: Readonly<{ symbol: string; mint: string | null; decimals: number }>;
+  amount: Readonly<{ raw: string; display: string }> | null;
+  description: string | null;
+  recipient: Readonly<{ abbreviated: string; address: string }>;
+  reference: string;
+  createdAt: string;
+  expiresAt: string;
+  paid: Readonly<{ signature: string; creditedRaw: string; paidAt: string | null }> | null;
+}>;
+
+export type PayPublicView = Readonly<{ request: PayPublicRequest; payUrl: string }>;
+
+/** `GET /api/pay/{id}` — public, observed like the v1 read. */
+export type PayPublicResponse = Readonly<{ data: PayPublicView }>;
+
+export type PayPublicError = Readonly<{ error: Readonly<{ code: PayPublicErrorCode; message: string }> }>;
+
+/** `POST /api/pay/{id}/transaction` — the payer (the bearer's own wallet) and, for an open link only, the amount. */
+export type PayTransactionRequest = Readonly<{ payer: string; amount?: string | null }>;
+
+/** The unsigned transfer with the link's reference, pinned by its message hash for three minutes. */
+export type PayTransactionResponse = Readonly<{
+  data: Readonly<{
+    ok: true;
+    intentId: string;
+    unsignedWireBase64: string;
+    messageHash: string;
+    amountRaw: string;
+    mint: string | null;
+    simulated: Readonly<{ succeeded: boolean; error: string | null }> | null;
+    createsRecipientAccount: boolean;
+    networkFeeLamports: string;
+  }>;
+}>;
+
+export type PayTransactionError = Readonly<{ error: Readonly<{ code: PayTransactionErrorCode; message: string }> }>;
+
+/** `POST /api/pay/{id}/submit` — the intent and the bytes the wallet signed. */
+export type PaySubmitRequest = Readonly<{ intentId: string; signedWireBase64: string }>;
+
+/** Sent once: the signature, and the link as its page now reads it. */
+export type PaySubmitResponse = Readonly<{ data: Readonly<{ signature: string; view: PayPublicView | null }> }>;
+
+export type PaySubmitError = Readonly<{ error: Readonly<{ code: PaySubmitErrorCode; message: string }> }>;

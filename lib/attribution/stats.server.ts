@@ -11,16 +11,27 @@
  *
  * The deployment may name a public dashboard (`RYNTRA_PUBLIC_DASHBOARD_URL`);
  * when it does not, the page says nothing about one.
+ *
+ * Cashback and friends' rewards are read from the reward ledger the Growth
+ * line writes — read only, through its own schema and its own rule for a
+ * later valuation — and matched to an operation by the reference the reward
+ * names. A ledger that does not answer leaves every operation without rewards
+ * rather than with zeros, and the page says so.
  */
 
 import { internalWalletsFromEnv, resolveInternalWallets } from "../admin/internal-wallets.ts";
-import { KNOWN_MINTS, projectOperations, type CctpBurnRef, type CrossSwapOrderRef, type MintNames, type OperationRecord, type OperationSource } from "../analytics/operations.ts";
+import { KNOWN_MINTS, projectOperations, type CctpBurnRef, type CrossSwapOrderRef, type MintNames, type OperationRecord, type OperationRewards, type OperationSource } from "../analytics/operations.ts";
 import { getGuardRuntime } from "../guard/runtime.ts";
+import type { GuardStore } from "../guard/store.ts";
+import { RewardEntrySchema, type RewardEntry } from "../rewards/model.ts";
 import { SolanaWalletActionSchema, type SolanaWalletAction } from "../solana/action-ledger.ts";
 import { fetchTokenCatalog } from "../solana/catalog.ts";
 import { readStockUniverse } from "../stocks/universe.server.ts";
 import { SWAP_NETWORKS, type SwapNetwork } from "../swap/catalog.ts";
 import { readAttribution } from "./chain.server.ts";
+import { feeWalletAccounts } from "./ata.ts";
+import { ATTRIBUTION_REGISTRY, publicRegistryDocument, registryFacts } from "./registry.ts";
+import { rewardsByOperation } from "./rewards.ts";
 import { buildLedgerStats, buildOnchainStats, buildStatsModel, chainAttributionOf, type StatsModel } from "./stats-model.ts";
 
 export const PUBLIC_DASHBOARD_ENV = "RYNTRA_PUBLIC_DASHBOARD_URL";
@@ -43,18 +54,40 @@ function isSwapNetwork(value: unknown): value is SwapNetwork {
   return typeof value === "string" && (SWAP_NETWORKS as readonly string[]).includes(value);
 }
 
-type Ledger = Readonly<{ actions: readonly SolanaWalletAction[]; orders: ReadonlyMap<string, CrossSwapOrderRef>; burns: ReadonlyMap<string, CctpBurnRef>; internalWallets: ReadonlySet<string> }>;
+type Ledger = Readonly<{
+  actions: readonly SolanaWalletAction[];
+  orders: ReadonlyMap<string, CrossSwapOrderRef>;
+  burns: ReadonlyMap<string, CctpBurnRef>;
+  internalWallets: ReadonlySet<string>;
+  /** Rewards by operation reference; null when the reward ledger did not answer. */
+  rewards: ReadonlyMap<string, OperationRewards> | null;
+}>;
+
+async function readRewards(store: GuardStore): Promise<ReadonlyMap<string, OperationRewards> | null> {
+  try {
+    const rows = await store.collection<unknown>("rewardEntries").valuesWithPrefix("");
+    const entries: RewardEntry[] = [];
+    for (const row of rows) {
+      const parsed = RewardEntrySchema.safeParse(row);
+      if (parsed.success) entries.push(parsed.data);
+    }
+    return rewardsByOperation(entries);
+  } catch {
+    return null;
+  }
+}
 
 const CCTP_DIRECTIONS = new Set(["SOLANA_TO_BASE", "BASE_TO_SOLANA", "SOLANA_TO_ETHEREUM", "ETHEREUM_TO_SOLANA"]);
 
 async function readLedger(env: NodeJS.ProcessEnv): Promise<Readonly<{ ledger: Ledger | null; internalWallets: ReadonlySet<string> }>> {
   try {
     const store = getGuardRuntime().store;
-    const [rawActions, rawOrders, rawBurns, internal] = await Promise.all([
+    const [rawActions, rawOrders, rawBurns, internal, rewards] = await Promise.all([
       store.collection<unknown>("solanaWalletActions").valuesWithPrefix("solana:mainnet:"),
       store.collection<unknown>("solanaCrossSwapOrders").valuesWithPrefix(""),
       store.collection<unknown>("solanaCctpBurns").valuesWithPrefix(""),
       resolveInternalWallets(store, env),
+      readRewards(store),
     ]);
     const actions: SolanaWalletAction[] = [];
     for (const row of rawActions) {
@@ -85,7 +118,7 @@ async function readLedger(env: NodeJS.ProcessEnv): Promise<Readonly<{ ledger: Le
         mintTx: typeof claim.mintTransactionHash === "string" ? claim.mintTransactionHash : null,
       });
     }
-    return { ledger: { actions, orders, burns, internalWallets: internal.wallets }, internalWallets: internal.wallets };
+    return { ledger: { actions, orders, burns, internalWallets: internal.wallets, rewards }, internalWallets: internal.wallets };
   } catch {
     /* The store did not answer; the deployment's own list still names Ryntra's internal wallets. */
     return { ledger: null, internalWallets: new Set(internalWalletsFromEnv(env)) };
@@ -142,6 +175,7 @@ export async function readOperationSource(deps: Readonly<{ env?: NodeJS.ProcessE
       internalWallets: ledger.ledger.internalWallets,
       names,
       chain: chainAttributionOf(chain),
+      ...(ledger.ledger.rewards ? { rewards: ledger.ledger.rewards } : {}),
     },
     chain,
     internalWallets: ledger.internalWallets,
@@ -159,6 +193,21 @@ export async function readAllOperations(deps: Readonly<{ env?: NodeJS.ProcessEnv
   };
 }
 
+/**
+ * The registry with where each row started — only from a read that saw the
+ * whole history: a partial read may have missed the first credit, and an
+ * earlier start written as the first would be a wrong fact.
+ */
+export async function registryDocumentOf(chain: Awaited<ReturnType<typeof readAttribution>>) {
+  /* A read kept from before the reader named first credits has none to give: unknown, not "none yet". */
+  const whole = chain.ok && chain.coverage.complete && !chain.coverage.truncated && Array.isArray(chain.firstCredits);
+  const feeAccounts = new Map<string, readonly string[]>();
+  for (const row of ATTRIBUTION_REGISTRY) {
+    if (row.kind === "FEE_WALLET" && row.address !== null) feeAccounts.set(row.id, (await feeWalletAccounts(row.address)).map((entry) => entry.account));
+  }
+  return publicRegistryDocument(undefined, whole ? registryFacts(chain.firstCredits) : null, feeAccounts);
+}
+
 export async function readPublicStats(deps: Readonly<{ env?: NodeJS.ProcessEnv; now?: () => Date }> = {}): Promise<StatsModel> {
   const env = deps.env ?? process.env;
   const now = (deps.now ?? (() => new Date()))();
@@ -168,5 +217,6 @@ export async function readPublicStats(deps: Readonly<{ env?: NodeJS.ProcessEnv; 
     ledger: buildLedgerStats(read.source, now),
     onchain: buildOnchainStats(read.chain, { stockMints: read.stockMints, internalWallets: read.internalWallets }),
     dashboardUrl: dashboardUrl(env),
+    registry: await registryDocumentOf(read.chain),
   });
 }

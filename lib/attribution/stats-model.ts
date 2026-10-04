@@ -15,6 +15,9 @@
  *   *attributable on chain* — and the gap between them is stated, not
  *   smoothed.
  *
+ * Beside them, the attribution registry: every public identity a counter can
+ * read Ryntra by, with its network, products, role, start block and example.
+ *
  * Ryntra's own wallets are counted in and named as such rather than removed:
  * the chain does not know whose wallet is whose, so a figure that quietly
  * dropped them would no longer agree with what the chain shows.
@@ -23,16 +26,19 @@
 import {
   decimalText,
   filterOperations,
+  OPERATION_PRODUCTS,
   OPERATION_RANGES,
   projectOperations,
   summarizeOperations,
   toPublicOperation,
+  type OperationProduct,
   type OperationRange,
   type OperationSource,
   type OperationSummary,
   type PublicOperation,
 } from "../analytics/operations.ts";
 import type { AttributionRead } from "./chain.server.ts";
+import type { PublicRegistry } from "./registry.ts";
 
 export { decimalText };
 
@@ -51,7 +57,7 @@ export type StatsOnchain =
   | Readonly<{
       state: "ok";
       ruleVersion: string;
-      referralAccount: string;
+      referralAccount: string | null;
       tokenAccounts: readonly Readonly<{ address: string; symbol: string }>[];
       updatedAt: string;
       since: string | null;
@@ -64,6 +70,8 @@ export type StatsOnchain =
       fees: readonly StatsFee[];
       ryntraSharePercent: number | null;
       coverage: Readonly<{ complete: boolean; signaturesSeen: number; transactionsRead: number; missing: number; truncated: boolean }>;
+      /** Operations the chain read credited to each fee identity, by registry id. */
+      byIdentity: Readonly<Record<string, number>>;
       /** Operations and wallets Ryntra has marked as its own (testing), counted in the figures above. */
       own: Readonly<{ operations: number; wallets: number }>;
       stocks: Readonly<{ state: "ok"; operations: number; volumeUsd: number; unvalued: number }> | Readonly<{ state: "unavailable" }>;
@@ -78,6 +86,14 @@ export type StatsLedger =
       operations: readonly PublicOperation[];
       /** Totals over every product for each range, from the same rows. */
       summary: Readonly<Record<OperationRange, OperationSummary>>;
+      /**
+       * Totals for every product filter and range, over every confirmed
+       * operation — counted on the server, so the figures cover the whole
+       * ledger and the rewards of single operations never leave it.
+       */
+      summaries: Readonly<Record<OperationProduct | "ALL", Readonly<Record<OperationRange, OperationSummary>>>>;
+      /** Whether the reward ledger answered: without it, cashback and revenue are not stated. */
+      rewards: "ok" | "unavailable";
       /** How many confirmed operations the ledger holds beyond the rows carried here. */
       truncated: number;
     }>
@@ -89,6 +105,8 @@ export type StatsModel = Readonly<{
   onchain: StatsOnchain;
   /** A public dashboard, when the deployment names one; absent otherwise. Never a placeholder. */
   dashboardUrl: string | null;
+  /** The public identities: every registry row with an address. */
+  registry: PublicRegistry;
 }>;
 
 const KNOWN_SYMBOLS: Readonly<Record<string, string>> = {
@@ -119,7 +137,9 @@ export function buildOnchainStats(
   let stockOperations = 0;
   let stockVolume = 0n;
   let stockUnvalued = 0;
+  const byIdentity: Record<string, number> = {};
   for (const operation of read.operations) {
+    for (const identity of operation.identities ?? []) byIdentity[identity] = (byIdentity[identity] ?? 0) + 1;
     if (args.internalWallets.has(operation.taker)) {
       ownOperations += 1;
       ownWallets.add(operation.taker);
@@ -159,6 +179,7 @@ export function buildOnchainStats(
       missing: read.coverage.transactionsMissing,
       truncated: read.coverage.truncated,
     },
+    byIdentity,
     own: { operations: ownOperations, wallets: ownWallets.size },
     stocks: args.stockMints ? { state: "ok", operations: stockOperations, volumeUsd: usdFromMicros(stockVolume), unvalued: stockUnvalued } : { state: "unavailable" },
     sources: read.sources,
@@ -178,15 +199,35 @@ export function buildLedgerStats(source: OperationSource | null, now: Date): Sta
   if (!source) return { state: "unavailable" };
   const records = projectOperations(source);
   const confirmed = filterOperations(records, { now, confirmedOnly: true });
-  const summary = Object.fromEntries(OPERATION_RANGES.map((range) => [range, summarizeOperations(records, { range, now })])) as Record<OperationRange, OperationSummary>;
+  /* Friends' rewards say who invited whom — in any window, at any moment, as
+     a sum or as a count — so the public model carries none of them. */
+  const summaries = Object.fromEntries(
+    (["ALL", ...OPERATION_PRODUCTS] as const).map((product) => [product, Object.fromEntries(OPERATION_RANGES.map((range) => [range, summarizeOperations(records, { product, range, now })]))]),
+  ) as Record<OperationProduct | "ALL", Record<OperationRange, OperationSummary>>;
+  /* Without the reward ledger cashback is unknown, so revenue is too: stated as unknown, never as what reached Ryntra. */
+  if (!source.rewards) {
+    for (const product of ["ALL", ...OPERATION_PRODUCTS] as const) {
+      for (const range of OPERATION_RANGES) {
+        const one = summaries[product][range];
+        summaries[product][range] = {
+          ...one,
+          money: { ...one.money, cashbackUsd: null, revenueUsd: null },
+          breakdown: one.breakdown.map((line) => ({ ...line, cashbackUsd: null, revenueUsd: null })),
+        };
+      }
+    }
+  }
+  const summary = summaries.ALL;
   return {
     state: "ok",
     operations: confirmed.slice(0, PUBLIC_OPERATIONS_LIMIT).map(toPublicOperation),
     summary,
+    summaries,
     truncated: Math.max(0, confirmed.length - PUBLIC_OPERATIONS_LIMIT),
+    rewards: source.rewards ? "ok" : "unavailable",
   };
 }
 
-export function buildStatsModel(args: Readonly<{ generatedAt: string; ledger: StatsLedger; onchain: StatsOnchain; dashboardUrl: string | null }>): StatsModel {
-  return { generatedAt: args.generatedAt, ledger: args.ledger, onchain: args.onchain, dashboardUrl: args.dashboardUrl };
+export function buildStatsModel(args: Readonly<{ generatedAt: string; ledger: StatsLedger; onchain: StatsOnchain; dashboardUrl: string | null; registry: PublicRegistry }>): StatsModel {
+  return { generatedAt: args.generatedAt, ledger: args.ledger, onchain: args.onchain, dashboardUrl: args.dashboardUrl, registry: args.registry };
 }

@@ -41,6 +41,8 @@ import {
   type ConvertMode,
 } from '@/features/invest/conversion-watch'
 import { INVEST_COPY } from '@/features/invest/copy'
+import { SALE_COPY } from '@/features/invest/sale-copy'
+import { heldUnitsText, positionUsd } from '@/features/invest/sale-model'
 import { DETAILS_COPY, isAssetCategory } from '@/features/invest/details-copy'
 import { coinName, companyDisplayName, premiumPhrase } from '@/features/invest/shelf'
 import type { BuyCompany } from '@/features/invest/use-buy'
@@ -69,6 +71,7 @@ import { BudgetSheet } from '@/screens/autoinvest/budget-sheet'
 import { RuleCard } from '@/screens/autoinvest/rule-card'
 import { BuySheet } from '@/screens/invest/buy-sheet'
 import { ConvertSheet } from '@/screens/invest/convert-sheet'
+import { PositionCard, SellSheet } from '@/screens/invest/sell-sheet'
 import { EventBanner } from '@/screens/invest/event-ui'
 import { useTheme } from '@/theme'
 import {
@@ -211,6 +214,9 @@ export function AssetScreen({
   const [research, setResearch] = useState(false)
   const [details, setDetails] = useState(false)
   const [buying, setBuying] = useState(openBuy || reminder !== null)
+  // The sale open now, with the company as the page named it when «Продати» was pressed: the sheet stays while it is open.
+  const [selling, setSelling] = useState<Readonly<{ name: string; icon: string | null; ticker: string }> | null>(null)
+  const saleWords = useCopy(SALE_COPY)
 
   /* ---- «Автоінвест»: the wallet's rules, and the reminder the purchase is made under ---- */
   const account = useAccount()
@@ -694,6 +700,47 @@ export function AssetScreen({
       buyAction = <Button title={words.buy} size="lg" loading={buying} onPress={() => setBuying(true)} />
     }
 
+    /* «Твоя позиція»: what the wallet holds of the company and its worth, with «Продати» — the web's sale from a
+       position. Not where the issuer's window offers its own sale above: a holder never sees two. */
+    const saleHint = { name, icon: detail.icon, ticker: detail.symbol }
+    // What the wallet can move — the figure the sale sells, so the card and the sheet say one amount.
+    const heldRaw =
+      holds && heldRow && /^\d+$/.test(heldRow.spendableRaw) && BigInt(heldRow.spendableRaw) > 0n
+        ? BigInt(heldRow.spendableRaw)
+        : null
+    // Counted as the sale counts it: the chain's multiplier first, the issuer's market price first.
+    const heldMultiplier =
+      stock.data?.chainMultiplier?.current ?? stock.data?.row.multiplier?.current ?? heldRow?.uiMultiplier ?? null
+    const heldPrice = stock.data?.row.market.priceUsd ?? detail.price
+    const heldUnits =
+      heldRaw !== null && heldRow
+        ? heldUnitsText(
+            heldRaw,
+            {
+              decimals: heldRow.decimals,
+              multiplier: heldMultiplier,
+              unit: rep?.instrument?.unitBasis === 'token' ? 'token' : 'share',
+              name,
+            },
+            locale,
+          )
+        : null
+    const heldUsd = positionUsd(heldRaw, heldRow?.decimals ?? null, heldMultiplier, heldPrice)
+    // Where the issuer's window offers its own sale, the position is said and that sale is the one offered.
+    const canSell = !retired && !halted && heldUsd !== null && !event
+    const positionCard =
+      isStock && stock.data && rep && !retired && heldUnits ? (
+        <Animated.View layout={SETTLE}>
+          <PositionCard
+            label={saleWords.yourPosition}
+            value={heldUsd === null ? heldUnits : dollarsText(heldUsd, locale)}
+            detail={heldUsd === null ? null : heldUnits}
+            sellLabel={canSell ? saleWords.sell : null}
+            onSell={() => setSelling(saleHint)}
+          />
+        </Animated.View>
+      ) : null
+
     body = (
       <View className="gap-4">
         <SimpleHead
@@ -737,6 +784,7 @@ export function AssetScreen({
             <Skeleton className="h-3.5 w-52" />
           </Animated.View>
         ) : null}
+        {positionCard}
         <Animated.View layout={SETTLE} style={{ gap: 8 }}>
           {buyAction}
           {company && offer ? null : companyRule ? (
@@ -911,6 +959,7 @@ export function AssetScreen({
         />
       ) : null}
       <BudgetSheet visible={budgetOpen} onClose={() => setBudgetOpen(false)} />
+      {selling ? <SellSheet visible mint={mint} hint={selling} onClose={() => setSelling(null)} /> : null}
       {event && convertToken ? (
         <ConvertSheet
           visible={convertMode !== null}

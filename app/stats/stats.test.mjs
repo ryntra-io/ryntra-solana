@@ -165,8 +165,8 @@ test("the page is on the frozen chrome, follows the reader's language, is in the
   assert.match(content, /ryntra:public-locale/, "the content follows the header's language switch");
   assert.match(content, /solscan\.io\/account\//, "the referral account and the fee accounts link to an explorer");
   assert.match(content, /<details className="rx-stats-method">/, "the methodology sits behind one disclosure");
-  assert.match(content, /filterOperations\(rows, \{ product, range, now \}\)/, "the feed and the totals come from the same filtered rows");
-  assert.match(content, /summarizeOperations\(rows, \{ product, range, now \}\)/);
+  assert.match(content, /filterOperations\(rows, \{ product, range, now \}\)/, "the feed is the filtered rows");
+  assert.match(content, /ledger\.summaries\[product\]\[range\]/, "the totals are the server's, for the same filter");
   assert.match(content, /row\.links\[0\]/, "every row carries its proof link");
   assert.doesNotMatch(content, /\d{2,}\.\d+ ?(USDC|SOL)/, "no figure typed into the markup");
   assert.ok(PUBLIC_PAGES.some((entry) => entry.path === "/stats"), "the sitemap lists /stats");
@@ -181,4 +181,194 @@ test("the JSON route serves the same model and lets the edge keep it for seconds
   assert.match(route, /s-maxage=5, stale-while-revalidate=10/);
   assert.doesNotMatch(route, /s-maxage=600/, "the ten-minute edge cache is gone: a confirmed operation is visible within seconds");
   assert.doesNotMatch(route, /getAdminSession|cookies\(/, "public and unauthenticated");
+});
+
+/* ---------------------------------------------------------------------------
+ * Fees, revenue and rewards in dollars; product × network.
+ * ------------------------------------------------------------------------- */
+
+const RELAY_SOURCE = `0x${"ab".repeat(32)}`;
+
+function moneyLedger() {
+  const now = new Date("2026-10-04T12:00:00.000Z");
+  const swap = action({
+    actionId: SIG("solfee"),
+    signature: SIG("solfee"),
+    /* 1 USDC in, 0.008 SOL out; 40,000 lamports of fee in SOL, 32,000 of them Ryntra's. */
+    out: { mint: USDC, amountRaw: "1000000", decimals: 6, symbol: "USDC" },
+    in: { mint: WSOL, amountRaw: "8000000", decimals: 9, symbol: "SOL" },
+    fee: { collected: true, basisPoints: 50, amountRaw: "40000", decimals: 9, symbol: "SOL", usd: null, asset: WSOL, providerRaw: "8000", ryntraRaw: "32000", state: "COLLECTED", note: null },
+    startedAt: "2026-10-04T10:00:00.000Z",
+    updatedAt: "2026-10-04T10:00:02.000Z",
+  });
+  const stock = action({
+    actionId: SIG("usdcfee"),
+    signature: SIG("usdcfee"),
+    out: { mint: USDC, amountRaw: "2000000", decimals: 6, symbol: "USDC" },
+    in: { mint: STOCK, amountRaw: "1000", decimals: 8, symbol: "NVDAx" },
+    fee: { collected: true, basisPoints: 50, amountRaw: "10000", decimals: 6, symbol: "USDC", usd: null, asset: USDC, providerRaw: "2000", ryntraRaw: "8000", state: "COLLECTED", note: null },
+    startedAt: "2026-10-04T10:10:00.000Z",
+    updatedAt: "2026-10-04T10:10:02.000Z",
+  });
+  const meme = action({
+    actionId: SIG("meme"),
+    signature: SIG("meme"),
+    /* SOL for a token: no stablecoin leg, so the SOL fee has no dollar figure. */
+    out: { mint: WSOL, amountRaw: "10000000", decimals: 9, symbol: "SOL" },
+    in: { mint: "MemeMint1111111111111111111111111111111111", amountRaw: "5", decimals: 6, symbol: "MEME" },
+    fee: { collected: true, basisPoints: 50, amountRaw: "50000", decimals: 9, symbol: "SOL", usd: null, asset: WSOL, providerRaw: "10000", ryntraRaw: "40000", state: "COLLECTED", note: null },
+    startedAt: "2026-10-04T10:20:00.000Z",
+    updatedAt: "2026-10-04T10:20:02.000Z",
+  });
+  const bridge = action({
+    actionId: "intent-1",
+    lane: "CROSS_SWAP",
+    signature: null,
+    sourceTx: RELAY_SOURCE,
+    out: { mint: null, amountRaw: "5000000", decimals: 6, symbol: "USDC" },
+    in: { mint: null, amountRaw: "40000000", decimals: 9, symbol: "SOL" },
+    fee: { collected: true, basisPoints: 25, amountRaw: "12552", decimals: 6, symbol: "USDC", usd: 0.012549, asset: "USDC", providerRaw: "0", ryntraRaw: "12552", state: "COLLECTED", note: null },
+    providerRef: null,
+    startedAt: "2026-10-04T10:30:00.000Z",
+    updatedAt: "2026-10-04T10:30:05.000Z",
+  });
+  return {
+    now,
+    source: {
+      actions: [swap, stock, meme, bridge],
+      orders: new Map([["intent-1", { provider: "RELAY", sourceChain: "base", destinationChain: "solana", sourceTxHash: RELAY_SOURCE, destinationTxHash: null }]]),
+      stockMints: new Set([STOCK]),
+      internalWallets: new Set(),
+      names: {},
+      chain: null,
+      rewards: new Map([
+        [SIG("solfee"), { cashbackUsd: 0.0025, friendsUsd: 0.0005, unvalued: 0 }],
+        [RELAY_SOURCE, { cashbackUsd: 0.006274, friendsUsd: 0, unvalued: 0 }],
+        [SIG("meme"), { cashbackUsd: 0, friendsUsd: 0, unvalued: 1 }],
+      ]),
+    },
+  };
+}
+
+test("a fee is stated in dollars by one rule — the provider's figure, a stablecoin at par, or the operation's own execution rate — and never priced later", () => {
+  const { now, source } = moneyLedger();
+  const block = buildLedgerStats(source, now);
+  const byAction = Object.fromEntries(block.operations.map((row) => [row.action, row]));
+  const swap = byAction["USDC → SOL"];
+  assert.equal(swap.network, "solana");
+  assert.deepEqual([swap.fee.valueUsd, swap.fee.valueBasis, swap.fee.ryntraUsd], [0.005, "EXECUTION_RATE", 0.004], "0.00004 SOL at the trade's own 125 USDC per SOL");
+  const stock = byAction["Buy NVDAx"];
+  assert.deepEqual([stock.fee.valueUsd, stock.fee.valueBasis, stock.fee.ryntraUsd], [0.01, "PAR", 0.008]);
+  const meme = byAction["SOL → MEME"];
+  assert.deepEqual([meme.fee.valueUsd, meme.fee.valueBasis, meme.fee.ryntraUsd], [null, null, null], "no stablecoin leg: counted in SOL, no dollar figure");
+  const bridge = byAction["Base → Solana"];
+  assert.equal(bridge.network, "base", "a bridge's network is where the person paid");
+  assert.deepEqual([bridge.fee.valueUsd, bridge.fee.valueBasis, bridge.fee.ryntraUsd], [0.012549, "PROVIDER_STATED", 0.012549]);
+  for (const row of block.operations) assert.equal("rewards" in row, false, "what one trader's referrer earned on one trade is never public");
+  assert.equal(block.summaries.BRIDGE.all.money.cashbackUsd, 0.006274, "the bridge's cashback matched by its source transaction");
+  assert.equal(block.summaries.STOCK.all.money.cashbackUsd, 0, "no reward rows for an operation adds nothing");
+});
+
+test("a fee no rule above values takes the reward ledger's own valuation at settlement — cashback over its rate", async () => {
+  const { projectOperations } = await import("../../lib/analytics/operations.ts");
+  const { now, source } = moneyLedger();
+  const meme = source.actions.find((entry) => entry.actionId === SIG("meme"));
+  const [record] = projectOperations({ ...source, actions: [meme], rewards: new Map([[SIG("meme"), { cashbackUsd: 0.0031, friendsUsd: 0, unvalued: 0, feeUsd: 0.0062 }]]) });
+  assert.deepEqual([record.fee.valueUsd, record.fee.valueBasis, record.fee.ryntraUsd], [0.0062, "REWARD_LEDGER", 0.00496]);
+  void now;
+});
+
+test("the overview and the product × network table come from the same rows: fees, what Ryntra kept, cashback, friends and revenue", async () => {
+  const { now, source } = moneyLedger();
+  const { projectOperations, summarizeOperations } = await import("../../lib/analytics/operations.ts");
+  /* The arithmetic; what the public model withholds is the next test. */
+  const all = summarizeOperations(projectOperations(source), { now });
+  assert.deepEqual(all.money, {
+    feesUsd: 0.027549,
+    feesUnvalued: 1,
+    retainedUsd: 0.024549,
+    retainedUnvalued: 1,
+    cashbackUsd: 0.008774,
+    rewardsUnvalued: 1,
+    revenueUsd: 0.015775,
+    revenueExcluded: 1,
+  });
+  assert.deepEqual(
+    all.breakdown.map((row) => [row.product, row.network, row.operations, row.volumeUsd, row.feesUsd, row.feesUnvalued, row.revenueUsd, row.cashbackUsd, row.wallets]),
+    [
+      ["BRIDGE", "base", 1, 5, 0.012549, 0, 0.006275, 0.006274, 1],
+      ["STOCK", "solana", 1, 2, 0.01, 0, 0.008, 0, 1],
+      ["SWAP", "solana", 2, 1, 0.005, 1, 0.0015, 0.0025, 1],
+    ],
+  );
+  const sum = (key) => Math.round(all.breakdown.reduce((total, row) => total + row[key], 0) * 1e6) / 1e6;
+  assert.equal(sum("feesUsd"), all.money.feesUsd);
+  assert.equal(sum("revenueUsd"), all.money.revenueUsd);
+  assert.equal(all.breakdown.reduce((total, row) => total + row.operations, 0), all.operations);
+  assert.equal(buildLedgerStats(source, now).rewards, "ok");
+  const { rewards: _rewards, ...withoutRewards } = source;
+  void _rewards;
+  assert.equal(buildLedgerStats(withoutRewards, now).rewards, "unavailable", "a reward ledger that did not answer is said, not drawn as zeros");
+});
+
+test("cashback and friends are read from the reward ledger by the reference each reward names; a claim is not an earning", async () => {
+  const { rewardsByOperation } = await import("../../lib/attribution/rewards.ts");
+  const base = { rateBps: 5000, shareRaw: "1", valuation: { basis: "STABLECOIN_PAR", price: null, sourceRef: "USDC", observedAt: "2026-10-04T10:00:03.000Z" }, createdAt: "2026-10-04T10:00:03.000Z", claimId: null, signature: null };
+  const source = { mechanism: "JUPITER_REFERRAL", operationRef: SIG("solfee"), trader: OWNER, grossRaw: "10000", asset: USDC, symbol: "USDC", decimals: 6, settledAt: "2026-10-04T10:00:02.000Z" };
+  const map = rewardsByOperation([
+    { ...base, type: "CASHBACK", recipient: OWNER, usdMicros: "5000", source },
+    { ...base, type: "REFERRAL_L1", recipient: "Referrer111111111111111111111111111111111", rateBps: 1000, usdMicros: "1000", source },
+    { ...base, type: "REFERRAL_L2", recipient: "Referrer222222222222222222222222222222222", rateBps: 500, usdMicros: null, source },
+    { ...base, type: "CLAIM", recipient: OWNER, rateBps: 0, shareRaw: null, usdMicros: "-5000", source: null, claimId: "c1", signature: SIG("payout") },
+  ]);
+  assert.deepEqual([...map.entries()], [[SIG("solfee"), { cashbackUsd: 0.005, friendsUsd: 0.001, unvalued: 0, feeUsd: 0.01 }]], "the gross fee is the cashback over its 50 %; an unvalued friends' reward is not counted — how many there are would say how many inviters");
+});
+
+test("the page draws the registry's published rows and links the JSON; the breakdown and the registry are tables", () => {
+  const content = read("app/stats/stats-content.tsx");
+  assert.match(content, /model\.registry\.rows/);
+  assert.match(content, /href="\/api\/stats\/registry"/);
+  assert.match(content, /summary\.breakdown\.map/);
+  assert.match(content, /rx-stats-breakdown/);
+  assert.match(content, /rx-stats-registry/);
+  for (const locale of ["en", "uk"]) {
+    const words = STATS_COPY[locale];
+    for (const key of ["product", "network", "operations", "volume", "fees", "revenue", "cashback", "users"]) assert.ok(words.breakdown.columns[key], `${locale}: breakdown ${key}`);
+    for (const role of ["FEE", "PAYOUT_CASHBACK", "PAYOUT_FRIENDS", "PAYOUT_INTEGRATORS", "PAYOUT_REWARDS", "TREASURY"]) assert.ok(words.registry.roles[role], `${locale}: role ${role}`);
+  }
+  assert.deepEqual(Object.values(STATS_COPY.uk.products), ["Усі", "Обмін", "Спот", "Акції", "Міст"], "the Ukrainian page names the products in Ukrainian");
+});
+
+test("a dollar at par is decided by the mint: a token that calls itself USDC values nothing", async () => {
+  const { projectOperations } = await import("../../lib/analytics/operations.ts");
+  const { source } = moneyLedger();
+  const fake = action({
+    actionId: SIG("fakeusdc"),
+    signature: SIG("fakeusdc"),
+    out: { mint: WSOL, amountRaw: "10000000", decimals: 9, symbol: "SOL" },
+    in: { mint: "FakeUsdc11111111111111111111111111111111111", amountRaw: "100000000000000", decimals: 6, symbol: "USDC" },
+    fee: { collected: true, basisPoints: 50, amountRaw: "50000", decimals: 9, symbol: "SOL", usd: null, asset: WSOL, providerRaw: "10000", ryntraRaw: "40000", state: "COLLECTED", note: null },
+  });
+  const [record] = projectOperations({ ...source, actions: [fake], rewards: new Map() });
+  assert.deepEqual([record.fee.valueUsd, record.fee.valueBasis], [null, null], "no execution rate against a counterfeit dollar");
+  const usdcFee = action({ actionId: SIG("fakefee"), signature: SIG("fakefee"), fee: { collected: true, basisPoints: 50, amountRaw: "1000000", decimals: 6, symbol: "USDC", usd: null, asset: "FakeUsdc11111111111111111111111111111111111", providerRaw: "0", ryntraRaw: "1000000", state: "COLLECTED", note: null } });
+  const [paid] = projectOperations({ ...source, actions: [usdcFee], rewards: new Map() });
+  assert.notEqual(paid.fee.valueBasis, "PAR", "a fee in a counterfeit USDC is not at par");
+});
+
+test("friends' rewards say who invited whom: no public summary carries them, as a sum or as a count, in any window", () => {
+  const { now, source } = moneyLedger();
+  const block = buildLedgerStats(source, now);
+  assert.equal(block.summaries.ALL.all.money.revenueUsd, 0.015775, "revenue is after cashback only, the same half for everyone: always stated");
+  const text = JSON.stringify(block);
+  assert.doesNotMatch(text, /friends|invited/i, "nothing about friends' rewards reaches the public model");
+});
+
+test("without the reward ledger cashback and revenue are unknown in the model, never what reached Ryntra", () => {
+  const { now, source } = moneyLedger();
+  const { rewards: _rewards, ...withoutRewards } = source;
+  void _rewards;
+  const block = buildLedgerStats(withoutRewards, now);
+  assert.deepEqual([block.summary.all.money.cashbackUsd, block.summary.all.money.revenueUsd], [null, null]);
+  assert.ok(block.summaries.SWAP["7d"].breakdown.every((line) => line.cashbackUsd === null && line.revenueUsd === null));
 });

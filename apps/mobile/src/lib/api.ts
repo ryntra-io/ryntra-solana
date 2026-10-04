@@ -41,6 +41,7 @@ import {
   type RulePaymentOwnRequest,
   type RuleResponse,
   type RuleStatus,
+  type SwapCheck,
   type TelegramChannelResponse,
   type VerifyResponse,
   type WatchlistMergeResponse,
@@ -829,6 +830,8 @@ export type SwapQuoteResponse = Readonly<{
   verdict: Readonly<{ verdict: string; reasons?: readonly string[] }>
   decimals: Readonly<Record<string, number>>
   expiresAt: string
+  /** «Перевірка» as the server counts it for a company bought with USDC or sold into it (1.20.0); null otherwise. */
+  check?: SwapCheck | null
 }>
 
 export function fetchSwapQuote(input: SwapQuoteInput, signal?: AbortSignal): Promise<SwapQuoteResponse> {
@@ -861,6 +864,8 @@ export type SwapOrderResponse = Readonly<{
   proof: Readonly<{ status: 'SIGNED' | 'UNSIGNED'; digest?: string }>
   preSign: Readonly<{ ready: boolean; code: string; reason: string }>
   expiresAt: string
+  /** «Перевірка» on this exact order, the account's reserve included (1.20.0); null unless a company is bought or sold for USDC. */
+  check?: SwapCheck | null
 }>
 
 /**
