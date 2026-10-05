@@ -1,0 +1,60 @@
+{
+  "observation": {
+    "token": "Dj3yqog9pqdsEY7tGqD2wNv3bJc1d9Ci39Z1ubPEXWzs",
+    "pool": "9vx2VNrZseL1yFpD2yymg2A35tyRARwC4vahxwxeGM3w",
+    "config": "9fRjQM1eDW6hNJRzeLoTZ1sub7tbuMcEbHEwd29UuDik",
+    "preset": "classic",
+    "configProblems": [],
+    "creator": "DG1NZsiS18egP4adUQ7vGLh8jaauLFHmLmdrsrrNUHx",
+    "mint": {
+      "program": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+      "supplyRaw": "1000000000000000",
+      "decimals": 6,
+      "mintAuthority": null,
+      "freezeAuthority": null,
+      "extensions": [
+        "MetadataPointer",
+        "TokenMetadata"
+      ],
+      "transferHookProgram": null,
+      "metadataPointerAuthority": null,
+      "metadataPointerAddress": "Dj3yqog9pqdsEY7tGqD2wNv3bJc1d9Ci39Z1ubPEXWzs",
+      "metadataRead": "OK",
+      "metadataUpdateAuthority": null,
+      "name": "Outside",
+      "symbol": "OUT"
+    },
+    "curve": {
+      "quoteReserveRaw": "0",
+      "baseReserveRaw": "1000000000000000",
+      "migrationQuoteThresholdRaw": "15454411163",
+      "progressBps": 0,
+      "migrated": false,
+      "migrationProgress": 0,
+      "partnerQuoteFeeRaw": "0",
+      "creatorQuoteFeeRaw": "0"
+    },
+    "graduated": null
+  },
+  "creation": {
+    "signature": "OutsideSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS",
+    "slot": 507638192,
+    "blockTime": 1791181149,
+    "failed": false,
+    "feePayer": "DG1NZsiS18egP4adUQ7vGLh8jaauLFHmLmdrsrrNUHx",
+    "signers": [
+      "DG1NZsiS18egP4adUQ7vGLh8jaauLFHmLmdrsrrNUHx",
+      "Dj3yqog9pqdsEY7tGqD2wNv3bJc1d9Ci39Z1ubPEXWzs"
+    ],
+    "initialized": {
+      "config": "9fRjQM1eDW6hNJRzeLoTZ1sub7tbuMcEbHEwd29UuDik",
+      "creator": "DG1NZsiS18egP4adUQ7vGLh8jaauLFHmLmdrsrrNUHx",
+      "baseMint": "Dj3yqog9pqdsEY7tGqD2wNv3bJc1d9Ci39Z1ubPEXWzs",
+      "pool": "9vx2VNrZseL1yFpD2yymg2A35tyRARwC4vahxwxeGM3w",
+      "payer": "DG1NZsiS18egP4adUQ7vGLh8jaauLFHmLmdrsrrNUHx"
+    },
+    "creator": "DG1NZsiS18egP4adUQ7vGLh8jaauLFHmLmdrsrrNUHx",
+    "creatorTokensOutRaw": "0",
+    "creatorQuoteInRaw": "0"
+  }
+}

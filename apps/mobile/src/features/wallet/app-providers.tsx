@@ -5,6 +5,8 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 
 import { SessionBinder } from '@/features/session/session-binder'
+import { WidgetBinder } from '@/features/widget/widget-binder'
+import { keepQueries, restoreKeptQueries } from '@/lib/query-keep'
 
 /** What the wallet shows the person when Ryntra asks to connect. */
 const identity: AppIdentity = { name: 'Ryntra', uri: 'https://ryntra.io', icon: 'favicon.ico' }
@@ -20,6 +22,10 @@ const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
 })
 
+// The last answers kept on the device come back before the first screen, and what changes is kept again (M9).
+restoreKeptQueries(queryClient)
+keepQueries(queryClient)
+
 export function AppProviders({ children }: { children: ReactNode }) {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -27,6 +33,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
         <QueryClientProvider client={queryClient}>
           <MobileWalletProvider cluster={cluster} identity={identity}>
             <SessionBinder />
+            <WidgetBinder />
             {children}
           </MobileWalletProvider>
         </QueryClientProvider>

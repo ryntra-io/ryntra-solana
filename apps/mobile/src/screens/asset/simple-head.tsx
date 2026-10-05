@@ -7,9 +7,10 @@ import { Skeleton } from '@/components/skeleton'
 import { Txt } from '@/components/txt'
 import type { ExchangeState } from '@/features/invest/buy-model'
 import type { InvestCopy } from '@/features/invest/copy'
+import { useNow } from '@/hooks/use-now'
 import type { Locale } from '@/lib/i18n'
 import { Change } from '@/screens/invest/shelf-ui'
-import { formatClock, formatPrice } from '@/utils/format'
+import { formatAt, formatPrice, isToday } from '@/utils/format'
 
 export type SimpleWarning = Readonly<{ key: string; text: string; tone: 'warning' | 'danger' }>
 
@@ -74,6 +75,8 @@ export function SimpleHead({
   locale: Locale
   warnings: readonly SimpleWarning[]
 }) {
+  // A price kept from another day names its day (M9).
+  const now = useNow(60_000)
   return (
     <View className="gap-4">
       <View className="flex-row items-center gap-3">
@@ -105,7 +108,7 @@ export function SimpleHead({
         <View className="flex-row flex-wrap items-center gap-x-2 gap-y-0.5">
           <Change value={change} locale={locale} />
           <Txt variant="ui" tone="faint">
-            {`${copy.today} · ${copy.priceAt(formatClock(observedAt))}`}
+            {`${isToday(observedAt, now) ? `${copy.today} · ` : ''}${copy.priceAt(formatAt(observedAt, now, locale))}`}
           </Txt>
           {stale ? (
             <Txt variant="ui" tone="warning">

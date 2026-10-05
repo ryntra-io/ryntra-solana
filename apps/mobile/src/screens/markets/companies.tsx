@@ -14,10 +14,11 @@ import { INVEST_COPY } from '@/features/invest/copy'
 import { CRYPTO_SHOWN, matchCoins, matchShelf, premiumPhrase } from '@/features/invest/shelf'
 import { useCoinShelf, useCompanyShelf } from '@/features/invest/use-shelf'
 import { MARKETS_TOOL_PATHS, MARKETS_TOOLS, PLACES_COPY, type MarketsTool } from '@/features/shell/places'
+import { useNow } from '@/hooks/use-now'
 import { useCopy, useLocale } from '@/lib/i18n'
 import { coinItem, companyItem, RowSkeleton, ShelfRow, type ShelfItem } from '@/screens/invest/shelf-ui'
 import { useTheme } from '@/theme'
-import { DASH, formatClock } from '@/utils/format'
+import { DASH, formatAt } from '@/utils/format'
 
 /** The icon of each tool of «Для досвідчених». */
 const TOOL_ICONS: Readonly<Record<MarketsTool, IconName>> = {
@@ -111,6 +112,7 @@ export function CompaniesMarkets() {
   const router = useRouter()
   const { colors } = useTheme()
   const locale = useLocale()
+  const now = useNow(60_000)
   const copy = useCopy(INVEST_COPY)
   const places = useCopy(PLACES_COPY)
   const shelf = useCompanyShelf()
@@ -148,7 +150,7 @@ export function CompaniesMarkets() {
     router.push({ pathname: '/asset/[mint]', params: symbol ? { mint: item.mint, symbol } : { mint: item.mint } })
   }
 
-  const shelfTime = shelf.shelf ? formatClock(shelf.shelf.fetchedAt) : null
+  const shelfTime = shelf.shelf ? formatAt(shelf.shelf.fetchedAt, now, locale) : null
   const subtitle = shelf.shelf
     ? shelf.fromDevice
       ? shelf.query.isError

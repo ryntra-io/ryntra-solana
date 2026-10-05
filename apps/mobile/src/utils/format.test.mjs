@@ -8,6 +8,8 @@ import {
   formatBarTime,
   formatClock,
   formatCount,
+  formatAt,
+  isToday,
   formatDay,
   formatMoment,
   formatPercent,
@@ -126,4 +128,18 @@ test('the venue’s figures in Ukrainian shape: the web’s K and M with a comma
   assert.equal(formatShare(30.7, 'uk'), '30,7%')
   assert.equal(formatAmount(1234.5, 6, 'uk'), `1${NBSP}234,5`)
   assert.equal(formatAmount(1234.5), '1,234.5')
+})
+
+test('a time with its preposition names its day when it is not today', () => {
+  const noon = new Date(2026, 9, 5, 12, 0).getTime()
+  const at = (day, hour) => new Date(2026, 9, day, hour, 30).toISOString()
+  assert.equal(formatAt(at(5, 9), noon), 'at 09:30')
+  assert.equal(formatAt(at(4, 22), noon), 'yesterday at 22:30')
+  assert.equal(formatAt(at(1, 8), noon), '1 Oct at 08:30')
+  assert.equal(formatAt(at(5, 9), noon, 'uk'), 'о 09:30')
+  assert.equal(formatAt(at(4, 22), noon, 'uk'), 'вчора о 22:30')
+  assert.equal(formatAt(null, noon, 'uk'), DASH)
+  assert.equal(isToday(at(5, 9), noon), true)
+  assert.equal(isToday(at(4, 22), noon), false)
+  assert.equal(isToday(null, noon), false)
 })

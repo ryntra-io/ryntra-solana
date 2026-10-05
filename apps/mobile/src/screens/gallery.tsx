@@ -25,11 +25,11 @@ import { HOME_COPY } from '@/features/home/copy'
 import { BUY_COPY } from '@/features/invest/buy-copy'
 import {
   approxUsd,
-  buyReviewRows,
+  buyCheckRows,
   dollarsText,
   NO_FEE_CAP_RAW,
   reserveFirstOf,
-  truthLine,
+  ryntraFeeFigures,
   type BuyOutcome,
 } from '@/features/invest/buy-model'
 import {
@@ -58,6 +58,7 @@ import { CompanyPathStrip } from '@/screens/asset/company-path'
 import { AttentionRow } from '@/screens/home/blocks'
 import { PaymentEvents } from '@/screens/autoinvest/autoinvest-sheet'
 import { RuleCard } from '@/screens/autoinvest/rule-card'
+import { SAMPLE_BUY_CHECKS, SAMPLE_BUY_FEES } from '@/screens/invest/buy-samples'
 import { BudgetRow } from '@/screens/autoinvest/budget-row'
 import { HomeRuleCard } from '@/screens/autoinvest/rules-block'
 import {
@@ -72,6 +73,7 @@ import { convertReceiptFace } from '@/screens/invest/convert-sheet'
 import { EventBanner } from '@/screens/invest/event-ui'
 import { SaleSamples } from '@/screens/invest/sale-samples'
 import { HoldingRow } from '@/screens/portfolio/holding-row'
+import { WidgetSamples } from '@/screens/widget-samples'
 import { type } from '@/theme'
 import { formatClock } from '@/utils/format'
 
@@ -79,49 +81,6 @@ import { formatClock } from '@/utils/format'
 const SAMPLE_AT = '2026-09-14T20:55:14.587Z'
 const SAMPLE_QUOTE_AT = new Date(Date.now() - 12_000).toISOString()
 const SAMPLE_NOW = Date.parse(SAMPLE_QUOTE_AT) + 12_000
-/* A purchase of Apple for $20, as an order and its answers would state it. */
-const SAMPLE_ORDER = {
-  inAmountRaw: '20000000',
-  outAmountRaw: '7870000',
-  minReceivedRaw: '7830000',
-  inUsdValue: '20.00',
-  outUsdValue: '19.95',
-  totalFeeBasisPoints: 20,
-  priceImpactPct: '0.001',
-  signatureFeeLamports: '5000',
-  priorityFeeLamports: '40075',
-  rentFeeLamports: '2039280',
-}
-/* A purchase of OpenAI through PreStocks for $10, as the route quoted it: what arrives is after the issuer's 1 %
-   and counts through the token's multiplier. */
-const SAMPLE_PRIVATE_ORDER = {
-  inAmountRaw: '10000000',
-  outAmountRaw: '4893336',
-  minReceivedRaw: '4893336',
-  inUsdValue: '9.998492',
-  outUsdValue: '9.754841',
-  totalFeeBasisPoints: 50,
-  priceImpactPct: '-0.024369',
-  signatureFeeLamports: '5000',
-  priorityFeeLamports: '40075',
-  rentFeeLamports: '2039280',
-}
-/* A purchase of Apple for $1 (M21, canon v5.5 В35) that opens its token's account — 179 bytes of Token-2022, the
-   reserve said on its own line under «Усі витрати» — and the same $1 on a route that opens several accounts, whose
-   one-time reserve is more than the purchase itself: «Перевірка» says so first. */
-const SAMPLE_DOLLAR_ORDER = {
-  inAmountRaw: '1000000',
-  outAmountRaw: '393000',
-  minReceivedRaw: '391000',
-  inUsdValue: '1.00',
-  outUsdValue: '0.9905',
-  totalFeeBasisPoints: 50,
-  priceImpactPct: '0.001',
-  signatureFeeLamports: '5000',
-  priorityFeeLamports: '40075',
-  rentFeeLamports: '1559560',
-}
-const SAMPLE_RESERVE_ORDER = { ...SAMPLE_DOLLAR_ORDER, rentFeeLamports: '9000000' }
 const SAMPLE_CONTEXT: TradeContext = {
   mode: 'buy',
   pay: USDC_ASSET,
@@ -546,22 +505,12 @@ export function GalleryScreen() {
   const buyCopy = useCopy(BUY_COPY)
   const ruleCopy = useCopy(AUTOINVEST_COPY)
   const locale = useLocale()
-  const reserveFirst = reserveFirstOf({ order: SAMPLE_RESERVE_ORDER, payDecimals: 6, solUsd: 200 })
-  const dollarRows = (order: typeof SAMPLE_DOLLAR_ORDER) =>
-    buyReviewRows({
-      order,
-      pay: USDC_ASSET,
-      payDecimals: 6,
-      receiveDecimals: 8,
-      multiplier: 1,
-      unit: 'share',
-      company: 'Apple',
-      truth: truthLine('xstocks', 'Apple', locale),
-      preIpo: false,
-      solUsd: 200,
-      locale,
-      words: buyCopy,
-    })
+  const reserveFirst = reserveFirstOf(SAMPLE_BUY_CHECKS.reserveFirst)
+  const checkRows = (key: keyof typeof SAMPLE_BUY_CHECKS) => {
+    const check = SAMPLE_BUY_CHECKS[key]
+    const ryntraFee = ryntraFeeFigures(SAMPLE_BUY_FEES[key], locale)
+    return buyCheckRows(check, { unit: check.company.unit, company: check.company.name, locale, words: buyCopy, ryntraFee })
+  }
   const convertCopy = useCopy(CONVERT_COPY)
   const pathCopy = useCopy(COMPANY_PATH_COPY)
   const portfolioCopy = useCopy(PORTFOLIO_COPY)
@@ -722,41 +671,14 @@ export function GalleryScreen() {
           </Section>
           <Section title="Purchase · the four rows and the receipt">
             <BuyReviewTable
-              rows={buyReviewRows({
-                order: SAMPLE_ORDER,
-                pay: USDC_ASSET,
-                payDecimals: 6,
-                receiveDecimals: 8,
-                multiplier: 1,
-                unit: 'share',
-                company: 'Apple',
-                truth: truthLine('xstocks', 'Apple', locale),
-                preIpo: false,
-                solUsd: 200,
-                locale,
-                words: buyCopy,
-              })}
+              rows={checkRows('apple')}
               words={buyCopy}
             />
             <BuyReviewTable
-              rows={buyReviewRows({
-                order: SAMPLE_PRIVATE_ORDER,
-                pay: USDC_ASSET,
-                payDecimals: 6,
-                receiveDecimals: 9,
-                multiplier: 1.4861347,
-                unit: 'token',
-                company: 'OpenAI',
-                truth: truthLine('prestocks', 'OpenAI', locale),
-                preIpo: true,
-                issuerFee: { basisPoints: 100, maximumFeeRaw: NO_FEE_CAP_RAW },
-                solUsd: 200,
-                locale,
-                words: buyCopy,
-              })}
+              rows={checkRows('openai')}
               words={buyCopy}
             />
-            <BuyReviewTable rows={dollarRows(SAMPLE_DOLLAR_ORDER)} words={buyCopy} />
+            <BuyReviewTable rows={checkRows('dollar')} words={buyCopy} />
             {reserveFirst ? (
               <ReserveFirstLine
                 line={buyCopy.reserveFirst(
@@ -765,7 +687,7 @@ export function GalleryScreen() {
                 )}
               />
             ) : null}
-            <BuyReviewTable rows={dollarRows(SAMPLE_RESERVE_ORDER)} words={buyCopy} />
+            <BuyReviewTable rows={checkRows('reserveFirst')} words={buyCopy} />
             {/* No route for $1 (M21): the company's own minimum read from the quote, and the one action that puts it in —
                 what the sheet says when the venue answers «no route» below $5, as no company does today. */}
             <Card className="gap-3">
@@ -787,6 +709,9 @@ export function GalleryScreen() {
                 />
               </Card>
             ))}
+          </Section>
+          <Section title="Home-screen widget · Portfolio">
+            <WidgetSamples />
           </Section>
           <Section title="Sale from a position · Apple and OpenAI">
             <SaleSamples />
@@ -879,20 +804,7 @@ export function GalleryScreen() {
               />
             ))}
             <BuyReviewTable
-              rows={buyReviewRows({
-                order: SAMPLE_ORDER,
-                pay: USDC_ASSET,
-                payDecimals: 6,
-                receiveDecimals: 8,
-                multiplier: 1,
-                unit: 'share',
-                company: 'Apple',
-                truth: truthLine('xstocks', 'Apple', locale),
-                preIpo: false,
-                solUsd: 200,
-                locale,
-                words: buyCopy,
-              })}
+              rows={checkRows('apple')}
               words={buyCopy}
             />
             <RuleMarkLine

@@ -48,3 +48,10 @@ test('the copies carry what 1.20.0 added — «Перевірка» counted by t
   assert.match(types, /export type SwapCheck = Readonly<\{/)
   assert.equal(types.match(/^ {2}check: SwapCheck \| null;$/gm)?.length, 2)
 })
+
+test('the copies carry what 1.24.0 added — a `/build` order and the fee paid whole into Ryntra’s fee wallet', () => {
+  const types = readFileSync(join(here, 'types.ts'), 'utf8').replace(/\r\n/g, '\n')
+  assert.match(types, /path: "ORDER_EXECUTE" \| "BUILD_SUBMIT";/)
+  assert.match(types, /"JUPITER_REFERRAL" \| "JUPITER_PLATFORM_FEE"/)
+  assert.match(types, /ryntraFeeAccount\?: Readonly<\{ owner: string; account: string \}>;/)
+})

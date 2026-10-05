@@ -275,7 +275,12 @@ test('the brief: notes since the look, plans changed since, the portfolio day, t
       preferences: { telegram: false, push: false, quietHours: null },
     },
     plans: [changed, old],
-    portfolio: { coverage: 'PARTIAL', total: 1000, dayChange: { usd: -12.3, pct: -1.2, covered: 3, of: 4 } },
+    portfolio: {
+      coverage: 'PARTIAL',
+      total: 1000,
+      observedAt: new Date(NOW).toISOString(),
+      dayChange: { usd: -12.3, pct: -1.2, covered: 3, of: 4 },
+    },
     moves: [
       { row: row({ price: 103 }), pct: 3, dayPct: 9 },
       { row: row({ mint: MINTS.aapl, symbol: 'AAPLx' }), pct: 0.1, dayPct: 1 },
@@ -390,4 +395,18 @@ test('money hides on request and dashes the unknown', () => {
 test('the freshest time wins; junk is ignored', () => {
   assert.equal(freshestAt(iso(10), null, iso(2), 'junk', undefined), iso(2))
   assert.equal(freshestAt(null, undefined, 'junk'), null)
+})
+
+test("the brief says the portfolio's day only for a read from today (M9)", () => {
+  const portfolio = {
+    coverage: 'COMPLETE',
+    total: 1000,
+    observedAt: new Date(NOW - 36 * 60 * 60 * 1000).toISOString(),
+    dayChange: { usd: -12.3, pct: -1.2, covered: 3, of: 3 },
+  }
+  const lines = briefLines({ look: null, surface: null, plans: null, portfolio, moves: [], now: NOW })
+  assert.equal(
+    lines.some((line) => line.kind === 'portfolio'),
+    false,
+  )
 })

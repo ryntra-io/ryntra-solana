@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar'
 import * as SystemUI from 'expo-system-ui'
 import { useEffect } from 'react'
 
+import { OfflineFrame } from '@/components/offline-frame'
 import { NotificationsBinder } from '@/features/notifications/notifications-binder'
 import { AppProviders } from '@/features/wallet/app-providers'
 import { applyStoredThemeMode, useTheme } from '@/theme'
@@ -16,7 +17,9 @@ export default function RootLayout() {
   return (
     <AppProviders>
       <NotificationsBinder />
-      <RootStack />
+      <OfflineFrame>
+        <RootStack />
+      </OfflineFrame>
     </AppProviders>
   )
 }

@@ -1,6 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
+import { figuresOf } from '@/features/widget/widget-model'
+import { redrawPortfolioWidgets } from '@/features/widget/widget-render'
+import { setWidgetFailed, setWidgetFigures } from '@/features/widget/widget-store'
 import { fetchHoldings, type HoldingsResponse } from '@/lib/api'
 
 import { portfolioView, type PortfolioView } from './portfolio-model'
@@ -45,10 +48,24 @@ export function usePortfolio(address: string | null) {
   if (latest && latest !== kept && !keepsPrevious(latest, kept)) setKept(latest)
   const shown = latest && keepsPrevious(latest, kept) ? kept : latest
   const view = useMemo((): PortfolioView | null => (shown ? portfolioView(shown) : null), [shown])
+  // The home-screen widget shows the same read, with its time (M9).
+  useEffect(() => {
+    if (!view) return
+    const changed = setWidgetFigures(figuresOf(view))
+    if (changed) redrawPortfolioWidgets(changed)
+  }, [view])
+  const heldBack = shown !== latest
+  // A refresh the app saw fail, or held back, is labelled on the widget as it is here.
+  const failedAt = query.isError ? query.errorUpdatedAt : heldBack ? query.dataUpdatedAt : 0
+  useEffect(() => {
+    if (!address || failedAt <= 0) return
+    const changed = setWidgetFailed(new Date(failedAt).toISOString(), address)
+    if (changed) redrawPortfolioWidgets(changed)
+  }, [address, failedAt])
   return {
     query,
     view,
     /** True when the latest refresh could not read the token accounts and an earlier, fuller read is shown instead. */
-    heldBack: shown !== latest,
+    heldBack,
   }
 }

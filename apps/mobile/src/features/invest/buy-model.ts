@@ -6,8 +6,8 @@
  * What a beginner reads about a company and about a purchase is decided here
  * once and tested: the one line of truth about what the token is (from the
  * issuer's own documents — never «акція Apple»), whether the exchange is open,
- * a sum of dollars as it is typed, how much of the company it buys, what the
- * purchase costs in dollars, all of it, the four rows of «Перевірка», what the
+ * a sum of dollars as it is typed, how much of the company it buys, the four
+ * rows of «Перевірка» as the server counts them (contract 1.20.0), what the
  * server's answer after a signature means, and the one action the sheet
  * offers. The rules are the web line's own for the same page and the same
  * sheet, so the phone and ryntra.io say the same thing; every figure is the
@@ -17,6 +17,7 @@
  */
 
 import {
+  SOL_MINT,
   USDC_MINT,
   USDT_MINT,
   type SessionPeriod,
@@ -24,6 +25,7 @@ import {
   type SwapOrderCore,
   type SwapSettlement,
 } from '../../lib/api.ts'
+import type { SwapCheck } from '../../lib/api/v1/types.ts'
 import type { Locale } from '../../lib/i18n.ts'
 import { DASH, formatUsd } from '../../utils/format.ts'
 import {
@@ -437,27 +439,19 @@ function reserveUsdOf(rentFeeLamports: string | null, solUsd: number): number | 
 }
 
 /**
- * Whether the one-time reserve that opens the token's account is more than the
- * purchase itself — then «Перевірка» says so before anything else (canon v5.5
- * В35). The reserve stays in the person's wallet; it is never a cost.
- */
-export function reserveOverPurchase(accountUsd: number | null, spendUsd: number): boolean {
-  return accountUsd !== null && Number.isFinite(accountUsd) && Number.isFinite(spendUsd) && accountUsd > spendUsd
-}
-
-/**
  * The line «Перевірка» says before its four rows when the order's one-time
- * reserve is more than the purchase: the reserve and the sum in dollars, as the
- * rows say them; null when there is no reserve, no SOL price, or it is not more.
+ * reserve is more than the purchase (canon v5.5 В35): the reserve and the sum
+ * in dollars, as the server counted them on the exact order — `first` is the
+ * server's own judgement; null when it said no reserve, no figure, or not more.
+ * The reserve stays in the person's wallet; it is never a cost.
  */
 export function reserveFirstOf(
-  input: Readonly<{ order: BuyOrderFigures; payDecimals: number; solUsd: number | null }>,
+  check: SwapCheck | null,
 ): Readonly<{ reserveUsd: number; spendUsd: number }> | null {
-  const solUsd = input.solUsd !== null && Number.isFinite(input.solUsd) && input.solUsd > 0 ? input.solUsd : null
-  const spent = unitsFromRaw(input.order.inAmountRaw, input.payDecimals, null)
-  if (solUsd === null || spent === null) return null
-  const reserveUsd = reserveUsdOf(input.order.rentFeeLamports, solUsd)
-  return reserveUsd !== null && reserveOverPurchase(reserveUsd, spent) ? { reserveUsd, spendUsd: spent } : null
+  const reserve = check?.reserve ?? null
+  const spendUsd = check?.spend.amount ?? null
+  if (!reserve?.first || reserve.usd === null || spendUsd === null) return null
+  return { reserveUsd: reserve.usd, spendUsd }
 }
 
 /** «≈ $0,06», or «< $0,01» for a real cost too small to print as a cent. */
@@ -487,27 +481,6 @@ export function issuerFeeOf(
 /** «1%», «0,5%» — a fee in basis points as a person reads it. */
 export function feePercentText(basisPoints: number, locale: Locale): string {
   return `${new Intl.NumberFormat(numberTag(locale), { maximumFractionDigits: 2 }).format(basisPoints / 100)}%`
-}
-
-/**
- * The issuer's fee on a purchase, in dollars. The mint withholds it from the
- * transfer that delivers the token, and the route quotes what arrives after it
- * — so the fee is its share of what left the pool: what arrives, over one less
- * the fee (under the mint's cap, where it has one), at the route's own price.
- * Unknown without the route's dollar value of what arrives.
- */
-export function issuerFeeUsd(
-  input: Readonly<{ fee: IssuerFee | null; outUsdValue: string | null; outAmountRaw: string | null }>,
-): number | null {
-  const fee = input.fee
-  const outUsd = numeric(input.outUsdValue)
-  if (!fee || outUsd === null || outUsd <= 0) return null
-  let usd = (outUsd * fee.basisPoints) / (10_000 - fee.basisPoints)
-  const cap = fee.maximumFeeRaw
-  const arrives = input.outAmountRaw && /^\d+$/.test(input.outAmountRaw) ? Number(input.outAmountRaw) : 0
-  if (cap && /^\d+$/.test(cap) && cap !== NO_FEE_CAP_RAW && arrives > 0)
-    usd = Math.min(usd, (outUsd * Number(cap)) / arrives)
-  return usd
 }
 
 /* ---- the dollars a purchase is paid with ---- */
@@ -569,6 +542,8 @@ export type BuyRowWords = Readonly<{
   atLeast: string
   reserve: (usd: string) => string
   issuerFee: (pct: string, usd: string | null) => string
+  /** «з них комісія Ryntra 0,50% · ≈ 0,05 USDC» — beside the issuer's, inside «Усі витрати». */
+  ryntraFee: (figures: string) => string
   truthUnknown: string
 }>
 
@@ -586,17 +561,167 @@ export type BuyOrderFigures = Pick<
   | 'rentFeeLamports'
 >
 
+/** «≈ $0,10», «< $0,01» kept on one line — the sign never ends a line apart from its figure. */
+export const keepTogether = (text: string): string => text.replace(/^([≈<]) /, '$1\u00a0')
+
+/* ---- Ryntra's own fee inside «Усі витрати» — the web's one formatter (`serviceFeeReviewText`), on the order's figures ---- */
+
+/** A company is bought with dollars and sold into them; Ryntra's fee is in one of these, or in SOL. */
+const FEE_SIDES: Readonly<Record<string, Readonly<{ decimals: number; code: string }>>> = {
+  [SOL_MINT]: { decimals: 9, code: 'SOL' },
+  [USDC_MINT]: { decimals: 6, code: 'USDC' },
+  [USDT_MINT]: { decimals: 6, code: 'USDT' },
+}
+
+export type RyntraFeeOrder = Pick<
+  SwapOrderCore,
+  'ryntraFee' | 'inputMint' | 'outputMint' | 'inAmountRaw' | 'outAmountRaw' | 'inUsdValue' | 'outUsdValue'
+>
+
 /**
- * «Перевірка» as the four rows a person reads before the signature —
- * **Спишеться · Отримаєш · Усі витрати · Що це** — from the exact order the
- * server built: what leaves the wallet, what arrives (and the least that may)
- * in the unit the wallet shows — through the token's multiplier and after the
- * issuer's fee, as the route quotes it and the server's simulation holds it
- * to — everything it costs in dollars with the issuer's own fee said on a line
- * of its own, and what the token is. Always four, in that order; an unknown
- * figure is a dash.
+ * «0,50% · ≈\u00a00,05 USDC» — Ryntra's fee on an order as the web says it inside
+ * «Усі витрати»: the rate, and the amount — exact where the provider stated it,
+ * else `≈` the rate's share of the side it is taken from — with a dollar
+ * anchor when the fee is in SOL. The order's own figures, never a cost counted
+ * here; null when the order charges none.
  */
-export function buyReviewRows(
+export function ryntraFeeFigures(order: RyntraFeeOrder | null | undefined, locale: Locale): string | null {
+  const fee = order?.ryntraFee ?? null
+  if (!order || !fee || !(fee.basisPoints > 0)) return null
+  const tag = numberTag(locale)
+  const fixed = (value: number, digits: number) =>
+    new Intl.NumberFormat(tag, { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(value)
+  const rate = `${fixed(fee.basisPoints / 100, 2)}%`
+  const asset = fee.asset
+  const side = asset ? (FEE_SIDES[asset] ?? null) : null
+  const decimals = fee.decimals ?? side?.decimals ?? null
+  const code = fee.symbol ?? side?.code ?? null
+  const sideRaw = asset === order.inputMint ? order.inAmountRaw : asset === order.outputMint ? order.outAmountRaw : null
+  const estimate =
+    fee.amountRaw != null
+      ? { raw: fee.amountRaw, exact: true }
+      : sideRaw !== null && /^\d+$/.test(sideRaw) && fee.basisPoints < 10_000
+        ? { raw: ((BigInt(sideRaw) * BigInt(fee.basisPoints)) / 10_000n).toString(), exact: false }
+        : null
+  if (!estimate || decimals === null) {
+    if (fee.usd != null && fee.usd > 0) return `${rate}\u00a0· ${keepTogether(approxUsd(fee.usd, locale))}`
+    return rate
+  }
+  const figure = new Intl.NumberFormat(tag, { maximumFractionDigits: decimals }).format(Number(estimate.raw) / 10 ** decimals)
+  const sideUsd = asset === order.inputMint ? numeric(order.inUsdValue) : asset === order.outputMint ? numeric(order.outUsdValue) : null
+  const feeUsd =
+    asset && asset !== USDC_MINT && asset !== USDT_MINT && sideUsd !== null && sideUsd > 0 && sideRaw && Number(sideRaw) > 0
+      ? (sideUsd * Number(estimate.raw)) / Number(sideRaw)
+      : null
+  const dollars = feeUsd === null ? null : keepTogether(approxUsd(feeUsd, locale))
+  const amount = `${estimate.exact ? '' : '≈\u00a0'}${figure}${code ? `\u00a0${code}` : ''}`
+  // One ordinary space, after «·»: a narrow cell wraps there, never inside the rate or the amount.
+  return `${rate}\u00a0· ${amount}${dollars ? ` (${dollars})` : ''}`
+}
+
+/** The costs row's quieter lines of fees: the issuer's, then Ryntra's — each on its own line; null when neither. */
+function feeLines(issuer: string | null, ryntra: string | null, words: BuyRowWords): string | null {
+  const lines = [issuer, ryntra ? words.ryntraFee(ryntra) : null].filter((line): line is string => line !== null)
+  return lines.length > 0 ? lines.join('\n') : null
+}
+
+/**
+ * What the sum buys and costs, from the live quote — the server's `check` (1.20.0).
+ * A quote the server did not count (paid in USDT, a company it could not read)
+ * says what arrives as the order states it and the costs as unknown; a figure
+ * that cannot be said is null, and the sheet says nothing in its place.
+ */
+export function buyEstimate(
+  quote: Readonly<{ order: Pick<SwapOrderCore, 'outAmountRaw'>; decimals: Readonly<Record<string, number>>; check?: SwapCheck | null }> | null,
+  company: Readonly<{ mint: string; decimals: number | null; multiplier: number | null }>,
+): Readonly<{ units: number | null; costsUsd: number | null }> | null {
+  if (!quote) return null
+  const check = quote.check ?? null
+  if (check) return { units: check.get.amount, costsUsd: check.costs?.usd ?? null }
+  return {
+    units: unitsFromRaw(quote.order.outAmountRaw, quote.decimals[company.mint] ?? company.decimals, company.multiplier),
+    costsUsd: null,
+  }
+}
+
+/**
+ * «Перевірка» of a purchase as the server counts it (contract 1.20.0) — the
+ * four rows a person reads before the signature, **Спишеться · Отримаєш ·
+ * Усі витрати · Що це**: the dollars that leave the wallet, the company's
+ * units that arrive and the least that may — in the unit the wallet shows,
+ * through the token's multiplier — everything it costs with the issuer's own
+ * fee on a line of its own and the account's one-time reserve apart (canon
+ * v5.5 В35), and what the token is with the issuer's event said to a buyer.
+ * The quote's `check` carries no reserve; the order's carries the one its
+ * simulation proved. Drawn, never counted here — the web draws the same
+ * `check`, so the same sum says the same figures; a figure the server could
+ * not count is a dash.
+ */
+export function buyCheckRows(
+  check: SwapCheck,
+  input: Readonly<{
+    unit: BuyUnit
+    company: string
+    locale: Locale
+    words: BuyRowWords
+    /** Ryntra's fee on the order, as `ryntraFeeFigures` says it; null when none. */
+    ryntraFee?: string | null
+  }>,
+): readonly [BuyRow, BuyRow, BuyRow, BuyRow] {
+  const { locale, words } = input
+  const spend = check.spend
+  const get = check.get
+  const issuerFee = check.costs?.issuerFee ?? null
+  const note = check.what.note
+  return [
+    {
+      key: 'spend',
+      value: spend.amount === null ? DASH : formatUsd(spend.amount, locale),
+      fee: null,
+      sub: spend.unit === 'usdc' ? 'USDC' : null,
+      caution: false,
+    },
+    {
+      key: 'get',
+      value: get.amount === null ? DASH : `≈ ${unitsPhrase(get.amount, input.unit, input.company, locale)}`,
+      fee: null,
+      sub: get.atLeast === null ? null : `${words.atLeast} ${formatShareUnits(get.atLeast, locale)}`,
+      caution: false,
+    },
+    {
+      key: 'costs',
+      value: check.costs ? approxUsd(check.costs.usd, locale) : DASH,
+      fee: feeLines(
+        issuerFee
+          ? words.issuerFee(feePercentText(issuerFee.basisPoints, locale), keepTogether(approxUsd(issuerFee.usd, locale)))
+          : null,
+        input.ryntraFee ?? null,
+        words,
+      ),
+      // The reserve stays in the wallet, on the token's account: said apart, never joined to the costs (canon v5.5 В35).
+      sub: check.reserve?.usd ? words.reserve(approxUsd(check.reserve.usd, locale)) : null,
+      caution: false,
+    },
+    {
+      key: 'what',
+      value: check.what.truth[locale] || words.truthUnknown,
+      fee: null,
+      sub: note?.kind === 'issuer-event' ? note[locale] : null,
+      caution: check.what.caution,
+    },
+  ]
+}
+
+/**
+ * The same four rows for an order the server answered without its count — a
+ * purchase paid in USDT, or a company the server could not read: what leaves
+ * and what arrives (and the least that may) as the order states them, through
+ * the token's multiplier, the fees the order and the mint state (the issuer's
+ * per cent, Ryntra's), and what the token is as the page read it. What only the
+ * server counts — all the costs, the issuer's fee in dollars, the reserve — is a
+ * dash, never a figure of the phone's own.
+ */
+export function buyOrderRows(
   input: Readonly<{
     order: BuyOrderFigures
     pay: TradeAsset
@@ -607,14 +732,12 @@ export function buyReviewRows(
     company: string
     truth: string | null
     preIpo: boolean
-    /**
-     * The issuer's event said again under «Що це» (the IPO and conversion watch, canon v5.2 В27; M19): «SpaceX
-     * вийшла на біржу. Куплений SPACEX треба обміняти до 12 березня 2027 — після строку токен згорить.»; null for none.
-     */
+    /** The issuer's event said again under «Що це» (the IPO and conversion watch, canon v5.2 В27; M19); null for none. */
     eventLine?: string | null
     /** The mint's own fee on the transfer that delivers the token; null when it charges none. */
     issuerFee?: IssuerFee | null
-    solUsd: number | null
+    /** Ryntra's fee on the order, as `ryntraFeeFigures` says it; null when none. */
+    ryntraFee?: string | null
     locale: Locale
     words: BuyRowWords
   }>,
@@ -624,22 +747,6 @@ export function buyReviewRows(
   const spent = unitsFromRaw(order.inAmountRaw, input.payDecimals, null)
   const got = unitsFromRaw(order.outAmountRaw, input.receiveDecimals, input.multiplier)
   const least = unitsFromRaw(order.minReceivedRaw, input.receiveDecimals, input.multiplier)
-  const costs =
-    spent === null
-      ? null
-      : buyCosts({
-          spendUsd: spent,
-          inUsdValue: order.inUsdValue,
-          outUsdValue: order.outUsdValue,
-          totalFeeBasisPoints: order.totalFeeBasisPoints,
-          issuerFeeBps: issuerFee?.basisPoints ?? null,
-          priceImpactPct: order.priceImpactPct,
-          signatureFeeLamports: order.signatureFeeLamports,
-          priorityFeeLamports: order.priorityFeeLamports,
-          rentFeeLamports: order.rentFeeLamports,
-          solUsd: input.solUsd,
-        })
-  const feeUsd = issuerFeeUsd({ fee: issuerFee, outUsdValue: order.outUsdValue, outAmountRaw: order.outAmountRaw })
   return [
     {
       key: 'spend',
@@ -657,15 +764,13 @@ export function buyReviewRows(
     },
     {
       key: 'costs',
-      value: costs ? approxUsd(costs.totalUsd, locale) : DASH,
-      fee: issuerFee
-        ? words.issuerFee(
-            feePercentText(issuerFee.basisPoints, locale),
-            feeUsd === null ? null : approxUsd(feeUsd, locale),
-          )
-        : null,
-      // The reserve stays in the wallet, on the token's account: said apart, never joined to the costs (canon v5.5 В35).
-      sub: costs?.accountUsd ? words.reserve(approxUsd(costs.accountUsd, locale)) : null,
+      value: DASH,
+      fee: feeLines(
+        issuerFee ? words.issuerFee(feePercentText(issuerFee.basisPoints, locale), null) : null,
+        input.ryntraFee ?? null,
+        words,
+      ),
+      sub: null,
       caution: false,
     },
     {

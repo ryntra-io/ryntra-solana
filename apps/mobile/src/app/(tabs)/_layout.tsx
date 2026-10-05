@@ -5,6 +5,7 @@ import { unreadCount } from '@/features/monitoring/monitoring-model'
 import { useSurface } from '@/features/plans/use-plans'
 import { useAccount } from '@/features/session/use-account'
 import { BADGE_TAB, badgeOf, drawnTabs, TAB_TITLES, type ShellTab } from '@/features/shell/shell'
+import { useQuickActions } from '@/features/shell/use-quick-actions'
 import { useCopy, useLocale } from '@/lib/i18n'
 import { fonts, useTheme } from '@/theme'
 
@@ -30,6 +31,8 @@ export default function TabsLayout() {
   const account = useAccount()
   // The unread notes of the wallet, as the server counts them, on the tab where attention lives.
   const unread = unreadCount(useSurface(account.session, locale))
+  // A long press on the launcher icon: four doors into the places (M9).
+  useQuickActions()
   return (
     <Tabs
       initialRouteName="index"

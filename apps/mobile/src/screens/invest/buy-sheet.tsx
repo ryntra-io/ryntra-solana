@@ -43,6 +43,7 @@ import {
   dollarsText,
   isCompanyBuy,
   isDollarMint,
+  keepTogether,
   MIN_BUY_USD,
   spentText,
   unitsFromRaw,
@@ -94,7 +95,11 @@ const PAY_CHOICES: readonly Choice<PayDollar>[] = [
  * person confirms there with the wallet's own biometrics, the server submits
  * once. The one-time reserve that opens a new token's account is its own line
  * under «Усі витрати», never among them: it stays in the wallet; when it is
- * more than the purchase itself, «Перевірка» says so first. **The receipt:**
+ * more than the purchase itself, «Перевірка» says so first. **The figures
+ * are the server's** (contract 1.20.0): what the sum buys, all costs with the
+ * issuer's fee inside them, the reserve and «Що це» are the `check` the quote
+ * and the order answer — the web draws the same, so one sum reads the same on
+ * both; the sheet counts none of them. **The receipt:**
  * «✓ У тебе є частинка Apple · $10» with what arrived. A signature whose
  * outcome is not known yet is checked here, never repeated.
  *
@@ -371,10 +376,13 @@ function estimateOf(buy: BuyController, company: BuyCompany, words: BuyCopy): st
     const key = buyFailureKey(trade.quoteFailure.code)
     return QUOTE_UNREAD.has(key) ? words.quoteDown : words.failures[key]
   }
+  // The server's figures (1.20.0); «≈» never ends a line apart from its figure.
   if (buy.estimate?.units !== null && buy.estimate?.units !== undefined)
-    return `≈ ${unitsPhrase(buy.estimate.units, company.unit, company.name, locale)} · ${words.allCosts} ${
-      buy.estimate.costs ? approxUsd(buy.estimate.costs.totalUsd, locale) : DASH
+    return `${keepTogether(`≈ ${unitsPhrase(buy.estimate.units, company.unit, company.name, locale)}`)} · ${words.allCosts}\u00a0${
+      buy.estimate.costsUsd !== null ? keepTogether(approxUsd(buy.estimate.costsUsd, locale)) : DASH
     }`
+  // The server answered without a figure for what arrives: nothing is said in its place, as on the web.
+  if (buy.estimate) return ' '
   return words.pricing
 }
 

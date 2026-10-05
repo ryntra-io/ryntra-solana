@@ -10,8 +10,10 @@ import {
   BUY_SHARE_PRESETS_PCT,
   buyCosts,
   buyFailureKey,
+  buyCheckRows,
+  buyEstimate,
+  buyOrderRows,
   buyOutcome,
-  buyReviewRows,
   composeAction,
   DEFAULT_BUY_USD,
   dollarBalanceText,
@@ -22,13 +24,15 @@ import {
   isBuyableSum,
   isCompanyBuy,
   issuerFeeOf,
-  issuerFeeUsd,
   MIN_BUY_USD,
   NO_FEE_CAP_RAW,
   offersPayChoice,
   parseDollars,
   payDollar,
+  keepTogether,
   recoveryDoor,
+  reserveFirstOf,
+  ryntraFeeFigures,
   spentText,
   sumText,
   truthLine,
@@ -187,7 +191,134 @@ test('«Усі витрати»: the route’s own dollar difference, never belo
 
 const ROW_WORDS = BUY_COPY.uk
 
-test('«Перевірка» is exactly four rows — Спишеться · Отримаєш · Усі витрати · Що це — from the server’s exact order', () => {
+/* The server's own «Перевірка» of Apple bought for $10 — the contract's example, built by the server's builder
+   (docs/api/examples/v1/swap-check-buy.json at contract 1.20.0). */
+const APPLE_CHECK = {
+  side: 'buy',
+  basis: 'order',
+  company: {
+    mint: 'XsbEhLAtcf6HdfpFZ5xEMdqW8nfAvcsP5bdudRLJzJp',
+    symbol: 'AAPLx',
+    name: 'Apple',
+    issuer: 'xstocks',
+    unit: 'share',
+    privateCompany: false,
+    decimals: 8,
+    multiplier: 1.0118,
+  },
+  spend: { mint: USDC_ASSET.mint, unit: 'usdc', amount: 10, usd: 10 },
+  get: {
+    mint: 'XsbEhLAtcf6HdfpFZ5xEMdqW8nfAvcsP5bdudRLJzJp',
+    unit: 'share',
+    amount: 0.04313729,
+    atLeast: 0.04270592,
+    usd: 9.9612,
+  },
+  costs: { usd: 0.047778371999999646, issuerFee: null },
+  reserve: { lamports: '2074080', usd: 0.44219385599999994, first: false },
+  what: {
+    truth: {
+      en: 'A token that tracks the price of Apple · backed 1:1 · no vote',
+      uk: 'Токен, що відстежує ціну Apple · забезпечений 1:1 · без голосу',
+    },
+    note: null,
+    caution: false,
+  },
+  sol: { usd: 213.2, observedAt: '2026-09-27T12:00:00.000Z' },
+}
+
+test('«Перевірка» is exactly four rows — Спишеться · Отримаєш · Усі витрати · Що це — drawn from the server’s check', () => {
+  const rows = buyCheckRows(APPLE_CHECK, { unit: 'share', company: 'Apple', locale: 'uk', words: ROW_WORDS })
+  assert.deepEqual(
+    rows.map((row) => row.key),
+    ['spend', 'get', 'costs', 'what'],
+  )
+  assert.deepEqual(rows[0], { key: 'spend', value: '$10,00', fee: null, sub: 'USDC', caution: false })
+  assert.deepEqual(rows[1], {
+    key: 'get',
+    value: '≈ 0,0431 частки Apple',
+    fee: null,
+    sub: 'щонайменше 0,0427',
+    caution: false,
+  })
+  assert.equal(rows[2].value, '≈ $0,05', 'the server’s figure, as the web prints it')
+  assert.equal(rows[2].fee, null, 'a token its issuer charges nothing to move has no fee line')
+  // The reserve is a line of its own under «Усі витрати», never joined to the costs (canon v5.5 В35).
+  assert.equal(rows[2].sub, '≈ $0,44 у SOL разово лишаються в гаманці на рахунку токена')
+  assert.deepEqual(rows[3], {
+    key: 'what',
+    value: 'Токен, що відстежує ціну Apple · забезпечений 1:1 · без голосу',
+    fee: null,
+    sub: null,
+    caution: false,
+  })
+  const english = buyCheckRows(APPLE_CHECK, { unit: 'share', company: 'Apple', locale: 'en', words: BUY_COPY.en })
+  assert.equal(english[0].value, '$10.00')
+  assert.equal(english[1].value, '≈ 0.0431 of a share')
+  assert.equal(english[2].value, '≈ $0.05')
+  assert.equal(english[3].value, APPLE_CHECK.what.truth.en)
+  // The quote's check carries no reserve, and a figure the server could not count is a dash — never one counted here.
+  const quoted = buyCheckRows(
+    { ...APPLE_CHECK, basis: 'quote', costs: null, reserve: null, get: { ...APPLE_CHECK.get, atLeast: null } },
+    { unit: 'share', company: 'Apple', locale: 'uk', words: ROW_WORDS },
+  )
+  assert.equal(quoted[2].value, '—', 'no SOL price on the server, no cost figure')
+  assert.equal(quoted[2].sub, null, 'no reserve on a quote')
+  assert.equal(quoted[1].sub, null)
+})
+
+test('a PreStocks purchase reviews with the issuer’s 1% inside «Усі витрати» and the event said to a buyer, as the server counts them', () => {
+  const check = {
+    ...APPLE_CHECK,
+    company: { ...APPLE_CHECK.company, issuer: 'prestocks', unit: 'token', privateCompany: true, name: 'OpenAI' },
+    get: { ...APPLE_CHECK.get, unit: 'token', amount: 0.00727215, atLeast: 0.00727215 },
+    costs: { usd: 0.2534, issuerFee: { basisPoints: 100, usd: 0.0985 } },
+    what: {
+      truth: { en: 'A private company', uk: 'Приватна компанія' },
+      note: { kind: 'issuer-event', en: 'Swap it by 12 March 2027.', uk: 'Обміняй до 12 березня 2027.' },
+      caution: true,
+    },
+  }
+  const rows = buyCheckRows(check, { unit: 'token', company: 'OpenAI', locale: 'uk', words: ROW_WORDS })
+  assert.equal(rows.length, 4, 'still exactly four rows')
+  assert.equal(rows[1].value, '≈ 0,0073 токена OpenAI')
+  assert.equal(rows[2].value, '≈ $0,25')
+  assert.equal(rows[2].fee, 'з них комісія емітента 1% ≈ $0,10', '«1% ≈ $0,10» kept on one line')
+  assert.deepEqual(rows[3], {
+    key: 'what',
+    value: 'Приватна компанія',
+    fee: null,
+    sub: 'Обміняй до 12 березня 2027.',
+    caution: true,
+  })
+  const english = buyCheckRows(check, { unit: 'token', company: 'OpenAI', locale: 'en', words: BUY_COPY.en })
+  assert.equal(english[1].value, '≈ 0.0073 of a token')
+  assert.equal(english[2].fee, 'including the issuer’s 1% fee ≈ $0.10')
+  assert.equal(english[3].sub, 'Swap it by 12 March 2027.')
+  // A sale's caution is never said to a buyer.
+  const sale = buyCheckRows(
+    { ...check, what: { ...check.what, note: { kind: 'sale-may-fail', en: 'x', uk: 'x' } } },
+    { unit: 'token', company: 'OpenAI', locale: 'uk', words: ROW_WORDS },
+  )
+  assert.equal(sale[3].sub, null)
+})
+
+test('the account’s reserve is said first only when the server judged it more than the purchase', () => {
+  assert.equal(reserveFirstOf(null), null)
+  assert.equal(reserveFirstOf(APPLE_CHECK), null, 'a reserve under the purchase is a line under «Усі витрати» only')
+  assert.deepEqual(
+    reserveFirstOf({
+      ...APPLE_CHECK,
+      spend: { ...APPLE_CHECK.spend, amount: 1 },
+      reserve: { lamports: '9000000', usd: 1.92, first: true },
+    }),
+    { reserveUsd: 1.92, spendUsd: 1 },
+  )
+  assert.equal(reserveFirstOf({ ...APPLE_CHECK, reserve: { lamports: '9000000', usd: null, first: true } }), null)
+  assert.equal(reserveFirstOf({ ...APPLE_CHECK, reserve: null }), null)
+})
+
+test('an order the server did not count — paid in USDT — says what leaves and arrives as the order states it, and the costs as a dash', () => {
   const order = {
     inAmountRaw: '20000000',
     outAmountRaw: '7870000',
@@ -201,9 +332,9 @@ test('«Перевірка» is exactly four rows — Спишеться · От
     rentFeeLamports: '2039280',
   }
   const truth = truthLine('xstocks', 'Apple', 'uk')
-  const rows = buyReviewRows({
+  const rows = buyOrderRows({
     order,
-    pay: USDC_ASSET,
+    pay: USDT_ASSET,
     payDecimals: 6,
     receiveDecimals: 8,
     multiplier: 1,
@@ -211,28 +342,14 @@ test('«Перевірка» is exactly four rows — Спишеться · От
     company: 'Apple',
     truth,
     preIpo: false,
-    solUsd: 200,
     locale: 'uk',
     words: ROW_WORDS,
   })
-  assert.deepEqual(
-    rows.map((row) => row.key),
-    ['spend', 'get', 'costs', 'what'],
-  )
-  assert.deepEqual(rows[0], { key: 'spend', value: '$20,00', fee: null, sub: 'USDC', caution: false })
-  assert.deepEqual(rows[1], {
-    key: 'get',
-    value: '≈ 0,0787 частки Apple',
-    fee: null,
-    sub: 'щонайменше 0,0783',
-    caution: false,
-  })
-  assert.equal(rows[2].value, '≈ $0,06')
-  assert.equal(rows[2].fee, null, 'a token its issuer charges nothing to move has no fee line')
-  // The reserve is a line of its own under «Усі витрати», never joined to the costs (canon v5.5 В35).
-  assert.equal(rows[2].sub, '≈ $0,41 у SOL разово лишаються в гаманці на рахунку токена')
+  assert.deepEqual(rows[0], { key: 'spend', value: '$20,00', fee: null, sub: 'USDT', caution: false })
+  assert.equal(rows[1].value, '≈ 0,0787 частки Apple')
+  assert.deepEqual(rows[2], { key: 'costs', value: '—', fee: null, sub: null, caution: false })
   assert.deepEqual(rows[3], { key: 'what', value: truth, fee: null, sub: null, caution: false })
-  const unknown = buyReviewRows({
+  const unknown = buyOrderRows({
     order,
     pay: USDT_ASSET,
     payDecimals: 6,
@@ -242,109 +359,27 @@ test('«Перевірка» is exactly four rows — Спишеться · От
     company: 'OpenAI',
     truth: null,
     preIpo: true,
-    solUsd: null,
+    eventLine: 'event',
     locale: 'uk',
     words: ROW_WORDS,
   })
-  assert.equal(unknown.length, 4)
-  assert.equal(unknown[0].sub, 'USDT')
   assert.equal(unknown[1].value, '—', 'no decimals, no figure')
-  assert.equal(unknown[2].value, '—', 'no SOL price, no cost figure')
   assert.equal(unknown[3].value, ROW_WORDS.truthUnknown)
+  assert.equal(unknown[3].sub, 'event')
   assert.equal(unknown[3].caution, true)
 })
 
-/* OpenAI through PreStocks for $10, as the route quoted it on 2026-09-24: what arrives is already after the
-   issuer's 1 % (a simulation of the same purchase delivered 4 928 959 raw against 4 928 622 quoted, 49 788 withheld)
-   and counts through the token's multiplier, ×1.4861347. */
-const PRIVATE_ORDER = {
-  inAmountRaw: '10000000',
-  outAmountRaw: '4893336',
-  minReceivedRaw: '4893336',
-  inUsdValue: '9.998492',
-  outUsdValue: '9.754841',
-  totalFeeBasisPoints: 50,
-  priceImpactPct: '-0.024369',
-  signatureFeeLamports: '5000',
-  priorityFeeLamports: '40075',
-  rentFeeLamports: '2039280',
-}
-
-test('a PreStocks purchase reviews with the issuer’s 1% said in «Усі витрати» and the amount through the multiplier', () => {
-  const fee = issuerFeeOf({ basisPoints: 100, maximumFeeRaw: NO_FEE_CAP_RAW, configUsed: 'NEWER' })
-  assert.deepEqual(fee, { basisPoints: 100, maximumFeeRaw: NO_FEE_CAP_RAW })
-  const truth = truthLine('prestocks', 'OpenAI', 'uk')
-  const rows = buyReviewRows({
-    order: PRIVATE_ORDER,
-    pay: USDC_ASSET,
-    payDecimals: 6,
-    receiveDecimals: 9,
-    multiplier: 1.4861347,
-    unit: 'token',
-    company: 'OpenAI',
-    truth,
-    preIpo: true,
-    issuerFee: fee,
-    solUsd: 200,
-    locale: 'uk',
-    words: ROW_WORDS,
-  })
-  assert.deepEqual(
-    rows.map((row) => row.key),
-    ['spend', 'get', 'costs', 'what'],
-    'still exactly four rows',
-  )
-  assert.equal(rows[0].value, '$10,00')
-  assert.equal(unitsFromRaw('4893336', 9, 1.4861347), 0.00727215, 'the multiplier applied once, on what arrives')
-  assert.deepEqual(rows[1], {
-    key: 'get',
-    value: '≈ 0,0073 токена OpenAI',
-    fee: null,
-    sub: 'щонайменше 0,0073',
-    caution: false,
-  })
-  assert.equal(rows[2].value, '≈ $0,25')
-  assert.equal(rows[2].fee, 'з них комісія емітента 1% ≈ $0,10')
-  assert.equal(rows[2].sub, '≈ $0,41 у SOL разово лишаються в гаманці на рахунку токена')
-  assert.deepEqual(rows[3], { key: 'what', value: truth, fee: null, sub: null, caution: true })
-  const english = buyReviewRows({
-    order: PRIVATE_ORDER,
-    pay: USDC_ASSET,
-    payDecimals: 6,
-    receiveDecimals: 9,
-    multiplier: 1.4861347,
-    unit: 'token',
-    company: 'OpenAI',
-    truth: truthLine('prestocks', 'OpenAI', 'en'),
-    preIpo: true,
-    issuerFee: fee,
-    solUsd: null,
-    locale: 'en',
-    words: BUY_COPY.en,
-  })
-  assert.equal(english[1].value, '≈ 0.0073 of a token')
-  assert.equal(english[2].value, '—', 'no SOL price, no total — the fee is still said')
-  assert.equal(english[2].fee, 'including the issuer’s 1% fee ≈ $0.10')
-})
-
-test('the issuer’s fee: none when the mint charges none, its per cent as read, its dollars under the mint’s cap', () => {
+test('the issuer’s fee: none when the mint charges none, its per cent as read', () => {
   assert.equal(issuerFeeOf(null), null)
   assert.equal(issuerFeeOf({ basisPoints: 0, maximumFeeRaw: NO_FEE_CAP_RAW, configUsed: 'NEWER' }), null)
+  assert.deepEqual(issuerFeeOf({ basisPoints: 100, maximumFeeRaw: NO_FEE_CAP_RAW, configUsed: 'NEWER' }), {
+    basisPoints: 100,
+    maximumFeeRaw: NO_FEE_CAP_RAW,
+  })
   assert.equal(feePercentText(100, 'uk'), '1%')
   assert.equal(feePercentText(50, 'uk'), '0,5%')
   assert.equal(feePercentText(20, 'en'), '0.2%')
-  const fee = { basisPoints: 100, maximumFeeRaw: NO_FEE_CAP_RAW }
-  const usd = issuerFeeUsd({ fee, outUsdValue: '9.754841', outAmountRaw: '4893336' })
-  assert.ok(Math.abs(usd - 9.754841 / 99) < 1e-12, 'its share of what left the pool, what arrives being after it')
-  const capped = issuerFeeUsd({
-    fee: { basisPoints: 100, maximumFeeRaw: '1000' },
-    outUsdValue: '9.754841',
-    outAmountRaw: '4893336',
-  })
-  assert.ok(Math.abs(capped - (9.754841 * 1000) / 4893336) < 1e-12, 'never above the mint’s cap')
-  assert.equal(issuerFeeUsd({ fee, outUsdValue: null, outAmountRaw: '4893336' }), null)
-  assert.equal(issuerFeeUsd({ fee: null, outUsdValue: '9.754841', outAmountRaw: '4893336' }), null)
-  // Without the route's dollar figures the total is never below the stated fees, the issuer's among them.
+  // The issuer's event swap still counts its own costs, as the web's issuer-event sheet does: never below the stated fees.
   const floor = buyCosts({ ...COST, inUsdValue: null, outUsdValue: null, issuerFeeBps: 100 })
   assert.ok(Math.abs(floor.totalUsd - (0.24 + 0.0002 + 0.009015)) < 1e-9)
 })
@@ -602,4 +637,87 @@ test('a signature to check opens where it was made: a company bought with dollar
     'a token the shelf does not name is Trade’s',
   )
   assert.deepEqual(recoveryDoor(null, company), { kind: 'trade' }, 'a signature this phone never made')
+})
+
+const NB = String.fromCharCode(0xa0)
+const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'
+const SOL_MINT = 'So11111111111111111111111111111111111111112'
+
+test('Ryntra’s fee inside «Усі витрати» in the web’s words: the rate, the amount of the side it is taken from, a dollar anchor for SOL', () => {
+  const order = {
+    inputMint: USDC_MINT,
+    outputMint: AAPLX,
+    inAmountRaw: '10000000',
+    outAmountRaw: '2980006',
+    inUsdValue: '10.00',
+    outUsdValue: '9.95',
+    ryntraFee: { mechanism: 'JUPITER_REFERRAL', state: 'QUOTED', basisPoints: 50, requestedBasisPoints: 50, asset: USDC_MINT, symbol: null, decimals: null, amountRaw: null, usd: null },
+  }
+  assert.equal(ryntraFeeFigures(order, 'uk'), `0,50%${NB}· ≈${NB}0,05${NB}USDC`)
+  assert.equal(ryntraFeeFigures(order, 'en'), `0.50%${NB}· ≈${NB}0.05${NB}USDC`)
+  // /build states the input side's fee exactly before the signature: no «≈».
+  const exact = { ...order, ryntraFee: { ...order.ryntraFee, mechanism: 'JUPITER_PLATFORM_FEE', basisPoints: 25, amountRaw: '25000', decimals: 6 } }
+  assert.equal(ryntraFeeFigures(exact, 'en'), `0.25%${NB}· 0.025${NB}USDC`)
+  // A fee in SOL carries its dollars from the order's own value of that side.
+  const sol = { ...order, inputMint: SOL_MINT, inAmountRaw: '100000000', inUsdValue: '20.00', ryntraFee: { ...order.ryntraFee, asset: SOL_MINT, basisPoints: 10 } }
+  assert.equal(ryntraFeeFigures(sol, 'en'), `0.10%${NB}· ≈${NB}0.0001${NB}SOL (≈${NB}$0.02)`)
+  // The company's own token: no scale the phone knows — the rate alone, as the web says it.
+  const output = { ...order, ryntraFee: { ...order.ryntraFee, asset: AAPLX } }
+  assert.equal(ryntraFeeFigures(output, 'uk'), '0,50%')
+  assert.equal(ryntraFeeFigures({ ...order, ryntraFee: { ...order.ryntraFee, basisPoints: 0 } }, 'uk'), null, 'no fee, no line')
+  assert.equal(ryntraFeeFigures(null, 'uk'), null)
+  // Said beside the issuer's, each on its own line.
+  const rows = buyCheckRows(
+    { ...APPLE_CHECK, costs: { usd: 0.35, issuerFee: { basisPoints: 100, usd: 0.0985 } } },
+    { unit: 'share', company: 'Apple', locale: 'uk', words: ROW_WORDS, ryntraFee: ryntraFeeFigures(order, 'uk') },
+  )
+  assert.equal(rows[2].fee, `з них комісія емітента 1% ≈${NB}$0,10\nз них комісія Ryntra${NB}0,50%${NB}· ≈${NB}0,05${NB}USDC`)
+})
+
+test('an order the server did not count still says the fees the mint and the order state — the issuer’s per cent, Ryntra’s', () => {
+  const rows = buyOrderRows({
+    order: { inAmountRaw: '10000000', outAmountRaw: '4893336', minReceivedRaw: '4893336' },
+    pay: USDT_ASSET,
+    payDecimals: 6,
+    receiveDecimals: 9,
+    multiplier: 1.4861347,
+    unit: 'token',
+    company: 'OpenAI',
+    truth: null,
+    preIpo: true,
+    issuerFee: { basisPoints: 100, maximumFeeRaw: NO_FEE_CAP_RAW },
+    ryntraFee: '0,50%',
+    locale: 'uk',
+    words: ROW_WORDS,
+  })
+  assert.equal(rows[2].value, '—', 'the costs are the server’s count alone')
+  assert.equal(rows[2].fee, `з них комісія емітента 1%\nз них комісія Ryntra${NB}0,50%`)
+})
+
+test('the estimate under the sum is the quote’s check; without one, what arrives as the order states it and no costs', () => {
+  const company = { mint: AAPLX, decimals: 8, multiplier: 1 }
+  assert.equal(buyEstimate(null, company), null)
+  assert.deepEqual(buyEstimate({ order: { outAmountRaw: '1' }, decimals: {}, check: APPLE_CHECK }, company), {
+    units: 0.04313729,
+    costsUsd: 0.047778371999999646,
+  })
+  assert.deepEqual(
+    buyEstimate({ order: { outAmountRaw: '1' }, decimals: {}, check: { ...APPLE_CHECK, costs: null } }, company),
+    { units: 0.04313729, costsUsd: null },
+    'a cost the server could not count stays unknown',
+  )
+  assert.deepEqual(buyEstimate({ order: { outAmountRaw: '2980006' }, decimals: { [AAPLX]: 8 }, check: null }, company), {
+    units: 0.02980006,
+    costsUsd: null,
+  })
+  assert.deepEqual(buyEstimate({ order: { outAmountRaw: '2980006' }, decimals: {}, check: null }, { ...company, decimals: null }), {
+    units: null,
+    costsUsd: null,
+  })
+})
+
+test('«≈» and «<» never end a line apart from their figure', () => {
+  assert.equal(keepTogether('≈ $0,07'), `≈${NB}$0,07`)
+  assert.equal(keepTogether('< $0,01'), `<${NB}$0,01`)
+  assert.equal(keepTogether('$0,07'), '$0,07')
 })

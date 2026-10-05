@@ -70,6 +70,8 @@ export type BuyCopy = Readonly<{
   reserveFirst: (reserve: string, spend: string) => string
   /** The issuer's own fee inside «Усі витрати» — «з них комісія емітента 1% ≈ $0,10» (canon §12). */
   issuerFee: (pct: string, usd: string | null) => string
+  /** Ryntra's own fee inside «Усі витрати», beside the issuer's — «з них комісія Ryntra 0,50% · ≈ 0,05 USDC», the web's words. */
+  ryntraFee: (figures: string) => string
   truthUnknown: string
   priceHolds: (seconds: number) => string
   priceExpired: string
@@ -148,6 +150,7 @@ export const BUY_COPY: Copy<BuyCopy> = {
     reserveFirst: (reserve, spend) =>
       `The one-time reserve, ${reserve} in SOL, is more than the purchase itself (${spend}). It stays in your wallet, on the token’s account — it is not a cost.`,
     issuerFee: (pct, usd) => (usd ? `including the issuer’s ${pct} fee ${usd}` : `including the issuer’s ${pct} fee`),
+    ryntraFee: (figures) => `including the Ryntra fee\u00a0${figures}`,
     truthUnknown: 'Not verified: no issuer document was read',
     priceHolds: (seconds) => `The price holds for ${seconds} s`,
     priceExpired: 'The price has expired',
@@ -258,6 +261,7 @@ export const BUY_COPY: Copy<BuyCopy> = {
     reserveFirst: (reserve, spend) =>
       `Разовий резерв ${reserve} у SOL більший за саму покупку (${spend}). Він лишиться в гаманці на рахунку токена — це не витрата.`,
     issuerFee: (pct, usd) => (usd ? `з них комісія емітента ${pct} ${usd}` : `з них комісія емітента ${pct}`),
+    ryntraFee: (figures) => `з них комісія Ryntra\u00a0${figures}`,
     truthUnknown: 'Не перевірено: документів емітента не прочитано',
     priceHolds: (seconds) => `Ціна діє ще ${seconds} с`,
     priceExpired: 'Ціна застаріла',

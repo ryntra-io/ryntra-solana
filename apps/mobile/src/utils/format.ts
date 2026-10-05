@@ -247,6 +247,32 @@ export function formatMoment(iso: string | null | undefined, now: number = Date.
   return `${formatDay(iso, now, locale)} ${at}`
 }
 
+/** Whether an ISO timestamp falls on `now`'s own day; false when absent or unparsable. */
+export function isToday(iso: string | null | undefined, now: number): boolean {
+  if (!iso) return false
+  const time = Date.parse(iso)
+  return !Number.isNaN(time) && daysFromToday(time, now) === 0
+}
+
+/**
+ * A time with its preposition, as a line says it: «о 14:32», «вчора о
+ * 22:30», «3 жовт. о 08:30» — "at 14:32", "yesterday at 22:30", "3 Oct at
+ * 08:30". A read kept from another day names its day, so it never reads as
+ * today's (M9). A dash when absent or unparsable.
+ */
+export function formatAt(iso: string | null | undefined, now: number, locale: Locale = 'en'): string {
+  if (!iso) return DASH
+  const time = Date.parse(iso)
+  if (Number.isNaN(time)) return DASH
+  const days = daysFromToday(time, now)
+  const at = clock.format(new Date(time))
+  const words = TIME_WORDS[locale]
+  const preposition = locale === 'uk' ? 'о' : 'at'
+  const day =
+    days === 0 ? null : days === 1 ? words.tomorrow : days === -1 ? words.yesterday : formatDay(iso, now, locale)
+  return day ? `${day} ${preposition} ${at}` : `${preposition} ${at}`
+}
+
 /**
  * The time of a chart bar, as the window needs it: a clock inside a day
  * (`intraday`), day and clock across a few days (`days`), the day alone

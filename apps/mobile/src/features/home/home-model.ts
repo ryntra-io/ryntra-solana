@@ -13,7 +13,7 @@
  */
 
 import type { MarketRow, MonitoringCard, MonitoringSurface, Session, TradingPlan } from '../../lib/api.ts'
-import { DASH, formatUsd } from '../../utils/format.ts'
+import { DASH, formatUsd, isToday } from '../../utils/format.ts'
 import { planForCard, type NoteTarget } from '../monitoring/monitoring-model.ts'
 import { entryExpired, groupPlans, plansForCard } from '../plans/plan-model.ts'
 import type { DayChange, PortfolioView } from '../portfolio/portfolio-model.ts'
@@ -228,7 +228,8 @@ export function briefLines(input: BriefInput): readonly BriefLine[] {
     for (const plan of changed) lines.push({ kind: 'plan', plan })
   }
 
-  if (input.portfolio?.dayChange) {
+  // A day's move belongs to its day: a read kept from an earlier day says nothing about today (M9).
+  if (input.portfolio?.dayChange && isToday(input.portfolio.observedAt, input.now)) {
     lines.push({ kind: 'portfolio', change: input.portfolio.dayChange, total: input.portfolio.total })
   }
 

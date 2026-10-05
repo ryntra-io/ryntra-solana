@@ -15,6 +15,7 @@ import { setAmountsHidden, useAmountsHidden } from '@/features/home/last-look'
 import { recoveryDoor } from '@/features/invest/buy-model'
 import { INVEST_COPY } from '@/features/invest/copy'
 import { POPULAR_COUNT } from '@/features/invest/shelf'
+import { usePopularCompanies } from '@/features/invest/use-popular'
 import { useCompanyShelf, useShelfNames } from '@/features/invest/use-shelf'
 import { recordJourney } from '@/features/journeys/journey-store'
 import { unreadCount } from '@/features/monitoring/monitoring-model'
@@ -23,11 +24,12 @@ import { usePortfolio } from '@/features/portfolio/use-portfolio'
 import { useAccount } from '@/features/session/use-account'
 import { CHANGES_PATH, PLACES_COPY } from '@/features/shell/places'
 import { useAttempt } from '@/features/trade/trade-store'
+import { useNow } from '@/hooks/use-now'
 import { useCopy, useLocale } from '@/lib/i18n'
 import { RulesBlock } from '@/screens/autoinvest/rules-block'
 import { companyItem, ShelfTile, TileGrid, TileSkeleton } from '@/screens/invest/shelf-ui'
 import { useTheme } from '@/theme'
-import { DASH, formatClock, formatPercent, formatUsd, formatUsdSigned, signOf } from '@/utils/format'
+import { DASH, formatAt, formatPercent, isToday, formatUsd, formatUsdSigned, signOf } from '@/utils/format'
 
 import { TopUpSheet } from './top-up-sheet'
 
@@ -75,6 +77,8 @@ export function InvestorHome() {
   const agentCopy = useCopy(AGENT_COPY)
   const places = useCopy(PLACES_COPY)
   const locale = useLocale()
+  // A read kept from another day names its day; the minute's tick carries that across midnight (M9).
+  const now = useNow(60_000)
   const account = useAccount()
   const state = accountState(account.address, account.session)
   const hidden = useAmountsHidden()
@@ -82,8 +86,10 @@ export function InvestorHome() {
   const attempt = useAttempt(account.address)
   const surface = useSurface(account.session, locale)
   const unread = unreadCount(surface)
-  const shelf = useCompanyShelf()
+  // The shelf names a company a signature was left on (the recovery's door); «Популярне» is the server's own list.
+  useCompanyShelf()
   const nameOf = useShelfNames()
+  const popularRead = usePopularCompanies()
   const queryClient = useQueryClient()
   const [topUp, setTopUp] = useState(false)
 
@@ -116,10 +122,10 @@ export function InvestorHome() {
 
   const refreshing =
     (holdings.query.isFetching && !holdings.query.isPending) ||
-    (shelf.query.isFetching && shelf.query.data !== undefined)
+    (popularRead.isFetching && popularRead.data !== undefined)
   const refresh = () => {
     if (account.address) void holdings.query.refetch()
-    void shelf.query.refetch()
+    void popularRead.refetch()
     if (account.session) void queryClient.invalidateQueries({ queryKey: RULES_KEY })
   }
 
@@ -182,12 +188,13 @@ export function InvestorHome() {
     )
   } else {
     const view = holdings.view
-    const change = view?.dayChange ?? null
+    // A day's move belongs to its day: a read kept from an earlier day shows its value and its time, not «today» (M9).
+    const change = view && isToday(view.observedAt, now) ? view.dayChange : null
     const move = signOf(change?.usd)
     // A read that saw less than the whole wallet is a warning; balances the venue cannot price (dust, airdrops) are only said.
     const note: Readonly<{ text: string; tone: 'warning' | 'faint' }> | null = view
       ? holdings.heldBack
-        ? { text: copy.heldBack(formatClock(view.observedAt)), tone: 'warning' }
+        ? { text: copy.heldBack(formatAt(view.observedAt, now, locale)), tone: 'warning' }
         : view.coverage !== 'COMPLETE'
           ? { text: copy.partlyRead, tone: 'warning' }
           : view.unpriced > 0 && !view.empty
@@ -250,7 +257,12 @@ export function InvestorHome() {
             </Txt>
             {view ? (
               <Txt variant="ui" tone="faint">
-                {`· ${copy.at(formatClock(view.observedAt))}`}
+                {`· ${formatAt(view.observedAt, now, locale)}`}
+              </Txt>
+            ) : null}
+            {view && holdings.query.isError ? (
+              <Txt variant="ui" tone="warning">
+                {`· ${copy.notUpdated}`}
               </Txt>
             ) : null}
           </View>
@@ -278,16 +290,16 @@ export function InvestorHome() {
     )
   }
 
-  /* ---- the popular companies: eight cards, the same for everyone ---- */
-  const cards = shelf.shelf?.companies.slice(0, POPULAR_COUNT) ?? []
-  const shelfTime = shelf.shelf ? formatClock(shelf.shelf.fetchedAt) : null
-  const shelfNote = shelf.fromDevice
-    ? shelf.query.isError
+  /* ---- the popular companies: eight cards, the same for everyone — the server's list, as the web's Home (1.20.0) ---- */
+  const listed = popularRead.data ?? null
+  const cards = listed?.companies.slice(0, POPULAR_COUNT) ?? []
+  const shelfTime = listed ? formatAt(listed.fetchedAt, now, locale) : null
+  // The list on screen carries its own time; a refresh that failed says so beside it, never as fresh.
+  const shelfNote = listed
+    ? popularRead.isError
       ? `${copy.pricesAt(shelfTime ?? DASH)} · ${copy.notUpdated}`
-      : copy.updating
-    : shelf.shelf
-      ? `${copy.byVolume} · ${copy.at(shelfTime ?? DASH)}`
-      : copy.byVolume
+      : `${copy.byVolume} · ${shelfTime ?? DASH}`
+    : copy.byVolume
   let tiles: ReactNode
   if (cards.length > 0) {
     tiles = (
@@ -303,7 +315,7 @@ export function InvestorHome() {
         ))}
       </TileGrid>
     )
-  } else if (shelf.query.isError) {
+  } else if (popularRead.isError) {
     tiles = (
       <View className="items-start gap-3 rounded-sm border border-line bg-surface p-4">
         <Txt variant="ui" tone="muted">
@@ -313,8 +325,8 @@ export function InvestorHome() {
           title={copy.reload}
           variant="secondary"
           size="sm"
-          loading={shelf.query.isFetching}
-          onPress={() => void shelf.query.refetch()}
+          loading={popularRead.isFetching}
+          onPress={() => void popularRead.refetch()}
         />
       </View>
     )

@@ -31,7 +31,8 @@ import {
 import { BUY_COPY } from '@/features/invest/buy-copy'
 import { dollarsText } from '@/features/invest/buy-model'
 import { INVEST_COPY } from '@/features/invest/copy'
-import { POPULAR_COUNT, shelfCardFor, type ShelfCard } from '@/features/invest/shelf'
+import { shelfCardFor, type ShelfCard } from '@/features/invest/shelf'
+import { usePopularCompanies } from '@/features/invest/use-popular'
 import { useCompanyShelf } from '@/features/invest/use-shelf'
 import { recordJourney } from '@/features/journeys/journey-store'
 import { usePortfolio } from '@/features/portfolio/use-portfolio'
@@ -387,9 +388,12 @@ export function HomeRuleCard({
 
 /**
  * «Додати правило» → «Для якої компанії?»: the companies the wallet owns
- * first, then the popular ones, the same for everyone; «Усі компанії» opens
- * Markets. A tap opens the company with its «Автоінвест» sheet.
+ * first, then the popular ones — the server's list, the web's own (1.20.0),
+ * without what the wallet owns; «Усі компанії» opens Markets. A tap opens the
+ * company with its «Автоінвест» sheet.
  */
+type PickedCompany = Pick<ShelfCard, 'mint' | 'ticker' | 'name' | 'icon' | 'price' | 'change24h'>
+
 function CompanyPicker({
   visible,
   address,
@@ -401,12 +405,13 @@ function CompanyPicker({
   address: string
   copy: AutoinvestCopy
   onClose: () => void
-  onPick: (company: ShelfCard) => void
+  onPick: (company: PickedCompany) => void
 }) {
   const router = useRouter()
   const locale = useLocale()
   const invest = useCopy(INVEST_COPY)
   const shelf = useCompanyShelf()
+  const listed = usePopularCompanies()
   const holdings = usePortfolio(address)
   if (!visible) return null
   const cards = shelf.shelf
@@ -414,9 +419,9 @@ function CompanyPicker({
     (holdings.view?.rows ?? []).filter((row) => row.amount > 0 && !row.native).map((row) => row.mint),
   )
   const owned = cards ? [...cards.companies, ...cards.privateCompanies].filter((card) => held.has(card.mint)) : []
-  const popular = cards ? cards.companies.filter((card) => !held.has(card.mint)).slice(0, POPULAR_COUNT) : []
+  const popular = (listed.data?.companies ?? []).filter((company) => !held.has(company.mint))
   const today = invest.today
-  const section = (title: string, list: readonly ShelfCard[]) =>
+  const section = (title: string, list: readonly PickedCompany[]) =>
     list.length > 0 ? (
       <View className="gap-1">
         <Txt variant="labelSm" tone="faint" caps>
@@ -439,11 +444,42 @@ function CompanyPicker({
   return (
     <Sheet visible title={copy.pickCompany} onClose={onClose} scroll>
       <View className="gap-4 pb-2">
-        {cards ? (
+        {cards || listed.data ? (
           <>
             {section(copy.youOwn, owned)}
-            {section(copy.popular, popular)}
+            {listed.data ? (
+              section(copy.popular, popular)
+            ) : listed.isError ? (
+              // The server's list did not answer: said, with the one way to ask again — never a section that silently vanished.
+              <View className="items-start gap-3 rounded-sm border border-line bg-surface p-4">
+                <Txt variant="ui" tone="muted">
+                  {invest.shelfDown}
+                </Txt>
+                <Button
+                  title={invest.reload}
+                  variant="secondary"
+                  size="sm"
+                  loading={listed.isFetching}
+                  onPress={() => void listed.refetch()}
+                />
+              </View>
+            ) : (
+              <Skeleton className="h-40 rounded-sm" accessibilityRole="progressbar" />
+            )}
           </>
+        ) : listed.isError ? (
+          <View className="items-start gap-3 rounded-sm border border-line bg-surface p-4">
+            <Txt variant="ui" tone="muted">
+              {invest.shelfDown}
+            </Txt>
+            <Button
+              title={invest.reload}
+              variant="secondary"
+              size="sm"
+              loading={listed.isFetching}
+              onPress={() => void listed.refetch()}
+            />
+          </View>
         ) : (
           <Skeleton className="h-40 rounded-sm" accessibilityRole="progressbar" />
         )}

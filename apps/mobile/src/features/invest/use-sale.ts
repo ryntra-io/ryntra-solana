@@ -12,7 +12,7 @@ import { isSupportedIssuer } from '@/lib/stocks'
 
 import { BUY_COPY } from './buy-copy'
 import { SALE_COPY } from './sale-copy'
-import { amountFieldText, issuerFeeOf, parseDollars, truthLine, unitsFromRaw } from './buy-model'
+import { amountFieldText, issuerFeeOf, parseDollars, ryntraFeeFigures, truthLine, unitsFromRaw } from './buy-model'
 import {
   isCompanySale,
   isWholePosition,
@@ -187,14 +187,17 @@ export function useSale(company: SaleCompany) {
     atLeast: words.atLeast,
     reserve: words.reserve,
     issuerFee: words.issuerFee,
+    ryntraFee: words.ryntraFee,
     truthUnknown: words.truthUnknown,
     mayFail: SALE_COPY[locale].saleMayFail,
   }
   const orderCheck = prepared?.order.check ?? null
+  // Ryntra's own fee on the exact order, said inside «Усі витрати» beside the issuer's, as the web says it.
+  const ryntraFee = ryntraFeeFigures(prepared?.order.order, locale)
   const rows = !prepared
     ? null
     : orderCheck
-      ? saleCheckRows(orderCheck, { unit: company.unit, company: company.name, locale, words: rowWords })
+      ? saleCheckRows(orderCheck, { unit: company.unit, company: company.name, locale, words: rowWords, ryntraFee })
       : saleOrderRows({
           order: prepared.order.order,
           payDecimals: prepared.context.payDecimals,
@@ -205,6 +208,7 @@ export function useSale(company: SaleCompany) {
           truth: company.truth,
           preIpo: company.preIpo,
           issuerFee: company.issuerFee,
+          ryntraFee,
           locale,
           words: rowWords,
         })

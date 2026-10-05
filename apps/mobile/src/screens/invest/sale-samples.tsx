@@ -217,6 +217,7 @@ export function SaleSamples() {
     atLeast: buyWords.atLeast,
     reserve: buyWords.reserve,
     issuerFee: buyWords.issuerFee,
+    ryntraFee: buyWords.ryntraFee,
     truthUnknown: buyWords.truthUnknown,
     mayFail: words.saleMayFail,
   }

@@ -6,15 +6,15 @@ import type { Prepared } from '@/features/trade/trade-flow'
 import type { TradeAsset } from '@/features/trade/trade-model'
 import { useTrade } from '@/features/trade/use-trade'
 import { useWallet } from '@/features/wallet/use-wallet'
-import { useMarket } from '@/hooks/use-market'
-import { SOL_MINT, USDC_MINT, USDT_MINT, type RuleBinding } from '@/lib/api'
+import { USDC_MINT, USDT_MINT, type RuleBinding } from '@/lib/api'
 import { useLocale } from '@/lib/i18n'
 
 import { BUY_COPY } from './buy-copy'
 import {
   amountFieldText,
-  buyCosts,
-  buyReviewRows,
+  buyCheckRows,
+  buyEstimate,
+  buyOrderRows,
   buyShares,
   composeAction,
   DEFAULT_BUY_USD,
@@ -27,6 +27,7 @@ import {
   parseDollars,
   pickedShare,
   reserveFirstOf,
+  ryntraFeeFigures,
   sumText,
   unitsFromRaw,
   type BuyUnit,
@@ -78,7 +79,8 @@ export type RuleBuy = Readonly<{ amountUsd: number | null; binding: RuleBinding 
  * the sum in dollars — from $1, opening on $10 — and its quick shares of the
  * wallet's dollars, which dollars pay, what the sum buys and costs, the
  * company's own minimum where the sum has no route, the four rows of
- * «Перевірка» with the account's reserve apart, and the one action the sheet
+ * «Перевірка» with the account's reserve apart — the server's `check`, never
+ * a count of the phone's own (contract 1.20.0) — and the one action the sheet
  * offers (canon v5.5 В35; M21). A Review the app closed on comes back only
  * when it is this company's purchase. Under a reminder the sum is the rule's
  * and the dollars are USDC.
@@ -144,91 +146,42 @@ export function useBuy(company: BuyCompany, rule: RuleBuy | null = null) {
     rule: binding,
   })
 
-  /* ---- SOL's price, for the network fee said in dollars ---- */
-  const sol = useMarket(SOL_MINT)
-  const solUsd = sol.data?.market?.price ?? null
-
-  /* ---- what the sum buys and costs, from the live quote ---- */
-  const quote = trade.quote
-  // The page builds its company on every render: the fee is held by its figures, so the memos below stay put.
-  const feeBps = company.issuerFee?.basisPoints ?? null
-  const feeCap = company.issuerFee?.maximumFeeRaw ?? null
-  const issuerFee = useMemo(
-    (): IssuerFee | null => (feeBps === null ? null : { basisPoints: feeBps, maximumFeeRaw: feeCap }),
-    [feeBps, feeCap],
-  )
-  const estimate = useMemo(() => {
-    if (!quote) return null
-    const decimals = quote.decimals[company.mint] ?? company.decimals
-    const spend = unitsFromRaw(quote.order.inAmountRaw, quote.decimals[payAsset.mint] ?? payAsset.decimals, null)
-    return {
-      // What arrives, after the issuer's fee as the route quotes it, through the token's multiplier.
-      units: unitsFromRaw(quote.order.outAmountRaw, decimals, company.multiplier),
-      costs:
-        spend === null
-          ? null
-          : buyCosts({
-              spendUsd: spend,
-              inUsdValue: quote.order.inUsdValue,
-              outUsdValue: quote.order.outUsdValue,
-              totalFeeBasisPoints: quote.order.totalFeeBasisPoints,
-              issuerFeeBps: issuerFee?.basisPoints ?? null,
-              priceImpactPct: quote.order.priceImpactPct,
-              signatureFeeLamports: quote.order.signatureFeeLamports,
-              priorityFeeLamports: quote.order.priorityFeeLamports,
-              // The quote has no taker: whether an account is opened is known only on the exact order.
-              rentFeeLamports: null,
-              solUsd,
-            }),
-    }
-  }, [quote, company.mint, company.decimals, company.multiplier, issuerFee, payAsset, solUsd])
+  /* ---- what the sum buys and costs, from the live quote — the server's count (contract 1.20.0) ---- */
+  const estimate = buyEstimate(trade.quote, company)
 
   /* ---- no route for the sum: the company's own minimum, from the same quote at the ladder's larger sums (canon v5.5 В35) ---- */
   // A reminder's sum is the rule's own, so only a sum the person types looks for one.
   const noRoute = rule === null && valid && isNoRoute(trade.quoteFailure?.code)
   const routeMinimum = useRouteMinimum(payAsset.mint, company.mint, valid ? amountUsd : null, noRoute)
 
-  /* ---- «Перевірка»: the exact order in four rows ---- */
+  /* ---- «Перевірка»: the exact order in four rows, as the server counted them on the bytes the wallet signs ---- */
   const prepared = trade.prepared
-  const rows = useMemo(() => {
-    if (!prepared) return null
-    const words = BUY_COPY[locale]
-    return buyReviewRows({
-      order: prepared.order.order,
-      pay: prepared.context.pay,
-      payDecimals: prepared.context.payDecimals,
-      receiveDecimals: prepared.context.receiveDecimals,
-      multiplier: company.multiplier,
-      unit: company.unit,
-      company: company.name,
-      truth: company.truth,
-      preIpo: company.preIpo,
-      eventLine: company.eventLine ?? null,
-      issuerFee,
-      solUsd,
-      locale,
-      words,
-    })
-  }, [
-    prepared,
-    company.multiplier,
-    company.unit,
-    company.name,
-    company.truth,
-    company.preIpo,
-    company.eventLine,
-    issuerFee,
-    solUsd,
-    locale,
-  ])
-  // The account's one-time reserve, said before the rows when it is more than the purchase itself.
-  const reserveFirst = useMemo(
-    () =>
-      prepared
-        ? reserveFirstOf({ order: prepared.order.order, payDecimals: prepared.context.payDecimals, solUsd })
-        : null,
-    [prepared, solUsd],
-  )
+  const orderCheck = prepared?.order.check ?? null
+  const words = BUY_COPY[locale]
+  // Ryntra's own fee on the exact order, said inside «Усі витрати» beside the issuer's, as the web says it.
+  const ryntraFee = ryntraFeeFigures(prepared?.order.order, locale)
+  const rows = !prepared
+    ? null
+    : orderCheck
+      ? buyCheckRows(orderCheck, { unit: company.unit, company: company.name, locale, words, ryntraFee })
+      : buyOrderRows({
+          order: prepared.order.order,
+          pay: prepared.context.pay,
+          payDecimals: prepared.context.payDecimals,
+          receiveDecimals: prepared.context.receiveDecimals,
+          multiplier: company.multiplier,
+          unit: company.unit,
+          company: company.name,
+          truth: company.truth,
+          preIpo: company.preIpo,
+          eventLine: company.eventLine ?? null,
+          issuerFee: company.issuerFee,
+          ryntraFee,
+          locale,
+          words,
+        })
+  // The account's one-time reserve, said before the rows when the server judged it more than the purchase itself.
+  const reserveFirst = reserveFirstOf(orderCheck)
 
   /* ---- the one action ---- */
   const insufficient =

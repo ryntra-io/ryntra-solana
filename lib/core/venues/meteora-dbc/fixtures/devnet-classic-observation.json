@@ -1,0 +1,62 @@
+{
+  "token": "GQrCYD8h4gkBf9FgRok3EjFFiAvnzcJXDxTRusW8Tv54",
+  "pool": "E5PYLamoBFXpTePGPCkNaSgvGaJvQWZ1vcw8K3aSbPn9",
+  "config": "9fRjQM1eDW6hNJRzeLoTZ1sub7tbuMcEbHEwd29UuDik",
+  "preset": "classic",
+  "configProblems": [],
+  "creator": "DG1NZsiS18egP4adUQ7vGLh8jaauLFHmLmdrsrrNUHx",
+  "mint": {
+    "program": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+    "supplyRaw": "1000000000000000",
+    "decimals": 6,
+    "mintAuthority": null,
+    "freezeAuthority": null,
+    "extensions": [
+      "MetadataPointer",
+      "TokenMetadata"
+    ],
+    "transferHookProgram": null,
+    "metadataPointerAuthority": null,
+    "metadataPointerAddress": "GQrCYD8h4gkBf9FgRok3EjFFiAvnzcJXDxTRusW8Tv54",
+    "metadataRead": "OK",
+    "metadataUpdateAuthority": null,
+    "name": "Ryntra Rehearsal Classic",
+    "symbol": "RRC"
+  },
+  "curve": {
+    "quoteReserveRaw": "15454411164",
+    "baseReserveRaw": "201937666031134",
+    "migrationQuoteThresholdRaw": "15454411163",
+    "progressBps": 10000,
+    "migrated": true,
+    "migrationProgress": 3,
+    "partnerQuoteFeeRaw": "0",
+    "creatorQuoteFeeRaw": "0"
+  },
+  "graduated": {
+    "pool": "4m7eG78CteAoHN5VEFzwJ37CqCXDeR4kvBH2CjqGbkzn",
+    "collectFeeMode": 2,
+    "compoundingFeeBps": 5000,
+    "baseFeeMode": 4,
+    "tokenAReserveRaw": "386985561958132",
+    "tokenBReserveRaw": "7943983556",
+    "liquidity": "32195722109617618664787406099478",
+    "poolPermanentLockedLiquidity": "32195722107772944257416450937878",
+    "positions": [
+      {
+        "position": "FWoDeUX67tW9VrjGKWXKhWhUeZki7L9Gvjc4ozRc6UxG",
+        "owner": "xkfpaFQnfBGposA1WnsU3miQ8L5sFAXv5Mck9Cjxjju",
+        "permanentLockedLiquidity": "16097861053743786066771311646678",
+        "unlockedLiquidity": "0",
+        "vestedLiquidity": "0"
+      },
+      {
+        "position": "BgZ8LCv9Whuva5kQjjenBEPcsVM264U1AHU9DRSki8HM",
+        "owner": "DG1NZsiS18egP4adUQ7vGLh8jaauLFHmLmdrsrrNUHx",
+        "permanentLockedLiquidity": "16097861054029158190645139291200",
+        "unlockedLiquidity": "0",
+        "vestedLiquidity": "0"
+      }
+    ]
+  }
+}

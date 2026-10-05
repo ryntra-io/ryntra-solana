@@ -14,8 +14,7 @@ import { USDC_ASSET } from '../trade/trade-model.ts'
 import { BUY_COPY } from './buy-copy.ts'
 import {
   amountFieldText,
-  buyCosts,
-  buyReviewRows,
+  buyCheckRows,
   buyShares,
   DEFAULT_BUY_USD,
   dollarsRaw,
@@ -24,7 +23,6 @@ import {
   ladderMinimum,
   pickedShare,
   reserveFirstOf,
-  reserveOverPurchase,
   ROUTE_MINIMUM_LADDER_USD,
   ROUTE_MINIMUM_RETRY_MS,
   routeMinimumSteps,
@@ -206,50 +204,44 @@ test('the ladder reads the company’s own minimum from the quote: the first sum
   })
 })
 
-/** $1 of an xStock the wallet does not hold: the chain-proven 179-byte Token-2022 account, 1,559,560 lamports. */
-const ONE_DOLLAR = {
-  inAmountRaw: '1000000',
-  outAmountRaw: '2800',
-  minReceivedRaw: '2786',
-  inUsdValue: '0.9998',
-  outUsdValue: '0.9905',
-  totalFeeBasisPoints: 50,
-  priceImpactPct: '-0.004',
-  signatureFeeLamports: '5000',
-  priorityFeeLamports: '0',
-  rentFeeLamports: '1559560',
+/** $1 of an xStock the wallet does not hold, as the server counts it: the chain-proven 179-byte Token-2022 account, 1,559,560 lamports. */
+const ONE_DOLLAR_CHECK = {
+  side: 'buy',
+  basis: 'order',
+  company: {
+    mint: 'XsH7vuEDhQZcGzQnxfuGq3nEYp9dHqPzR2DxBG3kS1V',
+    symbol: 'IRENx',
+    name: 'IREN',
+    issuer: 'xstocks',
+    unit: 'share',
+    privateCompany: false,
+    decimals: 8,
+    multiplier: 1,
+  },
+  spend: { mint: USDC_ASSET.mint, unit: 'usdc', amount: 1, usd: 1 },
+  get: { mint: 'XsH7vuEDhQZcGzQnxfuGq3nEYp9dHqPzR2DxBG3kS1V', unit: 'share', amount: 0.000028, atLeast: 0.00002786, usd: 0.9905 },
+  costs: { usd: 0.0103, issuerFee: null },
+  reserve: { lamports: '1559560', usd: 0.311912, first: false },
+  what: {
+    truth: {
+      en: 'A token that tracks the price of IREN · backed 1:1 · no vote',
+      uk: 'Токен, що відстежує ціну IREN · забезпечений 1:1 · без голосу',
+    },
+    note: null,
+    caution: false,
+  },
+  sol: { usd: 200, observedAt: null },
 }
 
-test('the one-time reserve is never a cost; «Перевірка» says it first only when it is more than the purchase', () => {
-  const costs = buyCosts({ spendUsd: 1, ...ONE_DOLLAR, solUsd: 200 })
-  assert.ok(Math.abs(costs.accountUsd - 0.311912) < 1e-9, `reserve ${costs.accountUsd}`)
-  assert.ok(costs.totalUsd < 0.02, `the costs stay the costs: ${costs.totalUsd}`)
-  assert.equal(reserveOverPurchase(costs.accountUsd, 1), false)
-  assert.equal(reserveOverPurchase(1.2, 1), true, 'a reserve above the purchase is said first')
-  assert.equal(reserveOverPurchase(null, 1), false)
-  assert.equal(reserveFirstOf({ order: ONE_DOLLAR, payDecimals: 6, solUsd: 200 }), null)
-  assert.deepEqual(reserveFirstOf({ order: ONE_DOLLAR, payDecimals: 6, solUsd: 1_000 }), {
-    reserveUsd: 1.55956,
-    spendUsd: 1,
-  })
-  assert.equal(reserveFirstOf({ order: ONE_DOLLAR, payDecimals: 6, solUsd: null }), null)
-  assert.equal(reserveFirstOf({ order: { ...ONE_DOLLAR, rentFeeLamports: '0' }, payDecimals: 6, solUsd: 1_000 }), null)
+test('the one-time reserve is never a cost; «Перевірка» says it first only when the server judged it more than the purchase', () => {
+  assert.equal(reserveFirstOf(ONE_DOLLAR_CHECK), null)
+  assert.deepEqual(
+    reserveFirstOf({ ...ONE_DOLLAR_CHECK, reserve: { lamports: '1559560', usd: 1.55956, first: true } }),
+    { reserveUsd: 1.55956, spendUsd: 1 },
+  )
+  assert.equal(reserveFirstOf({ ...ONE_DOLLAR_CHECK, reserve: null }), null)
   // Four rows still: the reserve is a line of its own under «Усі витрати», never joined to them.
-  const rows = buyReviewRows({
-    order: ONE_DOLLAR,
-    pay: USDC_ASSET,
-    payDecimals: 6,
-    receiveDecimals: 8,
-    multiplier: 1,
-    unit: 'share',
-    company: 'IREN',
-    truth: 'Токен, що відстежує ціну IREN · забезпечений 1:1 · без голосу',
-    preIpo: false,
-    issuerFee: null,
-    solUsd: 200,
-    locale: 'uk',
-    words: BUY_COPY.uk,
-  })
+  const rows = buyCheckRows(ONE_DOLLAR_CHECK, { unit: 'share', company: 'IREN', locale: 'uk', words: BUY_COPY.uk })
   assert.equal(rows.length, 4)
   assert.equal(rows[2].key, 'costs')
   assert.equal(rows[2].value, '≈ $0,01')

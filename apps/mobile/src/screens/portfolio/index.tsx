@@ -28,7 +28,7 @@ import { useCopy, useLocale, useSharedCopy } from '@/lib/i18n'
 import { RulesBlock } from '@/screens/autoinvest/rules-block'
 import { useTheme } from '@/theme'
 import { cn } from '@/utils/cn'
-import { DASH, formatClock, formatPercent, formatUsd, formatUsdSigned, shortAddress } from '@/utils/format'
+import { DASH, formatMoment, isToday, formatPercent, formatUsd, formatUsdSigned, shortAddress } from '@/utils/format'
 
 import { HoldingRow, type RowEvent } from './holding-row'
 import { HoldingSheet } from './holding-sheet'
@@ -204,7 +204,7 @@ export function PortfolioScreen() {
   const observedAt = view?.observedAt ?? null
   const subtitle = account.address
     ? observedAt
-      ? `${shortAddress(account.address, 6)} · ${formatClock(observedAt)}`
+      ? `${shortAddress(account.address, 6)} · ${formatMoment(observedAt, now, locale)}${view?.empty && query.isError ? ` · ${copy.notUpdated}` : ''}`
       : query.isError
         ? `${shortAddress(account.address, 6)} · ${shared.didNotLoad}`
         : `${shortAddress(account.address, 6)} · ${shared.loading}`
@@ -240,9 +240,10 @@ export function PortfolioScreen() {
       </ScrollView>
     )
   } else if (view) {
-    const change = view.dayChange
+    // A day's move belongs to its day: a read kept from an earlier day shows its value and time, not «today» (M9).
+    const change = isToday(view.observedAt, now) ? view.dayChange : null
     const notices = [
-      heldBack ? copy.heldBack(formatClock(view.observedAt)) : null,
+      heldBack ? copy.heldBack(formatMoment(view.observedAt, now, locale)) : null,
       view.coverage === 'PARTIAL' ? copy.partlyRead : null,
       view.coverage === 'UNAVAILABLE' ? copy.notRead : null,
       query.isError ? shared.refreshFailed : null,

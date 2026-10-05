@@ -27,7 +27,7 @@ import { useCandles } from '@/hooks/use-market'
 import { useNow } from '@/hooks/use-now'
 import type { MarketDetail, StockAsset } from '@/lib/api'
 import { useCopy, useLocale, type Locale } from '@/lib/i18n'
-import { formatClock, formatPrice } from '@/utils/format'
+import { formatMoment, formatPrice } from '@/utils/format'
 
 /**
  * A company's facts at rest (M23) — the web's company page
@@ -63,6 +63,8 @@ export function CompanyFacts({
 }) {
   const words = useCopy(COMPANY_COPY)
   const locale = useLocale()
+  // A market read kept from another day names its day (M9).
+  const now = useNow(60_000)
   const { row } = asset
   const rep = row.representation
   const preIpo = rep.instrument?.class === 'pre-ipo'
@@ -100,7 +102,9 @@ export function CompanyFacts({
         title={words.tradingOnSolana}
         source={
           day.stats.length > 0 || day.pressure
-            ? [words.marketSource(formatClock(observedAt)), stale ? words.notUpdated : null].filter(Boolean).join(' · ')
+            ? [words.marketSource(formatMoment(observedAt, now, locale)), stale ? words.notUpdated : null]
+                .filter(Boolean)
+                .join(' · ')
             : null
         }
       >

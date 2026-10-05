@@ -142,12 +142,13 @@ export const CAPABILITY_REGISTRY: readonly CapabilityRow[] = Object.freeze([
     network: "solana",
     venue: "meteora-dbc",
     capability: "launch",
-    state: "PLANNED",
+    /* The adapter and the presets exist and were rehearsed on devnet; people get Launch with its own subtask. */
+    state: "BUILDING",
     lane: null,
     fee: PLANNED_FEE,
     attribution: { kind: "CURVE_CONFIG", configKey: null, products: ["launch"] },
     pipeline: null,
-    note: "Ryntra Launch on a dynamic bonding curve: its own config, fee collector and pool creator.",
+    note: "Ryntra Launch on a dynamic bonding curve: three presets, each its own config; the partner's fee claimer and the pool payer in the attribution registry.",
   },
   {
     network: "solana",

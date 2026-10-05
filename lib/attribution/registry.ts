@@ -38,6 +38,13 @@
  *   (`PAYOUT_REWARDS`); it is closed with an end block when the payouts move.
  * - **Treasury** — Ryntra's own reserve. Nothing is charged into it; a counter
  *   ignores it.
+ * - **Launch** — Ryntra Launch on Meteora DBC (plan §6.1): each preset's
+ *   config, which every launched pool names on chain — a counter adds the
+ *   partner's share of the fees those pools take, at the trade, as Ryntra
+ *   Launch's fees; the partner's fee claimer, the Squads multisig's vault
+ *   that collects them later — not counted again, the same money arriving;
+ *   and the wallet that pays for creating the pools, which only identifies
+ *   them. None of them is used for anything else.
  *
  * A wallet that pays friends' rewards — the friends' payout wallet, and the
  * rewards wallet while it pays them too — is registered here and never
@@ -67,7 +74,7 @@ export const ATTRIBUTION_REGISTRY_VERSION = "1.0.0";
 export const REGISTRY_NETWORKS = [...NETWORK_IDS, "relay"] as const;
 export type RegistryNetwork = NetworkId | "relay";
 
-export const REGISTRY_ROLES = ["FEE", "PAYOUT_CASHBACK", "PAYOUT_FRIENDS", "PAYOUT_INTEGRATORS", "PAYOUT_REWARDS", "TREASURY"] as const;
+export const REGISTRY_ROLES = ["FEE", "PAYOUT_CASHBACK", "PAYOUT_FRIENDS", "PAYOUT_INTEGRATORS", "PAYOUT_REWARDS", "TREASURY", "LAUNCH_CONFIG", "LAUNCH_FEE_CLAIMER", "LAUNCH_POOL_PAYER"] as const;
 export type RegistryRole = (typeof REGISTRY_ROLES)[number];
 
 /** How the identity exists on its network. */
@@ -84,6 +91,12 @@ export const REGISTRY_KINDS = [
   "PAYOUT_WALLET",
   /** Ryntra's reserve. */
   "TREASURY_WALLET",
+  /** A Meteora DBC config of a Ryntra Launch preset; the pools launched on it name it. */
+  "DBC_CONFIG",
+  /** The config's fee claimer: the partner's Squads multisig vault. */
+  "DBC_FEE_CLAIMER",
+  /** The wallet that pays the rent of the pools Ryntra Launch creates. */
+  "LAUNCH_POOL_PAYER",
 ] as const;
 export type RegistryKind = (typeof REGISTRY_KINDS)[number];
 
@@ -200,6 +213,13 @@ export const ATTRIBUTION_REGISTRY: readonly RegistryEntry[] = Object.freeze([
   place("solana-payout-integrators", "PAYOUT_INTEGRATORS", "PAYOUT_WALLET", ["api"], "SUPPLY_SIDE"),
   place("solana-payout-rewards", "PAYOUT_REWARDS", "PAYOUT_WALLET", EVERY_FEE_PRODUCT, "SUPPLY_SIDE"),
   place("solana-treasury", "TREASURY", "TREASURY_WALLET", [], "NONE"),
+  /* Created on mainnet 2026-10-05, the creator's share 40 %; the fee claimer is vault 0 of the partner's Squads multisig
+     4qFxfhdHoJvRtSyfmx8ZnCH8k8Cvb6WicPDaYYnsECLM. Two earlier configs with a 25 % share (8C7rCu7t…, J1HDwCmm…) were never
+     used by Ryntra and are not Ryntra Launch's. */
+  { ...place("solana-launch-config-classic", "LAUNCH_CONFIG", "DBC_CONFIG", ["launch"], "FEES"), address: "B6gheJ5PL6tpE9V3vQGYA8wLqe3pcFh1fgKf4aPxZh1G" },
+  { ...place("solana-launch-config-protected", "LAUNCH_CONFIG", "DBC_CONFIG", ["launch"], "FEES"), address: "33KU1WNMVAXLBuGF1EQAHqWFnrsDevofJnw4VAamiK2G" },
+  { ...place("solana-launch-fee-claimer", "LAUNCH_FEE_CLAIMER", "DBC_FEE_CLAIMER", ["launch"], "NONE"), address: "22BZNVD9FuZPQvGwALBwhopSyxUCTuNNeTW1Lr1KsSvA" },
+  place("solana-launch-pool-payer", "LAUNCH_POOL_PAYER", "LAUNCH_POOL_PAYER", ["launch"], "NONE"),
 ]);
 
 /* ------------------------------------------------------------ validation */
@@ -249,7 +269,13 @@ export function validateRegistry(rows: readonly RegistryEntry[] = ATTRIBUTION_RE
         ? ["FEE_WALLET", "JUPITER_REFERRAL_ACCOUNT", "JUPITER_REFERRAL_TOKEN_ACCOUNT", "RELAY_APP_FEE_RECIPIENT"].includes(row.kind) && row.countedAs === "FEES"
         : row.role === "TREASURY"
           ? row.kind === "TREASURY_WALLET" && row.countedAs === "NONE"
-          : row.kind === "PAYOUT_WALLET" && row.countedAs === "SUPPLY_SIDE";
+          : row.role === "LAUNCH_CONFIG"
+            ? row.kind === "DBC_CONFIG" && row.countedAs === "FEES"
+            : row.role === "LAUNCH_FEE_CLAIMER"
+              ? row.kind === "DBC_FEE_CLAIMER" && row.countedAs === "NONE"
+              : row.role === "LAUNCH_POOL_PAYER"
+                ? row.kind === "LAUNCH_POOL_PAYER" && row.countedAs === "NONE"
+                : row.kind === "PAYOUT_WALLET" && row.countedAs === "SUPPLY_SIDE";
     if (!roleFits) problems.push(`${row.id}: the role, the kind and how it is counted disagree`);
     if (row.role !== "TREASURY" && row.products.length === 0) problems.push(`${row.id}: names no product`);
     if (row.kind === "JUPITER_REFERRAL_TOKEN_ACCOUNT" && (row.parent === null || row.mint === null)) problems.push(`${row.id}: a referral token account names its account and its mint`);
@@ -265,6 +291,10 @@ export function validateRegistry(rows: readonly RegistryEntry[] = ATTRIBUTION_RE
     if (count !== 1) problems.push(`${role}: ${count} rows, one expected`);
   }
   if (rows.filter((row) => row.role === "PAYOUT_REWARDS" && row.end === null).length > 1) problems.push("PAYOUT_REWARDS: more than one open row");
+  for (const role of ["LAUNCH_FEE_CLAIMER", "LAUNCH_POOL_PAYER"] as const) {
+    if (rows.filter((row) => row.role === role && row.network === "solana" && row.end === null).length > 1) problems.push(`${role}: more than one open row`);
+  }
+  for (const row of rows) if (row.role.startsWith("LAUNCH_") && (row.products.length !== 1 || row.products[0] !== "launch")) problems.push(`${row.id}: a launch identity serves Ryntra Launch alone`);
   return problems;
 }
 
@@ -278,9 +308,17 @@ export function registryStatus(row: RegistryEntry): RegistryStatus {
 /** Roles whose payouts would name inviters: registered, never published. */
 export const UNPUBLISHED_ROLES: ReadonlySet<RegistryRole> = new Set(["PAYOUT_FRIENDS", "PAYOUT_REWARDS"]);
 
+/**
+ * Roles drawn only once their product is open to people: Ryntra Launch's
+ * identities exist on chain before people can launch, and a public page names
+ * them when Launch opens to people — the registry already holds them, so the
+ * address is never written twice.
+ */
+export const NOT_YET_OPEN_ROLES: ReadonlySet<RegistryRole> = new Set(["LAUNCH_CONFIG", "LAUNCH_FEE_CLAIMER", "LAUNCH_POOL_PAYER"]);
+
 /** Whether a row may be published — on the page, in the JSON, in a public query. */
 export function isPublishable(row: RegistryEntry): boolean {
-  return row.address !== null && !UNPUBLISHED_ROLES.has(row.role);
+  return row.address !== null && !UNPUBLISHED_ROLES.has(row.role) && !NOT_YET_OPEN_ROLES.has(row.role);
 }
 
 /** The rows a public page draws: every row with an address whose payouts name no inviter. A kept place without one is not drawn. */

@@ -9,6 +9,7 @@ import {
   dollarsText,
   feePercentText,
   formatShareUnits,
+  keepTogether,
   MIN_BUY_USD,
   unitsFromRaw,
   unitsPhrase,
@@ -24,9 +25,6 @@ import {
  * sells the company's token into USDC on Trade's own path. Everything here is
  * pure: the sheet and its hook draw what it decides.
  */
-
-/** «≈ $0,10» kept on one line — the sign never ends a line apart from its figure. */
-const keepTogether = (text: string): string => text.replace('≈ ', '≈\u00a0')
 
 /** The least a sale is — a dollar, as a purchase; the whole position may be less. */
 export const MIN_SALE_USD = MIN_BUY_USD
@@ -241,6 +239,8 @@ export type SaleRowWords = Readonly<{
   atLeast: string
   reserve: (usd: string) => string
   issuerFee: (pct: string, usd: string | null) => string
+  /** «з них комісія Ryntra 0,50% · ≈ 0,05 USDC» — beside the issuer's, inside «Усі витрати». */
+  ryntraFee: (figures: string) => string
   truthUnknown: string
   /** «Продати може не вийти…» — said under a private company's truth. */
   mayFail: string
@@ -256,7 +256,14 @@ export type SaleRowWords = Readonly<{
  */
 export function saleCheckRows(
   check: SwapCheck,
-  input: Readonly<{ unit: BuyUnit; company: string; locale: Locale; words: SaleRowWords }>,
+  input: Readonly<{
+    unit: BuyUnit
+    company: string
+    locale: Locale
+    words: SaleRowWords
+    /** Ryntra's fee on the order, as `ryntraFeeFigures` says it; null when none. */
+    ryntraFee?: string | null
+  }>,
 ): readonly [BuyRow, BuyRow, BuyRow, BuyRow] {
   const { locale, words } = input
   const spend = check.spend
@@ -281,9 +288,13 @@ export function saleCheckRows(
     {
       key: 'costs',
       value: check.costs ? approxUsd(check.costs.usd, locale) : DASH,
-      fee: issuerFee
-        ? words.issuerFee(feePercentText(issuerFee.basisPoints, locale), keepTogether(approxUsd(issuerFee.usd, locale)))
-        : null,
+      fee: saleFeeLines(
+        issuerFee
+          ? words.issuerFee(feePercentText(issuerFee.basisPoints, locale), keepTogether(approxUsd(issuerFee.usd, locale)))
+          : null,
+        input.ryntraFee ?? null,
+        words,
+      ),
       sub: check.reserve?.usd ? words.reserve(approxUsd(check.reserve.usd, locale)) : null,
       caution: false,
     },
@@ -295,6 +306,12 @@ export function saleCheckRows(
       caution: check.what.caution,
     },
   ]
+}
+
+/** The costs row's quieter lines of fees: the issuer's, then Ryntra's — each on its own line; null when neither. */
+function saleFeeLines(issuer: string | null, ryntra: string | null, words: SaleRowWords): string | null {
+  const lines = [issuer, ryntra ? words.ryntraFee(ryntra) : null].filter((line): line is string => line !== null)
+  return lines.length > 0 ? lines.join('\n') : null
 }
 
 /**
@@ -314,6 +331,8 @@ export function saleOrderRows(
     truth: string | null
     preIpo: boolean
     issuerFee: IssuerFee | null
+    /** Ryntra's fee on the order, as `ryntraFeeFigures` says it; null when none. */
+    ryntraFee?: string | null
     locale: Locale
     words: SaleRowWords
   }>,
@@ -341,7 +360,11 @@ export function saleOrderRows(
     {
       key: 'costs',
       value: DASH,
-      fee: input.issuerFee ? words.issuerFee(feePercentText(input.issuerFee.basisPoints, locale), null) : null,
+      fee: saleFeeLines(
+        input.issuerFee ? words.issuerFee(feePercentText(input.issuerFee.basisPoints, locale), null) : null,
+        input.ryntraFee ?? null,
+        words,
+      ),
       sub: null,
       caution: false,
     },

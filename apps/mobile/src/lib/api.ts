@@ -31,6 +31,7 @@ import {
   type PlanStatusRequest,
   type PlanUpdateRequest,
   type PlanVersionResponse,
+  type PopularCompaniesResponse,
   type RuleBinding,
   type RuleBudgetRequest,
   type RuleBudgetResponse,
@@ -1252,6 +1253,20 @@ export const rulesApi: RulesApi = {
       signal,
       session,
     }),
+}
+
+/**
+ * «Популярні компанії» as the server lists them (contract 1.20.0) — the listed
+ * companies by the day's trading, the same list and order the web's Home and
+ * the column beside a company's page draw. Public. The route reads the stock
+ * universe, which takes about twenty seconds when its cache is cold, so this
+ * read waits as long as the universe's own.
+ */
+export function fetchPopularCompanies(
+  options: Readonly<{ limit?: number; exclude?: string }> = {},
+  signal?: AbortSignal,
+): Promise<PopularCompaniesResponse> {
+  return v1(() => v1Client(null, signal, 35_000).stocks.popular(options))
 }
 
 /** What the deployment offers — read for the evidence metrics' own words and units (a plan's market rules). Public. */

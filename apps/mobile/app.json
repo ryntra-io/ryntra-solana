@@ -85,6 +85,53 @@
           "defaultChannel": "plans"
         }
       ],
+      [
+        "expo-quick-actions",
+        {
+          "androidIcons": {
+            "shortcut_search": {
+              "foregroundImage": "./assets/images/shortcut-search.png",
+              "backgroundColor": "#080D13"
+            },
+            "shortcut_portfolio": {
+              "foregroundImage": "./assets/images/shortcut-portfolio.png",
+              "backgroundColor": "#080D13"
+            },
+            "shortcut_agent": {
+              "foregroundImage": "./assets/images/shortcut-agent.png",
+              "backgroundColor": "#080D13"
+            },
+            "shortcut_markets": {
+              "foregroundImage": "./assets/images/shortcut-markets.png",
+              "backgroundColor": "#080D13"
+            }
+          }
+        }
+      ],
+      [
+        "react-native-android-widget",
+        {
+          "fonts": [
+            "./node_modules/@expo-google-fonts/geist/400Regular/Geist_400Regular.ttf",
+            "./node_modules/@expo-google-fonts/geist/500Medium/Geist_500Medium.ttf",
+            "./node_modules/@expo-google-fonts/geist/600SemiBold/Geist_600SemiBold.ttf"
+          ],
+          "widgets": [
+            {
+              "name": "Portfolio",
+              "label": "@string/widget_portfolio_label",
+              "previewImage": "./assets/images/widget-portfolio-preview.png",
+              "minWidth": "180dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 3,
+              "targetCellHeight": 2,
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 1800000
+            }
+          ]
+        }
+      ],
+      "./plugins/with-widget-strings.js",
       "./plugins/with-release-signing.js"
     ],
     "experiments": {

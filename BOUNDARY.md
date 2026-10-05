@@ -9,10 +9,10 @@ moved counts as new. Generated at every update from the development history.
 
 | Since the tag | Files |
 |---|---|
-| New | 1,027 |
+| New | 1,064 |
 | Changed | 806 |
 | Unchanged | 933 |
-| Lines added / removed | +271,381 / −19,778 |
+| Lines added / removed | +275,655 / −19,729 |
 
 ## New since the tag
 
@@ -375,13 +375,20 @@ moved counts as new. Generated at every update from the development history.
 - `apps/mobile/assets/images/adaptive-monochrome.png`
 - `apps/mobile/assets/images/icon.png`
 - `apps/mobile/assets/images/notification-icon.png`
+- `apps/mobile/assets/images/shortcut-agent.png`
+- `apps/mobile/assets/images/shortcut-markets.png`
+- `apps/mobile/assets/images/shortcut-portfolio.png`
+- `apps/mobile/assets/images/shortcut-search.png`
 - `apps/mobile/assets/images/splash-icon.png`
+- `apps/mobile/assets/images/widget-portfolio-preview-uk.png`
+- `apps/mobile/assets/images/widget-portfolio-preview.png`
 - `apps/mobile/eslint.config.js`
 - `apps/mobile/index.js`
 - `apps/mobile/metro.config.js`
 - `apps/mobile/package-lock.json`
 - `apps/mobile/package.json`
 - `apps/mobile/plugins/with-release-signing.js`
+- `apps/mobile/plugins/with-widget-strings.js`
 - `apps/mobile/polyfill.js`
 - `apps/mobile/scripts/release-android.mjs`
 - `apps/mobile/scripts/release-check.mjs`
@@ -424,6 +431,7 @@ moved counts as new. Generated at every update from the development history.
 - `apps/mobile/src/components/field.tsx`
 - `apps/mobile/src/components/filter-sheet.tsx`
 - `apps/mobile/src/components/icon.tsx`
+- `apps/mobile/src/components/offline-frame.tsx`
 - `apps/mobile/src/components/price-chart.tsx`
 - `apps/mobile/src/components/receipt-card.tsx`
 - `apps/mobile/src/components/review-block.tsx`
@@ -484,6 +492,7 @@ moved counts as new. Generated at every update from the development history.
 - `apps/mobile/src/features/invest/truth-topics.ts`
 - `apps/mobile/src/features/invest/use-buy.ts`
 - `apps/mobile/src/features/invest/use-convert.ts`
+- `apps/mobile/src/features/invest/use-popular.ts`
 - `apps/mobile/src/features/invest/use-route-minimum.ts`
 - `apps/mobile/src/features/invest/use-sale.ts`
 - `apps/mobile/src/features/invest/use-shelf.ts`
@@ -527,9 +536,14 @@ moved counts as new. Generated at every update from the development history.
 - `apps/mobile/src/features/session/use-account.ts`
 - `apps/mobile/src/features/shell/places.test.mjs`
 - `apps/mobile/src/features/shell/places.ts`
+- `apps/mobile/src/features/shell/quick-actions.test.mjs`
+- `apps/mobile/src/features/shell/quick-actions.ts`
 - `apps/mobile/src/features/shell/shell.test.mjs`
 - `apps/mobile/src/features/shell/shell.ts`
+- `apps/mobile/src/features/shell/use-quick-actions.ts`
 - `apps/mobile/src/features/trade/copy.ts`
+- `apps/mobile/src/features/trade/trade-cues.test.mjs`
+- `apps/mobile/src/features/trade/trade-cues.ts`
 - `apps/mobile/src/features/trade/trade-flow.ts`
 - `apps/mobile/src/features/trade/trade-model.ts`
 - `apps/mobile/src/features/trade/trade-store.test.mjs`
@@ -546,6 +560,13 @@ moved counts as new. Generated at every update from the development history.
 - `apps/mobile/src/features/watchlist/watchlist-sync.test.mjs`
 - `apps/mobile/src/features/watchlist/watchlist-sync.ts`
 - `apps/mobile/src/features/watchlist/watchlist.ts`
+- `apps/mobile/src/features/widget/portfolio-widget.tsx`
+- `apps/mobile/src/features/widget/widget-binder.tsx`
+- `apps/mobile/src/features/widget/widget-model.test.mjs`
+- `apps/mobile/src/features/widget/widget-model.ts`
+- `apps/mobile/src/features/widget/widget-render.tsx`
+- `apps/mobile/src/features/widget/widget-store.ts`
+- `apps/mobile/src/features/widget/widget-task.tsx`
 - `apps/mobile/src/global.css`
 - `apps/mobile/src/global.d.ts`
 - `apps/mobile/src/hooks/use-debounced.ts`
@@ -562,10 +583,15 @@ moved counts as new. Generated at every update from the development history.
 - `apps/mobile/src/lib/client-identity.ts`
 - `apps/mobile/src/lib/clipboard.ts`
 - `apps/mobile/src/lib/gallery-route.test.mjs`
+- `apps/mobile/src/lib/haptics.ts`
 - `apps/mobile/src/lib/i18n.ts`
 - `apps/mobile/src/lib/locale.test.mjs`
 - `apps/mobile/src/lib/locale.ts`
+- `apps/mobile/src/lib/network.ts`
+- `apps/mobile/src/lib/offline-model.test.mjs`
+- `apps/mobile/src/lib/offline-model.ts`
 - `apps/mobile/src/lib/preferences.ts`
+- `apps/mobile/src/lib/query-keep.ts`
 - `apps/mobile/src/lib/search.test.mjs`
 - `apps/mobile/src/lib/search.ts`
 - `apps/mobile/src/lib/stocks.test.mjs`
@@ -594,6 +620,7 @@ moved counts as new. Generated at every update from the development history.
 - `apps/mobile/src/screens/home/index.tsx`
 - `apps/mobile/src/screens/home/investor.tsx`
 - `apps/mobile/src/screens/home/top-up-sheet.tsx`
+- `apps/mobile/src/screens/invest/buy-samples.ts`
 - `apps/mobile/src/screens/invest/buy-sheet.tsx`
 - `apps/mobile/src/screens/invest/convert-sheet.tsx`
 - `apps/mobile/src/screens/invest/event-ui.tsx`
@@ -620,6 +647,7 @@ moved counts as new. Generated at every update from the development history.
 - `apps/mobile/src/screens/rewards/index.tsx`
 - `apps/mobile/src/screens/trade/asset-picker.tsx`
 - `apps/mobile/src/screens/trade/index.tsx`
+- `apps/mobile/src/screens/widget-samples.tsx`
 - `apps/mobile/src/theme/index.ts`
 - `apps/mobile/src/theme/render-css.mjs`
 - `apps/mobile/src/theme/theme-mode.ts`
@@ -728,6 +756,15 @@ moved counts as new. Generated at every update from the development history.
 - `lib/core/solana-swap/refusal.ts`
 - `lib/core/solana-swap/settle.ts`
 - `lib/core/venues/jupiter.ts`
+- `lib/core/venues/meteora-dbc/fixtures/devnet-classic-config.json`
+- `lib/core/venues/meteora-dbc/fixtures/devnet-classic-creation.json`
+- `lib/core/venues/meteora-dbc/fixtures/devnet-classic-observation.json`
+- `lib/core/venues/meteora-dbc/fixtures/devnet-outside-launch.json`
+- `lib/core/venues/meteora-dbc/launch.server.ts`
+- `lib/core/venues/meteora-dbc/presets.test.mjs`
+- `lib/core/venues/meteora-dbc/presets.ts`
+- `lib/core/venues/meteora-dbc/receipt.test.mjs`
+- `lib/core/venues/meteora-dbc/receipt.ts`
 - `lib/development-repository.mjs`
 - `lib/evidence/address.ts`
 - `lib/evidence/budget.ts`

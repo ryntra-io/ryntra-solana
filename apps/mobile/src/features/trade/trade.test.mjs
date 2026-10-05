@@ -14,6 +14,7 @@ import {
   signAndSend,
 } from './trade-flow.ts'
 import {
+  additionalJupiterFeeBps,
   assessReview,
   formatUnits,
   lamportsToSol,
@@ -1153,4 +1154,12 @@ test('recover: the server’s answer settles the attempt; pending keeps asking t
     /sent but never landed/,
   )
   assert.equal(attempts.get(TAKER), null)
+})
+
+test('Ryntra’s fee is inside Jupiter’s total on an `/order` referral and on a `/build` platform fee (1.24.0): only the venue’s own remains', () => {
+  const fee = (mechanism) => ({ mechanism, basisPoints: 25 })
+  assert.equal(additionalJupiterFeeBps(45, fee('JUPITER_REFERRAL')), 20)
+  assert.equal(additionalJupiterFeeBps(45, fee('JUPITER_PLATFORM_FEE')), 20)
+  assert.equal(additionalJupiterFeeBps(45, fee('NONE')), 45)
+  assert.equal(additionalJupiterFeeBps(10, fee('JUPITER_PLATFORM_FEE')), 0, 'never below nothing')
 })

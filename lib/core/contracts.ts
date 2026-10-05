@@ -178,6 +178,16 @@ export type LaunchParams = Readonly<{
   /** A named preset of the venue's curve configuration. */
   preset: string;
   creator: Address;
+  /** Who pays the network's rent for the new accounts; absent, the creator. */
+  payer?: Address;
+  /**
+   * The creator's first purchase, in the pair currency's raw units, made in
+   * the creation transaction itself; absent or "0", none. The venue refuses
+   * it above the preset's cap — Ryntra's rule, not a field of the curve.
+   */
+  creatorFirstBuyRaw?: RawAmount;
+  /** The pair currency, where a preset is quoted in more than one (a community's own token); absent, the preset's one. */
+  pairMint?: Address;
 }>;
 
 export type CurveProgress = Readonly<{
@@ -189,7 +199,12 @@ export type CurveProgress = Readonly<{
 
 export interface LaunchVenue {
   readonly venue: VenueId;
-  create(params: LaunchParams): Promise<UnsignedTx>;
+  /**
+   * The bytes that create the token. They may already carry the signature of
+   * the fresh account the venue made for them (the new mint) — never a key of
+   * the person's: the wallet still signs, and nothing lands without it.
+   */
+  create(params: LaunchParams): Promise<UnsignedTx & Readonly<{ token: Address }>>;
   progress(token: Address): Promise<CurveProgress>;
   claimFees(role: "partner" | "creator", token: Address): Promise<UnsignedTx>;
 }

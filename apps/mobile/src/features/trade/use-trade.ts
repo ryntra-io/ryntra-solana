@@ -16,6 +16,7 @@ import {
   type RuleBinding,
   type SwapSettlement,
 } from '@/lib/api'
+import { feel } from '@/lib/haptics'
 
 import {
   failureFrom,
@@ -36,6 +37,7 @@ import {
   type TradeLegs,
   type TradeMode,
 } from './trade-model'
+import { failureCue, settlementCue } from './trade-cues'
 import { attemptStore, clearReview, loadReview, saveReview, useAttempt } from './trade-store'
 
 /** A development build says which step ended how; a person never sees this and no secret is in it. */
@@ -206,6 +208,7 @@ export function useTrade(
     setPrepared(outcome.prepared)
     setInvalidated(false)
     setPhase('review')
+    feel('review')
   }, [account.session, amountRaw, mode, pay, plan, receive, rule, setFailure])
 
   const closeReview = useCallback(() => {
@@ -236,6 +239,14 @@ export function useTrade(
     if (ticket.current !== my) return
     trace('sign', outcome.ok ? `settled ${outcome.settlement.state}` : `${outcome.phase} ${outcome.failure.code}`)
     if (outcome.ok || outcome.phase === 'recovery' || outcome.invalidated) clearReview(session.address)
+    // The signature's answer, felt: filled, on its way, the wallet's «no», or refused.
+    feel(
+      outcome.ok
+        ? settlementCue(outcome.settlement)
+        : outcome.phase === 'recovery'
+          ? 'sent'
+          : failureCue(outcome.failure.code),
+    )
     if (!outcome.ok) {
       setFailure(outcome.failure)
       if (outcome.invalidated) setInvalidated(true)
@@ -273,6 +284,7 @@ export function useTrade(
       return
     }
     setSettled({ settlement: outcome.settlement, context: open.context, at: new Date().toISOString() })
+    if (outcome.final) feel(settlementCue(outcome.settlement))
     setPhase(outcome.final ? 'settled' : 'recovery')
   }, [account.session, attempt, setFailure])
 

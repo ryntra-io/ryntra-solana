@@ -371,10 +371,10 @@ export function serviceFeeText(fee: SwapOrderCore['ryntraFee'], locale: Locale =
   return `${rate} · ${fee.usd < 0.01 ? `< $${fixed(0.01, 2, locale)}` : `≈ $${fixed(fee.usd, 2, locale)}`}`
 }
 
-/** Jupiter's total already includes the referral share; what remains is the venue's own. */
+/** Jupiter's total already includes Ryntra's share — a referral or, on a `/build` order (1.24.0), the platform fee; what remains is the venue's own. */
 export function additionalJupiterFeeBps(total: number, fee: SwapOrderCore['ryntraFee']): number {
   if (!Number.isFinite(total) || total < 0) return 0
-  const included = fee?.mechanism === 'JUPITER_REFERRAL' ? fee.basisPoints : 0
+  const included = fee?.mechanism === 'JUPITER_REFERRAL' || fee?.mechanism === 'JUPITER_PLATFORM_FEE' ? fee.basisPoints : 0
   return Math.max(0, total - included)
 }
 

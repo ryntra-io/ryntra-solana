@@ -234,12 +234,13 @@ test("«Працює зараз» — every item is tied to the code that does i
  * page — or, while the thing it names is still being built, passes to the row
  * that builds it now. The Android app: M8 «Реліз» (the release signed,
  * 2026-09-28) and M17 «Пакет» (the dApp Store package, 2026-09-29) closed,
- * and the app is not in a store yet, so the item stays in «Будуємо» on the
- * row that builds the app on, M9 «Polish» (merged on 2026-09-29). It moves to
- * «Працює зараз» once a store lists the app.
+ * and the app is not in a store yet, so the item stays in «Будуємо». M9
+ * «Polish» closed on 2026-10-05; the item now rides on the phone line's next
+ * open row, M6 — a feature, not the publication — only because the app is
+ * still being built. It moves to «Працює зараз» once a store lists the app.
  */
 const ROWS = {
-  android: { registry: "mobile", row: "M9" },
+  android: { registry: "mobile", row: "M6" },
   warn: { registry: "web", row: "RYN-PROTECT-SIGNAL-001" },
   fairPrice: { registry: "web", row: "RYN-FAIR-PRICE-001" },
   assetTruth: { registry: "web", row: "RYN-ASSET-TRUTH-001" },

@@ -29,6 +29,7 @@ const words = (locale) => {
     atLeast: w.atLeast,
     reserve: w.reserve,
     issuerFee: w.issuerFee,
+    ryntraFee: w.ryntraFee,
     truthUnknown: w.truthUnknown,
     mayFail: locale === 'uk' ? 'Продати може не вийти.' : 'Selling may not be possible.',
   }
@@ -260,4 +261,30 @@ test('what the wallet holds, said as units of the company', () => {
   assert.equal(heldUnitsText(7_870_000n, apple, 'uk'), '0,0787 частки Apple')
   assert.equal(heldUnitsText(0n, apple, 'uk'), null)
   assert.equal(heldUnitsText(null, apple, 'uk'), null)
+})
+
+test('Ryntra’s fee on a sale is said inside «Усі витрати» beside the issuer’s, counted or not', () => {
+  const NB = String.fromCharCode(0xa0)
+  const counted = saleCheckRows(
+    { ...check, costs: { usd: 0.3, issuerFee: { basisPoints: 100, usd: 0.1 } } },
+    { unit: 'token', company: 'OpenAI', locale: 'uk', words: words('uk'), ryntraFee: '0,50%' },
+  )
+  assert.equal(counted[2].fee, `з них комісія емітента 1% ≈${NB}$0,10
+з них комісія Ryntra${NB}0,50%`)
+  const uncounted = saleOrderRows({
+    order: { inAmountRaw: '7870000', outAmountRaw: '9970000', minReceivedRaw: '9920000', inUsdValue: null },
+    payDecimals: 8,
+    receiveDecimals: 6,
+    multiplier: null,
+    unit: 'share',
+    company: 'Apple',
+    truth: 'Tokenised Apple',
+    preIpo: false,
+    issuerFee: null,
+    ryntraFee: '0.50%',
+    locale: 'en',
+    words: words('en'),
+  })
+  assert.equal(uncounted[2].value, '—')
+  assert.equal(uncounted[2].fee, `including the Ryntra fee${NB}0.50%`)
 })

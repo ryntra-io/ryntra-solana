@@ -22,7 +22,7 @@ import type { MarketRow } from '@/lib/api'
 import { useCopy, useSharedCopy } from '@/lib/i18n'
 import { PlanRow } from '@/screens/plans/plan-row'
 import { useTheme } from '@/theme'
-import { formatClock, formatMoment, formatPercent, formatUsdSigned } from '@/utils/format'
+import { formatClock, formatMoment, formatPercent, formatUsdSigned, isToday } from '@/utils/format'
 
 import { AttentionRow, Block, blockGate, BriefRow, MoverPill, MoveRow, QuietLine } from './blocks'
 
@@ -105,7 +105,7 @@ export function HomeScreen({ onBack, backLabel }: { onBack?: () => void; backLab
   const subtitle = home.offline
     ? copy.offline
     : home.asOf
-      ? copy.asOf(formatClock(home.asOf))
+      ? copy.asOf(formatMoment(home.asOf, now, locale))
       : state === 'guest' && home.watch.total === 0 && !home.trending.on
         ? undefined
         : shared.loading
@@ -206,10 +206,11 @@ export function HomeScreen({ onBack, backLabel }: { onBack?: () => void; backLab
       retrying: home.holdings.isFetching,
       retryLabel: shared.tryAgain,
     })
-    const change = view?.dayChange ?? null
+    // A day's move belongs to its day (M9).
+    const change = view && isToday(view.observedAt, now) ? view.dayChange : null
     const notices = view
       ? [
-          home.heldBack ? portfolioCopy.heldBack(formatClock(view.observedAt)) : null,
+          home.heldBack ? portfolioCopy.heldBack(formatMoment(view.observedAt, now, locale)) : null,
           view.coverage === 'PARTIAL' ? portfolioCopy.partlyRead : null,
           view.coverage === 'UNAVAILABLE' ? portfolioCopy.notRead : null,
           home.holdings.isError ? shared.refreshFailed : null,
@@ -218,7 +219,7 @@ export function HomeScreen({ onBack, backLabel }: { onBack?: () => void; backLab
     portfolio = (
       <Block
         title={copy.portfolio}
-        fact={view ? formatClock(view.observedAt) : null}
+        fact={view ? formatMoment(view.observedAt, now, locale) : null}
         action={
           view ? { label: portfolioCopy.history, onPress: () => go('portfolio', () => router.push('/history')) } : null
         }
@@ -380,7 +381,7 @@ export function HomeScreen({ onBack, backLabel }: { onBack?: () => void; backLab
     movers = (
       <Block
         title={copy.movers}
-        fact={home.trending.query.data ? formatClock(home.trending.query.data.observedAt) : null}
+        fact={home.trending.query.data ? formatMoment(home.trending.query.data.observedAt, now, locale) : null}
         action={{ label: copy.openMarkets, onPress: openMarkets }}
       >
         {gate ??
