@@ -5,7 +5,7 @@ import test from "node:test";
 import { HOMEPAGE_COPY } from "../../lib/site/homepage-copy.ts";
 import { homepageModel } from "../../lib/site/homepage-model.ts";
 import { POINTS_POLICY_V1, levelFor } from "../../lib/points/policy.ts";
-import { REWARD_RATE_BPS } from "../../lib/rewards/model.ts";
+import { REWARD_RANKS, REWARD_RULES_CURRENT } from "../../lib/rewards/rules.ts";
 import { MENU_DESTINATIONS } from "../shell/domains.ts";
 import { PRODUCT_ROUTES } from "../shell/product-routes.ts";
 import { POINTS, POINTS_EXAMPLE, REWARDS } from "./rewards-facts.ts";
@@ -66,9 +66,10 @@ test("the block carries its words in both languages and claims nothing the progr
 });
 
 test("the three rates are the programme's own and the points example sits on a level the policy has", () => {
-  assert.equal(REWARDS.feeSharePercent, REWARD_RATE_BPS.CASHBACK / 100);
-  assert.equal(REWARDS.referralLevel1Percent, REWARD_RATE_BPS.REFERRAL_L1 / 100);
-  assert.equal(REWARDS.referralLevel2Percent, REWARD_RATE_BPS.REFERRAL_L2 / 100);
+  const level1 = REWARD_RANKS.map((rank) => REWARD_RULES_CURRENT.referralL1BpsByRank[rank] / 100);
+  assert.equal(REWARDS.feeSharePercent, REWARD_RULES_CURRENT.cashbackBps / 100);
+  assert.equal(REWARDS.referralLevel1Percent, `${Math.min(...level1)}–${Math.max(...level1)}`);
+  assert.equal(REWARDS.referralLevel2Percent, REWARD_RULES_CURRENT.referralL2Bps / 100);
   assert.equal(REWARDS.feeSharePercent, 50);
   const placed = levelFor(POINTS_POLICY_V1, POINTS_EXAMPLE);
   assert.equal(POINTS.level, placed.level);

@@ -26,7 +26,7 @@
  */
 
 export const API_MAJOR = 1 as const;
-export const API_CONTRACT_VERSION = "1.25.0" as const;
+export const API_CONTRACT_VERSION = "1.26.0" as const;
 export const API_HEADER = "X-Ryntra-API" as const;
 export const API_VERSION_HEADER = "X-Ryntra-API-Version" as const;
 export const NETWORK = "solana:mainnet" as const;
@@ -1822,6 +1822,24 @@ export type RewardsPoints = Readonly<{
   excluded: boolean;
 }>;
 
+export type RewardRank = "BRONZE" | "SILVER" | "GOLD" | "SAPPHIRE" | "DIAMOND";
+
+/** The rank over the last 30 days and the level-1 share of the received fee it pays (Growth line, rules 2.0.0). */
+export type RewardsRank = Readonly<{
+  rank: RewardRank;
+  points: string;
+  fromTrades: string;
+  fromFriends: string;
+  fromLaunches: string;
+  rankFrom: string;
+  next: Readonly<{ rank: RewardRank; at: string; toGo: string; friendShare: number }> | null;
+  friendShare: number;
+  secondLevelShare: number;
+  ladder: readonly Readonly<{ rank: RewardRank; from: string; friendShare: number }>[];
+  windowDays: number;
+  rulesVersion: string;
+}>;
+
 /** `GET /api/rewards?address=&locale=` — read-only; a claim is not described here. */
 export type RewardsResponse = Readonly<{
   ok: true;
@@ -1842,6 +1860,8 @@ export type RewardsResponse = Readonly<{
   claim: Readonly<{ state: RewardClaimState; text: string; signature: string | null }> | null;
   invitedBy: string | null;
   points: RewardsPoints | null;
+  /** Null when the rank could not be read; absent from a deployment before ranks. */
+  rank?: RewardsRank | null;
   started: boolean;
 }>;
 

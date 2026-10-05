@@ -42,7 +42,8 @@ test("About says what production does, and the one fee, from the policy the prod
   const uk = words(COMPANY_COPY.uk);
   assert.ok(en.includes(`${FEES.swap} of a purchase or a swap`));
   assert.ok(uk.includes(`${FEES_UK.swap} суми купівлі чи обміну`));
-  assert.ok(en.includes(`${REWARDS.cashbackPercent}% of the fee Ryntra collects`));
+  assert.ok(en.includes(`${REWARDS.cashbackPercent}% of the fee Ryntra receives`));
+  assert.ok(en.includes(`${REWARDS.referralL1Percent}% by their rank`));
   /* No rate is typed into the copy: it is read from the policy (`FEES`, `REWARDS`). */
   assert.doesNotMatch(code(read("app/company/company-copy.ts")), /"[^"]*\b0\.(5|25)%[^"]*"|"[^"]*\b(50|10|5)% (of|від)[^"]*"/);
   /* The retired line and the old story are gone; no team, partner or performance claim. */

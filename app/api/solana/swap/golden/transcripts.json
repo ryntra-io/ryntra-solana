@@ -8011,8 +8011,8 @@
        "type": "CASHBACK",
        "recipient": "4EeXQa4MKrBSwDj9pHEoZXjiiUaZmWzveGq5X9dUKPGW",
        "rateBps": 5000,
-       "shareRaw": "3768",
-       "usdMicros": "3768",
+       "shareRaw": "3014",
+       "usdMicros": "3014",
        "valuation": {
         "basis": "STABLECOIN_PAR",
         "price": null,
@@ -8031,9 +8031,16 @@
        },
        "createdAt": "2026-10-01T12:00:00.000Z",
        "claimId": null,
-       "signature": null
+       "signature": null,
+       "rules": {
+        "version": "2.0.0",
+        "base": "RECEIVED",
+        "baseRaw": "6029",
+        "rank": null
+       }
       }
-     ]
+     ],
+     "rules": "2.0.0"
     }
    },
    "rewardCodes": {
@@ -8049,8 +8056,8 @@
      "type": "CASHBACK",
      "recipient": "4EeXQa4MKrBSwDj9pHEoZXjiiUaZmWzveGq5X9dUKPGW",
      "rateBps": 5000,
-     "shareRaw": "3768",
-     "usdMicros": "3768",
+     "shareRaw": "3014",
+     "usdMicros": "3014",
      "valuation": {
       "basis": "STABLECOIN_PAR",
       "price": null,
@@ -8069,7 +8076,20 @@
      },
      "createdAt": "2026-10-01T12:00:00.000Z",
      "claimId": null,
-     "signature": null
+     "signature": null,
+     "rules": {
+      "version": "2.0.0",
+      "base": "RECEIVED",
+      "baseRaw": "6029",
+      "rank": null
+     }
+    }
+   },
+   "rewardRules": {
+    "2.0.0": {
+     "version": "2.0.0",
+     "effectiveFrom": "2026-10-01T12:00:00.000Z",
+     "setBy": "local"
     }
    },
    "solanaSendAttempts": {
@@ -8977,8 +8997,8 @@
        "type": "CASHBACK",
        "recipient": "4EeXQa4MKrBSwDj9pHEoZXjiiUaZmWzveGq5X9dUKPGW",
        "rateBps": 5000,
-       "shareRaw": "3768",
-       "usdMicros": "3768",
+       "shareRaw": "3014",
+       "usdMicros": "3014",
        "valuation": {
         "basis": "STABLECOIN_PAR",
         "price": null,
@@ -8997,9 +9017,16 @@
        },
        "createdAt": "2026-10-01T12:00:00.000Z",
        "claimId": null,
-       "signature": null
+       "signature": null,
+       "rules": {
+        "version": "2.0.0",
+        "base": "RECEIVED",
+        "baseRaw": "6029",
+        "rank": null
+       }
       }
-     ]
+     ],
+     "rules": "2.0.0"
     }
    },
    "rewardCodes": {
@@ -9015,8 +9042,8 @@
      "type": "CASHBACK",
      "recipient": "4EeXQa4MKrBSwDj9pHEoZXjiiUaZmWzveGq5X9dUKPGW",
      "rateBps": 5000,
-     "shareRaw": "3768",
-     "usdMicros": "3768",
+     "shareRaw": "3014",
+     "usdMicros": "3014",
      "valuation": {
       "basis": "STABLECOIN_PAR",
       "price": null,
@@ -9035,7 +9062,20 @@
      },
      "createdAt": "2026-10-01T12:00:00.000Z",
      "claimId": null,
-     "signature": null
+     "signature": null,
+     "rules": {
+      "version": "2.0.0",
+      "base": "RECEIVED",
+      "baseRaw": "6029",
+      "rank": null
+     }
+    }
+   },
+   "rewardRules": {
+    "2.0.0": {
+     "version": "2.0.0",
+     "effectiveFrom": "2026-10-01T12:00:00.000Z",
+     "setBy": "local"
     }
    },
    "solanaSendAttempts": {
@@ -10226,8 +10266,8 @@
        "type": "CASHBACK",
        "recipient": "4EeXQa4MKrBSwDj9pHEoZXjiiUaZmWzveGq5X9dUKPGW",
        "rateBps": 5000,
-       "shareRaw": "3768",
-       "usdMicros": "3768",
+       "shareRaw": "3014",
+       "usdMicros": "3014",
        "valuation": {
         "basis": "STABLECOIN_PAR",
         "price": null,
@@ -10246,9 +10286,16 @@
        },
        "createdAt": "2026-10-01T12:00:00.000Z",
        "claimId": null,
-       "signature": null
+       "signature": null,
+       "rules": {
+        "version": "2.0.0",
+        "base": "RECEIVED",
+        "baseRaw": "6029",
+        "rank": null
+       }
       }
-     ]
+     ],
+     "rules": "2.0.0"
     }
    },
    "rewardCodes": {
@@ -10264,8 +10311,8 @@
      "type": "CASHBACK",
      "recipient": "4EeXQa4MKrBSwDj9pHEoZXjiiUaZmWzveGq5X9dUKPGW",
      "rateBps": 5000,
-     "shareRaw": "3768",
-     "usdMicros": "3768",
+     "shareRaw": "3014",
+     "usdMicros": "3014",
      "valuation": {
       "basis": "STABLECOIN_PAR",
       "price": null,
@@ -10284,7 +10331,20 @@
      },
      "createdAt": "2026-10-01T12:00:00.000Z",
      "claimId": null,
-     "signature": null
+     "signature": null,
+     "rules": {
+      "version": "2.0.0",
+      "base": "RECEIVED",
+      "baseRaw": "6029",
+      "rank": null
+     }
+    }
+   },
+   "rewardRules": {
+    "2.0.0": {
+     "version": "2.0.0",
+     "effectiveFrom": "2026-10-01T12:00:00.000Z",
+     "setBy": "local"
     }
    },
    "solanaSendAttempts": {
@@ -11359,8 +11419,8 @@
        "type": "CASHBACK",
        "recipient": "4EeXQa4MKrBSwDj9pHEoZXjiiUaZmWzveGq5X9dUKPGW",
        "rateBps": 5000,
-       "shareRaw": "3768",
-       "usdMicros": "3768",
+       "shareRaw": "3014",
+       "usdMicros": "3014",
        "valuation": {
         "basis": "STABLECOIN_PAR",
         "price": null,
@@ -11379,9 +11439,16 @@
        },
        "createdAt": "2026-10-01T12:00:01.500Z",
        "claimId": null,
-       "signature": null
+       "signature": null,
+       "rules": {
+        "version": "2.0.0",
+        "base": "RECEIVED",
+        "baseRaw": "6029",
+        "rank": null
+       }
       }
-     ]
+     ],
+     "rules": "2.0.0"
     }
    },
    "rewardCodes": {
@@ -11397,8 +11464,8 @@
      "type": "CASHBACK",
      "recipient": "4EeXQa4MKrBSwDj9pHEoZXjiiUaZmWzveGq5X9dUKPGW",
      "rateBps": 5000,
-     "shareRaw": "3768",
-     "usdMicros": "3768",
+     "shareRaw": "3014",
+     "usdMicros": "3014",
      "valuation": {
       "basis": "STABLECOIN_PAR",
       "price": null,
@@ -11417,7 +11484,20 @@
      },
      "createdAt": "2026-10-01T12:00:01.500Z",
      "claimId": null,
-     "signature": null
+     "signature": null,
+     "rules": {
+      "version": "2.0.0",
+      "base": "RECEIVED",
+      "baseRaw": "6029",
+      "rank": null
+     }
+    }
+   },
+   "rewardRules": {
+    "2.0.0": {
+     "version": "2.0.0",
+     "effectiveFrom": "2026-10-01T12:00:01.500Z",
+     "setBy": "local"
     }
    },
    "solanaSendAttempts": {
@@ -12348,8 +12428,8 @@
        "type": "CASHBACK",
        "recipient": "4EeXQa4MKrBSwDj9pHEoZXjiiUaZmWzveGq5X9dUKPGW",
        "rateBps": 5000,
-       "shareRaw": "3768",
-       "usdMicros": "3768",
+       "shareRaw": "3014",
+       "usdMicros": "3014",
        "valuation": {
         "basis": "STABLECOIN_PAR",
         "price": null,
@@ -12368,9 +12448,16 @@
        },
        "createdAt": "2026-10-01T12:00:00.000Z",
        "claimId": null,
-       "signature": null
+       "signature": null,
+       "rules": {
+        "version": "2.0.0",
+        "base": "RECEIVED",
+        "baseRaw": "6029",
+        "rank": null
+       }
       }
-     ]
+     ],
+     "rules": "2.0.0"
     }
    },
    "rewardCodes": {
@@ -12386,8 +12473,8 @@
      "type": "CASHBACK",
      "recipient": "4EeXQa4MKrBSwDj9pHEoZXjiiUaZmWzveGq5X9dUKPGW",
      "rateBps": 5000,
-     "shareRaw": "3768",
-     "usdMicros": "3768",
+     "shareRaw": "3014",
+     "usdMicros": "3014",
      "valuation": {
       "basis": "STABLECOIN_PAR",
       "price": null,
@@ -12406,7 +12493,20 @@
      },
      "createdAt": "2026-10-01T12:00:00.000Z",
      "claimId": null,
-     "signature": null
+     "signature": null,
+     "rules": {
+      "version": "2.0.0",
+      "base": "RECEIVED",
+      "baseRaw": "6029",
+      "rank": null
+     }
+    }
+   },
+   "rewardRules": {
+    "2.0.0": {
+     "version": "2.0.0",
+     "effectiveFrom": "2026-10-01T12:00:00.000Z",
+     "setBy": "local"
     }
    },
    "solanaSendAttempts": {
@@ -13540,8 +13640,8 @@
        "type": "CASHBACK",
        "recipient": "4EeXQa4MKrBSwDj9pHEoZXjiiUaZmWzveGq5X9dUKPGW",
        "rateBps": 5000,
-       "shareRaw": "3768",
-       "usdMicros": "3768",
+       "shareRaw": "3014",
+       "usdMicros": "3014",
        "valuation": {
         "basis": "STABLECOIN_PAR",
         "price": null,
@@ -13560,9 +13660,16 @@
        },
        "createdAt": "2026-10-01T12:00:00.000Z",
        "claimId": null,
-       "signature": null
+       "signature": null,
+       "rules": {
+        "version": "2.0.0",
+        "base": "RECEIVED",
+        "baseRaw": "6029",
+        "rank": null
+       }
       }
-     ]
+     ],
+     "rules": "2.0.0"
     }
    },
    "rewardCodes": {
@@ -13578,8 +13685,8 @@
      "type": "CASHBACK",
      "recipient": "4EeXQa4MKrBSwDj9pHEoZXjiiUaZmWzveGq5X9dUKPGW",
      "rateBps": 5000,
-     "shareRaw": "3768",
-     "usdMicros": "3768",
+     "shareRaw": "3014",
+     "usdMicros": "3014",
      "valuation": {
       "basis": "STABLECOIN_PAR",
       "price": null,
@@ -13598,7 +13705,20 @@
      },
      "createdAt": "2026-10-01T12:00:00.000Z",
      "claimId": null,
-     "signature": null
+     "signature": null,
+     "rules": {
+      "version": "2.0.0",
+      "base": "RECEIVED",
+      "baseRaw": "6029",
+      "rank": null
+     }
+    }
+   },
+   "rewardRules": {
+    "2.0.0": {
+     "version": "2.0.0",
+     "effectiveFrom": "2026-10-01T12:00:00.000Z",
+     "setBy": "local"
     }
    },
    "solanaSendAttempts": {

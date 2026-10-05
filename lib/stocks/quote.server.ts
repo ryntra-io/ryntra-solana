@@ -111,7 +111,7 @@ export async function quoteStock(
     sleep?: (ms: number) => Promise<void>;
     findRow?: typeof findStockRow;
     referral?: () => Promise<JupiterReferral | null>;
-    /** Fee policy v2's lane for the web, so the figure is the web Review's; absent, `/order` as before (the phone, until it reads 1.24.0). */
+    /** Fee policy v2's lane, so the figure is the Review's on the web and the phone; absent, `/order` with the flat referral — still how the web's compare block (`compare.server.ts`) prices, a separate gap. */
     feePolicy?: "v2";
   }> = {},
 ): Promise<{ ok: true; quote: StockQuote } | StockQuoteFailure> {

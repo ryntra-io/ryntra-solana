@@ -9,14 +9,16 @@ import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
 
 import { DEVELOPER_ENTRIES, DOC_NAV, DOC_PAGES, docNeighbours, docPageBySlug, docSearchText, docsHref } from "./content/index.ts";
-import { FEES, POINTS, PRODUCT_PAGES, REWARDS, hrefOf, readinessOf } from "./content/facts.ts";
+import { FEES, JUPITER_ORDER_KEEPS_PERCENT, JUPITER_ORDER_MIN_FEE_BPS, POINTS, PRODUCT_PAGES, REWARDS, hrefOf, readinessOf } from "./content/facts.ts";
 import { DOC_GROUP_IDS, DOC_PATH_PREFIXES } from "./content/model.ts";
 import { PRODUCT_ROUTES } from "../shell/product-routes.ts";
 import { MENU_DESTINATIONS, MENU_ROWS, MENU_SECTION_IDS, PRODUCT_PAGE_IDS, drawn } from "../shell/domains.ts";
 import { CUSTOMER_REDIRECTS } from "../../lib/product/customer-routing.ts";
 import { RYNTRA_SERVICE_FEE_POLICY } from "../../lib/swap/service-fee.ts";
 import { FEE_POLICY_V2 } from "../../lib/core/fee-policy.ts";
-import { REWARD_MINIMUM_CLAIM_USD_MICROS, REWARD_RATE_BPS, USD_MICROS_PER_USD } from "../../lib/rewards/model.ts";
+import { REWARD_MINIMUM_CLAIM_USD_MICROS, USD_MICROS_PER_USD } from "../../lib/rewards/model.ts";
+import { REWARD_RANKS, REWARD_RULES_CURRENT } from "../../lib/rewards/rules.ts";
+import { JUPITER_REFERRAL_FEE_MIN_BPS, JUPITER_REFERRAL_PROVIDER_SHARE_PERCENT } from "../../lib/solana/quotes.ts";
 import { POINTS_POLICY_V1 } from "../../lib/points/policy.ts";
 
 const root = new URL("../../", import.meta.url);
@@ -195,9 +197,15 @@ test("every figure the documentation states is the one the product computes with
   assert.equal(FEES.company, `${FEE_POLICY_V2.XSTOCK.bps / 100}–${FEE_POLICY_V2.ONDO.bps / 100}%`);
   assert.equal(FEES.flow("STABLE"), "0%");
   assert.equal(FEES.bridge, `${RYNTRA_SERVICE_FEE_POLICY.RELAY_APP_FEE / 100}%`);
-  assert.equal(REWARDS.cashbackPercent, REWARD_RATE_BPS.CASHBACK / 100);
-  assert.equal(REWARDS.referralL1Percent, REWARD_RATE_BPS.REFERRAL_L1 / 100);
-  assert.equal(REWARDS.referralL2Percent, REWARD_RATE_BPS.REFERRAL_L2 / 100);
+  /* The rules in force: shares of the fee Ryntra received, the inviter's by rank. */
+  const level1 = REWARD_RANKS.map((rank) => REWARD_RULES_CURRENT.referralL1BpsByRank[rank] / 100);
+  assert.equal(REWARDS.cashbackPercent, REWARD_RULES_CURRENT.cashbackBps / 100);
+  assert.equal(REWARDS.referralL1Percent, `${Math.min(...level1)}–${Math.max(...level1)}`);
+  assert.equal(REWARDS.referralL2Percent, REWARD_RULES_CURRENT.referralL2Bps / 100);
+  /* The order route's share the net cost assumes is the one the quote code applies. */
+  assert.equal(JUPITER_ORDER_KEEPS_PERCENT, JUPITER_REFERRAL_PROVIDER_SHARE_PERCENT);
+  assert.equal(JUPITER_ORDER_MIN_FEE_BPS, JUPITER_REFERRAL_FEE_MIN_BPS);
+  for (const share of level1) assert.ok(REWARDS.referralL1Ladder.en.includes(`${share}%`) && REWARDS.referralL1Ladder.uk.includes(`${share}%`), `the ladder states ${share}%`);
   assert.equal(REWARDS.claimFloorUsd, Number(REWARD_MINIMUM_CLAIM_USD_MICROS / USD_MICROS_PER_USD));
   assert.equal(POINTS.dailyCap, Number(POINTS_POLICY_V1.dailyVolumePointsCap));
   assert.equal(POINTS.levels.length, POINTS_POLICY_V1.levels.length);

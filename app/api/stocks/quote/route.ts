@@ -2,7 +2,6 @@ import { z } from "zod";
 
 import { consumeSolanaReadRequest } from "@/lib/agent-control/http";
 import { rateLimitHeaders, type RateLimitDecision } from "@/lib/http-control";
-import { mutationOriginAllowed } from "@/lib/security";
 import { quoteStock, STOCK_QUOTE_MAX_USD } from "@/lib/stocks/quote.server";
 
 export const runtime = "nodejs";
@@ -34,9 +33,8 @@ export async function GET(request: Request) {
   if (!rate.allowed) return failure(429, "RATE_LIMITED", "Too many requests.", rate);
   const parsed = QuerySchema.safeParse(Object.fromEntries(new URL(request.url).searchParams.entries()));
   if (!parsed.success) return failure(400, "VALIDATION_ERROR", "The quote request did not match its schema.", rate);
-  /* The web is priced on fee policy v2's lane — the lane its Review takes; the phone keeps `/order` until it reads 1.24.0. */
-  const fromSite = mutationOriginAllowed(request.url, request.headers.get("origin"), request.headers.get("sec-fetch-site"));
-  const read = await quoteStock(parsed.data, fromSite ? { feePolicy: "v2" } : {});
+  /* Priced on fee policy v2's lane — the lane the Review takes — for the web and the phone alike. */
+  const read = await quoteStock(parsed.data, { feePolicy: "v2" });
   if (!read.ok) {
     /* LIFECYCLE: the issuer does not offer this token for purchase now — a conflict with the request, never a server fault. */
     const status = read.code === "UNKNOWN_ASSET" ? 404 : read.code === "AMOUNT" || read.code === "UNITS" ? 400 : read.code === "NO_ROUTE" || read.code === "LIFECYCLE" ? 409 : 503;

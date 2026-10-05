@@ -149,7 +149,7 @@ test("nothing in the drawn hero is invented: no user, volume or partner counts, 
     const total = rows.reduce((sum, [, share]) => sum + share, 0);
     assert.equal(Math.round(total * 10) / 10, 100, `the allocation sums to 100 (${locale})`);
     const rewards = HOMEPAGE_COPY[locale].hero.rewards.rows.map(([figure]) => figure);
-    assert.deepEqual(rewards, ["50%", "10% · 5%", "Points"], "the real 50 / 10 / 5 split and Points, no tier or token");
+    assert.deepEqual(rewards, ["50%", "10–30%", "Points"], "the real 50% cashback, the inviter's 10–30% by rank and Points, no tier or token");
   }
 });
 

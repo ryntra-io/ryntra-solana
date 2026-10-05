@@ -9,9 +9,12 @@ import { ensureRewardAccount, readRewardAccount } from "./ledger.ts";
 import { accrualRef, isParMint, REWARD_PAR_MINTS, rewardEntryKey, RewardEntrySchema, type RewardEntry } from "./model.ts";
 import { referralLevelsAt, RewardAccountSchema, type RewardAccount } from "./referral.ts";
 import { completeBenefitJob, enqueueBenefitJob } from "./benefit-jobs.ts";
+import { readRankStanding, rewardRulesFor } from "./rank-store.ts";
+import { rewardRulesOf, type RewardRank } from "./rules.ts";
 
 type Price = Readonly<{ price: string; sourceRef: string; observedAt: string }>;
-type RewardAccrualRecord = Readonly<{ version: number; trader: string; entries: readonly RewardEntry[]; valuationsComplete?: boolean }>;
+/** `rules` is absent for an accrual written under rules `1.0.0`, and it never changes after the first write. */
+type RewardAccrualRecord = Readonly<{ version: number; trader: string; entries: readonly RewardEntry[]; valuationsComplete?: boolean; rules?: "2.0.0" }>;
 
 /**
  * The one call a finished, fee-bearing operation makes.
@@ -118,6 +121,14 @@ async function recordRewardsCore(
       && (args.deps?.readPrice || Math.abs(Date.parse(now) - Date.parse(settledAt)) <= 5 * 60_000) ? await (args.deps?.readPrice ?? readPrice)(asset) : null;
     const price = candidate && Math.abs(Date.parse(candidate.observedAt) - Date.parse(settledAt)) <= 5 * 60_000 ? candidate : null;
     const resolvedFee = fee;
+    /* The rules this operation is computed by: the ones its accrual was first
+       written with, or — for a first write — the ones in force when it
+       settled. Never the newest by default; see `rank-store.ts`. */
+    const env = args.env ?? process.env;
+    const rulesInForce = existingAccrual ? null : await rewardRulesFor(store, settledAt, now, env);
+    /* The inviter's rank, read at most once per call however many times the
+       write below retries. */
+    const ranks = new Map<string, RewardRank>();
     return await withBoundedCasRetry<RecordRewardsOutcome>(async () => {
     const prior = await coordinator.get(ref);
     if (prior && prior.trader !== args.trader) return { state: "SKIPPED", reason: "This fee already belongs to another trader." };
@@ -125,7 +136,24 @@ async function recordRewardsCore(
     const account = await ensureRewardAccount(store, args.trader, now);
     const above = account.referrer ? await readRewardAccount(store, account.referrer) : null;
     const levels = prior ? { l1: prior.entries.find(entry => entry.type === "REFERRAL_L1")?.recipient ?? null, l2: prior.entries.find(entry => entry.type === "REFERRAL_L2")?.recipient ?? null } : referralLevelsAt(account, above, settledAt);
+    const rules = prior ? rewardRulesOf(prior.rules) : rulesInForce ?? await rewardRulesFor(store, settledAt, now, env);
+    /* The inviter's share follows the inviter's rank when the trade settled —
+       frozen on the first write, so pricing a pending row later can never
+       move it. A rank that cannot be read is not guessed: Bronze would freeze
+       an underpayment for good, so the whole accrual waits for its retry. */
+    let referrerL1Rank: RewardRank = "BRONZE";
+    if (prior) referrerL1Rank = prior.entries.find(entry => entry.type === "REFERRAL_L1")?.rules?.rank ?? "BRONZE";
+    else if (rules.base === "RECEIVED" && levels.l1) {
+      const inviter = levels.l1;
+      if (!ranks.has(inviter)) {
+        try { ranks.set(inviter, (await readRankStanding(store, inviter, settledAt)).rank); }
+        catch { return { state: "SKIPPED", reason: "The inviter's rank could not be read; the accrual waits for its retry.", retryable: true }; }
+      }
+      referrerL1Rank = ranks.get(inviter)!;
+    }
     const accrual = accrueRewards({
+      rules,
+      referrerL1Rank,
       fee: resolvedFee,
       trader: args.trader,
       referrerL1: levels.l1,
@@ -180,7 +208,7 @@ async function recordRewardsCore(
       writes.push({ collection: "rewardAccounts", key: owner.wallet, expectedVersion: owner.version,
         next: RewardAccountSchema.parse({ ...owner, earning, version: owner.version + 1 }) });
     }
-    const snapshot: RewardAccrualRecord = { version: 0, trader: args.trader, entries: canonicalEntries };
+    const snapshot: RewardAccrualRecord = { version: 0, trader: args.trader, entries: canonicalEntries, ...(rules.version === "2.0.0" ? { rules: "2.0.0" as const } : {}) };
     writes.push({ collection: "rewardAccruals", key: ref, expectedVersion: null, next: snapshot });
     if (!await store.compareAndSetMany(writes)) return false;
     return { state: "RECORDED", created, existing: accrual.entries.length - created, pending: canonicalEntries.some(entry => entry.usdMicros === null) };

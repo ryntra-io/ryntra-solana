@@ -850,7 +850,7 @@ test("the Swap surface quotes server-side, keeps its deep link, and renders ever
   /* The browser never talks to the venue. Every quote is built by the server
      route, which holds the credential and reads both mints itself. */
   assert.ok(!/api\.jup\.ag/.test(card), "The card reaches the venue directly; the credential is server-only.");
-  assert.match(route, /fetchJupiterOrder/, "The quote route no longer asks the V2 order adapter.");
+  assert.match(route, /await chooseQuote\(\{/, "The quote route no longer asks fee policy v2's lane choice.");
   assert.match(route, /readMintAccount/, "The quote route no longer re-reads both mints live.");
 
   /* Every venue refusal the adapter can produce has a rendering path. The card

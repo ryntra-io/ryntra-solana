@@ -585,8 +585,9 @@
  * the exact fee before the signature. Such an order is sent once through
  * Ryntra's own RPC by the same `execute` route; its outcome receipt pins the
  * action `action:jupiter-swap/build-own-rpc-submit@1`. A `/order` order is unchanged, except that its referral
- * rate is now the flow's. The native carrier stays on `/order` until the client
- * reads this version: a client that sums a fee by mechanism adds the new one
+ * rate is now the flow's. The native carrier stayed on `/order` until its client
+ * read this version (line B's M30); since 2026-10-05 it takes the same lanes as
+ * the web, with no change to any shape: a client that sums a fee by mechanism adds the new one
  * beside `JUPITER_REFERRAL` — the fee is already inside Jupiter's total.
  *
  * **1.25.0 — Ryntra Launch, «Запустити токен».** Additive, and served only
@@ -614,6 +615,20 @@
  * `LAUNCH_IMAGE_INVALID`, `LAUNCH_LIMIT`, `LAUNCH_PAUSED`,
  * `LAUNCH_FIRST_BUY_ABOVE_CAP`, `LAUNCH_BUILD_EXPIRED`, `LAUNCH_BUILD_USED`,
  * `LAUNCH_SIGNED_OTHER_BYTES`, `LAUNCH_SUBMIT_FAILED`, `LAUNCH_NOT_FOUND`.
+ *
+ * **1.26.0 — Rewards ranks.** Additive. `GET /api/rewards` gains an optional
+ * `rank` (`RewardsRankSchema`): the wallet's rank — Bronze, Silver, Gold,
+ * Sapphire, Diamond — by points over the last 30 days (a dollar of fee Ryntra
+ * received on the wallet's own trades or its invited friends' trades is a
+ * point; a launch that reached a DEX adds a fixed number), where the points
+ * came from, the next rank and how many points it still needs, the share of
+ * the received fee a friend's trade pays at this rank and at the second level,
+ * and the ladder of all five under the rules in force. `null` when the rank
+ * could not be read — unavailable, never Bronze; absent from a deployment
+ * before ranks. Under rules 2.0.0 every share is of the fee Ryntra received —
+ * cashback 50 %, the inviter 10–30 % by rank, the second level 5 % — and
+ * `points` (the earlier Points programme) stays as it was. A client that does
+ * not read `rank` needs no release.
  */
 
 import {
@@ -654,7 +669,7 @@ import { LAUNCH_PRESET_IDS } from "../../core/venues/meteora-dbc/presets.ts";
 import { LaunchReceiptFactsSchema } from "../../core/venues/meteora-dbc/receipt.ts";
 
 export const API_MAJOR = 1;
-export const API_CONTRACT_VERSION = "1.25.0";
+export const API_CONTRACT_VERSION = "1.26.0";
 export const API_HEADER = "X-Ryntra-API";
 export const API_VERSION_HEADER = "X-Ryntra-API-Version";
 export const NETWORK = "solana:mainnet";
@@ -3906,6 +3921,39 @@ export const RewardsPointsSchema = z
   .strict();
 export type RewardsPoints = z.infer<typeof RewardsPointsSchema>;
 
+export const REWARD_RANKS_V1 = ["BRONZE", "SILVER", "GOLD", "SAPPHIRE", "DIAMOND"] as const;
+
+/**
+ * The wallet's rank (Growth line, rules 2.0.0): Ryntra points over the last 30
+ * days — a dollar of fee Ryntra received on the wallet's own trades or its
+ * invited friends' trades is a point, a launch that reached a DEX adds a fixed
+ * number — and the share of the received fee a friend's trade pays at this rank.
+ */
+export const RewardsRankSchema = z
+  .object({
+    rank: z.enum(REWARD_RANKS_V1),
+    points: RewGrouped,
+    fromTrades: RewGrouped,
+    fromFriends: RewGrouped,
+    fromLaunches: RewGrouped,
+    /** Points at which the current rank began. */
+    rankFrom: RewGrouped,
+    /** The next rank, the points it begins at, how many are still needed and its level-1 share; null at Diamond. */
+    next: z
+      .object({ rank: z.enum(REWARD_RANKS_V1), at: RewGrouped, toGo: RewGrouped, friendShare: z.number().int().min(0).max(100) })
+      .strict()
+      .nullable(),
+    /** Whole percent of the received fee: level 1 at this rank, and level 2. */
+    friendShare: z.number().int().min(0).max(100),
+    secondLevelShare: z.number().int().min(0).max(100),
+    /** All five ranks under the rules in force: where each begins and its level-1 share. */
+    ladder: z.array(z.object({ rank: z.enum(REWARD_RANKS_V1), from: RewGrouped, friendShare: z.number().int().min(0).max(100) }).strict()).length(5),
+    windowDays: z.number().int().min(1),
+    rulesVersion: z.string().min(1).max(20),
+  })
+  .strict();
+export type RewardsRank = z.infer<typeof RewardsRankSchema>;
+
 /**
  * `GET /api/rewards?address=&locale=en|uk` — what the proven wallet has earned,
  * behind a wallet proof (the `rw` cookie or the native bearer) for exactly
@@ -3952,6 +4000,8 @@ export const RewardsResponseSchema = z
     /** The confirmed inviter, masked; null when nobody invited this wallet. */
     invitedBy: RewMasked.nullable(),
     points: RewardsPointsSchema.nullable(),
+    /** Null when the rank could not be read — unavailable, not Bronze. Absent from a deployment before ranks. */
+    rank: RewardsRankSchema.nullable().optional(),
     started: z.boolean(),
   })
   .strict();

@@ -9,7 +9,8 @@ import { useSolanaConnection } from "../connection.tsx";
 import { useSolanaI18n } from "../i18n/provider.tsx";
 import { WalletGate } from "../wallet-gate.tsx";
 import { useWalletProof } from "../wallet-proof.tsx";
-import { PointsCard, type PointsSummary } from "./points-card.tsx";
+import { rankCopy } from "./rank-copy.ts";
+import { RankCard, type RankSummary } from "./rank-card.tsx";
 import { ReferralCard } from "./referral-card.tsx";
 import styles from "./rewards.module.css";
 
@@ -22,7 +23,7 @@ import styles from "./rewards.module.css";
  * standard: not one wide column of stacked blocks, but a composition. The
  * earnings on the left — the figure that is theirs to claim, the claim, and
  * where every dollar came from as one bar — and on the right the two
- * programmes side by side, Points and the invitation, over the statement of
+ * programmes side by side, the rank and the invitation, over the statement of
  * every reward. Everything is a computed figure, a share, a distance, a
  * date; nothing is a paragraph.
  *
@@ -61,8 +62,8 @@ type Summary = Readonly<{
   claim: Readonly<{ state: string; text: string; signature: string | null }> | null;
   started: boolean;
   invitedBy: string | null;
-  /** Ryntra Points, or null when the ledger could not be read. */
-  points?: PointsSummary | null;
+  /** The rank over the last 30 days, or null when it could not be read. */
+  rank?: RankSummary | null;
   sourceAmounts?: Readonly<Record<"CASHBACK" | "REFERRAL_L1" | "REFERRAL_L2", string>>;
 }>;
 
@@ -102,6 +103,7 @@ function Glyph({ kind }: { kind: string }) {
 export function RewardsCard() {
   const { connection } = useSolanaConnection();
   const { text, locale } = useSolanaI18n();
+  const words = rankCopy(locale);
   const proof = useWalletProof();
   const address = connection?.address ?? null;
   const intl = locale === "uk" ? "uk-UA" : "en-US";
@@ -277,8 +279,11 @@ export function RewardsCard() {
   const share_ = (value: number): string | null => (sources.total > 0 ? `${Math.round((value / sources.total) * 100)}%` : null);
   const sourceLabel = (kind: "cashback" | "l1" | "l2"): string =>
     kind === "cashback" ? text("Cashback") : kind === "l1" ? text("Referral L1") : text("Referral L2");
+  /* The level-1 share follows the rank; without a rank only the range is
+     true, so the range is what is shown rather than a guessed figure. */
+  const friendShare = summary.rank ? `${summary.rank.friendShare}%` : "10–30%";
   const sourceRate = (kind: "cashback" | "l1" | "l2"): string =>
-    kind === "cashback" ? text("50% of the Ryntra fee on your trades") : kind === "l1" ? text("10% from people you invited") : text("5% from the people they invited");
+    kind === "cashback" ? words.cashbackRate : kind === "l1" ? words.friendRate : text("5% from the people they invited");
   const sourceFigure = (kind: "cashback" | "l1" | "l2"): string =>
     dollars(kind === "cashback" ? summary.cashback : kind === "l1" ? summary.referralL1 : summary.referralL2);
 
@@ -365,17 +370,17 @@ export function RewardsCard() {
 
       <div className={styles.main}>
         <div className={styles.programmes}>
-          {/* Points beside the money: activity is the second thing Rewards is
-              about, and it belongs on this page rather than on a page of its
-              own — the Owner's placement. */}
-          <PointsCard points={summary.points ?? null} />
+          {/* The rank beside the money: it sets what a friend's trade pays, so
+              it sits next to the invitation — the Owner's placement for
+              Points, kept for what replaced them. */}
+          <RankCard rank={summary.rank ?? null} />
 
-          <section className={`${styles.panel} ${styles.invite}`} id="rewards-invite" aria-label={text("Invite and earn")}>
+          <section className={`${styles.panel} ${styles.invite}`} id="rewards-invite" aria-label={words.inviteTitle}>
             <div className={styles.panelHead}>
-              <h2 className={styles.title}>{text("Invite and earn")}</h2>
+              <h2 className={styles.title}>{words.inviteTitle}</h2>
               <div className={styles.chips}>
-                <span className={styles.chip}>{text("10% Level 1")}</span>
-                <span className={styles.chip}>{text("5% Level 2")}</span>
+                <span className={styles.chip}>{words.levelOneChip(friendShare)}</span>
+                <span className={styles.chip}>{words.levelTwoChip(`${summary.rank?.secondLevelShare ?? 5}%`)}</span>
               </div>
             </div>
 
@@ -474,19 +479,15 @@ export function RewardsCard() {
         <details className={`${styles.panel} ${styles.rules}`}>
           <summary>{text("How rewards work")}</summary>
           <ul className={styles.rulesBody}>
-            <li>{text("50% cashback of the Ryntra service fee on your own trade.")}</li>
-            <li>{text("10% of the Ryntra service fee from someone you invited, and 5% from the people they invited.")}</li>
+            {words.rewardsRules.map((rule) => <li key={rule}>{rule}</li>)}
             <li>{text("Claim from $1.00 USDC, to the wallet you are signed in with.")}</li>
             <li>{text("Only fees actually collected after Rewards launched are eligible. Routes with no Ryntra fee earn nothing.")}</li>
           </ul>
         </details>
         <details className={`${styles.panel} ${styles.rules}`}>
-          <summary>{text("How points work")}</summary>
+          <summary>{words.ranksTitle}</summary>
           <ul className={styles.rulesBody}>
-            <li>{text("Only a settled trade earns — a Swap, a Spot order or a Bridge that arrived. A quote, a review, a failed or cancelled operation earns nothing.")}</li>
-            <li>{text("The first $1,000 you trade in a day earns 1 point per dollar; the rate then steps down at $1,000, $5,000 and $25,000, with a daily ceiling.")}</li>
-            <li>{text("An active day — $10 or more traded — adds 10 points. When someone you invited has their first active day, you receive 100.")}</li>
-            <li>{text("Points have no cash value and cannot be transferred. Nothing about leverage, profit or loss changes them.")}</li>
+            {words.ranksRules.map((rule) => <li key={rule}>{rule}</li>)}
           </ul>
         </details>
       </div>

@@ -185,6 +185,13 @@ export const GUARD_COLLECTIONS = [
      counter missed repairs itself the first time either party opens Rewards,
      and one it already has stays exactly as it is. */
   "rewardReferralEdges",
+  /* Ranks (the Growth line, rules 2.0.0). `rewardRules` holds the moment each
+     rules version came into force, written once with `insertIfAbsent`;
+     `rankEvents` are points earned without a fee — a launch that reached a
+     DEX — keyed `wallet:kind:ref`, append-only. Values in the same column; no
+     DDL. */
+  "rewardRules",
+  "rankEvents",
   /* Admin business analytics. Two records, neither a boundary: nothing
      compare-and-sets on them to decide whether money may move.
 

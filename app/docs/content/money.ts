@@ -1,4 +1,4 @@
-import { FEES, FEES_UK, POINTS, REWARDS, TOP_UP, levelRows, pointsTierRows } from "./facts.ts";
+import { FEES, FEES_UK, POINTS, REWARDS, TOP_UP, levelRows, pointsTierRows, rankRows } from "./facts.ts";
 import { facts, list, note, p, section, steps, table, type DocPage } from "./model.ts";
 import { BRIDGE } from "./trade.ts";
 
@@ -160,27 +160,27 @@ export const REWARDS_PAGE: DocPage = {
   pageId: "rewards",
   title: { en: "Rewards", uk: "Винагороди" },
   summary: {
-    en: "Cashback from the service fee Ryntra actually collects on your purchases and trades, paid in USDC on Solana, plus the referral share from people you invited.",
-    uk: "Кешбек із комісії, яку Ryntra справді збирає з твоїх купівель і угод, у USDC на Solana, плюс реферальна частка від запрошених тобою.",
+    en: "Cashback from the service fee Ryntra actually receives on your purchases and trades, paid in USDC on Solana, plus the referral share from people you invited.",
+    uk: "Кешбек із комісії, яку Ryntra справді отримує з твоїх купівель і угод, у USDC на Solana, плюс реферальна частка від запрошених тобою.",
   },
   sections: [
     section("how", "How Rewards work", "Як працюють Винагороди", [
       p(
-        "When Ryntra collects its service fee on your purchase, swap, Spot trade or bridge, a share of that fee comes back to you and to the people who invited you. Only a fee actually collected counts: a route that carries no Ryntra fee earns nothing, and a quoted fee that was not collected earns nothing.",
-        "Коли Ryntra збирає свою комісію з твоєї купівлі, обміну, угоди на Споті чи мосту, частка цієї комісії повертається тобі й тим, хто тебе запросив. Рахується лише справді зібрана комісія: маршрут без комісії Ryntra не дає нічого, і показана, але не зібрана комісія не дає нічого.",
+        "When Ryntra receives its service fee on your purchase, swap, Spot trade or bridge, a share of what it received comes back to you and to the people who invited you — the fee after any provider's own cut. Only a fee actually received counts: a route that carries no Ryntra fee earns nothing, and a quoted fee that was not collected earns nothing.",
+        "Коли Ryntra отримує свою комісію з твоєї купівлі, обміну, угоди на Споті чи мосту, частка отриманої комісії — тобто комісії після власної частки провайдера — повертається тобі й тим, хто тебе запросив. Рахується лише справді отримана комісія: маршрут без комісії Ryntra не дає нічого, і показана, але не зібрана комісія не дає нічого.",
       ),
       table(
-        { en: ["Share of the collected fee", "Goes to"], uk: ["Частка зібраної комісії", "Кому"] },
+        { en: ["Share of the received fee", "Goes to"], uk: ["Частка отриманої комісії", "Кому"] },
         {
           en: [
             [`${REWARDS.cashbackPercent}%`, "You — cashback on your own purchase or trade"],
-            [`${REWARDS.referralL1Percent}%`, "The person who invited you"],
+            [`${REWARDS.referralL1Percent}%`, `The person who invited you — by their rank: ${REWARDS.referralL1Ladder.en}`],
             [`${REWARDS.referralL2Percent}%`, "The person who invited them"],
             ["The rest", "Ryntra. A missing inviter's share stays with Ryntra; it is never given to someone else"],
           ],
           uk: [
             [`${REWARDS.cashbackPercent}%`, "Тобі — кешбек із твоєї купівлі чи угоди"],
-            [`${REWARDS.referralL1Percent}%`, "Тому, хто тебе запросив"],
+            [`${REWARDS.referralL1Percent}%`, `Тому, хто тебе запросив, — за його рангом: ${REWARDS.referralL1Ladder.uk}`],
             [`${REWARDS.referralL2Percent}%`, "Тому, хто запросив його"],
             ["Решта", "Ryntra. Частка відсутнього запрошувача лишається в Ryntra; її ніколи не віддають комусь іншому"],
           ],
@@ -199,6 +199,16 @@ export const REWARDS_PAGE: DocPage = {
           ["Виплата від", `$${REWARDS.claimFloorUsd.toFixed(2).replace(".", ",")} USDC`],
           ["Час", "Винагорода читається як «Очікує», поки операція не завершена й комісія не підтверджена, потім — «Доступно»"],
         ],
+      ),
+    ]),
+    section("ranks", "Ranks", "Ранги", [
+      p(
+        `Your rank is read from your rank points over the last ${REWARDS.rankWindowDays} days — not the Points programme's: a dollar of fee Ryntra received on your own trades or on trades of friends you invited is a rank point. The rank sets the share you earn from a friend's trade; the share is fixed at the moment of that trade. The rank has no cash value.`,
+        `Твій ранг рахується з очок за останні ${REWARDS.rankWindowDays} днів: долар комісії, яку Ryntra отримала з твоїх угод або з угод друзів, яких ти запросив, — це очко. Ранг задає частку, яку ти отримуєш з угоди друга; частка фіксується в момент цієї угоди. Ранг не має грошової вартості.`,
+      ),
+      table(
+        { en: ["Rank", "From rank points", "Your share of a friend's trade"], uk: ["Ранг", "Від очок", "Твоя частка з угоди друга"] },
+        { en: rankRows("en"), uk: rankRows("uk") },
       ),
     ]),
     section("claim", "How to claim", "Як отримати виплату", [
@@ -235,8 +245,8 @@ export const REFERRALS: DocPage = {
   sections: [
     section("how", "How referrals work", "Як працюють реферали", [
       p(
-        `Every signed-in wallet has a referral link. When someone opens Ryntra through it and confirms you as their inviter, you receive ${REWARDS.referralL1Percent}% of the Ryntra service fee collected on their purchases and trades, and ${REWARDS.referralL2Percent}% on those of the people they invite in turn. The shares come out of Ryntra's fee, never out of anyone's amount.`,
-        `Кожен гаманець після входу має реферальне посилання. Коли хтось відкриває Ryntra за ним і підтверджує тебе як запрошувача, ти отримуєш ${REWARDS.referralL1Percent}% комісії Ryntra, зібраної з його купівель і угод, і ${REWARDS.referralL2Percent}% — з тих, кого запросить він. Частки йдуть із комісії Ryntra, а не із суми людини.`,
+        `Every signed-in wallet has a referral link. When someone opens Ryntra through it and confirms you as their inviter, you receive ${REWARDS.referralL1Percent}% of the Ryntra service fee received on their purchases and trades — the share your rank holds at the moment of their trade — and ${REWARDS.referralL2Percent}% on those of the people they invite in turn. The shares come out of Ryntra's fee, never out of anyone's amount.`,
+        `Кожен гаманець після входу має реферальне посилання. Коли хтось відкриває Ryntra за ним і підтверджує тебе як запрошувача, ти отримуєш ${REWARDS.referralL1Percent}% комісії Ryntra, отриманої з його купівель і угод, — частку, яку дає твій ранг у момент його угоди, — і ${REWARDS.referralL2Percent}% — з тих, кого запросить він. Частки йдуть із комісії Ryntra, а не із суми людини.`,
       ),
       steps(
         [
@@ -313,8 +323,8 @@ export const POINTS_PAGE: DocPage = {
         { en: levelRows("en"), uk: levelRows("uk") },
       ),
       p(
-        "Rewards shows your points, level, rank, lifetime volume, trades and active days. There is no public leaderboard; rank is your own position.",
-        "Винагороди показують твої бали, рівень, ранг, обсяг за весь час, кількість угод і активних днів. Публічної таблиці лідерів немає; ранг — твоя власна позиція.",
+        "Points and their level are counted as before, and the phone shows them. On the web, Rewards shows your rank in their place — Bronze to Diamond by the fee Ryntra received over 30 days; see Rewards. There is no public leaderboard.",
+        "Бали та їхній рівень рахуються як і раніше, і телефон їх показує. На сайті Винагороди показують замість них твій ранг — від Бронзи до Діаманта за комісією, яку Ryntra отримала за 30 днів; дивись Винагороди. Публічної таблиці лідерів немає.",
       ),
     ]),
   ],

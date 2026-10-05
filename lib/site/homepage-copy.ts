@@ -84,7 +84,7 @@ export const HOMEPAGE_COPY = {
       portfolio: { title: "Portfolio", view: "View", today: "today", value: "$13.51", change: "−1.53%",
         rows: [["SOL", 48.2], ["Stocks", 27.6], ["Memes", 12.4], ["USDC", 11.8]] },
       rewards: { title: "Rewards", view: "View",
-        rows: [["50%", "Fee cashback", "Eligible fees"], ["10% · 5%", "Referrals", "Two levels"], ["Points", "Points program", "Levels · Rank"]] },
+        rows: [["50%", "Fee cashback", "Eligible fees"], ["10–30%", "Referrals", "By rank"], ["Points", "Points program", "Levels · Rank"]] },
       /* The four ways in along the hero's foot: a company from $1, the rules,
          the private companies, the fee back. */
       strip: [
@@ -306,7 +306,7 @@ export const HOMEPAGE_COPY = {
       portfolio: { title: "Портфель", view: "Відкрити", today: "сьогодні", value: "$13.51", change: "−1.53%",
         rows: [["SOL", 48.2], ["Акції", 27.6], ["Меми", 12.4], ["USDC", 11.8]] },
       rewards: { title: "Винагороди", view: "Відкрити",
-        rows: [["50%", "Кешбек з комісії", "Лише прийнятні"], ["10% · 5%", "Реферали", "Два рівні"], ["Points", "Програма балів", "Рівні · Ранг"]] },
+        rows: [["50%", "Кешбек з комісії", "Лише прийнятні"], ["10–30%", "Реферали", "За рангом"], ["Points", "Програма балів", "Рівні · Ранг"]] },
       strip: [
         { id: "invest", big: "$1", title: "Частинка компанії", body: "Від $1, у доларах, у твоєму гаманці." },
         { id: "autoinvest", big: "", title: "Автоінвест", body: "Щодня, якщо впаде, з оплат." },

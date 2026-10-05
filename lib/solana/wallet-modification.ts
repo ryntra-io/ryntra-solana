@@ -21,6 +21,10 @@ import {
 export const COMPUTE_BUDGET_PROGRAM = "ComputeBudget111111111111111111111111111111";
 /** Canonical Lighthouse Protocol program id declared by its open-source program. */
 export const LIGHTHOUSE_PROGRAM = "L2TExMFKdjpN9kozasaurPirfHy9P8sbXoAN1qA3S95";
+/** The last value of Lighthouse's own `LogLevel` (0 `Silent` … 6 `FailedEncodedNoop`,
+    `lighthouse-sdk` 2.1.0). The level only chooses what is logged when an
+    assertion fails; Phantom signs at 4, the Seeker Wallet at 5. */
+const LIGHTHOUSE_MAX_LOG_LEVEL = 6;
 const MAX_COMPUTE_UNITS = 1_400_000;
 const MICRO_LAMPORTS_PER_LAMPORT = 1_000_000n;
 
@@ -538,8 +542,8 @@ export function compareWalletTransaction(args: {
               ? `its payload is ${bytes.length} bytes, outside the 4 to 512 this guard accepts`
               : kind !== 6 && kind !== 10
                 ? `its variant is ${kind} and only 6 and 10 are recognised`
-                : logLevel > 4
-                  ? `its log level is ${logLevel}, above the 4 this guard accepts`
+                : logLevel > LIGHTHOUSE_MAX_LOG_LEVEL
+                  ? `its log level is ${logLevel}, above the ${LIGHTHOUSE_MAX_LOG_LEVEL} Lighthouse defines`
                   : bytes[2] === 0
                     ? "its assertion list is empty"
                     : bounded

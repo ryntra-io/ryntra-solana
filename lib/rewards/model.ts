@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import type { ServiceFeeMechanism } from "../swap/service-fee.ts";
+import { REWARD_RANKS } from "./rules.ts";
 
 /**
  * What a reward is, in the only units that can be added up without lying.
@@ -23,18 +24,23 @@ import type { ServiceFeeMechanism } from "../swap/service-fee.ts";
  *
  * ## What is being divided
  *
- * The **gross** service fee — what the person actually paid — is the base for
- * all three shares. Not what reached Ryntra, and not the quote. The owner's own
- * worked example fixes this: on a $5.00 gross where Jupiter keeps $1.00, the
- * trader gets $2.50, L1 gets $0.50, L2 gets $0.25, and Ryntra keeps the $0.75
- * that is left of its own $4.00. Taking the shares off Ryntra's residual
- * instead would pay the trader $2.00 and quietly rename the programme.
+ * Under rules `1.0.0` (2026-09-10) the **gross** service fee — what the person
+ * actually paid — was the base for all three shares: on a $5.00 gross where
+ * Jupiter keeps $1.00, the trader got $2.50, L1 $0.50, L2 $0.25.
+ *
+ * Under rules `2.0.0` (the decision of 2026-10-04) the base is what **reached
+ * Ryntra**: on the same fee the trader gets $2.00 of the $4.00 received, the
+ * inviter 10–30 % of it by rank, the second level 5 %, and the sum never
+ * exceeds the $4.00. `rules.ts` holds both; an accrual records which it used.
  *
  * The provider's share is untouched by any of this. It left before Ryntra saw
  * it.
  */
 
-/** Basis points of the gross service fee, by owner decision of 2026-09-10. */
+/**
+ * Basis points under rules `1.0.0`, by owner decision of 2026-09-10 — and the
+ * Bronze shares of `2.0.0`, where the level-1 share grows with rank.
+ */
 export const REWARD_RATE_BPS = {
   CASHBACK: 5000,
   REFERRAL_L1: 1000,
@@ -158,6 +164,20 @@ export const RewardEntrySchema = z
     /** Set on a claim entry: the claim it belongs to, and its payout signature. */
     claimId: z.string().min(1).max(80).nullable(),
     signature: z.string().min(1).max(120).nullable(),
+    /**
+     * The rules this accrual was computed by, from `2.0.0` on. Absent means
+     * `1.0.0`: a share of the gross. `baseRaw` is what Ryntra received, in the
+     * fee asset; `rank` is the inviter's rank on a level-1 share.
+     */
+    rules: z
+      .object({
+        version: z.literal("2.0.0"),
+        base: z.literal("RECEIVED"),
+        baseRaw: z.string().regex(RAW_INTEGER),
+        rank: z.enum(REWARD_RANKS).nullable(),
+      })
+      .strict()
+      .optional(),
   })
   .strict();
 

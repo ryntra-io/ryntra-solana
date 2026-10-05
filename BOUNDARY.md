@@ -9,10 +9,10 @@ moved counts as new. Generated at every update from the development history.
 
 | Since the tag | Files |
 |---|---|
-| New | 1,090 |
+| New | 1,096 |
 | Changed | 807 |
-| Unchanged | 932 |
-| Lines added / removed | +280,676 / −19,725 |
+| Unchanged | 931 |
+| Lines added / removed | +282,194 / −19,691 |
 
 ## New since the tag
 
@@ -367,6 +367,8 @@ moved counts as new. Generated at every update from the development history.
 - `app/solana/workspace/evidence/risk-words.ts`
 - `app/solana/workspace/evidence/risk.module.css`
 - `app/solana/workspace/holdings/plan-link.tsx`
+- `app/solana/workspace/rewards/rank-card.tsx`
+- `app/solana/workspace/rewards/rank-copy.ts`
 - `app/solana/workspace/spot/plan-review-block.tsx`
 - `app/solana/workspace/spot/quote-asset-switch.tsx`
 - `app/solana/workspace/spot/stock-context.tsx`
@@ -919,8 +921,12 @@ moved counts as new. Generated at every update from the development history.
 - `lib/rewards/claim-settlement.server.ts`
 - `lib/rewards/claim-settlement.ts`
 - `lib/rewards/cross-swap-settlement.server.ts`
+- `lib/rewards/rank-store.ts`
+- `lib/rewards/rank.test.mjs`
+- `lib/rewards/rank.ts`
 - `lib/rewards/record.server.test.mjs`
 - `lib/rewards/reliability.test.mjs`
+- `lib/rewards/rules.ts`
 - `lib/rewards/swap-settlement.ts`
 - `lib/search/movers.test.mjs`
 - `lib/search/movers.ts`
@@ -1450,7 +1456,6 @@ moved counts as new. Generated at every update from the development history.
 - `app/solana/workspace/receive/receive-card.tsx`
 - `app/solana/workspace/receive/receive.module.css`
 - `app/solana/workspace/rewards/page.tsx`
-- `app/solana/workspace/rewards/points-card.tsx`
 - `app/solana/workspace/rewards/referral-card.tsx`
 - `app/solana/workspace/rewards/rewards-card.tsx`
 - `app/solana/workspace/rewards/rewards.module.css`
@@ -1836,6 +1841,7 @@ moved counts as new. Generated at every update from the development history.
 - `lib/solana/transaction.ts`
 - `lib/solana/user-path.test.mjs`
 - `lib/solana/wallet-modification.test.mjs`
+- `lib/solana/wallet-modification.ts`
 - `lib/solana/wallet-restore.test.mjs`
 - `lib/solana/wallet-signin.client.ts`
 - `lib/solana/wallet.client.ts`

@@ -14,9 +14,10 @@
  * `/order` with the flow's own rate where Jupiter allows it, and no fee where
  * that rate is under Jupiter's minimum: never more than the flow's rate.
  *
- * The phone (`bearer`) stays on that lane too until the mobile line reads the
- * contract that names `/build` (1.24.0): its client sums a fee by mechanism,
- * and a mechanism it has never seen would be shown twice.
+ * The phone takes the same decision as the web: it was kept on «as now»
+ * until its client read the contract that names `/build` (1.24.0, line B's
+ * M30), and since 2026-10-05 (line B's request 41) who carries the request no
+ * longer picks the lane.
  */
 
 import { associatedTokenAccount } from "../../attribution/ata.ts";
@@ -56,9 +57,6 @@ import {
   type FeeFlow,
   type SideFacts,
 } from "../fee-policy.ts";
-
-/** Which policy a carrier is on: the web is on v2; the phone stays as it was until its client reads 1.24.0. */
-export type FeePolicyCarrier = "site" | "bearer";
 
 /**
  * The operator's switch for the policy, beside the swap lane's own stop:
@@ -230,7 +228,7 @@ function withFlowFee<T extends JupiterOrderQuote | JupiterExecutableOrder>(order
 export type LaneChoice<T> = Readonly<{ ok: true; order: T; flow: FeeFlow; lane: "BUILD" | "ORDER" }> | Readonly<{ ok: false; failure: JupiterExecutableOrderFailure; flow: FeeFlow }>;
 
 /**
- * The person's own order on the web: the flow's lane, both lanes where both
+ * The person's own order, on the web and the phone alike: the flow's lane, both lanes where both
  * may win, the better net price, and — when `/build` wins — its bytes
  * assembled for the wallet. A refusal is the lane's own answer.
  */
@@ -240,7 +238,6 @@ export async function chooseExecutableOrder(args: Readonly<{
   amountRaw: string;
   taker: string;
   slippageBps?: number;
-  carrier: FeePolicyCarrier;
   endpoint: JupiterSwapEndpoint;
   handle: SolanaRpcHandle;
   config: ServiceFeeConfig;
@@ -252,7 +249,8 @@ export async function chooseExecutableOrder(args: Readonly<{
       () => fetchOrder({ inputMint, outputMint, amountRaw, taker, referral, ...(slippageBps !== undefined ? { slippageBps } : {}) }, endpoint),
       { maxWaitMs: JUPITER_ORDER_RETRY_WAIT_MAX_MS },
     );
-  if (args.carrier === "bearer" || (deps.policy ?? feePolicyInForce()) === "as-now") {
+  /* One product, one fee: the phone reads contract 1.24.0 (line B, M30), so who carries the request no longer picks the lane. */
+  if ((deps.policy ?? feePolicyInForce()) === "as-now") {
     const result = await askOrder(deps.referral ? await deps.referral(null, config) : await asNowReferral(config));
     return result.ok ? { ok: true, order: result.order, flow: "AS_NOW", lane: "ORDER" } : { ok: false, failure: result, flow: "AS_NOW" };
   }
@@ -291,7 +289,7 @@ export async function chooseExecutableOrder(args: Readonly<{
 }
 
 /**
- * The card's read-only quote on the web: the same decision, with `/build`
+ * The read-only quote, on the web's card and the phone alike: the same decision, with `/build`
  * asked under its stand-in taker and `/order` without one. Nothing here can
  * be signed.
  */

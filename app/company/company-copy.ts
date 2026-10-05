@@ -63,7 +63,7 @@ export const COMPANY_COPY: Readonly<Record<CompanyLocale, CompanyCopy>> = {
       lead: "Ryntra earns only when you actually buy, swap or bridge — never for looking, and never for the checks that protect you.",
       rows: [
         ["Service fee", `${FEES.swap} of a purchase or a swap, ${FEES.bridge} of a bridge`, "Its own line in the Review"],
-        ["Rewards", `${REWARDS.cashbackPercent}% of the fee Ryntra collects comes back to you in USDC; ${REWARDS.referralL1Percent}% and ${REWARDS.referralL2Percent}% go to those who invited you`, "Only a fee actually collected counts"],
+        ["Rewards", `${REWARDS.cashbackPercent}% of the fee Ryntra receives comes back to you in USDC; ${REWARDS.referralL1Percent}% by their rank and ${REWARDS.referralL2Percent}% go to those who invited you`, "Only a fee Ryntra actually received counts"],
         ["No Ryntra fee", "Send, Receive, Rewards claims and every check before you sign", "Only the network's own fee"],
         ["Not Ryntra's", "The Solana network fee, and a PreStocks token's issuer fee read from the chain", "Shown apart in the Review"],
       ],
@@ -125,7 +125,7 @@ export const COMPANY_COPY: Readonly<Record<CompanyLocale, CompanyCopy>> = {
       lead: "Ryntra заробляє лише тоді, коли ти справді купуєш, обмінюєш чи переносиш кошти, — ніколи за перегляд і ніколи за перевірки, що тебе захищають.",
       rows: [
         ["Комісія Ryntra", `${FEES_UK.swap} суми купівлі чи обміну, ${FEES_UK.bridge} — мосту`, "Окремий рядок «Перевірки»"],
-        ["Винагороди", `${REWARDS.cashbackPercent}% зібраної комісії повертається тобі в USDC; ${REWARDS.referralL1Percent}% і ${REWARDS.referralL2Percent}% — тим, хто тебе запросив`, "Рахується лише справді зібрана комісія"],
+        ["Винагороди", `${REWARDS.cashbackPercent}% отриманої комісії повертається тобі в USDC; ${REWARDS.referralL1Percent}% за рангом запрошувача і ${REWARDS.referralL2Percent}% — тим, хто тебе запросив`, "Рахується лише комісія, яку Ryntra справді отримала"],
         ["Без комісії Ryntra", "Надіслати, Отримати, виплати Винагород і кожна перевірка перед підписом", "Лише власна плата мережі"],
         ["Не комісія Ryntra", "Плата мережі Solana і комісія емітента токенів PreStocks, прочитана з ланцюга", "Окремо в «Перевірці»"],
       ],

@@ -1,7 +1,6 @@
 import {
   accrualRef,
   isParMint,
-  REWARD_RATE_BPS,
   rawAmount,
   priceRatio,
   RewardValuationSchema,
@@ -12,6 +11,7 @@ import {
   type RewardValuation,
 } from "./model.ts";
 import { isServiceFeeIncome, type RyntraServiceFee } from "../swap/service-fee.ts";
+import { REWARD_RULES_V1, type RewardRank, type RewardRules } from "./rules.ts";
 
 /**
  * One collected service fee becomes up to three rewards, or nothing at all.
@@ -72,6 +72,15 @@ export type AccrualInput = Readonly<{
    * never be passed here; only what a settlement reports as paid.
    */
   providerUsd?: number | null;
+  /**
+   * The rules version this operation is computed by. Absent means `1.0.0`,
+   * the gross-based programme, so a caller that predates ranks keeps its
+   * arithmetic exactly; `record.server.ts` chooses by when the operation
+   * settled.
+   */
+  rules?: RewardRules;
+  /** The inviter's rank when the trade settled. Absent means Bronze. */
+  referrerL1Rank?: RewardRank | null;
 }>;
 
 export type AccrualRefusal = Readonly<{ ok: false; reason: string }>;
@@ -94,6 +103,28 @@ function grossOf(fee: RyntraServiceFee): Readonly<{ raw: bigint; decimals: numbe
   return { raw: rawAmount(settlement.userPaidRaw, "The gross fee"), decimals };
 }
 
+/**
+ * What reached Ryntra of a gross, or the reason it is not known.
+ *
+ * The settlement's own `ryntraRaw` first — read or derived from the
+ * provider's documented cut by the code that read the chain. Failing that,
+ * gross minus the provider's stated share. Never more than the gross, and
+ * never a guess: an unknown received amount accrues nothing under a rule
+ * whose whole point is that payouts stay inside it.
+ */
+function receivedOf(fee: RyntraServiceFee, gross: bigint): bigint | string {
+  const settlement = fee.settlement;
+  const stated = settlement?.ryntraRaw ?? null;
+  const received = stated !== null
+    ? rawAmount(stated, "The received fee")
+    : settlement?.providerRaw != null
+      ? gross - rawAmount(settlement.providerRaw, "The provider's share")
+      : null;
+  if (received === null) return "The settlement does not state what reached Ryntra, so a share of it cannot be computed.";
+  if (received < 0n || received > gross) return "The received fee is outside the gross the person paid.";
+  return received;
+}
+
 export function accrueRewards(input: AccrualInput): AccrualResult {
   const { fee } = input;
   if (!isServiceFeeIncome(fee)) {
@@ -108,6 +139,11 @@ export function accrueRewards(input: AccrualInput): AccrualResult {
   if (gross.raw === 0n) {
     return { ok: false, reason: "The person paid no fee, so there is nothing to share." };
   }
+  const rules = input.rules ?? REWARD_RULES_V1;
+  const received = rules.base === "RECEIVED" ? receivedOf(fee, gross.raw) : gross.raw;
+  if (typeof received === "string") return { ok: false, reason: received };
+  if (received === 0n) return { ok: false, reason: "Nothing reached Ryntra, so there is nothing to share." };
+  const base = received;
 
   const asset = settlement.asset ?? fee.asset;
   const symbol = settlement.symbol ?? fee.symbol;
@@ -157,11 +193,12 @@ export function accrueRewards(input: AccrualInput): AccrualResult {
   const valueOf = (shareRaw: bigint, rateBps: number): string | null => {
     if (par) return shareRaw.toString();
     if (statedMicros !== null && valuation.basis === "PROVIDER_STATED_USD") {
-      /* The **rate**, not the share. `shareRaw` is already gross x rate / 10000
-         in the fee asset, and dividing one by the other to recover that ratio
-         would be a floating-point operation in the one module that must not
-         contain any — while the exact integer that produced it is in scope. */
-      return ((statedMicros * BigInt(rateBps)) / 10_000n).toString();
+      /* The **rate**, not the share. The provider's figure is the gross, so it
+         is scaled to the base (received ÷ gross, which is 1 under the gross
+         rules) and by the rate in one integer expression — recovering the
+         ratio from `shareRaw` would be a floating-point operation in the one
+         module that must not contain any. */
+      return ((statedMicros * base * BigInt(rateBps)) / (gross.raw * 10_000n)).toString();
     }
     if (!priced?.price) return null;
     try {
@@ -174,8 +211,9 @@ export function accrueRewards(input: AccrualInput): AccrualResult {
   };
 
   const entries: RewardEntry[] = [];
+  const l1Rank: RewardRank = input.referrerL1Rank ?? "BRONZE";
   const add = (type: "CASHBACK" | "REFERRAL_L1" | "REFERRAL_L2", recipient: string, rateBps: number): void => {
-    const shareRaw = shareOfGross(gross.raw, rateBps);
+    const shareRaw = shareOfGross(base, rateBps);
     if (shareRaw === 0n) return;
     entries.push({
       type,
@@ -188,23 +226,34 @@ export function accrueRewards(input: AccrualInput): AccrualResult {
       createdAt: input.now,
       claimId: null,
       signature: null,
+      ...(rules.base === "RECEIVED"
+        ? { rules: { version: "2.0.0" as const, base: "RECEIVED" as const, baseRaw: base.toString(), rank: type === "REFERRAL_L1" ? l1Rank : null } }
+        : {}),
     });
   };
 
-  add("CASHBACK", input.trader, REWARD_RATE_BPS.CASHBACK);
+  add("CASHBACK", input.trader, rules.cashbackBps);
 
   /* Self-referral is refused where a referrer is bound, and refused again here.
      The first refusal is the rule; this one is the guard that keeps a future
      caller from routing around it. */
   if (input.referrerL1 && input.referrerL1 !== input.trader) {
-    add("REFERRAL_L1", input.referrerL1, REWARD_RATE_BPS.REFERRAL_L1);
+    add("REFERRAL_L1", input.referrerL1, rules.referralL1BpsByRank[l1Rank]);
   }
   if (
     input.referrerL2 &&
     input.referrerL2 !== input.trader &&
     input.referrerL2 !== input.referrerL1
   ) {
-    add("REFERRAL_L2", input.referrerL2, REWARD_RATE_BPS.REFERRAL_L2);
+    add("REFERRAL_L2", input.referrerL2, rules.referralL2Bps);
+  }
+
+  /* The rule of a received base, checked on the figures themselves rather
+     than trusted to the rates: everything one fee pays out stays inside what
+     reached Ryntra. */
+  if (rules.base === "RECEIVED") {
+    const paid = entries.reduce((sum, entry) => sum + BigInt(entry.shareRaw ?? "0"), 0n);
+    if (paid > base) return { ok: false, reason: "These shares would pay out more than Ryntra received." };
   }
 
   return { ok: true, entries, ref };

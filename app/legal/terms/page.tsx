@@ -21,7 +21,7 @@ export default function TermsPage() {
   return (
     <>
       <h1>Terms of Use</h1>
-      <p className="legal-updated">Effective date: September 14, 2026</p>
+      <p className="legal-updated">Effective date: October 5, 2026</p>
 
       <p>
         These Terms of Use (&ldquo;Terms&rdquo;) govern your access to and use of the Ryntra website at{" "}
@@ -69,15 +69,19 @@ export default function TermsPage() {
 
       <h2>5. Rewards, referrals and Points</h2>
       <p>
-        When Ryntra collects its service fee on an eligible operation, a share of that collected fee is
-        credited under the Rewards programme: {REWARDS.cashbackPercent}% to the wallet that made the
-        operation, {REWARDS.referralL1Percent}% to the wallet that invited it and{" "}
-        {REWARDS.referralL2Percent}% to the wallet that invited that one. Only a fee actually collected by
-        Ryntra is eligible; an operation on a route that carries no Ryntra fee, or a quoted fee that was not
+        When Ryntra receives its service fee on an eligible operation, a share of the fee it received —
+        after any provider&rsquo;s own share — is credited under the Rewards programme:{" "}
+        {REWARDS.cashbackPercent}% to the wallet that made the operation,{" "}
+        {REWARDS.referralL1Percent}% to the wallet that invited it, by that wallet&rsquo;s rank when the
+        operation settled, and {REWARDS.referralL2Percent}% to the wallet that invited that one. Only a fee
+        actually received by Ryntra is eligible; an operation on a route that carries no Ryntra fee, or a quoted fee that was not
         collected, earns nothing. Rewards are paid in USDC on Solana to the wallet you are signed in with,
         from a minimum of ${REWARDS.claimFloorUsd.toFixed(2)} USDC per claim, and are credited only after
         the operation has settled and its fee is confirmed. An inviter, once confirmed, cannot be changed;
-        self-referral and circular referrals are refused. Points record activity on the Service, have no
+        self-referral and circular referrals are refused. A wallet&rsquo;s rank is set by its rank points over the
+        last {REWARDS.rankWindowDays} days — one for each dollar of fee Ryntra received on the wallet&rsquo;s own
+        operations and on those of wallets it invited; rank points, like Points, have no cash value and cannot
+        be transferred. Points record activity on the Service, have no
         cash value, cannot be transferred, and carry no promise of any token, airdrop or conversion. We may
         change, suspend or end the Rewards and Points programme; a change applies to operations made after
         it takes effect.

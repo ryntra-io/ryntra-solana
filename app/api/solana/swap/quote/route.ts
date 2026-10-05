@@ -11,12 +11,10 @@ import { readMintAccount, type MintReadSuccess } from "@/lib/solana/mint";
 import { buildPassport } from "@/lib/solana/passport";
 import { evaluateOwnerPolicy } from "@/lib/solana/policy";
 import { buildTransferPreflight } from "@/lib/solana/preflight";
-import { askOnceMoreAfterRate } from "@/lib/solana/jupiter-ask-again";
-import { fetchJupiterOrder, resolveJupiterSwapEndpoint } from "@/lib/solana/quotes";
+import { resolveJupiterSwapEndpoint } from "@/lib/solana/quotes";
 import { eventStateAt } from "@/lib/stocks/instrument";
 import { lifecycleEventFor } from "@/lib/stocks/lifecycle-events";
 import { isRetiredMint, RETIRED_REASON } from "@/lib/stocks/retired";
-import { verifiedJupiterReferral } from "@/lib/solana/referral-account.server";
 import { resolveServiceFeeConfig } from "@/lib/swap/service-fee.server";
 import { createSolanaRpcHandle } from "@/lib/solana/rpc";
 import { serverSendPolicy } from "@/lib/solana/send-safety";
@@ -24,7 +22,6 @@ import { buildSwapQuoteReview } from "@/lib/solana/swap-review";
 import type { SolanaAssetPassport } from "@/lib/solana/types";
 import { awaitCheckContext, readCheckContext, swapCheckOf } from "@/lib/stocks/check.server";
 import { chooseQuote } from "@/lib/core/solana-swap/fee-route.server";
-import { mutationOriginAllowed } from "@/lib/security";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -37,7 +34,8 @@ export const maxDuration = 30;
  * The Trade page used to answer only through a full page navigation, which is
  * why its numbers arrived as a document rather than as a swap. This route
  * gives the card the same server-built truth on every keystroke-settled
- * amount: one keyed `/order` without a taker, both Asset Passports read live,
+ * amount: fee policy v2's lane choice (`chooseQuote`, the same for the web and
+ * the phone), both Asset Passports read live,
  * and the review policy's verdict over the output mint. It builds no
  * transaction, asks for no wallet and cannot sign — the executable path stays
  * `../order` and `../execute`.
@@ -125,16 +123,10 @@ export async function POST(request: Request) {
   }
 
   const config = resolveServiceFeeConfig();
-  /* Fee policy v2 prices the lane the web's Review will be built on; the phone and any other caller keep `/order` as before until the mobile line reads 1.24.0. A quote moves nothing: refused for rate alone, it is asked once more after the provider's own short pause (DECISIONS 2026-09-15). */
-  const fromSite = mutationOriginAllowed(request.url, request.headers.get("origin"), request.headers.get("sec-fetch-site"));
-  const result = fromSite
-    ? await chooseQuote({ inputMint: input.inputMint, outputMint: input.outputMint, amountRaw: input.amountRaw, selection, handle, config }).then((choice) =>
-        choice.ok ? ({ ok: true, order: choice.order } as const) : choice.failure,
-      )
-    : await askOnceMoreAfterRate(async () => {
-        const referral = (await verifiedJupiterReferral(config)).referral;
-        return fetchJupiterOrder({ inputMint: input.inputMint, outputMint: input.outputMint, amountRaw: input.amountRaw, referral }, selection);
-      });
+  /* Fee policy v2 prices the lane the Review will be built on, for the web and the phone alike (the phone reads 1.24.0 since M30): one product, one fee for the same purchase. */
+  const result = await chooseQuote({ inputMint: input.inputMint, outputMint: input.outputMint, amountRaw: input.amountRaw, selection, handle, config }).then((choice) =>
+    choice.ok ? ({ ok: true, order: choice.order } as const) : choice.failure,
+  );
   if (!result.ok) {
     const status = result.code === "NO_ROUTE" ? 409 : result.code === "RATE_LIMITED" ? 429 : 502;
     return failure(status, `QUOTE_${result.code}`, result.reason, rate, {

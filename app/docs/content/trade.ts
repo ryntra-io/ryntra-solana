@@ -31,14 +31,14 @@ export const SWAP: DocPage = {
           ["Assets", "Any Solana token with a market; verified tokens are marked"],
           ["Quote", "Live, from the aggregated Solana liquidity; refreshes while you look"],
           ["Ryntra service fee", `${FEES.swap} of the amount by the token — none from dollar to dollar — with its amount in the quote you see`],
-          ["Your net cost", `${FEES.swapNetOfCashback} after the ${REWARDS.cashbackPercent}% cashback in Rewards`],
+          ["Your net cost", `${FEES.swapNetOfCashback} after the ${REWARDS.cashbackPercent}% cashback in Rewards when the whole fee reaches Ryntra; ${FEES.swapNetOfCashbackOrder} when Jupiter's order route carries the swap and keeps its share of the fee — major coins carry no Ryntra fee on that route`],
           ["Signature", "Your wallet's, for the exact transaction you reviewed"],
         ],
         [
           ["Активи", "Будь-який токен Solana, що має ринок; перевірені токени позначено"],
           ["Котирування", "Живе, з агрегованої ліквідності Solana; оновлюється, поки ти дивишся"],
           ["Комісія Ryntra", `${FEES_UK.swap} від суми залежно від токена — між доларами немає — із сумою в котируванні, яке ти бачиш`],
-          ["Твоя чиста вартість", `${FEES_UK.swapNetOfCashback} після кешбеку ${REWARDS.cashbackPercent}% у Винагородах`],
+          ["Твоя чиста вартість", `${FEES_UK.swapNetOfCashback} після кешбеку ${REWARDS.cashbackPercent}% у Винагородах, коли вся комісія доходить до Ryntra; ${FEES_UK.swapNetOfCashbackOrder}, коли обмін іде маршрутом замовлень Jupiter і він лишає собі частку комісії — великі монети на цьому маршруті комісії Ryntra не мають`],
           ["Підпис", "Твого гаманця — рівно на ту транзакцію, що була в «Перевірці»"],
         ],
       ),
@@ -68,13 +68,13 @@ export const SWAP: DocPage = {
         { en: ["Cost", "Who receives it", "Where you see it"], uk: ["Витрата", "Хто отримує", "Де ти це бачиш"] },
         {
           en: [
-            [`Ryntra service fee, ${FEES.swap}`, "Ryntra — half of it comes back to you as cashback", "In the quote and in the Review"],
+            [`Ryntra service fee, ${FEES.swap}`, "Ryntra — half of what it receives comes back to you as cashback", "In the quote and in the Review"],
             ["Network fee", "The Solana network", "In the Review, in SOL"],
             ["Token account reserve", "Kept by your own new token account; refundable when you close it", "In the Review, as the account reserve"],
             ["Price impact and slippage", "The market, not Ryntra", "In the quote; the minimum you receive bounds it"],
           ],
           uk: [
-            [`Комісія Ryntra, ${FEES_UK.swap}`, "Ryntra — половина повертається тобі кешбеком", "У котируванні й у «Перевірці»"],
+            [`Комісія Ryntra, ${FEES_UK.swap}`, "Ryntra — половина отриманого повертається тобі кешбеком", "У котируванні й у «Перевірці»"],
             ["Плата мережі", "Мережа Solana", "У «Перевірці», в SOL"],
             ["Резерв рахунку токена", "Лишається на твоєму новому рахунку токена; повертається, коли ти його закриваєш", "У «Перевірці», як резерв рахунку"],
             ["Вплив на ціну і прослизання", "Ринок, не Ryntra", "У котируванні; мінімум, який ти отримаєш, їх обмежує"],

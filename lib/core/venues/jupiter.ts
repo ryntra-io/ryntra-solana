@@ -29,7 +29,7 @@ import {
 import type { ServiceFeeConfig } from "../../swap/service-fee.ts";
 import { findCapability, resolveFeeIdentity } from "../capabilities.ts";
 import type { FeeFlow } from "../fee-policy.ts";
-import { chooseExecutableOrder, type FeePolicyCarrier } from "../solana-swap/fee-route.server.ts";
+import { chooseExecutableOrder } from "../solana-swap/fee-route.server.ts";
 import type { Attribution, FeeIdentity, Product, Quote, TradeIntent, TradeVenue, TradingAccount, UnsignedTx } from "../contracts.ts";
 
 /** The venue refused to price or build; its answer is carried as it came. */
@@ -80,11 +80,11 @@ export function createJupiterSwapVenue(args: Readonly<{
   /** The configured addresses, for `identity`. */
   config: ServiceFeeConfig;
   /**
-   * Fee policy v2's lane choice for the person's own order: who carries the
-   * request and the RPC that sizes and checks `/build`'s bytes. Absent, the
+   * Fee policy v2's lane choice for the person's own order: the RPC that
+   * sizes and checks `/build`'s bytes. Absent, the
    * venue asks `/order` with `referral` as production did before the policy.
    */
-  lanes?: Readonly<{ carrier: FeePolicyCarrier; handle: SolanaRpcHandle; onChoice?: (choice: Readonly<{ flow: FeeFlow; lane: "BUILD" | "ORDER" }>) => void }>;
+  lanes?: Readonly<{ handle: SolanaRpcHandle; onChoice?: (choice: Readonly<{ flow: FeeFlow; lane: "BUILD" | "ORDER" }>) => void }>;
 }>): JupiterSwapVenue {
   const { endpoint, referral, config, lanes } = args;
   return {
@@ -97,7 +97,6 @@ export function createJupiterSwapVenue(args: Readonly<{
           amountRaw: intent.amountRaw,
           taker: intent.account.address,
           ...(intent.slippageBps !== undefined ? { slippageBps: intent.slippageBps } : {}),
-          carrier: lanes.carrier,
           endpoint,
           handle: lanes.handle,
           config,
