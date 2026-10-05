@@ -54,7 +54,7 @@ import {
   getTokenMetadata,
   getTransferHook,
 } from "@solana/spl-token";
-import { Keypair, PublicKey, Transaction, type Connection, type TransactionInstruction } from "@solana/web3.js";
+import { Keypair, PublicKey, SystemProgram, Transaction, VersionedTransaction, type Connection, type TransactionInstruction } from "@solana/web3.js";
 import BN from "bn.js";
 
 import type { Address, CurveProgress, LaunchParams, LaunchVenue, UnsignedTx } from "../../contracts.ts";
@@ -78,6 +78,7 @@ export class LaunchRefusal extends Error {
     | "CONFIG_NOT_HONEST"
     | "NO_POOL_PAYER"
     | "CREATOR_BUY_ABOVE_CAP"
+    | "PAYER_NOT_COVERED"
     | "NO_POOL"
     | "NOT_GRADUATED"
     | "ALREADY_MIGRATED"
@@ -91,8 +92,19 @@ export class LaunchRefusal extends Error {
   }
 }
 
-/** A built launch: the bytes, and the token and curve they create. */
-export type LaunchBuild = UnsignedTx & Readonly<{ token: Address; pool: Address; config: Address; creatorFirstBuyOutRaw: string }>;
+/**
+ * A built launch: the bytes, and the token and curve they create. When the
+ * creator covers the pool payer, `payerCoveredLamports` is what the creator
+ * hands the payer in the same transaction — the rent of every account the
+ * creation opens and the network fee — and `payerNetLamports` is the payer's
+ * own balance change the network simulated for the sealed bytes (never below
+ * zero, or the build is refused).
+ */
+export type LaunchBuild = UnsignedTx &
+  Readonly<{ token: Address; pool: Address; config: Address; pairMint: Address; creatorFirstBuyOutRaw: string; payerCoveredLamports: string; payerNetLamports: string | null; /** The creator's SOL the network simulated the sealed bytes taking: the pool payer covered, the creator's own token accounts. */ creatorSpendLamports: string | null }>;
+
+/** What the creator's first purchase would buy on a fresh curve: the tokens for an amount, or the most it may spend under the cap. */
+export type FirstBuyQuote = Readonly<{ preset: LaunchPresetId; config: Address; pairMint: Address; amountInRaw: string; tokensOutRaw: string; capRaw: string; maxAmountInRaw: string; withinCap: boolean }>;
 
 /** A built config: the bytes, the config's address, and the curve's own numbers. */
 export type ConfigBuild = UnsignedTx & Readonly<{ config: Address; migrationQuoteThresholdRaw: string; fields: HonestConfigFields }>;
@@ -103,7 +115,14 @@ export type FeeKind = "curve" | "graduation" | "lp";
 export type MeteoraDbcLaunchVenue = LaunchVenue &
   Readonly<{
     buildConfig(args: Readonly<{ preset: LaunchPresetId; quote: PresetQuote; feeClaimer: Address; leftoverReceiver: Address; payer: Address; /** The config account's own fresh key, kept by the caller so a retried signature keeps one address; absent, a new one. */ configKey?: Keypair }>): Promise<ConfigBuild>;
-    create(params: LaunchParams): Promise<LaunchBuild>;
+    /**
+     * The token and the creator's first purchase. With `creatorCoversPayer`
+     * the creator's first instruction pays Ryntra's pool payer back the rent
+     * and fee the simulation shows it spending, and the sealed bytes are
+     * simulated again: a payer that would still lose lamports refuses the build.
+     */
+    create(params: LaunchParams, options?: Readonly<{ creatorCoversPayer?: boolean }>): Promise<LaunchBuild>;
+    firstBuyQuote(preset: LaunchPresetId, amountInRaw: string, pairMint?: Address): Promise<FirstBuyQuote>;
     /** The instructions of a fee claim, for the signer to wrap — the partner's multisig wraps them in a vault transaction. */
     claimFeeInstructions(role: "partner" | "creator", token: Address, kind?: FeeKind): Promise<readonly TransactionInstruction[]>;
     migrate(token: Address, payer: Address): Promise<UnsignedTx>;
@@ -167,6 +186,8 @@ export type LaunchObservation = Readonly<{
     metadataUpdateAuthority: Address | null;
     name: string | null;
     symbol: string | null;
+    /** The metadata URI the mint names for ever. */
+    uri: string | null;
   }>;
   curve: Readonly<{
     quoteReserveRaw: string;
@@ -298,6 +319,15 @@ export function configsOfPreset(configs: PresetConfigs, preset: LaunchPresetId):
   return typeof entry === "string" ? [entry] : entry;
 }
 
+/*
+ * A DBC config never changes once created, so its account is read once per
+ * process and network: every launch and every token read names one of a
+ * handful of configs, and a public RPC answers a burst of repeated reads with
+ * 429. Keyed by the connection's endpoint and the address; a config that is
+ * not there is not remembered.
+ */
+const CONFIG_ACCOUNTS = new Map<string, Promise<Buffer | null>>();
+
 export function createMeteoraDbcLaunchVenue(args: Readonly<{
   connection: Connection;
   configs: PresetConfigs;
@@ -318,21 +348,58 @@ export function createMeteoraDbcLaunchVenue(args: Readonly<{
     return { network: "solana", wireBase64: toBase64(tx), validUntil: String(latest.lastValidBlockHeight) };
   }
 
+  /** The lamports each account's balance loses when the network simulates these bytes; negative when it gains. */
+  async function spendOf(tx: Transaction, accounts: readonly PublicKey[]): Promise<bigint[]> {
+    const before = await Promise.all(accounts.map(async (account) => BigInt(await connection.getBalance(account, "confirmed"))));
+    const simulated = await connection.simulateTransaction(new VersionedTransaction(tx.compileMessage()), {
+      sigVerify: false,
+      replaceRecentBlockhash: true,
+      commitment: "confirmed",
+      accounts: { encoding: "base64", addresses: accounts.map((account) => account.toBase58()) },
+    });
+    if (simulated.value.err) throw new LaunchRefusal("PAYER_NOT_COVERED", `The creation does not simulate: ${JSON.stringify(simulated.value.err)}.`);
+    return accounts.map((_, index) => {
+      const after = simulated.value.accounts?.[index]?.lamports;
+      if (after === undefined || after === null) throw new LaunchRefusal("PAYER_NOT_COVERED", "The simulation did not return a balance.");
+      return (before[index] ?? 0n) - BigInt(after);
+    });
+  }
+  const payerSpend = async (tx: Transaction, payer: PublicKey) => (await spendOf(tx, [payer]))[0] ?? 0n;
+
+  /** A config account's bytes, read once (configs are immutable). */
+  function configAccount(config: PublicKey): Promise<Buffer | null> {
+    const key = `${connection.rpcEndpoint}:${config.toBase58()}`;
+    let read = CONFIG_ACCOUNTS.get(key);
+    if (!read) {
+      read = connection.getAccountInfo(config, "confirmed").then((info) => (info ? Buffer.from(info.data) : null));
+      CONFIG_ACCOUNTS.set(key, read);
+      read.then((data) => (data ? undefined : CONFIG_ACCOUNTS.delete(key))).catch(() => CONFIG_ACCOUNTS.delete(key));
+    }
+    return read;
+  }
+
   async function configOf(config: PublicKey): Promise<PoolConfig> {
-    const state = await client.state.getPoolConfig(config);
-    if (!state) throw new LaunchRefusal("NO_CONFIG", `No DBC config at ${config.toBase58()}.`);
-    return state;
+    const data = await configAccount(config);
+    if (!data) throw new LaunchRefusal("NO_CONFIG", `No DBC config at ${config.toBase58()}.`);
+    const coder = accountsCoder();
+    const head = Buffer.from(data.subarray(0, 8));
+    const name = head.equals(Buffer.from(coder.accountDiscriminator("configWithTransferHook"))) ? "configWithTransferHook" : "poolConfig";
+    return coder.decode<PoolConfig>(name, data);
   }
 
   async function poolOf(token: Address) {
     const baseMint = new PublicKey(token);
     /* A Ryntra launch sits on one of the presets' configs: its curve's address follows from it, read directly. */
-    for (const { config: address } of allConfigs()) {
+    const candidates = (await Promise.all(allConfigs().map(async ({ config: address }) => {
       const config = await configOf(new PublicKey(address)).catch(() => null);
-      if (!config) continue;
-      const derived = deriveDbcPoolAddress(config.quoteMint, baseMint, new PublicKey(address));
-      const account = await client.state.getPool(derived).catch(() => null);
-      if (account) return { publicKey: derived, account };
+      return config ? deriveDbcPoolAddress(config.quoteMint, baseMint, new PublicKey(address)) : null;
+    }))).filter((address): address is PublicKey => address !== null);
+    /* One read for every candidate curve: only the config the token was launched on has an account there. */
+    const accounts = candidates.length ? await connection.getMultipleAccountsInfo(candidates, "confirmed").catch(() => []) : [];
+    const found = accounts.findIndex((info) => info !== null);
+    if (found >= 0) {
+      const account = await client.state.getPool(candidates[found]!).catch(() => null);
+      if (account) return { publicKey: candidates[found]!, account };
     }
     const pool = await client.state.getPoolByBaseMint(baseMint);
     if (!pool) throw new LaunchRefusal("NO_POOL", "No curve for this token.");
@@ -358,13 +425,13 @@ export function createMeteoraDbcLaunchVenue(args: Readonly<{
   }
 
   async function readConfig(config: Address): Promise<ConfigFields> {
-    const info = await connection.getAccountInfo(new PublicKey(config), "confirmed");
-    if (!info) throw new LaunchRefusal("NO_CONFIG", `No DBC config at ${config}.`);
+    const data = await configAccount(new PublicKey(config));
+    if (!data) throw new LaunchRefusal("NO_CONFIG", `No DBC config at ${config}.`);
     const hookDiscriminator = accountsCoder().accountDiscriminator("configWithTransferHook");
-    if (Buffer.from(info.data.subarray(0, 8)).equals(Buffer.from(hookDiscriminator))) {
+    if (Buffer.from(data.subarray(0, 8)).equals(Buffer.from(hookDiscriminator))) {
       return { ...configFieldsOf(config, await configOf(new PublicKey(config)), true) };
     }
-    return configFieldsFromData(config, Buffer.from(info.data));
+    return configFieldsFromData(config, data);
   }
 
   /** The config a launch goes on: the preset's one, or — for «Спільнота» — the one quoted in the community's token. */
@@ -420,7 +487,7 @@ export function createMeteoraDbcLaunchVenue(args: Readonly<{
       return { ...sealed, config: config.publicKey.toBase58(), migrationQuoteThresholdRaw: curve.migrationQuoteThreshold.toString(), fields };
     },
 
-    async create(params: LaunchParams): Promise<LaunchBuild> {
+    async create(params: LaunchParams, options: Readonly<{ creatorCoversPayer?: boolean }> = {}): Promise<LaunchBuild> {
       const preset = launchPreset(params.preset);
       if (!preset) throw new LaunchRefusal("UNKNOWN_PRESET", `No preset «${params.preset}».`);
       /* Ryntra's pool payer pays and signs every Ryntra launch: that signature is what makes a pool on a public config Ryntra's. */
@@ -453,13 +520,66 @@ export function createMeteoraDbcLaunchVenue(args: Readonly<{
             firstBuyParam: { buyer: creator, receiver: creator, buyAmount: buyRaw, minimumAmountOut: outRaw, referralTokenAccount: null },
           })
         : await client.creator.createPool(createPoolParam);
+      let covered = 0n;
+      let net: bigint | null = null;
+      let creatorSpend: bigint | null = null;
+      if (options.creatorCoversPayer) {
+        /* What the payer spends is what the network says it spends: the simulated balance already counts the
+           signatures' fee and the rent of each account the creation opens. The creator hands exactly that over first,
+           in the same transaction; the sealed bytes are simulated again below and must leave the payer whole. */
+        tx.feePayer = payer;
+        tx.recentBlockhash = (await connection.getLatestBlockhash("confirmed")).blockhash;
+        covered = await payerSpend(tx, payer);
+        tx.instructions.unshift(SystemProgram.transfer({ fromPubkey: creator, toPubkey: payer, lamports: covered }));
+      }
       const sealed = await seal(tx, payer, [mint]);
+      if (options.creatorCoversPayer) {
+        const [payerSpent = 0n, creatorSpent = 0n] = await spendOf(Transaction.from(Buffer.from(sealed.wireBase64, "base64")), [payer, creator]);
+        net = -payerSpent;
+        creatorSpend = creatorSpent;
+        /* Exactly even: the payer loses nothing and the creator hands over nothing beyond what the payer spends. */
+        if (net !== 0n) throw new LaunchRefusal("PAYER_NOT_COVERED", `The pool payer's balance would change by ${net} lamports on this launch.`);
+      }
       return {
         ...sealed,
         token: mint.publicKey.toBase58(),
         pool: deriveDbcPoolAddress(new PublicKey(fields.quoteMint), mint.publicKey, config).toBase58(),
         config: fields.config,
+        pairMint: fields.quoteMint,
         creatorFirstBuyOutRaw: outRaw.toString(),
+        payerCoveredLamports: covered.toString(),
+        payerNetLamports: net === null ? null : net.toString(),
+        creatorSpendLamports: creatorSpend === null ? null : creatorSpend.toString(),
+      };
+    },
+
+    async firstBuyQuote(presetId, amountInRaw, pairMint) {
+      const preset = launchPreset(presetId);
+      if (!preset) throw new LaunchRefusal("UNKNOWN_PRESET", `No preset «${presetId}».`);
+      const fields = await configFor(preset, pairMint);
+      const configState = await configOf(new PublicKey(fields.config));
+      const cap = creatorFirstBuyCapRaw(preset);
+      const amount = new BN(amountInRaw);
+      const out = amount.gtn(0)
+        ? new BN(client.pool.getQuoteFromInputAmount({ config: configState, swapBaseForQuote: false, amountIn: amount, eligibleForFirstSwapWithMinFee: true, slippageBps: 0 }).outputAmount.toString())
+        : new BN(0);
+      /* The most the creator may spend: the input that buys exactly the cap on the fresh curve, rounded down so it stays under. */
+      const exact = client.pool.getQuoteFromOutputAmount({ config: configState, swapBaseForQuote: false, amountOut: new BN(cap.toString()), eligibleForFirstSwapWithMinFee: true, slippageBps: 0 });
+      let maxIn = new BN(exact.includedFeeInputAmount.toString());
+      while (maxIn.gtn(0)) {
+        const got = BigInt(client.pool.getQuoteFromInputAmount({ config: configState, swapBaseForQuote: false, amountIn: maxIn, eligibleForFirstSwapWithMinFee: true, slippageBps: 0 }).outputAmount.toString());
+        if (got <= cap) break;
+        maxIn = maxIn.subn(1);
+      }
+      return {
+        preset: preset.id,
+        config: fields.config,
+        pairMint: fields.quoteMint,
+        amountInRaw: amount.toString(),
+        tokensOutRaw: out.toString(),
+        capRaw: cap.toString(),
+        maxAmountInRaw: maxIn.toString(),
+        withinCap: BigInt(out.toString()) <= cap,
       };
     },
 
@@ -626,6 +746,7 @@ export function createMeteoraDbcLaunchVenue(args: Readonly<{
           metadataUpdateAuthority: metadata?.updateAuthority && !metadata.updateAuthority.equals(PublicKey.default) ? metadata.updateAuthority.toBase58() : null,
           name: metadata?.name ?? null,
           symbol: metadata?.symbol ?? null,
+          uri: metadata?.uri ?? null,
         },
         curve: {
           quoteReserveRaw: reserve.toString(),

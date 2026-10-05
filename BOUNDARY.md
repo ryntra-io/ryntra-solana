@@ -9,10 +9,10 @@ moved counts as new. Generated at every update from the development history.
 
 | Since the tag | Files |
 |---|---|
-| New | 1,064 |
-| Changed | 806 |
-| Unchanged | 933 |
-| Lines added / removed | +275,655 / −19,729 |
+| New | 1,090 |
+| Changed | 807 |
+| Unchanged | 932 |
+| Lines added / removed | +280,676 / −19,725 |
 
 ## New since the tag
 
@@ -62,6 +62,8 @@ moved counts as new. Generated at every update from the development history.
 - `app/api/cron/benefits/route.ts`
 - `app/api/cron/monitoring/route.ts`
 - `app/api/cron/reconcile/route.ts`
+- `app/api/launch/image/[id]/route.ts`
+- `app/api/launch/metadata/[id]/route.ts`
 - `app/api/monitoring/route.ts`
 - `app/api/predictions/account/route.ts`
 - `app/api/predictions/discover/route.ts`
@@ -109,6 +111,12 @@ moved counts as new. Generated at every update from the development history.
 - `app/api/v1/auth/session/route.ts`
 - `app/api/v1/auth/verify/route.ts`
 - `app/api/v1/capabilities/route.ts`
+- `app/api/v1/launch/[mint]/route.ts`
+- `app/api/v1/launch/build/route.ts`
+- `app/api/v1/launch/metadata/route.ts`
+- `app/api/v1/launch/presets/route.ts`
+- `app/api/v1/launch/quote/route.ts`
+- `app/api/v1/launch/submit/route.ts`
 - `app/api/v1/money/recipient/route.ts`
 - `app/api/v1/money/send/returned/route.ts`
 - `app/api/v1/notifications/devices/[deviceId]/route.ts`
@@ -189,6 +197,13 @@ moved counts as new. Generated at every update from the development history.
 - `app/app/invest/use-wallet-reach.ts`
 - `app/app/invest/watch-surfaces.test.mjs`
 - `app/app/invest/watch.module.css`
+- `app/app/launch/[mint]/page.tsx`
+- `app/app/launch/launch-format.ts`
+- `app/app/launch/launch-words.ts`
+- `app/app/launch/launch.module.css`
+- `app/app/launch/new/launch-flow.tsx`
+- `app/app/launch/new/page.tsx`
+- `app/app/launch/share-link.tsx`
 - `app/app/lens/ask-ryn-lens.tsx`
 - `app/app/lens/lens-open.ts`
 - `app/app/lens/lens-panel.tsx`
@@ -747,6 +762,9 @@ moved counts as new. Generated at every update from the development history.
 - `lib/core/core.test.mjs`
 - `lib/core/fee-policy.test.mjs`
 - `lib/core/fee-policy.ts`
+- `lib/core/launch/creator-lock.ts`
+- `lib/core/launch/moderation.test.mjs`
+- `lib/core/launch/moderation.ts`
 - `lib/core/networks/solana.ts`
 - `lib/core/pipeline.ts`
 - `lib/core/solana-swap/fee-route.server.ts`
@@ -756,6 +774,7 @@ moved counts as new. Generated at every update from the development history.
 - `lib/core/solana-swap/refusal.ts`
 - `lib/core/solana-swap/settle.ts`
 - `lib/core/venues/jupiter.ts`
+- `lib/core/venues/meteora-dbc/creator-lock.server.ts`
 - `lib/core/venues/meteora-dbc/fixtures/devnet-classic-config.json`
 - `lib/core/venues/meteora-dbc/fixtures/devnet-classic-creation.json`
 - `lib/core/venues/meteora-dbc/fixtures/devnet-classic-observation.json`
@@ -792,6 +811,13 @@ moved counts as new. Generated at every update from the development history.
 - `lib/guard/service.fixture.mjs`
 - `lib/guard/wallet-authorization.ts`
 - `lib/home/portfolio/adapters/conformance.fixture.mjs`
+- `lib/launch/config.server.ts`
+- `lib/launch/flow.server.ts`
+- `lib/launch/form.ts`
+- `lib/launch/launch.test.mjs`
+- `lib/launch/metadata.server.ts`
+- `lib/launch/runtime.server.ts`
+- `lib/launch/view.server.ts`
 - `lib/legal/candidate.ts`
 - `lib/liquidity/liquidity.test.mjs`
 - `lib/liquidity/meteora/client.server.ts`
@@ -1812,6 +1838,7 @@ moved counts as new. Generated at every update from the development history.
 - `lib/solana/wallet-modification.test.mjs`
 - `lib/solana/wallet-restore.test.mjs`
 - `lib/solana/wallet-signin.client.ts`
+- `lib/solana/wallet.client.ts`
 - `lib/spot/candles.server.ts`
 - `lib/spot/candles.test.mjs`
 - `lib/spot/candles.ts`

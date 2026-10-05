@@ -19,6 +19,7 @@ import { pushProviderConfigured } from "../../monitoring/push.ts";
 import { ASSET_CAP_PCT, CAPS_FROM_USD, PRIVATE_CAP_PCT } from "../../monitoring/portfolio-risk.ts";
 import { ABOVE_EXCHANGE_PCT, NEAR_LIMIT_PCT, WATCH_PRICE_MAX_AGE_MS, WATCH_STATES } from "../../monitoring/watch-state.ts";
 import { DEFAULT_PAYMENT_EXPIRATION } from "../../pay/model.ts";
+import { launchNetwork } from "../../launch/config.server.ts";
 import { LOSS_LIMIT_PRESETS } from "../../plans/purchase.ts";
 import { resolveServiceFeeConfig } from "../../swap/service-fee.server.ts";
 import {
@@ -205,6 +206,24 @@ export function buildCapabilities(deps: Readonly<{ env?: NodeJS.ProcessEnv; now?
       returned: "/api/v1/money/send/returned",
       transfer: "/api/solana/transfer",
     },
+    /* 1.25.0: Ryntra Launch — only where it is served (the devnet stand now), with the network it launches on. */
+    ...launchCapability(env),
     observedAt: (deps.now ?? (() => new Date()))().toISOString(),
+  };
+}
+
+function launchCapability(env: NodeJS.ProcessEnv): Pick<Capabilities, "launch"> {
+  const network = launchNetwork(env);
+  if (!network) return {};
+  return {
+    launch: {
+      network: network.chain,
+      presets: "/api/v1/launch/presets",
+      metadata: "/api/v1/launch/metadata",
+      quote: "/api/v1/launch/quote",
+      build: "/api/v1/launch/build",
+      submit: "/api/v1/launch/submit",
+      token: "/api/v1/launch/{mint}",
+    },
   };
 }

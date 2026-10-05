@@ -15,10 +15,12 @@
 
 import { z } from "zod";
 
+import type { CreatorLockObservation } from "./creator-lock.server.ts";
 import type { CreationObservation, LaunchObservation } from "./launch.server.ts";
 import { LAUNCH_PRESET_IDS, creatorFirstBuyCapRaw, launchPreset } from "./presets.ts";
 
 const TOKEN_2022_PROGRAM = "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb";
+const MET_LOCK_PROGRAM = "LocpQgucEQHbqNABEYvBvwoxCPsSbG91A1QaQhQQqjn";
 
 export const LAUNCH_RECEIPT_FACTS_SOURCE = "ryntra.solana.launch-receipt.facts@1";
 
@@ -42,6 +44,8 @@ export const LAUNCH_MARK_CODES = [
   "CURVE_HOLDS_FUNDS",
   /** After graduation: every share of the pool's liquidity is locked for ever. */
   "LP_LOCKED_FOREVER",
+  /** The creator put the tokens of their first purchase under a lock no one can cancel. */
+  "CREATOR_BUY_LOCKED",
 ] as const;
 export type LaunchMarkCode = (typeof LAUNCH_MARK_CODES)[number];
 
@@ -59,6 +63,8 @@ export const LaunchReceiptFactsSchema = z
     creator: Address,
     created: z.object({ signature: Signature, slot: z.number().int().nonnegative(), at: z.string().datetime({ offset: true }).nullable() }).strict(),
     creatorFirstBuy: z.object({ quoteInRaw: Raw, tokensOutRaw: Raw, capRaw: Raw }).strict().nullable(),
+    /** The creator's lock of that purchase, when the chain shows one that holds it; absent or null, none. */
+    creatorLock: z.object({ escrow: Address, lockedRaw: Raw, cliffAt: z.string().datetime({ offset: true }), endsAt: z.string().datetime({ offset: true }) }).strict().nullable().optional(),
     token2022: z
       .object({
         supplyRaw: Raw,
@@ -133,6 +139,28 @@ export function launchObservationProblems(observation: LaunchObservation): reado
   return problems;
 }
 
+/**
+ * Why a lock is not the creator's lock of their first purchase, each in a
+ * plain line; an empty list means it is: Met Lock's escrow of this token, made
+ * by and for the creator, holding at least the purchase, that nobody can
+ * cancel or redirect and that was not cancelled.
+ */
+export function creatorLockProblems(observation: Pick<LaunchObservation, "token" | "creator">, creation: Pick<CreationObservation, "creatorTokensOutRaw">, lock: CreatorLockObservation, nowSeconds: number): readonly string[] {
+  const problems: string[] = [];
+  const bought = BigInt(creation.creatorTokensOutRaw);
+  if (lock.program !== MET_LOCK_PROGRAM) problems.push("the escrow is not Met Lock's");
+  if (lock.mint !== observation.token) problems.push("the escrow locks another token");
+  if (lock.creator !== observation.creator || lock.recipient !== observation.creator) problems.push("the escrow is not the creator's own");
+  if (lock.cancelMode !== 0 || lock.updateRecipientMode !== 0) problems.push("the escrow can be cancelled or redirected");
+  if (lock.cancelledAt !== 0) problems.push("the escrow was cancelled");
+  if (bought <= 0n) problems.push("the creator made no first purchase");
+  if (BigInt(lock.totalRaw) < bought) problems.push("the escrow locks less than the first purchase");
+  if (BigInt(lock.heldRaw) < BigInt(lock.totalRaw) - BigInt(lock.claimedRaw)) problems.push("the escrow does not hold what it owes");
+  /* A lock that has run its course locks nothing: the mark is a fact of now, not of the launch day. */
+  if (nowSeconds >= lock.endsAt || BigInt(lock.claimedRaw) >= BigInt(lock.totalRaw)) problems.push("the lock has ended");
+  return problems;
+}
+
 /** Why a creation transaction is not a Ryntra launch's: Ryntra's pool payer paid and signed it, and the creator's purchase in it is under the cap. */
 export function launchCreationProblems(observation: LaunchObservation, creation: CreationObservation, ryntraPoolPayer: string): readonly string[] {
   const problems: string[] = [];
@@ -159,6 +187,10 @@ export type BuildLaunchReceiptInput = Readonly<{
   creation: CreationObservation;
   /** Ryntra's pool payer on this network — the signature that makes a launch Ryntra's. */
   ryntraPoolPayer: string;
+  /** The creator's lock the launch recorded, read from the chain; a lock that does not hold draws no mark. */
+  creatorLock?: CreatorLockObservation | null;
+  /** Where Ryntra serves launch metadata (`<origin>/api/launch/metadata/`): a mint whose URI points elsewhere could show anything, so its metadata is not «fixed». */
+  metadataUriPrefix?: string;
   observedAt: string;
 }>;
 
@@ -166,6 +198,10 @@ export type BuildLaunchReceiptInput = Readonly<{
 export function buildLaunchReceiptFacts(input: BuildLaunchReceiptInput): LaunchReceiptFacts {
   const { observation, creation } = input;
   const problems = [...launchObservationProblems(observation), ...launchCreationProblems(observation, creation, input.ryntraPoolPayer)];
+  if (input.metadataUriPrefix !== undefined) {
+    const uri = observation.mint.uri ?? "";
+    if (!uri.startsWith(input.metadataUriPrefix) || !/^[0-9a-f]{64}$/.test(uri.slice(input.metadataUriPrefix.length))) problems.push("the metadata lives outside Ryntra's content-addressed store");
+  }
   if (problems.length) throw new Error(`Not a Ryntra launch: ${problems.join("; ")}.`);
   const preset = launchPreset(observation.preset ?? "");
   if (!preset) throw new Error("Not a Ryntra launch: no preset.");
@@ -179,6 +215,8 @@ export function buildLaunchReceiptFacts(input: BuildLaunchReceiptInput): LaunchR
   ];
   const graduated = observation.graduated;
   if (graduated) for (const position of graduated.positions) marks.push({ code: "LP_LOCKED_FOREVER", account: position.position });
+  const lock = input.creatorLock && creatorLockProblems(observation, creation, input.creatorLock, Math.floor(Date.parse(input.observedAt) / 1000)).length === 0 ? input.creatorLock : null;
+  if (lock) marks.push({ code: "CREATOR_BUY_LOCKED", account: lock.escrow });
   return LaunchReceiptFactsSchema.parse({
     source: LAUNCH_RECEIPT_FACTS_SOURCE,
     network: "solana",
@@ -194,6 +232,7 @@ export function buildLaunchReceiptFacts(input: BuildLaunchReceiptInput): LaunchR
       at: creation.blockTime === null ? null : new Date(creation.blockTime * 1000).toISOString(),
     },
     creatorFirstBuy: bought ? { quoteInRaw: creation.creatorQuoteInRaw, tokensOutRaw: creation.creatorTokensOutRaw, capRaw: creatorFirstBuyCapRaw(preset).toString() } : null,
+    creatorLock: lock ? { escrow: lock.escrow, lockedRaw: lock.totalRaw, cliffAt: new Date(lock.cliffAt * 1000).toISOString(), endsAt: new Date(lock.endsAt * 1000).toISOString() } : null,
     token2022: {
       supplyRaw: observation.mint.supplyRaw,
       decimals: observation.mint.decimals,

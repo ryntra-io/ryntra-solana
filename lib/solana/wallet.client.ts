@@ -478,3 +478,51 @@ export async function signTransaction(args: {
     };
   }
 }
+
+export type SignManyResult =
+  | Readonly<{ ok: true; signedWireBase64: readonly string[] }>
+  | Readonly<{ ok: false; reason: string }>;
+
+/**
+ * Several server-built transactions signed in one prompt — Wallet Standard's
+ * `solana:signTransaction` takes many inputs at once, and the wallet shows
+ * them together. Nothing is sent: each signed one goes back to the server,
+ * which checks it against what it built. A wallet that returns fewer than it
+ * was given has signed nothing usable.
+ */
+export async function signTransactions(args: {
+  wallet: string;
+  address: string;
+  unsignedWireBase64: readonly string[];
+  chain?: string;
+}): Promise<SignManyResult> {
+  if (args.unsignedWireBase64.length === 1) {
+    const one = await signTransaction({ wallet: args.wallet, address: args.address, unsignedWireBase64: args.unsignedWireBase64[0] ?? "", chain: args.chain });
+    return one.ok ? { ok: true, signedWireBase64: [one.signedWireBase64] } : one;
+  }
+  const wallet = findWallet(args.wallet);
+  if (!wallet) return { ok: false, reason: `${args.wallet} is no longer registered in this browser.` };
+  const feature = wallet.features[SIGN_FEATURE] as
+    | {
+        signTransaction?: (
+          ...inputs: Readonly<{ account: StandardAccount; transaction: Uint8Array; chain: string }>[]
+        ) => Promise<readonly { signedTransaction: Uint8Array }[]>;
+      }
+    | undefined;
+  if (typeof feature?.signTransaction !== "function") {
+    return { ok: false, reason: `${args.wallet} can only sign and send in one step; this needs a wallet that signs without sending.` };
+  }
+  const account = selectSolanaAccount(wallet.accounts.filter((entry) => entry.address === args.address));
+  if (!account) return { ok: false, reason: `${args.wallet} no longer offers ${args.address}. Reconnect and check which account is selected.` };
+  try {
+    const outputs = await feature.signTransaction(
+      ...args.unsignedWireBase64.map((wire) => ({ account, transaction: fromBase64(wire), chain: args.chain ?? DEVNET_CHAIN })),
+    );
+    if (outputs.length !== args.unsignedWireBase64.length || outputs.some((output) => !output?.signedTransaction)) {
+      return { ok: false, reason: `${args.wallet} returned fewer signed transactions than it was given.` };
+    }
+    return { ok: true, signedWireBase64: outputs.map((output) => toBase64(output.signedTransaction)) };
+  } catch (failure) {
+    return { ok: false, reason: failure instanceof Error ? failure.message : `${args.wallet} refused to sign.` };
+  }
+}

@@ -26,7 +26,7 @@
  */
 
 export const API_MAJOR = 1 as const;
-export const API_CONTRACT_VERSION = "1.24.0" as const;
+export const API_CONTRACT_VERSION = "1.25.0" as const;
 export const API_HEADER = "X-Ryntra-API" as const;
 export const API_VERSION_HEADER = "X-Ryntra-API-Version" as const;
 export const NETWORK = "solana:mainnet" as const;
@@ -75,7 +75,19 @@ export type ApiErrorCode =
   /* 1.22.0 — «Гроші» */
   | "AMOUNT_INVALID"
   | "MINT_UNREADABLE"
-  | "PAY_LINK_NOT_FOUND";
+  | "PAY_LINK_NOT_FOUND"
+  /* 1.25.0 — Ryntra Launch */
+  | "LAUNCH_UNAVAILABLE"
+  | "LAUNCH_NAME_BORROWED"
+  | "LAUNCH_IMAGE_INVALID"
+  | "LAUNCH_LIMIT"
+  | "LAUNCH_PAUSED"
+  | "LAUNCH_FIRST_BUY_ABOVE_CAP"
+  | "LAUNCH_BUILD_EXPIRED"
+  | "LAUNCH_BUILD_USED"
+  | "LAUNCH_SIGNED_OTHER_BYTES"
+  | "LAUNCH_SUBMIT_FAILED"
+  | "LAUNCH_NOT_FOUND";
 
 /** 1.7.0: the stable ids a plan issue may carry beside its message. */
 export type PlanIssueCode =
@@ -195,6 +207,16 @@ export type Capabilities = Readonly<{
     recipient: "/api/v1/money/recipient";
     returned: "/api/v1/money/send/returned";
     transfer: "/api/solana/transfer";
+  }>;
+  /** 1.25.0: Ryntra Launch — present only where Launch is served, with the network it launches on. */
+  launch?: Readonly<{
+    network: LaunchNetworkId;
+    presets: "/api/v1/launch/presets";
+    metadata: "/api/v1/launch/metadata";
+    quote: "/api/v1/launch/quote";
+    build: "/api/v1/launch/build";
+    submit: "/api/v1/launch/submit";
+    token: "/api/v1/launch/{mint}";
   }>;
   observedAt: string;
 }>;
@@ -4056,3 +4078,123 @@ export type PaySubmitRequest = Readonly<{ intentId: string; signedWireBase64: st
 export type PaySubmitResponse = Readonly<{ data: Readonly<{ signature: string; view: PayPublicView | null }> }>;
 
 export type PaySubmitError = Readonly<{ error: Readonly<{ code: PaySubmitErrorCode; message: string }> }>;
+
+/* ------------------------------------------------------------ 1.25.0 — Ryntra Launch */
+
+/**
+ * «Запустити токен» — one set of routes for the web and the phone, served only
+ * where `capabilities.launch` is present. No bearer or cookie: the creator's
+ * signature inside the transaction is the proof. The phone signs with its
+ * wallet the bytes `build` returns (the creation and, when chosen, the lock)
+ * and hands both to `submit` unchanged.
+ */
+export type LaunchPresetId = "classic" | "protected" | "community";
+export type LaunchLockId = "1m-3m" | "3m-6m" | "6m-12m";
+export type LaunchNetworkId = "solana:devnet" | "solana:mainnet";
+
+export type LaunchPreset = Readonly<{
+  id: LaunchPresetId;
+  name: Readonly<{ uk: string; en: string }>;
+  pair: Readonly<{ mint: string; symbol: string; decimals: number }>;
+  startMarketCapUsd: number;
+  graduationMarketCapUsd: number;
+  sniperFee: Readonly<{ startBps: number; endBps: number; seconds: number }>;
+  creatorTradingFeePct: number;
+  graduationFee: Readonly<{ pct: number; creatorPct: number }>;
+  firstBuyCapBps: number;
+  lpLockedForeverPct: 100;
+}>;
+
+/** `GET /api/v1/launch/presets` */
+export type LaunchPresetsResponse = Readonly<{
+  network: LaunchNetworkId;
+  presets: readonly LaunchPreset[];
+  locks: readonly Readonly<{ id: LaunchLockId; cliffDays: number; vestDays: number }>[];
+  limits: Readonly<{ nameMax: number; symbolMax: number; descriptionMax: number; imageMaxBytes: number; imageTypes: readonly string[]; launchesPerDay: number }>;
+}>;
+
+/** `POST /api/v1/launch/metadata` — the picture's bytes as base64, the fields as typed. */
+export type LaunchMetadataRequest = Readonly<{ name: string; symbol: string; description: string; website: string; x: string; telegram: string; imageBase64: string }>;
+export type LaunchMetadataResponse = Readonly<{ metadataUri: string; imageUrl: string; name: string; symbol: string }>;
+
+/** `POST /api/v1/launch/quote` */
+export type LaunchQuoteRequest = Readonly<{ preset: LaunchPresetId; amountRaw: string }>;
+export type LaunchQuoteResponse = Readonly<{ preset: LaunchPresetId; pairMint: string; amountInRaw: string; tokensOutRaw: string; capRaw: string; maxAmountInRaw: string; withinCap: boolean }>;
+
+/** `POST /api/v1/launch/build` */
+export type LaunchBuildRequest = Readonly<{ creator: string; preset: LaunchPresetId; metadataUri: string; firstBuyRaw: string; lock: LaunchLockId | null }>;
+export type LaunchBuildResponse = Readonly<{
+  buildId: string;
+  network: LaunchNetworkId;
+  unsignedWireBase64: string;
+  lockUnsignedWireBase64: string | null;
+  token: string;
+  firstBuyOutRaw: string;
+  payerCoveredLamports: string;
+  creatorCostLamports: string;
+  expiresAt: string;
+}>;
+
+/** `POST /api/v1/launch/submit` */
+export type LaunchSubmitRequest = Readonly<{ buildId: string; creator: string; signedWireBase64: string; signedLockWireBase64: string | null }>;
+export type LaunchLock = Readonly<{ schedule: LaunchLockId; escrow: string; signature: string | null; state: "LOCKED" | "PENDING" | "FAILED"; reason: string | null }>;
+export type LaunchSubmitResponse = Readonly<{ token: string; signature: string; state: "LAUNCHED" | "PENDING"; lock: LaunchLock | null; tokenPath: string }>;
+
+export type LaunchMarkCode = "MINT_REVOKED" | "NO_FREEZE" | "METADATA_FIXED" | "NO_TRANSFER_HOOK" | "CURVE_HOLDS_FUNDS" | "LP_LOCKED_FOREVER" | "CREATOR_BUY_LOCKED";
+
+/** The launch receipt's facts, as the chain shows them; every mark names the account where anyone can see it. */
+export type LaunchReceiptFacts = Readonly<{
+  source: "ryntra.solana.launch-receipt.facts@1";
+  network: "solana";
+  cluster: "mainnet" | "devnet";
+  preset: LaunchPresetId;
+  config: string;
+  token: string;
+  pool: string;
+  creator: string;
+  created: Readonly<{ signature: string; slot: number; at: string | null }>;
+  creatorFirstBuy: Readonly<{ quoteInRaw: string; tokensOutRaw: string; capRaw: string }> | null;
+  creatorLock?: Readonly<{ escrow: string; lockedRaw: string; cliffAt: string; endsAt: string }> | null;
+  token2022: Readonly<{
+    supplyRaw: string;
+    decimals: number;
+    mintAuthority: null;
+    freezeAuthority: null;
+    transferHookProgram: null;
+    metadataUpdateAuthority: null;
+    metadataPointerAuthority: null;
+    extensions: readonly ("MetadataPointer" | "TokenMetadata")[];
+  }>;
+  curve: Readonly<{ quoteReserveRaw: string; migrationQuoteThresholdRaw: string; progressBps: number; migrated: boolean }>;
+  graduated: Readonly<{
+    pool: string;
+    compounding: true;
+    compoundingFeeBps: number;
+    feeFallsWithMarketCap: true;
+    positions: readonly Readonly<{ position: string; owner: string; permanentLockedLiquidity: string }>[];
+  }> | null;
+  marks: readonly Readonly<{ code: LaunchMarkCode; account: string }>[];
+  observedAt: string;
+}>;
+
+/** `GET /api/v1/launch/{mint}` */
+export type LaunchTokenResponse = Readonly<{
+  network: LaunchNetworkId;
+  token: string;
+  name: string;
+  symbol: string;
+  description: string;
+  image: string | null;
+  links: Readonly<{ website: string | null; x: string | null; telegram: string | null }>;
+  preset: LaunchPresetId;
+  creator: string;
+  launchedAt: string;
+  signature: string;
+  progressBps: number | null;
+  migrated: boolean | null;
+  lock: (LaunchLock & Readonly<{ cliffAt: string | null; endsAt: string | null }>) | null;
+  receipt: LaunchReceiptFacts | null;
+  receiptProblems: readonly string[];
+  shareLink: string;
+  observedAt: string;
+}>;

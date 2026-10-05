@@ -317,6 +317,23 @@ export const GUARD_COLLECTIONS = [
      when a complete read finds the token sold. It moves and holds nothing. A
      value in the same column; no DDL. */
   "positionWatches",
+  /* Ryntra Launch: a token's picture and its metadata, each keyed by the
+     sha256 of its own bytes — the address a mint names for ever cannot be
+     made to serve anything else. Written once, never changed. A value in the
+     same column; no DDL. */
+  "launchImages",
+  "launchMetadata",
+  /* Ryntra Launch: a launch built and waiting for the creator's signature,
+     keyed by its id — the hash of the exact message the server will co-sign,
+     nothing else; it lives minutes. And a launch the chain confirmed, keyed
+     `solana:<cluster>:<mint>` and, for the creator's own list and limit,
+     `solana:<cluster>:<creator>:<mint>`. A value in the same column; no DDL. */
+  "launchBuilds",
+  "launches",
+  "launchesByCreator",
+  /* Ryntra Launch: every send of a launch, keyed `solana:<cluster>:<creator>:<build>` — the creator's day and the
+     network's hour are counted from it, the sends the chain refused included. */
+  "launchAttempts",
 ] as const;
 
 export type GuardCollectionName = (typeof GUARD_COLLECTIONS)[number];

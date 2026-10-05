@@ -588,6 +588,32 @@
  * rate is now the flow's. The native carrier stays on `/order` until the client
  * reads this version: a client that sums a fee by mechanism adds the new one
  * beside `JUPITER_REFERRAL` — the fee is already inside Jupiter's total.
+ *
+ * **1.25.0 — Ryntra Launch, «Запустити токен».** Additive, and served only
+ * where `capabilities.launch` is present — on the devnet stand now, on
+ * mainnet when Launch opens to people; a deployment without it answers every
+ * launch route `LAUNCH_UNAVAILABLE`. The flow is one set of routes for the
+ * web and the phone: `GET /api/v1/launch/presets` (the three presets with
+ * their numbers, the lock schedules, the form's limits), `POST
+ * /api/v1/launch/metadata` (the picture as base64 and the fields → the
+ * metadata URI the mint will name for ever, its address the sha256 of its
+ * bytes; a name or ticker that borrows a known brand or person is
+ * `LAUNCH_NAME_BORROWED` with the names), `POST /api/v1/launch/quote` (what
+ * the creator's first purchase buys on the fresh curve and the most it may
+ * spend under the preset's cap), `POST /api/v1/launch/build` (the creation
+ * the creator signs — Ryntra's pool payer pays and is paid back in the same
+ * transaction, `payerCoveredLamports` — and, when the creator locks the
+ * purchase, the lock as a second transaction), `POST /api/v1/launch/submit`
+ * (both signed, byte for byte as built; the server adds the pool payer's
+ * signature, sends once, and answers the token's path) and `GET
+ * /api/v1/launch/{mint}` (the token as the chain shows it: the receipt's facts
+ * and marks, «Творець заблокував свою покупку» when the lock holds, the curve's
+ * progress, and the link the creator shares with their referral code). No
+ * bearer or cookie: the creator's signature inside the transaction is the
+ * proof. New error codes: `LAUNCH_UNAVAILABLE`, `LAUNCH_NAME_BORROWED`,
+ * `LAUNCH_IMAGE_INVALID`, `LAUNCH_LIMIT`, `LAUNCH_PAUSED`,
+ * `LAUNCH_FIRST_BUY_ABOVE_CAP`, `LAUNCH_BUILD_EXPIRED`, `LAUNCH_BUILD_USED`,
+ * `LAUNCH_SIGNED_OTHER_BYTES`, `LAUNCH_SUBMIT_FAILED`, `LAUNCH_NOT_FOUND`.
  */
 
 import {
@@ -623,8 +649,12 @@ import { POPULAR_LIMIT, POPULAR_LIMIT_MAX } from "../../stocks/popular.ts";
 import { STOCK_ISSUER_IDS } from "../../stocks/representations.ts";
 import { z } from "zod";
 
+import { CREATOR_LOCK_IDS } from "../../core/launch/creator-lock.ts";
+import { LAUNCH_PRESET_IDS } from "../../core/venues/meteora-dbc/presets.ts";
+import { LaunchReceiptFactsSchema } from "../../core/venues/meteora-dbc/receipt.ts";
+
 export const API_MAJOR = 1;
-export const API_CONTRACT_VERSION = "1.24.0";
+export const API_CONTRACT_VERSION = "1.25.0";
 export const API_HEADER = "X-Ryntra-API";
 export const API_VERSION_HEADER = "X-Ryntra-API-Version";
 export const NETWORK = "solana:mainnet";
@@ -692,6 +722,29 @@ export const ERROR_CODES = [
   "MINT_UNREADABLE",
   /** No payment link has that id. */
   "PAY_LINK_NOT_FOUND",
+  /* 1.25.0 — Ryntra Launch */
+  /** This deployment does not serve Launch: `capabilities.launch` is absent. */
+  "LAUNCH_UNAVAILABLE",
+  /** The name or ticker reads as a known brand or person; the message names them. */
+  "LAUNCH_NAME_BORROWED",
+  /** The picture is not a PNG, JPEG, WebP or GIF, or is above the size the presets' limits name. */
+  "LAUNCH_IMAGE_INVALID",
+  /** The wallet has launched as many tokens today as one wallet may. */
+  "LAUNCH_LIMIT",
+  /** Launching is paused for a moment on Ryntra's side; nothing was built. */
+  "LAUNCH_PAUSED",
+  /** The first purchase would receive more than the preset's cap. */
+  "LAUNCH_FIRST_BUY_ABOVE_CAP",
+  /** The build waited too long for the signature; build again. */
+  "LAUNCH_BUILD_EXPIRED",
+  /** This build was already submitted. */
+  "LAUNCH_BUILD_USED",
+  /** The signed bytes are not the built ones, or a signature is missing or wrong; nothing was sent. */
+  "LAUNCH_SIGNED_OTHER_BYTES",
+  /** The network did not confirm the creation; the message says why. */
+  "LAUNCH_SUBMIT_FAILED",
+  /** No launch, build or metadata by that id here. */
+  "LAUNCH_NOT_FOUND",
 ] as const;
 export type ApiErrorCode = (typeof ERROR_CODES)[number];
 
@@ -773,6 +826,17 @@ export const ERROR_STATUS: Readonly<Record<ApiErrorCode, number>> = {
   AMOUNT_INVALID: 400,
   MINT_UNREADABLE: 422,
   PAY_LINK_NOT_FOUND: 404,
+  LAUNCH_UNAVAILABLE: 404,
+  LAUNCH_NAME_BORROWED: 422,
+  LAUNCH_IMAGE_INVALID: 422,
+  LAUNCH_LIMIT: 429,
+  LAUNCH_PAUSED: 503,
+  LAUNCH_FIRST_BUY_ABOVE_CAP: 422,
+  LAUNCH_BUILD_EXPIRED: 410,
+  LAUNCH_BUILD_USED: 409,
+  LAUNCH_SIGNED_OTHER_BYTES: 422,
+  LAUNCH_SUBMIT_FAILED: 502,
+  LAUNCH_NOT_FOUND: 404,
 };
 
 /* ------------------------------------------------------------ capabilities */
@@ -991,6 +1055,20 @@ export const CapabilitiesSchema = z
         returned: z.literal("/api/v1/money/send/returned"),
         /** The prefix of the transfer routes: `…/plan`, `…/adopt`, `…/settle`, `…/recover`. */
         transfer: z.literal("/api/solana/transfer"),
+      })
+      .strict()
+      .optional(),
+    /** 1.25.0: Ryntra Launch — present only where Launch is served, with the network it launches on. */
+    launch: z
+      .object({
+        network: z.enum(["solana:devnet", "solana:mainnet"]),
+        presets: z.literal("/api/v1/launch/presets"),
+        metadata: z.literal("/api/v1/launch/metadata"),
+        quote: z.literal("/api/v1/launch/quote"),
+        build: z.literal("/api/v1/launch/build"),
+        submit: z.literal("/api/v1/launch/submit"),
+        /** The token's read: `/api/v1/launch/{mint}`. */
+        token: z.literal("/api/v1/launch/{mint}"),
       })
       .strict()
       .optional(),
@@ -8860,3 +8938,166 @@ export function requestedMajor(headerValue: string | null): number | null {
   const major = Number(headerValue.trim());
   return Number.isInteger(major) && major > 0 ? major : Number.NaN;
 }
+
+/* ------------------------------------------------------------ Ryntra Launch (1.25.0) */
+
+const LaunchRaw = z.string().regex(/^[0-9]{1,30}$/);
+const LaunchWords = z.object({ uk: z.string().min(1).max(64), en: z.string().min(1).max(64) }).strict();
+const LaunchNetworkId = z.enum(["solana:devnet", "solana:mainnet"]);
+const LaunchBuildId = z.string().regex(/^[0-9a-f]{32}$/);
+
+/** A preset as the form shows it: its numbers, each the config's own. */
+export const LaunchPresetSchema = z
+  .object({
+    id: z.enum(LAUNCH_PRESET_IDS),
+    name: LaunchWords,
+    pair: z.object({ mint: Address, symbol: z.string().min(1).max(12), decimals: z.number().int().min(0).max(18) }).strict(),
+    /** The curve's market cap in dollars, from launch to the DEX. */
+    startMarketCapUsd: z.number().positive(),
+    graduationMarketCapUsd: z.number().positive(),
+    /** The fee on the curve: from `startBps` falling to `endBps` over `seconds`. */
+    sniperFee: z.object({ startBps: z.number().int().positive(), endBps: z.number().int().positive(), seconds: z.number().int().positive() }).strict(),
+    /** The creator's share of the curve's trading fee after Meteora's 20 %. */
+    creatorTradingFeePct: z.number().int().min(0).max(100),
+    graduationFee: z.object({ pct: z.number().min(0).max(100), creatorPct: z.number().int().min(0).max(100) }).strict(),
+    /** The most of the supply the creator's first purchase may receive, basis points. */
+    firstBuyCapBps: z.number().int().positive().max(10_000),
+    /** Every share of the graduated pool's liquidity locked for ever. */
+    lpLockedForeverPct: z.literal(100),
+  })
+  .strict();
+export type LaunchPresetView = z.infer<typeof LaunchPresetSchema>;
+
+export const LaunchPresetsResponseSchema = z
+  .object({
+    network: LaunchNetworkId,
+    presets: z.array(LaunchPresetSchema).min(1),
+    locks: z.array(z.object({ id: z.enum(CREATOR_LOCK_IDS), cliffDays: z.number().int().positive(), vestDays: z.number().int().positive() }).strict()).min(1),
+    limits: z
+      .object({
+        nameMax: z.number().int().positive(),
+        symbolMax: z.number().int().positive(),
+        descriptionMax: z.number().int().positive(),
+        imageMaxBytes: z.number().int().positive(),
+        imageTypes: z.array(z.string().min(1)).min(1),
+        launchesPerDay: z.number().int().positive(),
+      })
+      .strict(),
+  })
+  .strict();
+export type LaunchPresetsResponse = z.infer<typeof LaunchPresetsResponseSchema>;
+
+export const LaunchMetadataRequestSchema = z
+  .object({
+    name: z.string().max(200),
+    symbol: z.string().max(40),
+    description: z.string().max(2_000),
+    website: z.string().max(300),
+    x: z.string().max(300),
+    telegram: z.string().max(300),
+    /** The picture's bytes, base64, as the page shrank it. */
+    imageBase64: z.string().min(1).max(400_000),
+  })
+  .strict();
+export type LaunchMetadataRequest = z.infer<typeof LaunchMetadataRequestSchema>;
+
+export const LaunchMetadataResponseSchema = z
+  .object({ metadataUri: z.string().url(), imageUrl: z.string().url(), name: z.string(), symbol: z.string() })
+  .strict();
+export type LaunchMetadataResponse = z.infer<typeof LaunchMetadataResponseSchema>;
+
+export const LaunchQuoteRequestSchema = z.object({ preset: z.enum(LAUNCH_PRESET_IDS), amountRaw: LaunchRaw }).strict();
+export type LaunchQuoteRequest = z.infer<typeof LaunchQuoteRequestSchema>;
+export const LaunchQuoteResponseSchema = z
+  .object({
+    preset: z.enum(LAUNCH_PRESET_IDS),
+    pairMint: Address,
+    amountInRaw: LaunchRaw,
+    tokensOutRaw: LaunchRaw,
+    capRaw: LaunchRaw,
+    /** The most the first purchase may spend and stay under the cap. */
+    maxAmountInRaw: LaunchRaw,
+    withinCap: z.boolean(),
+  })
+  .strict();
+export type LaunchQuoteResponse = z.infer<typeof LaunchQuoteResponseSchema>;
+
+export const LaunchBuildRequestSchema = z
+  .object({
+    creator: Address,
+    preset: z.enum(LAUNCH_PRESET_IDS),
+    metadataUri: z.string().url().max(300),
+    /** The first purchase in the pair's raw units; "0" for none. */
+    firstBuyRaw: LaunchRaw,
+    lock: z.enum(CREATOR_LOCK_IDS).nullable(),
+  })
+  .strict();
+export type LaunchBuildRequest = z.infer<typeof LaunchBuildRequestSchema>;
+
+export const LaunchBuildResponseSchema = z
+  .object({
+    buildId: LaunchBuildId,
+    network: LaunchNetworkId,
+    /** The creation, signed already by the new mint; the creator signs it, the server adds the pool payer's signature. */
+    unsignedWireBase64: z.string().min(1),
+    /** The lock of the first purchase, when chosen: signed by the escrow's fresh key; the creator signs it too. */
+    lockUnsignedWireBase64: z.string().min(1).nullable(),
+    token: Address,
+    firstBuyOutRaw: LaunchRaw,
+    /** What the creator hands Ryntra's pool payer in the creation: the rent of the accounts it opens and the fee. */
+    payerCoveredLamports: LaunchRaw,
+    /** The creator's SOL both transactions take, simulated before the signature: what is handed to the pool payer, the creator's own token accounts, the lock's rent and fee. */
+    creatorCostLamports: LaunchRaw,
+    expiresAt: Iso,
+  })
+  .strict();
+export type LaunchBuildResponse = z.infer<typeof LaunchBuildResponseSchema>;
+
+export const LaunchSubmitRequestSchema = z
+  .object({ buildId: LaunchBuildId, creator: Address, signedWireBase64: z.string().min(1).max(4_000), signedLockWireBase64: z.string().min(1).max(4_000).nullable() })
+  .strict();
+export type LaunchSubmitRequest = z.infer<typeof LaunchSubmitRequestSchema>;
+
+const LaunchLockSchema = z
+  .object({ schedule: z.enum(CREATOR_LOCK_IDS), escrow: Address, signature: z.string().nullable(), state: z.enum(["LOCKED", "PENDING", "FAILED"]), reason: z.string().max(512).nullable() })
+  .strict();
+
+export const LaunchSubmitResponseSchema = z
+  .object({
+    token: Address,
+    signature: z.string().min(64).max(90),
+    /** LAUNCHED — the chain confirmed the creation; PENDING — it was sent and not confirmed in time: the token's read settles it from the chain (a refused or expired creation is then not found), and the lock was not sent. */
+    state: z.enum(["LAUNCHED", "PENDING"]),
+    lock: LaunchLockSchema.nullable(),
+    tokenPath: z.string().startsWith("/app/launch/"),
+  })
+  .strict();
+export type LaunchSubmitResponse = z.infer<typeof LaunchSubmitResponseSchema>;
+
+export const LaunchTokenResponseSchema = z
+  .object({
+    network: LaunchNetworkId,
+    token: Address,
+    name: z.string(),
+    symbol: z.string(),
+    description: z.string(),
+    image: z.string().url().nullable(),
+    /** Set by the creator, never checked by Ryntra. */
+    links: z.object({ website: z.string().url().nullable(), x: z.string().url().nullable(), telegram: z.string().url().nullable() }).strict(),
+    preset: z.enum(LAUNCH_PRESET_IDS),
+    creator: Address,
+    launchedAt: Iso,
+    signature: z.string(),
+    /** The curve's way to the DEX now, basis points; null when the chain could not be read. */
+    progressBps: z.number().int().min(0).max(10_000).nullable(),
+    migrated: z.boolean().nullable(),
+    lock: LaunchLockSchema.extend({ cliffAt: Iso.nullable(), endsAt: Iso.nullable() }).strict().nullable(),
+    /** The launch receipt's facts read from the chain now; null with `receiptProblems` when the chain could not be read or a rule does not hold. */
+    receipt: LaunchReceiptFactsSchema.nullable(),
+    receiptProblems: z.array(z.string().max(512)),
+    /** The link the creator shares — their referral code, landing on this token. */
+    shareLink: z.string().url(),
+    observedAt: Iso,
+  })
+  .strict();
+export type LaunchTokenResponse = z.infer<typeof LaunchTokenResponseSchema>;

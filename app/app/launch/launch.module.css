@@ -1,0 +1,1142 @@
+/*
+ * Ryntra Launch — «Запустити токен» and a launched token's page. Drawn for
+ * 390 px first: one column of short sections and one orange action; from
+ * 1024 px the token's card and the review stay beside the form. Tokens only
+ * (DESIGN.md → app/design/tokens.css); figures, tickers and addresses in Geist
+ * Mono with tabular numerals.
+ */
+
+.page {
+  display: grid;
+  gap: var(--ry-s5);
+  width: 100%;
+  max-width: 1120px;
+  min-width: 0;
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ── The head ────────────────────────────────────────────────────────── */
+
+.head {
+  display: grid;
+  gap: var(--ry-s2);
+}
+
+.headRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ry-s3);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--ry-fs-key);
+  font-weight: 600;
+  line-height: var(--ry-lh-head);
+  letter-spacing: var(--ry-ls-head);
+  color: var(--ry-text);
+}
+
+.lede {
+  margin: 0;
+  max-width: 60ch;
+  font-size: var(--ry-fs-copy);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+}
+
+.netChip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 2px 10px;
+  border: 1px solid var(--ry-caution);
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-caution-soft);
+  color: var(--ry-text);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+}
+
+/* ── The layout ──────────────────────────────────────────────────────── */
+
+.layout {
+  display: grid;
+  gap: var(--ry-s5);
+  min-width: 0;
+}
+
+.form {
+  display: grid;
+  gap: var(--ry-s4);
+  min-width: 0;
+}
+
+.aside {
+  min-width: 0;
+}
+
+.asideSticky {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ry-s4);
+  min-width: 0;
+}
+
+@media (min-width: 1024px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr) 360px;
+    align-items: start;
+  }
+
+  .aside {
+    position: sticky;
+    top: 88px;
+    align-self: start;
+  }
+}
+
+/* ── A section ───────────────────────────────────────────────────────── */
+
+.section {
+  display: grid;
+  gap: var(--ry-s3);
+  min-width: 0;
+  margin: 0;
+  padding: var(--ry-s4);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+}
+
+.section:disabled {
+  opacity: 0.6;
+}
+
+.sectionTitle {
+  float: left;
+  width: 100%;
+  margin: 0 0 var(--ry-s1);
+  padding: 0;
+  font-size: var(--ry-fs-section);
+  font-weight: 600;
+  line-height: var(--ry-lh-head);
+  color: var(--ry-text);
+}
+
+.optional {
+  font-size: var(--ry-fs-label);
+  font-weight: 400;
+  color: var(--ry-muted);
+}
+
+.hint {
+  margin: 0;
+  font-size: var(--ry-fs-label);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+}
+
+.problem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: var(--ry-fs-label);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-risk);
+}
+
+/* ── Fields ──────────────────────────────────────────────────────────── */
+
+.field {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  min-width: 0;
+}
+
+.labelRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--ry-s2);
+}
+
+.label {
+  font-size: var(--ry-fs-label);
+  font-weight: 500;
+  color: var(--ry-text);
+}
+
+.count {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-muted);
+  text-align: right;
+}
+
+.input {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-bg);
+  color: var(--ry-text);
+  font: inherit;
+  font-size: var(--ry-fs-copy);
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.input::placeholder {
+  color: var(--ry-muted);
+  opacity: 0.7;
+}
+
+.input:hover {
+  border-color: var(--ry-border-strong);
+}
+
+.input:focus-visible {
+  outline: none;
+  border-color: var(--ry-iris);
+  box-shadow: 0 0 0 3px var(--ry-brand-soft);
+}
+
+.field[data-invalid] .input {
+  border-color: var(--ry-risk);
+}
+
+.mono {
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.textarea {
+  min-height: 84px;
+  resize: vertical;
+  line-height: var(--ry-lh-body);
+}
+
+.affixed {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.affixed .input {
+  flex: 1;
+}
+
+.affix {
+  position: absolute;
+  left: 12px;
+  font-family: var(--ry-font-mono);
+  color: var(--ry-muted);
+  pointer-events: none;
+}
+
+.affix + .input {
+  padding-left: 26px;
+}
+
+.suffix {
+  position: absolute;
+  right: 72px;
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+  pointer-events: none;
+}
+
+.affixed:has(.suffix) .input {
+  padding-right: 130px;
+}
+
+.maxChip {
+  position: absolute;
+  right: 6px;
+  min-height: 32px !important;
+  padding: 4px 12px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-elevated);
+  color: var(--ry-text);
+  font: inherit;
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.maxChip:hover {
+  border-color: var(--ry-iris);
+}
+
+/* ── The token: picture beside name and ticker ───────────────────────── */
+
+.tokenRow {
+  display: grid;
+  grid-template-columns: 104px minmax(0, 1fr);
+  gap: var(--ry-s3);
+  align-items: start;
+}
+
+.tokenFields {
+  display: grid;
+  gap: var(--ry-s3);
+  min-width: 0;
+}
+
+.picture {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 104px;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: 1px dashed var(--ry-border-strong);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-bg);
+  color: var(--ry-muted);
+  cursor: pointer;
+  transition: border-color 160ms ease, color 160ms ease;
+}
+
+.picture:hover,
+.picture:focus-within {
+  border-color: var(--ry-iris);
+  color: var(--ry-text);
+}
+
+.picture:not([data-empty]) {
+  border-style: solid;
+}
+
+.picture[data-invalid] {
+  border-color: var(--ry-risk);
+}
+
+.pictureEmpty {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 8px;
+  font-size: var(--ry-fs-label-sm);
+  text-align: center;
+}
+
+.pictureImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pictureChange {
+  position: absolute;
+  inset: auto 0 0;
+  padding: 4px;
+  background: rgb(8 13 19 / 0.72);
+  color: #fff;
+  font-size: var(--ry-fs-label-sm);
+  text-align: center;
+}
+
+.links {
+  display: grid;
+  gap: var(--ry-s3);
+}
+
+@media (min-width: 720px) {
+  .links {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* ── Presets ─────────────────────────────────────────────────────────── */
+
+.presets {
+  display: grid;
+  gap: var(--ry-s2);
+}
+
+@media (min-width: 720px) {
+  .presets {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.preset {
+  display: grid;
+  align-content: start;
+  gap: var(--ry-s2);
+  min-height: 0 !important;
+  padding: var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-bg);
+  color: var(--ry-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 160ms ease, background-color 160ms ease;
+}
+
+.preset:hover {
+  border-color: var(--ry-border-strong);
+}
+
+/* Selected is a firm border and a raised surface — orange is kept for the one action. */
+.preset[aria-checked="true"] {
+  border-color: var(--ry-text);
+  background: var(--ry-elevated);
+}
+
+.presetHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--ry-s2);
+}
+
+.presetName {
+  font-weight: 600;
+}
+
+.radio {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  border: 2px solid var(--ry-border-strong);
+  border-radius: 50%;
+}
+
+.preset[aria-checked="true"] .radio {
+  border: 5px solid var(--ry-text);
+}
+
+.presetFacts {
+  display: grid;
+  gap: 4px;
+  font-size: var(--ry-fs-label);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+}
+
+.presetPair {
+  color: var(--ry-text);
+}
+
+.details {
+  border-top: 1px solid var(--ry-border);
+  padding-top: var(--ry-s2);
+}
+
+.card > .details {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  font-size: var(--ry-fs-label);
+  font-weight: 500;
+  color: var(--ry-muted);
+  cursor: pointer;
+  list-style: none;
+}
+
+.summary::-webkit-details-marker {
+  display: none;
+}
+
+.summary:hover {
+  color: var(--ry-text);
+}
+
+.details[open] .caret {
+  transform: rotate(180deg);
+}
+
+/* ── Rows: a label and its value ─────────────────────────────────────── */
+
+.rows {
+  display: grid;
+  gap: 0;
+  margin: 0;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--ry-s3);
+  padding: 8px 0;
+  border-bottom: 1px solid var(--ry-border);
+  font-size: var(--ry-fs-label);
+}
+
+.row:last-child {
+  border-bottom: 0;
+}
+
+.row dt {
+  color: var(--ry-muted);
+}
+
+.row dd {
+  margin: 0;
+  color: var(--ry-text);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+/* ── The lock ────────────────────────────────────────────────────────── */
+
+.lockBox {
+  display: grid;
+  gap: var(--ry-s3);
+  padding: var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-bg);
+}
+
+/* A fact anyone can check on chain wears the evidence steel, not a market's green. */
+.lockBox[data-on] {
+  border-color: var(--rt-evidence-cyan-line);
+}
+
+.lockToggle {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: start;
+  gap: var(--ry-s2);
+  cursor: pointer;
+}
+
+.lockToggle input {
+  width: 18px;
+  height: 18px;
+  margin: 2px 0 0;
+  accent-color: var(--ry-text);
+}
+
+.lockIcon {
+  display: grid;
+  place-items: center;
+  color: var(--ry-muted);
+}
+
+.lockBox[data-on] .lockIcon {
+  color: var(--rt-evidence-cyan);
+}
+
+.lockText {
+  display: grid;
+  gap: 2px;
+}
+
+.lockTitle {
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.segments {
+  display: grid;
+  gap: 6px;
+}
+
+@media (min-width: 560px) {
+  .segments {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.segment {
+  min-height: 40px !important;
+  padding: 8px 10px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-card);
+  color: var(--ry-text);
+  font: inherit;
+  font-size: var(--ry-fs-label);
+  cursor: pointer;
+}
+
+.segment[aria-checked="true"] {
+  border-color: var(--ry-text);
+  background: var(--ry-elevated);
+  font-weight: 600;
+}
+
+/* ── The aside: the token as others see it, and the review ───────────── */
+
+.preview {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--ry-s3);
+  padding: var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+}
+
+.previewPicture {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--ry-bg);
+  color: var(--ry-muted);
+}
+
+.previewPicture img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.previewText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.previewName {
+  overflow: hidden;
+  font-weight: 600;
+  color: var(--ry-text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.previewSymbol {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+}
+
+.previewName[data-empty],
+.previewSymbol[data-empty] {
+  color: var(--ry-muted);
+  opacity: 0.55;
+}
+
+.previewChip {
+  padding: 2px 8px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-pill);
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+}
+
+.review {
+  display: grid;
+  gap: var(--ry-s3);
+  padding: var(--ry-s4);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+  box-shadow: var(--ry-shadow-sm);
+}
+
+.reviewTitle {
+  margin: 0;
+  font-size: var(--ry-fs-section);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.fixed {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-caution-soft);
+  color: var(--ry-text);
+  font-size: var(--ry-fs-label);
+  line-height: var(--ry-lh-body);
+}
+
+.fixed svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--ry-caution);
+}
+
+.cta {
+  width: 100%;
+  min-height: 48px !important;
+}
+
+.failure {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--ry-risk);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-risk-soft);
+}
+
+.failureTitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.failureTitle svg {
+  color: var(--ry-risk);
+}
+
+.failureDetail {
+  margin: 4px 0 0;
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+  overflow-wrap: anywhere;
+}
+
+.failure .details {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.failureText {
+  margin: 0;
+  font-size: var(--ry-fs-label);
+  color: var(--ry-text);
+  overflow-wrap: anywhere;
+}
+
+/* ── Progress: three steps, the active one turning ───────────────────── */
+
+.steps {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  list-style: none;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+}
+
+.step[data-state="active"] {
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.step[data-state="done"] {
+  color: var(--ry-text);
+}
+
+.stepIcon {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  color: var(--ry-iris);
+}
+
+.step[data-state="done"] .stepIcon {
+  color: var(--ry-verified);
+}
+
+.stepDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ry-border-strong);
+}
+
+.spin {
+  animation: spin 900ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spin {
+    animation: none;
+  }
+}
+
+/* ── Success ─────────────────────────────────────────────────────────── */
+
+.success {
+  display: grid;
+  justify-items: center;
+  gap: var(--ry-s3);
+  max-width: 560px;
+  margin: var(--ry-s4) auto 0;
+  padding: var(--ry-s6) var(--ry-s4);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+  text-align: center;
+}
+
+.successPicture {
+  position: relative;
+  width: 96px;
+  height: 96px;
+}
+
+.successPicture img {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.successBadge {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--ry-card);
+  color: var(--ry-verified);
+}
+
+.successTitle {
+  margin: 0;
+  font-size: var(--ry-fs-key);
+  font-weight: 600;
+  line-height: var(--ry-lh-head);
+  color: var(--ry-text);
+}
+
+.lockedLine {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 6px 12px;
+  border-radius: var(--ry-r-pill);
+  background: var(--rt-evidence-cyan-soft);
+  color: var(--ry-text);
+  font-size: var(--ry-fs-label);
+}
+
+.lockedLine svg {
+  color: var(--rt-evidence-cyan);
+}
+
+.successActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--ry-s2);
+  width: 100%;
+}
+
+.successActions > * {
+  flex: 1 1 200px;
+}
+
+/* ── Share ───────────────────────────────────────────────────────────── */
+
+.share {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  text-align: left;
+}
+
+.shareLabel {
+  font-size: var(--ry-fs-label);
+  font-weight: 500;
+  color: var(--ry-muted);
+}
+
+.shareRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s2);
+  min-width: 0;
+}
+
+.shareRow > :global(.rw-btn) {
+  flex: 1 1 auto;
+}
+
+.shareLink {
+  flex: 1 1 220px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 11px 12px;
+  overflow: hidden;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-bg);
+  color: var(--ry-text);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── The token's page ────────────────────────────────────────────────── */
+
+.tokenHead {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--ry-s3);
+  padding: var(--ry-s4);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+}
+
+.tokenPicture {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--ry-bg);
+  color: var(--ry-muted);
+}
+
+.tokenPicture img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.tokenTitle {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.tokenName {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: var(--ry-fs-key);
+  font-weight: 600;
+  line-height: var(--ry-lh-head);
+  color: var(--ry-text);
+}
+
+.tokenMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px var(--ry-s2);
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+}
+
+.tokenSymbol {
+  font-family: var(--ry-font-mono);
+  color: var(--ry-text);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-pill);
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+}
+
+.tokenGrid {
+  display: grid;
+  gap: var(--ry-s4);
+  min-width: 0;
+}
+
+@media (min-width: 1024px) {
+  .tokenGrid {
+    grid-template-columns: minmax(0, 1fr) 360px;
+    align-items: start;
+  }
+
+  .tokenGrid > .asideSticky {
+    position: sticky;
+    top: 88px;
+  }
+}
+
+.card {
+  display: grid;
+  gap: var(--ry-s3);
+  min-width: 0;
+  padding: var(--ry-s4);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+}
+
+.cardTitle {
+  margin: 0;
+  font-size: var(--ry-fs-section);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.progressHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--ry-s2);
+}
+
+.progressValue[data-unknown] {
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-label);
+  font-weight: 500;
+  color: var(--ry-muted);
+}
+
+.progressValue {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-data-m);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+}
+
+.bar {
+  height: 8px;
+  overflow: hidden;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-bg);
+}
+
+.barFill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ry-iris);
+}
+
+.marks {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mark {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  border-bottom: 1px solid var(--ry-border);
+  font-size: var(--ry-fs-label);
+  color: var(--ry-text);
+}
+
+.mark:last-child {
+  border-bottom: 0;
+}
+
+.mark svg {
+  color: var(--rt-evidence-cyan);
+}
+
+.markText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.markSub {
+  color: var(--ry-muted);
+}
+
+.markLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 32px;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+  text-decoration: none;
+}
+
+.markLink:hover {
+  color: var(--ry-text);
+}
+
+.markLocked {
+  border-radius: var(--ry-r-btn);
+  background: var(--rt-evidence-cyan-soft);
+  padding: 0 10px;
+  border-bottom: 0;
+  margin-bottom: 4px;
+}
+
+.description {
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-text);
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+.linkList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s2);
+}
+
+.unread {
+  margin: 0;
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+}
+
+.addr {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label);
+}

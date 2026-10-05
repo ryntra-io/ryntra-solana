@@ -8,6 +8,20 @@
 import type { z } from "zod";
 
 import type * as Client from "../../../packages/ryntra-api-client/src/types.ts";
+import type { LaunchReceiptFactsSchema } from "../../core/venues/meteora-dbc/receipt.ts";
+import type {
+  LaunchBuildRequestSchema,
+  LaunchBuildResponseSchema,
+  LaunchMetadataRequestSchema,
+  LaunchMetadataResponseSchema,
+  LaunchPresetSchema,
+  LaunchPresetsResponseSchema,
+  LaunchQuoteRequestSchema,
+  LaunchQuoteResponseSchema,
+  LaunchSubmitRequestSchema,
+  LaunchSubmitResponseSchema,
+  LaunchTokenResponseSchema,
+} from "./contract.ts";
 import type {
   PayLinkCreateRequestSchema as MoneyPayLinkCreateRequestSchema,
   PayLinkListResponseSchema as MoneyPayLinkListResponseSchema,
@@ -426,3 +440,21 @@ export type TransferClientChecks = [
 ];
 
 export const transferClientChecks: TransferClientChecks = [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true];
+
+/* 1.25.0 — Ryntra Launch: the client's mirror of every shape the flow sends or reads, both directions. */
+export type LaunchClientChecks = [
+  Same<z.output<typeof LaunchPresetSchema>, Client.LaunchPreset>,
+  Same<z.output<typeof LaunchPresetsResponseSchema>, Client.LaunchPresetsResponse>,
+  Same<z.input<typeof LaunchMetadataRequestSchema>, Client.LaunchMetadataRequest>,
+  Same<z.output<typeof LaunchMetadataResponseSchema>, Client.LaunchMetadataResponse>,
+  Same<z.input<typeof LaunchQuoteRequestSchema>, Client.LaunchQuoteRequest>,
+  Same<z.output<typeof LaunchQuoteResponseSchema>, Client.LaunchQuoteResponse>,
+  Same<z.input<typeof LaunchBuildRequestSchema>, Client.LaunchBuildRequest>,
+  Same<z.output<typeof LaunchBuildResponseSchema>, Client.LaunchBuildResponse>,
+  Same<z.input<typeof LaunchSubmitRequestSchema>, Client.LaunchSubmitRequest>,
+  Same<z.output<typeof LaunchSubmitResponseSchema>, Client.LaunchSubmitResponse>,
+  Same<z.output<typeof LaunchReceiptFactsSchema>, Client.LaunchReceiptFacts>,
+  Same<z.output<typeof LaunchTokenResponseSchema>, Client.LaunchTokenResponse>,
+];
+
+export const launchClientChecks: LaunchClientChecks = [true, true, true, true, true, true, true, true, true, true, true, true];
