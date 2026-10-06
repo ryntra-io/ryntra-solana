@@ -21,6 +21,13 @@ export function launchDeps(): LaunchDeps | null {
   return { network, connection: launchConnection(network), store: getGuardRuntime().store, poolPayer, origin: network.origin, now: () => new Date() };
 }
 
+/** What reading a launch's market and trading on it need — no key of Ryntra's: the person's wallet signs and pays. */
+export function launchMarketDeps(): Pick<LaunchDeps, "network" | "connection" | "store" | "now"> | null {
+  const network = launchNetwork();
+  if (!network) return null;
+  return { network, connection: launchConnection(network), store: getGuardRuntime().store, now: () => new Date() };
+}
+
 /** The presets this network has configs for, with the numbers the form shows. */
 export function launchPresetsView(network: LaunchNetwork): LaunchPresetsResponse {
   return {
@@ -46,11 +53,20 @@ export function launchPresetsView(network: LaunchNetwork): LaunchPresetsResponse
   };
 }
 
-/* Each writing route has its own window per address: a picture stored, a launch built, a launch sent. */
+/*
+ * Each route has its own window per address: a picture stored, a launch built, a launch sent; a trade quoted (the page
+ * asks again as the amount is typed), a trade built, a trade sent; a creator's cabinet read, a claim built, a claim sent.
+ */
 const LIMITERS = {
   metadata: new FixedWindowLimiter({ limit: 20, windowMs: 60 * 60 * 1000, maxKeys: 5_000 }),
   build: new FixedWindowLimiter({ limit: 30, windowMs: 60 * 60 * 1000, maxKeys: 5_000 }),
   submit: new FixedWindowLimiter({ limit: 20, windowMs: 60 * 60 * 1000, maxKeys: 5_000 }),
+  tradeQuote: new FixedWindowLimiter({ limit: 600, windowMs: 60 * 60 * 1000, maxKeys: 5_000 }),
+  tradeBuild: new FixedWindowLimiter({ limit: 120, windowMs: 60 * 60 * 1000, maxKeys: 5_000 }),
+  tradeSubmit: new FixedWindowLimiter({ limit: 120, windowMs: 60 * 60 * 1000, maxKeys: 5_000 }),
+  claimBuild: new FixedWindowLimiter({ limit: 60, windowMs: 60 * 60 * 1000, maxKeys: 5_000 }),
+  claimSubmit: new FixedWindowLimiter({ limit: 30, windowMs: 60 * 60 * 1000, maxKeys: 5_000 }),
+  cabinet: new FixedWindowLimiter({ limit: 240, windowMs: 60 * 60 * 1000, maxKeys: 5_000 }),
 } as const;
 
 export function consumeLaunchWrite(kind: keyof typeof LIMITERS, headers: Headers) {
@@ -66,6 +82,7 @@ export const LAUNCH_FAILURE_CODES = {
   PRESET_UNAVAILABLE: "VALIDATION_ERROR",
   FIRST_BUY_ABOVE_CAP: "LAUNCH_FIRST_BUY_ABOVE_CAP",
   LOCK_NEEDS_PURCHASE: "VALIDATION_ERROR",
+  SHARES_INVALID: "LAUNCH_SHARES_INVALID",
   NOT_BUILT: "LAUNCH_NOT_FOUND",
   BUILD_EXPIRED: "LAUNCH_BUILD_EXPIRED",
   BUILD_USED: "LAUNCH_BUILD_USED",

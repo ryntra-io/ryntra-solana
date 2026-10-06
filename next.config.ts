@@ -157,6 +157,15 @@ const nextConfig: NextConfig = {
    */
   distDir: process.env.RYNTRA_DIST_DIR || ".next",
   /*
+   * A dev stand that reads a public chain node keeps its compiled routes:
+   * by default the dev server drops all but a few, and a dropped route's
+   * server modules load again with their caches empty — every view then
+   * reads the chain cold and the node answers a burst with 429.
+   * `RYNTRA_DEV_KEEP_ROUTES=1` (the Launch stand sets it) keeps them for an
+   * hour. Only `next dev` reads this; a build and every deploy ignore it.
+   */
+  ...(process.env.RYNTRA_DEV_KEEP_ROUTES === "1" ? { onDemandEntries: { maxInactiveAge: 60 * 60 * 1000, pagesBufferLength: 100 } } : {}),
+  /*
    * Every page's metadata in its `<head>`, for every reader
    * (`RYN-SITE-V5-001`, subtask 4) — Next's own switch for turning its
    * streamed metadata off.

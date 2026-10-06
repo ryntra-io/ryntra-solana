@@ -224,6 +224,15 @@ function launchCapability(env: NodeJS.ProcessEnv): Pick<Capabilities, "launch"> 
       build: "/api/v1/launch/build",
       submit: "/api/v1/launch/submit",
       token: "/api/v1/launch/{mint}",
+      market: "/api/v1/launch/{mint}/market",
+      wallet: "/api/v1/launch/{mint}/wallet/{address}",
+      tradeQuote: "/api/v1/launch/{mint}/trade/quote",
+      tradeBuild: "/api/v1/launch/{mint}/trade/build",
+      tradeSubmit: "/api/v1/launch/{mint}/trade/submit",
+      creator: "/api/v1/launch/{mint}/creator",
+      creators: "/api/v1/launch/creators/{address}",
+      claimBuild: "/api/v1/launch/{mint}/claim/build",
+      claimSubmit: "/api/v1/launch/{mint}/claim/submit",
     },
   };
 }

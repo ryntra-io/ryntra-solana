@@ -33,6 +33,7 @@ import { buildCreatorLockTransaction } from "../core/venues/meteora-dbc/creator-
 import { LaunchRefusal, createMeteoraDbcLaunchVenue } from "../core/venues/meteora-dbc/launch.server.ts";
 import { launchPreset, type LaunchPresetId } from "../core/venues/meteora-dbc/presets.ts";
 import { creatorLockSchedule, type CreatorLockId } from "../core/launch/creator-lock.ts";
+import { feeShareProblems, type FeeShare } from "../core/launch/fee-shares.ts";
 import type { GuardStore } from "../guard/store.ts";
 import { ensureRewardAccount } from "../rewards/ledger.ts";
 import { LAUNCHES_PER_CREATOR_PER_DAY, LAUNCHES_PER_HOUR, POOL_PAYER_FLOOR_LAMPORTS, type LaunchNetwork } from "./config.server.ts";
@@ -60,6 +61,7 @@ export type LaunchFailureCode =
   | "PRESET_UNAVAILABLE"
   | "FIRST_BUY_ABOVE_CAP"
   | "LOCK_NEEDS_PURCHASE"
+  | "SHARES_INVALID"
   | "NOT_BUILT"
   | "BUILD_EXPIRED"
   | "BUILD_USED"
@@ -89,6 +91,8 @@ export type LaunchBuildRecord = Readonly<{
   payerCoveredLamports: string;
   messageSha256: string;
   lock: Readonly<{ schedule: CreatorLockId; escrow: string; amountRaw: string; cliffAt: number; endsAt: number; messageSha256: string }> | null;
+  /** «Спільнота» sharing the creator's fees: the vault, the shares and the second transaction's message. */
+  split: Readonly<{ vault: string; shares: readonly FeeShare[]; messageSha256: string }> | null;
   createdAt: string;
   expiresAt: string;
   validUntil: string;
@@ -117,6 +121,12 @@ export type LaunchRecord = Readonly<{
    * settles it from the escrow's own address; FAILED when the network refused it or it was never sent.
    */
   lock: Readonly<{ schedule: CreatorLockId; escrow: string; signature: string | null; state: "LOCKED" | "PENDING" | "FAILED"; reason: string | null }> | null;
+  /**
+   * «Спільнота» sharing the creator's fees: SHARED once the vault holds the curve's creator role on chain; PENDING while
+   * its send has no answer — the token's read settles it from the curve's own creator; FAILED when the network refused
+   * it or it was never sent, and then the creator's wallet keeps the role and every fee. Absent on a launch before it.
+   */
+  feeSharing?: Readonly<{ vault: string; shares: readonly FeeShare[]; signature: string | null; state: "SHARED" | "PENDING" | "FAILED"; reason: string | null }> | null;
   /** The build this launch was sent from — its send is counted under it. */
   buildId: string;
   referralCode: string | null;
@@ -135,6 +145,8 @@ export type PrepareInput = Readonly<{
   /** The first purchase in the pair currency's raw units; "0" for none. */
   firstBuyRaw: string;
   lock: CreatorLockId | null;
+  /** «Спільнота» only: the creator's fees shared, the creator among two to five wallets; absent or empty, not shared. */
+  feeShares?: readonly FeeShare[];
 }>;
 
 export type PreparedLaunch = Readonly<{
@@ -142,6 +154,9 @@ export type PreparedLaunch = Readonly<{
   buildId: string;
   wireBase64: string;
   lockWireBase64: string | null;
+  /** The sharing of the creator's fees, signed already by the new mint; the creator signs it in the same window. */
+  splitWireBase64: string | null;
+  feeVault: string | null;
   token: string;
   firstBuyOutRaw: string;
   payerCoveredLamports: string;
@@ -183,6 +198,12 @@ export async function prepareLaunch(deps: LaunchDeps, input: PrepareInput): Prom
   const check = checkLaunchForm({ name: stored.metadata.name, symbol: stored.metadata.symbol, description: stored.metadata.description, website: "", x: "", telegram: "" });
   if (check.hits.length) return fail("NAME_BORROWED", `The name or ticker reads as ${check.hits.map((hit) => hit.label).join(", ")}.`);
   if (input.lock && BigInt(input.firstBuyRaw) <= 0n) return fail("LOCK_NEEDS_PURCHASE", "Only a first purchase can be locked.");
+  const shares = input.feeShares ?? [];
+  if (shares.length > 0) {
+    if (preset.id !== "community") return fail("SHARES_INVALID", "Only «Спільнота» shares the creator's fees.");
+    const problems = feeShareProblems(input.creator, shares);
+    if (problems.length) return fail("SHARES_INVALID", `The split does not hold: ${problems.join(", ")}.`);
+  }
   await sweepBuilds(deps).catch(() => undefined);
   if ((await sendsToday(deps, input.creator)) >= LAUNCHES_PER_CREATOR_PER_DAY) {
     return fail("CREATOR_LIMIT", `One wallet launches at most ${LAUNCHES_PER_CREATOR_PER_DAY} tokens a day.`);
@@ -204,7 +225,7 @@ export async function prepareLaunch(deps: LaunchDeps, input: PrepareInput): Prom
         creatorFirstBuyRaw: input.firstBuyRaw,
         pairMint: deps.network.pairs[preset.id].mint,
       },
-      { creatorCoversPayer: true },
+      { creatorCoversPayer: true, feeShares: shares },
     );
   } catch (error) {
     if (error instanceof LaunchRefusal && error.code === "CREATOR_BUY_ABOVE_CAP") return fail("FIRST_BUY_ABOVE_CAP", "The first purchase is above the preset's cap.");
@@ -256,6 +277,7 @@ export async function prepareLaunch(deps: LaunchDeps, input: PrepareInput): Prom
     payerCoveredLamports: built.payerCoveredLamports,
     messageSha256: sha256(tx.serializeMessage()),
     lock,
+    split: built.split ? { vault: built.split.vault, shares, messageSha256: sha256(Transaction.from(Buffer.from(built.split.wireBase64, "base64")).serializeMessage()) } : null,
     createdAt: now.toISOString(),
     expiresAt: new Date(now.getTime() + BUILD_TTL_MS).toISOString(),
     validUntil: built.validUntil ?? "0",
@@ -266,10 +288,12 @@ export async function prepareLaunch(deps: LaunchDeps, input: PrepareInput): Prom
     buildId: record.id,
     wireBase64: built.wireBase64,
     lockWireBase64,
+    splitWireBase64: built.split?.wireBase64 ?? null,
+    feeVault: built.split?.vault ?? null,
     token: built.token,
     firstBuyOutRaw: built.creatorFirstBuyOutRaw,
     payerCoveredLamports: built.payerCoveredLamports,
-    creatorCostLamports: (BigInt(built.creatorSpendLamports ?? built.payerCoveredLamports) + lockCost).toString(),
+    creatorCostLamports: (BigInt(built.creatorSpendLamports ?? built.payerCoveredLamports) + lockCost + BigInt(built.split?.costLamports ?? "0")).toString(),
     expiresAt: record.expiresAt,
   };
 }
@@ -289,7 +313,7 @@ function signedAsBuilt(wireBase64: string, messageSha256: string, except: Public
   return tx;
 }
 
-export type SubmittedLaunch = Readonly<{ ok: true; token: string; signature: string; state: "LAUNCHED" | "PENDING"; lock: LaunchRecord["lock"]; tokenPath: string }>;
+export type SubmittedLaunch = Readonly<{ ok: true; token: string; signature: string; state: "LAUNCHED" | "PENDING"; lock: LaunchRecord["lock"]; feeSharing: NonNullable<LaunchRecord["feeSharing"]> | null; tokenPath: string }>;
 
 /**
  * What one send came to: confirmed; refused by the network's own preflight
@@ -297,7 +321,7 @@ export type SubmittedLaunch = Readonly<{ ok: true; token: string; signature: str
  * pool payer paid its fee); or not known yet — the bytes may still land until
  * their blockhash expires.
  */
-type Sent = Readonly<{ outcome: "CONFIRMED" | "REJECTED" | "FAILED" | "UNKNOWN"; signature: string; reason: string | null }>;
+export type Sent = Readonly<{ outcome: "CONFIRMED" | "REJECTED" | "FAILED" | "UNKNOWN"; signature: string; reason: string | null; /** A refusal's whole text with the program's logs, for telling one refusal from another. */ detail?: string }>;
 
 /** The chain's word on a signature: confirmed, refused, expired (its blockhash passed and it never landed), or not known yet. */
 async function signatureOutcome(connection: Connection, signature: string, validUntil: number): Promise<Sent["outcome"] | "EXPIRED"> {
@@ -328,13 +352,17 @@ function preflightRefused(error: unknown): boolean {
  * what the route may take; past it the outcome is UNKNOWN and the token's read
  * settles it from the chain.
  */
-async function sendOnce(connection: Connection, tx: Transaction, validUntil: number, now: () => Date, budget: Readonly<{ confirmMs: number; settleMs: number }>): Promise<Sent> {
+export async function sendOnce(connection: Connection, tx: Transaction, validUntil: number, now: () => Date, budget: Readonly<{ confirmMs: number; settleMs: number }>): Promise<Sent> {
   const signature = getBase58Decoder().decode(new Uint8Array(tx.signatures[0]?.signature ?? new Uint8Array()));
   let sendError: unknown = null;
   try {
     await connection.sendRawTransaction(tx.serialize(), { skipPreflight: false, preflightCommitment: "confirmed", maxRetries: 2 });
   } catch (error) {
-    if (preflightRefused(error)) return { outcome: "REJECTED", signature, reason: error instanceof Error ? error.message.slice(0, 300) : "The network refused it." };
+    if (preflightRefused(error)) {
+      const logs = (error as { logs?: unknown }).logs;
+      const detail = `${error instanceof Error ? error.message : ""}\n${Array.isArray(logs) ? logs.join("\n") : ""}`;
+      return { outcome: "REJECTED", signature, reason: error instanceof Error ? error.message.slice(0, 300) : "The network refused it.", detail };
+    }
     /* A lost answer is not a refusal: the bytes may have reached the network. */
     sendError = error;
   }
@@ -387,7 +415,7 @@ async function claimAttempt(deps: LaunchDeps, build: LaunchBuildRecord): Promise
 
 export async function submitLaunch(
   deps: LaunchDeps,
-  input: Readonly<{ buildId: string; creator: string; signedWireBase64: string; signedLockWireBase64: string | null }>,
+  input: Readonly<{ buildId: string; creator: string; signedWireBase64: string; signedLockWireBase64: string | null; signedSplitWireBase64?: string | null }>,
 ): Promise<SubmittedLaunch | LaunchFailure> {
   const builds = deps.store.collection<LaunchBuildRecord>("launchBuilds");
   const build = await builds.get(buildKey(deps.network.cluster, input.buildId));
@@ -402,6 +430,13 @@ export async function submitLaunch(
     const signed = signedAsBuilt(input.signedLockWireBase64, build.lock.messageSha256, null);
     if ("ok" in signed) return signed;
     lockTx = signed;
+  }
+  let splitTx: Transaction | null = null;
+  if (build.split) {
+    if (!input.signedSplitWireBase64) return fail("SIGNATURE_MISSING", "The sharing of the creator's fees was not signed.");
+    const signed = signedAsBuilt(input.signedSplitWireBase64, build.split.messageSha256, null);
+    if ("ok" in signed) return signed;
+    splitTx = signed;
   }
   const refused = await claimAttempt(deps, build);
   if (refused) return refused;
@@ -426,6 +461,7 @@ export async function submitLaunch(
     firstBuyInRaw: build.firstBuyInRaw,
     firstBuyOutRaw: build.firstBuyOutRaw,
     lock: null,
+    feeSharing: null,
     referralCode: referral?.code ?? null,
     launchedAt: deps.now().toISOString(),
     buildId: build.id,
@@ -442,8 +478,9 @@ export async function submitLaunch(
   if (sent.outcome === "UNKNOWN") {
     /* The lock waits for the creation: its tokens exist only once the creation lands. The page says what the chain says. */
     const lock: LaunchRecord["lock"] = build.lock ? { schedule: build.lock.schedule, escrow: build.lock.escrow, signature: null, state: "FAILED", reason: "not sent: the launch was not confirmed in time" } : null;
-    await writeLaunch(deps.store, { ...pending, lock });
-    return { ok: true, token: build.token, signature, state: "PENDING", lock, tokenPath: `/app/launch/${build.token}` };
+    const feeSharing: LaunchRecord["feeSharing"] = build.split ? { vault: build.split.vault, shares: build.split.shares, signature: null, state: "FAILED", reason: "not sent: the launch was not confirmed in time" } : null;
+    await writeLaunch(deps.store, { ...pending, lock, feeSharing });
+    return { ok: true, token: build.token, signature, state: "PENDING", lock, feeSharing, tokenPath: `/app/launch/${build.token}` };
   }
 
   let lock: LaunchRecord["lock"] = null;
@@ -452,13 +489,40 @@ export async function submitLaunch(
     const state = locked.outcome === "CONFIRMED" ? "LOCKED" : locked.outcome === "UNKNOWN" ? "PENDING" : "FAILED";
     lock = { schedule: build.lock.schedule, escrow: build.lock.escrow, signature: locked.signature, state, reason: state === "FAILED" ? (locked.reason ?? "the network refused the lock") : null };
   }
-  await writeLaunch(deps.store, { ...pending, state: "LAUNCHED", lock });
-  return { ok: true, token: build.token, signature, state: "LAUNCHED", lock, tokenPath: `/app/launch/${build.token}` };
+  let feeSharing: LaunchRecord["feeSharing"] = null;
+  if (build.split && splitTx) {
+    const shared = await sendOnce(deps.connection, splitTx, Number(build.validUntil), deps.now, LOCK_BUDGET);
+    const state = shared.outcome === "CONFIRMED" ? "SHARED" : shared.outcome === "UNKNOWN" ? "PENDING" : "FAILED";
+    feeSharing = { vault: build.split.vault, shares: build.split.shares, signature: shared.signature, state, reason: state === "FAILED" ? (shared.reason ?? "the network refused the sharing") : null };
+  }
+  await writeLaunch(deps.store, { ...pending, state: "LAUNCHED", lock, feeSharing });
+  return { ok: true, token: build.token, signature, state: "LAUNCHED", lock, feeSharing, tokenPath: `/app/launch/${build.token}` };
+}
+
+/** A launch whose creator fees a wallet shares in, indexed by that wallet — the creator's own row is in `launchesByCreator`. */
+export type FeeShareIndex = Readonly<{ cluster: string; wallet: string; token: string }>;
+export const FEE_SHARE_INDEX = "launchFeeShares";
+export const feeShareKey = (cluster: string, wallet: string, token = "") => `solana:${cluster}:${wallet}:${token}`;
+
+async function indexFeeShares(store: GuardStore, record: LaunchRecord): Promise<void> {
+  const sharing = record.feeSharing;
+  if (!sharing || sharing.state === "FAILED") return;
+  const index = store.collection<FeeShareIndex>(FEE_SHARE_INDEX);
+  for (const share of sharing.shares) {
+    if (share.address === record.creator) continue;
+    await index.set(feeShareKey(record.cluster, share.address, record.token), { cluster: record.cluster, wallet: share.address, token: record.token });
+  }
+}
+
+async function unindexFeeShares(store: GuardStore, record: LaunchRecord): Promise<void> {
+  const index = store.collection<FeeShareIndex>(FEE_SHARE_INDEX);
+  for (const share of record.feeSharing?.shares ?? []) await index.delete(feeShareKey(record.cluster, share.address, record.token));
 }
 
 async function writeLaunch(store: GuardStore, record: LaunchRecord): Promise<void> {
   await store.collection<LaunchRecord>("launches").set(launchKey(record.cluster, record.token), record);
   await store.collection<LaunchRecord>("launchesByCreator").set(creatorKey(record.cluster, record.creator, record.token), record);
+  await indexFeeShares(store, record);
 }
 
 async function removeLaunch(store: GuardStore, record: LaunchRecord): Promise<void> {
@@ -506,6 +570,27 @@ export async function settleLaunchLock(deps: Pick<LaunchDeps, "store" | "connect
   if (!next) return record;
   const settled: LaunchRecord = { ...record, lock: next };
   await writeLaunch(deps.store, settled);
+  return settled;
+}
+
+/**
+ * The sharing as the chain settles it: the vault holding the curve's creator role is SHARED, whatever the send said; a
+ * PENDING one whose signature failed or expired is FAILED. The record is rewritten when the state changes.
+ */
+export async function settleFeeSharing(deps: Pick<LaunchDeps, "store" | "connection">, record: LaunchRecord, roleOwner: string | null): Promise<LaunchRecord> {
+  const sharing = record.feeSharing;
+  if (!sharing || sharing.state === "SHARED") return record;
+  let next: NonNullable<LaunchRecord["feeSharing"]> | null = null;
+  if (roleOwner === sharing.vault) next = { ...sharing, state: "SHARED", reason: null };
+  else if (sharing.state === "PENDING" && sharing.signature) {
+    const outcome = await signatureOutcome(deps.connection, sharing.signature, Number(record.validUntil));
+    if (outcome === "FAILED" || outcome === "EXPIRED") next = { ...sharing, state: "FAILED", reason: "the network did not take the sharing" };
+  }
+  if (!next) return record;
+  const settled: LaunchRecord = { ...record, feeSharing: next };
+  await writeLaunch(deps.store, settled);
+  /* A sharing that never landed shares nothing: the other wallets' rows go, and the creator keeps every fee. */
+  if (next.state === "FAILED") await unindexFeeShares(deps.store, settled);
   return settled;
 }
 

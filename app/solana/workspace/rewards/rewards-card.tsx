@@ -10,6 +10,7 @@ import { useSolanaI18n } from "../i18n/provider.tsx";
 import { WalletGate } from "../wallet-gate.tsx";
 import { useWalletProof } from "../wallet-proof.tsx";
 import { rankCopy } from "./rank-copy.ts";
+import { BadgesCard, type AchievementsSummary } from "./badges-card.tsx";
 import { RankCard, type RankSummary } from "./rank-card.tsx";
 import { ReferralCard } from "./referral-card.tsx";
 import styles from "./rewards.module.css";
@@ -64,6 +65,8 @@ type Summary = Readonly<{
   invitedBy: string | null;
   /** The rank over the last 30 days, or null when it could not be read. */
   rank?: RankSummary | null;
+  /** The ranks reached and the achievements held, or null when they could not be read. */
+  achievements?: AchievementsSummary | null;
   sourceAmounts?: Readonly<Record<"CASHBACK" | "REFERRAL_L1" | "REFERRAL_L2", string>>;
 }>;
 
@@ -430,6 +433,8 @@ export function RewardsCard() {
             />
           </section>
         </div>
+
+        <BadgesCard wallet={address} rank={summary.rank?.rank ?? null} achievements={summary.achievements} />
 
         <section className={`${styles.panel} ${styles.history}`} id="rewards-history" aria-label={text("Recent rewards")}>
           <div className={styles.panelHead}>

@@ -341,6 +341,14 @@ export const GUARD_COLLECTIONS = [
   /* Ryntra Launch: every send of a launch, keyed `solana:<cluster>:<creator>:<build>` — the creator's day and the
      network's hour are counted from it, the sends the chain refused included. */
   "launchAttempts",
+  /* Ryntra Launch: a buy or a sale built for a wallet, keyed `<cluster>:<build>` — the unsigned bytes the signed ones
+     are compared with; it lives minutes. And each build that was sent, under the same key, so a build is sent once. */
+  "launchTradeBuilds",
+  "launchTradeSends",
+  "launchFeeShares",
+  "launchClaims",
+  "launchClaimBuilds",
+  "launchClaimSends",
 ] as const;
 
 export type GuardCollectionName = (typeof GUARD_COLLECTIONS)[number];

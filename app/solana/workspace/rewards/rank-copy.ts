@@ -10,6 +10,7 @@ import type { WorkspaceLocale } from "@/app/shell/locale";
  */
 
 export type RankId = "BRONZE" | "SILVER" | "GOLD" | "SAPPHIRE" | "DIAMOND";
+export type AchievementWordId = "FIRST_FRIEND" | "FIVE_FRIENDS" | "LAUNCH_ON_DEX";
 
 type Copy = Readonly<{
   title: string;
@@ -39,6 +40,30 @@ type Copy = Readonly<{
   rewardsRules: readonly string[];
   ranksTitle: string;
   ranksRules: readonly string[];
+  badgesTitle: string;
+  /** The line under the badges before one is chosen. */
+  badgesHint: string;
+  /** How many of the badges shown are held: «3 of 7», and the same read aloud. */
+  badgesHeld: (held: number, total: number) => string;
+  badgesHeldAloud: (held: number, total: number) => string;
+  /** The line under the badges once every one is held. */
+  badgesAllHint: string;
+  /** A rank reached where the day is not known. */
+  reached: string;
+  achievement: Readonly<Record<AchievementWordId, string>>;
+  /** What earns an achievement, one sentence. */
+  achievementHow: Readonly<Record<AchievementWordId, string>>;
+  /** What a rank badge asks: Bronze is held from the start, the rest from their threshold within 30 days. */
+  rankHow: (rank: RankId, from: string) => string;
+  /** A badge held, and the day it was earned. */
+  earnedOn: (date: string) => string;
+  /** A badge's accessible name when not yet held. */
+  notYet: (name: string) => string;
+  frame: string;
+  /** The frame line: the rank's frame, or that a frame begins at Silver. */
+  frameOf: (rank: RankId | null) => string;
+  frameHow: string;
+  avatar: (rank: RankId | null) => string;
 }>;
 
 /** The API groups thousands with a narrow space; English reads a comma. */
@@ -112,6 +137,25 @@ const EN: Copy = {
     "Your rank sets your share of a friend's fee: 10% at Bronze, 15% at Silver, 20% at Gold, 25% at Sapphire, 30% at Diamond.",
     "Points have no cash value and cannot be transferred or exchanged.",
   ],
+  badgesTitle: "Badges",
+  badgesHint: "Choose a badge to see what earns it.",
+  badgesHeld: (held, total) => `${held} of ${total}`,
+  badgesHeldAloud: (held, total) => `Badges earned: ${held} of ${total}`,
+  badgesAllHint: "Choose a badge to see when it was earned.",
+  reached: "Reached",
+  achievement: { FIRST_FRIEND: "First friend", FIVE_FRIENDS: "Five friends", LAUNCH_ON_DEX: "On a DEX" },
+  achievementHow: {
+    FIRST_FRIEND: "A friend you invited trades on Ryntra.",
+    FIVE_FRIENDS: "Five friends you invited have traded on Ryntra.",
+    LAUNCH_ON_DEX: "A token you launched moved from its curve to a DEX.",
+  },
+  rankHow: (rank, from) => (rank === "BRONZE" ? "Every account starts at Bronze." : `Reach ${enNumber(from)} points within 30 days. Once reached, the badge stays.`),
+  earnedOn: (date) => `Earned ${date}`,
+  notYet: (name) => `${name}, not yet earned`,
+  frame: "Frame",
+  frameOf: (rank) => (rank === null || rank === "BRONZE" ? "Frame from Silver" : `${EN_RANK[rank]} frame`),
+  frameHow: "From Silver up, your avatar wears your rank's frame. It changes with your rank.",
+  avatar: (rank) => (rank === null || rank === "BRONZE" ? "Your avatar, no frame yet" : `Your avatar in the ${EN_RANK[rank]} frame`),
 };
 
 const UK: Copy = {
@@ -151,6 +195,25 @@ const UK: Copy = {
     "Ранг визначає вашу частку з комісії друга: 10% на Бронзі, 15% на Сріблі, 20% на Золоті, 25% на Сапфірі, 30% на Діаманті.",
     "Очки не мають грошової вартості, їх не можна передати чи обміняти.",
   ],
+  badgesTitle: "Значки",
+  badgesHint: "Оберіть значок — побачите, як його отримати.",
+  badgesHeld: (held, total) => `${held} з ${total}`,
+  badgesHeldAloud: (held, total) => `Значків отримано: ${held} з ${total}`,
+  badgesAllHint: "Оберіть значок — побачите, коли його отримано.",
+  reached: "Досягнуто",
+  achievement: { FIRST_FRIEND: "Перший друг", FIVE_FRIENDS: "П'ять друзів", LAUNCH_ON_DEX: "Вихід на DEX" },
+  achievementHow: {
+    FIRST_FRIEND: "Друг, якого ви запросили, торгує на Ryntra.",
+    FIVE_FRIENDS: "П'ятеро друзів, яких ви запросили, торгували на Ryntra.",
+    LAUNCH_ON_DEX: "Токен, який ви запустили, вийшов з кривої на DEX.",
+  },
+  rankHow: (rank, from) => (rank === "BRONZE" ? "З Бронзи починає кожен." : `Наберіть ${from} ${ukUnit(from)} за 30 днів. Досягнутий значок лишається з вами.`),
+  earnedOn: (date) => `Отримано ${date}`,
+  notYet: (name) => `${name}, ще не отримано`,
+  frame: "Рамка",
+  frameOf: (rank) => (rank === null || rank === "BRONZE" ? "Рамка — від Срібла" : `Рамка ${UK_GENITIVE[rank]}`),
+  frameHow: "Від Срібла ваш аватар має рамку вашого рангу. Вона змінюється разом із рангом.",
+  avatar: (rank) => (rank === null || rank === "BRONZE" ? "Ваш аватар, рамки ще немає" : `Ваш аватар у рамці ${UK_GENITIVE[rank]}`),
 };
 
 export function rankCopy(locale: WorkspaceLocale): Copy {

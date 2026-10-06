@@ -58,6 +58,8 @@ import { Keypair, PublicKey, SystemProgram, Transaction, VersionedTransaction, t
 import BN from "bn.js";
 
 import type { Address, CurveProgress, LaunchParams, LaunchVenue, UnsignedTx } from "../../contracts.ts";
+import type { FeeShare } from "../../launch/fee-shares.ts";
+import { feeSharingSplitInstructions, feeSharingVaultOf, observeFeeSharing, type FeeSharingObservation } from "./fee-sharing.server.ts";
 import {
   LAUNCH_PRESET_IDS,
   creatorFirstBuyCapRaw,
@@ -101,7 +103,23 @@ export class LaunchRefusal extends Error {
  * zero, or the build is refused).
  */
 export type LaunchBuild = UnsignedTx &
-  Readonly<{ token: Address; pool: Address; config: Address; pairMint: Address; creatorFirstBuyOutRaw: string; payerCoveredLamports: string; payerNetLamports: string | null; /** The creator's SOL the network simulated the sealed bytes taking: the pool payer covered, the creator's own token accounts. */ creatorSpendLamports: string | null }>;
+  Readonly<{
+    token: Address;
+    pool: Address;
+    config: Address;
+    pairMint: Address;
+    creatorFirstBuyOutRaw: string;
+    payerCoveredLamports: string;
+    payerNetLamports: string | null;
+    /** The creator's SOL the network simulated the sealed bytes taking: the pool payer covered, the creator's own token accounts. */
+    creatorSpendLamports: string | null;
+    /**
+     * «Спільнота» sharing the creator's fees: the second transaction, signed already by the new mint as the vault's seed
+     * — the vault with the shares written for ever, and the curve's creator role handed to it. Sent once the creation
+     * lands. `costLamports` is the rent of the vault's two accounts and the signature's fee.
+     */
+    split: Readonly<{ wireBase64: string; vault: Address; costLamports: string }> | null;
+  }>;
 
 /** What the creator's first purchase would buy on a fresh curve: the tokens for an amount, or the most it may spend under the cap. */
 export type FirstBuyQuote = Readonly<{ preset: LaunchPresetId; config: Address; pairMint: Address; amountInRaw: string; tokensOutRaw: string; capRaw: string; maxAmountInRaw: string; withinCap: boolean }>;
@@ -121,7 +139,7 @@ export type MeteoraDbcLaunchVenue = LaunchVenue &
      * and fee the simulation shows it spending, and the sealed bytes are
      * simulated again: a payer that would still lose lamports refuses the build.
      */
-    create(params: LaunchParams, options?: Readonly<{ creatorCoversPayer?: boolean }>): Promise<LaunchBuild>;
+    create(params: LaunchParams, options?: Readonly<{ creatorCoversPayer?: boolean; feeShares?: readonly FeeShare[] }>): Promise<LaunchBuild>;
     firstBuyQuote(preset: LaunchPresetId, amountInRaw: string, pairMint?: Address): Promise<FirstBuyQuote>;
     /** The instructions of a fee claim, for the signer to wrap — the partner's multisig wraps them in a vault transaction. */
     claimFeeInstructions(role: "partner" | "creator", token: Address, kind?: FeeKind): Promise<readonly TransactionInstruction[]>;
@@ -170,7 +188,10 @@ export type LaunchObservation = Readonly<{
   preset: LaunchPresetId | null;
   /** What breaks «Чесний лаунч» in that config as the chain stores it. */
   configProblems: readonly string[];
+  /** Who holds the curve's creator role now: the creator's wallet, or — «Спільнота» sharing its fees — the vault. */
   creator: Address;
+  /** The vault holding the creator role when it is the one found from this token's own mint; null otherwise. */
+  feeSharing: FeeSharingObservation | null;
   mint: Readonly<{
     program: Address;
     supplyRaw: string;
@@ -190,6 +211,8 @@ export type LaunchObservation = Readonly<{
     uri: string | null;
   }>;
   curve: Readonly<{
+    /** The curve's vault of the pair currency — where the buyers' money sits while the token is on the curve. */
+    quoteVault?: Address;
     quoteReserveRaw: string;
     baseReserveRaw: string;
     migrationQuoteThresholdRaw: string;
@@ -232,6 +255,8 @@ export type CreationObservation = Readonly<{
 }>;
 
 const U64_MAX = new BN("18446744073709551615");
+/** A fee vault account of Meteora's Dynamic Fee Sharing: its header and five users (the program's `8 + FeeVault::INIT_SPACE`). */
+const FEE_VAULT_BYTES = 8 + 240 + 5 * 80;
 
 const DBC_PROGRAM = "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN";
 /** The curve initialization instructions a preset launch uses, by their discriminators, with the place of each account the receipt reads. */
@@ -487,7 +512,7 @@ export function createMeteoraDbcLaunchVenue(args: Readonly<{
       return { ...sealed, config: config.publicKey.toBase58(), migrationQuoteThresholdRaw: curve.migrationQuoteThreshold.toString(), fields };
     },
 
-    async create(params: LaunchParams, options: Readonly<{ creatorCoversPayer?: boolean }> = {}): Promise<LaunchBuild> {
+    async create(params: LaunchParams, options: Readonly<{ creatorCoversPayer?: boolean; feeShares?: readonly FeeShare[] }> = {}): Promise<LaunchBuild> {
       const preset = launchPreset(params.preset);
       if (!preset) throw new LaunchRefusal("UNKNOWN_PRESET", `No preset «${params.preset}».`);
       /* Ryntra's pool payer pays and signs every Ryntra launch: that signature is what makes a pool on a public config Ryntra's. */
@@ -540,10 +565,38 @@ export function createMeteoraDbcLaunchVenue(args: Readonly<{
         /* Exactly even: the payer loses nothing and the creator hands over nothing beyond what the payer spends. */
         if (net !== 0n) throw new LaunchRefusal("PAYER_NOT_COVERED", `The pool payer's balance would change by ${net} lamports on this launch.`);
       }
+      const poolAddress = deriveDbcPoolAddress(new PublicKey(fields.quoteMint), mint.publicKey, config).toBase58();
+      let split: LaunchBuild["split"] = null;
+      if (options.feeShares && options.feeShares.length > 0) {
+        /* Only «Спільнота» shares the creator's fees: its pair is the community's token, the vault's currency. */
+        if (preset.id !== "community") throw new LaunchRefusal("CONFIG_NOT_HONEST", "Only «Спільнота» shares the creator's fees.");
+        const pairProgram = (await connection.getAccountInfo(new PublicKey(fields.quoteMint), "confirmed"))?.owner;
+        if (!pairProgram) throw new LaunchRefusal("NO_CONFIG", "The pair currency could not be read.");
+        const instructions = await feeSharingSplitInstructions({
+          connection,
+          token: mint.publicKey.toBase58(),
+          pairMint: fields.quoteMint,
+          pairProgram: pairProgram.toBase58(),
+          creator: params.creator,
+          pool: poolAddress,
+          config: fields.config,
+          shares: options.feeShares,
+        });
+        const splitTx = new Transaction().add(...instructions);
+        splitTx.feePayer = creator;
+        /* The creation's blockhash: both are signed in one wallet window and the split lands right after the creation. */
+        splitTx.recentBlockhash = Transaction.from(Buffer.from(sealed.wireBase64, "base64")).recentBlockhash;
+        splitTx.partialSign(mint);
+        /* The vault's account and its token account, at the rent the network asks for their sizes, and one signature. */
+        const tokenAccountBytes = pairProgram.equals(TOKEN_2022_PROGRAM_ID) ? 170 : 165;
+        const rent = (await connection.getMinimumBalanceForRentExemption(FEE_VAULT_BYTES)) + (await connection.getMinimumBalanceForRentExemption(tokenAccountBytes));
+        split = { wireBase64: toBase64(splitTx), vault: feeSharingVaultOf(mint.publicKey.toBase58(), fields.quoteMint), costLamports: String(rent + 5_000) };
+      }
       return {
         ...sealed,
+        split,
         token: mint.publicKey.toBase58(),
-        pool: deriveDbcPoolAddress(new PublicKey(fields.quoteMint), mint.publicKey, config).toBase58(),
+        pool: poolAddress,
         config: fields.config,
         pairMint: fields.quoteMint,
         creatorFirstBuyOutRaw: outRaw.toString(),
@@ -725,13 +778,19 @@ export function createMeteoraDbcLaunchVenue(args: Readonly<{
           };
         }
       }
+      const roleOwner = state.creator.toBase58();
+      const isVault = roleOwner === feeSharingVaultOf(token, config.quoteMint.toBase58());
+      const feeSharing = isVault ? await observeFeeSharing(connection, roleOwner) : null;
+      /* A read that fails is a failed read, never «another creator». */
+      if (isVault && !feeSharing) throw new LaunchRefusal("NO_POOL", "The vault sharing the creator's fees could not be read.");
       return {
         token,
         pool: pool.publicKey.toBase58(),
         config: state.config.toBase58(),
         preset: presetOfConfig(state.config.toBase58()),
         configProblems: honestLaunchProblems(configFields),
-        creator: state.creator.toBase58(),
+        creator: roleOwner,
+        feeSharing,
         mint: {
           program: program.toBase58(),
           supplyRaw: mint.supply.toString(),
@@ -749,6 +808,7 @@ export function createMeteoraDbcLaunchVenue(args: Readonly<{
           uri: metadata?.uri ?? null,
         },
         curve: {
+          quoteVault: state.quoteVault.toBase58(),
           quoteReserveRaw: reserve.toString(),
           baseReserveRaw: str(state.baseReserve),
           migrationQuoteThresholdRaw: threshold.toString(),

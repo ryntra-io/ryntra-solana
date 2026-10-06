@@ -65,6 +65,15 @@ export const LaunchReceiptFactsSchema = z
     creatorFirstBuy: z.object({ quoteInRaw: Raw, tokensOutRaw: Raw, capRaw: Raw }).strict().nullable(),
     /** The creator's lock of that purchase, when the chain shows one that holds it; absent or null, none. */
     creatorLock: z.object({ escrow: Address, lockedRaw: Raw, cliffAt: z.string().datetime({ offset: true }), endsAt: z.string().datetime({ offset: true }) }).strict().nullable().optional(),
+    /**
+     * «Спільнота» sharing the creator's fees: the vault holding the curve's creator role and the shares written in it
+     * for ever (basis points of the creator's fees); absent or null when the creator's wallet holds the role.
+     */
+    feeSharing: z
+      .object({ vault: Address, shares: z.array(z.object({ address: Address, bps: z.number().int().min(1).max(10_000) }).strict()).min(2).max(5) })
+      .strict()
+      .nullable()
+      .optional(),
     token2022: z
       .object({
         supplyRaw: Raw,
@@ -145,12 +154,13 @@ export function launchObservationProblems(observation: LaunchObservation): reado
  * by and for the creator, holding at least the purchase, that nobody can
  * cancel or redirect and that was not cancelled.
  */
-export function creatorLockProblems(observation: Pick<LaunchObservation, "token" | "creator">, creation: Pick<CreationObservation, "creatorTokensOutRaw">, lock: CreatorLockObservation, nowSeconds: number): readonly string[] {
+export function creatorLockProblems(observation: Pick<LaunchObservation, "token">, creation: Pick<CreationObservation, "creatorTokensOutRaw" | "creator">, lock: CreatorLockObservation, nowSeconds: number): readonly string[] {
   const problems: string[] = [];
   const bought = BigInt(creation.creatorTokensOutRaw);
   if (lock.program !== MET_LOCK_PROGRAM) problems.push("the escrow is not Met Lock's");
   if (lock.mint !== observation.token) problems.push("the escrow locks another token");
-  if (lock.creator !== observation.creator || lock.recipient !== observation.creator) problems.push("the escrow is not the creator's own");
+  /* The creator is the wallet the creation names: with shared fees the curve's creator role is the vault's, the tokens the wallet's. */
+  if (lock.creator !== creation.creator || lock.recipient !== creation.creator) problems.push("the escrow is not the creator's own");
   if (lock.cancelMode !== 0 || lock.updateRecipientMode !== 0) problems.push("the escrow can be cancelled or redirected");
   if (lock.cancelledAt !== 0) problems.push("the escrow was cancelled");
   if (bought <= 0n) problems.push("the creator made no first purchase");
@@ -174,10 +184,26 @@ export function launchCreationProblems(observation: LaunchObservation, creation:
   if (creation.feePayer !== ryntraPoolPayer || !creation.signers.includes(ryntraPoolPayer) || (init !== null && init.payer !== ryntraPoolPayer)) {
     problems.push("not launched through Ryntra: Ryntra's pool payer did not pay for the creation");
   }
-  if (creation.creator !== observation.creator) problems.push("the creation names another creator");
+  if (creation.creator !== observation.creator && !sharedByCreator(observation, creation.creator)) problems.push("the creation names another creator");
   const preset = observation.preset ? launchPreset(observation.preset) : null;
   if (preset && BigInt(creation.creatorTokensOutRaw) > creatorFirstBuyCapRaw(preset)) problems.push("the creator's first purchase is above the preset's cap");
   return problems;
+}
+
+/**
+ * The curve's creator role held by the vault found from this token's own mint, made by the creator and sharing with
+ * them: «Спільнота» sharing the creator's fees — not another creator.
+ */
+function sharedByCreator(observation: Pick<LaunchObservation, "token" | "creator" | "feeSharing" | "preset">, creator: string): boolean {
+  const sharing = observation.feeSharing ?? null;
+  return (
+    observation.preset === "community" &&
+    sharing !== null &&
+    sharing.vault === observation.creator &&
+    sharing.base === observation.token &&
+    sharing.owner === creator &&
+    sharing.users.some((user) => user.address === creator)
+  );
 }
 
 export type BuildLaunchReceiptInput = Readonly<{
@@ -211,8 +237,9 @@ export function buildLaunchReceiptFacts(input: BuildLaunchReceiptInput): LaunchR
     { code: "NO_FREEZE", account: observation.token },
     { code: "METADATA_FIXED", account: observation.token },
     { code: "NO_TRANSFER_HOOK", account: observation.token },
-    { code: "CURVE_HOLDS_FUNDS", account: observation.pool },
   ];
+  /* While the token is on its curve the buyers' money is in the curve's vault, which the mark names; after graduation it is in the pool, whose locked liquidity the next marks name. */
+  if (!observation.curve.migrated) marks.push({ code: "CURVE_HOLDS_FUNDS", account: observation.curve.quoteVault ?? observation.pool });
   const graduated = observation.graduated;
   if (graduated) for (const position of graduated.positions) marks.push({ code: "LP_LOCKED_FOREVER", account: position.position });
   const lock = input.creatorLock && creatorLockProblems(observation, creation, input.creatorLock, Math.floor(Date.parse(input.observedAt) / 1000)).length === 0 ? input.creatorLock : null;
@@ -225,7 +252,7 @@ export function buildLaunchReceiptFacts(input: BuildLaunchReceiptInput): LaunchR
     config: observation.config,
     token: observation.token,
     pool: observation.pool,
-    creator: observation.creator,
+    creator: creation.creator,
     created: {
       signature: creation.signature,
       slot: creation.slot,
@@ -233,6 +260,9 @@ export function buildLaunchReceiptFacts(input: BuildLaunchReceiptInput): LaunchR
     },
     creatorFirstBuy: bought ? { quoteInRaw: creation.creatorQuoteInRaw, tokensOutRaw: creation.creatorTokensOutRaw, capRaw: creatorFirstBuyCapRaw(preset).toString() } : null,
     creatorLock: lock ? { escrow: lock.escrow, lockedRaw: lock.totalRaw, cliffAt: new Date(lock.cliffAt * 1000).toISOString(), endsAt: new Date(lock.endsAt * 1000).toISOString() } : null,
+    feeSharing: observation.feeSharing && sharedByCreator(observation, creation.creator)
+      ? { vault: observation.feeSharing.vault, shares: observation.feeSharing.users.map((user) => ({ address: user.address, bps: Math.round((user.share * 10_000) / observation.feeSharing!.totalShare) })) }
+      : null,
     token2022: {
       supplyRaw: observation.mint.supplyRaw,
       decimals: observation.mint.decimals,

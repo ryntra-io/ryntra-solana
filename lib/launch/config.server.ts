@@ -19,14 +19,19 @@
 
 import { Connection, Keypair } from "@solana/web3.js";
 
+import { FEE_POLICY_V2 } from "../core/fee-policy.ts";
 import type { PresetConfigs } from "../core/venues/meteora-dbc/launch.server.ts";
 import type { LaunchPresetId } from "../core/venues/meteora-dbc/presets.ts";
 import { resolveEndpoint } from "../solana/rpc.ts";
 
 export type LaunchCluster = "devnet";
 
-/** A pair currency a preset trades against on this network. */
-export type LaunchPair = Readonly<{ mint: string; symbol: string; decimals: number; usdPrice: number }>;
+/**
+ * A pair currency a preset trades against on this network. `dollar` — a
+ * dollar stablecoin, so a figure in it is a figure in dollars; a community's
+ * token is not, and its figures are said in the token.
+ */
+export type LaunchPair = Readonly<{ mint: string; symbol: string; decimals: number; usdPrice: number; dollar: boolean }>;
 
 export type LaunchNetwork = Readonly<{
   cluster: LaunchCluster;
@@ -38,6 +43,27 @@ export type LaunchNetwork = Readonly<{
   explorer: (kind: "tx" | "account", id: string) => string;
   /** Where the metadata, the pictures and the share links live — from configuration only. */
   origin: string;
+  /**
+   * The address Ryntra's referral token accounts belong to, for trades on a launch's
+   * curve and pool — Launch's own fee identity, the partner's vault, so a
+   * referral is counted with the rest of Launch's fees and nowhere else. A
+   * trade carries the referral only where that account exists on chain.
+   */
+  referralOwner: string | null;
+  /** Whether Jupiter routes this network, so a graduated token can also be traded there. Devnet has no Jupiter. */
+  jupiter: boolean;
+  /**
+   * Ryntra's fee wallet on this network: a graduated launch is a new token, and a direct trade in its pool carries the
+   * policy's Ryntra fee into this wallet, as a trade of it through Jupiter does. A trade's page reads the fee it finds
+   * moved here as part of what the trade cost. Null: no fee wallet.
+   */
+  feeWallet: string | null;
+  /**
+   * Whether a launch's trade is recorded here the way every Ryntra fee is — its row in History and /stats, the
+   * cashback and the inviter's share of the fee, its receipt. Ryntra's own fee in the pool is charged only where it
+   * is: a fee is never taken that the person's rewards do not see.
+   */
+  tradesRecorded: boolean;
 }>;
 
 /* The devnet rehearsal of 05.10 (run 3, creator's share 40 %): its three configs and its test pair currencies. */
@@ -50,11 +76,18 @@ const DEVNET: Omit<LaunchNetwork, "origin"> = {
     community: ["Ahh39x8jBcZxATVajcjfWUTsZBYmvwT6DwVTJLKEvr6v"],
   },
   pairs: {
-    classic: { mint: "9gCUiQwyGzSaV5tCvn3jQWJfCqwdKDkhbPYgAG5mZiHB", symbol: "USDC", decimals: 6, usdPrice: 1 },
-    protected: { mint: "9gCUiQwyGzSaV5tCvn3jQWJfCqwdKDkhbPYgAG5mZiHB", symbol: "USDC", decimals: 6, usdPrice: 1 },
-    community: { mint: "8QwXVdfGjmnjZjF3TkzT4FZzA8J1gg9s8SfF9TUxFgEX", symbol: "COMM", decimals: 6, usdPrice: 0.01 },
+    classic: { mint: "9gCUiQwyGzSaV5tCvn3jQWJfCqwdKDkhbPYgAG5mZiHB", symbol: "USDC", decimals: 6, usdPrice: 1, dollar: true },
+    protected: { mint: "9gCUiQwyGzSaV5tCvn3jQWJfCqwdKDkhbPYgAG5mZiHB", symbol: "USDC", decimals: 6, usdPrice: 1, dollar: true },
+    community: { mint: "8QwXVdfGjmnjZjF3TkzT4FZzA8J1gg9s8SfF9TUxFgEX", symbol: "COMM", decimals: 6, usdPrice: 0.01, dollar: false },
   },
   explorer: (kind, id) => `https://solscan.io/${kind}/${id}?cluster=devnet`,
+  /* The rehearsal's partner vault on devnet — the same role the multisig's vault has on mainnet. */
+  referralOwner: "xkfpaFQnfBGposA1WnsU3miQ8L5sFAXv5Mck9Cjxjju",
+  jupiter: false,
+  /* The rehearsal's owner on devnet stands in for Ryntra's fee wallet; on mainnet it is the attribution registry's. */
+  feeWallet: "9WBQamBC9Amdzzrq8QANXweZCKpfhLMLvPQJzMBgFbbu",
+  /* The stand records no launch trade: the pool's Ryntra fee is built and proven on chain, and charged where trades are recorded. */
+  tradesRecorded: false,
 };
 
 /**
@@ -113,3 +146,13 @@ export const POOL_PAYER_FLOOR_LAMPORTS = 20_000_000n;
  */
 export const LAUNCHES_PER_CREATOR_PER_DAY = 3;
 export const LAUNCHES_PER_HOUR = 60;
+
+/**
+ * The Ryntra fee a direct trade in a graduated launch's pool carries: after the curve the token is a new token like
+ * any other, so the policy's rate for that class (MEME), into the network's fee wallet. Its class by Jupiter's
+ * verification and age is read with the mainnet catalogue; a new launch is not verified yet. None without a fee wallet,
+ * and none where the trade is not recorded for the person's cashback, History and receipt.
+ */
+export function launchPoolFee(network: LaunchNetwork): Readonly<{ wallet: string; bps: number }> | null {
+  return network.feeWallet && network.tradesRecorded ? { wallet: network.feeWallet, bps: FEE_POLICY_V2.MEME.bps } : null;
+}

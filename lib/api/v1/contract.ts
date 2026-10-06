@@ -629,6 +629,94 @@
  * cashback 50 %, the inviter 10–30 % by rank, the second level 5 % — and
  * `points` (the earlier Points programme) stays as it was. A client that does
  * not read `rank` needs no release.
+ *
+ * **1.27.0 — a launch's market and trading on it.** Additive, and served only
+ * where `capabilities.launch` is present, like the rest of Launch. `GET
+ * /api/v1/launch/{mint}/market` — the token's market as the chain shows it:
+ * the price and market cap from the curve's or the graduated pool's own
+ * square-root price, the curve's way to the DEX, the curve's fee now (the
+ * falling fee for snipers included), the holders with the labels each earned
+ * (creator · sniper · bundle — a wallet that bought in the creation's block or
+ * whose buy the creator's wallet paid for as the swap's payer — and the curve's
+ * and the pool's vaults and the creator's lock, which are not people) and the
+ * shares of those groups (the snipers' and the bundle's null when the opening
+ * minutes could not be read; the bundle's `atLeast` when neither the history
+ * nor the creator's own accounts were read whole), the creator's own trades
+ * read whole from their accounts (`creator.tradesComplete`), the trades from
+ * the programs' own swap events
+ * with the market cap each left (what moved in the pair currency counts Ryntra's
+ * own fee of the same transaction), the chart of the market cap with the
+ * creator's trades and the graduation marked, the facts of risk as codes with
+ * figures and the transaction or account each rests on («the creator sold», what
+ * the creator, the bundle, the snipers and the ten largest hold, too few
+ * holders, a count of holders that is only a floor, a young token, the
+ * creator's other curves, opening minutes or a history read only in part) —
+ * never a verdict. `GET /api/v1/launch/{mint}/creator` — the creator's other
+ * Ryntra launches with what became of them (how much the creator sold, and of
+ * what), read after the market. `GET
+ * /api/v1/launch/{mint}/wallet/{address}` — what a wallet holds of the token
+ * and of the pair currency, for the trade's «Max». `POST
+ * /api/v1/launch/{mint}/trade/quote`, `…/trade/build` and `…/trade/submit` —
+ * a buy or a sale on the curve by Meteora DBC's own swap instruction, after
+ * graduation in its DAMM v2 pool; the fee is inside the swap in the same
+ * transaction (on the curve the config's — the creator's and Ryntra's shares —
+ * and Meteora's, with Ryntra's referral when it exists; in the pool the pool's,
+ * the referral and, a graduated launch being a new token, the policy's Ryntra
+ * fee into Ryntra's fee wallet — only on a network that records the trade for
+ * the person's cashback, History and receipt), and the quote names who gets
+ * what. The wallet is the only signer and the fee payer; `submit`
+ * takes the signed bytes, refuses any change but the wallet's own fee and guard
+ * instructions, sends once and answers `CONFIRMED` (with what the trade
+ * filled, from the program's event) or `PENDING`. New error
+ * codes: `LAUNCH_BALANCE_LOW`, `LAUNCH_GRADUATING`, `LAUNCH_SLIPPAGE`. The launch receipt's mark
+ * `CURVE_HOLDS_FUNDS` is now given only while the token is on its curve: after
+ * graduation the buyers' money is in the pool, named by the two
+ * `LP_LOCKED_FOREVER` marks (each position's owner is in `graduated.positions`).
+ *
+ * **1.28.0 — Rewards badges.** Additive. `GET /api/rewards` gains an optional
+ * `achievements` (`RewardsAchievementsSchema`): the five ranks, each with the
+ * points it begins at, whether the wallet has reached it since ranks began and
+ * when (the badge stays when the 30-day rank falls; Bronze and a rank reached
+ * where the start of ranks is unknown have `at` null), and the achievements
+ * (`REWARD_ACHIEVEMENTS_V1` — `FIRST_FRIEND`, `FIVE_FRIENDS`, `LAUNCH_ON_DEX`),
+ * each with whether it is earned and when. An achievement shown only once
+ * earned (`LAUNCH_ON_DEX`) is absent until it is. `null` when the badges could
+ * not be read; absent from a deployment before badges. The list of
+ * achievements is closed but grows: a new one is a new value, so a client
+ * skips an id it does not know. A client that does not read `achievements`
+ * needs no release.
+ *
+ * **1.29.0 — Ryntra Launch: the creator's cabinet.** Additive. `GET
+ * /api/v1/launch/creators/{address}` — «Мої лаунчі»: the wallet's launches as
+ * their creator and the launches whose creator fees it shares in, each with
+ * the curve's way to the DEX and what the creator's side earned by source
+ * (`curve` — the curve's creator share, `graduation` — the creator's part of
+ * the graduation fee, `lp` — the fees of the creator's locked LP after
+ * graduation), every figure a program's own counter read from the chain, and
+ * the wallet's part of it (`earnings.mine`: its share, earned, unclaimed,
+ * claimed); `earnings` null when the chain could not be read — never zero.
+ * Also the wallet's claim receipts and `card`, the creator earnings card's
+ * data (`CreatorEarningsCardSchema`: the period, the launches and those that
+ * reached a DEX, each currency apart, the receipts it rests on). `POST
+ * /api/v1/launch/{mint}/claim/build` and `…/claim/submit` — «Забрати»: every
+ * source holding a fee now in one transaction (two when a pool's accounts do
+ * not fit) for the wallet to sign as the only signer and fee payer; `submit`
+ * refuses any change but the wallet's own fee and guard instructions, sends
+ * once and answers the receipt read back from the programs' own events
+ * (`paid` by source) and the wallet's own balance (`receivedRaw`), or
+ * `PENDING`. «Спільнота» can share the creator's fees through Meteora's
+ * Dynamic Fee Sharing: `POST /api/v1/launch/build` takes optional `feeShares`
+ * (the creator among two to five wallets, whole basis points adding up to
+ * 10 000, each at least 100) and answers `splitUnsignedWireBase64` and
+ * `feeVault` — a second transaction, signed already by the new mint, that
+ * makes the vault with the shares written for ever and hands it the curve's
+ * creator role; `submit` takes `signedSplitWireBase64` and answers
+ * `feeSharing` (`SHARED`, `PENDING` or `FAILED` — then the creator's wallet
+ * keeps every fee). The token's read gains `feeSharing` and the receipt's
+ * `feeSharing` (the vault and the shares, from the chain); the receipt's
+ * `creator` is the wallet the creation names. New error codes:
+ * `LAUNCH_SHARES_INVALID`, `LAUNCH_NOTHING_TO_CLAIM`; a wallet that takes no
+ * part of a launch's creator fees gets `WALLET_MISMATCH`.
  */
 
 import {
@@ -665,11 +753,15 @@ import { STOCK_ISSUER_IDS } from "../../stocks/representations.ts";
 import { z } from "zod";
 
 import { CREATOR_LOCK_IDS } from "../../core/launch/creator-lock.ts";
+import { FEE_SOURCES } from "../../core/launch/creator-earnings.ts";
+import { EARNINGS_CARD_SOURCE } from "../../core/launch/earnings-card.ts";
+import { FEE_SHARE_MAX_RECIPIENTS, FEE_SHARE_MIN_BPS, FEE_SHARE_MIN_RECIPIENTS, FEE_SHARE_TOTAL_BPS } from "../../core/launch/fee-shares.ts";
+import { LAUNCH_CHART_MARKERS, LAUNCH_HOLDER_LABELS, LAUNCH_RISK_CODES, LAUNCH_TRADE_SIDES, LAUNCH_TRADE_VENUES } from "../../core/venues/meteora-dbc/market.ts";
 import { LAUNCH_PRESET_IDS } from "../../core/venues/meteora-dbc/presets.ts";
 import { LaunchReceiptFactsSchema } from "../../core/venues/meteora-dbc/receipt.ts";
 
 export const API_MAJOR = 1;
-export const API_CONTRACT_VERSION = "1.26.0";
+export const API_CONTRACT_VERSION = "1.29.0";
 export const API_HEADER = "X-Ryntra-API";
 export const API_VERSION_HEADER = "X-Ryntra-API-Version";
 export const NETWORK = "solana:mainnet";
@@ -760,6 +852,18 @@ export const ERROR_CODES = [
   "LAUNCH_SUBMIT_FAILED",
   /** No launch, build or metadata by that id here. */
   "LAUNCH_NOT_FOUND",
+  /* 1.27.0 — a launch's market and trading on it */
+  /** The wallet does not hold what the trade would spend. */
+  "LAUNCH_BALANCE_LOW",
+  /** The curve is full and the token is moving to its pool; trading opens there. */
+  "LAUNCH_GRADUATING",
+  /** The price moved past the trade's slippage before it landed — the program refused it; nothing moved. */
+  "LAUNCH_SLIPPAGE",
+  /* 1.29.0 — the creator's cabinet */
+  /** The sharing of the creator's fees does not hold: only «Спільнота», the creator among two to five wallets, whole basis points of at least 100 adding up to 10 000. */
+  "LAUNCH_SHARES_INVALID",
+  /** No source holds a fee for this wallet now; nothing was built. */
+  "LAUNCH_NOTHING_TO_CLAIM",
 ] as const;
 export type ApiErrorCode = (typeof ERROR_CODES)[number];
 
@@ -852,6 +956,11 @@ export const ERROR_STATUS: Readonly<Record<ApiErrorCode, number>> = {
   LAUNCH_SIGNED_OTHER_BYTES: 422,
   LAUNCH_SUBMIT_FAILED: 502,
   LAUNCH_NOT_FOUND: 404,
+  LAUNCH_BALANCE_LOW: 422,
+  LAUNCH_GRADUATING: 409,
+  LAUNCH_SLIPPAGE: 409,
+  LAUNCH_SHARES_INVALID: 422,
+  LAUNCH_NOTHING_TO_CLAIM: 409,
 };
 
 /* ------------------------------------------------------------ capabilities */
@@ -1084,6 +1193,17 @@ export const CapabilitiesSchema = z
         submit: z.literal("/api/v1/launch/submit"),
         /** The token's read: `/api/v1/launch/{mint}`. */
         token: z.literal("/api/v1/launch/{mint}"),
+        /* 1.27.0 — the token's market and trading on it. */
+        market: z.literal("/api/v1/launch/{mint}/market"),
+        wallet: z.literal("/api/v1/launch/{mint}/wallet/{address}"),
+        tradeQuote: z.literal("/api/v1/launch/{mint}/trade/quote"),
+        tradeBuild: z.literal("/api/v1/launch/{mint}/trade/build"),
+        tradeSubmit: z.literal("/api/v1/launch/{mint}/trade/submit"),
+        creator: z.literal("/api/v1/launch/{mint}/creator"),
+        /* 1.29.0 — the creator's cabinet and «Забрати»; absent on a deployment before it. */
+        creators: z.literal("/api/v1/launch/creators/{address}").optional(),
+        claimBuild: z.literal("/api/v1/launch/{mint}/claim/build").optional(),
+        claimSubmit: z.literal("/api/v1/launch/{mint}/claim/submit").optional(),
       })
       .strict()
       .optional(),
@@ -3954,6 +4074,28 @@ export const RewardsRankSchema = z
   .strict();
 export type RewardsRank = z.infer<typeof RewardsRankSchema>;
 
+export const REWARD_ACHIEVEMENTS_V1 = ["FIRST_FRIEND", "FIVE_FRIENDS", "LAUNCH_ON_DEX"] as const;
+
+/**
+ * The wallet's badges: every rank it has reached since ranks began — the
+ * badge stays when the 30-day rank falls — with the points each rank begins
+ * at, and its achievements, each with the moment it was earned. Bronze is
+ * held from the start (`at` null); a rank reached on a deployment that does
+ * not know when ranks began has `at` null too. An achievement that is shown
+ * only once earned (`LAUNCH_ON_DEX`) is absent until it is.
+ */
+export const RewardsAchievementsSchema = z
+  .object({
+    ranks: z
+      .array(z.object({ rank: z.enum(REWARD_RANKS_V1), reached: z.boolean(), at: z.string().datetime({ offset: true }).nullable(), from: RewGrouped }).strict())
+      .length(5),
+    badges: z
+      .array(z.object({ id: z.enum(REWARD_ACHIEVEMENTS_V1), earned: z.boolean(), at: z.string().datetime({ offset: true }).nullable() }).strict())
+      .max(20),
+  })
+  .strict();
+export type RewardsAchievements = z.infer<typeof RewardsAchievementsSchema>;
+
 /**
  * `GET /api/rewards?address=&locale=en|uk` — what the proven wallet has earned,
  * behind a wallet proof (the `rw` cookie or the native bearer) for exactly
@@ -4002,6 +4144,8 @@ export const RewardsResponseSchema = z
     points: RewardsPointsSchema.nullable(),
     /** Null when the rank could not be read — unavailable, not Bronze. Absent from a deployment before ranks. */
     rank: RewardsRankSchema.nullable().optional(),
+    /** Null when the badges could not be read. Absent from a deployment before badges. */
+    achievements: RewardsAchievementsSchema.nullable().optional(),
     started: z.boolean(),
   })
   .strict();
@@ -8991,6 +9135,9 @@ export function requestedMajor(headerValue: string | null): number | null {
 
 /* ------------------------------------------------------------ Ryntra Launch (1.25.0) */
 
+/** One wallet's share of a launch's creator fees, whole basis points (1.29.0). */
+const LaunchFeeShareSchema = z.object({ address: Address, bps: z.number().int().min(FEE_SHARE_MIN_BPS).max(FEE_SHARE_TOTAL_BPS) }).strict();
+
 const LaunchRaw = z.string().regex(/^[0-9]{1,30}$/);
 const LaunchWords = z.object({ uk: z.string().min(1).max(64), en: z.string().min(1).max(64) }).strict();
 const LaunchNetworkId = z.enum(["solana:devnet", "solana:mainnet"]);
@@ -9080,6 +9227,8 @@ export const LaunchBuildRequestSchema = z
     /** The first purchase in the pair's raw units; "0" for none. */
     firstBuyRaw: LaunchRaw,
     lock: z.enum(CREATOR_LOCK_IDS).nullable(),
+    /** 1.29.0, «Спільнота» only: the creator's fees shared — the creator among the wallets; absent or empty, not shared. */
+    feeShares: z.array(LaunchFeeShareSchema).max(FEE_SHARE_MAX_RECIPIENTS).optional(),
   })
   .strict();
 export type LaunchBuildRequest = z.infer<typeof LaunchBuildRequestSchema>;
@@ -9099,17 +9248,39 @@ export const LaunchBuildResponseSchema = z
     /** The creator's SOL both transactions take, simulated before the signature: what is handed to the pool payer, the creator's own token accounts, the lock's rent and fee. */
     creatorCostLamports: LaunchRaw,
     expiresAt: Iso,
+    /** 1.29.0: the sharing of the creator's fees, when asked — signed already by the new mint; the creator signs it too. */
+    splitUnsignedWireBase64: z.string().min(1).nullable().optional(),
+    /** The Dynamic Fee Sharing vault that will hold the curve's creator role. */
+    feeVault: Address.nullable().optional(),
   })
   .strict();
 export type LaunchBuildResponse = z.infer<typeof LaunchBuildResponseSchema>;
 
 export const LaunchSubmitRequestSchema = z
-  .object({ buildId: LaunchBuildId, creator: Address, signedWireBase64: z.string().min(1).max(4_000), signedLockWireBase64: z.string().min(1).max(4_000).nullable() })
+  .object({
+    buildId: LaunchBuildId,
+    creator: Address,
+    signedWireBase64: z.string().min(1).max(4_000),
+    signedLockWireBase64: z.string().min(1).max(4_000).nullable(),
+    /** 1.29.0: the signed sharing of the creator's fees, when it was built. */
+    signedSplitWireBase64: z.string().min(1).max(4_000).nullable().optional(),
+  })
   .strict();
 export type LaunchSubmitRequest = z.infer<typeof LaunchSubmitRequestSchema>;
 
 const LaunchLockSchema = z
   .object({ schedule: z.enum(CREATOR_LOCK_IDS), escrow: Address, signature: z.string().nullable(), state: z.enum(["LOCKED", "PENDING", "FAILED"]), reason: z.string().max(512).nullable() })
+  .strict();
+
+/** «Спільнота» sharing the creator's fees (1.29.0): SHARED once the vault holds the curve's creator role on chain; FAILED — the creator's wallet keeps it and every fee. */
+const LaunchFeeSharingSchema = z
+  .object({
+    vault: Address,
+    shares: z.array(LaunchFeeShareSchema).min(FEE_SHARE_MIN_RECIPIENTS).max(FEE_SHARE_MAX_RECIPIENTS),
+    signature: z.string().nullable(),
+    state: z.enum(["SHARED", "PENDING", "FAILED"]),
+    reason: z.string().max(512).nullable(),
+  })
   .strict();
 
 export const LaunchSubmitResponseSchema = z
@@ -9119,6 +9290,8 @@ export const LaunchSubmitResponseSchema = z
     /** LAUNCHED — the chain confirmed the creation; PENDING — it was sent and not confirmed in time: the token's read settles it from the chain (a refused or expired creation is then not found), and the lock was not sent. */
     state: z.enum(["LAUNCHED", "PENDING"]),
     lock: LaunchLockSchema.nullable(),
+    /** 1.29.0: the sharing of the creator's fees, when it was asked. */
+    feeSharing: LaunchFeeSharingSchema.nullable().optional(),
     tokenPath: z.string().startsWith("/app/launch/"),
   })
   .strict();
@@ -9142,6 +9315,8 @@ export const LaunchTokenResponseSchema = z
     progressBps: z.number().int().min(0).max(10_000).nullable(),
     migrated: z.boolean().nullable(),
     lock: LaunchLockSchema.extend({ cliffAt: Iso.nullable(), endsAt: Iso.nullable() }).strict().nullable(),
+    /** 1.29.0: «Спільнота» sharing the creator's fees, as recorded and settled by the chain; absent or null when not shared. */
+    feeSharing: LaunchFeeSharingSchema.nullable().optional(),
     /** The launch receipt's facts read from the chain now; null with `receiptProblems` when the chain could not be read or a rule does not hold. */
     receipt: LaunchReceiptFactsSchema.nullable(),
     receiptProblems: z.array(z.string().max(512)),
@@ -9151,3 +9326,364 @@ export const LaunchTokenResponseSchema = z
   })
   .strict();
 export type LaunchTokenResponse = z.infer<typeof LaunchTokenResponseSchema>;
+
+/* ------------------------------------------------------------ Ryntra Launch — the market and trading (1.27.0) */
+
+const LaunchSide = z.enum(LAUNCH_TRADE_SIDES);
+const LaunchTradeVenueSchema = z.enum(LAUNCH_TRADE_VENUES);
+const LaunchLabels = z.array(z.enum(LAUNCH_HOLDER_LABELS)).max(LAUNCH_HOLDER_LABELS.length);
+const LaunchSignature = z.string().min(64).max(90);
+const LaunchBps = z.number().int().min(0).max(10_000);
+const LaunchFigure = z.number().nonnegative();
+/** A figure in the pair currency and, when the pair is a dollar, in dollars. */
+const LaunchMoney = z.object({ pair: LaunchFigure, usd: LaunchFigure.nullable() }).strict();
+const LaunchSlippage = z.number().int().min(1).max(5_000);
+
+export const LaunchTradeRowSchema = z
+  .object({
+    signature: LaunchSignature,
+    at: Iso,
+    side: LaunchSide,
+    venue: LaunchTradeVenueSchema,
+    /** Whose tokens moved: the owner of the account that received them on a buy, that gave them on a sale. */
+    trader: Address,
+    /** Who paid for it — another wallet than the trader when someone bought for someone else. */
+    payer: Address,
+    /** The labels the trader carries on this token. */
+    traderLabels: LaunchLabels,
+    tokensRaw: LaunchRaw,
+    /** Paid by the buyer, fee included; received by the seller, fee taken — in the pair currency. */
+    pairRaw: LaunchRaw,
+    feeRaw: LaunchRaw,
+    /** The market cap the trade left, in the pair currency. */
+    marketCapPair: LaunchFigure,
+  })
+  .strict();
+export type LaunchTradeRow = z.infer<typeof LaunchTradeRowSchema>;
+
+export const LaunchHolderRowSchema = z
+  .object({
+    /** A wallet, or the vault or escrow account when the holder is not a person. */
+    owner: Address,
+    amountRaw: LaunchRaw,
+    shareBps: LaunchBps,
+    labels: LaunchLabels,
+  })
+  .strict();
+export type LaunchHolderRow = z.infer<typeof LaunchHolderRowSchema>;
+
+export const LaunchRiskFactSchema = z
+  .object({
+    code: z.enum(LAUNCH_RISK_CODES),
+    /** `attention` — worth a look before a trade; `info` — context. Never a verdict. */
+    level: z.enum(["attention", "info"]),
+    /** The figures a client builds its words from: shares in basis points, counts, times in unix seconds. */
+    values: z.record(z.string().min(1).max(32), z.number()),
+    /** Where anyone can see it: the transaction or the account; null for a count over many. */
+    source: z.object({ kind: z.enum(["tx", "account"]), id: z.string().min(32).max(90) }).strict().nullable(),
+  })
+  .strict();
+export type LaunchRiskFactView = z.infer<typeof LaunchRiskFactSchema>;
+
+export const LaunchCreatorLaunchSchema = z
+  .object({
+    token: Address,
+    name: z.string(),
+    symbol: z.string(),
+    preset: z.enum(LAUNCH_PRESET_IDS),
+    launchedAt: Iso,
+    /** The curve's way to the DEX now; null when it could not be read. */
+    progressBps: LaunchBps.nullable(),
+    migrated: z.boolean().nullable(),
+    /** How much the creator sold, by `creatorSoldOf`; 0 when nothing; null when the history could not be read whole. */
+    creatorSoldBps: LaunchBps.nullable(),
+    /** What `creatorSoldBps` is a share of: what they bought here, or the supply when they sold more than that; null when they sold nothing or it was not read. */
+    creatorSoldOf: z.enum(["bought", "supply"]).nullable(),
+  })
+  .strict();
+
+export const LaunchMarketResponseSchema = z
+  .object({
+    network: LaunchNetworkId,
+    token: Address,
+    /** Where the token trades now: its curve, or the pool it graduated into. */
+    venue: LaunchTradeVenueSchema,
+    pair: z.object({ mint: Address, symbol: z.string().min(1).max(12), decimals: z.number().int().min(0).max(18), dollar: z.boolean() }).strict(),
+    supplyRaw: LaunchRaw,
+    tokenDecimals: z.number().int().min(0).max(18),
+    /** The price of one token now. */
+    price: LaunchMoney,
+    marketCap: LaunchMoney,
+    /** The price now against the curve's opening price, basis points, signed. */
+    sinceLaunchBps: z.number().int(),
+    /** On the curve, what the curve holds of the pair currency; in the pool, the pool's two sides at the price now. */
+    liquidity: LaunchMoney,
+    volume24h: LaunchMoney.extend({ complete: z.boolean() }).strict(),
+    progress: z.object({ bps: LaunchBps, migrated: z.boolean(), reserveRaw: LaunchRaw, thresholdRaw: LaunchRaw }).strict(),
+    /** The curve's fee for a buy now and when the falling fee for snipers ends; null after graduation. */
+    curveFee: z.object({ nowBps: LaunchBps.nullable(), endBps: LaunchBps, sniperUntil: Iso.nullable() }).strict().nullable(),
+    holders: z
+      .object({
+        /** People holding the token; `atLeast` when the node could not count the whole mint and these are the ones found. */
+        count: z.number().int().nonnegative(),
+        atLeast: z.boolean(),
+        rows: z.array(LaunchHolderRowSchema).max(100),
+        groups: z
+          .object({
+            creatorBps: LaunchBps,
+            /** Null when the token's opening minutes could not be read: not known, never «none». */
+            snipers: z.object({ shareBps: LaunchBps, wallets: z.number().int().nonnegative() }).strict().nullable(),
+            /** `atLeast`: the history was read only in part, and a buy the creator's wallet paid for may be among the trades not read — a floor, not a count. */
+            bundle: z.object({ shareBps: LaunchBps, wallets: z.number().int().nonnegative(), atLeast: z.boolean() }).strict().nullable(),
+            top10Bps: LaunchBps,
+          })
+          .strict(),
+      })
+      .strict(),
+    trades: z
+      .object({
+        /** The newest first. */
+        rows: z.array(LaunchTradeRowSchema).max(100),
+        /** Every trade of the token was read; false when only the newest were. */
+        complete: z.boolean(),
+        read: z.number().int().nonnegative(),
+      })
+      .strict(),
+    chart: z
+      .object({
+        /** The market cap in the pair currency, one point a second at most, from the curve's opening to now. */
+        points: z.array(z.object({ t: z.number().int().nonnegative(), marketCapPair: LaunchFigure }).strict()).max(2_000),
+        markers: z.array(z.object({ t: z.number().int().nonnegative(), kind: z.enum(LAUNCH_CHART_MARKERS), signature: LaunchSignature }).strict()).max(500),
+      })
+      .strict(),
+    risk: z.array(LaunchRiskFactSchema).max(LAUNCH_RISK_CODES.length),
+    creator: z
+      .object({
+        address: Address,
+        /** Meteora DBC curves this wallet opened anywhere, this one included; null when the node does not answer. */
+        curves: z.number().int().nonnegative().nullable(),
+        /**
+         * Whether every trade of the creator's wallet on this token was read — what they bought and sold and every buy
+         * their wallet paid for, from their own accounts since the token opened. False: «the creator sold» may be
+         * missing, and is said so rather than read as «did not sell».
+         */
+        tradesComplete: z.boolean(),
+      })
+      .strict(),
+    trading: z
+      .object({
+        venue: LaunchTradeVenueSchema,
+        /** The curve, or the graduated pool. */
+        pool: Address,
+        /** Whether Ryntra's referral account rides in each trade here. */
+        referral: z.boolean(),
+        /** Whether the token can also be traded through Jupiter on this network — after graduation, on mainnet. */
+        jupiter: z.boolean(),
+      })
+      .strict(),
+    observedAt: Iso,
+  })
+  .strict();
+export type LaunchMarketResponse = z.infer<typeof LaunchMarketResponseSchema>;
+
+/** `GET /api/v1/launch/{mint}/creator` — the creator's other Ryntra launches and what became of each, read after the market. */
+export const LaunchCreatorResponseSchema = z
+  .object({ network: LaunchNetworkId, token: Address, creator: Address, launches: z.array(LaunchCreatorLaunchSchema).max(10), observedAt: Iso })
+  .strict();
+export type LaunchCreatorResponse = z.infer<typeof LaunchCreatorResponseSchema>;
+
+/** What a wallet holds for trading a launch: the token and the pair currency, raw. Public data, read from the chain now. */
+export const LaunchWalletResponseSchema = z
+  .object({ wallet: Address, token: Address, tokenRaw: LaunchRaw, pairRaw: LaunchRaw, observedAt: Iso })
+  .strict();
+export type LaunchWalletResponse = z.infer<typeof LaunchWalletResponseSchema>;
+
+export const LaunchTradeQuoteRequestSchema = z.object({ side: LaunchSide, amountRaw: LaunchRaw, slippageBps: LaunchSlippage }).strict();
+export type LaunchTradeQuoteRequest = z.infer<typeof LaunchTradeQuoteRequestSchema>;
+
+export const LaunchTradeQuoteResponseSchema = z
+  .object({
+    venue: LaunchTradeVenueSchema,
+    side: LaunchSide,
+    /** What the trade spends: the pair currency on a buy, the token on a sale. */
+    amountInRaw: LaunchRaw,
+    amountOutRaw: LaunchRaw,
+    /** The least it receives and still lands. */
+    minimumOutRaw: LaunchRaw,
+    /** A buy the curve cannot take whole before it graduates leaves this much unspent. */
+    amountLeftRaw: LaunchRaw,
+    slippageBps: LaunchSlippage,
+    /** Every fee of the trade as a share of what moves. */
+    feeBps: LaunchBps,
+    /** Who gets the fee, in the pair currency: on the curve the creator, Ryntra (partner and referral) and Meteora; in the pool the locked liquidity, Meteora and Ryntra's referral. */
+    fee: z
+      .object({ totalRaw: LaunchRaw, creatorRaw: LaunchRaw.nullable(), ryntraRaw: LaunchRaw, meteoraRaw: LaunchRaw, liquidityRaw: LaunchRaw.nullable() })
+      .strict(),
+    /** How far the trade moves the price, basis points, signed. */
+    priceMoveBps: z.number().int(),
+    marketCapAfter: LaunchMoney,
+    referral: z.boolean(),
+    observedAt: Iso,
+  })
+  .strict();
+export type LaunchTradeQuoteResponse = z.infer<typeof LaunchTradeQuoteResponseSchema>;
+
+export const LaunchTradeBuildRequestSchema = z.object({ wallet: Address, side: LaunchSide, amountRaw: LaunchRaw, slippageBps: LaunchSlippage }).strict();
+export type LaunchTradeBuildRequest = z.infer<typeof LaunchTradeBuildRequestSchema>;
+
+export const LaunchTradeBuildResponseSchema = z
+  .object({
+    buildId: LaunchBuildId,
+    network: LaunchNetworkId,
+    /** The trade for the wallet to sign — it is the fee payer and the only signer. */
+    unsignedWireBase64: z.string().min(1),
+    quote: LaunchTradeQuoteResponseSchema,
+    expiresAt: Iso,
+  })
+  .strict();
+export type LaunchTradeBuildResponse = z.infer<typeof LaunchTradeBuildResponseSchema>;
+
+export const LaunchTradeSubmitRequestSchema = z.object({ buildId: LaunchBuildId, wallet: Address, signedWireBase64: z.string().min(1).max(4_000) }).strict();
+export type LaunchTradeSubmitRequest = z.infer<typeof LaunchTradeSubmitRequestSchema>;
+
+export const LaunchTradeSubmitResponseSchema = z
+  .object({
+    signature: LaunchSignature,
+    /** CONFIRMED — the chain confirmed it; PENDING — sent and not confirmed in time: read the signature, never send again. */
+    state: z.enum(["CONFIRMED", "PENDING"]),
+    /** What the trade did, from the program's own event in the confirmed transaction; null when it could not be read yet. */
+    filled: z.object({ tokensRaw: LaunchRaw, pairRaw: LaunchRaw }).strict().nullable(),
+  })
+  .strict();
+export type LaunchTradeSubmitResponse = z.infer<typeof LaunchTradeSubmitResponseSchema>;
+
+/* ------------------------------------------------------------ Ryntra Launch — the creator's cabinet (1.29.0) */
+
+const LaunchFeeSourceSchema = z.enum(FEE_SOURCES);
+const LaunchSourceEarnings = z.object({ earnedRaw: LaunchRaw, unclaimedRaw: LaunchRaw }).strict();
+const LaunchPairView = z.object({ mint: Address, symbol: z.string().min(1).max(12), decimals: z.number().int().min(0).max(18), dollar: z.boolean() }).strict();
+
+/** What the creator's side of a launch earned by source, every figure a program's own counter, and one wallet's part of it. */
+export const LaunchEarningsSchema = z
+  .object({
+    role: z.object({ curve: LaunchSourceEarnings, graduation: LaunchSourceEarnings, lp: LaunchSourceEarnings, earnedRaw: LaunchRaw, unclaimedRaw: LaunchRaw }).strict(),
+    mine: z.object({ shareBps: z.number().int().min(0).max(FEE_SHARE_TOTAL_BPS), earnedRaw: LaunchRaw, unclaimedRaw: LaunchRaw, claimedRaw: LaunchRaw }).strict(),
+  })
+  .strict();
+export type LaunchEarnings = z.infer<typeof LaunchEarningsSchema>;
+
+export const LaunchCabinetRowSchema = z
+  .object({
+    token: Address,
+    name: z.string(),
+    symbol: z.string(),
+    image: z.string().url().nullable(),
+    preset: z.enum(LAUNCH_PRESET_IDS),
+    creator: Address,
+    /** The wallet's place: the launch's creator, or one of the wallets its creator fees are shared with. */
+    role: z.enum(["creator", "recipient"]),
+    launchedAt: Iso,
+    pair: LaunchPairView,
+    /** The curve's way to the DEX now; null when the chain could not be read. */
+    progressBps: z.number().int().min(0).max(10_000).nullable(),
+    migrated: z.boolean().nullable(),
+    /** Null when the chain could not be read now — never zero. */
+    earnings: LaunchEarningsSchema.nullable(),
+    feeSharing: LaunchFeeSharingSchema.nullable(),
+    /** Whether «Забрати» has something for this wallet now. */
+    claimable: z.boolean(),
+  })
+  .strict();
+export type LaunchCabinetRow = z.infer<typeof LaunchCabinetRowSchema>;
+
+/** A claim's receipt: what each program said it paid in its own event, and what the wallet's account received. */
+export const LaunchClaimReceiptSchema = z
+  .object({
+    token: Address,
+    name: z.string(),
+    symbol: z.string(),
+    signature: LaunchSignature,
+    at: Iso.nullable(),
+    pair: LaunchPairView,
+    /** By source, from the programs' events — to the wallet, or into the vault when shared. */
+    paid: z.object({ curve: LaunchRaw, graduation: LaunchRaw, lp: LaunchRaw }).strict(),
+    /** What the vault paid this wallet of its share; null when the fees are not shared. */
+    vaultPaidRaw: LaunchRaw.nullable(),
+    /** The change of the wallet's own balance of the pair currency in the transaction. */
+    receivedRaw: LaunchRaw,
+  })
+  .strict();
+export type LaunchClaimReceipt = z.infer<typeof LaunchClaimReceiptSchema>;
+
+/** The creator earnings card's data — figures from the programs' own counters, with their period; the receipts are of the claims made through Ryntra. */
+export const CreatorEarningsCardSchema = z
+  .object({
+    source: z.literal(EARNINGS_CARD_SOURCE),
+    kind: z.literal("creator"),
+    wallet: Address,
+    network: LaunchNetworkId,
+    period: z.object({ from: Iso, to: Iso }).strict(),
+    launches: z.number().int().nonnegative(),
+    graduated: z.number().int().nonnegative(),
+    unread: z.number().int().nonnegative(),
+    amounts: z
+      .array(z.object({ pairMint: Address, symbol: z.string().min(1).max(12), decimals: z.number().int().min(0).max(18), dollar: z.boolean(), earnedRaw: LaunchRaw, claimedRaw: LaunchRaw }).strict())
+      .max(20),
+    receipts: z.array(LaunchSignature).max(100),
+  })
+  .strict();
+export type CreatorEarningsCardView = z.infer<typeof CreatorEarningsCardSchema>;
+
+/** `GET /api/v1/launch/creators/{address}` — «Мої лаунчі». Public data: launches and fees are on chain; the receipts are of public transactions. */
+export const LaunchCreatorCabinetResponseSchema = z
+  .object({
+    network: LaunchNetworkId,
+    wallet: Address,
+    launches: z.array(LaunchCabinetRowSchema).max(50),
+    receipts: z.array(LaunchClaimReceiptSchema).max(50),
+    card: CreatorEarningsCardSchema,
+    observedAt: Iso,
+  })
+  .strict();
+export type LaunchCreatorCabinetResponse = z.infer<typeof LaunchCreatorCabinetResponseSchema>;
+
+export const LaunchClaimBuildRequestSchema = z.object({ wallet: Address }).strict();
+export type LaunchClaimBuildRequest = z.infer<typeof LaunchClaimBuildRequestSchema>;
+
+export const LaunchClaimBuildResponseSchema = z
+  .object({
+    buildId: LaunchBuildId,
+    network: LaunchNetworkId,
+    /** The claim for the wallet to sign — the fee payer and the only signer; one, or two when a pool's accounts do not fit one. */
+    unsignedWireBase64: z.array(z.string().min(1)).min(1).max(3),
+    /** The sources holding a fee now, each taken by the claim; empty when, shared, the wallet's part already sits in the vault. */
+    sources: z.array(LaunchFeeSourceSchema).max(3),
+    /** What the wallet's part comes to as read now; the receipt says what the programs paid. */
+    expectedRaw: LaunchRaw,
+    /** The wallet's SOL the network simulated the claim taking — its fees and the rent of any account it opens; null when it could not be simulated, never zero on a guess. */
+    networkCostLamports: LaunchRaw.nullable(),
+    pair: LaunchPairView,
+    expiresAt: Iso,
+  })
+  .strict();
+export type LaunchClaimBuildResponse = z.infer<typeof LaunchClaimBuildResponseSchema>;
+
+export const LaunchClaimSubmitRequestSchema = z
+  .object({ buildId: LaunchBuildId, wallet: Address, signedWireBase64: z.array(z.string().min(1).max(4_000)).min(1).max(3) })
+  .strict();
+export type LaunchClaimSubmitRequest = z.infer<typeof LaunchClaimSubmitRequestSchema>;
+
+export const LaunchClaimSubmitResponseSchema = z
+  .object({
+    /**
+     * CONFIRMED — every transaction landed and its receipt was read; PENDING — one was sent and not confirmed in time:
+     * read its signature, never send again; PARTIAL — the first landed and a later one did not (`failed`): part was
+     * taken, the rest still waits at its source or in the vault.
+     */
+    state: z.enum(["CONFIRMED", "PENDING", "PARTIAL"]),
+    receipts: z.array(LaunchClaimReceiptSchema).max(3),
+    pending: z.array(LaunchSignature).max(3),
+    failed: z.array(z.object({ signature: LaunchSignature, reason: z.string().max(300) }).strict()).max(3),
+  })
+  .strict();
+export type LaunchClaimSubmitResponse = z.infer<typeof LaunchClaimSubmitResponseSchema>;

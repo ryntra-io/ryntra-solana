@@ -10,8 +10,9 @@ import { rewardsActivation } from "@/lib/rewards/activation";
 import { readClaim } from "@/lib/rewards/claim";
 import { ensureRewardAccount, listRewardEntries, readRewardAccount, reconcileReferralEdges, readReferralCounts } from "@/lib/rewards/ledger";
 import { maskWallet, referralLink } from "@/lib/rewards/referral";
-import { rankStanding, rankSummary } from "@/lib/rewards/rank";
-import { listRankEvents, rewardRulesFor } from "@/lib/rewards/rank-store";
+import { rankStanding, rankSummary, type RankEvent } from "@/lib/rewards/rank";
+import { achievementsOf } from "@/lib/growth/achievements";
+import { listRankEvents, rewardRulesEffectiveFrom, rewardRulesFor } from "@/lib/rewards/rank-store";
 import type { RewardRules } from "@/lib/rewards/rules";
 import { readRewardsReserve, rewardsTreasuryConfig } from "@/lib/rewards/treasury.server";
 import { heldUsdMicros, readReserveLedger } from "@/lib/rewards/reserve";
@@ -155,9 +156,11 @@ export async function GET(req: NextRequest) {
        rank that names no other wallet. Null when the ledger could not be
        read, which the page shows as unavailable rather than as zero. */
     points,
-    /* The rank over the last 30 days and what it pays on a friend's trade.
-       Null when the rank events could not be read — unavailable, not Bronze. */
-    rank: await readRank(store, address, entries, now, rulesNow),
+    /* `rank`: the rank over the last 30 days and what it pays on a friend's
+       trade. Null when the rank events could not be read — unavailable, not
+       Bronze. `achievements`: every rank ever reached and the achievements
+       held, each with its day; null when they could not be read. */
+    ...(await readRankAndBadges(store, address, entries, now, rulesNow)),
     /* Has accrual begun at all on this deployment? A page that says
        "your rewards will appear after your first trade" while nothing is
        accruing is making a promise that is not yet true, and the honest
@@ -168,20 +171,48 @@ export async function GET(req: NextRequest) {
   } catch { return json({ ok: false, error: "REWARDS_UNAVAILABLE" }, 503); }
 }
 
-/** This wallet's rank, from the rows already read plus its rank events. */
-async function readRank(
+/**
+ * This wallet's rank and its badges, from the rows already read plus its
+ * rank events — read once for both. Each is null on its own failure: the
+ * rank needs the rules in force, the badges only the rows.
+ */
+async function readRankAndBadges(
   store: ReturnType<typeof getGuardRuntime>["store"],
   wallet: string,
   entries: Parameters<typeof rankStanding>[0]["entries"],
   now: string,
   rules: RewardRules | null,
 ) {
-  if (!rules) return null;
+  let events: readonly RankEvent[];
   try {
-    return rankSummary(rankStanding({ wallet, entries, events: await listRankEvents(store, wallet), at: now }), rules);
+    events = await listRankEvents(store, wallet);
   } catch {
-    return null;
+    return { rank: null, achievements: null };
   }
+  /* When ranks began on this store — badges are dated from it, never before;
+     null while rules 2.0.0 have not begun here. A failed read leaves only the
+     badges unavailable, never the rank. */
+  const since = await rewardRulesEffectiveFrom(store, now).catch(() => undefined);
+  const rank = (() => {
+    if (!rules) return null;
+    try {
+      return rankSummary(rankStanding({ wallet, entries, events, at: now }), rules);
+    } catch {
+      return null;
+    }
+  })();
+  /* The ranks reached and the achievements held — badges stay when a rank
+     falls. Null when they cannot be computed, which the page shows by not
+     drawing the panel. */
+  const achievements = (() => {
+    if (since === undefined) return null;
+    try {
+      return achievementsOf({ wallet, entries, events, at: now, since });
+    } catch {
+      return null;
+    }
+  })();
+  return { rank, achievements };
 }
 
 /**

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowSquareOut, CaretDown, CheckCircle, CircleNotch, ImageSquare, Lock, LockOpen, PaperPlaneTilt, Warning, Wallet } from "@phosphor-icons/react";
+import { ArrowSquareOut, CaretDown, CheckCircle, CircleNotch, ImageSquare, Lock, LockOpen, PaperPlaneTilt, Plus, Trash, Users, Warning, Wallet } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ChangeEvent, type ReactNode } from "react";
 
@@ -8,6 +8,7 @@ import { useWalletReach } from "@/app/app/invest/use-wallet-reach";
 import type { WorkspaceLocale } from "@/app/shell/locale";
 import { useSolanaConnection } from "@/app/solana/workspace/connection";
 import type { LaunchBuildResponse, LaunchMetadataResponse, LaunchPresetsResponse, LaunchPresetView, LaunchQuoteResponse, LaunchSubmitResponse, LaunchTokenResponse } from "@/lib/api/v1/contract";
+import { FEE_SHARE_MAX_RECIPIENTS, FEE_SHARE_MIN_BPS, FEE_SHARE_TOTAL_BPS, withCreatorShare } from "@/lib/core/launch/fee-shares";
 import { checkLaunchForm, imageTypeOf, IMAGE_MAX_BYTES, type FieldProblem, type LaunchFormFields } from "@/lib/launch/form";
 import { signTransactions } from "@/lib/solana/wallet.client";
 
@@ -30,12 +31,41 @@ import { ShareLink } from "../share-link";
 type Phase = "form" | "prepare" | "sign" | "send" | "done" | "error";
 type Picture = Readonly<{ url: string; base64: string; bytes: number }>;
 type Quote = Readonly<{ amountRaw: string; data: LaunchQuoteResponse | null; loading: boolean }>;
+/** Another wallet sharing the creator's fees, as typed: its address and its share in per cent. */
+type ShareRow = Readonly<{ key: number; address: string; pct: string }>;
+type ShareProblem = "ADDRESS" | "REPEATED" | "SELF" | "PCT";
+const BASE58 = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+
+/** A share typed in per cent, as whole basis points; null when it is not one. */
+function pctToBps(text: string): number | null {
+  const clean = text.trim().replace(",", ".");
+  if (!/^\d{1,2}(\.\d{1,2})?$/.test(clean)) return null;
+  return Math.round(Number(clean) * 100);
+}
+
+/** Each row's problem, and what the creator keeps — the rule the server checks again. */
+function checkShares(rows: readonly ShareRow[], creator: string | null): Readonly<{ problems: ReadonlyMap<number, ShareProblem>; creatorBps: number }> {
+  const problems = new Map<number, ShareProblem>();
+  const seen = new Set<string>();
+  let given = 0;
+  for (const row of rows) {
+    const address = row.address.trim();
+    const bps = pctToBps(row.pct);
+    if (!BASE58.test(address)) problems.set(row.key, "ADDRESS");
+    else if (creator && address === creator) problems.set(row.key, "SELF");
+    else if (seen.has(address)) problems.set(row.key, "REPEATED");
+    else if (bps === null || bps < FEE_SHARE_MIN_BPS || bps > FEE_SHARE_TOTAL_BPS - FEE_SHARE_MIN_BPS) problems.set(row.key, "PCT");
+    seen.add(address);
+    given += bps ?? 0;
+  }
+  return { problems, creatorBps: FEE_SHARE_TOTAL_BPS - given };
+}
 
 const EMPTY: LaunchFormFields = { name: "", symbol: "", description: "", website: "", x: "", telegram: "" };
 const API_HEADERS = { "content-type": "application/json", "X-Ryntra-API": "1" } as const;
 const SUPPLY_RAW = 1_000_000_000n * 1_000_000n;
-/* Before the build, the network cost as measured on devnet (05.10): the creation's rent and fee, and with the lock its rent too; the build replaces it with the simulated figure. */
-const COST_ESTIMATE_SOL = { plain: "0.010", locked: "0.014" } as const;
+/* Before the build, the network cost as measured on devnet (05.10–06.10): the creation's rent and fee, with the lock its rent too, with the sharing of the creator's fees the vault's two accounts; the build replaces it with the simulated figure. */
+const COST_ESTIMATE_SOL = { plain: "0.010", locked: "0.014", shared: "0.018", sharedLocked: "0.022" } as const;
 
 async function api<T>(path: string, init?: RequestInit): Promise<{ ok: true; data: T } | { ok: false; code: string; message: string }> {
   try {
@@ -90,9 +120,12 @@ export function LaunchFlow({ locale, presets }: { locale: WorkspaceLocale; prese
   const [phase, setPhase] = useState<Phase>("form");
   const [failure, setFailure] = useState<Failure | null>(null);
   const [many, setMany] = useState(false);
+  const [manyWithSplit, setManyWithSplit] = useState(false);
   const [covered, setCovered] = useState<string | null>(null);
   const [result, setResult] = useState<{ submit: LaunchSubmitResponse; token: LaunchTokenResponse | null; symbol: string; image: string | null } | null>(null);
   const [quote, setQuote] = useState<Quote>({ amountRaw: "0", data: null, loading: false });
+  const [shares, setShares] = useState<readonly ShareRow[]>([]);
+  const [nextShareKey, setNextShareKey] = useState(1);
   const firstError = useRef<HTMLElement | null>(null);
 
   const preset = presets.presets.find((entry) => entry.id === presetId) ?? presets.presets[0];
@@ -145,7 +178,11 @@ export function LaunchFlow({ locale, presets }: { locale: WorkspaceLocale; prese
     if (problem === "SYMBOL_CHARS") return word("errSymbolChars");
     return word(key === "x" ? "errLinkX" : key === "telegram" ? "errLinkTelegram" : "errLink");
   };
-  const valid = Object.keys(check.problems).length === 0 && picture !== null && buyRaw !== null && !aboveCap;
+  /* «Спільнота» alone shares the creator's fees; another preset sends none. */
+  const sharing = preset?.id === "community" && shares.length > 0;
+  const shareCheck = useMemo(() => checkShares(shares, connection?.address ?? null), [shares, connection?.address]);
+  const sharesValid = !sharing || (shareCheck.problems.size === 0 && shareCheck.creatorBps >= FEE_SHARE_MIN_BPS);
+  const valid = Object.keys(check.problems).length === 0 && picture !== null && buyRaw !== null && !aboveCap && sharesValid;
 
   const launch = useCallback(async () => {
     setAttempted(true);
@@ -167,11 +204,21 @@ export function LaunchFlow({ locale, presets }: { locale: WorkspaceLocale; prese
     if (!metadata.ok) return failed("before", metadata);
     const built = await api<LaunchBuildResponse>("/api/v1/launch/build", {
       method: "POST",
-      body: JSON.stringify({ creator: connection.address, preset: preset.id, metadataUri: metadata.data.metadataUri, firstBuyRaw: (buyRaw ?? 0n).toString(), lock: buying ? lockId : null }),
+      body: JSON.stringify({
+        creator: connection.address,
+        preset: preset.id,
+        metadataUri: metadata.data.metadataUri,
+        firstBuyRaw: (buyRaw ?? 0n).toString(),
+        lock: buying ? lockId : null,
+        ...(sharing ? { feeShares: withCreatorShare(connection.address, shares.map((row) => ({ address: row.address.trim(), bps: pctToBps(row.pct) ?? 0 }))) } : {}),
+      }),
     });
     if (!built.ok) return failed("before", built);
-    const wires = [built.data.unsignedWireBase64, ...(built.data.lockUnsignedWireBase64 ? [built.data.lockUnsignedWireBase64] : [])];
+    const lockWire = built.data.lockUnsignedWireBase64 ?? null;
+    const splitWire = built.data.splitUnsignedWireBase64 ?? null;
+    const wires = [built.data.unsignedWireBase64, ...(lockWire ? [lockWire] : []), ...(splitWire ? [splitWire] : [])];
     setMany(wires.length > 1);
+    setManyWithSplit(Boolean(splitWire));
     setCovered(built.data.creatorCostLamports);
     setPhase("sign");
     const signed = await signTransactions({ wallet: connection.wallet, address: connection.address, unsignedWireBase64: wires, chain: built.data.network });
@@ -179,7 +226,13 @@ export function LaunchFlow({ locale, presets }: { locale: WorkspaceLocale; prese
     setPhase("send");
     const submitted = await api<LaunchSubmitResponse>("/api/v1/launch/submit", {
       method: "POST",
-      body: JSON.stringify({ buildId: built.data.buildId, creator: connection.address, signedWireBase64: signed.signedWireBase64[0], signedLockWireBase64: signed.signedWireBase64[1] ?? null }),
+      body: JSON.stringify({
+        buildId: built.data.buildId,
+        creator: connection.address,
+        signedWireBase64: signed.signedWireBase64[0],
+        signedLockWireBase64: lockWire ? (signed.signedWireBase64[1] ?? null) : null,
+        signedSplitWireBase64: splitWire ? (signed.signedWireBase64[lockWire ? 2 : 1] ?? null) : null,
+      }),
     });
     if (!submitted.ok) {
       setFailure({ step: "send", code: submitted.code, detail: submitted.message || null, token: built.data.token });
@@ -189,13 +242,14 @@ export function LaunchFlow({ locale, presets }: { locale: WorkspaceLocale; prese
     const token = await api<LaunchTokenResponse>(`/api/v1/launch/${submitted.data.token}`);
     setResult({ submit: submitted.data, token: token.ok ? token.data : null, symbol: metadata.data.symbol, image: picture?.url ?? metadata.data.imageUrl });
     setPhase("done");
-  }, [valid, preset, connection, reach, fields, picture, buyRaw, buying, lockId]);
+  }, [valid, preset, connection, reach, fields, picture, buyRaw, buying, lockId, sharing, shares]);
 
   const reset = () => {
     setFields(EMPTY);
     setPicture(null);
     setBuyText("");
     setLockId(null);
+    setShares([]);
     setAttempted(false);
     setResult(null);
     setCovered(null);
@@ -294,6 +348,20 @@ export function LaunchFlow({ locale, presets }: { locale: WorkspaceLocale; prese
               ))}
             </div>
             <PresetDetails preset={preset} locale={locale} />
+            {preset.id === "community" ? (
+              <FeeShares
+                locale={locale}
+                rows={shares}
+                problems={attempted || shares.some((row) => row.address && row.pct) ? shareCheck.problems : new Map()}
+                creatorBps={shareCheck.creatorBps}
+                refFor={errorRef(sharing && !sharesValid)}
+                onChange={setShares}
+                onAdd={() => {
+                  setShares((current) => (current.length >= FEE_SHARE_MAX_RECIPIENTS - 1 ? current : [...current, { key: nextShareKey, address: "", pct: "" }]));
+                  setNextShareKey((key) => key + 1);
+                }}
+              />
+            ) : null}
           </fieldset>
 
           <fieldset className={styles.section} disabled={busy}>
@@ -341,13 +409,16 @@ export function LaunchFlow({ locale, presets }: { locale: WorkspaceLocale; prese
                 <Row label={word("reviewPreset")} value={preset.name[locale]} />
                 <Row label={word("reviewBuy")} value={buying && buyRaw !== null ? `${fromRaw(buyRaw, preset.pair.decimals)} ${preset.pair.symbol}` : word("buyNone")} />
                 {buying ? <Row label={word("reviewLock")} value={lock ? word("lockSchedule", { cliff: periodWord(lock.cliffDays, locale), vest: periodWord(lock.vestDays, locale) }) : word("reviewNoLock")} /> : null}
-                <Row label={word("reviewRent")} value={covered ? word("reviewRentExact", { sol: fromRaw(covered, 9, 6) }) : word("reviewRentValue", { sol: lockId && buying ? COST_ESTIMATE_SOL.locked : COST_ESTIMATE_SOL.plain })} />
+                {preset.id === "community" ? (
+                  <Row label={word("reviewShare")} value={sharing ? word("reviewShareValue", { you: formatBps(Math.max(shareCheck.creatorBps, 0), locale), n: shares.length }) : word("reviewShareNone")} />
+                ) : null}
+                <Row label={word("reviewRent")} value={covered ? word("reviewRentExact", { sol: fromRaw(covered, 9, 6) }) : word("reviewRentValue", { sol: sharing ? (lockId && buying ? COST_ESTIMATE_SOL.sharedLocked : COST_ESTIMATE_SOL.shared) : lockId && buying ? COST_ESTIMATE_SOL.locked : COST_ESTIMATE_SOL.plain })} />
               </dl>
               <p className={styles.fixed}>
                 <Warning size={16} aria-hidden /> {word("reviewFixed")}
               </p>
               {busy ? (
-                <Progress locale={locale} phase={phase} many={many} />
+                <Progress locale={locale} phase={phase} many={many} split={manyWithSplit} />
               ) : (
                 <button type="button" className={`rw-btn rw-btn--primary ${styles.cta}`} onClick={launch}>
                   {connection ? <PaperPlaneTilt size={18} weight="fill" aria-hidden /> : <Wallet size={18} aria-hidden />}
@@ -581,11 +652,11 @@ function Row({ label, value }: { label: string; value: ReactNode }) {
   );
 }
 
-function Progress({ locale, phase, many }: { locale: WorkspaceLocale; phase: Phase; many: boolean }) {
+function Progress({ locale, phase, many, split }: { locale: WorkspaceLocale; phase: Phase; many: boolean; split: boolean }) {
   const word = launchWords(locale);
   const steps: readonly { id: Phase; label: LaunchWordKey }[] = [
     { id: "prepare", label: "stepPrepare" },
-    { id: "sign", label: many ? "stepSignMany" : "stepSign" },
+    { id: "sign", label: split ? "stepSignAll" : many ? "stepSignMany" : "stepSign" },
     { id: "send", label: "stepSend" },
   ];
   const at = steps.findIndex((step) => step.id === phase);
@@ -609,6 +680,8 @@ function Success({ locale, result, onAnother }: { locale: WorkspaceLocale; resul
   const lockFailed = result.submit.lock?.state === "FAILED" && result.token?.lock?.state !== "LOCKED" && !pending;
   /* The token's read, made after the send, outranks the send's own word: an escrow already seen is locked. */
   const lockPending = result.submit.lock?.state === "PENDING" && result.token?.lock?.state !== "LOCKED";
+  /* The same for the sharing of the creator's fees: the token's read settles it from the curve's own creator. */
+  const sharingState = result.token?.feeSharing?.state ?? result.submit.feeSharing?.state ?? null;
   return (
     <section className={styles.success}>
       <span className={styles.successPicture}>
@@ -634,15 +707,126 @@ function Success({ locale, result, onAnother }: { locale: WorkspaceLocale; resul
           <Warning size={16} aria-hidden /> {word("successLockFailed")}
         </p>
       ) : null}
+      {sharingState === "SHARED" ? <p className={styles.lede}>{word("successShared")}</p> : null}
+      {sharingState === "PENDING" ? <p className={styles.lede}>{word("successSharePending")}</p> : null}
+      {sharingState === "FAILED" && !pending ? (
+        <p className={styles.problem} role="alert">
+          <Warning size={16} aria-hidden /> {word("successShareFailed")}
+        </p>
+      ) : null}
       {result.token ? <ShareLink link={result.token.shareLink} symbol={result.symbol} locale={locale} /> : null}
       <div className={styles.successActions}>
         <Link className="rw-btn rw-btn--primary" href={result.submit.tokenPath}>
           {word("openToken")} <ArrowSquareOut size={16} aria-hidden />
+        </Link>
+        <Link className="rw-btn" href="/app/launch/mine">
+          {word("mineTitle")}
         </Link>
         <button type="button" className="rw-btn" onClick={onAnother}>
           {word("launchAnother")}
         </button>
       </div>
     </section>
+  );
+}
+
+/**
+ * «Поділити свої комісії» — «Спільнота» only: the creator's part of the trading fee, the graduation fee and the locked
+ * liquidity's fees, shared with up to four more wallets by shares written for ever. The creator keeps what the others
+ * do not take; nothing is shared until a wallet is added.
+ */
+function FeeShares({
+  locale,
+  rows,
+  problems,
+  creatorBps,
+  refFor,
+  onChange,
+  onAdd,
+}: {
+  locale: WorkspaceLocale;
+  rows: readonly ShareRow[];
+  problems: ReadonlyMap<number, ShareProblem>;
+  creatorBps: number;
+  refFor: (element: HTMLElement | null) => void;
+  onChange: (rows: readonly ShareRow[]) => void;
+  onAdd: () => void;
+}) {
+  const word = launchWords(locale);
+  const id = useId();
+  const edit = (key: number, change: Partial<Pick<ShareRow, "address" | "pct">>) => onChange(rows.map((row) => (row.key === key ? { ...row, ...change } : row)));
+  const problemWord = (problem: ShareProblem) => word(problem === "ADDRESS" ? "shareErrAddress" : problem === "REPEATED" ? "shareErrRepeated" : problem === "SELF" ? "shareErrSelf" : "shareErrPct");
+  const tooMuch = rows.length > 0 && creatorBps < FEE_SHARE_MIN_BPS;
+  return (
+    <div className={styles.feeShareBox} ref={refFor}>
+      <div className={styles.lockText}>
+        <span className={styles.lockTitle}>
+          <Users size={18} aria-hidden /> {word("shareTitle")}
+        </span>
+        <span className={styles.hint}>{word("shareHint")}</span>
+      </div>
+      {rows.length > 0 ? (
+        <ul className={styles.feeShareRows}>
+          <li className={styles.feeShareRow} data-you="">
+            <span className={styles.feeShareYou}>{word("shareYou")}</span>
+            <span className={styles.feeSharePctFixed}>{formatBps(Math.max(creatorBps, 0), locale)}</span>
+          </li>
+          {rows.map((row, index) => {
+            const problem = problems.get(row.key) ?? null;
+            const problemId = `${id}-${row.key}-problem`;
+            return (
+              <li key={row.key} className={styles.feeShareRow} data-invalid={problem ? "" : undefined} data-problem={problem === "PCT" ? "share" : problem ? "address" : undefined}>
+                <label className={styles.visuallyHidden} htmlFor={`${id}-${row.key}-address`}>
+                  {word("shareWallet")} {index + 1}
+                </label>
+                {/* A field that wraps: the whole address is read before it is written for ever, on a phone too. */}
+                <textarea
+                  id={`${id}-${row.key}-address`}
+                  className={`${styles.input} ${styles.mono} ${styles.feeShareAddress}`}
+                  value={row.address}
+                  placeholder={word("shareWallet")}
+                  rows={1}
+                  autoComplete="off"
+                  spellCheck={false}
+                  aria-invalid={problem === "ADDRESS" || problem === "REPEATED" || problem === "SELF" ? true : undefined}
+                  aria-describedby={problem ? problemId : undefined}
+                  onChange={(event) => edit(row.key, { address: event.target.value.replace(/\s+/g, "") })}
+                />
+                <span className={styles.feeShareAffixed}>
+                  <label className={styles.visuallyHidden} htmlFor={`${id}-${row.key}-pct`}>
+                    {word("sharePct")} {index + 1}
+                  </label>
+                  <input
+                    id={`${id}-${row.key}-pct`}
+                    className={`${styles.input} ${styles.mono}`}
+                    value={row.pct}
+                    inputMode="decimal"
+                    placeholder="10"
+                    aria-invalid={problem === "PCT" ? true : undefined}
+                    aria-describedby={problem ? problemId : undefined}
+                    onChange={(event) => edit(row.key, { pct: event.target.value })}
+                  />
+                  <span className={styles.feeShareSuffix}>%</span>
+                </span>
+                <button type="button" className={styles.feeShareRemove} aria-label={`${word("shareRemove")} ${index + 1}`} onClick={() => onChange(rows.filter((entry) => entry.key !== row.key))}>
+                  <Trash size={18} aria-hidden />
+                </button>
+                {problem ? (
+                  <span id={problemId} className={styles.problem}>
+                    {problemWord(problem)}
+                  </span>
+                ) : null}
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
+      {tooMuch ? <span className={styles.problem}>{word("shareErrTotal")}</span> : null}
+      {rows.length < FEE_SHARE_MAX_RECIPIENTS - 1 ? (
+        <button type="button" className={`rw-btn ${styles.feeShareAdd}`} onClick={onAdd}>
+          <Plus size={16} aria-hidden /> {word("shareAdd")}
+        </button>
+      ) : null}
+    </div>
   );
 }

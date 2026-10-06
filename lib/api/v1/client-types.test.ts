@@ -21,6 +21,27 @@ import type {
   LaunchSubmitRequestSchema,
   LaunchSubmitResponseSchema,
   LaunchTokenResponseSchema,
+  LaunchHolderRowSchema,
+  LaunchMarketResponseSchema,
+  LaunchRiskFactSchema,
+  LaunchTradeBuildRequestSchema,
+  LaunchTradeBuildResponseSchema,
+  LaunchTradeQuoteRequestSchema,
+  LaunchTradeQuoteResponseSchema,
+  LaunchTradeRowSchema,
+  LaunchTradeSubmitRequestSchema,
+  LaunchTradeSubmitResponseSchema,
+  LaunchWalletResponseSchema,
+  LaunchCreatorResponseSchema,
+  LaunchEarningsSchema,
+  LaunchCabinetRowSchema,
+  LaunchClaimReceiptSchema,
+  CreatorEarningsCardSchema,
+  LaunchCreatorCabinetResponseSchema,
+  LaunchClaimBuildRequestSchema,
+  LaunchClaimBuildResponseSchema,
+  LaunchClaimSubmitRequestSchema,
+  LaunchClaimSubmitResponseSchema,
 } from "./contract.ts";
 import type {
   PayLinkCreateRequestSchema as MoneyPayLinkCreateRequestSchema,
@@ -458,3 +479,36 @@ export type LaunchClientChecks = [
 ];
 
 export const launchClientChecks: LaunchClientChecks = [true, true, true, true, true, true, true, true, true, true, true, true];
+
+/* 1.27.0 — a launch's market and trading on it: the client's mirror of every new shape, both directions. */
+export type LaunchMarketClientChecks = [
+  Same<z.output<typeof LaunchTradeRowSchema>, Client.LaunchTradeRow>,
+  Same<z.output<typeof LaunchHolderRowSchema>, Client.LaunchHolderRow>,
+  Same<z.output<typeof LaunchRiskFactSchema>, Client.LaunchRiskFact>,
+  Same<z.output<typeof LaunchMarketResponseSchema>, Client.LaunchMarketResponse>,
+  Same<z.output<typeof LaunchWalletResponseSchema>, Client.LaunchWalletResponse>,
+  Same<z.input<typeof LaunchTradeQuoteRequestSchema>, Client.LaunchTradeQuoteRequest>,
+  Same<z.output<typeof LaunchTradeQuoteResponseSchema>, Client.LaunchTradeQuoteResponse>,
+  Same<z.input<typeof LaunchTradeBuildRequestSchema>, Client.LaunchTradeBuildRequest>,
+  Same<z.output<typeof LaunchTradeBuildResponseSchema>, Client.LaunchTradeBuildResponse>,
+  Same<z.input<typeof LaunchTradeSubmitRequestSchema>, Client.LaunchTradeSubmitRequest>,
+  Same<z.output<typeof LaunchTradeSubmitResponseSchema>, Client.LaunchTradeSubmitResponse>,
+  Same<z.output<typeof LaunchCreatorResponseSchema>, Client.LaunchCreatorResponse>,
+];
+
+export const launchMarketClientChecks: LaunchMarketClientChecks = [true, true, true, true, true, true, true, true, true, true, true, true];
+
+/* 1.29.0 — the creator's cabinet and «Забрати»: the client's mirror of every new shape, both directions. */
+export type LaunchCabinetClientChecks = [
+  Same<z.output<typeof LaunchEarningsSchema>, Client.LaunchEarnings>,
+  Same<z.output<typeof LaunchCabinetRowSchema>, Client.LaunchCabinetRow>,
+  Same<z.output<typeof LaunchClaimReceiptSchema>, Client.LaunchClaimReceipt>,
+  Same<z.output<typeof CreatorEarningsCardSchema>, Client.CreatorEarningsCard>,
+  Same<z.output<typeof LaunchCreatorCabinetResponseSchema>, Client.LaunchCreatorCabinetResponse>,
+  Same<z.input<typeof LaunchClaimBuildRequestSchema>, Client.LaunchClaimBuildRequest>,
+  Same<z.output<typeof LaunchClaimBuildResponseSchema>, Client.LaunchClaimBuildResponse>,
+  Same<z.input<typeof LaunchClaimSubmitRequestSchema>, Client.LaunchClaimSubmitRequest>,
+  Same<z.output<typeof LaunchClaimSubmitResponseSchema>, Client.LaunchClaimSubmitResponse>,
+];
+
+export const launchCabinetClientChecks: LaunchCabinetClientChecks = [true, true, true, true, true, true, true, true, true];

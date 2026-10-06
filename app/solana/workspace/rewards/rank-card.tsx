@@ -3,13 +3,14 @@
 import { useId } from "react";
 
 import { useSolanaI18n } from "../i18n/provider.tsx";
+import { RankBadge, tilt } from "./badge.tsx";
 import { rankCopy, type RankId } from "./rank-copy.ts";
 import styles from "./rewards.module.css";
 
 /**
  * The rank, inside Rewards — where the Points card used to stand.
  *
- * The rank's name is the heading; the ring beside it is how far through the
+ * The rank's name is the heading, its badge before it; the ring beside it is how far through the
  * rank this wallet is, from the rank's own start to the next threshold, with
  * the points of the last 30 days inside it. Under the name: the distance to
  * the next rank and one line saying where the points came from. Below, the
@@ -110,7 +111,14 @@ export function RankCard({ rank }: { rank: RankSummary | null }) {
           </div>
         </div>
         <div>
-          <p className={styles.rankTitle}>{name}</p>
+          <p className={styles.rankTitle}>
+            {/* The rank's own badge: it glows in its metal and, under a
+                pointer, leans toward it and catches a sheen. */}
+            <span className={styles.rankBadgeHold} {...tilt}>
+              <RankBadge rank={rank.rank} size={36} className={`${styles.badgeArt} ${styles.rankBadge}`} />
+            </span>
+            {name}
+          </p>
           <p className={styles.pointsNext}>{rank.next ? copy.toNext(rank.next.toGo, rank.next.rank) : copy.top}</p>
           <p className={styles.pointsLead}>
             {fresh

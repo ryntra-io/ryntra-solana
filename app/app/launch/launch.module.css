@@ -209,10 +209,11 @@
   border-color: var(--ry-border-strong);
 }
 
+/* Focus in the ink of the text, like every control of Launch: orange stays with the one action. */
 .input:focus-visible {
   outline: none;
-  border-color: var(--ry-iris);
-  box-shadow: 0 0 0 3px var(--ry-brand-soft);
+  border-color: var(--ry-text);
+  box-shadow: 0 0 0 1px var(--ry-text);
 }
 
 .field[data-invalid] .input {
@@ -1053,7 +1054,7 @@
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: var(--ry-iris);
+  background: var(--ry-aurora);
 }
 
 .marks {
@@ -1139,4 +1140,1621 @@
 .addr {
   font-family: var(--ry-font-mono);
   font-size: var(--ry-fs-label);
+}
+
+/* ── The token's market: one column on a phone, the trade beside it on a desk ── */
+
+.page[data-wide] {
+  max-width: 1280px;
+}
+
+.tokenLayout {
+  display: grid;
+  gap: var(--ry-s4);
+  min-width: 0;
+}
+
+/*
+ * The page is written in the order a person reads it on a phone — the price, the chart, what is worth a look, the
+ * trade, then the rest — so a keyboard and a screen reader meet it in that order too. On a desk the trade and the
+ * share link stand in a column beside the rest, and stay in view.
+ */
+.mainCol,
+.asideCol {
+  display: grid;
+  gap: var(--ry-s4);
+  min-width: 0;
+}
+
+.slotTrade,
+.slotMarks,
+.slotAbout,
+.slotShare,
+.slotReceipt {
+  display: grid;
+  min-width: 0;
+}
+
+/* Every block of the page keeps its own name, for its place on a desk and for the eyes that find it. */
+.slotProgress,
+.slotTabs,
+.slotCreator {
+  min-width: 0;
+}
+
+/*
+ * A ring a keyboard can see on every card of the page: the ink of the text, in place of the product's faint orange
+ * glow — scoped under the page so it wins over the product's own focus rule, never beside it.
+ */
+.page .tokenLayout :is(a, button, [role="tab"], [role="radio"]):focus-visible {
+  outline: 2px solid var(--ry-text);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+.page .tokenLayout .input:focus-visible {
+  outline: none;
+  border-color: var(--ry-text);
+  box-shadow: 0 0 0 1px var(--ry-text);
+}
+
+/* A figure counted from the trades read: «≥» a floor, «not read» an unknown — both quieter than a count. */
+.statFloor,
+.statUnread {
+  color: var(--ry-muted);
+}
+
+.statUnread {
+  font-family: var(--ry-font-sans);
+  font-weight: 500;
+}
+
+/* The person cancelled in their wallet: said plainly. */
+.cancelled {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+}
+
+@media (min-width: 1024px) {
+  .tokenLayout {
+    grid-template-columns: minmax(0, 1fr) 360px;
+    grid-template-areas:
+      "head head"
+      "chart aside"
+      "main aside";
+    align-items: start;
+  }
+
+  .tokenLayout[data-attention] {
+    grid-template-areas:
+      "head head"
+      "chart aside"
+      "attention aside"
+      "main aside";
+  }
+
+  .headSlot {
+    grid-area: head;
+  }
+
+  .slotChart {
+    grid-area: chart;
+  }
+
+  .slotAttention {
+    grid-area: attention;
+  }
+
+  .mainCol {
+    grid-area: main;
+  }
+
+  .asideCol {
+    grid-area: aside;
+    position: sticky;
+    top: 88px;
+    align-self: start;
+  }
+}
+
+.headSlot {
+  display: grid;
+  gap: var(--ry-s4);
+  min-width: 0;
+  padding: var(--ry-s4);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+}
+
+.headSlot > .tokenHead {
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+.priceBlock {
+  display: grid;
+  gap: var(--ry-s3);
+  min-width: 0;
+}
+
+@media (min-width: 900px) {
+  .priceBlock {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: end;
+    gap: var(--ry-s5);
+  }
+}
+
+.priceMain {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.priceLabel {
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+}
+
+.priceCap {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-data-xl);
+  font-weight: 600;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  color: var(--ry-text);
+}
+
+.priceMove {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-muted);
+}
+
+.priceMove[data-dir="up"] {
+  color: var(--ry-pnl-pos);
+}
+
+.priceMove[data-dir="down"] {
+  color: var(--ry-pnl-neg);
+}
+
+.priceMoveLabel {
+  font-family: var(--ry-font-sans);
+  color: var(--ry-muted);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--ry-s3) var(--ry-s3);
+  margin: 0;
+}
+
+@media (min-width: 1200px) {
+  .stats {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+.stat {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.stat dt {
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stat dd {
+  margin: 0;
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-copy);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.soldBanner {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--ry-caution);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-caution-soft);
+  color: var(--ry-text);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.soldBanner svg:first-child {
+  color: var(--ry-caution);
+}
+
+.soldWhen {
+  font-weight: 400;
+  color: var(--ry-muted);
+}
+
+/* Where the banner would stand when the creator's trades were not read whole: said plainly, in no warning colour. */
+.soldUnread {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px dashed var(--ry-border-strong);
+  border-radius: var(--ry-r-btn);
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+}
+
+.cardHeadRow {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--ry-s2);
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px var(--ry-s3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+}
+
+.legendUp { color: var(--ry-verified); }
+.legendDown { color: var(--ry-risk); }
+
+.chartCanvas {
+  position: relative;
+  width: 100%;
+  height: 300px;
+  min-width: 0;
+}
+
+@media (max-width: 719px) {
+  .chartCanvas {
+    height: 220px;
+  }
+}
+
+.progressLine {
+  margin: 0;
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-muted);
+}
+
+/* ── Tabs: trades · holders · risk ───────────────────────────────────── */
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-bg);
+}
+
+.tab {
+  display: inline-flex;
+  flex: 1 1 0;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: var(--ry-r-btn-sm);
+  background: transparent;
+  color: var(--ry-muted);
+  font: inherit;
+  font-size: var(--ry-fs-label);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.tab[aria-selected="true"] {
+  background: var(--ry-card);
+  color: var(--ry-text);
+  font-weight: 600;
+  box-shadow: var(--ry-shadow-sm);
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--ry-text);
+  outline-offset: 1px;
+}
+
+.tabCount {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-caution-soft);
+  color: var(--ry-text);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label-sm);
+}
+
+.tabPanel {
+  display: grid;
+  gap: var(--ry-s3);
+  min-width: 0;
+}
+
+/* An inactive panel stays in the page for its tab, hidden: the grid above must not show it. */
+.tabPanel[hidden] {
+  display: none;
+}
+
+.labels {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.holderLabel,
+.label_you {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 0 7px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-pill);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  color: var(--ry-muted);
+  white-space: nowrap;
+}
+
+.holderLabel[data-label="creator"] {
+  border-color: var(--ry-text);
+  color: var(--ry-text);
+}
+
+.holderLabel[data-label="sniper"] {
+  border-color: var(--ry-caution);
+  background: var(--ry-caution-soft);
+  color: var(--ry-text);
+}
+
+/* The bundle in the same amber as its group and its fact: worth a look, never a verdict. */
+.holderLabel[data-label="bundle"] {
+  border-color: var(--ry-caution);
+  background: var(--ry-caution-soft);
+  color: var(--ry-text);
+}
+
+.label_you {
+  border-color: var(--ry-text);
+  color: var(--ry-text);
+}
+
+/* A trade: the side, who, the amount and the tokens, the market cap it left, when. */
+.tradeList,
+.holderList,
+.riskList,
+.launchList,
+.groupRow {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tradeRow {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) auto;
+  grid-template-areas:
+    "side who time"
+    "side amount cap";
+  align-items: center;
+  gap: 2px var(--ry-s3);
+  min-height: 52px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--ry-border);
+  font-size: var(--ry-fs-label);
+}
+
+.tradeRow:last-child {
+  border-bottom: 0;
+}
+
+@media (min-width: 720px) {
+  .tradeRow {
+    grid-template-columns: 72px minmax(0, 1.4fr) minmax(0, 1.2fr) minmax(0, 0.8fr) 88px;
+    grid-template-areas: "side who amount cap time";
+    min-height: 44px;
+  }
+}
+
+.tradeSide {
+  grid-area: side;
+  font-weight: 600;
+}
+
+.tradeRow[data-side="buy"] .tradeSide {
+  color: var(--ry-pnl-pos);
+}
+
+.tradeRow[data-side="sell"] .tradeSide {
+  color: var(--ry-pnl-neg);
+}
+
+.tradeWho {
+  grid-area: who;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  min-width: 0;
+}
+
+.tradeAmount {
+  grid-area: amount;
+  display: grid;
+  min-width: 0;
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+}
+
+.tradeTokens {
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tradeCap {
+  grid-area: cap;
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-muted);
+  text-align: right;
+}
+
+.tradeTime {
+  grid-area: time;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.tradeTime > a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 32px;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.tradeTime > a:hover {
+  color: var(--ry-text);
+}
+
+.tradeTable {
+  display: grid;
+  min-width: 0;
+}
+
+/* «MC» before the market cap on a phone, where no column names it. */
+.tradeCapLabel {
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-label-sm);
+}
+
+@media (min-width: 720px) {
+  .tradeCapLabel {
+    display: none;
+  }
+}
+
+/* Holders: the groups' shares, then each holder with a bar of their share. */
+.groupRow {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ry-s2);
+}
+
+@media (min-width: 720px) {
+  .groupRow {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.group {
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-bg);
+}
+
+.group[data-on] {
+  border-color: var(--ry-caution);
+}
+
+.groupName {
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+}
+
+.groupValue {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-copy);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+}
+
+.holderRow {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) 120px;
+  /* Its own areas: the who cell is shared with the trade row, whose areas would scatter these three. */
+  grid-template-areas: "rank who share";
+  align-items: center;
+  gap: var(--ry-s3);
+  min-height: 44px;
+  border-bottom: 1px solid var(--ry-border);
+  font-size: var(--ry-fs-label);
+}
+
+.holderRow:last-child {
+  border-bottom: 0;
+}
+
+/* The curve, the pool and the lock: listed apart, without a rank or a bar — they are not people. */
+.holderRow[data-vault] {
+  color: var(--ry-muted);
+}
+
+.holderRow[data-vault] .holderShare {
+  color: var(--ry-muted);
+}
+
+.holderRank {
+  grid-area: rank;
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+}
+
+.holderShare {
+  grid-area: share;
+  display: grid;
+  white-space: nowrap;
+  gap: 4px;
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+  text-align: right;
+}
+
+.shareBar {
+  display: block;
+  height: 4px;
+  overflow: hidden;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-bg);
+}
+
+.shareBar > span {
+  display: block;
+  height: 100%;
+  margin-left: auto;
+  border-radius: inherit;
+  background: var(--ry-aurora);
+}
+
+/* Risk: a fact, why it matters, where to see it. Amber for worth a look; never a verdict. */
+.riskRow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--ry-border);
+  font-size: var(--ry-fs-label);
+  color: var(--ry-text);
+}
+
+.riskRow:last-child {
+  border-bottom: 0;
+}
+
+.riskRow > svg {
+  margin-top: 1px;
+  color: var(--ry-muted);
+}
+
+.riskRow[data-level="attention"] > svg {
+  color: var(--ry-caution);
+}
+
+.riskText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.riskRow[data-level="attention"] .riskText > span:first-child {
+  font-weight: 600;
+}
+
+.riskWhy {
+  color: var(--ry-muted);
+}
+
+/* The creator and their other launches. */
+.subTitle {
+  margin: 0;
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.launchItem {
+  display: grid;
+  gap: 2px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--ry-border);
+}
+
+.launchItem:last-child {
+  border-bottom: 0;
+}
+
+.launchHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+}
+
+.launchMint {
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+}
+
+.unreadRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px var(--ry-s3);
+}
+
+/* A quiet action inside a card: a word, not a second orange button. */
+.textButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ry-muted);
+  font: inherit;
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.textButton:hover {
+  color: var(--ry-text);
+}
+
+.textButton:focus-visible {
+  outline: 2px solid var(--ry-text);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.launchName {
+  color: var(--ry-text);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.launchName:hover {
+  text-decoration: underline;
+}
+
+.launchMeta {
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+}
+
+.launchSold[data-sold] {
+  color: var(--ry-text);
+}
+
+/* ── The trade panel ─────────────────────────────────────────────────── */
+
+.tradeCard {
+  gap: var(--ry-s3);
+}
+
+.tradeHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--ry-s2);
+}
+
+.sideSwitch {
+  display: inline-grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-bg);
+}
+
+.sideOption {
+  min-width: 84px;
+  min-height: 36px;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: var(--ry-r-btn-sm);
+  background: transparent;
+  color: var(--ry-muted);
+  font: inherit;
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sideOption[aria-checked="true"] {
+  background: var(--ry-card);
+  box-shadow: var(--ry-shadow-sm);
+}
+
+.sideOption[data-side="buy"][aria-checked="true"] {
+  color: var(--ry-pnl-pos);
+}
+
+.sideOption[data-side="sell"][aria-checked="true"] {
+  color: var(--ry-pnl-neg);
+}
+
+.sideOption:focus-visible,
+.quick:focus-visible,
+.slip:focus-visible {
+  outline: 2px solid var(--ry-text);
+  outline-offset: 1px;
+}
+
+.tradeVenue {
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+}
+
+.tradeCard .suffix {
+  right: 12px;
+}
+
+.tradeCard .affixed:has(.suffix) .input {
+  padding-right: 96px;
+  font-size: var(--ry-fs-data-m);
+}
+
+.quickRow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.quick,
+.slip {
+  min-height: 36px;
+  padding: 4px 10px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-bg);
+  color: var(--ry-text);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label);
+  cursor: pointer;
+}
+
+.quick:hover,
+.slip:hover {
+  border-color: var(--ry-border-strong);
+}
+
+.quick:disabled,
+.slip:disabled,
+.sideOption:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.slip[aria-checked="true"] {
+  border-color: var(--ry-text);
+  background: var(--ry-elevated);
+  font-weight: 600;
+}
+
+.quoteBox {
+  display: grid;
+  gap: var(--ry-s2);
+  padding: var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-bg);
+}
+
+.quoteMain {
+  display: grid;
+  gap: 2px;
+}
+
+.quoteLabel {
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+}
+
+.quoteValue {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-data-m);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+  overflow-wrap: anywhere;
+}
+
+.quoteSub {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+}
+
+.sniperLine {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 6px;
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--ry-caution);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-caution-soft);
+  font-size: var(--ry-fs-label);
+  color: var(--ry-text);
+}
+
+.sniperLine svg {
+  margin-top: 2px;
+  color: var(--ry-caution);
+}
+
+.slipRow,
+.slipGroup {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.slipRow {
+  margin-top: var(--ry-s2);
+}
+
+.tradeStep {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.tradeStep svg {
+  color: var(--ry-muted);
+}
+
+.tradeDone {
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+}
+
+.tradeDoneIcon {
+  color: var(--ry-verified);
+}
+
+.tradePendingIcon {
+  color: var(--ry-caution);
+}
+
+.tradeDoneTitle {
+  margin: 0;
+  font-size: var(--ry-fs-section);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+/* The trades' column names: drawn on a desk, only read on a phone, where each row says its own short words. */
+.tradeHeadRow {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (min-width: 720px) {
+  .tradeHeadRow {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+    display: grid;
+    grid-template-columns: 72px minmax(0, 1.4fr) minmax(0, 1.2fr) minmax(0, 0.8fr) 88px;
+    gap: 2px var(--ry-s3);
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--ry-border);
+    font-size: var(--ry-fs-label-sm);
+    color: var(--ry-muted);
+  }
+
+  .tradeHeadRow > :nth-child(4),
+  .tradeHeadRow > :nth-child(5) {
+    text-align: right;
+  }
+}
+
+.slipLabel {
+  margin-right: 2px;
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+}
+
+.groupValue[data-unread] {
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-label);
+  font-weight: 500;
+  color: var(--ry-muted);
+}
+
+.marksChecked {
+  margin: 0;
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+}
+
+.tradeStep svg {
+  color: var(--ry-muted);
+}
+
+/* The graduation mark in the ink of the page: orange stays with the one action. */
+.legendDex {
+  color: var(--ry-text);
+}
+
+/* On a phone the page ends clear of the trade button: the last block is never under it. */
+@media (max-width: 1023px) {
+  .tokenLayout {
+    padding-bottom: 72px;
+  }
+}
+
+/* A finger needs room: on a touch screen every link and quiet button of the page is at least 44 px tall. */
+@media (pointer: coarse) {
+  .tokenLayout .markLink,
+  .tokenLayout .textButton,
+  .tradeTime > a {
+    min-height: 44px;
+  }
+
+  .launchName {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+}
+
+/* On a phone, once the trade has gone up out of view: one button brings it back, above the bottom bar. */
+.tradeJump {
+  position: fixed;
+  right: var(--ry-s4);
+  bottom: calc(var(--ry-s4) + env(safe-area-inset-bottom, 0px));
+  left: var(--ry-s4);
+  z-index: 30;
+  box-shadow: var(--ry-shadow-md);
+}
+
+@media (max-width: 900px) {
+  .tradeJump {
+    bottom: calc(56px + var(--ry-s3) + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (min-width: 1024px) {
+  .tradeJump {
+    display: none;
+  }
+}
+
+/* ── «Мої лаунчі»: the totals, each launch as a card, the receipts ───── */
+
+.headAction {
+  margin-left: auto;
+}
+
+.mineEmpty {
+  justify-items: start;
+  padding: var(--ry-s5) var(--ry-s4);
+}
+
+.mineEmptyIcon {
+  color: var(--ry-muted);
+}
+
+.mineTotals {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--ry-s3);
+  margin: 0;
+}
+
+.mineTotal {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.mineTotal dt {
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+}
+
+.mineTotal dd {
+  margin: 0;
+  overflow: hidden;
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-copy);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.mineTotal[data-lead] dd {
+  font-size: var(--ry-fs-data-m);
+}
+
+.mineMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px var(--ry-s2);
+  margin: 0;
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+}
+
+.mineMeta strong {
+  font-family: var(--ry-font-mono);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.mineList {
+  display: grid;
+  gap: var(--ry-s4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  min-width: 0;
+}
+
+/* Two columns on a desk, filled top to bottom, so cards of different heights leave no hole. */
+@media (min-width: 1024px) {
+  .mineList {
+    display: block;
+    column-count: 2;
+    column-gap: var(--ry-s4);
+  }
+
+  .mineList > li {
+    break-inside: avoid;
+    margin-bottom: var(--ry-s4);
+  }
+}
+
+.mineCard {
+  align-content: start;
+}
+
+.mineHead {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--ry-s3);
+}
+
+.minePicture {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--ry-bg);
+  color: var(--ry-muted);
+}
+
+.minePicture img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mineTitleBlock {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.mineName {
+  margin: 0;
+  overflow: hidden;
+  font-size: var(--ry-fs-section);
+  font-weight: 600;
+  line-height: var(--ry-lh-head);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.mineName a {
+  color: var(--ry-text);
+  text-decoration: none;
+}
+
+.mineName a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.mineProgress {
+  display: grid;
+  gap: 6px;
+}
+
+.mineDone {
+  color: var(--ry-verified);
+}
+
+.mineStats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ry-s3);
+  margin: 0;
+}
+
+@media (min-width: 560px) {
+  .mineStats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* Two cards side by side on a desk: each card's figures in two columns, whole, never cut. */
+@media (min-width: 1024px) {
+  .mineStats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.mineLeft {
+  display: block;
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+}
+
+.mineShares {
+  display: grid;
+  gap: 4px;
+  padding-top: var(--ry-s2);
+  border-top: 1px solid var(--ry-border);
+}
+
+.mineSharesTitle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--ry-s2);
+  margin: 0;
+  font-size: var(--ry-fs-label);
+  font-weight: 500;
+  color: var(--ry-muted);
+}
+
+.mineShareList {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mineShareList li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--ry-s3);
+  padding: 6px 0;
+  border-bottom: 1px solid var(--ry-border);
+  font-size: var(--ry-fs-label);
+  color: var(--ry-text);
+}
+
+.mineShareList li:last-child {
+  border-bottom: 0;
+}
+
+.mineSharePct {
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.mineActions {
+  display: grid;
+  gap: var(--ry-s2);
+  justify-items: start;
+}
+
+.mineActions .cta {
+  justify-self: stretch;
+}
+
+.mineResult {
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+  padding: 10px 12px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+}
+
+.mineReceipts {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mineReceipt {
+  display: grid;
+  gap: 4px;
+  padding: var(--ry-s2) 0;
+  border-bottom: 1px solid var(--ry-border);
+}
+
+.mineReceipt:last-child {
+  border-bottom: 0;
+}
+
+.mineReceiptHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--ry-s3);
+  font-size: var(--ry-fs-label);
+  color: var(--ry-text);
+}
+
+.mineReceiptAmount {
+  font-family: var(--ry-font-mono);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.mineReceipt .details {
+  border-top: 0;
+  padding-top: 0;
+}
+
+/* ── «Поділити свої комісії» — «Спільнота» only ─────────────────────── */
+
+.feeShareBox {
+  display: grid;
+  gap: var(--ry-s3);
+  padding: var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+}
+
+.feeShareBox .lockTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.feeShareRows {
+  display: grid;
+  gap: var(--ry-s2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.feeShareRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 92px 44px;
+  align-items: center;
+  gap: var(--ry-s2);
+}
+
+.feeShareRow[data-you] {
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-bg);
+}
+
+.feeShareRow .problem {
+  grid-column: 1 / -1;
+}
+
+.feeShareYou {
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.feeSharePctFixed {
+  font-family: var(--ry-font-mono);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+}
+
+.feeShareAffixed {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.feeShareAffixed .input {
+  flex: 1;
+  width: 100%;
+  padding-right: 28px;
+  text-align: right;
+}
+
+.feeShareSuffix {
+  position: absolute;
+  right: 12px;
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+  pointer-events: none;
+}
+
+.feeShareRemove {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: transparent;
+  color: var(--ry-muted);
+  cursor: pointer;
+}
+
+.feeShareRemove:hover {
+  color: var(--ry-text);
+  border-color: var(--ry-border-strong);
+}
+
+.feeShareAdd {
+  justify-self: start;
+}
+
+/* A share row that does not hold: its own field in the risk colour, the message under the row. */
+.feeShareRow .input[aria-invalid="true"] {
+  border-color: var(--ry-risk);
+}
+
+/* «Забрати» on each launch: a plain action with the brand's edge — the page keeps no single orange action, every launch has its own. */
+.claimBtn {
+  border-color: var(--ry-brand-line) !important;
+  background: var(--ry-brand-soft) !important;
+  font-weight: 600;
+}
+
+/* A second currency under the first: the same ink, a step smaller — a community token is not worth less attention. */
+.mineTotal dd + dd {
+  font-size: var(--ry-fs-copy);
+}
+
+.mineResultTitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+/* On a phone the address takes its own line, whole; the share and «remove» sit under it. */
+@media (max-width: 559px) {
+  .feeShareRow:not([data-you]) {
+    grid-template-columns: minmax(0, 1fr) 44px;
+  }
+
+  .feeShareRow:not([data-you]) > .feeShareAddress {
+    grid-column: 1 / -1;
+  }
+}
+
+/* The cabinet's head: the title and the line, «Запустити токен» beside them on a desk, under them on a phone. */
+.mineHeadGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "title action"
+    "lede action";
+  align-items: center;
+  gap: var(--ry-s2) var(--ry-s4);
+}
+
+.mineHeadGrid > .headRow {
+  grid-area: title;
+}
+
+.mineHeadGrid > .lede {
+  grid-area: lede;
+}
+
+.mineHeadGrid > .headAction {
+  grid-area: action;
+  margin-left: 0;
+}
+
+@media (max-width: 559px) {
+  .mineHeadGrid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "title"
+      "lede"
+      "action";
+  }
+
+  .mineHeadGrid > .headAction {
+    justify-self: start;
+  }
+}
+
+.mineSub {
+  margin: 0;
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+}
+
+.mineCost {
+  padding-top: 6px;
+  border-top: 1px solid var(--ry-border);
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+  list-style: none;
+}
+
+.minePartial {
+  color: var(--ry-caution);
+}
+
+/* Links and disclosures a finger presses: 44 px tall where the pointer is coarse. */
+@media (pointer: coarse) {
+  .mineCard .markLink,
+  .mineCard .summary,
+  .mineReceipt .markLink,
+  .mineReceipt .summary {
+    min-height: 44px;
+  }
+}
+
+/* On a phone the totals are rows — the label on the left, each currency on the right, whole. */
+@media (max-width: 559px) {
+  .mineTotals {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .mineTotal {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: baseline;
+    column-gap: var(--ry-s3);
+  }
+
+  .mineTotal dt {
+    grid-column: 1;
+    grid-row: 1 / span 3;
+  }
+
+  .mineTotal dd {
+    grid-column: 2;
+    justify-self: end;
+    text-align: right;
+  }
+}
+
+/* An address and an amount never break mid-way. */
+.addr,
+.mineReceiptAmount {
+  white-space: nowrap;
+}
+
+/* The lead total's second currency a step smaller, as the others. */
+.mineTotal[data-lead] dd + dd {
+  font-size: var(--ry-fs-copy);
+}
+
+/* On a phone the whole address shows in its own line, in a size that holds 44 characters; its problem sits right under it. */
+@media (max-width: 559px) {
+
+
+  .feeShareRow[data-problem="address"] .problem {
+    grid-row: 2;
+  }
+}
+
+/* The address field wraps instead of hiding its end: it grows a line on a phone, stays one line where it fits. */
+.feeShareAddress {
+  min-height: 44px;
+  resize: none;
+  overflow: hidden;
+  field-sizing: content;
+  word-break: break-all;
+  line-height: 1.4;
+}
+
+/* Where a browser cannot grow the field to its text, a phone gives it two lines from the start: 44 characters fit. */
+@media (max-width: 559px) {
+  .feeShareAddress {
+    min-height: calc(2 * 1.4em + 22px);
+  }
 }

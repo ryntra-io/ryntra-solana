@@ -9,10 +9,10 @@ moved counts as new. Generated at every update from the development history.
 
 | Since the tag | Files |
 |---|---|
-| New | 1,096 |
+| New | 1,130 |
 | Changed | 807 |
 | Unchanged | 931 |
-| Lines added / removed | +282,194 / −19,691 |
+| Lines added / removed | +292,919 / −19,673 |
 
 ## New since the tag
 
@@ -111,8 +111,17 @@ moved counts as new. Generated at every update from the development history.
 - `app/api/v1/auth/session/route.ts`
 - `app/api/v1/auth/verify/route.ts`
 - `app/api/v1/capabilities/route.ts`
+- `app/api/v1/launch/[mint]/claim/build/route.ts`
+- `app/api/v1/launch/[mint]/claim/submit/route.ts`
+- `app/api/v1/launch/[mint]/creator/route.ts`
+- `app/api/v1/launch/[mint]/market/route.ts`
 - `app/api/v1/launch/[mint]/route.ts`
+- `app/api/v1/launch/[mint]/trade/build/route.ts`
+- `app/api/v1/launch/[mint]/trade/quote/route.ts`
+- `app/api/v1/launch/[mint]/trade/submit/route.ts`
+- `app/api/v1/launch/[mint]/wallet/[address]/route.ts`
 - `app/api/v1/launch/build/route.ts`
+- `app/api/v1/launch/creators/[address]/route.ts`
 - `app/api/v1/launch/metadata/route.ts`
 - `app/api/v1/launch/presets/route.ts`
 - `app/api/v1/launch/quote/route.ts`
@@ -197,10 +206,15 @@ moved counts as new. Generated at every update from the development history.
 - `app/app/invest/use-wallet-reach.ts`
 - `app/app/invest/watch-surfaces.test.mjs`
 - `app/app/invest/watch.module.css`
+- `app/app/launch/[mint]/launch-chart.tsx`
 - `app/app/launch/[mint]/page.tsx`
+- `app/app/launch/[mint]/token-market.tsx`
+- `app/app/launch/[mint]/trade-panel.tsx`
 - `app/app/launch/launch-format.ts`
 - `app/app/launch/launch-words.ts`
 - `app/app/launch/launch.module.css`
+- `app/app/launch/mine/creator-cabinet.tsx`
+- `app/app/launch/mine/page.tsx`
 - `app/app/launch/new/launch-flow.tsx`
 - `app/app/launch/new/page.tsx`
 - `app/app/launch/share-link.tsx`
@@ -367,6 +381,8 @@ moved counts as new. Generated at every update from the development history.
 - `app/solana/workspace/evidence/risk-words.ts`
 - `app/solana/workspace/evidence/risk.module.css`
 - `app/solana/workspace/holdings/plan-link.tsx`
+- `app/solana/workspace/rewards/badge.tsx`
+- `app/solana/workspace/rewards/badges-card.tsx`
 - `app/solana/workspace/rewards/rank-card.tsx`
 - `app/solana/workspace/rewards/rank-copy.ts`
 - `app/solana/workspace/spot/plan-review-block.tsx`
@@ -764,7 +780,11 @@ moved counts as new. Generated at every update from the development history.
 - `lib/core/core.test.mjs`
 - `lib/core/fee-policy.test.mjs`
 - `lib/core/fee-policy.ts`
+- `lib/core/launch/creator-earnings.test.mjs`
+- `lib/core/launch/creator-earnings.ts`
 - `lib/core/launch/creator-lock.ts`
+- `lib/core/launch/earnings-card.ts`
+- `lib/core/launch/fee-shares.ts`
 - `lib/core/launch/moderation.test.mjs`
 - `lib/core/launch/moderation.ts`
 - `lib/core/networks/solana.ts`
@@ -776,16 +796,22 @@ moved counts as new. Generated at every update from the development history.
 - `lib/core/solana-swap/refusal.ts`
 - `lib/core/solana-swap/settle.ts`
 - `lib/core/venues/jupiter.ts`
+- `lib/core/venues/meteora-dbc/claim.server.ts`
 - `lib/core/venues/meteora-dbc/creator-lock.server.ts`
+- `lib/core/venues/meteora-dbc/fee-sharing.server.ts`
 - `lib/core/venues/meteora-dbc/fixtures/devnet-classic-config.json`
 - `lib/core/venues/meteora-dbc/fixtures/devnet-classic-creation.json`
 - `lib/core/venues/meteora-dbc/fixtures/devnet-classic-observation.json`
 - `lib/core/venues/meteora-dbc/fixtures/devnet-outside-launch.json`
 - `lib/core/venues/meteora-dbc/launch.server.ts`
+- `lib/core/venues/meteora-dbc/market.server.ts`
+- `lib/core/venues/meteora-dbc/market.test.mjs`
+- `lib/core/venues/meteora-dbc/market.ts`
 - `lib/core/venues/meteora-dbc/presets.test.mjs`
 - `lib/core/venues/meteora-dbc/presets.ts`
 - `lib/core/venues/meteora-dbc/receipt.test.mjs`
 - `lib/core/venues/meteora-dbc/receipt.ts`
+- `lib/core/venues/meteora-dbc/trade.server.ts`
 - `lib/development-repository.mjs`
 - `lib/evidence/address.ts`
 - `lib/evidence/budget.ts`
@@ -808,17 +834,25 @@ moved counts as new. Generated at every update from the development history.
 - `lib/evidence/service.server.ts`
 - `lib/evidence/service.test.mjs`
 - `lib/evidence/snapshot.ts`
+- `lib/growth/achievements.ts`
+- `lib/growth/avatar-frames.ts`
+- `lib/growth/badges.test.mjs`
+- `lib/growth/badges.ts`
 - `lib/guard/evidence-coverage.test.mjs`
 - `lib/guard/response.ts`
 - `lib/guard/service.fixture.mjs`
 - `lib/guard/wallet-authorization.ts`
 - `lib/home/portfolio/adapters/conformance.fixture.mjs`
 - `lib/launch/config.server.ts`
+- `lib/launch/creator.server.ts`
 - `lib/launch/flow.server.ts`
 - `lib/launch/form.ts`
+- `lib/launch/graduation.server.ts`
 - `lib/launch/launch.test.mjs`
+- `lib/launch/market.server.ts`
 - `lib/launch/metadata.server.ts`
 - `lib/launch/runtime.server.ts`
+- `lib/launch/trade.server.ts`
 - `lib/launch/view.server.ts`
 - `lib/legal/candidate.ts`
 - `lib/liquidity/liquidity.test.mjs`

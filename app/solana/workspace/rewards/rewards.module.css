@@ -397,6 +397,7 @@
 
 .points,
 .invite,
+.badges,
 .history {
   display: flex;
   flex-direction: column;
@@ -490,8 +491,11 @@
   white-space: nowrap;
 }
 
-/* The rank's name is the card's heading. */
+/* The rank's name is the card's heading, its badge before it. */
 .rankTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s2);
   margin: 0;
   font-size: var(--ry-fs-h2);
   font-weight: 700;
@@ -592,6 +596,249 @@
   .ringFill {
     transition: none;
   }
+}
+
+/* ── Badges: the frame, the ranks reached, the achievements ──────────── */
+
+/* The frame on its own row, the badges under it — one row on a desk, five
+   to a row on a phone. */
+.badgesBody {
+  display: grid;
+  gap: var(--ry-s3);
+}
+
+.frameTile,
+.badgeTile {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: var(--ry-s2) 4px;
+  border: 0;
+  border-radius: var(--ry-r-btn);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.frameTile {
+  grid-template-columns: auto minmax(0, 1fr);
+  justify-items: start;
+  align-items: center;
+  gap: var(--ry-s3);
+  justify-self: start;
+  min-width: min(100%, 240px);
+  padding: var(--ry-s2) var(--ry-s4) var(--ry-s2) var(--ry-s2);
+  background: var(--ry-bg);
+  text-align: start;
+}
+
+.frameTile .badgeName {
+  text-align: start;
+}
+
+.frameTile:hover,
+.badgeTile:hover {
+  background: var(--ry-bg);
+}
+
+.frameTile[aria-pressed="true"],
+.badgeTile[aria-pressed="true"] {
+  background: var(--ry-brand-soft);
+  box-shadow: inset 0 0 0 1px var(--ry-accent-fg);
+}
+
+.frameTile:focus-visible,
+.badgeTile:focus-visible {
+  outline: 2px solid var(--ry-accent-fg);
+  outline-offset: 2px;
+}
+
+.badgeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* A name may take two lines — «Перший друг» under a 44px badge — never an ellipsis. */
+.badgeName {
+  display: -webkit-box;
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--ry-text);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: center;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.badgeTile[data-held="false"] .badgeName,
+.frameTile[data-framed="false"] .badgeName {
+  color: var(--ry-muted);
+}
+
+/* ── Light on the badges ────────────────────────────────────────────────
+   Light that moves only when the person does. A held badge glows in its
+   own metal (`--badge-glow`, set by the badge) — softer on the light
+   theme. Where there is a pointer, a badge leans toward it (`--rx`, `--ry`)
+   and a soft light follows across the metal (`--mx`, `--my`, the SVG's
+   `[data-spec]`); the Diamond's spark twinkles. Chosen, a badge rises,
+   glows brighter and a sheen crosses it once (`[data-sheen]`, 600 ms).
+   A badge not yet held has no light. At rest nothing is lifted into 3D,
+   so the drawing stays sharp. Reduced motion keeps the glow and drops
+   every movement. */
+
+.badges,
+.rankTitle {
+  --badge-glow-rest: 45%;
+  --badge-glow-chosen: 70%;
+}
+
+:global([data-theme="light"]) .badges,
+:global([data-theme="light"]) .rankTitle {
+  --badge-glow-rest: 25%;
+  --badge-glow-chosen: 40%;
+}
+
+.badgeArt {
+  position: relative;
+  transition: transform 160ms ease-out, filter 240ms ease-out;
+}
+
+/* The light adds to the metal rather than greying the enamel. */
+.badgeArt :global([data-spec]),
+.badgeArt :global([data-sheen]) {
+  mix-blend-mode: screen;
+}
+
+.badgeArt :global([data-spec]) {
+  transform: translate(calc(var(--mx, 0) * 18px), calc(var(--my, 0) * 18px));
+  transition: opacity 200ms ease-out;
+}
+
+.badgeTile[data-held="true"] .badgeArt,
+.frameTile[data-framed="true"] .badgeArt,
+.rankBadge {
+  filter: drop-shadow(0 3px 9px color-mix(in srgb, var(--badge-glow, transparent) var(--badge-glow-rest), transparent));
+}
+
+.badgeTile:focus-visible .badgeArt :global([data-spec]) {
+  opacity: 1;
+}
+
+.badgeTile[aria-pressed="true"] .badgeArt,
+.frameTile[aria-pressed="true"] .badgeArt {
+  transform: perspective(260px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(-2px) scale(1.08);
+}
+
+.badgeTile[aria-pressed="true"][data-held="true"] .badgeArt,
+.frameTile[aria-pressed="true"][data-framed="true"] .badgeArt {
+  filter: drop-shadow(0 4px 16px color-mix(in srgb, var(--badge-glow, transparent) var(--badge-glow-chosen), transparent));
+}
+
+.badgeTile[aria-pressed="true"] .badgeArt :global([data-sheen]) {
+  animation: rw-sheen 600ms ease-out both;
+}
+
+.badgeTile[aria-pressed="true"] .badgeArt :global([data-sparkle]) {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: rw-twinkle 600ms ease-out;
+}
+
+/* Only where there is a pointer: on touch a hover would stay after the tap. */
+@media (hover: hover) {
+  .badgeTile:hover .badgeArt,
+  .frameTile:hover .badgeArt,
+  .rankBadgeHold:hover .badgeArt {
+    transform: perspective(260px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  }
+
+  .badgeTile[aria-pressed="true"]:hover .badgeArt,
+  .frameTile[aria-pressed="true"]:hover .badgeArt {
+    transform: perspective(260px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(-2px) scale(1.08);
+  }
+
+  .badgeTile:hover .badgeArt :global([data-spec]),
+  .rankBadgeHold:hover .badgeArt :global([data-spec]) {
+    opacity: 1;
+  }
+
+  .rankBadgeHold:hover .badgeArt :global([data-sheen]) {
+    animation: rw-sheen 600ms ease-out both;
+  }
+
+  .badgeTile:hover .badgeArt :global([data-sparkle]),
+  .rankBadgeHold:hover .badgeArt :global([data-sparkle]) {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: rw-twinkle 600ms ease-out;
+  }
+}
+
+.rankBadgeHold {
+  display: inline-flex;
+}
+
+@keyframes rw-sheen {
+  from {
+    opacity: 1;
+    transform: skewX(-18deg) translateX(0);
+  }
+  to {
+    opacity: 1;
+    transform: skewX(-18deg) translateX(120px);
+  }
+}
+
+@keyframes rw-twinkle {
+  0% { transform: scale(1) rotate(0deg); }
+  45% { transform: scale(1.7) rotate(45deg); }
+  100% { transform: scale(1) rotate(90deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .badgeArt,
+  .badgeTile[aria-pressed="true"] .badgeArt,
+  .frameTile[aria-pressed="true"] .badgeArt,
+  .badgeTile:hover .badgeArt,
+  .frameTile:hover .badgeArt,
+  .rankBadgeHold:hover .badgeArt,
+  .badgeTile[aria-pressed="true"]:hover .badgeArt,
+  .frameTile[aria-pressed="true"]:hover .badgeArt {
+    transform: none;
+    transition: none;
+  }
+
+  .badgeArt :global([data-spec]) {
+    transform: none;
+  }
+
+  .badgeArt :global([data-sheen]),
+  .badgeArt :global([data-sparkle]) {
+    animation: none !important;
+  }
+}
+
+/* One line: what to do at rest, then said for the badge chosen. */
+.badgeDetail {
+  min-height: 1.4em;
+  margin: 0;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-dense);
+  line-height: 1.4;
+}
+
+.badgeDetail strong {
+  color: var(--ry-text);
+  font-weight: 600;
 }
 
 .pointsNext {
@@ -1058,8 +1305,13 @@
   .earn,
   .points,
   .invite,
+  .badges,
   .history {
     padding: var(--ry-s4);
+  }
+
+  .badgeGrid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 
   .programmes {
