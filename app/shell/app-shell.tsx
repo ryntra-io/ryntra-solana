@@ -83,6 +83,7 @@ import {
   Gift,
   PlusCircle,
   Repeat,
+  RocketLaunch,
 } from "@phosphor-icons/react";
 
 import { Wordmark } from "@/app/site/wordmark";
@@ -312,6 +313,8 @@ const ICONS: Record<string, ReactNode> = {
   "top-up": <PlusCircle size={17} weight="bold" />,
   history: <ClockCounterClockwise size={17} weight="bold" />,
   rewards: <Gift size={17} weight="bold" />,
+  /* Launch: a token leaving the ground. */
+  launch: <RocketLaunch size={17} weight="bold" />,
 };
 
 /*

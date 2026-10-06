@@ -2076,9 +2076,10 @@ button.rs-group-title[data-shut="true"] .rs-group-caret {
   }
 }
 
-/* A laptop's short window (1440 × 800 with the browser's own bars): the rows
-   tighten once more, so the menu and its foot still stand in one screen. */
-@media (min-width: 901px) and (max-height: 860px) {
+/* A laptop's window (1440 × 900 and shorter, with the browser's own bars): the
+   rows tighten once more, so the menu and its foot still stand in one screen —
+   since Launch's row (2026-10-06) from 960 px of height down, not 860. */
+@media (min-width: 901px) and (max-height: 960px) {
   .ry-product .rs[data-product="true"] .rs-nav .rs-link {
     min-height: 30px;
     padding-block: 3px;
@@ -2086,6 +2087,39 @@ button.rs-group-title[data-shut="true"] .rs-group-caret {
 
   .rs[data-product="true"] .rs-nav .rs-group-title {
     padding-top: 4px;
+  }
+}
+
+/* A 1440 × 900 screen's window — about 800 px under the browser's bars — and shorter: the rows a pointer aims at
+   tighten to 26 px, the captions and the gaps with them, so every section and the foot still stand in one screen. */
+@media (min-width: 901px) and (max-height: 860px) {
+  .ry-product .rs[data-product="true"] .rs-nav .rs-link,
+  .ry-product .rs[data-product="true"] .rs-view .rs-link {
+    min-height: 26px;
+    padding-block: 2px;
+  }
+
+  .rs[data-product="true"] .rs-nav .rs-group-title {
+    padding: 3px var(--ry-s4) 1px;
+  }
+
+  .rs[data-product="true"] .rs-nav {
+    padding-block: 4px;
+  }
+
+  .rs[data-product="true"] .rs-group {
+    padding-block: 1px;
+  }
+
+  .rs[data-product="true"] .rs-group[data-group="domains-invest"],
+  .rs[data-product="true"] .rs-group[data-group="domains-agent"] {
+    margin-top: 4px;
+    padding-top: 4px;
+  }
+
+  .rs[data-product="true"] .rs-nav-pinned {
+    padding-top: 2px;
+    margin-top: 2px;
   }
 }
 

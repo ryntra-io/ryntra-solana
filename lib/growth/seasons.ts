@@ -1,0 +1,117 @@
+import { effectiveRewardEntries } from "../rewards/ledger.ts";
+import type { RewardEntry } from "../rewards/model.ts";
+import { weekStartOf, within, type SeasonRange } from "./weeks.ts";
+
+/**
+ * A season: its theme, its tasks, and what one wallet has done of them.
+ *
+ * ## Tasks a person does, never volume
+ *
+ * Three tasks, one of each kind — begin, habit, together — and
+ * none of them "make N trades" or "trade $N": a first trade of the season, a
+ * trade in three different weeks of it, and a friend you invited trading in
+ * it. Each is a fact of rows the ledger already holds — the wallet's own
+ * cashback rows say it traded and Ryntra received a fee, its level-1 rows say
+ * a friend did — so nothing new is stored and nothing can drift.
+ *
+ * ## What a season gives
+ *
+ * Status and badges only. All three tasks earn the season's badge; a place in
+ * the top three of any weekly board earns its podium badge. No points toward
+ * a rank, no money, no prize: a season's count starts again from nothing, and
+ * ranks and rewards carry on untouched. Prizes would need a lawyer and the
+ * owner's word first, and only for deeds that do not depend on profit or
+ * volume.
+ */
+
+export const SEASON_TASK_IDS = ["FIRST_TRADE", "THREE_WEEKS", "FRIEND_TRADES"] as const;
+export type SeasonTaskId = (typeof SEASON_TASK_IDS)[number];
+
+/** The kind of each task: begin, habit or together. */
+export const SEASON_TASK_KIND: Readonly<Record<SeasonTaskId, "BEGIN" | "HABIT" | "TOGETHER">> = {
+  FIRST_TRADE: "BEGIN",
+  THREE_WEEKS: "HABIT",
+  FRIEND_TRADES: "TOGETHER",
+};
+
+/** How many of something each task asks for. */
+export const SEASON_TASK_NEED: Readonly<Record<SeasonTaskId, number>> = {
+  FIRST_TRADE: 1,
+  THREE_WEEKS: 3,
+  FRIEND_TRADES: 1,
+};
+
+/** Themes, one per season, in turn. The page names them in its own language. */
+export const SEASON_THEMES = ["FIRST_STEPS", "TOGETHER", "HABIT"] as const;
+export type SeasonTheme = (typeof SEASON_THEMES)[number];
+
+export function seasonTheme(number: number): SeasonTheme {
+  return SEASON_THEMES[(Math.max(1, number) - 1) % SEASON_THEMES.length];
+}
+
+export type SeasonTaskState = Readonly<{
+  id: SeasonTaskId;
+  done: boolean;
+  /** How far: weeks with a trade, or 0/1 — never more than the need. */
+  have: number;
+  need: number;
+  /** When it was done, or null. */
+  at: string | null;
+}>;
+
+export type SeasonProgress = Readonly<{
+  tasks: readonly SeasonTaskState[];
+  /** All tasks done: the season's badge, and when. */
+  complete: boolean;
+  completedAt: string | null;
+}>;
+
+/**
+ * What `wallet` has done of the season's tasks, from its own reward rows
+ * (rows where it is the recipient — its cashback and its friends' level-1).
+ * Rows after `at` do not count yet, so a season read mid-way is that day's
+ * truth.
+ */
+export function seasonProgress(
+  args: Readonly<{ wallet: string; entries: readonly RewardEntry[]; season: Pick<SeasonRange, "start" | "end">; at: string }>,
+): SeasonProgress {
+  const atMs = Date.parse(args.at);
+  const end = Math.min(Date.parse(args.season.end), Number.isFinite(atMs) ? atMs + 1 : Date.parse(args.season.end));
+  const range = { start: args.season.start, end: new Date(end).toISOString() };
+  const own: string[] = [];
+  const friends: string[] = [];
+  for (const entry of effectiveRewardEntries(args.entries)) {
+    if (entry.recipient !== args.wallet || !entry.source || !within(entry.source.settledAt, range)) continue;
+    if (entry.type === "CASHBACK" && entry.source.trader === args.wallet) own.push(entry.source.settledAt);
+    if (entry.type === "REFERRAL_L1" && entry.source.trader !== args.wallet) friends.push(entry.source.settledAt);
+  }
+  own.sort();
+  friends.sort();
+
+  const firstTrade = own[0] ?? null;
+  /* The week each trade fell in; the third distinct one is when the habit was made. */
+  const weeks: string[] = [];
+  let habitAt: string | null = null;
+  for (const at of own) {
+    const week = weekStartOf(at);
+    if (!weeks.includes(week)) {
+      weeks.push(week);
+      if (weeks.length === SEASON_TASK_NEED.THREE_WEEKS) habitAt = at;
+    }
+  }
+  const friendAt = friends[0] ?? null;
+
+  const tasks: SeasonTaskState[] = [
+    { id: "FIRST_TRADE", done: firstTrade !== null, have: firstTrade ? 1 : 0, need: 1, at: firstTrade },
+    { id: "THREE_WEEKS", done: habitAt !== null, have: Math.min(weeks.length, SEASON_TASK_NEED.THREE_WEEKS), need: SEASON_TASK_NEED.THREE_WEEKS, at: habitAt },
+    { id: "FRIEND_TRADES", done: friendAt !== null, have: friendAt ? 1 : 0, need: 1, at: friendAt },
+  ];
+  const complete = tasks.every((task) => task.done);
+  const completedAt = complete ? tasks.map((task) => task.at!).sort().at(-1)! : null;
+  return { tasks, complete, completedAt };
+}
+
+/** How many tasks a progress holds — the season's own count, which starts again each season. */
+export function tasksDone(progress: SeasonProgress): number {
+  return progress.tasks.filter((task) => task.done).length;
+}

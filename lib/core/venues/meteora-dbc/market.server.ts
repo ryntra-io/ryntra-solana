@@ -38,7 +38,7 @@ import { Connection, PublicKey } from "@solana/web3.js";
 import { getBase58Encoder } from "@solana/kit";
 import BN from "bn.js";
 
-import { SNIPER_SECONDS, priceFromSqrtX64, tradeOf, type LaunchTrade, type SwapSeen } from "./market.ts";
+import { SNIPER_SECONDS, accountPageReached, listsWhole, priceFromSqrtX64, tradeOf, type LaunchTrade, type SwapSeen } from "./market.ts";
 
 const DBC_PROGRAM = "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN";
 const DAMM_V2_PROGRAM = "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG";
@@ -129,11 +129,24 @@ export type HolderRead = Readonly<{
   totalHolders: number | null;
 }>;
 
-type Decoded = Readonly<{ slot: number; blockTime: number | null; failed: boolean; trades: readonly LaunchTrade[] }>;
+export type Decoded = Readonly<{ slot: number; blockTime: number | null; failed: boolean; trades: readonly LaunchTrade[] }>;
+
+/**
+ * Where decoded transactions outlive a process: a confirmed transaction's trades never change, so once any instance has
+ * read one from the node, every other instance reads it from here. One reader's index is for one fee wallet — what a
+ * trade cost depends on it — and `load` gives every transaction of the token already decoded, by signature.
+ */
+export type DecodedIndex = Readonly<{
+  load(token: string): Promise<ReadonlyMap<string, Decoded>>;
+  save(token: string, signature: string, decoded: Decoded): Promise<void>;
+}>;
 
 /* A confirmed transaction never changes: decoded once a process. Bounded, oldest out first. */
 const DECODED = new Map<string, Decoded>();
 const DECODED_MAX = 20_000;
+/* When this process last read a token's decoded transactions from the shared index. */
+const WARMED = new Map<string, number>();
+const WARM_EVERY_MS = 60_000;
 /* A token's opening minutes, once over and read whole. */
 const OPENINGS = new Map<string, Readonly<{ trades: readonly LaunchTrade[]; complete: boolean }>>();
 /** How far back the opening minutes are looked for: pages of a thousand signatures, and how many of their transactions are read. */
@@ -177,7 +190,7 @@ export type LaunchMarketReader = Readonly<{
    * own token accounts, so its trades are read whole however long the token's history is. `complete`: every such
    * transaction was read inside the budget.
    */
-  accountTrades(args: Readonly<{ token: string; state: MarketState; accounts: readonly string[]; since: number | null; budgetMs?: number }>): Promise<Readonly<{ trades: readonly LaunchTrade[]; complete: boolean }>>;
+  accountTrades(args: Readonly<{ token: string; state: MarketState; accounts: readonly string[]; since: number | null; creationSignature?: string | null; budgetMs?: number }>): Promise<Readonly<{ trades: readonly LaunchTrade[]; complete: boolean }>>;
   /** The trades one transaction made on this token, from its swap events; null when the node has no record of it yet. */
   transaction(args: Readonly<{ token: string; state: MarketState; signature: string }>): Promise<readonly LaunchTrade[] | null>;
   /** The DBC curves a wallet created, anywhere — null when the node does not answer the scan. */
@@ -193,26 +206,59 @@ export type LaunchMarketReader = Readonly<{
  */
 const REFUSED = new Map<string, number>();
 const REFUSAL_PAUSE_MS = 5 * 60 * 1000;
+/** How long one of them may take; a node that has not answered by then is a node that refused. */
+const OPTIONAL_READ_MS = 8_000;
 
 async function optional<T>(endpoint: string, kind: string, read: () => Promise<T>): Promise<T | null> {
   const key = `${endpoint}:${kind}`;
   const at = REFUSED.get(key);
   if (at !== undefined && Date.now() - at < REFUSAL_PAUSE_MS) return null;
+  let timer: ReturnType<typeof setTimeout> | undefined;
   try {
-    return await read();
+    return await Promise.race([
+      read(),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error("The node did not answer in time.")), OPTIONAL_READ_MS);
+      }),
+    ]);
   } catch {
     REFUSED.set(key, Date.now());
     return null;
+  } finally {
+    clearTimeout(timer);
   }
+}
+
+/*
+ * The endpoints beside the main one — indexed reads, whole signature lists, older transactions — one connection each
+ * per process, and none of them waits out a refusal: a 429 is answered at once (the read falls back or is left
+ * unread), so a page never sleeps through a public node's backoff past its budget.
+ */
+const SIDE_CONNECTIONS = new Map<string, Connection>();
+function sideConnection(url: string): Connection {
+  const known = SIDE_CONNECTIONS.get(url) ?? new Connection(url, { commitment: "confirmed", disableRetryOnRateLimit: true });
+  SIDE_CONNECTIONS.set(url, known);
+  return known;
 }
 
 /**
  * `feeWallet`: Ryntra's fee wallet on this network — what a transaction moved into it in the pair currency is Ryntra's
- * own fee on the trade in it, and is counted in what the trade cost.
+ * own fee on the trade in it, and is counted in what the trade cost. `indexed`: the endpoint for the reads a node answers
+ * from its indexes — the largest accounts, every holder of the mint, a creator's curves — where it is not the main one
+ * (a public node may refuse them). `index`: decoded transactions shared beyond this process. `history`: the endpoint whose
+ * signature lists reach back to a token's creation — a public node keeps a day or two of them, and a list cut short by the
+ * node reads as whole to anyone who trusts its length. `archive`: the endpoint asked for a transaction the main one no
+ * longer keeps.
  */
-export function createLaunchMarketReader(connection: Connection, options: Readonly<{ feeWallet?: string | null }> = {}): LaunchMarketReader {
-  const lenient = new Connection(connection.rpcEndpoint, { commitment: "confirmed", disableRetryOnRateLimit: true });
+export function createLaunchMarketReader(
+  connection: Connection,
+  options: Readonly<{ feeWallet?: string | null; indexed?: string | null; index?: DecodedIndex | null; history?: string | null; archive?: string | null }> = {},
+): LaunchMarketReader {
+  const lenient = sideConnection(options.indexed ?? connection.rpcEndpoint);
+  const listing = options.history && options.history !== connection.rpcEndpoint ? sideConnection(options.history) : connection;
+  const archive = options.archive && options.archive !== connection.rpcEndpoint ? sideConnection(options.archive) : null;
   const feeWallet = options.feeWallet ?? null;
+  const index = options.index ?? null;
   const client = new DynamicBondingCurveClient(connection, "confirmed");
   const lenientClient = new DynamicBondingCurveClient(lenient, "confirmed");
   const cpAmm = new CpAmm(connection);
@@ -312,12 +358,15 @@ export function createLaunchMarketReader(connection: Connection, options: Readon
     const key = `${token}:${signature}:${feeWallet ?? ""}`;
     const cached = DECODED.get(key);
     if (cached) return cached;
-    const tx = await connection.getTransaction(signature, { commitment: "confirmed", maxSupportedTransactionVersion: 0 });
+    let tx = await connection.getTransaction(signature, { commitment: "confirmed", maxSupportedTransactionVersion: 0 });
+    /* A public node keeps a day or two of transactions: an older one is asked of the archive. */
+    if (!tx && archive) tx = await archive.getTransaction(signature, { commitment: "confirmed", maxSupportedTransactionVersion: 0 }).catch(() => null);
     if (!tx?.meta) return null;
     const message = tx.transaction.message;
     const keys = message.getAccountKeys({ accountKeysFromLookups: tx.meta.loadedAddresses });
     const keyAt = (index: number) => keys.get(index)?.toBase58() ?? "";
     const seen: SwapSeen[] = [];
+    let unsure = false;
     /* Who owns each token account the transaction touched, from the chain's own record of its balances. */
     const pre = tx.meta.preTokenBalances ?? [];
     const post = tx.meta.postTokenBalances ?? [];
@@ -363,6 +412,8 @@ export function createLaunchMarketReader(connection: Connection, options: Readon
           });
         } else {
           const graduated = market.graduated;
+          /* A pool's swap read before this read knew the token graduated may be the token's own: not kept as «no trade». */
+          if (!graduated) unsure = true;
           if (!graduated || fields.pool.toBase58() !== graduated.pool) continue;
           /* A to B sells A: the token is sold when it is A. */
           const sell = (fields.tradeDirection === 0) === graduated.tokenIsA;
@@ -379,8 +430,33 @@ export function createLaunchMarketReader(connection: Connection, options: Readon
     /* Ryntra's fee belongs to the one trade of its transaction; a transaction of several swaps keeps it out rather than guess whose. */
     const trades = seen.map((entry) => tradeOf(seen.length === 1 && ryntraFee > 0n ? { ...entry, ryntraFeeRaw: ryntraFee } : entry));
     const decoded: Decoded = { slot: tx.slot, blockTime: tx.blockTime ?? null, failed: tx.meta.err !== null, trades: tx.meta.err === null ? trades : [] };
+    /* Kept only when it is whole: a decode that may have missed the token's own pool swap is answered once and read again. */
+    if (unsure) return decoded;
     remember(key, decoded);
+    /* Shared beyond this process; a store that does not answer costs only the next instance a read of the node. */
+    if (index) await index.save(token, signature, decoded).catch(() => undefined);
     return decoded;
+  }
+
+  /**
+   * What other instances already decoded of this token, into this process's memory — before any of it is read from the
+   * node; once a minute at most per token, so a busy token's history is not read from the store on every request.
+   */
+  async function warm(token: string): Promise<void> {
+    if (!index) return;
+    const warmKey = `${token}:${feeWallet ?? ""}`;
+    const last = WARMED.get(warmKey);
+    if (last !== undefined && Date.now() - last < WARM_EVERY_MS) return;
+    WARMED.set(warmKey, Date.now());
+    const known = await index.load(token).catch(() => null);
+    if (!known) {
+      WARMED.delete(warmKey);
+      return;
+    }
+    for (const [signature, decoded] of known) {
+      const key = `${token}:${signature}:${feeWallet ?? ""}`;
+      if (!DECODED.has(key)) remember(key, decoded);
+    }
   }
 
   /** Reads `run` over `items` a few at a time: a public node answers a burst with 429. */
@@ -405,6 +481,7 @@ export function createLaunchMarketReader(connection: Connection, options: Readon
    * and says so, rather than the page waiting past its time.
    */
   async function decodeAll(token: string, market: MarketState, signatures: readonly string[], until: number): Promise<(Decoded | null)[]> {
+    if (signatures.some((signature) => !DECODED.has(`${token}:${signature}:${feeWallet ?? ""}`))) await warm(token);
     const decoded = await inTurns(signatures, (signature) => (Date.now() < until ? decode(token, signature, market).catch(() => null) : Promise.resolve(null)));
     for (let index = 0; index < decoded.length && Date.now() < until; index += 1) {
       if (decoded[index] !== null) continue;
@@ -414,10 +491,24 @@ export function createLaunchMarketReader(connection: Connection, options: Readon
     return decoded;
   }
 
+  /** An account's signatures from the endpoint with the whole history, or the main one when that does not answer. */
+  async function signaturesOf(address: PublicKey, options: Readonly<{ before?: string; limit: number }>) {
+    return (await listedFrom(address, options)).entries;
+  }
+
+  /** The same, and whether the endpoint with the whole history gave it — a short list from any other proves nothing. */
+  async function listedFrom(address: PublicKey, options: Readonly<{ before?: string; limit: number }>) {
+    if (listing !== connection) {
+      const entries = await listing.getSignaturesForAddress(address, options, "confirmed").catch(() => null);
+      if (entries) return { entries, deep: true };
+    }
+    return { entries: await connection.getSignaturesForAddress(address, options, "confirmed"), deep: false };
+  }
+
   async function trades({ token, state: market, creationSignature, limit = TRADE_HISTORY_LIMIT, budgetMs = HISTORY_BUDGET_MS }: Parameters<LaunchMarketReader["trades"]>[0]): Promise<TradeHistory> {
     const until = Date.now() + budgetMs;
-    const curveSignatures = await connection.getSignaturesForAddress(new PublicKey(market.curve.pool), { limit }, "confirmed");
-    const poolSignatures = market.graduated ? await connection.getSignaturesForAddress(new PublicKey(market.graduated.pool), { limit }, "confirmed") : [];
+    const curveSignatures = await signaturesOf(new PublicKey(market.curve.pool), { limit });
+    const poolSignatures = market.graduated ? await signaturesOf(new PublicKey(market.graduated.pool), { limit }) : [];
     const all = [...new Map([...curveSignatures, ...poolSignatures].filter((entry) => entry.err === null).map((entry) => [entry.signature, entry])).values()];
     if (!all.some((entry) => entry.signature === creationSignature)) all.push({ signature: creationSignature, slot: 0, err: null, memo: null, blockTime: null });
     /* The creation first: the creator's first buy and the opening block rest on it, and it is read once a process. */
@@ -432,33 +523,38 @@ export function createLaunchMarketReader(connection: Connection, options: Readon
     });
     list.sort((a, b) => a.slot - b.slot || a.at - b.at);
     const oldestPool = poolSignatures.at(-1);
-    const poolComplete = poolSignatures.length < limit;
+    const { curveWhole, poolWhole } = listsWhole({ curve: curveSignatures, pool: market.graduated ? poolSignatures : null, creationSignature, limit });
     /* What a figure over a window can trust: the lists reach back that far, and no transaction in it went unread. */
-    const cutAt = (list: typeof curveSignatures) => (list.length < limit ? null : (list.at(-1)?.blockTime ?? Number.POSITIVE_INFINITY));
-    const cuts = [cutAt(curveSignatures), cutAt(poolSignatures)].filter((value): value is number => value !== null);
+    const cutAt = (list: typeof curveSignatures, whole: boolean) => (whole ? null : (list.at(-1)?.blockTime ?? Number.POSITIVE_INFINITY));
+    const cuts = [cutAt(curveSignatures, curveWhole), ...(market.graduated ? [cutAt(poolSignatures, poolWhole)] : [])].filter((value): value is number => value !== null);
     const times = new Map(all.map((entry) => [entry.signature, entry.blockTime ?? null]));
     return {
       coveredFrom: cuts.length ? Math.max(...cuts) : null,
       gaps: signatures.filter((_, index) => decoded[index] === null).map((signature) => times.get(signature) ?? Math.floor(Date.now() / 1000)),
       trades: list,
-      complete: curveSignatures.length < limit && poolComplete && decoded.every((entry) => entry !== null),
+      complete: curveWhole && poolWhole && decoded.every((entry) => entry !== null),
       created,
-      graduated: market.graduated && poolComplete && oldestPool ? { at: oldestPool.blockTime ?? 0, signature: oldestPool.signature } : null,
+      graduated: market.graduated && poolWhole && oldestPool ? { at: oldestPool.blockTime ?? 0, signature: oldestPool.signature } : null,
     };
   }
 
-  async function accountTrades({ token, state: market, accounts, since, budgetMs = ACCOUNT_BUDGET_MS }: Parameters<LaunchMarketReader["accountTrades"]>[0]): ReturnType<LaunchMarketReader["accountTrades"]> {
+  async function accountTrades({ token, state: market, accounts, since, creationSignature = null, budgetMs = ACCOUNT_BUDGET_MS }: Parameters<LaunchMarketReader["accountTrades"]>[0]): ReturnType<LaunchMarketReader["accountTrades"]> {
     const until = Date.now() + budgetMs;
     const signatures: string[] = [];
     let complete = true;
     for (const account of accounts) {
-      const batch = await connection.getSignaturesForAddress(new PublicKey(account), { limit: ACCOUNT_SIGNATURES }, "confirmed").catch(() => null);
-      if (!batch) {
+      const listed = await listedFrom(new PublicKey(account), { limit: ACCOUNT_SIGNATURES }).catch(() => null);
+      if (!listed) {
         complete = false;
         continue;
       }
-      /* Newest first: the window is whole when the page reached past the token's opening, or held everything there was. */
-      const reached = batch.length < ACCOUNT_SIGNATURES || (since !== null && batch.some((entry) => entry.blockTime !== null && entry.blockTime !== undefined && entry.blockTime < since));
+      const batch = listed.entries;
+      /*
+       * Newest first: the window is whole when the page reached past the token's opening — the creation itself, or a
+       * transaction older than the window — or when the account's whole history is on it: a short page, and only from
+       * the endpoint with the whole history, since a node that keeps a day returns a short page too.
+       */
+      const reached = accountPageReached({ page: batch, whole: batch.length < ACCOUNT_SIGNATURES && listed.deep, creationSignature, since });
       if (!reached) complete = false;
       for (const entry of batch) {
         if (entry.err !== null) continue;
@@ -480,7 +576,7 @@ export function createLaunchMarketReader(connection: Connection, options: Readon
     let before: string | undefined;
     let reached = false;
     for (let page = 0; page < OPENING_PAGES && !reached; page += 1) {
-      const batch = await connection.getSignaturesForAddress(pool, { before, limit: 1_000 }, "confirmed");
+      const batch = await signaturesOf(pool, { before, limit: 1_000 });
       for (const entry of batch) {
         if (entry.signature === creationSignature) reached = true;
         if (entry.err !== null) continue;
@@ -508,7 +604,7 @@ export function createLaunchMarketReader(connection: Connection, options: Readon
     if (market.graduated) accounts.push({ owner: market.graduated.tokenVault, account: market.graduated.tokenVault });
     if (escrow) accounts.push({ owner: escrow, account: getAssociatedTokenAddressSync(mint, new PublicKey(escrow), true, TOKEN_2022_PROGRAM_ID).toBase58() });
     /* The largest accounts catch a holder who never traded; a node that will not answer them leaves the traders' own. */
-    const largest = (await optional(connection.rpcEndpoint, "largest", () => lenient.getTokenLargestAccounts(mint, "confirmed").then((answer) => answer.value.map((entry) => entry.address.toBase58())))) ?? [];
+    const largest = (await optional(lenient.rpcEndpoint, "largest", () => lenient.getTokenLargestAccounts(mint, "confirmed").then((answer) => answer.value.map((entry) => entry.address.toBase58())))) ?? [];
     const known = new Set(accounts.map((entry) => entry.account));
     const extra = largest.filter((address) => !known.has(address));
     const balances: HolderBalance[] = [];
@@ -538,7 +634,7 @@ export function createLaunchMarketReader(connection: Connection, options: Readon
 
   /** Every account of the mint with a balance, counted on the node; null where the node does not index the token program. */
   async function countHolders(mint: PublicKey): Promise<number | null> {
-    return optional(connection.rpcEndpoint, "holders", async () => {
+    return optional(lenient.rpcEndpoint, "holders", async () => {
       const accounts = await lenient.getProgramAccounts(TOKEN_2022_PROGRAM_ID, {
         commitment: "confirmed",
         filters: [{ memcmp: { offset: 0, bytes: mint.toBase58() } }],
@@ -549,7 +645,7 @@ export function createLaunchMarketReader(connection: Connection, options: Readon
   }
 
   async function curvesBy(creator: string): Promise<number | null> {
-    return optional(connection.rpcEndpoint, "curves", async () => (await lenientClient.state.getPoolsByCreator(creator)).length);
+    return optional(lenient.rpcEndpoint, "curves", async () => (await lenientClient.state.getPoolsByCreator(creator)).length);
   }
 
   async function feeNowBps(market: MarketState, side: "buy" | "sell"): Promise<number | null> {

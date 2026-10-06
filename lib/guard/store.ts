@@ -192,6 +192,14 @@ export const GUARD_COLLECTIONS = [
      DDL. */
   "rewardRules",
   "rankEvents",
+  /* Leaderboards and seasons (the Growth line). `growthBoards` caches each
+     week's computed figures and each season's counts so a board is not
+     recomputed from every ledger on every read; `growthSeasons` holds when the
+     first season began, written once; `growthPrefs` is one row per wallet
+     that chose to be hidden from the boards. No money, no DDL. */
+  "growthBoards",
+  "growthSeasons",
+  "growthPrefs",
   /* Admin business analytics. Two records, neither a boundary: nothing
      compare-and-sets on them to decide whether money may move.
 
@@ -349,6 +357,13 @@ export const GUARD_COLLECTIONS = [
   "launchClaims",
   "launchClaimBuilds",
   "launchClaimSends",
+  /* Ryntra Launch: a launch's transactions as decoded from the chain, keyed `<cluster>:<token>:<fee wallet>:<signature>` —
+     a confirmed transaction's trades never change, so every instance reads them here and asks the node only for what is
+     new. Written once each, never changed. A value in the same column; no DDL. */
+  "launchTradeIndex",
+  /* Ryntra Launch: the routes' write windows shared by every instance, keyed `<route>:<address>:<window start>`, a
+     version-checked count; an address's older windows are removed as it writes. A value in the same column; no DDL. */
+  "launchLimits",
 ] as const;
 
 export type GuardCollectionName = (typeof GUARD_COLLECTIONS)[number];

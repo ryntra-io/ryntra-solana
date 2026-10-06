@@ -122,6 +122,16 @@
   opacity: 0.6;
 }
 
+/* Paused, not busy: the presets' numbers stay at full contrast — they are still what a person reads here — and only
+   the fields a person would fill fade. */
+.section[data-paused]:disabled {
+  opacity: 1;
+}
+
+.section[data-paused] :is(.input, .picture, .lockBox) {
+  opacity: 0.6;
+}
+
 .sectionTitle {
   float: left;
   width: 100%;
@@ -2218,10 +2228,6 @@
 
 /* ── «Мої лаунчі»: the totals, each launch as a card, the receipts ───── */
 
-.headAction {
-  margin-left: auto;
-}
-
 .mineEmpty {
   justify-items: start;
   padding: var(--ry-s5) var(--ry-s4);
@@ -2631,42 +2637,10 @@
   }
 }
 
-/* The cabinet's head: the title and the line, «Запустити токен» beside them on a desk, under them on a phone. */
+/* The cabinet's head: the title and the line; «Запустити токен» is the tab above them. */
 .mineHeadGrid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-areas:
-    "title action"
-    "lede action";
-  align-items: center;
-  gap: var(--ry-s2) var(--ry-s4);
-}
-
-.mineHeadGrid > .headRow {
-  grid-area: title;
-}
-
-.mineHeadGrid > .lede {
-  grid-area: lede;
-}
-
-.mineHeadGrid > .headAction {
-  grid-area: action;
-  margin-left: 0;
-}
-
-@media (max-width: 559px) {
-  .mineHeadGrid {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-areas:
-      "title"
-      "lede"
-      "action";
-  }
-
-  .mineHeadGrid > .headAction {
-    justify-self: start;
-  }
+  gap: var(--ry-s2);
 }
 
 .mineSub {
@@ -2757,4 +2731,120 @@
   .feeShareAddress {
     min-height: calc(2 * 1.4em + 22px);
   }
+}
+
+/* ── Launch's two pages, one tap apart: «Запустити токен» · «Мої лаунчі» ─
+   The menu has one row for Launch, so its pages are named here, on a desk too.
+   Portfolio's pill tabs: the current one a card on the page with a hairline. */
+.placeTabs {
+  display: flex;
+  gap: var(--ry-s1);
+  min-width: 0;
+  /* Room for the focus ring, which a scrolling row would otherwise clip. */
+  margin: -3px -3px var(--ry-s3);
+  padding: 3px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.placeTabs::-webkit-scrollbar {
+  display: none;
+}
+
+.placeTab {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--ry-s3);
+  border-radius: var(--ry-r-pill);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--ry-muted);
+  text-decoration: none;
+  transition: background-color var(--rt-duration-fast) var(--rt-ease), color var(--rt-duration-fast) var(--rt-ease);
+}
+
+.placeTab:hover {
+  color: var(--ry-text);
+}
+
+.placeTab[aria-current="page"] {
+  background: var(--ry-card);
+  box-shadow: inset 0 0 0 1px var(--ry-border);
+  color: var(--ry-text);
+}
+
+.placeTab:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+}
+/* Launch's operator stop: a quiet line in the page's own tone — the muted ink and an icon, no card of its own, so it
+   never weighs as much as the form — and never the red of a problem. */
+.pausedNote {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ry-s2);
+  margin: 0;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-dense);
+  line-height: 1.45;
+}
+
+.pausedNote > svg {
+  flex: none;
+  margin-top: 1px;
+}
+
+.pausedText {
+  margin: 0;
+  max-width: 68ch;
+}
+
+.pausedLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--ry-text);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: var(--ry-border);
+  text-underline-offset: 3px;
+  white-space: nowrap;
+}
+
+.pausedLink:hover {
+  text-decoration-color: currentColor;
+}
+
+.pausedLink:focus-visible {
+  outline: none;
+  border-radius: 4px;
+  box-shadow: var(--ry-focus);
+}
+
+.pausedChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 24px;
+  padding: 2px 10px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-card);
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+}
+
+/* The action's place while launching waits: the button itself, unpressable and without the brand's orange, says why. */
+/* Above the product's own «disabled = half opacity», which would fade the words to about 2:1. */
+.review .cta.ctaPaused,
+.review .cta.ctaPaused:disabled {
+  border: 1px solid var(--ry-border);
+  background: var(--ry-hover);
+  color: var(--ry-muted);
+  opacity: 1;
+  cursor: not-allowed;
 }

@@ -4,8 +4,8 @@
  * time, which would tell a crawler every page changed on every deploy.
  */
 
-/** The documentation was rewritten on this date (the menu's sections, the pages of «Інвестувати», «ти» in Ukrainian); every page carries it until its next change. */
-export const DOCS_UPDATED = "2026-09-26";
+/** The documentation last changed on this date (2026-10-06: the menu's section «Лаунч» and its page; before it 2026-09-26, the menu's sections, «Інвестувати», «ти» in Ukrainian); every page carries it until its next change. */
+export const DOCS_UPDATED = "2026-10-06";
 
 /** Home's words of its own as the app's page, and its Ukrainian address. */
 export const HOME_UPDATED = "2026-09-27";

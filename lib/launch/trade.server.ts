@@ -27,13 +27,14 @@ import type {
   LaunchWalletResponse,
 } from "../api/v1/contract.ts";
 import { priceMoveBps, uiAmount, type LaunchTrade } from "../core/venues/meteora-dbc/market.ts";
-import { createLaunchMarketReader, type MarketState } from "../core/venues/meteora-dbc/market.server.ts";
+import type { MarketState } from "../core/venues/meteora-dbc/market.server.ts";
 import { LaunchTradeRefusal, createLaunchTradeVenue, type LaunchTradeQuote } from "../core/venues/meteora-dbc/trade.server.ts";
 import { compareWalletTransaction } from "../solana/wallet-modification.ts";
 import type { LaunchDeps, LaunchRecord } from "./flow.server.ts";
-import { launchPoolFee } from "./config.server.ts";
+import { launchPair, launchPoolFee } from "./config.server.ts";
 import { readLaunchRecord, sendOnce } from "./flow.server.ts";
 import { forgetLaunchMarket } from "./market.server.ts";
+import { launchMarketReader } from "./trade-index.server.ts";
 
 export type TradeDeps = Pick<LaunchDeps, "network" | "connection" | "store" | "now">;
 
@@ -63,7 +64,7 @@ const buildKey = (cluster: string, id: string) => `${cluster}:${id}`;
 async function launchState(deps: TradeDeps, token: string): Promise<Readonly<{ record: LaunchRecord; state: MarketState }> | TradeFailure> {
   const record = await readLaunchRecord(deps, deps.network.cluster, token);
   if (!record || record.state === "PENDING") return fail("LAUNCH_NOT_FOUND", "No Ryntra launch of this token here.");
-  const state = await createLaunchMarketReader(deps.connection, { feeWallet: deps.network.feeWallet }).state({ token, pool: record.pool });
+  const state = await launchMarketReader(deps).state({ token, pool: record.pool });
   return { record, state };
 }
 
@@ -78,7 +79,7 @@ function refused(error: unknown): TradeFailure {
 }
 
 function quoteView(deps: TradeDeps, record: LaunchRecord, state: MarketState, quote: LaunchTradeQuote): LaunchTradeQuoteResponse {
-  const pair = deps.network.pairs[record.preset];
+  const pair = launchPair(deps.network, record.preset);
   const capPair = quote.priceAfter * uiAmount(state.supplyRaw, state.tokenDecimals);
   return {
     venue: quote.venue,
@@ -226,7 +227,7 @@ async function filledBy(deps: TradeDeps, build: TradeBuildRecord, signature: str
   try {
     const record = await readLaunchRecord(deps, deps.network.cluster, build.token);
     if (!record) return null;
-    const reader = createLaunchMarketReader(deps.connection, { feeWallet: deps.network.feeWallet });
+    const reader = launchMarketReader(deps);
     const state = await reader.state({ token: build.token, pool: record.pool });
     for (let attempt = 0; attempt < 3; attempt += 1) {
       const filled = fillOf(await reader.transaction({ token: build.token, state, signature }), build);

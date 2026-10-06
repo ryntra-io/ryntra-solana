@@ -30,6 +30,7 @@ import { readStockUniverse } from "../stocks/universe.server.ts";
 import { SWAP_NETWORKS, type SwapNetwork } from "../swap/catalog.ts";
 import { readAttribution } from "./chain.server.ts";
 import { feeWalletAccounts } from "./ata.ts";
+import { readLaunchStarts } from "./launch-starts.server.ts";
 import { ATTRIBUTION_REGISTRY, publicRegistryDocument, registryFacts } from "./registry.ts";
 import { rewardsByOperation } from "./rewards.ts";
 import { buildLedgerStats, buildOnchainStats, buildStatsModel, chainAttributionOf, type StatsModel } from "./stats-model.ts";
@@ -205,7 +206,7 @@ export async function registryDocumentOf(chain: Awaited<ReturnType<typeof readAt
   for (const row of ATTRIBUTION_REGISTRY) {
     if (row.kind === "FEE_WALLET" && row.address !== null) feeAccounts.set(row.id, (await feeWalletAccounts(row.address)).map((entry) => entry.account));
   }
-  return publicRegistryDocument(undefined, whole ? registryFacts(chain.firstCredits) : null, feeAccounts);
+  return publicRegistryDocument(undefined, whole ? registryFacts(chain.firstCredits) : null, feeAccounts, await readLaunchStarts());
 }
 
 export async function readPublicStats(deps: Readonly<{ env?: NodeJS.ProcessEnv; now?: () => Date }> = {}): Promise<StatsModel> {

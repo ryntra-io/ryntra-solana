@@ -6,7 +6,8 @@ import { solanaServerLocale } from "@/app/solana/workspace/i18n/server";
 import type { LaunchTokenResponse } from "@/lib/api/v1/contract";
 import { BASE58 } from "@/lib/api/v1/contract";
 import { getGuardRuntime } from "@/lib/guard/runtime";
-import { launchConnection, launchNetwork, launchPoolPayer } from "@/lib/launch/config.server";
+import { launchConnection, launchNetwork, launchPoolPayerAddress } from "@/lib/launch/config.server";
+import { launchTrading } from "@/lib/launch/runtime.server";
 import { readLaunchView } from "@/lib/launch/view.server";
 import { launchPreset } from "@/lib/core/venues/meteora-dbc/presets";
 
@@ -21,12 +22,9 @@ export const revalidate = 0;
 
 async function view(mint: string): Promise<LaunchTokenResponse | null> {
   const network = launchNetwork();
-  const payer = launchPoolPayer();
+  const payer = network ? launchPoolPayerAddress(network) : null;
   if (!network || !payer || !BASE58.test(mint)) return null;
-  return readLaunchView(
-    { network, connection: launchConnection(network), store: getGuardRuntime().store, poolPayer: payer.publicKey.toBase58(), origin: network.origin, now: () => new Date() },
-    mint,
-  );
+  return readLaunchView({ network, connection: launchConnection(network), store: getGuardRuntime().store, poolPayer: payer, origin: network.origin, now: () => new Date() }, mint);
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ mint: string }> }) {
@@ -51,11 +49,12 @@ export default async function LaunchTokenPage({ params }: { params: Promise<{ mi
   const token = await view(mint);
   if (!token) notFound();
   const network = launchNetwork();
-  const pairSymbol = network?.pairs[token.preset].symbol ?? "";
+  const pairSymbol = network?.pairs[token.preset]?.symbol ?? "";
   return (
     <div className={styles.page} data-wide="">
       <TokenMarket
         initial={null}
+        paused={!launchTrading()}
         token={token.token}
         symbol={token.symbol}
         locale={locale}

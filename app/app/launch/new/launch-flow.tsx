@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowSquareOut, CaretDown, CheckCircle, CircleNotch, ImageSquare, Lock, LockOpen, PaperPlaneTilt, Plus, Trash, Users, Warning, Wallet } from "@phosphor-icons/react";
+import { ArrowSquareOut, CaretDown, CheckCircle, CircleNotch, ImageSquare, Lock, LockOpen, PaperPlaneTilt, PauseCircle, Plus, Trash, Users, Warning, Wallet } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ChangeEvent, type ReactNode } from "react";
 
@@ -15,6 +15,8 @@ import { signTransactions } from "@/lib/solana/wallet.client";
 import { formatBps, formatDate, formatDuration, formatNumber, formatPercent, formatRaw, fromRaw, toRaw } from "../launch-format";
 import { launchWords, type LaunchWordKey } from "../launch-words";
 import styles from "../launch.module.css";
+import { LaunchTabs } from "../launch-tabs";
+import { PausedChip, PausedNote } from "../paused-note";
 import { ShareLink } from "../share-link";
 
 /**
@@ -105,7 +107,7 @@ async function shrinkPicture(file: File): Promise<Picture | null> {
   return null;
 }
 
-export function LaunchFlow({ locale, presets }: { locale: WorkspaceLocale; presets: LaunchPresetsResponse }) {
+export function LaunchFlow({ locale, presets, paused = null }: { locale: WorkspaceLocale; presets: LaunchPresetsResponse; paused?: "all" | "launching" | null }) {
   const word = launchWords(locale);
   const { connection } = useSolanaConnection();
   const { reach } = useWalletReach();
@@ -135,7 +137,8 @@ export function LaunchFlow({ locale, presets }: { locale: WorkspaceLocale; prese
 
   /* The first buy quoted on the fresh curve: the tokens it gets and the most it may spend. */
   useEffect(() => {
-    if (!preset || buyRaw === null) return;
+    /* Paused: nothing can be built, so nothing is quoted either. */
+    if (!preset || buyRaw === null || paused) return;
     const amountRaw = buyRaw.toString();
     setQuote((current) => ({ amountRaw, data: current.data?.preset === preset.id ? current.data : null, loading: true }));
     const timer = window.setTimeout(async () => {
@@ -143,7 +146,7 @@ export function LaunchFlow({ locale, presets }: { locale: WorkspaceLocale; prese
       setQuote((current) => (current.amountRaw === amountRaw ? { amountRaw, data: read.ok ? read.data : null, loading: false } : current));
     }, 300);
     return () => window.clearTimeout(timer);
-  }, [preset, buyRaw]);
+  }, [preset, buyRaw, paused]);
 
   useEffect(() => {
     if (!buying) setLockId(null);
@@ -275,6 +278,7 @@ export function LaunchFlow({ locale, presets }: { locale: WorkspaceLocale; prese
 
   return (
     <div className={styles.page}>
+      <LaunchTabs locale={locale} />
       <header className={styles.head}>
         <div className={styles.headRow}>
           <h1 className={styles.title}>{word("title")}</h1>
@@ -283,13 +287,15 @@ export function LaunchFlow({ locale, presets }: { locale: WorkspaceLocale; prese
               {word("devnet")}
             </span>
           ) : null}
+          {paused ? <PausedChip locale={locale} /> : null}
         </div>
         <p className={styles.lede}>{word("lede")}</p>
+        {paused ? <PausedNote locale={locale} scope={paused} /> : null}
       </header>
 
       <div className={styles.layout}>
         <form className={styles.form} onSubmit={(event) => event.preventDefault()} noValidate aria-busy={busy}>
-          <fieldset className={styles.section} disabled={busy}>
+          <fieldset className={styles.section} disabled={busy || paused !== null} data-paused={paused ? "" : undefined}>
             <legend className={styles.sectionTitle}>{word("sectionToken")}</legend>
             <div className={styles.tokenRow}>
               <label className={styles.picture} data-empty={picture ? undefined : ""} data-invalid={(attempted && !picture) || pictureBad ? "" : undefined} ref={errorRef(attempted && !picture)}>
@@ -327,7 +333,7 @@ export function LaunchFlow({ locale, presets }: { locale: WorkspaceLocale; prese
             </Field>
           </fieldset>
 
-          <fieldset className={styles.section} disabled={busy}>
+          <fieldset className={styles.section} disabled={busy || paused !== null} data-paused={paused ? "" : undefined}>
             <legend className={styles.sectionTitle}>
               {word("sectionLinks")} <span className={styles.optional}>{word("optional")}</span>
             </legend>
@@ -340,7 +346,7 @@ export function LaunchFlow({ locale, presets }: { locale: WorkspaceLocale; prese
             </div>
           </fieldset>
 
-          <fieldset className={styles.section} disabled={busy}>
+          <fieldset className={styles.section} disabled={busy || paused !== null} data-paused={paused ? "" : undefined}>
             <legend className={styles.sectionTitle}>{word("sectionPreset")}</legend>
             <div className={styles.presets} role="radiogroup" aria-label={word("sectionPreset")}>
               {presets.presets.map((entry) => (
@@ -364,7 +370,7 @@ export function LaunchFlow({ locale, presets }: { locale: WorkspaceLocale; prese
             ) : null}
           </fieldset>
 
-          <fieldset className={styles.section} disabled={busy}>
+          <fieldset className={styles.section} disabled={busy || paused !== null} data-paused={paused ? "" : undefined}>
             <legend className={styles.sectionTitle}>
               {word("sectionBuy")} <span className={styles.optional}>{word("optional")}</span>
             </legend>
@@ -419,6 +425,12 @@ export function LaunchFlow({ locale, presets }: { locale: WorkspaceLocale; prese
               </p>
               {busy ? (
                 <Progress locale={locale} phase={phase} many={many} split={manyWithSplit} />
+              ) : paused ? (
+                /* Paused: said under the title before anything is filled; here the action itself, unpressable, says it waits. */
+                <button type="button" className={`rw-btn ${styles.cta} ${styles.ctaPaused}`} disabled>
+                  <PauseCircle size={18} aria-hidden />
+                  {word("pausedAction")}
+                </button>
               ) : (
                 <button type="button" className={`rw-btn rw-btn--primary ${styles.cta}`} onClick={launch}>
                   {connection ? <PaperPlaneTilt size={18} weight="fill" aria-hidden /> : <Wallet size={18} aria-hidden />}
@@ -470,9 +482,11 @@ function failureText(failure: Failure, word: ReturnType<typeof launchWords>): st
       return word("pictureBad");
     case "LAUNCH_LIMIT":
       return word("errLimit");
+    /* From the form it means new launches wait — the whole of Launch, or only them; either way it is true. */
     case "LAUNCH_PAUSED":
+      return word("errLaunchingPaused");
     case "RATE_LIMITED":
-      return word("errPaused");
+      return word("errRateLimited");
     case "LAUNCH_FIRST_BUY_ABOVE_CAP":
       return word("errAboveCap");
     case "LAUNCH_BUILD_EXPIRED":

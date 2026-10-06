@@ -366,6 +366,37 @@ export function launchRiskFacts(
  * the history was read whole, or its lists reach back past `since` and no transaction listed since then went unread.
  * Never judged from the oldest trade read: the creation is read first, and its buy is the oldest of any partial read.
  */
+type Listed = Readonly<{ signature: string }>;
+
+/**
+ * Whether the curve's and the graduated pool's signature lists reach their first transaction. A list is whole when it
+ * holds its account's first — not when it is shorter than asked: a node that keeps a day of history returns a short list
+ * for an older token. The curve's first is the token's creation; the pool's first is the migration, which the curve's
+ * whole list holds too. `pool`: null before the token graduated.
+ */
+export function listsWhole(args: Readonly<{ curve: readonly Listed[]; pool: readonly Listed[] | null; creationSignature: string; limit: number }>): Readonly<{ curveWhole: boolean; poolWhole: boolean }> {
+  const curveWhole = args.curve.length < args.limit && args.curve.some((entry) => entry.signature === args.creationSignature);
+  if (args.pool === null) return { curveWhole, poolWhole: true };
+  const oldestPool = args.pool.at(-1);
+  const curveListed = new Set(args.curve.map((entry) => entry.signature));
+  return { curveWhole, poolWhole: curveWhole && args.pool.length < args.limit && oldestPool !== undefined && curveListed.has(oldestPool.signature) };
+}
+
+/**
+ * Whether one account's newest page of signatures reaches past the token's opening, so every trade of the token through
+ * that account is on it: the page holds the creation, or a transaction older than `since` (unix seconds), or the
+ * account's whole history (`whole`: a short page from the endpoint that keeps it all). A transaction just after the
+ * opening proves nothing — the creator's buys of the first seconds may sit beyond the page.
+ */
+export function accountPageReached(
+  args: Readonly<{ page: readonly Readonly<{ signature: string; blockTime?: number | null }>[]; whole: boolean; creationSignature: string | null; since: number | null }>,
+): boolean {
+  if (args.whole) return true;
+  if (args.creationSignature !== null && args.page.some((entry) => entry.signature === args.creationSignature)) return true;
+  const since = args.since;
+  return since !== null && args.page.some((entry) => typeof entry.blockTime === "number" && entry.blockTime < since);
+}
+
 export function windowReadWhole(history: Readonly<{ complete: boolean; coveredFrom: number | null; gaps: readonly number[] }>, since: number): boolean {
   if (history.complete) return true;
   return (history.coveredFrom === null || history.coveredFrom < since) && history.gaps.every((at) => at < since);

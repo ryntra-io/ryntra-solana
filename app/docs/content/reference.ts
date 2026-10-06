@@ -281,7 +281,7 @@ export const GLOSSARY: DocPage = {
         { en: ["Term", "Meaning"], uk: ["Термін", "Значення"] },
         {
           en: [
-            ["The app", "The product at ryntra.io/app: the seven sections of the menu and the twelve pages in them, one menu for everyone."],
+            ["The app", "The product at ryntra.io/app: the eight sections of the menu and the twelve pages in them, one menu for everyone."],
             ["Review", "The screen before any financial action that shows exactly what will happen; nothing is signed without it. A purchase shows four lines."],
             ["Receipt", "Ryntra's record of one operation: what was reviewed and what the network did."],
             ["Autoinvest", "Your rule for buying a company — regularly, if it falls, or from every payment. Ryntra reminds you; you sign each purchase."],
@@ -299,7 +299,7 @@ export const GLOSSARY: DocPage = {
             ["For experienced investors", "What a trader reaches for: Spot, the stock screener and Trends under Trade in the menu and on top of Markets; the full plans, Results and History under Portfolio. The same checks before every signature."],
           ],
           uk: [
-            ["Застосунок", "Продукт на ryntra.io/app: сім розділів меню і дванадцять сторінок у них, одне меню для всіх."],
+            ["Застосунок", "Продукт на ryntra.io/app: вісім розділів меню і дванадцять сторінок у них, одне меню для всіх."],
             ["«Перевірка»", "Екран перед будь-якою фінансовою дією, що показує, що саме станеться; без нього нічого не підписується. Купівля — це чотири рядки."],
             ["Квитанція", "Запис Ryntra про одну операцію: що перевірено і що зробила мережа."],
             ["«Автоінвест»", "Твоє правило купівлі компанії — регулярно, якщо впаде, чи з кожної оплати. Ryntra нагадує; кожну купівлю підписуєш ти."],

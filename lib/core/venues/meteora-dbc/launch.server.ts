@@ -358,6 +358,8 @@ export function createMeteoraDbcLaunchVenue(args: Readonly<{
   configs: PresetConfigs;
   /** Ryntra's pool payer — pays the rent of every pool Ryntra Launch creates and signs its creation; absent, nothing launches. */
   poolPayer?: Address | null;
+  /** Asked for a transaction the main endpoint no longer keeps — a public node holds a day or two of them. */
+  archive?: Connection | null;
 }>): MeteoraDbcLaunchVenue {
   const { connection, configs } = args;
   const client = new DynamicBondingCurveClient(connection, "confirmed");
@@ -823,7 +825,8 @@ export function createMeteoraDbcLaunchVenue(args: Readonly<{
     },
 
     async observeCreation(signature: string, token: Address): Promise<CreationObservation> {
-      const tx = await connection.getTransaction(signature, { commitment: "confirmed", maxSupportedTransactionVersion: 0 });
+      let tx = await connection.getTransaction(signature, { commitment: "confirmed", maxSupportedTransactionVersion: 0 });
+      if (!tx && args.archive) tx = await args.archive.getTransaction(signature, { commitment: "confirmed", maxSupportedTransactionVersion: 0 }).catch(() => null);
       if (!tx?.meta) throw new LaunchRefusal("NO_POOL", `No transaction ${signature}.`);
       const message = tx.transaction.message;
       const keys = message.getAccountKeys({ accountKeysFromLookups: tx.meta.loadedAddresses });

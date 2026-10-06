@@ -35,6 +35,7 @@ export const DOC_SLUGS = [
   "trade/spot",
   "trade/screener",
   "trade/trends",
+  "launch/launch-a-token",
   "money/top-up",
   "money/send",
   "money/receive",

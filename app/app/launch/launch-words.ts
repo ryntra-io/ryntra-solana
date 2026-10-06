@@ -98,7 +98,17 @@ export const LAUNCH_WORDS = {
   errUnknownAfterSend: bi("No answer came back. The launch may still land: check the token page in a minute.", "Відповідь не прийшла. Запуск ще може лягти в мережу: перевір сторінку токена за хвилину."),
   errBorrowedServer: bi("The name or ticker reads as a known brand or person. Nothing was sent.", "Назва чи тікер схожі на відомий бренд або людину. Нічого не надіслано."),
   errLimit: bi("One wallet launches up to 3 tokens a day. Nothing was sent; try tomorrow.", "Один гаманець запускає до 3 токенів на добу. Нічого не надіслано; спробуй завтра."),
-  errPaused: bi("Launching is paused for a moment. Nothing was sent; try again shortly.", "Запуск на хвилину призупинено. Нічого не надіслано; спробуй трохи згодом."),
+  /* Launch's operator stop, said one way everywhere and with no time promised: nobody knows when it opens again. */
+  pausedNotice: bi("Launch is paused: new launches, trades and fee claims here wait until it reopens. Everything already on Solana stays as it is.", "Лаунч на паузі: запуск, угоди й забирання комісій тут чекають, доки його відкриють знову. Усе, що вже в мережі Solana, лишається як є."),
+  /* Only new launches wait — the pool payer or the shared store is not here — while trades and claims go on. */
+  pausedLaunching: bi("Launching new tokens is paused. Tokens already launched trade as usual, and your fees can still be claimed.", "Запуск нових токенів на паузі. Уже запущені токени торгуються як завжди, а свої комісії можна забрати й зараз."),
+  pausedChip: bi("Paused", "На паузі"),
+  pausedAction: bi("Launching is paused", "Запуск на паузі"),
+  pausedToMine: bi("My launches", "Мої лаунчі"),
+  errLaunchPaused: bi("Launch is paused; nothing was sent.", "Лаунч на паузі; нічого не надіслано."),
+  /* Every window lasts an hour at most — this server's from its first request, the shared one by the clock — so an hour from now both have started over. */
+  errRateLimited: bi("Too many tries for now; nothing was sent. You can try again in an hour at most.", "Забагато спроб; нічого не надіслано. Спробувати знову можна буде не пізніше ніж за годину."),
+  errLaunchingPaused: bi("Launching new tokens is paused; nothing was sent.", "Запуск нових токенів на паузі; нічого не надіслано."),
   errAboveCap: bi("The first buy is above the preset's cap. Nothing was sent.", "Перша покупка більша за стелю пресету. Нічого не надіслано."),
   errExpired: bi("The signature took too long. Nothing was sent; launch again.", "Підпис забрав забагато часу. Нічого не надіслано; запусти ще раз."),
   errUsed: bi("This launch was already sent.", "Цей запуск уже надіслано."),

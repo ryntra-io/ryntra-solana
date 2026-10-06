@@ -44,7 +44,9 @@
  *   Launch's fees; the partner's fee claimer, the Squads multisig's vault
  *   that collects them later — not counted again, the same money arriving;
  *   and the wallet that pays for creating the pools, which only identifies
- *   them. None of them is used for anything else.
+ *   them. None of them is used for anything else: the configs and the pool
+ *   payer were created for Launch, and the partner's vault — a vault that
+ *   existed before — is Launch's from the first config that names it.
  *
  * A wallet that pays friends' rewards — the friends' payout wallet, and the
  * rewards wallet while it pays them too — is registered here and never
@@ -219,7 +221,8 @@ export const ATTRIBUTION_REGISTRY: readonly RegistryEntry[] = Object.freeze([
   { ...place("solana-launch-config-classic", "LAUNCH_CONFIG", "DBC_CONFIG", ["launch"], "FEES"), address: "B6gheJ5PL6tpE9V3vQGYA8wLqe3pcFh1fgKf4aPxZh1G" },
   { ...place("solana-launch-config-protected", "LAUNCH_CONFIG", "DBC_CONFIG", ["launch"], "FEES"), address: "33KU1WNMVAXLBuGF1EQAHqWFnrsDevofJnw4VAamiK2G" },
   { ...place("solana-launch-fee-claimer", "LAUNCH_FEE_CLAIMER", "DBC_FEE_CLAIMER", ["launch"], "NONE"), address: "22BZNVD9FuZPQvGwALBwhopSyxUCTuNNeTW1Lr1KsSvA" },
-  place("solana-launch-pool-payer", "LAUNCH_POOL_PAYER", "LAUNCH_POOL_PAYER", ["launch"], "NONE"),
+  /* Created 2026-10-06 for this job alone; its key is held outside this repository, and a launch pays it back in its own transaction. */
+  { ...place("solana-launch-pool-payer", "LAUNCH_POOL_PAYER", "LAUNCH_POOL_PAYER", ["launch"], "NONE"), address: "H2Bzv5pcrEGug1STGbZhvX98DGb3SCFa4pnAtUwktyyV" },
 ]);
 
 /* ------------------------------------------------------------ validation */
@@ -309,12 +312,13 @@ export function registryStatus(row: RegistryEntry): RegistryStatus {
 export const UNPUBLISHED_ROLES: ReadonlySet<RegistryRole> = new Set(["PAYOUT_FRIENDS", "PAYOUT_REWARDS"]);
 
 /**
- * Roles drawn only once their product is open to people: Ryntra Launch's
- * identities exist on chain before people can launch, and a public page names
- * them when Launch opens to people — the registry already holds them, so the
- * address is never written twice.
+ * Roles drawn only once their product is open to people: an identity that
+ * exists on chain before people can use its product is held here and named on
+ * a public page when the product opens — the address is never written twice.
+ * Ryntra Launch's identities were held so until it opened on 2026-10-06; none
+ * waits now.
  */
-export const NOT_YET_OPEN_ROLES: ReadonlySet<RegistryRole> = new Set(["LAUNCH_CONFIG", "LAUNCH_FEE_CLAIMER", "LAUNCH_POOL_PAYER"]);
+export const NOT_YET_OPEN_ROLES: ReadonlySet<RegistryRole> = new Set<RegistryRole>();
 
 /** Whether a row may be published — on the page, in the JSON, in a public query. */
 export function isPublishable(row: RegistryEntry): boolean {
@@ -412,16 +416,21 @@ export type PublicRegistry = Readonly<{
   rows: readonly PublicRegistryRow[];
 }>;
 
+/**
+ * `starts`: where an identity that is not credited started — a Launch config, the partner's vault, the pool payer —
+ * read from the chain on its own: the first transaction it took part in.
+ */
 export function publicRegistryDocument(
   rows: readonly RegistryEntry[] = ATTRIBUTION_REGISTRY,
   facts: RegistryFacts | null = null,
   feeAccounts: ReadonlyMap<string, readonly string[]> = new Map(),
+  starts: ReadonlyMap<string, RegistryMoment> = new Map(),
 ): PublicRegistry {
   return {
     version: ATTRIBUTION_REGISTRY_VERSION,
     observed: facts !== null,
     rows: publicRegistry(rows).map((row) => {
-      const start = facts?.get(row.id) ?? null;
+      const start = facts?.get(row.id) ?? (row.role.startsWith("LAUNCH_") ? (starts.get(row.id) ?? null) : null);
       const counted = row.network === "solana" && (row.kind === "FEE_WALLET" || row.kind === "JUPITER_REFERRAL_ACCOUNT" || row.kind === "JUPITER_REFERRAL_TOKEN_ACCOUNT");
       return { ...row, status: registryStatus(row), start, example: start?.tx ?? null, observed: facts !== null && counted, accounts: row.kind === "FEE_WALLET" ? (feeAccounts.get(row.id) ?? null) : null };
     }),

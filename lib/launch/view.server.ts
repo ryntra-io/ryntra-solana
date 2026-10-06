@@ -11,6 +11,7 @@ import { observeCreatorLock } from "../core/venues/meteora-dbc/creator-lock.serv
 import { createMeteoraDbcLaunchVenue } from "../core/venues/meteora-dbc/launch.server.ts";
 import { buildLaunchReceiptFacts, type LaunchReceiptFacts } from "../core/venues/meteora-dbc/receipt.ts";
 import type { LaunchTokenResponse } from "../api/v1/contract.ts";
+import { launchArchiveConnection } from "./config.server.ts";
 import type { LaunchDeps } from "./flow.server.ts";
 import { launchShareLink, readLaunchRecord, settleFeeSharing, settleLaunchLock } from "./flow.server.ts";
 import { metadataOfUri } from "./metadata.server.ts";
@@ -56,7 +57,7 @@ async function readFresh(deps: Omit<LaunchDeps, "poolPayer"> & Readonly<{ poolPa
   let record = await readLaunchRecord(deps, deps.network.cluster, token);
   if (!record) return null;
   const stored = await metadataOfUri(deps.store, record.metadataUri, deps.origin);
-  const venue = createMeteoraDbcLaunchVenue({ connection: deps.connection, configs: deps.network.configs, poolPayer: deps.poolPayer });
+  const venue = createMeteoraDbcLaunchVenue({ connection: deps.connection, configs: deps.network.configs, poolPayer: deps.poolPayer, archive: launchArchiveConnection(deps.network) });
   let receipt: LaunchReceiptFacts | null = null;
   let progressBps: number | null = null;
   let migrated: boolean | null = null;

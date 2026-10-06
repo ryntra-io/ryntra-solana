@@ -2,6 +2,7 @@ import { PageHead } from "../hub/parts.tsx";
 import { MoneyTabs } from "../money/money-tabs.tsx";
 import { solanaServerText } from "../i18n/server.ts";
 import { RewardsCard } from "./rewards-card.tsx";
+import { RewardsTabs } from "./rewards-tabs.tsx";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -30,6 +31,7 @@ export default async function SolanaRewardsPage() {
     <>
       <PageHead title="Rewards" />
       <MoneyTabs current="rewards" />
+      <RewardsTabs current="overview" />
       <section aria-label={text("Rewards")}>
         <RewardsCard />
       </section>

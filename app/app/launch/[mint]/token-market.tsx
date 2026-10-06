@@ -36,11 +36,14 @@ export function TokenMarket({
   symbol,
   locale,
   slots,
+  paused = false,
 }: {
   initial: LaunchMarketResponse | null;
   token: string;
   symbol: string;
   locale: WorkspaceLocale;
+  /** Launch's operator stop is closed: the trade panel says so in place of its action. */
+  paused?: boolean;
   slots: Readonly<{ head: ReactNode; marks: ReactNode; about: ReactNode; share: ReactNode; receipt: ReactNode }>;
 }) {
   const word = launchWords(locale);
@@ -276,7 +279,7 @@ export function TokenMarket({
 
       <div className={styles.asideCol}>
         <div className={styles.slotTrade} ref={tradeRef} id="launch-trade">
-          <TradePanel market={market} symbol={symbol} locale={locale} onTraded={() => void read()} />
+          <TradePanel market={market} symbol={symbol} locale={locale} paused={paused} onTraded={() => void read()} />
         </div>
         <div className={styles.slotShare}>{slots.share}</div>
       </div>

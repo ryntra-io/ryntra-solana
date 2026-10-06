@@ -13,6 +13,7 @@ import { rankCopy } from "./rank-copy.ts";
 import { BadgesCard, type AchievementsSummary } from "./badges-card.tsx";
 import { RankCard, type RankSummary } from "./rank-card.tsx";
 import { ReferralCard } from "./referral-card.tsx";
+import { SeasonCard } from "./season-card.tsx";
 import styles from "./rewards.module.css";
 
 /**
@@ -435,6 +436,9 @@ export function RewardsCard() {
         </div>
 
         <BadgesCard wallet={address} rank={summary.rank?.rank ?? null} achievements={summary.achievements} />
+
+        {/* The season and the week's boards: tasks and status, no money. */}
+        <SeasonCard />
 
         <section className={`${styles.panel} ${styles.history}`} id="rewards-history" aria-label={text("Recent rewards")}>
           <div className={styles.panelHead}>

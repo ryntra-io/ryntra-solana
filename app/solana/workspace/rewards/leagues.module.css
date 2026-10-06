@@ -1,0 +1,1056 @@
+/* Leaderboards and seasons — the same panels, type and tokens as Rewards.
+   Three boards side by side on a desk, one at a time on a phone. No orange
+   in here but the page's one action: places, figures and badges are status,
+   not buttons. Both themes; motion only with the person, none for reduced
+   motion. */
+
+.page {
+  display: grid;
+  gap: var(--ry-s3);
+  min-width: 0;
+}
+
+.panel {
+  min-width: 0;
+  background: var(--ry-card);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+}
+
+.pad {
+  display: grid;
+  gap: var(--ry-s3);
+  padding: var(--ry-s4) var(--ry-s5);
+}
+
+/* ── The Rewards section's own tabs ───────────────────────────────────── */
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  width: max-content;
+  max-width: 100%;
+  padding: 4px;
+  overflow-x: auto;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-card);
+  scrollbar-width: none;
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 var(--ry-s4);
+  border-radius: var(--ry-r-pill);
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.tab:hover {
+  color: var(--ry-text);
+}
+
+.tab[aria-current="page"] {
+  background: var(--ry-elevated);
+  color: var(--ry-text);
+  box-shadow: inset 0 0 0 1px var(--ry-border-strong);
+}
+
+.tab:focus-visible,
+.segment:focus-visible,
+.link:focus-visible,
+.switch:focus-visible {
+  outline: 2px solid var(--ry-focus);
+  outline-offset: 2px;
+}
+
+/* ── Shared vocabulary ─────────────────────────────────────────────────── */
+
+.eyebrow {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 0;
+  color: var(--ry-text);
+  font-size: var(--ry-fs-title);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.lead {
+  margin: 0;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-dense);
+  line-height: 1.4;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ry-s3);
+  flex-wrap: wrap;
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 32px;
+  color: var(--ry-text);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 var(--ry-s2);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-pill);
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.chip[data-tone="live"]::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--ry-verified);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.error {
+  margin: 0;
+  color: var(--ry-risk);
+  font-size: var(--ry-fs-dense);
+}
+
+.state {
+  display: grid;
+  justify-items: center;
+  gap: var(--ry-s3);
+  padding: var(--ry-s6) var(--ry-s4);
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-dense);
+  text-align: center;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 var(--ry-s5);
+  border: 1px solid var(--ry-brand-edge);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-gradient);
+  color: var(--ry-on-iris);
+  font: inherit;
+  font-size: var(--ry-fs-app);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.button:disabled {
+  border-color: var(--ry-border);
+  background: var(--ry-elevated);
+  color: var(--ry-muted);
+  cursor: not-allowed;
+}
+
+.quietButton {
+  composes: button;
+  border-color: var(--ry-border);
+  background: var(--ry-elevated);
+  color: var(--ry-text);
+}
+
+/* ── The season strip and the week's controls ─────────────────────────── */
+
+.strip {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s3);
+  padding: var(--ry-s3) var(--ry-s4);
+}
+
+.stripText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.stripName {
+  color: var(--ry-text);
+  font-size: var(--ry-fs-app);
+  font-weight: 700;
+}
+
+.stripMeta {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-dense);
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ry-s3);
+  flex-wrap: wrap;
+}
+
+.segments {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-bg);
+}
+
+.segment {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 var(--ry-s3);
+  border: 0;
+  border-radius: calc(var(--ry-r-btn) - 3px);
+  background: transparent;
+  color: var(--ry-muted);
+  font: inherit;
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.segment[aria-pressed="true"],
+.segment[aria-selected="true"] {
+  background: var(--ry-card);
+  color: var(--ry-text);
+  box-shadow: 0 0 0 1px var(--ry-border-strong);
+}
+
+.weekMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-dense);
+  flex-wrap: wrap;
+}
+
+/* ── You ───────────────────────────────────────────────────────────────── */
+
+.you {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--ry-s3) var(--ry-s4);
+  padding: var(--ry-s4) var(--ry-s5);
+}
+
+.youWho {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.youName {
+  color: var(--ry-text);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+}
+
+.youStats {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--ry-s2);
+  margin: 0;
+}
+
+.youStats[data-count="2"],
+.boards[data-count="2"],
+.podiums[data-count="2"] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.youStat {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--ry-s2) var(--ry-s3);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-bg);
+}
+
+.youStat dt {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.youStat dd {
+  margin: 0;
+  color: var(--ry-text);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.youStat dd[data-off="true"] {
+  color: var(--ry-muted);
+  font-family: var(--ry-font-sans);
+  font-weight: 500;
+}
+
+.youNote {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-dense);
+}
+
+/* A switch, not an action: neutral when off, the verified green when on.
+   The button is the product's 44px touch target; the track and the knob are
+   drawn inside it. */
+.switchRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--ry-text);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.switch {
+  position: relative;
+  flex: none;
+  width: 48px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--ry-r-pill);
+  background: transparent;
+  cursor: pointer;
+}
+
+.switch::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  left: 4px;
+  width: 40px;
+  height: 24px;
+  box-sizing: border-box;
+  border: 1px solid var(--ry-border-strong);
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-elevated);
+  transition: background 160ms ease-out, border-color 160ms ease-out;
+}
+
+.switch::after {
+  content: "";
+  position: absolute;
+  top: 14px;
+  left: 8px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--ry-muted);
+  transition: transform 160ms ease-out, background 160ms ease-out;
+}
+
+.switch[aria-checked="true"]::before {
+  border-color: var(--ry-verified);
+  background: var(--ry-verified-soft);
+}
+
+.switch[aria-checked="true"]::after {
+  transform: translateX(16px);
+  background: var(--ry-verified);
+}
+
+.switch:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+/* ── Boards ────────────────────────────────────────────────────────────── */
+
+.boardTabs {
+  display: none;
+}
+
+.boards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--ry-s3);
+  align-items: start;
+}
+
+.board {
+  display: grid;
+  gap: var(--ry-s3);
+  padding: var(--ry-s4);
+}
+
+.boardHead {
+  display: grid;
+  gap: 2px;
+}
+
+.rows {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 2.2em 32px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--ry-s2);
+  min-height: 48px;
+  padding: 4px var(--ry-s2);
+  border-radius: var(--ry-r-btn);
+}
+
+/* The week's top three sit on the page's ground — the podium, said quietly. */
+.row[data-podium="true"] {
+  background: var(--ry-bg);
+}
+
+.row[data-you="true"] {
+  box-shadow: inset 0 0 0 1px var(--ry-border-strong);
+}
+
+.place {
+  color: var(--ry-muted);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  text-align: center;
+}
+
+.row[data-podium="true"] .place {
+  color: var(--ry-text);
+  font-weight: 700;
+}
+
+.who {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.name {
+  overflow: hidden;
+  color: var(--ry-text);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rankName {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+}
+
+.value {
+  color: var(--ry-text);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.value[data-sign="pos"] {
+  color: var(--ry-pnl-pos);
+}
+
+.value[data-sign="neg"] {
+  color: var(--ry-pnl-neg);
+}
+
+/* The core's light theme keeps the dark red (3.3:1 on white); the light
+   one reads at about 5:1. */
+:global([data-theme="light"]) .value[data-sign="neg"] {
+  color: var(--ry-pnl-neg-light);
+}
+
+.boardFoot {
+  margin: 0;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+}
+
+.empty {
+  margin: 0;
+  padding: var(--ry-s5) var(--ry-s3);
+  border: 1px dashed var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-dense);
+  text-align: center;
+}
+
+/* ── Rules ─────────────────────────────────────────────────────────────── */
+
+.rules {
+  padding: 0 var(--ry-s4);
+}
+
+.rules > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 48px;
+  color: var(--ry-text);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  list-style: none;
+  cursor: pointer;
+}
+
+.rules > summary::-webkit-details-marker {
+  display: none;
+}
+
+.rules > summary::after {
+  content: "+";
+  color: var(--ry-muted);
+  font-family: var(--ry-font-mono);
+}
+
+.rules[open] > summary {
+  border-bottom: 1px solid var(--ry-border);
+}
+
+.rules[open] > summary::after {
+  content: "−";
+}
+
+.rulesBody {
+  display: grid;
+  gap: var(--ry-s2);
+  margin: 0;
+  padding: var(--ry-s3) 0 var(--ry-s4) 1.1em;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-dense);
+  line-height: 1.5;
+}
+
+/* ── Season ────────────────────────────────────────────────────────────── */
+
+.seasonGrid {
+  display: grid;
+  grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
+  gap: var(--ry-s3);
+  align-items: start;
+}
+
+.seasonHero {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s4);
+  padding: var(--ry-s5);
+}
+
+.seasonHeroText {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.seasonName {
+  margin: 0;
+  color: var(--ry-text);
+  font-size: var(--ry-fs-h3);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.weekTrack {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 4px;
+  margin-top: var(--ry-s2);
+}
+
+.weekTick {
+  height: 6px;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-elevated);
+  box-shadow: inset 0 0 0 1px var(--ry-border);
+}
+
+.weekTick[data-state="ENDED"] {
+  background: var(--ry-muted);
+  box-shadow: none;
+}
+
+.weekTick[data-state="LIVE"] {
+  background: var(--ry-text);
+  box-shadow: none;
+}
+
+.tasks {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.taskItem {
+  min-width: 0;
+}
+
+.taskDetails > summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.taskDetails > summary::-webkit-details-marker {
+  display: none;
+}
+
+.taskDetails > summary:hover {
+  background: var(--ry-bg);
+}
+
+.taskDetails > summary:focus-visible,
+.weekSummary:focus-visible {
+  outline: 2px solid var(--ry-focus);
+  outline-offset: 2px;
+}
+
+.taskDetails > .taskHow {
+  margin: 0;
+  padding: 0 var(--ry-s2) var(--ry-s2) calc(24px + var(--ry-s2) * 2);
+}
+
+.weekDetails > summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.weekDetails > summary::-webkit-details-marker {
+  display: none;
+}
+
+.weekDetails[open] > summary {
+  margin-bottom: var(--ry-s2);
+}
+
+.weekSummary .weekHead {
+  display: flex;
+  gap: var(--ry-s3);
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+
+.weekSummary .weekHead::after {
+  content: "+" / "";
+  margin-left: auto;
+  color: var(--ry-muted);
+  font-family: var(--ry-font-mono);
+}
+
+.weekDetails[open] > .weekSummary .weekHead::after {
+  content: "−" / "";
+}
+
+/* A finished week, folded: its top trader, quiet, on the same line. */
+.weekTop {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+  overflow-wrap: anywhere;
+}
+
+/* A task opens to what it asks: the same quiet + and − as the weeks. */
+.taskDetails > summary.task {
+  grid-template-columns: 24px minmax(0, 1fr) auto 1em;
+}
+
+.taskDetails > summary.task::after {
+  content: "+" / "";
+  color: var(--ry-muted);
+  font-family: var(--ry-font-mono);
+  text-align: right;
+}
+
+.taskDetails[open] > summary.task::after {
+  content: "−" / "";
+}
+
+/* A season that ended: a task not done is no longer something to do. */
+.tasks[data-ended="true"] .taskItem[data-done="false"] .taskName {
+  color: var(--ry-muted);
+  font-weight: 500;
+}
+
+.task {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--ry-s2);
+  min-height: 44px;
+  padding: 4px var(--ry-s2);
+  border-radius: var(--ry-r-btn);
+}
+
+.taskMark {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 1.5px solid var(--ry-border-strong);
+  border-radius: 50%;
+  color: transparent;
+}
+
+.taskItem[data-done="true"] .taskMark,
+.task[data-done="true"] .taskMark {
+  border-color: var(--ry-verified);
+  background: var(--ry-verified-soft);
+  color: var(--ry-verified);
+}
+
+.taskText {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.taskName {
+  color: var(--ry-text);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+}
+
+.taskItem[data-done="true"] .taskName,
+.task[data-done="true"] .taskName {
+  color: var(--ry-muted);
+}
+
+.taskHow {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+  line-height: 1.35;
+}
+
+.taskFigure {
+  color: var(--ry-muted);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.seasonBadges {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ry-s2);
+}
+
+.seasonBadge {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--ry-s3);
+  padding: var(--ry-s3);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-bg);
+}
+
+.seasonBadgeText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.seasonBadgeName {
+  color: var(--ry-text);
+  font-size: var(--ry-fs-dense);
+  font-weight: 700;
+}
+
+.seasonBadge[data-held="false"] .seasonBadgeName {
+  color: var(--ry-muted);
+}
+
+.seasonBadgeLine {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+  line-height: 1.35;
+}
+
+/* A held badge glows in its amethyst, softer on the light theme. */
+.badgeGlow {
+  filter: drop-shadow(0 3px 9px color-mix(in srgb, var(--badge-glow, transparent) 45%, transparent));
+}
+
+:global([data-theme="light"]) .badgeGlow {
+  filter: drop-shadow(0 3px 9px color-mix(in srgb, var(--badge-glow, transparent) 25%, transparent));
+}
+
+.weeks {
+  display: grid;
+  gap: var(--ry-s2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.week {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ry-s3);
+  align-items: start;
+  padding: var(--ry-s3);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-bg);
+}
+
+/* A week still ahead is one quiet line: its name, its dates, «ahead». */
+.week[data-state="AHEAD"] {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--ry-border);
+  padding: var(--ry-s2) var(--ry-s3);
+}
+
+.week[data-state="AHEAD"] .weekHead {
+  display: flex;
+  gap: var(--ry-s3);
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+
+.week[data-state="AHEAD"] .weekName {
+  color: var(--ry-muted);
+  font-weight: 600;
+}
+
+.weekHead {
+  display: grid;
+  gap: 2px;
+}
+
+.weekName {
+  color: var(--ry-text);
+  font-size: var(--ry-fs-dense);
+  font-weight: 700;
+}
+
+.weekDates {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+}
+
+.podiums {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--ry-s2);
+  min-width: 0;
+}
+
+.podium {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  min-width: 0;
+}
+
+.podiumRow {
+  display: grid;
+  grid-template-columns: 1.4em 24px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  font-size: var(--ry-fs-label-sm);
+}
+
+.podiumRow[data-you="true"] {
+  padding: 0 4px;
+  border-radius: var(--ry-r-btn-sm);
+  box-shadow: inset 0 0 0 1px var(--ry-border-strong);
+}
+
+.podiumList {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+h3.eyebrow {
+  margin: 0;
+}
+
+.podiumRow .name,
+.podiumRow .value {
+  font-size: var(--ry-fs-label-sm);
+}
+
+.community {
+  margin: 0;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-dense);
+}
+
+.seasonLinks {
+  display: flex;
+  gap: var(--ry-s3);
+  flex-wrap: wrap;
+}
+
+/* ── The season card on Rewards ───────────────────────────────────────── */
+
+.card {
+  display: grid;
+  gap: var(--ry-s3);
+  padding: var(--ry-s5);
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s3);
+}
+
+.cardTitle {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.cardLinks {
+  display: flex;
+  gap: var(--ry-s4);
+  flex-wrap: wrap;
+}
+
+/* ── Narrower screens ─────────────────────────────────────────────────── */
+
+@media (max-width: 1100px) {
+  .seasonGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .boardTabs {
+    display: flex;
+  }
+
+  .boards,
+  .boards[data-count="2"] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .board[data-shown="false"] {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .pad,
+  .card,
+  .seasonHero {
+    padding: var(--ry-s4);
+  }
+
+  .you {
+    grid-template-columns: auto minmax(0, 1fr);
+    padding: var(--ry-s4);
+  }
+
+  /* On a phone each board is one line: its name, then where you stand. */
+  .youStats,
+  .youStats[data-count="2"] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .youStat {
+    grid-template-columns: 6.5em minmax(0, 1fr);
+    align-items: baseline;
+    gap: var(--ry-s2);
+  }
+
+  .youAction {
+    grid-column: 1 / -1;
+  }
+
+  .week {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .podiums,
+  .podiums[data-count="2"] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .seasonBadges {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .switch::before,
+  .switch::after {
+    transition: none;
+  }
+}
+
+/* The season being read, among the seasons. */
+.seasonLinks .link[aria-current="page"] {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 6px;
+}

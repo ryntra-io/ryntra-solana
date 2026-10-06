@@ -36,7 +36,7 @@ import { creatorLockSchedule, type CreatorLockId } from "../core/launch/creator-
 import { feeShareProblems, type FeeShare } from "../core/launch/fee-shares.ts";
 import type { GuardStore } from "../guard/store.ts";
 import { ensureRewardAccount } from "../rewards/ledger.ts";
-import { LAUNCHES_PER_CREATOR_PER_DAY, LAUNCHES_PER_HOUR, POOL_PAYER_FLOOR_LAMPORTS, type LaunchNetwork } from "./config.server.ts";
+import { LAUNCHES_PER_CREATOR_PER_DAY, LAUNCHES_PER_HOUR, POOL_PAYER_FLOOR_LAMPORTS, launchPair, type LaunchNetwork } from "./config.server.ts";
 import { checkLaunchForm } from "./form.ts";
 import { metadataOfUri } from "./metadata.server.ts";
 
@@ -209,7 +209,7 @@ export async function prepareLaunch(deps: LaunchDeps, input: PrepareInput): Prom
     return fail("CREATOR_LIMIT", `One wallet launches at most ${LAUNCHES_PER_CREATOR_PER_DAY} tokens a day.`);
   }
   const payerBalance = BigInt(await deps.connection.getBalance(deps.poolPayer.publicKey, "confirmed"));
-  if (payerBalance < POOL_PAYER_FLOOR_LAMPORTS) return fail("PAYER_LOW", "Launching is paused for a moment; try again later.");
+  if (payerBalance < POOL_PAYER_FLOOR_LAMPORTS) return fail("PAYER_LOW", "Launching is paused; nothing was built.");
 
   const venue = createMeteoraDbcLaunchVenue({ connection: deps.connection, configs: deps.network.configs, poolPayer: deps.poolPayer.publicKey.toBase58() });
   let built;
@@ -223,7 +223,7 @@ export async function prepareLaunch(deps: LaunchDeps, input: PrepareInput): Prom
         preset: preset.id,
         creator: input.creator,
         creatorFirstBuyRaw: input.firstBuyRaw,
-        pairMint: deps.network.pairs[preset.id].mint,
+        pairMint: launchPair(deps.network, preset.id).mint,
       },
       { creatorCoversPayer: true, feeShares: shares },
     );
@@ -408,7 +408,7 @@ async function claimAttempt(deps: LaunchDeps, build: LaunchBuildRecord): Promise
   const all = (await attempts.valuesWithPrefix(`solana:${build.cluster}:`)).filter((row) => Date.parse(row.at) >= hour).length;
   if (mine > LAUNCHES_PER_CREATOR_PER_DAY || all > LAUNCHES_PER_HOUR) {
     await attempts.delete(key);
-    return mine > LAUNCHES_PER_CREATOR_PER_DAY ? fail("CREATOR_LIMIT", `One wallet launches at most ${LAUNCHES_PER_CREATOR_PER_DAY} tokens a day.`) : fail("PAYER_LOW", "Launching is paused for a moment; try again later.");
+    return mine > LAUNCHES_PER_CREATOR_PER_DAY ? fail("CREATOR_LIMIT", `One wallet launches at most ${LAUNCHES_PER_CREATOR_PER_DAY} tokens a day.`) : fail("PAYER_LOW", "Launching is paused; nothing was sent.");
   }
   return null;
 }
@@ -594,9 +594,16 @@ export async function settleFeeSharing(deps: Pick<LaunchDeps, "store" | "connect
   return settled;
 }
 
-/** The link a creator shares: their referral code, landing on the token's page. */
-export function launchShareLink(origin: string, record: Pick<LaunchRecord, "token" | "referralCode">): string {
+/**
+ * Whether the referral route `/r/<code>` lands on the page a link names with `to=`. Until it does it lands on Rewards,
+ * so the link a creator shares is the token's page itself and the creator's code waits for it; the launch test reads
+ * the route and fails the day it follows `to`, so this is flipped then and not later.
+ */
+export const REFERRAL_ROUTE_FOLLOWS_TO = false;
+
+/** The link a creator shares: the token's page — through their referral code once the referral route lands there. */
+export function launchShareLink(origin: string, record: Pick<LaunchRecord, "token" | "referralCode">, followsTo: boolean = REFERRAL_ROUTE_FOLLOWS_TO): string {
   const page = `/app/launch/${record.token}`;
   /* The page is a path of base58 letters and slashes — legal in a query as it is, so the link reads plainly. */
-  return record.referralCode ? `${origin}/r/${record.referralCode}?to=${page}` : `${origin}${page}`;
+  return followsTo && record.referralCode ? `${origin}/r/${record.referralCode}?to=${page}` : `${origin}${page}`;
 }

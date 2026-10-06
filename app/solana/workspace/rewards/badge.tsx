@@ -2,7 +2,7 @@
 
 import { useId, type CSSProperties, type PointerEvent } from "react";
 
-import { ACHIEVEMENT_METAL, achievementBadgeSvg, RANK_METALS, rankBadgeSvg, walletAvatarSvg, type AchievementId } from "@/lib/growth/badges";
+import { ACHIEVEMENT_METAL, achievementBadgeSvg, faceAvatarSvg, RANK_METALS, rankBadgeSvg, SEASON_METAL, seasonBadgeSvg, walletAvatarSvg, type AchievementId, type SeasonBadgeId } from "@/lib/growth/badges";
 import type { RewardRank } from "@/lib/rewards/rules";
 
 /**
@@ -38,6 +38,18 @@ export function RankBadge({ rank, size = 40, locked = false, label, className }:
 export function AchievementBadge({ achievement, earned, size = 40, label, className }: { achievement: AchievementId; earned: boolean; size?: number; label?: string; className?: string }) {
   const id = cleanId(useId());
   return <Drawing markup={achievementBadgeSvg(achievement, { id, size, earned })} size={size} label={label} className={className} glow={earned ? ACHIEVEMENT_METAL.mid : undefined} />;
+}
+
+/** A season's badge: the season done, or a week's podium. */
+export function SeasonBadge({ badge, earned, size = 40, label, className }: { badge: SeasonBadgeId; earned: boolean; size?: number; label?: string; className?: string }) {
+  const id = cleanId(useId());
+  return <Drawing markup={seasonBadgeSvg(badge, { id, size, earned })} size={size} label={label} className={className} glow={earned ? SEASON_METAL.mid : undefined} />;
+}
+
+/** Another wallet's face on a board, from the number the server sends beside its masked name. */
+export function FaceAvatar({ face, rank, size = 32, label, className }: { face: number; rank: RewardRank | null; size?: number; label?: string; className?: string }) {
+  const id = cleanId(useId());
+  return <Drawing markup={faceAvatarSvg(face, rank, { id, size })} size={size} label={label} className={className} />;
 }
 
 /** A wallet's face with its rank's frame — Silver and above; none below. */

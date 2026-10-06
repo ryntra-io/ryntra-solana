@@ -4,7 +4,7 @@ import { rateLimitHeaders } from "@/lib/http-control";
 import { launchNetwork } from "@/lib/launch/config.server";
 import { checkLaunchForm } from "@/lib/launch/form";
 import { storeLaunchImage, storeLaunchMetadata } from "@/lib/launch/metadata.server";
-import { consumeLaunchWrite, launchDeps } from "@/lib/launch/runtime.server";
+import { consumeSharedLaunchWrite, launchDeps } from "@/lib/launch/runtime.server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,8 +21,8 @@ export async function POST(request: Request) {
   if (refused) return refused;
   if (!launchNetwork()) return apiFailure("LAUNCH_UNAVAILABLE", "Launch is not served here.");
   const deps = launchDeps();
-  if (!deps) return apiFailure("LAUNCH_PAUSED", "Launching is paused for a moment; try again later.");
-  const rate = consumeLaunchWrite("metadata", request.headers);
+  if (!deps) return apiFailure("LAUNCH_PAUSED", "Launching is paused; nothing was built.");
+  const rate = await consumeSharedLaunchWrite("metadata", request.headers);
   if (!rate.allowed) return apiFailure("RATE_LIMITED", "Too many requests.", { headers: rateLimitHeaders(rate) });
   const read = await readApiBody(request, LaunchMetadataRequestSchema, 420_000);
   if (!read.ok) return read.response;

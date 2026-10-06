@@ -33,10 +33,11 @@ import {
   type LaunchHolderLabel,
   type LaunchTrade,
 } from "../core/venues/meteora-dbc/market.ts";
-import { createLaunchMarketReader, type LaunchMarketReader, type MarketState } from "../core/venues/meteora-dbc/market.server.ts";
+import type { LaunchMarketReader, MarketState } from "../core/venues/meteora-dbc/market.server.ts";
 import { launchPreset } from "../core/venues/meteora-dbc/presets.ts";
 import { createLaunchTradeVenue } from "../core/venues/meteora-dbc/trade.server.ts";
-import { launchPoolFee } from "./config.server.ts";
+import { launchPair, launchPoolFee } from "./config.server.ts";
+import { launchMarketReader } from "./trade-index.server.ts";
 import type { LaunchDeps, LaunchRecord } from "./flow.server.ts";
 import { readLaunchRecord } from "./flow.server.ts";
 import { noteGraduation } from "./graduation.server.ts";
@@ -93,7 +94,7 @@ async function curvesOf(reader: LaunchMarketReader, creator: string, now: number
 async function assemble(deps: MarketDeps, token: string): Promise<LaunchMarketResponse | null> {
   const record = await readLaunchRecord(deps, deps.network.cluster, token);
   if (!record || record.state === "PENDING") return null;
-  const reader = createLaunchMarketReader(deps.connection, { feeWallet: deps.network.feeWallet });
+  const reader = launchMarketReader(deps);
   const state = await reader.state({ token, pool: record.pool });
   const deadline = Date.now() + MARKET_BUDGET_MS;
   const history = await reader.trades({ token, state, creationSignature: record.signature, budgetMs: HISTORY_BUDGET_MS });
@@ -114,7 +115,7 @@ async function assemble(deps: MarketDeps, token: string): Promise<LaunchMarketRe
   const creatorRead = history.complete
     ? { trades: [] as LaunchTrade[], complete: true }
     : creatorTime >= 3_000
-      ? await reader.accountTrades({ token, state, accounts: creatorAccounts, since: createdAt === null ? null : createdAt - 60, budgetMs: creatorTime })
+      ? await reader.accountTrades({ token, state, accounts: creatorAccounts, since: createdAt === null ? null : createdAt - 60, creationSignature: record.signature, budgetMs: creatorTime })
       : { trades: [] as LaunchTrade[], complete: false };
   /* The snipers and the bundle are the opening minutes' trades: read back to the creation when the newest page did not reach it. */
   const openingTime = Math.min(12_000, deadline - Date.now() - AFTER_HISTORY_MS);
@@ -169,7 +170,7 @@ async function assemble(deps: MarketDeps, token: string): Promise<LaunchMarketRe
     creatorCurves: curves,
   });
 
-  const pair = deps.network.pairs[record.preset];
+  const pair = launchPair(deps.network, record.preset);
   const supplyUi = uiAmount(supply, state.tokenDecimals);
   const money = (pairValue: number) => ({ pair: pairValue, usd: pair.dollar ? pairValue * pair.usdPrice : null });
   const pairUi = (raw: bigint | string) => uiAmount(raw, state.pairDecimals);
@@ -253,7 +254,7 @@ async function assemble(deps: MarketDeps, token: string): Promise<LaunchMarketRe
 export async function readCreatorLaunches(deps: MarketDeps, token: string): Promise<LaunchCreatorResponse | null> {
   const current = await readLaunchRecord(deps, deps.network.cluster, token);
   if (!current || current.state === "PENDING") return null;
-  const reader = createLaunchMarketReader(deps.connection, { feeWallet: deps.network.feeWallet });
+  const reader = launchMarketReader(deps);
   const records = (await deps.store.collection<LaunchRecord>("launchesByCreator").valuesWithPrefix(`solana:${deps.network.cluster}:${current.creator}:`))
     .filter((record) => record.token !== current.token && record.state !== "PENDING" && record.cluster === deps.network.cluster)
     .sort((a, b) => Date.parse(b.launchedAt) - Date.parse(a.launchedAt))

@@ -13,6 +13,7 @@ import { signTransactions } from "@/lib/solana/wallet.client";
 import { explorerUrl, formatBps, formatMoneyShort, formatMove, formatNumber, formatPercent, formatRaw, fromRaw, rovingNext, toRaw } from "../launch-format";
 import { launchWords } from "../launch-words";
 import styles from "../launch.module.css";
+import { PausedNote } from "../paused-note";
 
 /**
  * Buy and sell a launch: on its curve by Meteora DBC's own swap, after
@@ -49,11 +50,14 @@ export function TradePanel({
   market,
   symbol,
   locale,
+  paused = false,
   onTraded,
 }: {
   market: LaunchMarketResponse;
   symbol: string;
   locale: WorkspaceLocale;
+  /** Launch's operator stop is closed: nothing is quoted, built or sent here. */
+  paused?: boolean;
   /** After a trade the network confirmed or took: the page reads the market again. */
   onTraded: (wallet: string) => void;
 }) {
@@ -160,7 +164,11 @@ export function TradePanel({
               ? word("errSignedOther")
               : code === "WALLET_REFUSED"
                 ? word("errWalletRefused")
-                : word("errGeneric");
+                : code === "LAUNCH_PAUSED"
+                  ? word("errLaunchPaused")
+                  : code === "RATE_LIMITED"
+                    ? word("errRateLimited")
+                    : word("errGeneric");
 
   /* Two places for money; a sum too small for them is «< 0.01», never a false zero. */
   const places = Math.min(2, pair.decimals);
@@ -171,6 +179,20 @@ export function TradePanel({
   const tokens = (raw: string) => formatRaw(raw, market.tokenDecimals, locale, 0);
   const capText = (value: { pair: number; usd: number | null }) => formatMoneyShort(value.usd ?? value.pair, locale, value.usd !== null, pair.symbol);
   const sniper = market.curveFee && market.curveFee.sniperUntil && shown && shown.venue === "curve" && shown.feeBps > market.curveFee.endBps + 5 ? market.curveFee : null;
+
+  /* Launch's stop closed: said in place of the panel, before anything is typed; Swap, its own lane, still trades a graduated token. */
+  if (paused) {
+    return (
+      <section className={`${styles.card} ${styles.tradeCard}`}>
+        <PausedNote locale={locale} />
+        {market.trading.jupiter ? (
+          <Link className={styles.markLink} href={`/app/swap?in=${pair.mint}&out=${market.token}`}>
+            {word("jupiter")}
+          </Link>
+        ) : null}
+      </section>
+    );
+  }
 
   if (phase === "done" && result) {
     const bought = result.side === "buy";

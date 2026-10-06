@@ -254,7 +254,7 @@ test("the documentation speaks the product's language, never the company's", () 
 
 test("the navigation is the menu's sections with every page once, and the developers' routes are real", () => {
   /* The documentation's sections are the menu's, then Reference and Developers. */
-  assert.deepEqual([...DOC_GROUP_IDS], ["start", "invest", "trade", "money", "portfolio", "ryntra", "rewards", "reference", "developers"]);
+  assert.deepEqual([...DOC_GROUP_IDS], ["start", "invest", "trade", "launch", "money", "portfolio", "ryntra", "rewards", "reference", "developers"]);
   assert.deepEqual(DOC_NAV.map((group) => group.id), [...DOC_GROUP_IDS]);
   const hrefs = DOC_NAV.flatMap((group) => group.items.map((item) => item.href));
   assert.equal(new Set(hrefs).size, hrefs.length, "a page appears twice in the navigation");

@@ -1,30 +1,41 @@
 /**
  * Where Ryntra Launch runs, and with what.
  *
- * Launch opens to people on mainnet with its own subtask; until then it runs
- * only on a devnet stand: `RYNTRA_LAUNCH_STAND=devnet` on a local server, never
- * on production, where every page and route of Launch answers «not found».
+ * On every deployment Launch runs on mainnet, on the configs created on
+ * 2026-10-05 (Класичний and Захищений; «Спільнота» gets a config per
+ * community token when one launches, so it is not offered here yet). A local
+ * server can run the devnet stand instead — `RYNTRA_LAUNCH_STAND=devnet`,
+ * never on production — whose presets are the devnet rehearsal's configs: the
+ * same fields, with a test USDC and a test community token.
  *
- * On the stand the presets are the devnet rehearsal's configs — the same
- * fields as the mainnet configs, with a test USDC and a test community token
- * — and Ryntra's pool payer is a devnet key the stand hands in through
- * `RYNTRA_LAUNCH_POOL_PAYER_SECRET` (a JSON array of 64 numbers). The key is
- * never in the repository and never printed.
+ * Reading a launch — its page, its market, a creator's cabinet — needs no key
+ * and no switch: people hold these tokens. Building or sending anything —
+ * a launch, a trade, a claim — obeys the Launch lane's operator stop
+ * (`RYNTRA_SOLANA_LAUNCH_STATE`, fail-closed), and a launch needs Ryntra's pool
+ * payer too: its key comes through `RYNTRA_LAUNCH_POOL_PAYER_SECRET` (a JSON
+ * array of 64 numbers, or the base58 string a wallet exports). On mainnet the
+ * key must be the pool payer the attribution registry publishes, or nothing
+ * launches: a pool Ryntra opens is always one a counter can attribute. The key
+ * is never in the repository and never printed.
  *
- * The origin a launch's metadata, picture and share link live on is the
- * stand's own configuration (`RYNTRA_LAUNCH_PUBLIC_ORIGIN`), never a request's
- * Host or X-Forwarded-Host: a mint names its metadata URI for ever, and a
- * header must not be able to point it at someone else's server.
+ * The origin a launch's metadata, picture and share link live on is
+ * configuration — `https://ryntra.io` on mainnet, the stand's own
+ * `RYNTRA_LAUNCH_PUBLIC_ORIGIN` — never a request's Host or X-Forwarded-Host:
+ * a mint names its metadata URI for ever, and a header must not be able to
+ * point it at someone else's server.
  */
 
+import { getBase58Encoder } from "@solana/kit";
 import { Connection, Keypair } from "@solana/web3.js";
 
+import { ATTRIBUTION_REGISTRY, SOLANA_FEE_WALLET } from "../attribution/registry.ts";
 import { FEE_POLICY_V2 } from "../core/fee-policy.ts";
 import type { PresetConfigs } from "../core/venues/meteora-dbc/launch.server.ts";
 import type { LaunchPresetId } from "../core/venues/meteora-dbc/presets.ts";
-import { resolveEndpoint } from "../solana/rpc.ts";
+import { resolveSolanaLaneState } from "../solana/lane-state.ts";
+import { resolveEndpoint, resolveEndpoints } from "../solana/rpc.ts";
 
-export type LaunchCluster = "devnet";
+export type LaunchCluster = "devnet" | "mainnet";
 
 /**
  * A pair currency a preset trades against on this network. `dollar` — a
@@ -36,10 +47,10 @@ export type LaunchPair = Readonly<{ mint: string; symbol: string; decimals: numb
 export type LaunchNetwork = Readonly<{
   cluster: LaunchCluster;
   /** The Wallet Standard chain a wallet signs for. */
-  chain: "solana:devnet";
+  chain: "solana:devnet" | "solana:mainnet";
   configs: PresetConfigs;
-  /** The pair of each preset: USDC, or for «Спільнота» the community's token. */
-  pairs: Readonly<Record<LaunchPresetId, LaunchPair>>;
+  /** The pair of each preset with a config here: USDC, or for «Спільнота» the community's token. */
+  pairs: Readonly<Partial<Record<LaunchPresetId, LaunchPair>>>;
   explorer: (kind: "tx" | "account", id: string) => string;
   /** Where the metadata, the pictures and the share links live — from configuration only. */
   origin: string;
@@ -90,16 +101,64 @@ const DEVNET: Omit<LaunchNetwork, "origin"> = {
   tradesRecorded: false,
 };
 
+const USDC: LaunchPair = { mint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", symbol: "USDC", decimals: 6, usdPrice: 1, dollar: true };
+
+const registryAddress = (id: string): string | null => ATTRIBUTION_REGISTRY.find((row) => row.id === id && row.end === null)?.address ?? null;
+
+/*
+ * Mainnet: the two configs created on 2026-10-05 (the creator's share 40 %), the attribution registry's rows —
+ * the partner's vault owns Ryntra's referral accounts, Ryntra's fee wallet. A launch's trade is not yet recorded the way a
+ * Ryntra fee is (History, cashback, the inviter's share), so no Ryntra fee is taken in a graduated pool: on the curve Ryntra
+ * earns as the config's partner, inside the curve's own fee.
+ */
+const MAINNET: LaunchNetwork = {
+  cluster: "mainnet",
+  chain: "solana:mainnet",
+  configs: {
+    classic: registryAddress("solana-launch-config-classic") ?? "",
+    protected: registryAddress("solana-launch-config-protected") ?? "",
+  },
+  pairs: { classic: USDC, protected: USDC },
+  explorer: (kind, id) => `https://solscan.io/${kind}/${id}`,
+  origin: "https://ryntra.io",
+  referralOwner: registryAddress("solana-launch-fee-claimer"),
+  jupiter: true,
+  feeWallet: SOLANA_FEE_WALLET,
+  tradesRecorded: false,
+};
+
 /**
- * The network Launch runs on here, or null — Launch is closed in this
- * deployment. The devnet stand is never production: a flag left set on the
- * production deployment opens nothing. Without its public origin the stand is
- * closed too.
+ * The network Launch runs on here: the devnet stand where a local server asks
+ * for it — never production, where a flag left set opens nothing and mainnet
+ * runs as everywhere else — and mainnet otherwise. Null only for a stand
+ * without its public origin.
  */
 export function launchNetwork(env: NodeJS.ProcessEnv = process.env): LaunchNetwork | null {
-  if (env.RYNTRA_LAUNCH_STAND !== "devnet" || env.VERCEL_ENV === "production") return null;
+  if (env.RYNTRA_LAUNCH_STAND !== "devnet" || env.VERCEL_ENV === "production") return MAINNET;
   const origin = publicOrigin(env.RYNTRA_LAUNCH_PUBLIC_ORIGIN);
   return origin ? { ...DEVNET, origin } : null;
+}
+
+/** Whether anything may be built or sent through Launch now: its lane's operator stop says `OPEN`. */
+export function launchOpen(env: NodeJS.ProcessEnv = process.env): boolean {
+  return resolveSolanaLaneState("LAUNCH", env) === "OPEN";
+}
+
+/**
+ * Whether this deployment may make a launch on its network. A mint names its metadata at `https://ryntra.io` for ever,
+ * so on mainnet only the production deployment — whose store is the one that address serves — writes a launch; a preview
+ * or a local server reads launches and never makes one whose metadata would be found nowhere. The devnet stand makes
+ * launches on its own origin.
+ */
+export function launchWritesHere(network: LaunchNetwork, env: NodeJS.ProcessEnv = process.env): boolean {
+  return network.cluster !== "mainnet" || env.VERCEL_ENV === "production";
+}
+
+/** The pair a preset trades against here; a preset without a config here has none, and is refused before this is asked. */
+export function launchPair(network: LaunchNetwork, preset: LaunchPresetId): LaunchPair {
+  const pair = network.pairs[preset];
+  if (!pair) throw new Error(`Launch has no ${preset} preset on ${network.cluster}.`);
+  return pair;
 }
 
 /** An origin as configured — `scheme://host[:port]`, nothing more — or null. */
@@ -114,12 +173,32 @@ function publicOrigin(raw: string | undefined): string | null {
   }
 }
 
-/** Ryntra's pool payer on the stand; null when the stand has none, and then nothing launches. */
-export function launchPoolPayer(env: NodeJS.ProcessEnv = process.env): Keypair | null {
-  const raw = env.RYNTRA_LAUNCH_POOL_PAYER_SECRET;
-  if (!raw) return null;
+/**
+ * Ryntra's pool payer here; null when there is none, and then nothing launches. On mainnet only the key of the pool payer
+ * the attribution registry publishes is one: a key for another address is refused, never used.
+ */
+export function launchPoolPayer(env: NodeJS.ProcessEnv = process.env, network: LaunchNetwork | null = launchNetwork(env)): Keypair | null {
+  if (!network) return null;
+  const payer = keypairOf(env.RYNTRA_LAUNCH_POOL_PAYER_SECRET);
+  if (!payer || network.cluster !== "mainnet") return payer;
+  return payer.publicKey.toBase58() === registryAddress("solana-launch-pool-payer") ? payer : null;
+}
+
+/**
+ * The pool payer's address a launch's receipt asks for: the registry's on mainnet, read without the key — a page shows a
+ * launch whether or not this deployment can launch — and the stand's own key's on devnet.
+ */
+export function launchPoolPayerAddress(network: LaunchNetwork, env: NodeJS.ProcessEnv = process.env): string | null {
+  if (network.cluster === "mainnet") return registryAddress("solana-launch-pool-payer");
+  return launchPoolPayer(env, network)?.publicKey.toBase58() ?? null;
+}
+
+/** A secret key as configured: a JSON array of 64 bytes, or the base58 string a wallet exports. Null for anything else. */
+function keypairOf(raw: string | undefined): Keypair | null {
+  const text = raw?.trim();
+  if (!text) return null;
   try {
-    const bytes = JSON.parse(raw) as unknown;
+    const bytes = text.startsWith("[") ? (JSON.parse(text) as unknown) : Array.from(getBase58Encoder().encode(text));
     if (!Array.isArray(bytes) || bytes.length !== 64 || !bytes.every((b) => Number.isInteger(b) && b >= 0 && b < 256)) return null;
     return Keypair.fromSecretKey(Uint8Array.from(bytes as number[]));
   } catch {
@@ -133,6 +212,47 @@ export function launchConnection(network: LaunchNetwork): Connection {
   const url = resolveEndpoint(network.cluster);
   if (!cached || cached.url !== url) cached = { url, connection: new Connection(url, "confirmed") };
   return cached.connection;
+}
+
+/**
+ * The endpoint whose signature lists reach back to a token's creation. The public operators keep a day or two of an
+ * account's signatures (measured 06.10: the same wallet — 9 on one, 8 on the other, 52 back to 1 October on Solana's own
+ * endpoint), so on mainnet the lists come from Solana's own public endpoint unless a provider's is configured. A list
+ * is trusted as whole only when it reaches the account's first transaction, whatever endpoint gave it.
+ */
+export function launchHistoryEndpoint(network: LaunchNetwork): string {
+  const endpoints = resolveEndpoints(network.cluster);
+  const primary = endpoints[0]!;
+  if (primary.fromEnv || network.cluster !== "mainnet") return primary.url;
+  return "https://api.mainnet-beta.solana.com";
+}
+
+/** Asked for a transaction the main endpoint no longer keeps: the second operator still serves older ones. */
+export function launchArchiveEndpoint(network: LaunchNetwork): string {
+  return launchIndexedEndpoint(network);
+}
+
+/* One per process; a refusal is answered at once rather than waited out — the receipt then says it was not read. */
+const ARCHIVES = new Map<string, Connection>();
+export function launchArchiveConnection(network: LaunchNetwork): Connection | null {
+  const url = launchArchiveEndpoint(network);
+  if (url === resolveEndpoint(network.cluster)) return null;
+  const known = ARCHIVES.get(url) ?? new Connection(url, { commitment: "confirmed", disableRetryOnRateLimit: true });
+  ARCHIVES.set(url, known);
+  return known;
+}
+
+/**
+ * The endpoint for the reads a node answers from its indexes — every holder of a mint, its largest accounts, a creator's
+ * curves. A configured primary (a provider's endpoint) answers them; the public primary on mainnet refuses them ("indexed
+ * requests require a personal token"), so then the network's second operator, which answers a small token's holders in
+ * about a second.
+ */
+export function launchIndexedEndpoint(network: LaunchNetwork): string {
+  const endpoints = resolveEndpoints(network.cluster);
+  const primary = endpoints[0]!;
+  if (primary.fromEnv) return primary.url;
+  return (endpoints.find((endpoint) => endpoint.role === "fallback") ?? primary).url;
 }
 
 /** The fewest lamports the pool payer keeps; below it the stand stops building launches rather than fail them. */

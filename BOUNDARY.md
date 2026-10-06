@@ -9,10 +9,10 @@ moved counts as new. Generated at every update from the development history.
 
 | Since the tag | Files |
 |---|---|
-| New | 1,130 |
+| New | 1,155 |
 | Changed | 807 |
 | Unchanged | 931 |
-| Lines added / removed | +292,919 / −19,673 |
+| Lines added / removed | +298,138 / −19,674 |
 
 ## New since the tag
 
@@ -62,6 +62,9 @@ moved counts as new. Generated at every update from the development history.
 - `app/api/cron/benefits/route.ts`
 - `app/api/cron/monitoring/route.ts`
 - `app/api/cron/reconcile/route.ts`
+- `app/api/growth/leaderboards/route.ts`
+- `app/api/growth/leaderboards/visibility/route.ts`
+- `app/api/growth/season/route.ts`
 - `app/api/launch/image/[id]/route.ts`
 - `app/api/launch/metadata/[id]/route.ts`
 - `app/api/monitoring/route.ts`
@@ -211,12 +214,14 @@ moved counts as new. Generated at every update from the development history.
 - `app/app/launch/[mint]/token-market.tsx`
 - `app/app/launch/[mint]/trade-panel.tsx`
 - `app/app/launch/launch-format.ts`
+- `app/app/launch/launch-tabs.tsx`
 - `app/app/launch/launch-words.ts`
 - `app/app/launch/launch.module.css`
 - `app/app/launch/mine/creator-cabinet.tsx`
 - `app/app/launch/mine/page.tsx`
 - `app/app/launch/new/launch-flow.tsx`
 - `app/app/launch/new/page.tsx`
+- `app/app/launch/paused-note.tsx`
 - `app/app/launch/share-link.tsx`
 - `app/app/lens/ask-ryn-lens.tsx`
 - `app/app/lens/lens-open.ts`
@@ -260,6 +265,9 @@ moved counts as new. Generated at every update from the development history.
 - `app/app/results/results-panel.tsx`
 - `app/app/results/results-words.ts`
 - `app/app/results/results.module.css`
+- `app/app/rewards/leaderboard/page.tsx`
+- `app/app/rewards/season/[season]/page.tsx`
+- `app/app/rewards/season/page.tsx`
 - `app/app/ryn/ask-ryn.tsx`
 - `app/app/ryn/page.tsx`
 - `app/app/ryn/ryn-surface.tsx`
@@ -332,6 +340,7 @@ moved counts as new. Generated at every update from the development history.
 - `app/docs/content/facts.ts`
 - `app/docs/content/index.ts`
 - `app/docs/content/invest.ts`
+- `app/docs/content/launch.ts`
 - `app/docs/content/manage.ts`
 - `app/docs/content/model.ts`
 - `app/docs/content/money.ts`
@@ -383,8 +392,15 @@ moved counts as new. Generated at every update from the development history.
 - `app/solana/workspace/holdings/plan-link.tsx`
 - `app/solana/workspace/rewards/badge.tsx`
 - `app/solana/workspace/rewards/badges-card.tsx`
+- `app/solana/workspace/rewards/leaderboard-view.tsx`
+- `app/solana/workspace/rewards/league-copy.ts`
+- `app/solana/workspace/rewards/league-pages.tsx`
+- `app/solana/workspace/rewards/leagues.module.css`
 - `app/solana/workspace/rewards/rank-card.tsx`
 - `app/solana/workspace/rewards/rank-copy.ts`
+- `app/solana/workspace/rewards/rewards-tabs.tsx`
+- `app/solana/workspace/rewards/season-card.tsx`
+- `app/solana/workspace/rewards/season-view.tsx`
 - `app/solana/workspace/spot/plan-review-block.tsx`
 - `app/solana/workspace/spot/quote-asset-switch.tsx`
 - `app/solana/workspace/spot/stock-context.tsx`
@@ -747,6 +763,7 @@ moved counts as new. Generated at every update from the development history.
 - `lib/attribution/chain.server.ts`
 - `lib/attribution/chain.test.mjs`
 - `lib/attribution/fixtures/onchain-2026-09.json`
+- `lib/attribution/launch-starts.server.ts`
 - `lib/attribution/registry.test.mjs`
 - `lib/attribution/registry.ts`
 - `lib/attribution/rewards.ts`
@@ -838,6 +855,13 @@ moved counts as new. Generated at every update from the development history.
 - `lib/growth/avatar-frames.ts`
 - `lib/growth/badges.test.mjs`
 - `lib/growth/badges.ts`
+- `lib/growth/leaderboard.ts`
+- `lib/growth/league-store.ts`
+- `lib/growth/league-view.ts`
+- `lib/growth/leagues.test.mjs`
+- `lib/growth/seasons.ts`
+- `lib/growth/trader-pnl.ts`
+- `lib/growth/weeks.ts`
 - `lib/guard/evidence-coverage.test.mjs`
 - `lib/guard/response.ts`
 - `lib/guard/service.fixture.mjs`
@@ -852,6 +876,7 @@ moved counts as new. Generated at every update from the development history.
 - `lib/launch/market.server.ts`
 - `lib/launch/metadata.server.ts`
 - `lib/launch/runtime.server.ts`
+- `lib/launch/trade-index.server.ts`
 - `lib/launch/trade.server.ts`
 - `lib/launch/view.server.ts`
 - `lib/legal/candidate.ts`

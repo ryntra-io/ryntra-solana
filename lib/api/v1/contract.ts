@@ -717,6 +717,19 @@
  * `creator` is the wallet the creation names. New error codes:
  * `LAUNCH_SHARES_INVALID`, `LAUNCH_NOTHING_TO_CLAIM`; a wallet that takes no
  * part of a launch's creator fees gets `WALLET_MISMATCH`.
+ *
+ * **1.30.0 — Ryntra Launch on mainnet.** No shape changes. Launch is served
+ * for people: `capabilities.launch` is present on production with `network`
+ * `solana:mainnet`, and the presets there are «Класичний» and «Захищений»
+ * («Спільнота» gets a config per community token when one launches; until then
+ * `presets` does not list it and a build with it is refused). Building and
+ * sending through Launch — `metadata`, `quote`, `build`, `submit`, a trade's
+ * `build` and `submit`, a claim's `build` and `submit` — obey Launch's own
+ * operator stop and answer `LAUNCH_PAUSED` while it is closed (a trade and a
+ * claim included now); the reads — the token, its market, a wallet's holding,
+ * the creator's launches, the cabinet, a trade's quote — answer while it is
+ * closed, and the token's read no longer answers `LAUNCH_PAUSED`. The link a
+ * token's read names is its page until the referral route lands there.
  */
 
 import {
@@ -761,7 +774,7 @@ import { LAUNCH_PRESET_IDS } from "../../core/venues/meteora-dbc/presets.ts";
 import { LaunchReceiptFactsSchema } from "../../core/venues/meteora-dbc/receipt.ts";
 
 export const API_MAJOR = 1;
-export const API_CONTRACT_VERSION = "1.29.0";
+export const API_CONTRACT_VERSION = "1.30.0";
 export const API_HEADER = "X-Ryntra-API";
 export const API_VERSION_HEADER = "X-Ryntra-API-Version";
 export const NETWORK = "solana:mainnet";
@@ -838,7 +851,7 @@ export const ERROR_CODES = [
   "LAUNCH_IMAGE_INVALID",
   /** The wallet has launched as many tokens today as one wallet may. */
   "LAUNCH_LIMIT",
-  /** Launching is paused for a moment on Ryntra's side; nothing was built. */
+  /** Launch is paused on Ryntra's side — all of it, or new launches alone; nothing was built or sent. */
   "LAUNCH_PAUSED",
   /** The first purchase would receive more than the preset's cap. */
   "LAUNCH_FIRST_BUY_ABOVE_CAP",

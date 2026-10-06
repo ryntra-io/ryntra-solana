@@ -39,6 +39,7 @@ import { ClaimRefusal, buildCreatorClaim, earningsOf, mayClaim, observeCreatorCl
 import type { GuardStore } from "../guard/store.ts";
 import { compareWalletTransaction } from "../solana/wallet-modification.ts";
 import type { LaunchDeps, LaunchRecord } from "./flow.server.ts";
+import { launchPair } from "./config.server.ts";
 import { FEE_SHARE_INDEX, feeShareKey, readLaunchRecord, sendOnce, settleFeeSharing, type FeeShareIndex } from "./flow.server.ts";
 import { noteGraduation } from "./graduation.server.ts";
 import { forgetLaunchMarket } from "./market.server.ts";
@@ -62,7 +63,7 @@ const buildKey = (cluster: string, id: string) => `${cluster}:${id}`;
 type CabinetRead = Readonly<{ row: LaunchCabinetRow; card: Parameters<typeof creatorEarningsCard>[0]["rows"][number] | null }>;
 
 async function readRow(deps: CabinetDeps, record: LaunchRecord, wallet: string, deadline: number): Promise<CabinetRead> {
-  const pairOf = deps.network.pairs[record.preset];
+  const pairOf = launchPair(deps.network, record.preset);
   const stored = await metadataOfUri(deps.store, record.metadataUri, deps.network.origin).catch(() => null);
   let observation: CreatorFeesObservation | null = null;
   let settled = record;
@@ -220,7 +221,7 @@ export async function buildLaunchClaim(deps: CabinetDeps, token: string, wallet:
       expiresAt: new Date(now.getTime() + CLAIM_BUILD_TTL_MS).toISOString(),
     };
     await deps.store.collection<ClaimBuildRecord>("launchClaimBuilds").insertIfAbsent(buildKey(build.cluster, build.id), build);
-    const pair = deps.network.pairs[record.preset];
+    const pair = launchPair(deps.network, record.preset);
     return {
       ok: true,
       build: {
@@ -310,7 +311,7 @@ async function claimReceipt(deps: CabinetDeps, record: LaunchRecord, wallet: str
   for (let attempt = 0; attempt < 4; attempt += 1) {
     const observed = await observeCreatorClaim(deps.connection, { signature, wallet, pairMint: record.pairMint, pool: record.pool, graduatedPool: fees?.graduated?.pool ?? null }).catch(() => null);
     if (observed && !observed.failed) {
-      const pair = deps.network.pairs[record.preset];
+      const pair = launchPair(deps.network, record.preset);
       const receipt: LaunchClaimReceipt = {
         token: record.token,
         name: record.name,

@@ -513,16 +513,17 @@ export function mobileNavigation(routes: readonly PageRoute[], locale: ProductLo
 /**
  * The menu you can see: on a desk every section
  * with its caption and nothing behind «Ще» — Головна · Інвестувати (Ринки,
- * Автоінвест) · Торгувати (Обмін, Спот, Скринер акцій, Тренди) · Гроші
- * (Поповнити, Надіслати, Отримати, Міст) · Портфель (Позиції, Стратегії,
- * Результати, Історія) · Ryntra — ШІ-помічник · Винагороди, with Відгук and
- * Налаштування at the foot. On a phone «Ще» opens the same sections.
+ * Автоінвест) · Торгувати (Обмін, Спот, Скринер акцій, Тренди) · Лаунч —
+ * свій токен (since 2026-10-06) · Гроші (Поповнити, Надіслати, Отримати,
+ * Міст) · Портфель (Позиції, Стратегії, Результати, Історія) · Ryntra —
+ * ШІ-помічник · Винагороди, with Відгук and Налаштування at the foot. On a
+ * phone «Ще» opens the same sections.
  *
  * A row is a registered page, or one of the product's own destinations that
  * is not a page of the registry — Home, Markets, «Автоінвест», «Поповнити»,
- * the assistant — each named, drawn and owning its routes here.
+ * Launch, the assistant — each named, drawn and owning its routes here.
  */
-export const MENU_SECTION_IDS = ["home", "invest", "trade", "money", "portfolio", "agent", "rewards"] as const;
+export const MENU_SECTION_IDS = ["home", "invest", "trade", "launch", "money", "portfolio", "agent", "rewards"] as const;
 
 export type MenuSectionId = (typeof MENU_SECTION_IDS)[number];
 
@@ -535,7 +536,7 @@ export const MENU_SECTION_LABELS: Readonly<Partial<Record<MenuSectionId, DomainL
 };
 
 /** The product's own destinations that are rows of the menu without being registered pages. */
-export const MENU_DESTINATION_IDS = ["home", "markets", "autoinvest", "top-up", "agent"] as const;
+export const MENU_DESTINATION_IDS = ["home", "markets", "autoinvest", "top-up", "launch", "agent"] as const;
 
 export type MenuDestinationId = (typeof MENU_DESTINATION_IDS)[number];
 
@@ -556,6 +557,9 @@ export const MENU_DESTINATIONS: Readonly<Record<MenuDestinationId, MenuDestinati
   markets: { label: PLACE_LABELS.markets, href: "/app/markets", icon: "explore", match: ["/app/markets", "/app/stocks"] },
   autoinvest: { label: { en: "Autoinvest", uk: "Автоінвест" }, href: "/app/autoinvest", icon: "autoinvest", match: ["/app/autoinvest"] },
   "top-up": { label: { en: "Top up", uk: "Поповнити" }, href: "/app/top-up", icon: "top-up", match: ["/app/top-up"] },
+  /* Ryntra Launch, since 2026-10-06: one row, as the assistant is — the form opens it, «Мої лаунчі» is a tab beside it on
+     the page, and every launch's page stands under it. One row keeps the whole menu in one screen of a laptop. */
+  launch: { label: { en: "Launch", uk: "Лаунч" }, caption: { en: "Your token", uk: "Свій токен" }, href: "/app/launch/new", icon: "launch", match: ["/app/launch"] },
   /* The assistant says what it is: «Ryntra» alone
      read as the product's name, not as the AI. Its older names lead here. */
   agent: {
@@ -574,6 +578,7 @@ export const MENU_ROWS: Readonly<Record<MenuSectionId, readonly MenuRowRef[]>> =
   home: [{ destination: "home" }],
   invest: [{ destination: "markets" }, { destination: "autoinvest" }],
   trade: [{ page: "swap" }, { page: "spot" }, { page: "stocks" }, { page: "trends" }, { page: "perps" }],
+  launch: [{ destination: "launch" }],
   money: [{ destination: "top-up" }, { page: "send" }, { page: "receive" }, { page: "bridge" }],
   portfolio: [{ page: "portfolio" }, { page: "my-strategies" }, { page: "results" }, { page: "activity" }],
   agent: [{ destination: "agent" }],

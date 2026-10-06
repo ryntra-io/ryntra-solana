@@ -42,11 +42,11 @@ export type DocSection = Readonly<{
  * stands under Rewards, `strategies/*` and `manage/*` under Portfolio — so no
  * link anyone holds moves; a page that moved address answers by a 308.
  */
-export const DOC_GROUP_IDS = ["start", "invest", "trade", "money", "portfolio", "ryntra", "rewards", "reference", "developers"] as const;
+export const DOC_GROUP_IDS = ["start", "invest", "trade", "launch", "money", "portfolio", "ryntra", "rewards", "reference", "developers"] as const;
 export type DocGroupId = (typeof DOC_GROUP_IDS)[number];
 
 /** The first segment of a page's address: its section's own, or the one the page kept when it moved. */
-export const DOC_PATH_PREFIXES = ["start", "invest", "trade", "money", "strategies", "manage", "ryntra", "reference"] as const;
+export const DOC_PATH_PREFIXES = ["start", "invest", "trade", "launch", "money", "strategies", "manage", "ryntra", "reference"] as const;
 
 export type DocPage = Readonly<{
   /** The path under `/docs/` — `trade/swap` answers at `/docs/trade/swap`. */
@@ -70,6 +70,7 @@ export const GROUP_TITLES: Readonly<Record<DocGroupId, Localized>> = {
   start: { en: "Start here", uk: "Почати" },
   invest: { en: "Invest", uk: "Інвестувати" },
   trade: { en: "Trade", uk: "Торгувати" },
+  launch: { en: "Launch", uk: "Лаунч" },
   money: { en: "Money", uk: "Гроші" },
   portfolio: { en: "Portfolio", uk: "Портфель" },
   ryntra: { en: "Ryntra", uk: "Ryntra" },

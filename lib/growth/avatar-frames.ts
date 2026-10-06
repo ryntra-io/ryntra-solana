@@ -2,6 +2,7 @@ import type { GuardStore } from "../guard/store.ts";
 import { readRankStanding } from "../rewards/rank-store.ts";
 import type { RewardRank } from "../rewards/rules.ts";
 import { hasAvatarFrame } from "./badges.ts";
+import { isHiddenWallet } from "./league-store.ts";
 
 /**
  * The frames a chart draws around traders' avatars: Silver and above.
@@ -25,6 +26,8 @@ export async function readAvatarFrames(
   const read = await Promise.all(
     unique.map(async (wallet) => {
       try {
+        /* A wallet hidden from the boards wears no frame anywhere: its status is not shown. */
+        if (await isHiddenWallet(store, wallet)) return [wallet, null] as const;
         const { rank } = await readRankStanding(store, wallet, at);
         return [wallet, hasAvatarFrame(rank) ? rank : null] as const;
       } catch {

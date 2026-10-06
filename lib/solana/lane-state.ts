@@ -31,7 +31,7 @@
  * fail in, and it is visible rather than silent: both lanes say so.
  */
 
-export const SOLANA_LANES = ["SEND", "SWAP", "BRIDGE", "CROSS_SWAP"] as const;
+export const SOLANA_LANES = ["SEND", "SWAP", "BRIDGE", "CROSS_SWAP", "LAUNCH"] as const;
 export type SolanaLane = (typeof SOLANA_LANES)[number];
 
 export type SolanaLaneState = "OPEN" | "PAUSED";
@@ -43,12 +43,18 @@ export type SolanaLaneState = "OPEN" | "PAUSED";
  * the bridge: a route that moves money through a new provider opens because
  * somebody set its switch by name, never because Swap or Bridge happened to be
  * open.
+ *
+ * `LAUNCH` is the fifth, added on 2026-10-06 when Ryntra Launch opened on
+ * mainnet: creating a token, trading on its curve or pool and claiming its fees
+ * through Ryntra. A launch's page and its market stay readable while the lane
+ * is paused — people hold the tokens — but nothing is built or sent.
  */
 export const SOLANA_LANE_STATE_ENV = {
   SEND: "RYNTRA_SOLANA_SEND_STATE",
   SWAP: "RYNTRA_SOLANA_SWAP_STATE",
   BRIDGE: "RYNTRA_SOLANA_BRIDGE_STATE",
   CROSS_SWAP: "RYNTRA_SOLANA_CROSS_SWAP_STATE",
+  LAUNCH: "RYNTRA_SOLANA_LAUNCH_STATE",
 } as const satisfies Record<SolanaLane, string>;
 
 /**

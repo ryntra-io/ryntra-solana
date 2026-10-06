@@ -69,13 +69,14 @@ test("the registry carries fifteen pages in the product's order, each of one kin
 });
 
 test("the menu you can see — every section with its caption, nothing behind «Ще»", () => {
-  assert.deepEqual([...MENU_SECTION_IDS], ["home", "invest", "trade", "money", "portfolio", "agent", "rewards"]);
+  assert.deepEqual([...MENU_SECTION_IDS], ["home", "invest", "trade", "launch", "money", "portfolio", "agent", "rewards"]);
   const uk = menuNavigation(ROUTES, "uk");
   const shape = (menu) => menu.sections.map((section) => [section.title, section.rows.map((row) => row.label)]);
   assert.deepEqual(shape(uk), [
     [null, ["Головна"]],
     ["Інвестувати", ["Ринки", "Автоінвест"]],
     ["Торгувати", ["Обмін", "Спот", "Скринер акцій", "Тренди"]],
+    [null, ["Лаунч"]],
     ["Гроші", ["Поповнити", "Надіслати", "Отримати", "Міст"]],
     ["Портфель", ["Позиції", "Стратегії", "Результати", "Історія"]],
     [null, ["Ryntra"]],
@@ -85,6 +86,7 @@ test("the menu you can see — every section with its caption, nothing behind «
     "/app/home",
     "/app/markets", "/app/autoinvest",
     "/app/swap", "/app/spot", "/app/stocks/screener", "/app/trends",
+    "/app/launch/new",
     "/app/top-up", "/app/send", "/app/receive", "/app/bridge",
     "/app/portfolio", "/app/strategies", "/app/results", "/app/activity",
     "/app/ryn",
@@ -104,6 +106,7 @@ test("the menu you can see — every section with its caption, nothing behind «
     [null, ["Home"]],
     ["Invest", ["Markets", "Autoinvest"]],
     ["Trade", ["Swap", "Spot", "Stock screener", "Trends"]],
+    [null, ["Launch"]],
     ["Money", ["Top up", "Send", "Receive", "Bridge"]],
     ["Portfolio", ["Positions", "Strategies", "Results", "History"]],
     [null, ["Ryntra"]],

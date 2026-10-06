@@ -322,6 +322,18 @@ const FRAME_GEM = 11;
 
 /** FNV-1a over the address: the same wallet always draws the same face. */
 function hash(text: string): number {
+  return fnv(text);
+}
+
+/**
+ * The number a wallet's face is drawn from. A board sends this rather than
+ * the address, so a page can draw the same face beside a masked name.
+ */
+export function walletFace(wallet: string): number {
+  return hash(wallet);
+}
+
+function fnv(text: string): number {
   let h = 0x811c9dc5;
   for (let i = 0; i < text.length; i += 1) {
     h ^= text.charCodeAt(i);
@@ -354,8 +366,13 @@ const AVATAR_PAIRS: readonly (readonly [string, string])[] = [
  * rank is unknown, no frame: the disc alone.
  */
 export function walletAvatarSvg(wallet: string, rank: RewardRank | null, options: BadgeOptions = {}): string {
+  return faceAvatarSvg(hash(wallet), rank, options);
+}
+
+/** The same face from its number ({@link walletFace}) — for a page that has only a masked name. */
+export function faceAvatarSvg(seed: number, rank: RewardRank | null, options: BadgeOptions = {}): string {
   const id = idPrefix(options.id);
-  const h = hash(wallet);
+  const h = seed >>> 0;
   const [a, b] = AVATAR_PAIRS[h % AVATAR_PAIRS.length];
   const angle = (h >>> 3) % 360;
   /* Three quiet shapes; never a rotated square, which would read as a gem. */
@@ -390,6 +407,57 @@ export function walletAvatarSvg(wallet: string, rank: RewardRank | null, options
     `<g clip-path="url(#${id}-c)"><rect width="64" height="64" fill="url(#${id}-f)"/>${face}</g>` +
     /* The gem sits on the ring: its girdle on the ring's own line. */
     gem(metal, 32, 32 - FRAME_RING - FRAME_GEM * 0.3, FRAME_GEM) +
+    `</svg>`
+  );
+}
+
+/* ---------------------------------------------------------------- seasons */
+
+/**
+ * The season's enamel: an amethyst no rank, achievement or action wears — a
+ * season badge reads as a season, never as a rank or a button.
+ */
+export const SEASON_METAL: Metal = { light: "#EBD3FF", mid: "#A869DB", dark: "#5E2C8C", edge: "#43206A" };
+
+export const SEASON_BADGE_IDS = ["SEASON", "PODIUM"] as const;
+export type SeasonBadgeId = (typeof SEASON_BADGE_IDS)[number];
+
+/** A rounded square around (32, 32): the season's medallion, beside the rank's hexagon and the achievement's circle. */
+function squircle(half: number, corner: number): string {
+  const lo = 32 - half;
+  const hi = 32 + half;
+  return roundedPolygon([[lo, lo], [hi, lo], [hi, hi], [lo, hi]], corner);
+}
+
+/** The season's pictograms: a pennant on its pole for a season done, three steps for the podium. */
+function seasonPictogram(id: SeasonBadgeId, color: string): string {
+  const stroke = `fill="none" stroke="${color}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"`;
+  if (id === "SEASON") {
+    return `<path d="M22 47V17" ${stroke}/><path d="M22 18.5c5-2.6 9 2.6 14 0s7-1 9 .5v13c-2-1.5-4-2.7-9-.5s-9-2.6-14 0z" fill="${color}" fill-opacity="0.35" ${stroke}/>`;
+  }
+  return `<path d="M18 45V36h9v9M27 45V29h10v16M37 45V39h9v6M16 45h32" ${stroke}/><path d="M32 18.5l1.3 2.7 2.9.4-2.1 2 .5 2.9-2.6-1.4-2.6 1.4.5-2.9-2.1-2 2.9-.4z" ${stroke} stroke-width="1.6"/>`;
+}
+
+/**
+ * A season badge: the medallion as a rounded square in the season's amethyst
+ * with its pictogram — or, not yet earned, the rim alone in slate, like every
+ * other badge.
+ */
+export function seasonBadgeSvg(badge: SeasonBadgeId, options: BadgeOptions & { earned: boolean }): string {
+  const id = idPrefix(options.id);
+  const outer = squircle(28, 9);
+  const inner = squircle(22.5, 6.5);
+  if (!options.earned) {
+    return svgOpen(options.size, options.title) + lockedRim(outer, inner) + seasonPictogram(badge, LOCKED_METAL.mid) + `</svg>`;
+  }
+  return (
+    svgOpen(options.size, options.title) +
+    `<defs>${metalGradient(`${id}-m`, SEASON_METAL)}${enamelGradient(`${id}-e`)}</defs>` +
+    `<path d="${outer}" fill="url(#${id}-m)" stroke="${SEASON_METAL.edge}" stroke-width="1"/>` +
+    gloss(`${id}-g`, outer) +
+    `<path d="${inner}" fill="url(#${id}-e)" stroke="${SEASON_METAL.light}" stroke-opacity="0.45" stroke-width="0.8"/>` +
+    seasonPictogram(badge, SEASON_METAL.light) +
+    lights(id, outer) +
     `</svg>`
   );
 }

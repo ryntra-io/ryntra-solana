@@ -3,7 +3,7 @@ import { apiFailure, apiJson, apiMajorRefusal } from "@/lib/api/v1/http";
 import { consumeSolanaReadRequest } from "@/lib/agent-control/http";
 import { rateLimitHeaders } from "@/lib/http-control";
 import { launchNetwork } from "@/lib/launch/config.server";
-import { launchDeps } from "@/lib/launch/runtime.server";
+import { launchViewDeps } from "@/lib/launch/runtime.server";
 import { readLaunchView } from "@/lib/launch/view.server";
 
 export const runtime = "nodejs";
@@ -18,13 +18,14 @@ export async function GET(request: Request, context: { params: Promise<{ mint: s
   const refused = apiMajorRefusal(request.headers);
   if (refused) return refused;
   if (!launchNetwork()) return apiFailure("LAUNCH_UNAVAILABLE", "Launch is not served here.");
-  const deps = launchDeps();
-  if (!deps) return apiFailure("LAUNCH_PAUSED", "Launching is paused for a moment; try again later.");
+  /* Read while the lane is paused too: people hold the token. */
+  const deps = launchViewDeps();
+  if (!deps) return apiFailure("LAUNCH_UNAVAILABLE", "Launch is not served here.");
   const rate = consumeSolanaReadRequest(request.headers);
   if (!rate.allowed) return apiFailure("RATE_LIMITED", "Too many requests.", { headers: rateLimitHeaders(rate) });
   const { mint } = await context.params;
   if (!BASE58.test(mint)) return apiFailure("VALIDATION_ERROR", "mint: not an address");
-  const view = await readLaunchView({ ...deps, poolPayer: deps.poolPayer.publicKey.toBase58() }, mint);
+  const view = await readLaunchView(deps, mint);
   if (!view) return apiFailure("LAUNCH_NOT_FOUND", "No Ryntra launch of this token here.");
   return apiJson(view satisfies LaunchTokenResponse);
 }

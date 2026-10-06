@@ -21,6 +21,8 @@ import { signTransactions } from "@/lib/solana/wallet.client";
 import { explorerUrl, formatBps, formatCountShort, formatDate, formatMoneyShort, formatRaw, fromRaw, shortAddress } from "../launch-format";
 import { launchWords } from "../launch-words";
 import styles from "../launch.module.css";
+import { LaunchTabs } from "../launch-tabs";
+import { PausedChip, PausedNote } from "../paused-note";
 
 /**
  * «Мої лаунчі» — the creator's cabinet. Drawn for 390 px first: what the
@@ -65,7 +67,7 @@ function exact(raw: string | bigint, pair: Pair, locale: WorkspaceLocale): strin
   return pair.dollar ? `$${text}` : `${text} ${pair.symbol}`;
 }
 
-export function CreatorCabinet({ locale, network }: { locale: WorkspaceLocale; network: "solana:devnet" | "solana:mainnet" }) {
+export function CreatorCabinet({ locale, network, paused = false }: { locale: WorkspaceLocale; network: "solana:devnet" | "solana:mainnet"; paused?: boolean }) {
   const word = launchWords(locale);
   const { connection } = useSolanaConnection();
   const { reach } = useWalletReach();
@@ -106,6 +108,8 @@ export function CreatorCabinet({ locale, network }: { locale: WorkspaceLocale; n
 
   return (
     <div className={styles.page}>
+      {/* «Запустити токен» is the tab beside this one: no second way to the same page in the head. */}
+      <LaunchTabs locale={locale} />
       <header className={styles.mineHeadGrid}>
         <div className={styles.headRow}>
           <h1 className={styles.title}>{word("mineTitle")}</h1>
@@ -114,11 +118,11 @@ export function CreatorCabinet({ locale, network }: { locale: WorkspaceLocale; n
               {word("devnet")}
             </span>
           ) : null}
+          {paused ? <PausedChip locale={locale} /> : null}
         </div>
         <p className={styles.lede}>{word("mineLede")}</p>
-        <Link href="/app/launch/new" className={`rw-btn ${styles.headAction}`}>
-          <Plus size={16} aria-hidden /> {word("mineLaunch")}
-        </Link>
+        {/* Launch's stop closed: «Забрати» waits; the cabinet is read as ever. */}
+        {paused ? <PausedNote locale={locale} /> : null}
       </header>
 
       {!wallet ? (
@@ -156,7 +160,7 @@ export function CreatorCabinet({ locale, network }: { locale: WorkspaceLocale; n
           <ul className={styles.mineList}>
             {data.launches.map((row) => (
               <li key={row.token}>
-                <LaunchRow row={row} market={markets[row.token]} wallet={wallet} network={data.network} locale={locale} onClaimed={() => void load()} />
+                <LaunchRow row={row} market={markets[row.token]} wallet={wallet} network={data.network} locale={locale} paused={paused} onClaimed={() => void load()} />
               </li>
             ))}
           </ul>
@@ -214,6 +218,7 @@ function LaunchRow({
   wallet,
   network,
   locale,
+  paused,
   onClaimed,
 }: {
   row: LaunchCabinetRow;
@@ -221,6 +226,7 @@ function LaunchRow({
   wallet: string;
   network: "solana:devnet" | "solana:mainnet";
   locale: WorkspaceLocale;
+  paused: boolean;
   onClaimed: () => void;
 }) {
   const word = launchWords(locale);
@@ -390,7 +396,7 @@ function LaunchRow({
         </ol>
       ) : (
         <div className={styles.mineActions}>
-          {row.claimable && unclaimed > 0n ? (
+          {row.claimable && unclaimed > 0n && !paused ? (
             <button type="button" className={`rw-btn ${styles.cta} ${styles.claimBtn}`} onClick={() => void claim()}>
               {word("claim", { amount: exact(unclaimed, row.pair, locale) })}
             </button>
@@ -430,7 +436,7 @@ function marketFigure(market: LaunchMarketResponse | "unread" | undefined, figur
 /** The title says only what is known: «nothing was claimed» where the claim was refused before or by the network, else what happened. */
 function claimFailureTitle(code: string, atSend: boolean): "errClaimTitle" | "errClaimTitleUnknown" | "errClaimTitleSent" {
   if (code === "LAUNCH_BUILD_USED") return "errClaimTitleSent";
-  const known = ["LAUNCH_SUBMIT_FAILED", "LAUNCH_NOTHING_TO_CLAIM", "LAUNCH_SIGNED_OTHER_BYTES", "LAUNCH_BUILD_EXPIRED", "WALLET_CHANGED", "WALLET_MISMATCH", "LAUNCH_NOT_FOUND"];
+  const known = ["LAUNCH_SUBMIT_FAILED", "LAUNCH_NOTHING_TO_CLAIM", "LAUNCH_SIGNED_OTHER_BYTES", "LAUNCH_BUILD_EXPIRED", "WALLET_CHANGED", "WALLET_MISMATCH", "LAUNCH_NOT_FOUND", "LAUNCH_PAUSED"];
   return atSend && !known.includes(code) ? "errClaimTitleUnknown" : "errClaimTitle";
 }
 
@@ -450,6 +456,10 @@ function claimFailureText(code: string, atSend: boolean, word: Word): string {
       return word("errClaimSubmit");
     case "LAUNCH_BUILD_USED":
       return word("errClaimUsed");
+    case "LAUNCH_PAUSED":
+      return word("errLaunchPaused");
+    case "RATE_LIMITED":
+      return word("errRateLimited");
     default:
       /* No answer at the send is not «nothing was sent»: the claim may have gone out. */
       return atSend ? word("errClaimUnknown") : word("errGeneric");

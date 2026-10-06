@@ -1,4 +1,5 @@
 import { INVEST_PAGES } from "./invest.ts";
+import { LAUNCH_PAGES } from "./launch.ts";
 import { ACTIVITY, PORTFOLIO, SETTINGS } from "./manage.ts";
 import { DOC_GROUP_IDS, GROUP_TITLES, type DocGroupId, type DocPage, type Localized } from "./model.ts";
 import { MONEY_PAGES, REWARDS_PAGES } from "./money.ts";
@@ -10,7 +11,7 @@ import { SCREENER, SPOT, SWAP, TRENDS } from "./trade.ts";
 
 /**
  * Every documentation page, in reading order — the menu's order: Start,
- * Invest, Trade, Money, Portfolio, Ryntra, Rewards, then Reference. The
+ * Invest, Trade, Launch, Money, Portfolio, Ryntra, Rewards, then Reference. The
  * overview (slug "") is `/docs`; every other slug answers at `/docs/<slug>`.
  */
 export const DOC_PAGES: readonly DocPage[] = [
@@ -21,6 +22,7 @@ export const DOC_PAGES: readonly DocPage[] = [
   SPOT,
   SCREENER,
   TRENDS,
+  ...LAUNCH_PAGES,
   ...MONEY_PAGES,
   PORTFOLIO,
   ...STRATEGY_PAGES,

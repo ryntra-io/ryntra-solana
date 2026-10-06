@@ -21,14 +21,15 @@ export async function POST(request: Request) {
   if (refused) return refused;
   if (!launchNetwork()) return apiFailure("LAUNCH_UNAVAILABLE", "Launch is not served here.");
   const deps = launchDeps();
-  if (!deps) return apiFailure("LAUNCH_PAUSED", "Launching is paused for a moment; try again later.");
+  if (!deps) return apiFailure("LAUNCH_PAUSED", "Launching is paused; nothing was built.");
   const rate = consumeSolanaReadRequest(request.headers);
   if (!rate.allowed) return apiFailure("RATE_LIMITED", "Too many requests.", { headers: rateLimitHeaders(rate) });
   const read = await readApiBody(request, LaunchQuoteRequestSchema);
   if (!read.ok) return read.response;
-  if (!deps.network.configs[read.body.preset]) return apiFailure("VALIDATION_ERROR", "preset: not on this network");
+  const pair = deps.network.pairs[read.body.preset];
+  if (!deps.network.configs[read.body.preset] || !pair) return apiFailure("VALIDATION_ERROR", "preset: not on this network");
   const venue = createMeteoraDbcLaunchVenue({ connection: deps.connection, configs: deps.network.configs, poolPayer: deps.poolPayer.publicKey.toBase58() });
-  const quote = await venue.firstBuyQuote(read.body.preset, read.body.amountRaw, deps.network.pairs[read.body.preset].mint).catch(() => null);
+  const quote = await venue.firstBuyQuote(read.body.preset, read.body.amountRaw, pair.mint).catch(() => null);
   if (!quote) return apiFailure("UNAVAILABLE", "The curve could not be read. Try again.");
   return apiJson({
     preset: quote.preset,
