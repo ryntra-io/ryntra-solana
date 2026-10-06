@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { secureCookies } from "@/lib/auth/cookie-policy";
+import { referralDestination } from "@/lib/growth/referral-destination";
 import { normalizeReferralCode, REFERRAL_COOKIE } from "@/lib/rewards/referral";
 
 export const runtime = "nodejs";
@@ -34,7 +35,8 @@ const THIRTY_DAYS_SECONDS = 30 * 24 * 60 * 60;
 export async function GET(req: NextRequest, context: { params: Promise<{ code: string }> }) {
   const { code } = await context.params;
   const normalized = normalizeReferralCode(code ?? "");
-  const destination = new URL("/app/rewards", req.url);
+  /* «Винагороди», or the product page the link names (`?to=`, this site's `/app` only). */
+  const destination = referralDestination(new URL(req.url).searchParams.get("to"), req.url);
   const response = NextResponse.redirect(destination, 302);
   if (normalized) {
     response.cookies.set({

@@ -10,7 +10,7 @@ before every signature, a portfolio and a history with receipts. It runs at
 This repository is the product's source code as released — the web app, the
 Android app, the Evidence Kernel and the database schema, with their tests. It
 is private and shared read-only with invited reviewers. Every update is one
-commit, named for what it released; the latest is from 2026-10-06.
+commit, named for what it released; the latest is from 2026-10-07.
 
 ## What is here
 
@@ -23,7 +23,7 @@ commit, named for what it released; the latest is from 2026-10-06.
 | `supabase/migrations/`, `supabase/prepared/` | The database schema migration by migration, and the prepared SQL that is applied by hand (corrections and rollbacks) |
 | `public/` | Static assets |
 
-2,901 files come from the development repository as released, and each test
+2,916 files come from the development repository as released, and each test
 sits beside the code it tests (`*.test.mjs`); `README.md`, `BOUNDARY.md`,
 `LICENSE`, `.gitignore` and the scripts of `package.json` are written for this
 snapshot.
@@ -85,15 +85,15 @@ build-tools).
 
 The code as it stood before the hackathon is tagged
 `pre-hackathon-baseline-2026-09-11` in the development repository — commit `7fc5776f`,
-2026-09-11. Measured against that tag, path by path, for the 2,901 files
+2026-09-11. Measured against that tag, path by path, for the 2,916 files
 that come from the development repository:
 
 | Since the tag | Files |
 |---|---|
-| New | 1,166 |
-| Changed | 806 |
-| Unchanged | 929 |
-| Lines added / removed | +299,643 / −19,729 |
+| New | 1,181 |
+| Changed | 813 |
+| Unchanged | 922 |
+| Lines added / removed | +302,410 / −19,747 |
 
 [BOUNDARY.md](BOUNDARY.md) lists every new and every changed file. Shipped since
 then, as the public build log records it:
@@ -137,6 +137,8 @@ then, as the public build log records it:
 | 2026-10-06 | Ryntra Launch: your Solana token on a Meteora bonding curve in one signature |
 | 2026-10-06 | One menu around launch, trade and bots, and one screener for every asset |
 | 2026-10-06 | A launch that lands is always shown, and every launched token can be bought and sold |
+| 2026-10-06 | Every page takes the width of the screen it is on |
+| 2026-10-07 | Share a trade: a card of your result with your invite link |
 
 ## What is not here
 

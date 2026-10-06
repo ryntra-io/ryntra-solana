@@ -1,4 +1,4 @@
-.asset { width: 100%; max-width: 1120px; margin: 0 auto; color: var(--ry-text); }
+.asset { width: 100%; max-width: 1120px; margin-inline: auto; color: var(--ry-text); } /* width-law: an asset's passport — one reading column in the middle of the canvas */
 .header { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 28px; }
 .header h1 { margin: 0; font-size: 2rem; letter-spacing: -0.02em; }
 .find { display: grid; gap: 10px; margin-bottom: 28px; }

@@ -11,6 +11,7 @@ import { useSolanaI18n } from "../i18n/provider.tsx";
 import { MarketIcon } from "./market-list.tsx";
 import { formatAge, formatCount, formatPercent, formatUsdCompact, formatUsdPrice, shortAddress, toneOf } from "./spot-format.ts";
 import { StockHeaderLine } from "./stock-context.tsx";
+import { ShareTrade } from "../rewards/share-trade.tsx";
 import { AskRynLens } from "@/app/app/lens/ask-ryn-lens";
 import type { MarketState } from "./use-spot-data.ts";
 
@@ -118,6 +119,8 @@ export function MarketHeader({
         </span>
         {state.status === "unavailable" ? <span className={styles.priceMeta}>{text("Price feed unavailable")}</span> : null}
         {state.status === "ready" && state.stale ? <span className={styles.priceMeta}>{text("Last known price")}</span> : null}
+        {/* «Поділитися»: a card of this wallet's trade of this token (from Rewards), in the price line (the end of it on a desk, a line of its own under the price on a phone), so the name keeps its room; nothing without a trade. */}
+        {mint ? <ShareTrade mint={mint} align="end" /> : null}
       </div>
 
       {/* A tokenized stock carries its reference, its session and its deviation

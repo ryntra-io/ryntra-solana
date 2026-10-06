@@ -49,7 +49,7 @@
   justify-content: center;
   gap: var(--rt-space-sm);
   width: 100%;
-  max-width: 46rem;
+  max-width: 46rem; /* width-law: a row of wallet choices, centred */
 }
 
 .tile {

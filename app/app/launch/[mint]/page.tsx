@@ -51,7 +51,7 @@ export default async function LaunchTokenPage({ params }: { params: Promise<{ mi
   const network = launchNetwork();
   const pairSymbol = network?.pairs[token.preset]?.symbol ?? "";
   return (
-    <div className={styles.page} data-wide="">
+    <div className={styles.page}>
       <TokenMarket
         initial={null}
         paused={!launchTrading()}

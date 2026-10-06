@@ -9,10 +9,10 @@ moved counts as new. Generated at every update from the development history.
 
 | Since the tag | Files |
 |---|---|
-| New | 1,166 |
-| Changed | 806 |
-| Unchanged | 929 |
-| Lines added / removed | +299,643 / −19,729 |
+| New | 1,181 |
+| Changed | 813 |
+| Unchanged | 922 |
+| Lines added / removed | +302,410 / −19,747 |
 
 ## New since the tag
 
@@ -62,6 +62,10 @@ moved counts as new. Generated at every update from the development history.
 - `app/api/cron/benefits/route.ts`
 - `app/api/cron/monitoring/route.ts`
 - `app/api/cron/reconcile/route.ts`
+- `app/api/growth/cards/[id]/image/card-art.tsx`
+- `app/api/growth/cards/[id]/image/route.tsx`
+- `app/api/growth/cards/origin.ts`
+- `app/api/growth/cards/route.ts`
 - `app/api/growth/leaderboards/route.ts`
 - `app/api/growth/leaderboards/visibility/route.ts`
 - `app/api/growth/season/route.ts`
@@ -250,6 +254,7 @@ moved counts as new. Generated at every update from the development history.
 - `app/app/notifications/bell.tsx`
 - `app/app/notifications/note-list.tsx`
 - `app/app/notifications/use-notes.ts`
+- `app/app/page-width.test.mjs`
 - `app/app/predictions/[eventId]/depth.tsx`
 - `app/app/predictions/[eventId]/live.ts`
 - `app/app/predictions/[eventId]/market-detail.tsx`
@@ -381,6 +386,8 @@ moved counts as new. Generated at every update from the development history.
 - `app/preview/agg-lab/profile-from-hooks.tsx`
 - `app/preview/agg-lab/ready-app.tsx`
 - `app/preview/agg-lab/ryntra-adaptation.tsx`
+- `app/r/[code]/c/[card]/card-page.module.css`
+- `app/r/[code]/c/[card]/page.tsx`
 - `app/security/security-copy.ts`
 - `app/shell/help-topics.ts`
 - `app/shell/help.module.css`
@@ -410,6 +417,8 @@ moved counts as new. Generated at every update from the development history.
 - `app/solana/workspace/rewards/rewards-tabs.tsx`
 - `app/solana/workspace/rewards/season-card.tsx`
 - `app/solana/workspace/rewards/season-view.tsx`
+- `app/solana/workspace/rewards/share-trade.tsx`
+- `app/solana/workspace/rewards/share.module.css`
 - `app/solana/workspace/spot/plan-review-block.tsx`
 - `app/solana/workspace/spot/quote-asset-switch.tsx`
 - `app/solana/workspace/spot/stock-context.tsx`
@@ -864,11 +873,17 @@ moved counts as new. Generated at every update from the development history.
 - `lib/growth/avatar-frames.ts`
 - `lib/growth/badges.test.mjs`
 - `lib/growth/badges.ts`
+- `lib/growth/card-copy.ts`
+- `lib/growth/card-store.ts`
 - `lib/growth/leaderboard.ts`
 - `lib/growth/league-store.ts`
 - `lib/growth/league-view.ts`
 - `lib/growth/leagues.test.mjs`
+- `lib/growth/public-address.ts`
+- `lib/growth/referral-destination.ts`
 - `lib/growth/seasons.ts`
+- `lib/growth/trade-cards.test.mjs`
+- `lib/growth/trade-cards.ts`
 - `lib/growth/trader-pnl.ts`
 - `lib/growth/weeks.ts`
 - `lib/guard/evidence-coverage.test.mjs`
@@ -1282,6 +1297,7 @@ moved counts as new. Generated at every update from the development history.
 - `app/app/adviser/page.tsx`
 - `app/app/adviser/tiles.tsx`
 - `app/app/adviser/workbench-surface.test.mjs`
+- `app/app/agents/agents.module.css`
 - `app/app/alerts/page.tsx`
 - `app/app/alerts/read.ts`
 - `app/app/alerts/tiles.tsx`
@@ -1407,6 +1423,7 @@ moved counts as new. Generated at every update from the development history.
 - `app/opengraph-image.tsx`
 - `app/pay/pay-surface.test.mjs`
 - `app/product-map/page.tsx`
+- `app/r/[code]/route.ts`
 - `app/robinhood/workspace/[symbol]/page.tsx`
 - `app/robinhood/workspace/[symbol]/passport.css`
 - `app/robinhood/workspace/markets.css`
@@ -1482,6 +1499,7 @@ moved counts as new. Generated at every update from the development history.
 - `app/site/truth-core.ts`
 - `app/site/truth-view.ts`
 - `app/sitemap.ts`
+- `app/solana/workspace/assets/asset-view.module.css`
 - `app/solana/workspace/assets/featured.ts`
 - `app/solana/workspace/bridge/bridge-card.tsx`
 - `app/solana/workspace/bridge/bridge-surface.module.css`
@@ -1503,6 +1521,7 @@ moved counts as new. Generated at every update from the development history.
 - `app/solana/workspace/holdings/holdings.module.css`
 - `app/solana/workspace/holdings/page.tsx`
 - `app/solana/workspace/holdings/rewards-summary.tsx`
+- `app/solana/workspace/home-surface.module.css`
 - `app/solana/workspace/home-surface.tsx`
 - `app/solana/workspace/hub/hub.css`
 - `app/solana/workspace/hub/manifest.ts`
@@ -1515,6 +1534,7 @@ moved counts as new. Generated at every update from the development history.
 - `app/solana/workspace/layout.tsx`
 - `app/solana/workspace/map/map.module.css`
 - `app/solana/workspace/map/page.tsx`
+- `app/solana/workspace/markets/market-list.module.css`
 - `app/solana/workspace/markets/market-list.tsx`
 - `app/solana/workspace/money/money-tabs.tsx`
 - `app/solana/workspace/money/money.module.css`
@@ -1529,6 +1549,7 @@ moved counts as new. Generated at every update from the development history.
 - `app/solana/workspace/rewards/rewards.module.css`
 - `app/solana/workspace/send/page.tsx`
 - `app/solana/workspace/send/send-card.tsx`
+- `app/solana/workspace/send/send.module.css`
 - `app/solana/workspace/settings/page.tsx`
 - `app/solana/workspace/spot/market-header.tsx`
 - `app/solana/workspace/spot/market-list.tsx`
@@ -1545,6 +1566,7 @@ moved counts as new. Generated at every update from the development history.
 - `app/solana/workspace/trade/swap-card.module.css`
 - `app/solana/workspace/trade/swap-card.tsx`
 - `app/solana/workspace/trade/swap-context.tsx`
+- `app/solana/workspace/wallet-gate.module.css`
 - `app/solana/workspace/wallet-gate.tsx`
 - `app/stellar/destinations.ts`
 - `app/stellar/page.tsx`

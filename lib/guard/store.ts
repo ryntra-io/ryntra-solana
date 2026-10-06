@@ -200,6 +200,11 @@ export const GUARD_COLLECTIONS = [
   "growthBoards",
   "growthSeasons",
   "growthPrefs",
+  /* Trade cards (the Growth line): one row per card a wallet made of its own
+     trade — the figures, rank and code frozen at that moment — written once
+     with `insertIfAbsent`, read by the card's public page and picture. No
+     money, no DDL. */
+  "growthCards",
   /* Admin business analytics. Two records, neither a boundary: nothing
      compare-and-sets on them to decide whether money may move.
 

@@ -1,7 +1,9 @@
 /*
  * Ryntra Launch — «Запустити токен» and a launched token's page. Drawn for
  * 390 px first: one column of short sections and one orange action; from
- * 1024 px the token's card and the review stay beside the form. Tokens only
+ * 1024 px the token's card and the review stay beside the form, and on a wide
+ * desk the form itself runs in two columns. Every page takes the canvas's
+ * whole width (DESIGN.md → «Page width»): nothing here caps it. Tokens only
  * (DESIGN.md → app/design/tokens.css); figures, tickers and addresses in Geist
  * Mono with tabular numerals.
  */
@@ -10,7 +12,6 @@
   display: grid;
   gap: var(--ry-s5);
   width: 100%;
-  max-width: 1120px;
   min-width: 0;
 }
 
@@ -76,9 +77,25 @@
 }
 
 .form {
+  container: launch-form / inline-size;
+  min-width: 0;
+}
+
+/* The form's sections in their order — the token and its links, then the preset and the first buy. */
+.formColumns,
+.formColumn {
   display: grid;
   gap: var(--ry-s4);
+  align-content: start;
   min-width: 0;
+}
+
+/* Wide enough for two: the token and its links on the left, the preset and the first buy on the right. */
+@container launch-form (min-width: 900px) {
+  .formColumns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
 }
 
 .aside {
@@ -94,7 +111,7 @@
 
 @media (min-width: 1024px) {
   .layout {
-    grid-template-columns: minmax(0, 1fr) 360px;
+    grid-template-columns: minmax(0, 1fr) clamp(360px, 24vw, 440px);
     align-items: start;
   }
 
@@ -377,15 +394,11 @@
 
 /* ── Presets ─────────────────────────────────────────────────────────── */
 
+/* As many presets in a row as the section holds, each as wide as the row allows — never an empty slot beside them. */
 .presets {
   display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
   gap: var(--ry-s2);
-}
-
-@media (min-width: 720px) {
-  .presets {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
 }
 
 .preset {
@@ -1154,10 +1167,6 @@
 
 /* ── The token's market: one column on a phone, the trade beside it on a desk ── */
 
-.page[data-wide] {
-  max-width: 1280px;
-}
-
 .tokenLayout {
   display: grid;
   gap: var(--ry-s4);
@@ -1231,7 +1240,7 @@
 
 @media (min-width: 1024px) {
   .tokenLayout {
-    grid-template-columns: minmax(0, 1fr) 360px;
+    grid-template-columns: minmax(0, 1fr) clamp(360px, 24vw, 440px);
     grid-template-areas:
       "head head"
       "chart aside"
@@ -1442,10 +1451,11 @@
 .legendUp { color: var(--ry-verified); }
 .legendDown { color: var(--ry-risk); }
 
+/* The chart grows with the desk, so a wide screen shows a chart, not a strip (the chart sizes itself to this box). */
 .chartCanvas {
   position: relative;
   width: 100%;
-  height: 300px;
+  height: clamp(300px, 18vw, 480px);
   min-width: 0;
 }
 
@@ -2228,9 +2238,11 @@
 
 /* ── «Мої лаунчі»: the totals, each launch as a card, the receipts ───── */
 
+/* Nothing to show yet: the one line and the one action in the middle of the width, not in its corner. */
 .mineEmpty {
-  justify-items: start;
-  padding: var(--ry-s5) var(--ry-s4);
+  justify-items: center;
+  padding: var(--ry-s6) var(--ry-s4);
+  text-align: center;
 }
 
 .mineEmptyIcon {
@@ -2286,8 +2298,52 @@
   color: var(--ry-text);
 }
 
+/* The cabinet: the totals, the launches, the receipts — on a wide desk the launches take the width and the totals
+   and the receipts stand beside them, as Home's notes do. */
+.mineBoard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "summary" "list" "receipts";
+  gap: var(--ry-s4);
+  min-width: 0;
+}
+
+.mineBoard > [data-area="summary"] {
+  grid-area: summary;
+}
+
+.mineBoard > [data-area="list"] {
+  grid-area: list;
+}
+
+.mineBoard > [data-area="receipts"] {
+  grid-area: receipts;
+}
+
+@media (min-width: 1600px) {
+  .mineBoard {
+    grid-template-columns: minmax(0, 1fr) clamp(340px, 22vw, 440px);
+    grid-template-rows: auto 1fr;
+    grid-template-areas: "list summary" "list receipts";
+    align-items: start;
+  }
+
+  /* Beside the launches the total earned leads on its own line, what is to claim and what was claimed under it. */
+  .mineBoard > [data-area="summary"] .mineTotals {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .mineBoard > [data-area="summary"] .mineTotal[data-lead] {
+    grid-column: 1 / -1;
+  }
+}
+
+/* As many cards in a row as the width holds, each as wide as the row allows: two launches fill the row, never a
+   half-empty one. */
 .mineList {
   display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 400px), 1fr));
+  align-items: stretch;
   gap: var(--ry-s4);
   margin: 0;
   padding: 0;
@@ -2295,22 +2351,43 @@
   min-width: 0;
 }
 
-/* Two columns on a desk, filled top to bottom, so cards of different heights leave no hole. */
-@media (min-width: 1024px) {
-  .mineList {
-    display: block;
-    column-count: 2;
-    column-gap: var(--ry-s4);
-  }
-
-  .mineList > li {
-    break-inside: avoid;
-    margin-bottom: var(--ry-s4);
-  }
+/* The cards of a row stand equally tall; each card's own width decides its layout. */
+.mineList > li {
+  container: mine-card / inline-size;
+  display: grid;
+  min-width: 0;
 }
 
 .mineCard {
   align-content: start;
+}
+
+/* A lone launch across a wide desk: who and how far on the left, the figures on the right, the rest under both. */
+@container mine-card (min-width: 900px) {
+  .mineCard {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+    column-gap: var(--ry-s6);
+  }
+
+  .mineCard > * {
+    grid-column: 1 / -1;
+  }
+
+  .mineCard > .mineHead {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .mineCard > .mineProgress {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .mineCard > .mineStats {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    align-self: center;
+  }
 }
 
 .mineHead {
@@ -2372,6 +2449,7 @@
   color: var(--ry-verified);
 }
 
+/* A card's figures in two columns, whole, never cut; a wide card shows all four in one row. */
 .mineStats {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2379,16 +2457,9 @@
   margin: 0;
 }
 
-@media (min-width: 560px) {
+@container mine-card (min-width: 600px) {
   .mineStats {
     grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
-
-/* Two cards side by side on a desk: each card's figures in two columns, whole, never cut. */
-@media (min-width: 1024px) {
-  .mineStats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -2451,6 +2522,15 @@
 
 .mineActions .cta {
   justify-self: stretch;
+}
+
+/* A wide card: «Забрати» at a button's own width, not a bar across the card. */
+@container mine-card (min-width: 600px) {
+  .mineActions .cta {
+    justify-self: start;
+    width: auto;
+    min-width: 280px;
+  }
 }
 
 .mineResult {

@@ -149,12 +149,13 @@
   font-size: var(--ry-fs-copy);
 }
 
+/* Nothing to watch without a wallet: the one line and the one action in the middle of the width, not in its corner. */
 .gate {
   display: grid;
   gap: var(--ry-s3);
-  justify-items: start;
-  max-width: 42rem;
-  padding: var(--ry-s5);
+  justify-items: center;
+  padding: var(--ry-s6) var(--ry-s5);
+  text-align: center;
   background: var(--ry-card);
   border: 1px solid var(--ry-border);
   border-radius: var(--ry-r-card);

@@ -10,7 +10,6 @@
   display: grid;
   gap: var(--ry-s6);
   width: 100%;
-  max-width: 1200px;
   min-width: 0;
 }
 
@@ -644,12 +643,6 @@ a.row:hover {
 }
 
 /* ── Width: Markets on the full width ─────────────────────────────────── */
-
-/* The page reaches the edge of a wide screen; the cap keeps a line of
-   four readable on a very wide one. */
-.wide {
-  max-width: 1760px;
-}
 
 /* The price is the figure a person came for: bigger on the board. */
 .board .price {

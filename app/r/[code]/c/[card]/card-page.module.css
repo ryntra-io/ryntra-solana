@@ -1,0 +1,62 @@
+/* The invitation with a trade card: the picture first, then two lines and the
+   one orange action. One column on a phone; picture and words side by side
+   from a desk's width. */
+
+.page {
+  display: grid;
+  gap: var(--ry-s6);
+  padding-block: var(--ry-s7) var(--ry-s9);
+}
+
+.figure {
+  margin: 0;
+}
+
+.card {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1200 / 630;
+  border-radius: var(--ry-r-card, 16px);
+  border: 1px solid var(--ry-border);
+  background: #080d13;
+}
+
+.text {
+  display: grid;
+  gap: var(--ry-s4);
+  align-content: start;
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(1.75rem, 1.2rem + 2vw, 2.5rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+}
+
+.lead {
+  margin: 0;
+  color: var(--ry-text);
+  max-width: 44ch;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s3);
+}
+
+.note {
+  margin: 0;
+  max-width: 60ch;
+}
+
+@media (min-width: 1024px) {
+  .page {
+    grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+    align-items: center;
+    gap: var(--ry-s8);
+  }
+}

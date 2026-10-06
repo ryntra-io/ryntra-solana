@@ -115,3 +115,42 @@ export function seasonProgress(
 export function tasksDone(progress: SeasonProgress): number {
   return progress.tasks.filter((task) => task.done).length;
 }
+
+/* ------------------------------------------------------- when seasons begin */
+
+/** Outside wallets that must have traded through Ryntra before the first season begins. */
+export const SEASON_START_WALLETS = 10;
+
+/**
+ * When people came: the moment the `need`-th outside wallet made its first
+ * trade through Ryntra — a cashback row of its own, the same fact the "first
+ * trade of the season" task reads — settled by `at`; null while fewer have.
+ *
+ * Wallets in `internal` (the owner's, test and Ryntra's own) never count, so
+ * the owner trying the product cannot open a season with nobody in it. A
+ * wallet hidden from the boards does count: it is a person all the same.
+ * Only a moment comes out — never which wallets they were. The rows are read
+ * as written: a later valuation changes a row's dollars, never that it was a
+ * trade or when it settled.
+ */
+export function peopleArrivedAt(
+  args: Readonly<{ entries: ReadonlyMap<string, readonly RewardEntry[]>; internal: ReadonlySet<string>; at: string; need?: number }>,
+): string | null {
+  const need = args.need ?? SEASON_START_WALLETS;
+  const atMs = Date.parse(args.at);
+  if (!Number.isInteger(need) || need < 1 || !Number.isFinite(atMs)) return null;
+  const firsts: number[] = [];
+  for (const [wallet, entries] of args.entries) {
+    if (args.internal.has(wallet)) continue;
+    let first = Infinity;
+    for (const entry of entries) {
+      if (entry.type !== "CASHBACK" || entry.recipient !== wallet || !entry.source || entry.source.trader !== wallet) continue;
+      const settled = Date.parse(entry.source.settledAt);
+      if (Number.isFinite(settled) && settled <= atMs && settled < first) first = settled;
+    }
+    if (first !== Infinity) firsts.push(first);
+  }
+  if (firsts.length < need) return null;
+  firsts.sort((a, b) => a - b);
+  return new Date(firsts[need - 1]).toISOString();
+}

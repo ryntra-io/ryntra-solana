@@ -2,7 +2,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   width: 100%;
-  max-width: 720px;
+  max-width: 720px; /* width-law: a single action's card, centred on the canvas */
   /* Centred on both axes, and by auto margins rather than `align-items`.
      The Swap panel is the only thing on its page and the grid stretches it to
      the viewport, so a 400px card pinned to the top of an 1140px panel left

@@ -57,6 +57,7 @@ import { StockRowChips, useStockRows } from "../spot/stock-context.tsx";
 import { formatPercent, formatPrice } from "../spot/spot-format.ts";
 import { PlanLink, usePlansByMint } from "./plan-link.tsx";
 import { RewardsSummary } from "./rewards-summary.tsx";
+import { ShareTrade } from "../rewards/share-trade.tsx";
 import { WalletGate } from "../wallet-gate.tsx";
 import styles from "./holdings.module.css";
 
@@ -361,6 +362,8 @@ export function HoldingsCard() {
               </button>
             ))}
           </div>
+          {/* «Поділитися»: a card of a trade through Ryntra with the wallet's invitation link — from Rewards; at the end of the categories' row, so search keeps its width on a phone; nothing without a measured trade. */}
+          <ShareTrade align="end" />
           <div className={styles.tools}>
             <input
               className={styles.search}

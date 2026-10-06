@@ -779,7 +779,7 @@ export async function settleFeeSharing(deps: LaunchReadDeps, record: LaunchRecor
  * so the link a creator shares is the token's page itself and the creator's code waits for it; the launch test reads
  * the route and fails the day it follows `to`, so this is flipped then and not later.
  */
-export const REFERRAL_ROUTE_FOLLOWS_TO = false;
+export const REFERRAL_ROUTE_FOLLOWS_TO = true;
 
 /** The link a creator shares: the token's page — through their referral code once the referral route lands there. */
 export function launchShareLink(origin: string, record: Pick<LaunchRecord, "token" | "referralCode">, followsTo: boolean = REFERRAL_ROUTE_FOLLOWS_TO): string {

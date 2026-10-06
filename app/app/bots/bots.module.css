@@ -8,7 +8,6 @@
   display: grid;
   gap: var(--ry-s6);
   width: 100%;
-  max-width: 1200px;
   min-width: 0;
 }
 
@@ -95,9 +94,10 @@
   color: var(--ry-text);
 }
 
+/* Each bot as wide as the row allows: two bots fill the row, never an empty slot beside them. */
 .catalog {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
   gap: var(--ry-s4);
   margin: 0;
   padding: 0;
@@ -105,13 +105,33 @@
 }
 
 .bot {
+  container: bot / inline-size;
   display: grid;
-  grid-template-rows: auto 1fr auto;
-  gap: var(--ry-s3);
   padding: var(--ry-s5);
   border: 1px solid var(--ry-border);
   border-radius: var(--ry-r-card);
   background: var(--ry-card);
+}
+
+.botInner {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: var(--ry-s3);
+}
+
+/* A wide card: the icon, the words and the actions in one row, the words at a reading measure — not a phone's card stretched. */
+@container bot (min-width: 760px) {
+  .botInner {
+    grid-template-columns: auto minmax(0, 60ch) 1fr;
+    grid-template-rows: auto;
+    align-items: start;
+    column-gap: var(--ry-s5);
+  }
+
+  .botInner > .botActions {
+    align-self: center;
+    justify-content: flex-end;
+  }
 }
 
 .botIcon {

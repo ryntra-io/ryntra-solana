@@ -114,11 +114,13 @@
   color: var(--ry-caution);
 }
 
+/* Nothing to show without a wallet: the line and the action in the middle of the card, not in its corner. */
 .gate {
   display: grid;
   gap: var(--ry-s3);
-  justify-items: start;
+  justify-items: center;
   padding: var(--ry-s5) var(--ry-s4);
+  text-align: center;
 }
 
 .actions {

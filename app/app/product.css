@@ -52,8 +52,32 @@
 .ry-product .ry-inline-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
 .ry-product .ry-section-title { margin: 0 0 20px; font-size: 1.25rem; line-height: 1.3; }
 .ry-product .ry-muted { color: var(--ry-muted); }
-.ry-product .ry-account-settings { display: grid; gap: 32px; max-width: 800px; width: 100%; }
-.ry-product .ry-settings-section { padding: 24px 0; border-bottom: 1px solid var(--ry-border); }
+/* The password page is one short form: a column in the middle of the canvas, like every money flow. */
+.ry-product .ry-account-settings { display: grid; gap: 32px; width: 100%; max-width: 580px; margin-inline: auto; }
+/* Settings take the canvas (DESIGN.md → «Page width»): each group a card of a readable width, the cards of a row equally
+   tall — on a desk appearance and the wallet stacked beside the account, on a wide desk the three side by side. */
+.ry-product .ry-settings-board { gap: 20px; max-width: none; margin-inline: 0; }
+@media (min-width: 1280px) {
+  .ry-product .ry-settings-board { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: "title title" "appearance account" "wallet account" "links links"; align-items: stretch; }
+  .ry-product .ry-settings-board > h1 { grid-area: title; }
+  .ry-product .ry-settings-board > [data-area="appearance"] { grid-area: appearance; }
+  .ry-product .ry-settings-board > [data-area="wallet"] { grid-area: wallet; }
+  .ry-product .ry-settings-board > [data-area="account"] { grid-area: account; }
+  .ry-product .ry-settings-board > .ry-inline-actions { grid-area: links; }
+}
+@media (min-width: 1600px) {
+  .ry-product .ry-settings-board { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-areas: "title title title" "appearance wallet account" "links links links"; }
+}
+/* Signed in, the account — wallets, Telegram, sessions — is the long card: it takes the wide side and the short cards
+   keep their own height beside it, never stretched empty to its length. */
+@media (min-width: 1280px) {
+  .ry-product .ry-settings-board:has(.ry-account-settings-block) { align-items: start; }
+}
+@media (min-width: 1600px) {
+  .ry-product .ry-settings-board:has(.ry-account-settings-block) { grid-template-areas: "title title title" "appearance account account" "wallet account account" "links links links"; grid-template-rows: auto auto 1fr auto; }
+}
+.ry-product .ry-settings-section { padding: 20px 24px; border: 1px solid var(--ry-border); border-radius: var(--ry-r-card); background: var(--ry-card); }
+.ry-product .ry-settings-section > .ry-section-title { margin-bottom: 4px; }
 .ry-product .ry-settings-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin: 16px 0; }
 .ry-product .ry-settings-options { display: flex; gap: 8px; }
 .ry-product .ry-settings-option { border: 1px solid var(--ry-border); background: transparent; color: var(--ry-text); border-radius: var(--ry-r-btn); min-width: 80px; padding: 8px 14px; cursor: pointer; transition: background-color var(--rt-duration-fast) var(--rt-ease), border-color var(--rt-duration-fast) var(--rt-ease); }
@@ -64,9 +88,9 @@
 .ry-product .rs-nav a { min-height: 44px; }
 .ry-product .ry-plan-list { list-style: none; margin: 0 0 20px; padding: 0; }
 .ry-product .ry-plan-list li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; padding: 16px 0; border-bottom: 1px solid var(--ry-border); }
-.ry-product .ry-plans-page { max-width: 1000px; }
-.ry-product .ry-plans-page>h1 { margin-bottom: 32px; }
 .ry-money-flow { width: 100%; max-width: 580px; margin: 8px auto 0; }
+/* A single action: its title stands at the top of its own column, title and card one object in the middle of the canvas; the section's tabs stay at the edge. */
+.so-head:has(+ .ry-money-flow) { width: 100%; max-width: 580px; margin-inline: auto; }
 .ry-money-flow .rw-grid { display: flex; flex-direction: column; gap: 24px; }
 .ry-money-flow .rw { min-height: 0; height: auto; width: 100%; }
 .ry-money-flow .rw-b { overflow: visible; min-height: 0; }

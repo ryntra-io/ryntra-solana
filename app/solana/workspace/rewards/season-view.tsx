@@ -74,7 +74,7 @@ export function SeasonView({ season: asked }: { season: number | null }) {
     return (
       <section className={styles.panel} aria-live="polite">
         <div className={styles.state}>
-          <p className={styles.lead}>{failed ? words.seasonUnavailable : words.loading}</p>
+          <p className={styles.lead}>{failed ? words.seasonUnavailable : words.loadingSeason}</p>
           {failed ? (
             <button type="button" className={styles.quietButton} onClick={() => void load()}>
               {words.retry}
@@ -86,10 +86,15 @@ export function SeasonView({ season: asked }: { season: number | null }) {
   }
   if (!data.season) {
     return (
-      <section className={styles.panel}>
+      <section className={styles.panel} id="season-waiting">
         <div className={styles.state}>
           <SeasonBadge badge="SEASON" earned={false} size={56} />
-          <p className={styles.lead}>{words.notStarted}</p>
+          <h2 className={styles.title}>{asked !== null ? words.seasonNotStarted(asked) : words.notStarted}</h2>
+          <p className={styles.lead}>{words.notStartedMore}</p>
+          <Link className={styles.link} href="/app/rewards/leaderboard">
+            {words.thisWeeksBoards}
+            <ArrowRight size={14} aria-hidden="true" />
+          </Link>
         </div>
       </section>
     );

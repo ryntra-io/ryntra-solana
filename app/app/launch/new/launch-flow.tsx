@@ -293,119 +293,125 @@ export function LaunchFlow({ locale, presets, paused = null }: { locale: Workspa
 
       <div className={styles.layout}>
         <form className={styles.form} onSubmit={(event) => event.preventDefault()} noValidate aria-busy={busy}>
-          <fieldset className={styles.section} disabled={busy || paused !== null} data-paused={paused ? "" : undefined}>
-            <legend className={styles.sectionTitle}>{word("sectionToken")}</legend>
-            <div className={styles.tokenRow}>
-              <label className={styles.picture} data-empty={picture ? undefined : ""} data-invalid={(attempted && !picture) || pictureBad ? "" : undefined} ref={errorRef(attempted && !picture)}>
-                <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" className={styles.visuallyHidden} onChange={choosePicture} />
-                {picture ? (
-                  // eslint-disable-next-line @next/next/no-img-element -- the creator's own file, shrunk in this page
-                  <img src={picture.url} alt="" className={styles.pictureImage} />
-                ) : (
-                  <span className={styles.pictureEmpty}>
-                    <ImageSquare size={28} aria-hidden />
-                    <span>{word("pictureAdd")}</span>
-                  </span>
-                )}
-                {picture ? <span className={styles.pictureChange}>{word("pictureChange")}</span> : null}
-              </label>
-              <div className={styles.tokenFields}>
-                <Field label={word("name")} problem={shown("name") ? problemText("name", shown("name")!) : null} refFor={errorRef(shown("name"))} count={`${new TextEncoder().encode(check.clean.name).length}/${presets.limits.nameMax}`}>
-                  {(id, described) => <input id={id} aria-describedby={described} className={styles.input} value={fields.name} onChange={set("name")} placeholder={word("namePlaceholder")} autoComplete="off" maxLength={64} />}
-                </Field>
-                <Field label={word("ticker")} problem={shown("symbol") ? problemText("symbol", shown("symbol")!) : null} refFor={errorRef(shown("symbol"))}>
-                  {(id, described) => (
-                    <div className={styles.affixed}>
-                      <span className={styles.affix} aria-hidden>
-                        $
+          <div className={styles.formColumns}>
+            <div className={styles.formColumn}>
+              <fieldset className={styles.section} disabled={busy || paused !== null} data-paused={paused ? "" : undefined}>
+                <legend className={styles.sectionTitle}>{word("sectionToken")}</legend>
+                <div className={styles.tokenRow}>
+                  <label className={styles.picture} data-empty={picture ? undefined : ""} data-invalid={(attempted && !picture) || pictureBad ? "" : undefined} ref={errorRef(attempted && !picture)}>
+                    <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" className={styles.visuallyHidden} onChange={choosePicture} />
+                    {picture ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- the creator's own file, shrunk in this page
+                      <img src={picture.url} alt="" className={styles.pictureImage} />
+                    ) : (
+                      <span className={styles.pictureEmpty}>
+                        <ImageSquare size={28} aria-hidden />
+                        <span>{word("pictureAdd")}</span>
                       </span>
-                      <input id={id} aria-describedby={described} className={`${styles.input} ${styles.mono}`} value={fields.symbol} onChange={(event) => setFields((current) => ({ ...current, symbol: event.target.value.toUpperCase().replace(/^\$/, "") }))} placeholder={word("tickerPlaceholder")} autoComplete="off" maxLength={presets.limits.symbolMax} />
-                    </div>
-                  )}
+                    )}
+                    {picture ? <span className={styles.pictureChange}>{word("pictureChange")}</span> : null}
+                  </label>
+                  <div className={styles.tokenFields}>
+                    <Field label={word("name")} problem={shown("name") ? problemText("name", shown("name")!) : null} refFor={errorRef(shown("name"))} count={`${new TextEncoder().encode(check.clean.name).length}/${presets.limits.nameMax}`}>
+                      {(id, described) => <input id={id} aria-describedby={described} className={styles.input} value={fields.name} onChange={set("name")} placeholder={word("namePlaceholder")} autoComplete="off" maxLength={64} />}
+                    </Field>
+                    <Field label={word("ticker")} problem={shown("symbol") ? problemText("symbol", shown("symbol")!) : null} refFor={errorRef(shown("symbol"))}>
+                      {(id, described) => (
+                        <div className={styles.affixed}>
+                          <span className={styles.affix} aria-hidden>
+                            $
+                          </span>
+                          <input id={id} aria-describedby={described} className={`${styles.input} ${styles.mono}`} value={fields.symbol} onChange={(event) => setFields((current) => ({ ...current, symbol: event.target.value.toUpperCase().replace(/^\$/, "") }))} placeholder={word("tickerPlaceholder")} autoComplete="off" maxLength={presets.limits.symbolMax} />
+                        </div>
+                      )}
+                    </Field>
+                  </div>
+                </div>
+                {(attempted && !picture) || pictureBad ? <p className={styles.problem}>{pictureBad ? word("pictureBad") : word("pictureMissing")}</p> : <p className={styles.hint}>{word("pictureHint")}</p>}
+                <Field label={word("description")} optional={word("optional")} problem={shown("description") ? problemText("description", shown("description")!) : null} refFor={errorRef(shown("description"))} count={`${[...fields.description].length}/${presets.limits.descriptionMax}`}>
+                  {(id, described) => <textarea id={id} aria-describedby={described} className={`${styles.input} ${styles.textarea}`} value={fields.description} onChange={set("description")} placeholder={word("descriptionPlaceholder")} rows={3} />}
                 </Field>
-              </div>
-            </div>
-            {(attempted && !picture) || pictureBad ? <p className={styles.problem}>{pictureBad ? word("pictureBad") : word("pictureMissing")}</p> : <p className={styles.hint}>{word("pictureHint")}</p>}
-            <Field label={word("description")} optional={word("optional")} problem={shown("description") ? problemText("description", shown("description")!) : null} refFor={errorRef(shown("description"))} count={`${[...fields.description].length}/${presets.limits.descriptionMax}`}>
-              {(id, described) => <textarea id={id} aria-describedby={described} className={`${styles.input} ${styles.textarea}`} value={fields.description} onChange={set("description")} placeholder={word("descriptionPlaceholder")} rows={3} />}
-            </Field>
-          </fieldset>
+              </fieldset>
 
-          <fieldset className={styles.section} disabled={busy || paused !== null} data-paused={paused ? "" : undefined}>
-            <legend className={styles.sectionTitle}>
-              {word("sectionLinks")} <span className={styles.optional}>{word("optional")}</span>
-            </legend>
-            <div className={styles.links}>
-              {(["website", "x", "telegram"] as const).map((key) => (
-                <Field key={key} label={word(key)} problem={shown(key) ? problemText(key, shown(key)!) : null} refFor={errorRef(shown(key))}>
-                  {(id, described) => <input id={id} aria-describedby={described} className={styles.input} value={fields[key]} onChange={set(key)} placeholder={key === "website" ? "example.com" : key === "x" ? "x.com/…" : "t.me/…"} inputMode="url" autoComplete="off" />}
-                </Field>
-              ))}
+              <fieldset className={styles.section} disabled={busy || paused !== null} data-paused={paused ? "" : undefined}>
+                <legend className={styles.sectionTitle}>
+                  {word("sectionLinks")} <span className={styles.optional}>{word("optional")}</span>
+                </legend>
+                <div className={styles.links}>
+                  {(["website", "x", "telegram"] as const).map((key) => (
+                    <Field key={key} label={word(key)} problem={shown(key) ? problemText(key, shown(key)!) : null} refFor={errorRef(shown(key))}>
+                      {(id, described) => <input id={id} aria-describedby={described} className={styles.input} value={fields[key]} onChange={set(key)} placeholder={key === "website" ? "example.com" : key === "x" ? "x.com/…" : "t.me/…"} inputMode="url" autoComplete="off" />}
+                    </Field>
+                  ))}
+                </div>
+              </fieldset>
             </div>
-          </fieldset>
 
-          <fieldset className={styles.section} disabled={busy || paused !== null} data-paused={paused ? "" : undefined}>
-            <legend className={styles.sectionTitle}>{word("sectionPreset")}</legend>
-            <div className={styles.presets} role="radiogroup" aria-label={word("sectionPreset")}>
-              {presets.presets.map((entry) => (
-                <PresetCard key={entry.id} preset={entry} locale={locale} selected={entry.id === preset.id} onSelect={() => setPresetId(entry.id)} />
-              ))}
-            </div>
-            <PresetDetails preset={preset} locale={locale} />
-            {preset.id === "community" ? (
-              <FeeShares
-                locale={locale}
-                rows={shares}
-                problems={attempted || shares.some((row) => row.address && row.pct) ? shareCheck.problems : new Map()}
-                creatorBps={shareCheck.creatorBps}
-                refFor={errorRef(sharing && !sharesValid)}
-                onChange={setShares}
-                onAdd={() => {
-                  setShares((current) => (current.length >= FEE_SHARE_MAX_RECIPIENTS - 1 ? current : [...current, { key: nextShareKey, address: "", pct: "" }]));
-                  setNextShareKey((key) => key + 1);
-                }}
-              />
-            ) : null}
-          </fieldset>
-
-          <fieldset className={styles.section} disabled={busy || paused !== null} data-paused={paused ? "" : undefined}>
-            <legend className={styles.sectionTitle}>
-              {word("sectionBuy")} <span className={styles.optional}>{word("optional")}</span>
-            </legend>
-            <p className={styles.hint}>{word("buyHint")}</p>
-            <BuyField locale={locale} preset={preset} text={buyText} onText={setBuyText} quote={quoteData} loading={quote.loading} aboveCap={aboveCap} invalid={buyRaw === null} refFor={errorRef(aboveCap || buyRaw === null)} />
-            {buying ? (
-              <div className={styles.lockBox} data-on={lockId ? "" : undefined}>
-                <label className={styles.lockToggle}>
-                  <input type="checkbox" checked={lockId !== null} onChange={(event) => setLockId(event.target.checked ? presets.locks[0]?.id ?? null : null)} />
-                  <span className={styles.lockIcon} aria-hidden>
-                    {lockId ? <Lock size={18} weight="fill" /> : <LockOpen size={18} />}
-                  </span>
-                  <span className={styles.lockText}>
-                    <span className={styles.lockTitle}>{word("lockTitle")}</span>
-                    <span className={styles.hint}>{word("lockHint")}</span>
-                  </span>
-                </label>
-                {lockId ? (
-                  <>
-                    <div className={styles.segments} role="radiogroup" aria-label={word("lockTitle")}>
-                      {presets.locks.map((entry) => (
-                        <button key={entry.id} type="button" role="radio" aria-checked={entry.id === lockId} className={styles.segment} onClick={() => setLockId(entry.id)}>
-                          {word("lockSchedule", { cliff: periodWord(entry.cliffDays, locale), vest: periodWord(entry.vestDays, locale) })}
-                        </button>
-                      ))}
-                    </div>
-                    {lock ? <p className={styles.hint}>{word("lockUntil", { date: formatDate(Date.now() + lock.cliffDays * 86_400_000, locale), end: formatDate(Date.now() + (lock.cliffDays + lock.vestDays) * 86_400_000, locale) })}</p> : null}
-                  </>
+            <div className={styles.formColumn}>
+              <fieldset className={styles.section} disabled={busy || paused !== null} data-paused={paused ? "" : undefined}>
+                <legend className={styles.sectionTitle}>{word("sectionPreset")}</legend>
+                <div className={styles.presets} role="radiogroup" aria-label={word("sectionPreset")}>
+                  {presets.presets.map((entry) => (
+                    <PresetCard key={entry.id} preset={entry} locale={locale} selected={entry.id === preset.id} onSelect={() => setPresetId(entry.id)} />
+                  ))}
+                </div>
+                <PresetDetails preset={preset} locale={locale} />
+                {preset.id === "community" ? (
+                  <FeeShares
+                    locale={locale}
+                    rows={shares}
+                    problems={attempted || shares.some((row) => row.address && row.pct) ? shareCheck.problems : new Map()}
+                    creatorBps={shareCheck.creatorBps}
+                    refFor={errorRef(sharing && !sharesValid)}
+                    onChange={setShares}
+                    onAdd={() => {
+                      setShares((current) => (current.length >= FEE_SHARE_MAX_RECIPIENTS - 1 ? current : [...current, { key: nextShareKey, address: "", pct: "" }]));
+                      setNextShareKey((key) => key + 1);
+                    }}
+                  />
                 ) : null}
-              </div>
-            ) : null}
-          </fieldset>
+              </fieldset>
+
+              <fieldset className={styles.section} disabled={busy || paused !== null} data-paused={paused ? "" : undefined}>
+                <legend className={styles.sectionTitle}>
+                  {word("sectionBuy")} <span className={styles.optional}>{word("optional")}</span>
+                </legend>
+                <p className={styles.hint}>{word("buyHint")}</p>
+                <BuyField locale={locale} preset={preset} text={buyText} onText={setBuyText} quote={quoteData} loading={quote.loading} aboveCap={aboveCap} invalid={buyRaw === null} refFor={errorRef(aboveCap || buyRaw === null)} />
+                {buying ? (
+                  <div className={styles.lockBox} data-on={lockId ? "" : undefined}>
+                    <label className={styles.lockToggle}>
+                      <input type="checkbox" checked={lockId !== null} onChange={(event) => setLockId(event.target.checked ? presets.locks[0]?.id ?? null : null)} />
+                      <span className={styles.lockIcon} aria-hidden>
+                        {lockId ? <Lock size={18} weight="fill" /> : <LockOpen size={18} />}
+                      </span>
+                      <span className={styles.lockText}>
+                        <span className={styles.lockTitle}>{word("lockTitle")}</span>
+                        <span className={styles.hint}>{word("lockHint")}</span>
+                      </span>
+                    </label>
+                    {lockId ? (
+                      <>
+                        <div className={styles.segments} role="radiogroup" aria-label={word("lockTitle")}>
+                          {presets.locks.map((entry) => (
+                            <button key={entry.id} type="button" role="radio" aria-checked={entry.id === lockId} className={styles.segment} onClick={() => setLockId(entry.id)}>
+                              {word("lockSchedule", { cliff: periodWord(entry.cliffDays, locale), vest: periodWord(entry.vestDays, locale) })}
+                            </button>
+                          ))}
+                        </div>
+                        {lock ? <p className={styles.hint}>{word("lockUntil", { date: formatDate(Date.now() + lock.cliffDays * 86_400_000, locale), end: formatDate(Date.now() + (lock.cliffDays + lock.vestDays) * 86_400_000, locale) })}</p> : null}
+                      </>
+                    ) : null}
+                  </div>
+                ) : null}
+              </fieldset>
+            </div>
+          </div>
         </form>
 
         <aside className={styles.aside}>
           <div className={styles.asideSticky}>
-            {picture || check.clean.name ? <PreviewCard locale={locale} picture={picture?.url ?? null} name={check.clean.name} symbol={check.clean.symbol} preset={preset} /> : null}
+            <PreviewCard locale={locale} picture={picture?.url ?? null} name={check.clean.name} symbol={check.clean.symbol} preset={preset} />
             <section className={styles.review} aria-label={word("review")}>
               <h2 className={styles.reviewTitle}>{word("review")}</h2>
               <dl className={styles.rows}>

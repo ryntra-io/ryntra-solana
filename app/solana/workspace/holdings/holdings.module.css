@@ -41,7 +41,6 @@
       "value rules"
       "holdings rules";
     gap: var(--ry-s5) var(--ry-s6);
-    max-width: 1760px;
   }
 
   .autoinvest {

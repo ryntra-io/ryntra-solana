@@ -43,7 +43,7 @@ export type TraderWeek = Readonly<{
   lastClosedAt: string | null;
 }>;
 
-type Position = { knownQty: bigint; knownCost: bigint; unknownQty: bigint };
+type Position = { knownQty: bigint; knownCost: bigint; unknownQty: bigint; openedAt: string | null };
 
 /** A settled swap's dollar value: the par leg, else the provider's figure for the exact fill. */
 export function swapValueMicros(action: Pick<SolanaWalletAction, "out" | "in" | "statedUsd">): bigint | null {
@@ -78,31 +78,49 @@ function isCash(movement: SolanaWalletAction["out"]): boolean {
   return movementUsdMicros(movement) !== null;
 }
 
+/** A sale that closed part of a position whose cost was known, measured. */
+export type ClosedPart = Readonly<{
+  mint: string;
+  symbol: string | null;
+  decimals: number | null;
+  /** The closed part with a known cost, raw base units. */
+  quantity: bigint;
+  /** What that part cost through Ryntra, USD micros. */
+  cost: bigint;
+  /** What that part brought, USD micros. */
+  proceeds: bigint;
+  /** When the position was opened: its first buy since it was last empty. */
+  openedAt: string | null;
+}>;
+
+/** A buy whose dollar value was measured. */
+export type MeasuredBuy = Readonly<{ mint: string; symbol: string | null; decimals: number | null; quantity: bigint; value: bigint }>;
+
+export type PositionStep = Readonly<{ action: SolanaWalletAction; sale: ClosedPart | null; buy: MeasuredBuy | null }>;
+
 /**
- * The wallet's result for the week `range`, from all its actions (any order;
- * the ones that do not count are ignored).
+ * The wallet's counted swaps, oldest first, each with what it closed and
+ * what it opened at average cost — the one walk the traders' board and the
+ * trade cards both read, so a result is the same figure wherever it shows.
  */
-export function traderWeek(actions: readonly SolanaWalletAction[], wallet: string, range: WeekRange): TraderWeek {
+export function positionSteps(actions: readonly SolanaWalletAction[], wallet: string): readonly PositionStep[] {
   const positions = new Map<string, Position>();
   const position = (mint: string): Position => {
     let found = positions.get(mint);
     if (!found) {
-      found = { knownQty: 0n, knownCost: 0n, unknownQty: 0n };
+      found = { knownQty: 0n, knownCost: 0n, unknownQty: 0n, openedAt: null };
       positions.set(mint, found);
     }
     return found;
   };
-  let cost = 0n;
-  let proceeds = 0n;
-  let closed = 0;
-  let lastClosedAt: string | null = null;
-  const end = Date.parse(range.end);
+  const steps: PositionStep[] = [];
 
   for (const action of countedSwaps(actions, wallet)) {
-    if (Date.parse(action.startedAt) >= end) break;
     const out = action.out!;
     const arrived = action.in!;
     const value = swapValueMicros(action);
+    let sale: ClosedPart | null = null;
+    let buy: MeasuredBuy | null = null;
 
     /* The sale side: what left, unless it was cash. */
     if (!isCash(out)) {
@@ -111,24 +129,21 @@ export function traderWeek(actions: readonly SolanaWalletAction[], wallet: strin
       const total = held.knownQty + held.unknownQty;
       const closing = sold < total ? sold : total;
       const knownPart = total > 0n ? (closing * held.knownQty) / total : 0n;
-      if (value !== null && knownPart > 0n && held.knownQty > 0n && within(action.startedAt, range)) {
+      if (value !== null && knownPart > 0n && held.knownQty > 0n) {
         const partCost = (held.knownCost * knownPart) / held.knownQty;
         const partProceeds = (value * knownPart) / sold;
         if (partCost > 0n) {
-          cost += partCost;
-          proceeds += partProceeds;
-          closed += 1;
-          lastClosedAt = action.startedAt;
+          sale = { mint: out.mint!, symbol: out.symbol, decimals: out.decimals, quantity: knownPart, cost: partCost, proceeds: partProceeds, openedAt: held.openedAt };
         }
       }
       /* The position shrinks by what was sold of it, known and unknown alike. */
       if (total > 0n) {
-        const knownOut = knownPart;
         const unknownOut = closing - knownPart;
-        const costOut = held.knownQty > 0n ? (held.knownCost * knownOut) / held.knownQty : 0n;
-        held.knownQty -= knownOut;
+        const costOut = held.knownQty > 0n ? (held.knownCost * knownPart) / held.knownQty : 0n;
+        held.knownQty -= knownPart;
         held.knownCost -= costOut;
         held.unknownQty -= unknownOut < held.unknownQty ? unknownOut : held.unknownQty;
+        if (held.knownQty + held.unknownQty === 0n) held.openedAt = null;
       }
     }
 
@@ -136,12 +151,38 @@ export function traderWeek(actions: readonly SolanaWalletAction[], wallet: strin
     if (!isCash(arrived)) {
       const held = position(arrived.mint!);
       const bought = BigInt(arrived.amountRaw);
+      if (held.knownQty + held.unknownQty === 0n) held.openedAt = action.startedAt;
       if (value !== null) {
         held.knownQty += bought;
         held.knownCost += value;
+        buy = { mint: arrived.mint!, symbol: arrived.symbol, decimals: arrived.decimals, quantity: bought, value };
       } else {
         held.unknownQty += bought;
       }
+    }
+    steps.push({ action, sale, buy });
+  }
+  return steps;
+}
+
+/**
+ * The wallet's result for the week `range`, from all its actions (any order;
+ * the ones that do not count are ignored).
+ */
+export function traderWeek(actions: readonly SolanaWalletAction[], wallet: string, range: WeekRange): TraderWeek {
+  let cost = 0n;
+  let proceeds = 0n;
+  let closed = 0;
+  let lastClosedAt: string | null = null;
+  const end = Date.parse(range.end);
+
+  for (const { action, sale } of positionSteps(actions, wallet)) {
+    if (Date.parse(action.startedAt) >= end) break;
+    if (sale && within(action.startedAt, range)) {
+      cost += sale.cost;
+      proceeds += sale.proceeds;
+      closed += 1;
+      lastClosedAt = action.startedAt;
     }
   }
 

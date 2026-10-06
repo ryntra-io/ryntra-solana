@@ -2,11 +2,16 @@
  * «Поповнити» — the top-up. Drawn for 390 px first: a title and one line,
  * what the wallet holds against what a purchase needs, and three ways as
  * three rows. One column even on a wide screen — it is a list of steps, not
- * a dashboard. Tokens only (DESIGN.md → app/design/tokens.css).
+ * a dashboard — standing in the middle of the canvas like every money flow
+ * beside it (Надіслати, Отримати, Між мережами), its title at the top of
+ * the column and the section's tabs at the canvas's edge (DESIGN.md → «Page
+ * width»). Tokens only (DESIGN.md → app/design/tokens.css).
  */
 
-.page {
-  max-width: 640px;
+.page > * {
+  width: 100%;
+  max-width: 580px;
+  margin-inline: auto;
 }
 
 .head {

@@ -89,7 +89,7 @@ export function LaunchChart({
       handleScroll: { mouseWheel: false, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: false },
       handleScale: { mouseWheel: false, pinch: true, axisPressedMouseMove: false },
       /* A market cap moves by multiples: on a log scale  000 →  000 reads as the climb it is, and nothing is drawn below zero. */
-      rightPriceScale: { ...base.rightPriceScale, mode: PriceScaleMode.Logarithmic, scaleMargins: { top: 0.08, bottom: 0.08 } },
+      rightPriceScale: { ...base.rightPriceScale, mode: PriceScaleMode.Logarithmic, scaleMargins: { top: 0.08, bottom: 0.08 }, entireTextOnly: true },
       /* The first time label sits inside the chart, not half off its left edge. */
       timeScale: { ...base.timeScale, fixLeftEdge: true, fixRightEdge: true, rightOffset: 0 },
       localization: { priceFormatter: money },

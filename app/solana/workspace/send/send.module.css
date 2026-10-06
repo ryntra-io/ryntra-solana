@@ -18,7 +18,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   width: 100%;
-  max-width: 720px;
+  max-width: 720px; /* width-law: a single action's card, centred on the canvas */
   margin-inline: auto;
   gap: 10px;
 }

@@ -49,6 +49,7 @@ type Copy = Readonly<{
   unavailable: string;
   retry: string;
   loading: string;
+  loadingSeason: string;
   rulesTitle: string;
   rules: (min: number, creators: boolean) => readonly string[];
 
@@ -61,6 +62,9 @@ type Copy = Readonly<{
   ahead: string;
   running: string;
   notStarted: string;
+  seasonNotStarted: (number: number) => string;
+  notStartedMore: string;
+  thisWeeksBoards: string;
   task: Readonly<Record<TaskWordId, string>>;
   taskHow: Readonly<Record<TaskWordId, string>>;
   progress: (have: number, need: number) => string;
@@ -161,6 +165,7 @@ const EN: Copy = {
   unavailable: "The boards are unavailable right now.",
   retry: "Try again",
   loading: "Loading the boards…",
+  loadingSeason: "Loading the season…",
   rulesTitle: "How the boards work",
   rules: (min, creators) => [
     "A week runs Monday to Sunday, UTC. Every Monday the boards start again.",
@@ -179,7 +184,10 @@ const EN: Copy = {
   ended: "Ended",
   ahead: "Ahead",
   running: "Running",
-  notStarted: "Seasons have not started yet.",
+  notStarted: "Seasons have not started yet",
+  seasonNotStarted: (number) => `Season ${number} has not started yet`,
+  notStartedMore: "A season runs 8 weeks: three tasks and season badges.",
+  thisWeeksBoards: "This week's leaderboards",
   task: { FIRST_TRADE: "First trade of the season", THREE_WEEKS: "Trade in 3 different weeks", FRIEND_TRADES: "An invited friend trades" },
   taskHow: {
     FIRST_TRADE: "Any trade on Ryntra on which Ryntra receives a fee.",
@@ -271,6 +279,7 @@ const UK: Copy = {
   unavailable: "Таблиці зараз недоступні.",
   retry: "Спробувати ще",
   loading: "Завантажуємо таблиці…",
+  loadingSeason: "Завантажуємо сезон…",
   rulesTitle: "Як працюють таблиці",
   rules: (min, creators) => [
     "Тиждень — з понеділка по неділю за UTC. Щопонеділка таблиці починаються знову.",
@@ -289,7 +298,10 @@ const UK: Copy = {
   ended: "Завершено",
   ahead: "Попереду",
   running: "Триває",
-  notStarted: "Сезони ще не почалися.",
+  notStarted: "Сезони ще не почалися",
+  seasonNotStarted: (number) => `Сезон ${number} ще не почався`,
+  notStartedMore: "Сезон триває 8 тижнів: три завдання й значки сезону.",
+  thisWeeksBoards: "Таблиці тижня",
   task: { FIRST_TRADE: "Перша угода сезону", THREE_WEEKS: "Угоди у 3 різні тижні", FRIEND_TRADES: "Запрошений друг торгує" },
   taskHow: {
     FIRST_TRADE: "Будь-яка угода на Ryntra, з якої Ryntra отримує комісію.",

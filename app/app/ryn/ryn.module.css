@@ -76,11 +76,13 @@
   min-width: 0;
 }
 
+/* Nothing to ask without a wallet: the line and the action in the middle of the card, not in its corner. */
 .gate {
   display: grid;
   gap: var(--ry-s3);
-  justify-items: start;
+  justify-items: center;
   padding: var(--ry-s5);
+  text-align: center;
   border: 1px solid var(--ry-border);
   border-radius: var(--ry-r-card);
   background: var(--ry-card);

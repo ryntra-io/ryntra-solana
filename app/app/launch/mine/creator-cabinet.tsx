@@ -153,9 +153,10 @@ export function CreatorCabinet({ locale, network, paused = false }: { locale: Wo
           </Link>
         </section>
       ) : (
-        <>
+        /* The launches, and beside them on a wide desk the totals and the receipts; on a phone the totals come first. */
+        <div className={styles.mineBoard}>
           <Summary data={data} locale={locale} />
-          <ul className={styles.mineList}>
+          <ul className={styles.mineList} data-area="list">
             {data.launches.map((row) => (
               <li key={row.token}>
                 <LaunchRow row={row} market={markets[row.token]} wallet={wallet} network={data.network} locale={locale} paused={paused} onClaimed={() => void load()} />
@@ -163,7 +164,7 @@ export function CreatorCabinet({ locale, network, paused = false }: { locale: Wo
             ))}
           </ul>
           <Receipts receipts={data.receipts} network={data.network} locale={locale} />
-        </>
+        </div>
       )}
     </div>
   );
@@ -176,7 +177,7 @@ function Summary({ data, locale }: { data: LaunchCreatorCabinetResponse; locale:
   const toClaim = new Map<string, bigint>();
   for (const row of data.launches) if (row.earnings) toClaim.set(row.pair.mint, (toClaim.get(row.pair.mint) ?? 0n) + BigInt(row.earnings.mine.unclaimedRaw));
   return (
-    <section className={styles.card} aria-labelledby="mine-summary">
+    <section className={styles.card} aria-labelledby="mine-summary" data-area="summary">
       <h2 id="mine-summary" className={styles.visuallyHidden}>
         {word("mineEarned")}
       </h2>
@@ -519,7 +520,7 @@ function ClaimResult({ result, row, network, locale, onClose }: { result: Launch
 function Receipts({ receipts, network, locale }: { receipts: readonly LaunchClaimReceipt[]; network: "solana:devnet" | "solana:mainnet"; locale: WorkspaceLocale }) {
   const word = launchWords(locale);
   return (
-    <section className={styles.card} aria-labelledby="mine-receipts">
+    <section className={styles.card} aria-labelledby="mine-receipts" data-area="receipts">
       <h2 id="mine-receipts" className={styles.cardTitle}>
         <Receipt size={18} aria-hidden /> {word("receiptsTitle")}
       </h2>

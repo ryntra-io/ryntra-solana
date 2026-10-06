@@ -32,38 +32,42 @@ export default async function BotsCatalogPage() {
       </header>
       <ul className={styles.catalog}>
         <li className={styles.bot} data-bot="recurring">
-          <span className={styles.botIcon} aria-hidden="true">
-            <Repeat size={20} weight="bold" />
-          </span>
-          <div className={styles.botBody}>
-            <h2 className={styles.botName}>{word("recurring")}</h2>
-            <p className={styles.botLine}>{word("recurringWhat")}</p>
-            <p className={styles.botNote}>{word("recurringHow")}</p>
-            <p className={styles.botScope}>{word("recurringFor")}</p>
-          </div>
-          <div className={styles.botActions}>
-            <Link className="rw-btn rw-btn--primary" href="/app/markets?tab=stocks" prefetch={false}>
-              <span>{word("pickCompany")}</span>
-              <ArrowRight size={16} weight="bold" aria-hidden="true" />
-            </Link>
-            <Link className="rw-btn" href="/app/bots" prefetch={false}>
-              {word("myRules")}
-            </Link>
+          <div className={styles.botInner}>
+            <span className={styles.botIcon} aria-hidden="true">
+              <Repeat size={20} weight="bold" />
+            </span>
+            <div className={styles.botBody}>
+              <h2 className={styles.botName}>{word("recurring")}</h2>
+              <p className={styles.botLine}>{word("recurringWhat")}</p>
+              <p className={styles.botNote}>{word("recurringHow")}</p>
+              <p className={styles.botScope}>{word("recurringFor")}</p>
+            </div>
+            <div className={styles.botActions}>
+              <Link className="rw-btn rw-btn--primary" href="/app/markets?tab=stocks" prefetch={false}>
+                <span>{word("pickCompany")}</span>
+                <ArrowRight size={16} weight="bold" aria-hidden="true" />
+              </Link>
+              <Link className="rw-btn" href="/app/bots" prefetch={false}>
+                {word("myRules")}
+              </Link>
+            </div>
           </div>
         </li>
         <li className={styles.bot} data-bot="plan">
-          <span className={styles.botIcon} aria-hidden="true">
-            <NotePencil size={20} weight="bold" />
-          </span>
-          <div className={styles.botBody}>
-            <h2 className={styles.botName}>{word("planName")}</h2>
-            <p className={styles.botLine}>{word("planWhat")}</p>
-          </div>
-          <div className={styles.botActions}>
-            <Link className="rw-btn" href="/app/strategies/new" prefetch={false}>
-              <span>{word("createPlan")}</span>
-              <ArrowRight size={16} weight="bold" aria-hidden="true" />
-            </Link>
+          <div className={styles.botInner}>
+            <span className={styles.botIcon} aria-hidden="true">
+              <NotePencil size={20} weight="bold" />
+            </span>
+            <div className={styles.botBody}>
+              <h2 className={styles.botName}>{word("planName")}</h2>
+              <p className={styles.botLine}>{word("planWhat")}</p>
+            </div>
+            <div className={styles.botActions}>
+              <Link className="rw-btn" href="/app/strategies/new" prefetch={false}>
+                <span>{word("createPlan")}</span>
+                <ArrowRight size={16} weight="bold" aria-hidden="true" />
+              </Link>
+            </div>
           </div>
         </li>
       </ul>

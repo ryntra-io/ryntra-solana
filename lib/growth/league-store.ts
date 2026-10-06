@@ -6,7 +6,7 @@ import { mayStartRewardRules } from "../rewards/rank-store.ts";
 import type { RewardRank } from "../rewards/rules.ts";
 import { SolanaWalletActionSchema, type SolanaWalletAction } from "../solana/action-ledger.ts";
 import { entriesByRecipient, uniqueRankEvents, weekMetrics, type WeekMetrics } from "./leaderboard.ts";
-import { seasonProgress, tasksDone } from "./seasons.ts";
+import { peopleArrivedAt, seasonProgress, SEASON_START_WALLETS, tasksDone } from "./seasons.ts";
 import { DAY_MS, isWeekStart, seasonRange, weekRange, weekStartOf, type SeasonRange, type WeekRange } from "./weeks.ts";
 
 /**
@@ -50,25 +50,60 @@ const NETWORK_PREFIX = "solana:mainnet:";
 
 /* ---------------------------------------------------------------- seasons */
 
-type SeasonsRecord = Readonly<{ firstStart: string; setAt: string; setBy: string }>;
+type SeasonsRecord = Readonly<{ firstStart: string; setAt: string; setBy: string; peopleAt?: string; need?: number }>;
 
 /**
- * When the first season began on this store: the Monday of the week of the
- * first ask from a build that may start it (production, a store of its own,
- * or `RYNTRA_REWARDS_RULES_START=1` — the same rule as rules 2.0.0). Written
- * once; null while it has not happened, which a preview only ever reads.
+ * Where the first season's start is written. Seasons begin once people have
+ * come; the key `first` beside it held a start taken from the first read of
+ * the boards, before anyone had come, and nothing reads it any more.
+ */
+const FIRST_SEASON_KEY = "firstWithPeople";
+
+/**
+ * When the first season began on this store: the Monday of the week in which
+ * a build that may start it (production, a store of its own, or
+ * `RYNTRA_REWARDS_RULES_START=1` — the same rule as rules 2.0.0) first sees
+ * that {@link SEASON_START_WALLETS} outside wallets have traded through Ryntra
+ * ({@link peopleArrivedAt}). With people reading Rewards that is the week the
+ * tenth one came; it is never earlier, so no season opens in the past — not
+ * even when the tenth came long before anyone asked.
+ *
+ * Written once: a wallet put on the internal list later never moves a season
+ * that has begun. Null until then, and always null for a preview that finds
+ * nothing written. Without the internal list — unreadable, or empty — nothing
+ * begins: a store that cannot tell the owner's trades from people's must not
+ * open a season.
  */
 export async function seasonsBegan(store: GuardStore, now: string, env: NodeJS.ProcessEnv = process.env): Promise<string | null> {
   const collection = store.collection<SeasonsRecord>(SEASONS);
-  const existing = await collection.get("first");
+  const existing = await collection.get(FIRST_SEASON_KEY);
   if (existing) return existing.firstStart;
   if (!mayStartRewardRules(env)) return null;
-  await collection.insertIfAbsent("first", {
-    firstStart: weekStartOf(now),
-    setAt: new Date(Date.parse(now)).toISOString(),
-    setBy: (env.VERCEL_DEPLOYMENT_ID ?? env.VERCEL_URL ?? "local").slice(0, 120),
+  const internal = await resolveInternalWallets(store, env);
+  if (internal.store !== "measured" || internal.wallets.size === 0) return null;
+  const inputs = await readLeagueInputs(store);
+  const peopleAt = peopleArrivedAt({ entries: inputs.entries, internal: internal.wallets, at: now });
+  if (!peopleAt) return null;
+  return beginSeasons(store, { firstStart: now, peopleAt, now, setBy: env.VERCEL_DEPLOYMENT_ID ?? env.VERCEL_URL ?? "local" });
+}
+
+/**
+ * Write the first season's start once — the Monday of `firstStart`'s week —
+ * and read back what holds: the one write {@link seasonsBegan} makes, and the
+ * way a stand sets a season of its own without seeding a crowd.
+ */
+export async function beginSeasons(
+  store: GuardStore,
+  args: Readonly<{ firstStart: string; now: string; setBy: string; peopleAt?: string }>,
+): Promise<string | null> {
+  const collection = store.collection<SeasonsRecord>(SEASONS);
+  await collection.insertIfAbsent(FIRST_SEASON_KEY, {
+    firstStart: weekStartOf(args.firstStart),
+    setAt: new Date(Date.parse(args.now)).toISOString(),
+    setBy: args.setBy.slice(0, 120),
+    ...(args.peopleAt ? { peopleAt: args.peopleAt, need: SEASON_START_WALLETS } : {}),
   });
-  return (await collection.get("first"))?.firstStart ?? null;
+  return (await collection.get(FIRST_SEASON_KEY))?.firstStart ?? null;
 }
 
 /* ---------------------------------------------------------------- privacy */
