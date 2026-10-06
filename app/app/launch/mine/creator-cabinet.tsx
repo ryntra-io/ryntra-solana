@@ -21,7 +21,6 @@ import { signTransactions } from "@/lib/solana/wallet.client";
 import { explorerUrl, formatBps, formatCountShort, formatDate, formatMoneyShort, formatRaw, fromRaw, shortAddress } from "../launch-format";
 import { launchWords } from "../launch-words";
 import styles from "../launch.module.css";
-import { LaunchTabs } from "../launch-tabs";
 import { PausedChip, PausedNote } from "../paused-note";
 
 /**
@@ -109,7 +108,6 @@ export function CreatorCabinet({ locale, network, paused = false }: { locale: Wo
   return (
     <div className={styles.page}>
       {/* «Запустити токен» is the tab beside this one: no second way to the same page in the head. */}
-      <LaunchTabs locale={locale} />
       <header className={styles.mineHeadGrid}>
         <div className={styles.headRow}>
           <h1 className={styles.title}>{word("mineTitle")}</h1>

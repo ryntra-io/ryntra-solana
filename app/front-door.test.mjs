@@ -92,12 +92,12 @@ test("the language map lives in the config, never as a redirect() in a page", ()
    built by its technical subtask (2026-09-27). */
 const HOME_WORDS = {
   en: {
-    title: "Ryntra app — buy a piece of a company from $1",
-    description: "Connect a Solana wallet, top up from $1 and buy a piece of a company. Popular companies, Autoinvest and your notifications — on one screen.",
+    title: "Ryntra app — stocks, crypto, memes and your own token",
+    description: "Connect a Solana wallet, top up, and buy tokenized stocks, crypto and memes — or launch your own token. Markets, bots and your notifications in one app.",
   },
   uk: {
-    title: "Застосунок Ryntra — частинка компанії від $1",
-    description: "Під'єднай гаманець Solana, поповни від $1 і купи частинку компанії. Популярні компанії, «Автоінвест» і сповіщення — на одному екрані.",
+    title: "Застосунок Ryntra — акції, крипта, меми й свій токен",
+    description: "Під'єднай гаманець Solana, поповни й купуй токенізовані акції, крипту й меми — або запусти свій токен. Ринки, боти й сповіщення в одному застосунку.",
   },
 };
 
@@ -110,7 +110,8 @@ test("Home has words of its own as the app's page, at both of its addresses, wit
     assert.ok(HOME_WORDS[locale].title.length <= 60, `${locale} title within 60`);
     assert.equal(description, HOME_WORDS[locale].description);
     assert.ok(description.length > 40 && description.length <= 160, `${locale} description length`);
-    assert.match(description, /\$1/);
+    /* Since the menu v6.2 Home says what is live, not «a piece of a company from $1». */
+    assert.doesNotMatch(description, /piece of a company|частинк|from \$1|від \$1/);
     assert.match(description, /[.!?]$/u);
     assert.equal(metadata.robots?.index, true, "Home is offered to the index");
     assert.equal(metadata.alternates?.canonical, pair[locale], "the canonical is the address of the language the page is drawn in");

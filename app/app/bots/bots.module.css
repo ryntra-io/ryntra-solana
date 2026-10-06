@@ -1,0 +1,170 @@
+/*
+ * «Боти»: «Мої боти» — the recurring-buy rules, then the trade plans — and
+ * «Каталог», one card per bot that can be set up today. The page takes the
+ * canvas's width; the title and the one primary action share its head.
+ */
+
+.page {
+  display: grid;
+  gap: var(--ry-s6);
+  width: 100%;
+  max-width: 1200px;
+  min-width: 0;
+}
+
+.head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--ry-s3) var(--ry-s4);
+}
+
+.title {
+  display: grid;
+  gap: var(--ry-s2);
+  min-width: 0;
+}
+
+.title h1 {
+  margin: 0;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-page);
+  line-height: var(--ry-lh-tight);
+  letter-spacing: var(--ry-ls-head);
+  color: var(--ry-text);
+}
+
+.lead {
+  margin: 0;
+  max-width: 64ch;
+  font-size: var(--ry-fs-copy);
+  line-height: 1.5;
+  color: var(--ry-muted);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s2);
+}
+
+.block {
+  display: grid;
+  gap: var(--ry-s3);
+  min-width: 0;
+}
+
+.blockHead {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--ry-s1) var(--ry-s3);
+}
+
+.blockTitle {
+  margin: 0;
+  font-family: var(--ry-font-sans);
+  font-size: calc((var(--ry-fs-copy) + var(--ry-fs-key)) / 2);
+  font-weight: 600;
+  line-height: var(--ry-lh-head);
+  color: var(--ry-text);
+}
+
+.blockNote {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+}
+
+.guest {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--ry-s3);
+  padding: var(--ry-s4);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+}
+
+.guestLine {
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  color: var(--ry-text);
+}
+
+.catalog {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+  gap: var(--ry-s4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bot {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: var(--ry-s3);
+  padding: var(--ry-s5);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+}
+
+.botIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--ry-r-btn);
+  background: color-mix(in srgb, var(--ry-accent) 12%, transparent);
+  color: var(--ry-accent);
+}
+
+.botBody {
+  display: grid;
+  align-content: start;
+  gap: var(--ry-s2);
+}
+
+.botName {
+  margin: 0;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-key);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.botLine {
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  line-height: 1.5;
+  color: var(--ry-text);
+}
+
+.botNote {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  line-height: 1.5;
+  color: var(--ry-muted);
+}
+
+.botScope {
+  justify-self: start;
+  margin: 0;
+  padding: 2px var(--ry-s2);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-pill);
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+}
+
+.botActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s2);
+}

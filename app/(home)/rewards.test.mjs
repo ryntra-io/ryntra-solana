@@ -6,7 +6,8 @@ import { HOMEPAGE_COPY } from "../../lib/site/homepage-copy.ts";
 import { homepageModel } from "../../lib/site/homepage-model.ts";
 import { POINTS_POLICY_V1, levelFor } from "../../lib/points/policy.ts";
 import { REWARD_RANKS, REWARD_RULES_CURRENT } from "../../lib/rewards/rules.ts";
-import { MENU_DESTINATIONS } from "../shell/domains.ts";
+import { MENU_SECTIONS } from "../shell/domains.ts";
+import { customerHref } from "../../lib/product/customer-routing.ts";
 import { PRODUCT_ROUTES } from "../shell/product-routes.ts";
 import { POINTS, POINTS_EXAMPLE, REWARDS } from "./rewards-facts.ts";
 
@@ -61,7 +62,9 @@ test("the block carries its words in both languages and claims nothing the progr
   assert.match(en.segments.points.note, /No cash value · not a token/);
   /* Every footer destination is a page of the site. */
   assert.ok(PRODUCT_ROUTES.some((route) => route.href === "/app/rewards"), "/app/rewards is a registered page");
-  for (const id of ["home", "markets", "autoinvest"]) assert.equal(MENU_DESTINATIONS[id].href, `/app/${id}`, `/app/${id} is a destination of the menu`);
+  for (const id of ["home", "markets"]) assert.equal(MENU_SECTIONS[id].href, `/app/${id}`, `/app/${id} is a section of the menu`);
+  /* «Автоінвест» lives in «Боти» since the menu v6.2: the footer's old address leads there. */
+  assert.equal(customerHref("/app/autoinvest"), "/app/bots");
   for (const file of ["app/docs/page.tsx", "app/legal/terms/page.tsx", "app/legal/privacy/page.tsx"]) assert.ok(existsSync(new URL("../../" + file, import.meta.url)), file);
 });
 

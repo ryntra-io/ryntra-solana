@@ -1,16 +1,19 @@
 /**
  * The product's search (since 2026-09-24): one field in the top bar
- * that finds a company, a coin or an action — «Поповнити», «Історія»,
- * «Налаштування» — from any page.
+ * that finds a token by its name, its ticker or its contract address, a
+ * company, or an action — «Запустити токен», «Поповнити», «Історія»,
+ * «Налаштування» — from any page (the menu v6.2).
  *
  * Pure: the index in, the matches out. The index is the one Markets draws —
  * one company, one card; the venue's verified crypto; its verified memes; the
  * two dollars — so a search never names a company differently from the shelf.
- * The actions are the menu's own rows (`menuNavigation`), so a row the menu
- * draws is an action the search finds, in both languages, and nothing else.
+ * The actions are the menu's own sections and their tabs (`menuNavigation`,
+ * `MENU_SECTIONS`), so a place the menu draws is an action the search finds,
+ * in both languages, and nothing else. A pasted contract address is a token:
+ * it opens the token's page (`/app/token/<address>` finds which).
  */
 
-import { menuNavigation, type PageRoute, type ProductLocale } from "../../app/shell/domains.ts";
+import { MENU_SECTIONS, menuNavigation, type MenuSectionId, type PageRoute, type ProductLocale } from "../../app/shell/domains.ts";
 import type { ShelfCoin } from "../spot/coin-shelf.ts";
 import type { ShelfCard } from "../stocks/shelf.ts";
 
@@ -36,6 +39,8 @@ export type SearchAction = Readonly<{
 export type SearchCoin = ShelfCoin & Readonly<{ kind: "crypto" | "meme" | "dollar" }>;
 
 export type SearchResults = Readonly<{
+  /** A pasted contract address, to open as a token. */
+  address: string | null;
   actions: readonly SearchAction[];
   companies: readonly ShelfCard[];
   privateCompanies: readonly ShelfCard[];
@@ -45,20 +50,24 @@ export type SearchResults = Readonly<{
 /** Words a person may type for each row, in both languages, beside its label. */
 const WORDS: Readonly<Record<string, readonly string[]>> = {
   home: ["home", "головна", "balance", "баланс", "investments", "інвестиції"],
-  markets: ["markets", "ринки", "buy", "купити", "companies", "компанії", "crypto", "крипта", "stocks", "акції"],
-  autoinvest: ["autoinvest", "автоінвест", "regularly", "регулярно", "weekly", "щотижня", "rule", "правило", "budget", "бюджет", "dca"],
-  swap: ["swap", "обмін", "exchange", "обміняти", "convert"],
+  markets: ["markets", "ринки", "screener", "скринер", "trends", "тренди", "trending", "buy", "купити", "companies", "компанії", "crypto", "крипта", "stocks", "акції", "memes", "меми", "private", "приватні", "watchlist", "обране"],
+  trade: ["trade", "торгувати", "торгівля", "order", "ордер"],
+  launch: ["launch", "лаунч", "token", "токен", "create", "створити"],
+  bots: ["bots", "боти", "bot", "бот", "autoinvest", "автоінвест", "recurring", "регулярна", "regularly", "регулярно", "dca", "rule", "правило"],
+  money: ["money", "гроші", "funds", "кошти"],
   spot: ["spot", "спот", "chart", "графік", "candles", "свічки", "trade", "торгувати", "order", "ордер"],
-  stocks: ["screener", "скринер", "stocks", "акції", "filter", "фільтр"],
-  trends: ["trends", "тренди", "memes", "меми", "trending"],
+  swap: ["swap", "обмін", "exchange", "обміняти", "convert"],
+  "launch-new": ["launch", "запустити", "token", "токен", "create", "створити", "new", "новий"],
+  "launch-mine": ["my launches", "мої лаунчі", "creator", "творець", "claim", "забрати", "fees", "комісії"],
+  "bots-mine": ["my bots", "мої боти", "rules", "правила", "plans", "плани", "strategies", "стратегії", "results", "результати", "autoinvest", "автоінвест", "budget", "бюджет"],
+  "bots-catalog": ["catalog", "каталог", "recurring buy", "регулярна купівля", "weekly", "щотижня", "plan", "план"],
   "top-up": ["top up", "поповнити", "deposit", "поповнення", "card", "картка", "usdc", "sol"],
   send: ["send", "надіслати", "transfer", "переказ", "переказати", "відправити"],
   receive: ["receive", "отримати", "address", "адреса", "qr"],
-  bridge: ["bridge", "міст", "base", "ethereum", "arbitrum"],
+  bridge: ["bridge", "міст", "cross-chain", "між мережами", "base", "ethereum", "arbitrum"],
   portfolio: ["portfolio", "портфель", "positions", "позиції", "holdings", "що в мене"],
-  "my-strategies": ["strategies", "стратегії", "plan", "план", "plans", "плани"],
-  results: ["results", "результати", "profit", "прибуток"],
-  activity: ["history", "історія", "transactions", "транзакції", "receipts", "квитанції", "operations"],
+  positions: ["positions", "позиції", "holdings", "що в мене"],
+  history: ["history", "історія", "transactions", "транзакції", "receipts", "квитанції", "operations"],
   agent: ["ryntra", "ai", "ші", "assistant", "помічник", "ask", "спитати", "chat"],
   rewards: ["rewards", "винагороди", "points", "бали", "referral", "реферал", "cashback"],
   settings: ["settings", "налаштування", "language", "мова", "theme", "тема", "telegram", "account", "акаунт"],
@@ -68,8 +77,33 @@ const WORDS: Readonly<Record<string, readonly string[]>> = {
 /** The bell's page, found by the search as the one place every note lives. */
 const ALERTS = { id: "alerts", label: { en: "Notifications", uk: "Сповіщення" }, hint: { en: "Monitoring", uk: "Нагляд" }, href: "/app/alerts", icon: "alerts" } as const;
 
-/** What a query with nothing typed yet offers: the actions a beginner looks for first. */
-const STARTERS: readonly string[] = ["markets", "top-up", "autoinvest", "activity", "alerts", "settings"];
+/** What a query with nothing typed yet offers: the places and the two actions a person looks for first. */
+const STARTERS: readonly string[] = ["markets", "launch-new", "top-up", "bots-mine", "history", "settings"];
+
+/** A Solana address as a person pastes it: base58, 32 to 44 characters. */
+const ADDRESS = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+
+/** The glyph of a tab found as an action. */
+const TAB_ICONS: Readonly<Record<string, string>> = {
+  spot: "spot",
+  swap: "swap",
+  "launch-new": "launch-plus",
+  "launch-mine": "launch",
+  "bots-mine": "bots",
+  "bots-catalog": "autoinvest",
+  positions: "portfolio",
+  history: "history",
+  "top-up": "top-up",
+  send: "send",
+  receive: "receive",
+  bridge: "bridge",
+};
+
+/** The address a query is, when it is one — the way a pasted contract opens its token. */
+export function addressOf(query: string): string | null {
+  const trimmed = query.trim();
+  return ADDRESS.test(trimmed) ? trimmed : null;
+}
 
 /**
  * Every action the search can find, from the menu's own rows: its label, the
@@ -82,14 +116,28 @@ export function searchActions(routes: readonly PageRoute[], locale: ProductLocal
     section.rows.map((row): SearchAction => ({
       id: row.id,
       label: row.label,
-      hint: row.caption ?? section.title,
+      hint: row.caption ?? null,
       href: row.href,
       icon: row.icon,
       words: WORDS[row.id] ?? [],
     })),
   );
+  /* A section's tabs are actions of their own — «Запустити токен», «Поповнити», «Історія» — hinted by their section. */
+  const tabs = menu.sections.flatMap((section) => {
+    const def = MENU_SECTIONS[section.id as MenuSectionId];
+    return (def.tabs ?? []).map((tab): SearchAction => ({
+      id: tab.id,
+      label: tab.label[locale],
+      hint: def.label[locale],
+      href: tab.href,
+      icon: TAB_ICONS[tab.id] ?? def.icon,
+      words: WORDS[tab.id] ?? [],
+    }));
+  });
   return [
     ...rows,
+    ...tabs,
+    { id: "agent", label: menu.assistant.label, hint: menu.assistant.caption ?? null, href: menu.assistant.href, icon: menu.assistant.icon, words: WORDS.agent },
     { id: ALERTS.id, label: ALERTS.label[locale], hint: ALERTS.hint[locale], href: ALERTS.href, icon: ALERTS.icon, words: WORDS.alerts },
     { id: "settings", label: menu.settings.label, hint: null, href: menu.settings.href, icon: menu.settings.icon, words: WORDS.settings },
   ];
@@ -122,7 +170,8 @@ function actionScore(action: SearchAction, needle: string): number {
 }
 
 /** A company or a coin by its name or its ticker, with the same rule for a match inside a word. */
-function nameScore(name: string, ticker: string, needle: string): number {
+function nameScore(name: string, ticker: string, needle: string, mint?: string): number {
+  if (mint && mint.toLowerCase() === needle) return 6;
   const full = normalize(name);
   const symbol = normalize(ticker);
   if (full === needle || symbol === needle) return 5;
@@ -134,7 +183,7 @@ function nameScore(name: string, ticker: string, needle: string): number {
 
 function matchCards(cards: readonly ShelfCard[], needle: string): ShelfCard[] {
   return cards
-    .map((card) => ({ card, score: nameScore(card.name, card.ticker, needle) }))
+    .map((card) => ({ card, score: nameScore(card.name, card.ticker, needle, card.mint) }))
     .filter((entry) => entry.score > 0)
     .sort((a, b) => b.score - a.score || b.card.volume24h - a.card.volume24h)
     .map((entry) => entry.card);
@@ -149,8 +198,10 @@ export const RESULT_LIMITS = { actions: 5, companies: 6, privateCompanies: 3, co
  */
 export function searchProduct(index: SearchIndex | null, actions: readonly SearchAction[], query: string): SearchResults {
   const needle = normalize(query);
+  const address = addressOf(query);
   if (needle.length === 0) {
     return {
+      address: null,
       actions: STARTERS.flatMap((id) => actions.filter((action) => action.id === id)).slice(0, RESULT_LIMITS.actions + 1),
       companies: [],
       privateCompanies: [],
@@ -162,8 +213,10 @@ export function searchProduct(index: SearchIndex | null, actions: readonly Searc
     .filter((entry) => entry.score > 0)
     .sort((a, b) => b.score - a.score)
     .map((entry) => entry.action)
+    /* One answer per place: a section and its first tab open the same page, and the better match of the two is kept. */
+    .filter((action, index, all) => all.findIndex((other) => other.href === action.href) === index)
     .slice(0, RESULT_LIMITS.actions);
-  if (!index) return { actions: found, companies: [], privateCompanies: [], coins: [] };
+  if (!index) return { address, actions: found, companies: [], privateCompanies: [], coins: [] };
   const coins: SearchCoin[] = [
     ...index.dollars.map((coin) => ({ ...coin, kind: "dollar" as const })),
     ...index.coins.map((coin) => ({ ...coin, kind: "crypto" as const })),
@@ -171,11 +224,12 @@ export function searchProduct(index: SearchIndex | null, actions: readonly Searc
   ];
   const seen = new Set<string>();
   return {
+    address,
     actions: found,
     companies: matchCards(index.companies, needle).slice(0, RESULT_LIMITS.companies),
     privateCompanies: matchCards(index.privateCompanies, needle).slice(0, RESULT_LIMITS.privateCompanies),
     coins: coins
-      .map((coin) => ({ coin, score: nameScore(coin.name, coin.symbol, needle) }))
+      .map((coin) => ({ coin, score: nameScore(coin.name, coin.symbol, needle, coin.mint) }))
       .filter((entry) => entry.score > 0 && !seen.has(entry.coin.mint) && seen.add(entry.coin.mint))
       .sort((a, b) => b.score - a.score || b.coin.volume24h - a.coin.volume24h)
       .map((entry) => entry.coin)

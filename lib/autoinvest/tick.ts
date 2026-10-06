@@ -190,7 +190,7 @@ export async function writeBudgetNote(store: GuardStore, budget: AutoinvestBudge
     triggerId: identity,
     title: own.title,
     reason: own.reason,
-    context: budget.locale === "uk" ? "Автоінвест" : "Autoinvest",
+    context: budget.locale === "uk" ? "Регулярна купівля" : "Recurring buy",
     href: `/app/alerts/open?n=${inboxId}`,
     cta: own.cta,
     paper: false,

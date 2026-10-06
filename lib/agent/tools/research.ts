@@ -365,7 +365,7 @@ export const plansRead: AgentTool<z.ZodObject<Record<string, never>>> = {
   async run(_input, ctx) {
     const locale = ctx.locale;
     const listed = await ctx.readers.plans(ctx.owner);
-    const href = "/app/strategies";
+    const href = "/app/bots";
     if (listed.plans.length === 0) {
       const cite = ctx.citations.add({ tool: "plans_read", source: w(locale, "Plan store", "Сховище планів"), observedAt: new Date(ctx.nowMs).toISOString(), state: "current", ref: null, href });
       return { ...emptyRun("plans_read", "research", "empty", "current"), notes: [note("observation", w(locale, "This wallet has no trading plan yet.", "У цього гаманця ще немає торгового плану."), [cite.id])], handoffs: [{ kind: "builder", href: "/app/strategies/new", label: w(locale, "Create a plan", "Створити план"), primary: false }] };
@@ -487,7 +487,7 @@ export const resultsRead: AgentTool<typeof PlanInput> = {
       const read = await ctx.readers.planResults(ctx.owner, plan.id);
       if (read.ok && read.results.length > 0) results.push({ plan, rows: read.results });
     }
-    const href = "/app/results";
+    const href = "/app/bots";
     if (results.length === 0) {
       const cite = ctx.citations.add({ tool: "results_read", source: w(locale, "Results", "Результати"), observedAt: new Date(ctx.nowMs).toISOString(), state: "current", ref: null, href });
       return { ...emptyRun("results_read", "research", "empty", "current"), notes: [note("observation", w(locale, "No execution has been made under a plan yet, so there is no Plan vs Actual to read.", "Під планом ще не було виконання, тож Plan vs Actual читати нема чого."), [cite.id])], handoffs: [{ kind: "results", href, label: w(locale, "Open Results", "Відкрити Результати"), primary: false }] };
@@ -584,7 +584,7 @@ export const memoryRead: AgentTool<typeof MemoryInput> = {
   input: MemoryInput,
   async run(input, ctx) {
     const locale = ctx.locale;
-    const href = "/app/results";
+    const href = "/app/bots";
     const read = await ctx.readers.planMemory(ctx.owner);
     const wanted = read.facts.filter((entry) => {
       if (input.planId) return entry.scope.planId === input.planId;

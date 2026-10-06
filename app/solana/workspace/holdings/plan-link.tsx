@@ -65,7 +65,7 @@ export function usePlansByMint(address: string | null): ReadonlyMap<string, read
 export function PlanLink({ plans, text }: { plans: readonly TradingPlan[]; text: (value: string) => string }) {
   if (plans.length === 0) return null;
   const only = plans.length === 1 ? plans[0] : null;
-  const href = only ? `/app/strategies/plans/${only.id}` : "/app/results";
+  const href = only ? `/app/strategies/plans/${only.id}` : "/app/bots";
   const label = only ? text("Under a plan") : `${plans.length} ${text("plans")}`;
   return (
     <Link className={styles.planChip} href={href} prefetch={false} title={text("What you planned, and what actually happened")}>

@@ -97,8 +97,12 @@ test("the words, in both languages: the reserve apart, the company's own minimum
   assert.equal(routeMinimumLine("en", "$1", "IREN", "$5"), "No route for $1 right now. IREN from $5.");
   assert.equal(setMinimumWord("uk", "$5"), "Поставити $5");
   assert.equal(setMinimumWord("en", "$5"), "Use $5");
-  assert.equal(INVEST_WORDS.guestHeadline.uk, "Купи частинку компанії від $1");
-  assert.equal(INVEST_WORDS.stepTopUp.uk, "Поповни від $1");
+  /* Home says what is live (the menu v6.2): the minimum stays where a purchase is made, not a promise on Home. */
+  assert.equal(INVEST_WORDS.guestHeadline.uk, "Акції, крипта, меми — і свій токен");
+  assert.equal(INVEST_WORDS.stepTopUp.uk, "Поповни USDC або SOL");
+  for (const key of ["guestHeadline", "stepTopUp", "stepBuy", "emptyWallet", "autoinvestGuest", "noRulesYet", "fundFirst", "connectToBuy"]) {
+    assert.doesNotMatch(`${INVEST_WORDS[key].en} ${INVEST_WORDS[key].uk}`, /частинк|piece of|from \$1|від \$1/, `${key} still sells «a piece of a company from $1»`);
+  }
   assert.equal(INVEST_WORDS.minimum.uk, "Мінімум — $1");
   assert.equal(INVEST_WORDS.neededFrom.en, "needed from $1");
   for (const [key, pair] of Object.entries(INVEST_WORDS)) {

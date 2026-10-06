@@ -1,6 +1,5 @@
 import { AskRynLens } from "@/app/app/lens/ask-ryn-lens";
 import { LensPanel } from "@/app/app/lens/lens-panel";
-import { PortfolioTabs } from "@/app/app/portfolio/portfolio-tabs";
 
 import { PageHead } from "../hub/parts.tsx";
 import { solanaServerLocale, solanaServerText } from "../i18n/server.ts";
@@ -28,7 +27,6 @@ export default async function SolanaHoldingsPage() {
   return (
     <>
       {/* Portfolio's four, one tap apart: the positions, Strategies, Results, History. */}
-      <PortfolioTabs locale={locale} />
       {/* Ask Ryntra about the portfolio: what changed, which positions have a plan, what needs attention — opens the Brief below, the conversation one press further. */}
       <PageHead title="Portfolio" aside={<AskRynLens subject={{ kind: "portfolio" }} locale={locale} />} />
       <section aria-label={text("Portfolio")}>

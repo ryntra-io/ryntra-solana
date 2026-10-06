@@ -12,7 +12,7 @@ import { DEVELOPER_ENTRIES, DOC_NAV, DOC_PAGES, docNeighbours, docPageBySlug, do
 import { FEES, JUPITER_ORDER_KEEPS_PERCENT, JUPITER_ORDER_MIN_FEE_BPS, POINTS, PRODUCT_PAGES, REWARDS, hrefOf, readinessOf } from "./content/facts.ts";
 import { DOC_GROUP_IDS, DOC_PATH_PREFIXES } from "./content/model.ts";
 import { PRODUCT_ROUTES } from "../shell/product-routes.ts";
-import { MENU_DESTINATIONS, MENU_ROWS, MENU_SECTION_IDS, PRODUCT_PAGE_IDS, drawn } from "../shell/domains.ts";
+import { MENU_SECTIONS, MENU_SECTION_IDS, PRODUCT_PAGE_IDS, drawn } from "../shell/domains.ts";
 import { CUSTOMER_REDIRECTS } from "../../lib/product/customer-routing.ts";
 import { RYNTRA_SERVICE_FEE_POLICY } from "../../lib/swap/service-fee.ts";
 import { FEE_POLICY_V2 } from "../../lib/core/fee-policy.ts";
@@ -44,7 +44,7 @@ test("every page is complete in both languages and structurally identical across
     assert.ok(DOC_GROUP_IDS.includes(page.group), `${page.slug} has an unknown group`);
     /* A page keeps its address when it changes section (money/rewards under Rewards, strategies/* under Portfolio). */
     if (page.slug) assert.ok(DOC_PATH_PREFIXES.includes(page.slug.split("/")[0]), `${page.slug} lives outside every documentation path`);
-    if (page.destination) assert.ok(MENU_DESTINATIONS[page.destination], `${page.slug} opens a place the menu does not have`);
+    if (page.destination) assert.ok(page.destination === "agent" || MENU_SECTIONS[page.destination], `${page.slug} opens a place the menu does not have`);
     for (const locale of LOCALES) if (page.seoTitle) assert.ok(page.seoTitle[locale].length <= 60, `${page.slug} ${locale} search title is longer than 60`);
     for (const locale of LOCALES) {
       assert.ok(page.title[locale].length > 2, `${page.slug} has no ${locale} title`);
@@ -117,9 +117,9 @@ test("every page the menu draws has its documentation, and a page that is not bu
     assert.ok(page, `product page ${id} has no documentation page`);
   }
   /* The table lists the pages the menu draws, section by section in the menu's order. */
-  const drawnInMenuOrder = MENU_SECTION_IDS.flatMap((section) => MENU_ROWS[section].flatMap((ref) => ("page" in ref ? [ref.page] : []))).filter((id) => drawn(PRODUCT_ROUTES.find((route) => route.id === id)));
+  const drawnInMenuOrder = MENU_SECTION_IDS.flatMap((section) => MENU_SECTIONS[section].pages).filter((id) => drawn(PRODUCT_ROUTES.find((route) => route.id === id)));
   assert.deepEqual(PRODUCT_PAGES.map((page) => page.id), drawnInMenuOrder);
-  assert.deepEqual([...new Set(PRODUCT_PAGES.map((page) => page.section))], ["trade", "money", "portfolio", "rewards"]);
+  assert.deepEqual([...new Set(PRODUCT_PAGES.map((page) => page.section))], ["markets", "trade", "bots", "portfolio", "money", "rewards"]);
   assert.equal(CUSTOMER_REDIRECTS.find((row) => row.source === "/docs/trade/predictions")?.destination, "/docs/start/cabinet", "the demo's documentation address leads to the cabinet page");
   const redirected = new Map(CUSTOMER_REDIRECTS.map((row) => [row.source, row]));
   for (const [gone, to] of [["/docs/trade/perps", "/docs/trade/spot"], ["/docs/strategies/ideas", "/docs/strategies/overview"]]) {

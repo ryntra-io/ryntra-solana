@@ -139,7 +139,7 @@ export function HistoryCard({ selectedAction = null, initialFilter = "ALL" }: { 
       const counter = buy ? out : got;
       const verb = buy ? text("Bought") : text("Sold");
       /* A purchase under an autoinvest reminder says so — the receipt's mark of the rule (1.12.0). */
-      const where = action.origin.rule ? text("Autoinvest") : text("Spot");
+      const where = action.origin.rule ? text("Recurring buy") : text("Spot");
       return {
         title: asset ? `${verb} ${asset}` : verb,
         sub: counter ? `${buy ? text("for") : text("received")} ${counter} · ${where}` : where,

@@ -133,6 +133,8 @@ export function PlansPanel({ locale }: { locale: WorkspaceLocale }) {
   const address = connection?.address ?? null;
   const proven = proof.state.status === "proven" && proof.state.address === address;
   const [state, setState] = useState<{ status: "idle" | "loading" | "ready" | "failed"; plans: readonly TradingPlan[]; total: number }>({ status: "idle", plans: [], total: 0 });
+  /* All the results, in place: since the menu v6.2 a plan's results live on this list, not on a page of their own. */
+  const [allResults, setAllResults] = useState(false);
   const [results, setResults] = useState<{ status: "idle" | "ready"; results: readonly PlanResult[]; pending: number }>({ status: "idle", results: [], pending: 0 });
   const [icons, setIcons] = useState<IconMap>({});
 
@@ -244,7 +246,7 @@ export function PlansPanel({ locale }: { locale: WorkspaceLocale }) {
   const active = state.plans.filter((plan) => plan.status === "active");
   const drafts = state.plans.filter((plan) => plan.status === "draft");
   const closed = state.plans.filter((plan) => plan.status === "executed" || plan.status === "cancelled");
-  const recent = results.results.slice(0, RECENT_RESULTS);
+  const recent = allResults ? results.results : results.results.slice(0, RECENT_RESULTS);
 
   if (state.plans.length === 0) {
     return (
@@ -267,7 +269,7 @@ export function PlansPanel({ locale }: { locale: WorkspaceLocale }) {
     { key: "active", label: word("activePlans"), value: active.length, tone: "active" as const },
     { key: "drafts", label: word("drafts"), value: drafts.length },
     { key: "closed", label: word("closed"), value: closed.length },
-    { key: "results", label: word("recentResults"), value: results.results.length, href: "/app/results" },
+    { key: "results", label: word("recentResults"), value: results.results.length, href: "#plan-results" },
   ].filter((count) => count.value > 0);
 
   return (
@@ -328,12 +330,12 @@ export function PlansPanel({ locale }: { locale: WorkspaceLocale }) {
       ) : null}
 
       {recent.length > 0 || results.pending > 0 ? (
-        <section aria-label={word("recentResults")}>
+        <section aria-label={word("recentResults")} id="plan-results">
           <SectionHead title={word("recentResults")} count={results.results.length}>
-            {results.results.length > RECENT_RESULTS ? (
-              <Link className="rw-btn" href="/app/results" prefetch={false}>
+            {results.results.length > RECENT_RESULTS && !allResults ? (
+              <button type="button" className="rw-btn" onClick={() => setAllResults(true)}>
                 {word("allResults")}
-              </Link>
+              </button>
             ) : null}
           </SectionHead>
           {results.pending > 0 ? <p className={styles.muted}>{word("syncing")}</p> : null}

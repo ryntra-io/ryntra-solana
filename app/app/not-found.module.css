@@ -1,0 +1,50 @@
+/* The cabinet's «not found»: one composed card in the canvas, the shell around it. */
+
+.page {
+  display: grid;
+  place-items: start center;
+  width: 100%;
+  min-width: 0;
+  padding-top: clamp(16px, 6vh, 72px);
+}
+
+.card {
+  display: grid;
+  gap: var(--ry-s3);
+  width: min(560px, 100%);
+  padding: var(--ry-s6);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+}
+
+.code {
+  margin: 0;
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label);
+  letter-spacing: 0.08em;
+  color: var(--ry-muted);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-page);
+  line-height: var(--ry-lh-tight);
+  letter-spacing: var(--ry-ls-head);
+  color: var(--ry-text);
+}
+
+.body {
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  line-height: 1.55;
+  color: var(--ry-muted);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s2);
+  margin-top: var(--ry-s2);
+}

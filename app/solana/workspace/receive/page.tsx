@@ -1,6 +1,5 @@
 import { PanelGrid } from "@/app/shell/panel";
 import { PageHead } from "../hub/parts.tsx";
-import { MoneyTabs } from "../money/money-tabs.tsx";
 import { solanaServerText } from "../i18n/server.ts";
 import { ReceiveCard } from "./receive-card.tsx";
 
@@ -24,7 +23,6 @@ export default async function SolanaReceivePage() {
   return (
     <>
       <PageHead title="Receive" />
-      <MoneyTabs current="receive" />
       <div className="ry-money-flow"><PanelGrid label={text("Receive")}>
         <ReceiveCard />
       </PanelGrid></div>

@@ -84,9 +84,9 @@ test("cabinet locale changes propagate to nested providers and server-rendered p
   for (const file of ["app/app/layout.tsx", "app/app/agents/layout.tsx"]) {
     assert.match(code(file), /normalizeWorkspaceLocale\(store\.get\(WORKSPACE_LOCALE_COOKIE\)\?\.value\)/, file);
   }
-  /* My strategies reads the same cookie through the server locale helper and hands it to the plans panel. */
-  assert.match(code("app/app/strategies/page.tsx"), /await solanaServerLocale\(\)/);
-  assert.match(code("app/app/strategies/page.tsx"), /<PlansPanel locale=\{locale\} \/>/);
+  /* «Мої боти» reads the same cookie through the server locale helper and hands it to the plans panel. */
+  assert.match(code("app/app/bots/page.tsx"), /await solanaServerLocale\(\)/);
+  assert.match(code("app/app/bots/page.tsx"), /<PlansPanel locale=\{locale\} \/>/);
   for (const file of ["app/app/i18n/provider.tsx", "app/agents/workspace/i18n/provider.tsx", "app/solana/workspace/i18n/provider.tsx"]) {
     const source = code(file);
     assert.match(source, /useEffect\(\(\)\s*=>\s*\{\s*setLocaleState\(initialLocale\);\s*\},\s*\[initialLocale\]\)/, file);
@@ -145,7 +145,8 @@ test("every section of the product's menu is visible — a caption is a label, n
   const appShell = code("app/shell/app-shell.tsx");
   const product = appShell.slice(appShell.indexOf("const groups: readonly NavGroup[] = menu"), appShell.indexOf("const settingsEntry"));
   assert.doesNotMatch(product, /collapsible: true/, "a section of the product's menu can be shut");
-  assert.match(product, /title: section\.title \?\? undefined/);
+  /* The menu v6.2: groups without headings — a thin line, not a caption, stands between them. */
+  assert.doesNotMatch(product, /title:/, "a group of the product's menu carries a heading");
   assert.match(appShell, /aria-expanded=\{!shut\}/);
   assert.match(appShell, /openGroupOfActive\(readCollapsedGroups\(window\.localStorage\), groupsRef\.current, activeHref\)/,
     "the stored set must be read before the active group is opened, or a reload lands with the group shut over the page");

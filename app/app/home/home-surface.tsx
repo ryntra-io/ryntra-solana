@@ -29,7 +29,7 @@ import { PortfolioRisk } from "./portfolio-risk";
 /**
  * «Простий»'s Home.
  *
- * **A guest** reads one promise — «Купи частинку компанії від $1» — one
+ * **A guest** reads what is live — «Акції, крипта, меми — і свій токен» — one
  * orange action, «Під'єднати гаманець», and the popular companies, each one
  * tap from its page. **A wallet** reads what it holds — «Твої інвестиції» and
  * the positions by the companies' names — with «Купити» the one orange action
@@ -44,8 +44,8 @@ import { PortfolioRisk } from "./portfolio-risk";
  * is in beside the balance, a guest's three steps beside the promise.
  *
  * **The first step without crypto**: the orange action is always the step
- * that works next. A wallet with nothing to buy with reads «Поповни — і купи
- * першу частинку» and «Поповнити»; one with dollars and no SOL for the network
+ * that works next. A wallet with nothing to buy with reads «Поповни — і зроби
+ * першу купівлю» and «Поповнити»; one with dollars and no SOL for the network
  * reads «Потрібно трохи SOL на мережу» and «Поповнити SOL»; a phone whose
  * browser has no wallet is offered this page inside Phantom instead of a
  * wallet panel that has nothing to list.
@@ -82,7 +82,7 @@ export function HomeSurface({ locale, children }: { locale: WorkspaceLocale; chi
               <h2 id="popular-title" className={styles.sectionTitle}>{word("popularCompanies")}</h2>
               <p className={styles.sectionNote}>{word("byVolume")}</p>
             </div>
-            <Link className={styles.sectionLink} href="/app/markets?tab=companies">
+            <Link className={styles.sectionLink} href="/app/markets?tab=stocks">
               {word("allCompanies")}
               <ArrowRight size={14} weight="bold" aria-hidden="true" />
             </Link>

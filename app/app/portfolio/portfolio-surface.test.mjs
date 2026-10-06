@@ -18,14 +18,15 @@ const CSS = read("app/solana/workspace/holdings/holdings.module.css");
 
 test("Portfolio is the overview, and it is one direct screen", () => {
   /* Portfolio was first the functional overview; now the product opens on
-     Home, for everyone — Portfolio is the fourth of the five places, one
-     direct screen with its tabs: the positions, Strategies, Results,
-     History. */
+     Home, for everyone — Portfolio is a section of the menu, one direct
+     screen with its tabs: Позиції · Історія (the menu v6.2; the plans and
+     their results are «Боти → Мої боти»). */
   assert.doesNotMatch(PORTFOLIO, /\bredirect\(/);
   assert.match(PORTFOLIO, /export \{ default, generateMetadata \} from "@\/app\/solana\/workspace\/holdings\/page"/);
   /* One version: the beginner's empty states for everyone, no depth read on the server. */
   assert.match(HOLDINGS_PAGE, /<HoldingsCard \/>/);
-  assert.match(HOLDINGS_PAGE, /<PortfolioTabs locale=\{locale\} \/>/);
+  /* Its tabs — Позиції · Історія — are the shell's, drawn over the page (the menu v6.2). */
+  assert.doesNotMatch(HOLDINGS_PAGE, /PortfolioTabs/);
   assert.doesNotMatch(HOLDINGS_PAGE, /cookies\(|depthFromCookie/);
   assert.doesNotMatch(PORTFOLIO + HOLDINGS_PAGE, /<RyntraAppShell|<HomeShell|<SolanaConnectionProvider/);
   const routing = read("lib/product/customer-routing.ts");

@@ -9,10 +9,10 @@
  * thing you came to see. On a money product that is the difference between
  * checking a balance and deciding not to bother.
  *
- * **Головна · Ринки · Ryntra · Портфель · Ще**.
- * Four places and one opener: the four a person reaches for stay in the bar,
- * and «Ще» opens the menu's sections — the same list, with the same captions,
- * a desk shows on its rail.
+ * **Головна · Ринки · + · Портфель · Ще** (the menu v6.2).
+ * Three places, the launch of a token in the middle, and one opener: «Ще»
+ * opens the rows of the desk's menu the bar does not hold — Торгувати, Боти,
+ * Гроші, Винагороди, Ryntra and Налаштування.
  *
  * «Ще» is a button rather than a link on purpose. It opens the rail itself,
  * driven by the shell's one drawer state, so the bar and the menu cannot
@@ -102,6 +102,7 @@ export function ProductMobileNav({
               <Link
                 href={entry.href}
                 className="rs-mobilenav-link"
+                data-action={entry.action ? "true" : undefined}
                 data-active={current && !moreOpen ? "true" : "false"}
                 aria-current={current ? "page" : undefined}
                 onClick={onNavigate}

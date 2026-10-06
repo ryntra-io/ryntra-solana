@@ -9,10 +9,10 @@ moved counts as new. Generated at every update from the development history.
 
 | Since the tag | Files |
 |---|---|
-| New | 1,155 |
-| Changed | 807 |
-| Unchanged | 931 |
-| Lines added / removed | +298,138 / −19,674 |
+| New | 1,165 |
+| Changed | 806 |
+| Unchanged | 929 |
+| Lines added / removed | +299,058 / −19,729 |
 
 ## New since the tag
 
@@ -157,13 +157,21 @@ moved counts as new. Generated at every update from the development history.
 - `app/api/v1/stocks/popular/route.ts`
 - `app/api/v1/watchlist/merge/route.ts`
 - `app/api/v1/watchlist/route.ts`
+- `app/app/[...missing]/page.tsx`
 - `app/app/alerts/monitoring-view.tsx`
 - `app/app/alerts/monitoring.module.css`
 - `app/app/alerts/open/page.tsx`
 - `app/app/autoinvest/autoinvest-place.tsx`
 - `app/app/autoinvest/page.tsx`
+- `app/app/bots/bots-words.ts`
+- `app/app/bots/bots.module.css`
+- `app/app/bots/catalog/page.tsx`
+- `app/app/bots/my-recurring.tsx`
+- `app/app/bots/my-results.tsx`
+- `app/app/bots/page.tsx`
 - `app/app/feedback/feedback-launcher.tsx`
 - `app/app/feedback/feedback.module.css`
+- `app/app/header-tools.tsx`
 - `app/app/home/home-aside.tsx`
 - `app/app/home/home-surface.tsx`
 - `app/app/home/home.module.css`
@@ -214,7 +222,6 @@ moved counts as new. Generated at every update from the development history.
 - `app/app/launch/[mint]/token-market.tsx`
 - `app/app/launch/[mint]/trade-panel.tsx`
 - `app/app/launch/launch-format.ts`
-- `app/app/launch/launch-tabs.tsx`
 - `app/app/launch/launch-words.ts`
 - `app/app/launch/launch.module.css`
 - `app/app/launch/mine/creator-cabinet.tsx`
@@ -229,9 +236,13 @@ moved counts as new. Generated at every update from the development history.
 - `app/app/lens/lens-words.ts`
 - `app/app/lens/lens.module.css`
 - `app/app/markets/markets-place.tsx`
-- `app/app/markets/markets-surface.tsx`
+- `app/app/markets/markets-screener.tsx`
+- `app/app/markets/markets-words.ts`
 - `app/app/markets/page.tsx`
-- `app/app/markets/tabs.ts`
+- `app/app/markets/screener-rows.ts`
+- `app/app/markets/screener.module.css`
+- `app/app/not-found.module.css`
+- `app/app/not-found.tsx`
 - `app/app/notifications/bell-surface.test.mjs`
 - `app/app/notifications/bell-surface.ts`
 - `app/app/notifications/bell-words.ts`
@@ -239,8 +250,6 @@ moved counts as new. Generated at every update from the development history.
 - `app/app/notifications/bell.tsx`
 - `app/app/notifications/note-list.tsx`
 - `app/app/notifications/use-notes.ts`
-- `app/app/portfolio/portfolio-tabs.module.css`
-- `app/app/portfolio/portfolio-tabs.tsx`
 - `app/app/predictions/[eventId]/depth.tsx`
 - `app/app/predictions/[eventId]/live.ts`
 - `app/app/predictions/[eventId]/market-detail.tsx`
@@ -321,11 +330,10 @@ moved counts as new. Generated at every update from the development history.
 - `app/app/strategies/plans/plan-words.ts`
 - `app/app/strategies/plans/plans-panel.tsx`
 - `app/app/strategies/plans/plans.module.css`
+- `app/app/token/[mint]/page.tsx`
 - `app/app/top-up/page.tsx`
 - `app/app/top-up/top-up-surface.tsx`
 - `app/app/top-up/top-up.module.css`
-- `app/app/trends/pulse.test.mjs`
-- `app/app/trends/pulse.ts`
 - `app/brand/generated/mark-geometry.ts`
 - `app/brand/generated/wordmark-box.ts`
 - `app/brand/generated/wordmark-dark-ui.ts`
@@ -378,6 +386,7 @@ moved counts as new. Generated at every update from the development history.
 - `app/shell/help.module.css`
 - `app/shell/help.tsx`
 - `app/shell/menu-preferences.tsx`
+- `app/shell/section-tabs.tsx`
 - `app/site/info/info.module.css`
 - `app/site/info/info.tsx`
 - `app/site/info/prose.ts`
@@ -890,6 +899,7 @@ moved counts as new. Generated at every update from the development history.
 - `lib/liquidity/meteora/mapper.ts`
 - `lib/liquidity/model.ts`
 - `lib/liquidity/service.server.ts`
+- `lib/markets/screener.ts`
 - `lib/monitoring/acceptance.test.mjs`
 - `lib/monitoring/apply.ts`
 - `lib/monitoring/copy.ts`
@@ -1316,10 +1326,7 @@ moved counts as new. Generated at every update from the development history.
 - `app/app/strategy-lab/strategy-lab-workspace.tsx`
 - `app/app/strategy-lab/strategy-lab.test.mjs`
 - `app/app/theme.ts`
-- `app/app/trends/modes.test.mjs`
-- `app/app/trends/modes.ts`
 - `app/app/trends/page.tsx`
-- `app/app/trends/trends.module.css`
 - `app/app/visitor.tsx`
 - `app/app/wallet-connect.ts`
 - `app/app/wallet-data.tsx`
@@ -1512,12 +1519,14 @@ moved counts as new. Generated at every update from the development history.
 - `app/solana/workspace/money/money.module.css`
 - `app/solana/workspace/page.tsx`
 - `app/solana/workspace/receipts/local-receipts.tsx`
+- `app/solana/workspace/receive/page.tsx`
 - `app/solana/workspace/receive/receive-card.tsx`
 - `app/solana/workspace/receive/receive.module.css`
 - `app/solana/workspace/rewards/page.tsx`
 - `app/solana/workspace/rewards/referral-card.tsx`
 - `app/solana/workspace/rewards/rewards-card.tsx`
 - `app/solana/workspace/rewards/rewards.module.css`
+- `app/solana/workspace/send/page.tsx`
 - `app/solana/workspace/send/send-card.tsx`
 - `app/solana/workspace/settings/page.tsx`
 - `app/solana/workspace/spot/market-header.tsx`

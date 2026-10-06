@@ -126,7 +126,7 @@ export function AutoinvestBlock({ copy, locale, reminder }: { copy: LandingCopy[
             <Wallet size={20} weight="bold" aria-hidden />
             {copy.promise}
           </p>
-          <Link className={`${styles.link} ${styles.rise}`} style={{ "--d": 6 } as CSSProperties} href="/app/autoinvest" prefetch={false}>
+          <Link className={`${styles.link} ${styles.rise}`} style={{ "--d": 6 } as CSSProperties} href="/app/bots" prefetch={false}>
             {copy.open}
             <ArrowRight size={18} weight="bold" aria-hidden />
           </Link>

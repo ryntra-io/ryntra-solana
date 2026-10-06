@@ -1,4 +1,7 @@
-import type { MenuDestinationId, ProductPageId } from "../../shell/domains.ts";
+import type { MenuSectionId, ProductPageId } from "../../shell/domains.ts";
+
+/** Where a documentation page's primary button opens: a section of the menu, or the assistant. */
+export type DocsDestination = MenuSectionId | "agent";
 
 /**
  * The documentation's content model.
@@ -55,7 +58,7 @@ export type DocPage = Readonly<{
   /** The product page this document describes, when it describes one; its readiness comes from the registry. */
   pageId?: ProductPageId;
   /** A place of the menu that is not a registered page — Markets, Autoinvest, Top up, Ryntra — that «Open in Ryntra» leads to. */
-  destination?: MenuDestinationId;
+  destination?: DocsDestination;
   title: Localized;
   /** The title a search result and a browser tab show, when it says more than the heading does; else «{title} — Ryntra Docs». */
   seoTitle?: Localized;

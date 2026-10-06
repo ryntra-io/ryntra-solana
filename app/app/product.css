@@ -103,3 +103,48 @@
 .ry-product .rw[data-scroll="true"] .rw-b { overflow: visible; }
 
 .ry-product .ry-settings-option:disabled { opacity: 0.5; cursor: wait; }
+
+/* The header of the menu v6.2: «Спитати Ryntra» with the
+   screen as its context, then the bell; beside the wallet its balance and
+   «Поповнити». Quiet controls — the one orange action stays the screen's. */
+.ry-ask,
+.ry-balance-topup,
+.ry-balance-sum {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn, 10px);
+  background: var(--ry-card);
+  color: var(--ry-text);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: border-color var(--rt-duration-fast) var(--rt-ease), background-color var(--rt-duration-fast) var(--rt-ease);
+}
+.ry-ask:hover,
+.ry-balance-topup:hover,
+.ry-balance-sum:hover { border-color: var(--ry-border-strong); background: var(--ry-hover); }
+.ry-ask:focus-visible,
+.ry-balance-topup:focus-visible,
+.ry-balance-sum:focus-visible { outline: none; box-shadow: var(--ry-focus); }
+.ry-ask svg { color: var(--ry-accent); }
+.ry-balance { display: inline-flex; align-items: center; gap: 8px; }
+.ry-balance-sum { font-family: var(--ry-font-mono); font-variant-numeric: tabular-nums; border-color: transparent; background: transparent; }
+@media (max-width: 1240px) {
+  .ry-balance-topup span { display: none; }
+  .ry-balance-topup { padding: 0 10px; }
+}
+@media (max-width: 1080px) {
+  .ry-ask-label { display: none; }
+  .ry-ask { padding: 0 10px; }
+}
+/* On a phone the header keeps the search, «Спитати Ryntra» as its glyph (the screen is its context), the bell and the wallet; «Поповнити» is in «Ще» → Гроші. */
+@media (max-width: 900px) {
+  .ry-balance { display: none; }
+  .ry-ask { width: 40px; min-height: 40px; padding: 0; justify-content: center; }
+}

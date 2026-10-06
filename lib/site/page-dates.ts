@@ -11,7 +11,7 @@ export const DOCS_UPDATED = "2026-10-06";
 export const HOME_UPDATED = "2026-09-27";
 
 /** Markets offered to the index, in both languages. */
-export const MARKETS_UPDATED = "2026-09-27";
+export const MARKETS_UPDATED = "2026-10-06";
 
 /** The companies' pages offered to the index, in both languages, with their own words and cards. */
 export const COMPANY_PAGES_UPDATED = "2026-09-27";

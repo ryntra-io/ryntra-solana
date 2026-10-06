@@ -13,7 +13,7 @@ import { BRIDGE } from "./trade.ts";
 export const TOP_UP_PAGE: DocPage = {
   slug: "money/top-up",
   group: "money",
-  destination: "top-up",
+  destination: "money",
   title: { en: "Top up", uk: "Поповнити" },
   seoTitle: { en: "Top up: USDC and a little SOL — Ryntra Docs", uk: "Поповнити: USDC і трохи SOL — Документація Ryntra" },
   summary: {

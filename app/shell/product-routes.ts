@@ -44,11 +44,13 @@ import type { PageRoute } from "./domains";
  * owns the answer. A planned page is registered, served and honest on itself,
  * and is not projected into the rail.
  *
- * **One version, since 2026-09-24.** The menu is five places, not
- * these pages; which place holds a page is `PLACE_PAGES` in `domains.ts`. The
- * comments below keep the group each page was written for — TRADE, MONEY,
- * MANAGE — because that is still the kind of work it does (the API's
- * capabilities carry it), not because the rail draws it.
+ * **The menu v6.2, since 2026-10-06**. The menu is
+ * sections, not these pages; which section holds a page is `MENU_SECTIONS` in
+ * `domains.ts`, and its pages are tabs at the top of it. Stocks and Trends are
+ * one screener in «Ринки» (`/app/markets`); My strategies and Results are
+ * «Боти → Мої боти» (`/app/bots`). The comments below keep the group each page
+ * was written for — TRADE, MONEY, MANAGE — because that is still the kind of
+ * work it does (the API's capabilities carry it), not because the rail draws it.
  */
 
 const BASE = "/app";
@@ -77,11 +79,11 @@ export const PRODUCT_ROUTES: readonly PageRoute[] = [
   },
   {
     id: "stocks",
-    /* The screener since 2026-09-24: Stocks is
-       a tool of Markets' «Для досвідчених», and it opens on every confirmed
-       token with its filters. `/app/stocks` itself is Markets for everyone —
-       companies first — the address the landing gives. */
-    href: `${BASE}/stocks/screener`,
+    /* Since the menu v6.2 (2026-10-06) the stock screener is «Ринки»'s
+       «Акції» tab — one table for every asset; `/app/stocks` and
+       `/app/stocks/screener` lead there, and a company's page stays at
+       `/app/stocks/<ticker>`. */
+    href: `${BASE}/markets`,
     icon: "stocks",
     /*
      * The research workspace for tokenized stocks and ETFs on
@@ -100,16 +102,17 @@ export const PRODUCT_ROUTES: readonly PageRoute[] = [
   },
   {
     id: "trends",
-    href: `${BASE}/trends`,
     icon: "trends",
     /* `available` since 2026-09-23: the two modes
        with no list left the surface, and what is
        drawn — Trending and Memes over the ranked universe Spot reads, and the
        door to Stocks — lists the provider's own figures and opens Spot. */
     readiness: "available",
-    /* The old Markets landing is this page's earlier form, and the Asset
-       Passport is what one of its rows opens into. Both belong here. */
-    match: [`${BASE}/trends`, `${BASE}/markets`, `${BASE}/assets`],
+    /* Since the menu v6.2 (2026-10-06) Trends is a sort of «Ринки» —
+       «У тренді» — not a page: its address leads there. The Asset Passport is
+       what one of its rows opened into. */
+    href: `${BASE}/markets`,
+    match: [`${BASE}/trends`, `${BASE}/assets`],
   },
   {
     id: "perps",
@@ -156,7 +159,10 @@ export const PRODUCT_ROUTES: readonly PageRoute[] = [
   },
   {
     id: "my-strategies",
-    href: `${BASE}/strategies`,
+    /* «Боти → Мої боти» since the menu v6.2 (2026-10-06): the plans and the
+       recurring-buy rules in one list; the builder and a plan's page stay under
+       `/app/strategies`. */
+    href: `${BASE}/bots`,
     icon: "strategies",
     /* Stage A: the Trading Plan is the page — the
        wallet's plans, the builder with its deterministic size and check, the
@@ -171,6 +177,7 @@ export const PRODUCT_ROUTES: readonly PageRoute[] = [
      * alerts and what the Agents entry used to open.
      */
     match: [
+      `${BASE}/bots`,
       `${BASE}/strategies`,
       `${BASE}/plans`,
       `${BASE}/action-cases`,
@@ -181,7 +188,8 @@ export const PRODUCT_ROUTES: readonly PageRoute[] = [
   },
   {
     id: "results",
-    href: `${BASE}/results`,
+    /* A plan's result is on its card in «Мої боти» since the menu v6.2. */
+    href: `${BASE}/bots`,
     icon: "results",
     /* Available: the five things Results owns
        are all drawn — an operation as an entry or an exit, what a plan's own

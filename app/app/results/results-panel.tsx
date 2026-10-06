@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 
 import type { WorkspaceLocale } from "@/app/shell/locale";
 import { useSolanaConnection } from "@/app/solana/workspace/connection";
@@ -42,7 +42,12 @@ type Feed = Readonly<{
 
 const EMPTY: Feed = { status: "idle", results: [], outcomes: [], positions: [], summary: EMPTY_SUMMARY, pending: 0 };
 
-export function ResultsPanel({ locale }: { locale: WorkspaceLocale }) {
+/**
+ * `embedded` — the panel inside «Боти → Мої боти», under the plans: the page
+ * above already asks a guest in and a wallet to confirm, so the panel says
+ * nothing until it has results to show, and then draws `head` above them.
+ */
+export function ResultsPanel({ locale, embedded = false, head = null }: { locale: WorkspaceLocale; embedded?: boolean; head?: ReactNode }) {
   const word = resultWordsFor(locale);
   const plan = planWordsFor(locale);
   const { connection } = useSolanaConnection();
@@ -96,6 +101,7 @@ export function ResultsPanel({ locale }: { locale: WorkspaceLocale }) {
     }
   }, [proven, load]);
 
+  if (embedded && (!address || !proven)) return null;
   if (!address) {
     return (
       <section className={plans.card}>
@@ -121,6 +127,7 @@ export function ResultsPanel({ locale }: { locale: WorkspaceLocale }) {
   }
 
   if (feed.status === "loading" && feed.results.length === 0 && feed.outcomes.length === 0) {
+    if (embedded) return null;
     return (
       <section className={plans.card}>
         <div className={plans.cardBody}>
@@ -134,6 +141,8 @@ export function ResultsPanel({ locale }: { locale: WorkspaceLocale }) {
 
   if (feed.status === "failed") {
     return (
+      <>
+      {head}
       <section className={plans.card}>
         <div className={plans.cardBody}>
           <p className={plans.error}>{plan("couldNotLoad")}</p>
@@ -144,18 +153,20 @@ export function ResultsPanel({ locale }: { locale: WorkspaceLocale }) {
           </div>
         </div>
       </section>
+      </>
     );
   }
 
   const nothing = feed.results.length === 0 && feed.outcomes.length === 0 && feed.positions.length === 0;
   if (nothing) {
+    if (embedded) return null;
     return (
       <section className={plans.card}>
         <div className={plans.cardBody}>
           {feed.pending > 0 ? <p className={plans.muted}>{plan("syncing")}</p> : null}
           <p className={plans.muted}>{word("nothingYet")}</p>
           <div className={plans.actions}>
-            <Link className="rw-btn rw-btn--primary" href="/app/strategies" prefetch={false}>
+            <Link className="rw-btn" href="/app/bots" prefetch={false}>
               {plan("myStrategies")}
             </Link>
           </div>
@@ -171,6 +182,7 @@ export function ResultsPanel({ locale }: { locale: WorkspaceLocale }) {
 
   return (
     <div className={styles.stack}>
+      {head}
       {feed.pending > 0 ? <p className={plans.muted}>{plan("syncing")}</p> : null}
 
       <section className={styles.section} aria-label={word("summary")}>

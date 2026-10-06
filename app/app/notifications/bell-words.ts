@@ -13,7 +13,7 @@ export const BELL_WORDS = {
   title: bi("Notifications", "Сповіщення"),
   all: bi("All notifications", "Усі сповіщення"),
   unread: bi("unread", "непрочитаних"),
-  guest: bi("Connect a wallet — autoinvest reminders and news about your rules will appear here.", "Під'єднай гаманець — тут з'являться нагадування автоінвесту й новини твоїх правил."),
+  guest: bi("Connect a wallet — reminders of your recurring buys and news about your rules will appear here.", "Під'єднай гаманець — тут з'являться нагадування регулярної купівлі й новини твоїх правил."),
   unproven: bi("Confirm your wallet with one signature so only you can read its notifications.", "Підтвердь гаманець одним підписом — так сповіщення бачиш лише ти."),
   confirm: bi("Confirm wallet", "Підтвердити гаманець"),
   confirming: bi("Confirming…", "Підтверджуємо…"),

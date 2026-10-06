@@ -1,5 +1,5 @@
 import { PRODUCT_ROUTES } from "../../app/shell/product-routes.ts";
-import { MENU_DESTINATION_IDS } from "../../app/shell/domains.ts";
+import { MENU_SECTION_IDS } from "../../app/shell/domains.ts";
 import { productMapEntries, type ProductMapEntry, type ProductMapLabel } from "./product-map.ts";
 import type { PublicLocale } from "./locale.ts";
 
@@ -27,10 +27,12 @@ export function homepageModel(
     const route = routes.find((entry) => entry.id === id);
     return route ? FROM_ROUTE[route.readiness] ?? "UNAVAILABLE" : "UNAVAILABLE";
   };
-  /* Markets and «Автоінвест» are the menu's own destinations, not pages of
-     the route registry: drawn in the menu means open. */
-  const destination = (id: (typeof MENU_DESTINATION_IDS)[number]): HomepageStatus =>
-    (MENU_DESTINATION_IDS as readonly string[]).includes(id) ? "AVAILABLE" : "UNAVAILABLE";
+  /* Markets and «Автоінвест» are sections of the menu, not pages of the route
+     registry: drawn in the menu means open. «Автоінвест» lives in «Боти» since
+     the menu v6.2. */
+  const SECTION_OF = { markets: "markets", autoinvest: "bots" } as const;
+  const destination = (id: keyof typeof SECTION_OF): HomepageStatus =>
+    (MENU_SECTION_IDS as readonly string[]).includes(SECTION_OF[id]) ? "AVAILABLE" : "UNAVAILABLE";
   const swap = status("swap");
   const supported: HomepageStatus = swap === "AVAILABLE" ? "SUPPORTED_ROUTES" : swap;
   const tokenized = capabilities.find((entry) => entry.id === "rwa-markets")?.label ?? "UNAVAILABLE";

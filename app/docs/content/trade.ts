@@ -2,8 +2,8 @@ import { FEES, FEES_UK, REWARDS } from "./facts.ts";
 import { facts, list, note, p, section, steps, table, type DocPage } from "./model.ts";
 
 /**
- * Trade — Swap, Spot, the stock screener and Trends, as the menu's «Торгувати»
- * draws them, each documented as what it does today. Bridge is documented
+ * Trade — Spot and Swap, the tabs of the menu's «Торгувати», and the Markets
+ * screener with its Trending order, each documented as what it does today. Bridge is documented
  * under Money, where the product keeps it; what you buy and how a company is
  * bought live under Invest since the site's redesign, and the old Stocks
  * page's address leads there. A page that is not built has no documentation
@@ -215,32 +215,34 @@ export const SCREENER: DocPage = {
   slug: "trade/screener",
   group: "trade",
   pageId: "stocks",
-  title: { en: "Stock screener", uk: "Скринер акцій" },
+  title: { en: "Markets: the screener", uk: "Ринки: скринер" },
   summary: {
-    en: "Every tokenized stock on Solana in one list — by issuer, kind, market and session — with its price and day, the issuer's reference, volume and liquidity.",
-    uk: "Кожна токенізована акція на Solana в одному списку — за емітентом, видом, ринком і сесією — з ціною токена за день, орієнтиром емітента, обсягом і ліквідністю.",
+    en: "One table for everything Ryntra trades — tokenized stocks, private companies, crypto and memes — sorted the way you choose.",
+    uk: "Одна таблиця для всього, чим торгує Ryntra, — токенізовані акції, приватні компанії, крипта й меми — у порядку, який обираєш ти.",
   },
   sections: [
     section("what", "What the screener shows", "Що показує скринер", [
       p(
-        "The screener is the Stock screener row under Trade, and on top of Markets under «For experienced investors». It opens on a strip — the US session as the issuer's calendar states it, how many stock tokens are listed and by how many issuers, how many traded today and for how much, what the pools hold — and then the whole list.",
-        "Скринер — рядок «Скринер акцій» у розділі «Торгувати» й угорі Ринків, у ряді «Для досвідчених». Він відкривається смугою — сесія США так, як її називає календар емітента, скільки токенів акцій у каталозі й від скількох емітентів, скільки торгувалося сьогодні й на яку суму, що тримають пули, — а далі весь список.",
+        "Markets is one screener. Its tabs — All, Memes, Crypto, Stocks, Private and Watchlist — are views of one table, and the filter above it finds a row by name, ticker, issuer or contract address. A row opens the token's page: a company's page for a stock or a private company, the market in Spot for a coin.",
+        "Ринки — це один скринер. Його вкладки — Усі, Меми, Крипта, Акції, Приватні й Обране — це види однієї таблиці, а фільтр над нею знаходить рядок за назвою, тікером, емітентом чи адресою контракту. Рядок відкриває сторінку токена: сторінку компанії для акції чи приватної компанії, ринок у Споті для монети.",
       ),
       list(
         [
-          "Each row: the token's price and its day, the issuer's reference per share and its state, the deviation between them, the session, the volume and the liquidity.",
-          "Filters by issuer, kind, market and session, kept for you; every column sorts, so the most traded, the most liquid and the day's movers are one press away.",
-          "Search covers every listed stock by company, ticker or token; a row opens the company's page, and the candlestick chart is in Spot.",
+          "For every asset: the price, the change over 24 hours, the volume, the liquidity and, where the venue states it, the market cap.",
+          "For memes and crypto, also the hour's change, the age of the first pool, the share the ten largest holders keep and the venue's organic score; a token whose mint or freeze authority is still open says so on its row.",
+          "For stocks: the issuer, the exchange's session and the token's deviation from the share's price on the exchange. For private companies: «Not a share» and the token against PreStocks' own valuation — context, not a deviation.",
+          "The order is yours: Trending (the day's volume), Gainers, Losers, Moving now, Newest, Liquidity, or any column's header. Your tab and order are kept on this device; the Watchlist is the same list as Spot's star.",
         ],
         [
-          "Кожен рядок: ціна токена за день, орієнтир емітента за акцію та його стан, відхилення між ними, сесія, обсяг і ліквідність.",
-          "Фільтри за емітентом, видом, ринком і сесією зберігаються для тебе; кожна колонка сортується, тож найбільше торговані, найліквідніші й ті, що рухаються за день, — за один дотик.",
-          "Пошук покриває кожну акцію в каталозі за компанією, тікером або токеном; рядок відкриває сторінку компанії, а свічковий графік — у Споті.",
+          "Для кожного активу: ціна, зміна за 24 години, обсяг, ліквідність і, де майданчик її називає, капіталізація.",
+          "Для мемів і крипти ще зміна за годину, вік першого пулу, частка десяти найбільших власників і органічна оцінка майданчика; токен, у якого право випуску чи заморозки не відкликано, каже про це у своєму рядку.",
+          "Для акцій: емітент, сесія біржі й відхилення ціни токена від ціни акції на біржі. Для приватних компаній: «Це не акція» і ціна токена проти оцінки самого PreStocks — для орієнтиру, не відхилення.",
+          "Порядок обираєш ти: «У тренді» (денний обсяг), «Зростають», «Падають», «Рух за годину», «Нові», «Ліквідність» або заголовок будь-якої колонки. Вкладка й порядок зберігаються на цьому пристрої; «Обране» — той самий список, що й зірка у Споті.",
         ],
       ),
       note(
-        "A reference in the list is the issuer's cached figure with its fetch time, not a price you can trade at; the quote for your sum comes from the same path a purchase goes through and is quoted again in the Review. Issuers without a public catalogue show the reference as unavailable rather than as a guess.",
-        "Орієнтир у списку — кешована цифра емітента з часом отримання, а не ціна, за якою можна купити; котирування на твою суму йде тим самим шляхом, що й купівля, і котирується заново в «Перевірці». Емітенти без публічного каталогу показують орієнтир як недоступний, а не як здогад.",
+        "Every figure is its source's own — the venue's for coins, the issuers' and exchanges' for stocks — and a figure nobody stated is a dash, never a zero. Nothing in the table is a recommendation; the quote for your sum comes when you buy, and is quoted again in the Review.",
+        "Кожна цифра — її джерела: майданчика для монет, емітентів і бірж для акцій, — а цифра, якої ніхто не назвав, — риска, ніколи не нуль. Ніщо в таблиці не є рекомендацією; котирування на твою суму приходить, коли купуєш, і котирується заново в «Перевірці».",
       ),
     ]),
   ],
@@ -251,27 +253,27 @@ export const TRENDS: DocPage = {
   slug: "trade/trends",
   group: "trade",
   pageId: "trends",
-  title: { en: "Trends", uk: "Тренди" },
+  title: { en: "Trending", uk: "У тренді" },
   summary: {
-    en: "Where a trade starts: what is moving on Solana today, by the provider's own figures, one press away from Spot.",
-    uk: "Звідки починається угода: що рухається на Solana сьогодні, за цифрами самого постачальника, за одне натискання від Споту.",
+    en: "What is moving on Solana today — the Trending order of the Markets screener, by the venue's own figures, one press away from the token's page.",
+    uk: "Що рухається на Solana сьогодні — порядок «У тренді» скринера Ринків, за цифрами самого майданчика, за одне натискання від сторінки токена.",
   },
   sections: [
-    section("today", "What Trends shows", "Що показують Тренди", [
+    section("today", "What Trending shows", "Що показує «У тренді»", [
       p(
-        "Spot answers «what do I want to trade»; Trends answers «what is worth looking at right now». Trending lists the most traded assets on Solana today, Memes the memes by the day's volume, each row with its price, the day's change, volume, liquidity and whether the token is verified — the provider's own figures, with the time they were read. Above the list, four tiles: the most traded asset, the biggest move, the most liquid, and the day's activity across the list.",
-        "Спот відповідає «чим я хочу торгувати»; Тренди — «на що варто подивитися зараз». «У тренді» показує активи з найбільшим обсягом торгів на Solana сьогодні, «Меми» — меми за денним обсягом; кожен рядок має ціну, зміну за день, обсяг, ліквідність і позначку, чи токен перевірено, — цифри самого постачальника з часом, коли їх прочитано. Над списком — чотири плитки: найбільше торгів, найбільший рух, найліквідніший актив і активність за день по списку.",
+        "Trending is not a page of its own any more: it is the first order of the Markets screener — the assets with the most trading on Solana today, by the venue's own figures. Gainers, Losers and Moving now sit beside it, and the Memes tab shows the memes by the same order.",
+        "«У тренді» — більше не окрема сторінка, а перший порядок скринера Ринків: активи з найбільшим обсягом торгів на Solana сьогодні, за цифрами самого майданчика. Поруч — «Зростають», «Падають» і «Рух за годину», а вкладка «Меми» показує меми в тому самому порядку.",
       ),
       list(
         [
-          "A row or a tile opens the asset in Spot, where the chart, the watchlist star and the ticket are.",
-          "Stocks/RWA opens the stock screener, where tokenized stocks have their own list.",
-          "It is not a ranking and not advice: a figure the provider did not state shows a dash, never a zero.",
+          "A row opens the token's page — a coin's market in Spot, where the chart, the watchlist star and the ticket are.",
+          "Deposit receipts — a lending position like jlUSDC — are not rows: they are not markets to screen.",
+          "It is not a ranking and not advice: a figure the venue did not state shows a dash, never a zero.",
         ],
         [
-          "Рядок чи плитка відкриває актив у Споті — там графік, зірка обраного й квиток.",
-          "«Акції/RWA» відкриває скринер акцій — там токенізовані акції мають власний список.",
-          "Це не рейтинг і не порада: цифру, якої постачальник не назвав, показано рискою, ніколи нулем.",
+          "Рядок відкриває сторінку токена — ринок монети в Споті, де графік, зірка обраного й квиток.",
+          "Депозитні квитанції — позиція в кредитуванні, як-от jlUSDC, — не рядки: це не ринки для скринера.",
+          "Це не рейтинг і не порада: цифру, якої майданчик не назвав, показано рискою, ніколи нулем.",
         ],
       ),
     ]),

@@ -29,7 +29,7 @@ export default async function StockNotFound() {
         <h1 id="missing-title">{word("notFoundTitle")}</h1>
         <p>{word("notFoundBody")}</p>
         <div className={styles.missingActions}>
-          <Link className="rw-btn rw-btn--primary" href="/app/stocks" prefetch={false}>
+          <Link className="rw-btn rw-btn--primary" href="/app/markets?tab=stocks" prefetch={false}>
             {word("browseStocks")}
           </Link>
           <Link className="rw-btn" href="/app/spot?view=stock" prefetch={false}>

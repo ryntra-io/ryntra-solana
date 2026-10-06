@@ -12,7 +12,7 @@ const AMOUNT_SHAPE = /^\d{1,20}(\.\d{1,18})?$/;
 
 export async function generateMetadata() {
   const { text } = await solanaServerText();
-  return { title: text("Bridge") };
+  return { title: text("Cross-chain") };
 }
 
 /**
@@ -83,7 +83,7 @@ export default async function BridgePage({
 
   return (
     <>
-      <PageHead title="Bridge" />
+      <PageHead title="Cross-chain" />
       <div className="ry-money-flow">
         <ResumeUnfinished />
         <PanelGrid label={text("Bridge")}>

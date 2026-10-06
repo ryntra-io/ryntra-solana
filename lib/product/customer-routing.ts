@@ -42,7 +42,7 @@ export const CUSTOMER_PATHS = {
   home: "/app/home",
   portfolio: "/app/portfolio", activity: "/app/activity",
   swap: "/app/swap", spot: "/app/spot", perps: "/app/perps", trends: "/app/trends",
-  ideas: "/app/ideas", strategies: "/app/strategies", results: "/app/results",
+  ideas: "/app/ideas", strategies: "/app/bots", results: "/app/bots", markets: "/app/markets", bots: "/app/bots",
   send: "/app/send", receive: "/app/receive",
   receipts: "/app/receipts", assets: "/app/assets", settings: "/app/settings",
 } as const;
@@ -140,7 +140,7 @@ const moved: readonly (readonly [string, string])[] = [
   /* `/app/markets` is a page again since canon v5.0 §3: Markets, companies
      first, for everyone. The Solana workspace's old address keeps its Trends
      answer. */
-  ["/solana/workspace/markets", "/app/trends"],
+  ["/solana/workspace/markets", "/app/markets"],
 
   /* Strategies. Plans is not a second system (canon §5.2), so the plan list is
      this page rather than a page beside it. Action cases, Control and Agents
@@ -154,14 +154,33 @@ const moved: readonly (readonly [string, string])[] = [
      never re-ask. Redirecting `/app/plans` back would loop those browsers on
      the landing page of a whole group. It serves the same page instead; see
      `app/app/plans/page.tsx`. */
-  ["/app/action-cases", "/app/strategies"],
-  ["/app/control", "/app/strategies"],
-  ["/app/agents", "/app/strategies"],
-  ["/agent-control", "/app/strategies"], ["/agents", "/app/strategies"],
-  ["/agents/workspace", "/app/strategies"], ["/agents/workspace/agents", "/app/strategies"],
+  ["/app/action-cases", "/app/bots"],
+  ["/app/control", "/app/bots"],
+  ["/app/agents", "/app/bots"],
+  ["/agent-control", "/app/bots"], ["/agents", "/app/bots"],
+  ["/agents/workspace", "/app/bots"], ["/agents/workspace/agents", "/app/bots"],
   ...["attention", "actions", "policies", "evidence", "lab", "operations", "team", "reviews", "authorize", "integrations", "commerce", "tools", "adoption"].map(
-    (name): readonly [string, string] => [`/agents/workspace/${name}`, "/app/strategies"],
+    (name): readonly [string, string] => [`/agents/workspace/${name}`, "/app/bots"],
   ),
+
+  /* The menu v6.2 (2026-10-06):
+     every old address leads to its new place, temporarily, in one hop.
+     Ринки is one screener — the stock screener and Trends lead into it, on the
+     tab they were (`?kind=preipo` and `?mode=meme` are read there); Боти holds
+     the recurring-buy rules and the plans with their results, so the landings
+     of «Автоінвест», «Мої стратегії» and «Результати» lead to «Мої боти» (a
+     plan's builder and its page stay where they are); Торгувати is Спот ·
+     Обмін, and Лаунч opens on its form. `/app/plans` may now lead on too:
+     `/app/bots` redirects nowhere, so the cached 308 of 2026-09-08 ends there. */
+  ["/app/stocks", "/app/markets?tab=stocks"],
+  ["/app/stocks/screener", "/app/markets?tab=stocks"],
+  ["/app/trends", "/app/markets"],
+  ["/app/autoinvest", "/app/bots"],
+  ["/app/strategies", "/app/bots"],
+  ["/app/plans", "/app/bots"],
+  ["/app/results", "/app/bots"],
+  ["/app/trade", "/app/swap"],
+  ["/app/launch", "/app/launch/new"],
 
   /* Canon v5.0 §0.0 rule 10 (2026-09-23, `RYN-SURFACE-CLEAN-001`): only what
      is built reaches a person. Three pages that are not built leave the
@@ -200,13 +219,13 @@ const moved: readonly (readonly [string, string])[] = [
      strategies, where the person's own plans are. Until 2026-09-23 this row
      was deliberately absent — the lab was a live preview kept out of every
      menu by its own flag. */
-  ["/app/strategy-lab", "/app/strategies"],
+  ["/app/strategy-lab", "/app/bots"],
 
   /* Results takes plan-against-outcome. Journal used to answer to Activity,
      which is the other half of the question (canon §9.2 draws the line). */
-  ["/app/journal", "/app/results"],
-  ["/app/brief", "/app/results"],
-  ["/app/coverage", "/app/results"],
+  ["/app/journal", "/app/bots"],
+  ["/app/brief", "/app/bots"],
+  ["/app/coverage", "/app/bots"],
 
   /* The documentation of two pages that are not built left with canon v5.0
      §0.0 rule 10 (2026-09-23, `RYN-SURFACE-CLEAN-001`): only what is built
@@ -228,13 +247,13 @@ export const LAB_RECORD_SOURCE =
   "/app/strategies/:id([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})";
 
 export const CUSTOMER_REDIRECTS = [
-  /* No row is conditional: since canon v5.3 (В28) the rows that led «Профі»
+  /* No row is conditional: since canon v5.3 the rows that led «Профі»
      from Home, Markets and «Поповнити» to Portfolio, Trends and Receive by a
      cookie are gone with the switch, and those addresses answer everyone. */
   ...settled.map(([source, destination]) => ({ source, destination, permanent: true })),
   ...moved.map(([source, destination]) => ({ source, destination, permanent: false })),
   { source: "/assets/:mint", destination: "/app/assets?mint=:mint", permanent: true },
-  { source: LAB_RECORD_SOURCE, destination: "/app/strategies", permanent: false },
+  { source: LAB_RECORD_SOURCE, destination: "/app/bots", permanent: false },
 ];
 
 /** Preserve query and fragment when adapting links, never rewrite off-site URLs. */
@@ -255,5 +274,7 @@ export function customerHref(href: string): string {
   const target = aliases.find(([source]) => source === pathname)?.[1];
   if (!target) return href;
   const [base, fragment] = target.split("#");
-  return base + suffix + (fragment && !suffix.includes("#") ? `#${fragment}` : "");
+  /* A target that carries its own query (`/app/markets?tab=stocks`) takes the link's query after it. */
+  const joined = base.includes("?") && suffix.startsWith("?") ? `${base}&${suffix.slice(1)}` : base + suffix;
+  return joined + (fragment && !suffix.includes("#") ? `#${fragment}` : "");
 }

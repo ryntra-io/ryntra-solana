@@ -1,18 +1,15 @@
+import { redirect } from "next/navigation";
+
 /**
- * `/app/plans` serves My strategies, and does not redirect to it.
+ * `/app/plans` leads to «Боти → Мої боти» since the menu v6.2 (2026-10-06,
+ *), like `/app/strategies`.
  *
- * This is a loop the redirect table cannot fix. Until 2026-09-08 the alias ran
- * the other way and it was **permanent**: `/app/strategies → /app/plans`, a 308
- * that every browser which ever opened the strategies URL has cached and will
- * never ask about again. The page lives at `/app/strategies` — Plans is not a
- * second system — so pointing `/app/plans` back at it would give those
- * browsers `/app/strategies` → *cached 308* → `/app/plans` → 307 →
- * `/app/strategies` → … on the landing page of a whole navigation group, and
- * only for the people who had used it before.
- *
- * A 308 cannot be recalled. So the second URL is served rather than redirected:
- * one page, reachable by both names, and the rail marks My strategies from
- * either because the route registry owns both prefixes.
+ * Until then it served the plans rather than redirecting: a 308 of
+ * 2026-09-08 (`/app/strategies → /app/plans`) is cached in browsers that used
+ * the page, and sending `/app/plans` back to `/app/strategies` would loop
+ * them. `/app/bots` redirects nowhere, so a browser holding that old 308 now
+ * goes `/app/strategies` → `/app/plans` → `/app/bots` and stops.
  */
-export { default, metadata } from "../strategies/page";
-export const dynamic = "force-dynamic";
+export default function PlansMovedToBots(): never {
+  redirect("/app/bots");
+}

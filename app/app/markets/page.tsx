@@ -7,6 +7,8 @@ import { breadcrumbList, itemList, jsonLdScript, webPage } from "@/lib/site/stru
 import { companyShelf } from "@/lib/stocks/shelf";
 import { readStockUniverse } from "@/lib/stocks/universe.server";
 
+import { screenerTabOf } from "@/lib/markets/screener";
+
 import { MarketsPlace } from "./markets-place";
 
 export const dynamic = "force-dynamic";
@@ -21,10 +23,14 @@ export async function generateMetadata() {
   return buildAppMarketsMetadata(await solanaServerLocale());
 }
 
-/** Ринки — the second of the five places, the same for every person and every guest, in tabs; `?tab=` opens one. */
+/**
+ * Ринки — one screener for every asset (the menu v6.2), the
+ * same for every person and every guest; `?tab=` opens a tab, and the old
+ * screener's `?kind=` and Trends' `?mode=` open the tab they meant.
+ */
 export default async function MarketsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const [locale, params] = await Promise.all([solanaServerLocale(), searchParams]);
-  const tab = typeof params.tab === "string" ? params.tab : null;
+  const tab = screenerTabOf(params);
   return (
     <>
       <Suspense fallback={null}>

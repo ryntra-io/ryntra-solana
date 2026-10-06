@@ -114,7 +114,7 @@ function AutoinvestGuest({ locale }: { locale: WorkspaceLocale }) {
       </div>
       <div className={home.card}>
         <p className={home.cardLine}>{word("autoinvestGuest")}</p>
-        <Link className={home.textButton} href="/app/autoinvest" prefetch={false}>
+        <Link className={home.textButton} href="/app/bots" prefetch={false}>
           {word("howItWorks")}
           <ArrowRight size={14} weight="bold" aria-hidden="true" />
         </Link>

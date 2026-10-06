@@ -1,0 +1,629 @@
+/*
+ * «Ринки» — one screener. The head, then one card: the
+ * tabs and the filter, the quick orders, the table, the count. The table
+ * speaks the stock table's language — uppercase quiet headers that sort,
+ * 56px rows, mono figures, a dash for a figure nobody stated — so the two
+ * lists it replaced read as one.
+ */
+
+.page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ry-s4);
+  width: 100%;
+  min-width: 0;
+}
+
+.head {
+  display: grid;
+  gap: var(--ry-s1);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-page);
+  line-height: var(--ry-lh-tight);
+  letter-spacing: var(--ry-ls-head);
+  color: var(--ry-text);
+}
+
+.lead {
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  color: var(--ry-muted);
+}
+
+.screener {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ry-s3);
+  min-width: 0;
+  padding: var(--ry-s3) 0 0;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+  overflow: hidden;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--ry-s3);
+  padding: 0 var(--ry-s4);
+}
+
+.tabs {
+  display: flex;
+  gap: 2px;
+  min-width: 0;
+  max-width: 100%;
+  margin: -3px;
+  padding: 3px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.tab {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 var(--ry-s3);
+  border: 0;
+  border-radius: var(--ry-r-pill);
+  background: transparent;
+  color: var(--ry-muted);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--rt-duration-fast) var(--rt-ease), color var(--rt-duration-fast) var(--rt-ease);
+}
+
+.tab:hover {
+  color: var(--ry-text);
+}
+
+.tab[aria-pressed="true"] {
+  background: var(--ry-elevated);
+  box-shadow: inset 0 0 0 1px var(--ry-border-strong, var(--ry-border));
+  color: var(--ry-text);
+}
+
+.tab:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+}
+
+.tabCount {
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-hover);
+  font-size: var(--ry-fs-label-sm);
+  text-align: center;
+}
+
+.search {
+  display: flex;
+  flex: 0 1 340px;
+  align-items: center;
+  gap: var(--ry-s2);
+  min-width: 0;
+  height: 40px;
+  padding: 0 var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-bg, var(--ry-card));
+  color: var(--ry-muted);
+}
+
+.search:focus-within {
+  border-color: var(--ry-border-strong);
+  box-shadow: var(--ry-focus);
+}
+
+.search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ry-text);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  outline: none;
+}
+
+.search input::placeholder {
+  color: var(--ry-text-muted, var(--ry-muted));
+}
+
+.orders {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s3);
+  padding: 0 var(--ry-s4);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.orders::-webkit-scrollbar {
+  display: none;
+}
+
+/* The order is a quieter control than the kind of asset: words, the chosen one underlined — not a second row of pills. */
+.order {
+  flex: 0 0 auto;
+  min-height: 32px;
+  padding: 0 var(--ry-s1);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ry-muted);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-label);
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.order:hover {
+  color: var(--ry-text);
+}
+
+.order[aria-pressed="true"] {
+  border-bottom-color: var(--ry-iris);
+  color: var(--ry-text);
+  font-weight: 600;
+}
+
+.order:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+}
+
+.note {
+  margin: 0 var(--ry-s4);
+  padding: var(--ry-s2) var(--ry-s3);
+  border-radius: var(--ry-r-btn-sm);
+  background: color-mix(in srgb, var(--ry-caution) 10%, transparent);
+  color: var(--ry-text);
+  font-size: var(--ry-fs-label);
+  line-height: 1.45;
+}
+
+.tableWrap {
+  overflow-x: auto;
+  min-width: 0;
+  border-top: 1px solid var(--ry-border);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table thead th {
+  height: 40px;
+  padding: 0 var(--ry-s3);
+  border-bottom: 1px solid var(--ry-border);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.table thead th.cAsset {
+  text-align: left;
+}
+
+.sortButton,
+.headText {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s1);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ry-muted);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.sortButton {
+  cursor: pointer;
+}
+
+.sortButton:hover,
+.sortButton[data-active="true"] {
+  color: var(--ry-text);
+}
+
+.sortButton:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+  border-radius: 4px;
+}
+
+.table td,
+.table tbody th {
+  height: 56px;
+  padding: 0 var(--ry-s3);
+  border-bottom: 1px solid var(--ry-border);
+  font-size: var(--ry-fs-value);
+  color: var(--ry-text);
+  vertical-align: middle;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.table tbody tr:last-child td,
+.table tbody tr:last-child th {
+  border-bottom: 0;
+}
+
+.row {
+  transition: background-color var(--rt-duration-fast) var(--rt-ease);
+}
+
+.row:hover {
+  background: var(--ry-hover);
+}
+
+.cStar {
+  width: 40px;
+  padding-inline: var(--ry-s3) 0 !important;
+  text-align: left !important;
+}
+
+.star {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: var(--ry-r-pill);
+  background: transparent;
+  color: var(--ry-text-muted, var(--ry-muted));
+  cursor: pointer;
+}
+
+.star:hover {
+  color: var(--ry-text);
+  background: var(--ry-hover);
+}
+
+.star[aria-pressed="true"] {
+  color: var(--ry-caution);
+}
+
+.star:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+}
+
+.table tbody th.cAsset {
+  text-align: left;
+  font-weight: 600;
+}
+
+.asset {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s3);
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.asset:focus-visible {
+  outline: 2px solid var(--ry-focus-ring, var(--ry-iris));
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.icon {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-elevated);
+  object-fit: cover;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.names {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.symbol {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  color: var(--ry-text);
+  line-height: var(--ry-lh-tight);
+}
+
+.name {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 30ch;
+  font-size: var(--ry-fs-label);
+  font-weight: 400;
+  color: var(--ry-muted);
+  line-height: var(--ry-lh-tight);
+}
+
+.issuer {
+  color: var(--ry-text-muted, var(--ry-muted));
+}
+
+.flag {
+  padding: 1px var(--ry-s2);
+  border-radius: var(--ry-r-pill);
+  border: 1px solid var(--ry-border-strong);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ry-muted);
+  white-space: nowrap;
+}
+
+.flag[data-flag="private"],
+.flag[data-flag="caution"] {
+  border-color: color-mix(in srgb, var(--ry-caution) 55%, var(--ry-border));
+  color: var(--ry-caution);
+}
+
+.cNum {
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.cNum [data-tone="up"] {
+  color: var(--ry-pnl-pos);
+}
+
+.cNum [data-tone="down"] {
+  color: var(--ry-pnl-neg);
+}
+
+.cNum [data-tone="flat"] {
+  color: var(--ry-muted);
+}
+
+.cNum [data-organic="low"] {
+  color: var(--ry-caution);
+}
+
+.cNum [data-organic] {
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-label);
+}
+
+.session {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-label);
+  font-weight: 500;
+  color: var(--ry-text);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-unknown);
+}
+
+.session[data-tone="open"] .dot {
+  background: var(--ry-verified);
+}
+
+.session[data-tone="extended"] .dot {
+  background: var(--ry-info);
+}
+
+.session[data-tone="closed"] {
+  color: var(--ry-muted);
+}
+
+.foot {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ry-s3);
+  padding: var(--ry-s3) var(--ry-s4);
+  border-top: 1px solid var(--ry-border);
+}
+
+.footCount {
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+}
+
+.sources {
+  margin-inline-start: auto;
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-text-muted, var(--ry-muted));
+}
+
+.empty,
+.status {
+  margin: 0;
+  padding: var(--ry-s6) var(--ry-s4);
+  border-top: 1px solid var(--ry-border);
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-copy);
+  text-align: center;
+}
+
+.status {
+  display: grid;
+  justify-items: center;
+  gap: var(--ry-s3);
+}
+
+.status p {
+  margin: 0;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.bone {
+  display: block;
+  max-width: 100%;
+  border-radius: var(--ry-r-btn-sm);
+  background: var(--ry-elevated);
+  animation: screener-bone 1.4s ease-in-out infinite;
+}
+
+@keyframes screener-bone {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bone {
+    animation: none;
+    opacity: 0.7;
+  }
+}
+
+.boneRows {
+  display: grid;
+  gap: 6px;
+  padding: 0 var(--ry-s4) var(--ry-s4);
+}
+
+.phoneOnly {
+  display: none;
+}
+
+/* The columns follow the width: the asset, its price and its day always; the rest as the screen allows. */
+@media (max-width: 1280px) {
+  .table [data-col="organic"],
+  .table [data-col="top10"] {
+    display: none;
+  }
+}
+
+@media (max-width: 1080px) {
+  .table [data-col="marketCap"],
+  .table [data-col="age"],
+  .table [data-col="change1h"] {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .table [data-col="liquidity"],
+  .table [data-col="volume24h"],
+  .table [data-col="session"],
+  .table [data-col="deviation"],
+  .table [data-col="premium"] {
+    display: none;
+  }
+
+  .search {
+    flex-basis: 100%;
+  }
+
+  .phoneOnly {
+    display: inline-flex;
+    font-size: var(--ry-fs-label-sm);
+  }
+
+  /* A row that scrolls sideways fades at its edge, so the words past it read as more, not as cut. */
+  .tabs,
+  .orders {
+    -webkit-mask-image: linear-gradient(90deg, var(--ry-text) 85%, transparent);
+    mask-image: linear-gradient(90deg, var(--ry-text) 85%, transparent);
+    padding-inline-end: 32px;
+  }
+
+  /* On a phone the table takes the screen's width, edge to edge. */
+  .screener {
+    margin-inline: -16px;
+    border-inline: 0;
+    border-radius: 0;
+  }
+
+  /* A phone's row: the star, the asset, its price and its day — every one of them on the screen. */
+  .table td,
+  .table tbody th,
+  .table thead th {
+    padding: 0 6px;
+    font-size: var(--ry-fs-dense);
+  }
+
+  .cStar {
+    width: 30px;
+    padding-inline: 6px 0 !important;
+  }
+
+  .star {
+    width: 28px;
+    height: 28px;
+  }
+
+  .asset {
+    gap: var(--ry-s2);
+  }
+
+  .icon {
+    width: 24px;
+    height: 24px;
+  }
+
+  .name {
+    max-width: 11ch;
+  }
+
+  .symbol {
+    max-width: 14ch;
+  }
+
+  .sources {
+    margin-inline-start: 0;
+  }
+}

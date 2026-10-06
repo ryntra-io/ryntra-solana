@@ -1,0 +1,81 @@
+import type { WorkspaceLocale } from "@/app/shell/locale";
+
+/** The words of «Ринки» — one screener for everything Ryntra trades — in both languages. */
+
+type Bi = Readonly<{ en: string; uk: string }>;
+const bi = (en: string, uk: string): Bi => ({ en, uk });
+
+export const MARKETS_WORDS = {
+  title: bi("Markets", "Ринки"),
+  lead: bi("Stocks, private companies, crypto and memes in one table. You choose the order.", "Акції, приватні компанії, крипта й меми — в одній таблиці. Порядок обираєш ти."),
+  tabs: bi("Asset kinds", "Види активів"),
+  tabAll: bi("All", "Усі"),
+  tabMemes: bi("Memes", "Меми"),
+  tabCrypto: bi("Crypto", "Крипта"),
+  tabStocks: bi("Stocks", "Акції"),
+  tabPrivate: bi("Private", "Приватні"),
+  tabWatchlist: bi("Watchlist", "Обране"),
+  search: bi("Name, ticker or contract address", "Назва, тікер або адреса контракту"),
+  searchLabel: bi("Filter the table", "Фільтр таблиці"),
+  sortBy: bi("Sort", "Порядок"),
+  sortVolume: bi("Trending", "У тренді"),
+  sortRise: bi("Gainers", "Зростають"),
+  sortFall: bi("Losers", "Падають"),
+  sortHour: bi("Moving now", "Рух за годину"),
+  sortNew: bi("Newest", "Нові"),
+  sortLiquidity: bi("Liquidity", "Ліквідність"),
+  colAsset: bi("Asset", "Актив"),
+  colPrice: bi("Price", "Ціна"),
+  col1h: bi("1h", "1 год"),
+  col24h: bi("24h", "24 год"),
+  colVolume: bi("Volume 24h", "Обсяг 24 год"),
+  colLiquidity: bi("Liquidity", "Ліквідність"),
+  colMarketCap: bi("Market cap", "Капіталізація"),
+  colAge: bi("Age", "Вік"),
+  colTop10: bi("Top 10", "Топ-10"),
+  colOrganic: bi("Organic", "Органічність"),
+  colSession: bi("Session", "Сесія"),
+  colDeviation: bi("To exchange", "До біржі"),
+  colPremium: bi("To valuation", "До оцінки"),
+  notAShare: bi("Not a share", "Це не акція"),
+  privateLine: bi("PreStocks tokens, not shares. Selling may not be possible.", "Токени PreStocks, а не акції. Продати може не вийти."),
+  memesRisk: bi("The riskiest: a price can fall to zero within hours. Buy only what you are ready to lose.", "Найризикованіше: ціна може впасти до нуля за години. Купуй лише те, що готовий втратити."),
+  premiumNote: bi("Token price against PreStocks' own valuation — context, not a deviation.", "Ціна токена проти оцінки самого PreStocks — для орієнтиру, не відхилення."),
+  deviationNote: bi("Token price against the share's price on the exchange.", "Ціна токена проти ціни акції на біржі."),
+  unverified: bi("Not verified", "Не верифіковано"),
+  suspicious: bi("Flagged by Jupiter", "Позначка Jupiter"),
+  mintOpen: bi("Mint open", "Випуск відкритий"),
+  mintOpenTitle: bi("The token's mint authority is not revoked: more can be issued.", "Право випуску токена не відкликано: можуть випустити ще."),
+  freezeOpen: bi("Freeze open", "Заморозка можлива"),
+  freezeOpenTitle: bi("The token's freeze authority is not revoked: a holder's tokens can be frozen.", "Право заморозки не відкликано: токени власника можуть заморозити."),
+  halted: bi("Paused", "Призупинено"),
+  notOffered: bi("Not offered", "Не пропонується"),
+  organicHigh: bi("High", "Висока"),
+  organicMedium: bi("Medium", "Середня"),
+  organicLow: bi("Low", "Низька"),
+  star: bi("Add to watchlist", "Додати в обране"),
+  unstar: bi("Remove from watchlist", "Прибрати з обраного"),
+  showMore: bi("Show more", "Показати ще"),
+  shown: bi("shown", "показано"),
+  of: bi("of", "з"),
+  empty: bi("Nothing here.", "Тут порожньо."),
+  emptySearch: bi("Nothing matches.", "Нічого не знайдено."),
+  emptyWatchlist: bi("Your watchlist is empty — tap ☆ on any row.", "Обране порожнє — натисни ☆ у будь-якому рядку."),
+  coinsDown: bi("Crypto and memes are not answering right now.", "Крипта й меми зараз не відповідають."),
+  stocksDown: bi("Stocks are not answering right now.", "Акції зараз не відповідають."),
+  allDown: bi("The markets could not be read right now.", "Ринки зараз не вдалося прочитати."),
+  reload: bi("Reload", "Оновити"),
+  coinsAt: bi("coins read at", "монети станом на"),
+  coinsStaleAt: bi("coins last read at", "монети востаннє прочитано о"),
+  sources: bi("Prices: Jupiter for coins, the issuers and exchanges for stocks", "Ціни: Jupiter для монет, емітенти й біржі для акцій"),
+  days: bi("d", "д"),
+  months: bi("mo", "міс"),
+  years: bi("y", "р"),
+  underDay: bi("<1d", "<1 д"),
+} as const;
+
+export type MarketsWord = keyof typeof MARKETS_WORDS;
+
+export function marketsWords(locale: WorkspaceLocale) {
+  return (key: MarketsWord): string => MARKETS_WORDS[key][locale];
+}

@@ -15,7 +15,6 @@ import { signTransactions } from "@/lib/solana/wallet.client";
 import { formatBps, formatDate, formatDuration, formatNumber, formatPercent, formatRaw, fromRaw, toRaw } from "../launch-format";
 import { launchWords, type LaunchWordKey } from "../launch-words";
 import styles from "../launch.module.css";
-import { LaunchTabs } from "../launch-tabs";
 import { PausedChip, PausedNote } from "../paused-note";
 import { ShareLink } from "../share-link";
 
@@ -278,7 +277,6 @@ export function LaunchFlow({ locale, presets, paused = null }: { locale: Workspa
 
   return (
     <div className={styles.page}>
-      <LaunchTabs locale={locale} />
       <header className={styles.head}>
         <div className={styles.headRow}>
           <h1 className={styles.title}>{word("title")}</h1>

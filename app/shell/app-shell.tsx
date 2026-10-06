@@ -82,6 +82,7 @@ import {
   ClockCounterClockwise,
   Gift,
   PlusCircle,
+  Plus,
   Repeat,
   RocketLaunch,
 } from "@phosphor-icons/react";
@@ -103,11 +104,12 @@ import {
   menuNavigation,
   mobileNavigation,
   pageActiveHref,
-  productNavigation,
+  sectionTabs,
   type PageRoute,
   type ProductLocale,
 } from "./domains";
 import { ProductMobileNav } from "./product-mobile-nav";
+import { SectionTabsBar } from "./section-tabs";
 import { WidgetRegistryProvider } from "./widget";
 import {
   navigationFor,
@@ -315,6 +317,9 @@ const ICONS: Record<string, ReactNode> = {
   rewards: <Gift size={17} weight="bold" />,
   /* Launch: a token leaving the ground. */
   launch: <RocketLaunch size={17} weight="bold" />,
+  /* The menu v6.2: Bots run on a person's rule; «+» starts a token on the phone's bar. */
+  bots: <Robot size={17} weight="bold" />,
+  "launch-plus": <Plus size={18} weight="bold" />,
 };
 
 /*
@@ -576,6 +581,7 @@ function NavLink({
       className="rs-link"
       href={entry.href}
       title={entry.caption ? `${entry.label} — ${entry.caption}` : entry.label}
+      data-row={entry.id}
       data-heads={heads ? "true" : undefined}
       data-sub={entry.sub ? "true" : undefined}
       data-within={within ? "true" : undefined}
@@ -1053,12 +1059,12 @@ function ShellFrame({
      `shell-copy.tsx` for why that is a context and not four more props. */
   const chrome = useShellCopy();
   /* The product draws one menu for everyone — no depth, no stored preference
-     and no cookie decides it — and it is the menu you can see: every
-     section with its caption, nothing behind «Ще» on a desk, the same
-     sections under «Ще» on a phone. The phone's bar is the five places,
-     lit by `navigation`. */
-  const navigation = product ? productNavigation(product.routes, product.locale) : null;
+     and no cookie decides it: the menu v6.2, «+ Запустити токен» on top and
+     three groups of sections with their captions, nothing behind «Ще» on a
+     desk; on a phone the bar's five and «Ще» opening the rows the bar does not
+     hold. A section's pages are tabs at the top of its page. */
   const menu = product ? menuNavigation(product.routes, product.locale) : null;
+  const tabs = product ? sectionTabs(pathname, product.routes, product.locale) : null;
   const workspaceGroups = navGroupsFor?.(prefs.mode) ?? navGroups ?? navigationFor(workspace.id);
 
   /*
@@ -1075,11 +1081,12 @@ function ShellFrame({
    */
   const groups: readonly NavGroup[] = menu
     ? [
-        ...menu.sections.map((section) => ({
-          id: `domains-${section.id}`,
-          title: section.title ?? undefined,
-          entries: section.rows.map((row) => ({ id: row.id, label: row.label, caption: row.caption, href: row.href, icon: row.icon })),
+        ...menu.groups.map((group) => ({
+          id: `domains-${group.id}`,
+          entries: group.rows.map((row) => ({ id: row.id, label: row.label, caption: row.caption, href: row.href, icon: row.icon })),
         })),
+        /* The assistant is «Спитати Ryntra» in the header on a desk; on a phone, a row of «Ще» (shell.css). */
+        { id: "domains-assistant", entries: [{ id: menu.assistant.id, label: menu.assistant.label, caption: menu.assistant.caption, href: menu.assistant.href, icon: menu.assistant.icon }] },
         ...workspaceGroups,
       ]
     : workspaceGroups;
@@ -1234,7 +1241,19 @@ function ShellFrame({
         <PrimaryNavigation
           groups={groups}
           domainRoutes={menu?.routes}
-          actions={navActions}
+          actions={
+            menu ? (
+              /* «+ Запустити токен», quiet: the one orange action on a screen is the screen's own. */
+              <Link className="rs-nav-launch" href={menu.action.href} data-row="launch-action" aria-current={pathname === menu.action.href ? "page" : undefined}>
+                <span className="rs-nav-launch-ic" aria-hidden>
+                  <Plus size={15} weight="bold" />
+                </span>
+                <span className="rs-nav-launch-label">{menu.action.label}</span>
+              </Link>
+            ) : (
+              navActions
+            )
+          }
           label={copy.navLabel}
           footer={navFooter}
           viewExtras={viewExtras}
@@ -1244,10 +1263,10 @@ function ShellFrame({
           hidden={mobile && !drawer}
         />
 
-        {product && navigation ? (
+        {product && menu ? (
           <ProductMobileNav
             entries={mobileNavigation(product.routes, product.locale)}
-            activeHref={pageActiveHref(pathname, navigation.routes)}
+            activeHref={pageActiveHref(pathname, menu.routes)}
             label={copy.navLabel}
             icons={ICONS}
             moreLabel={copy.navOpen}
@@ -1267,6 +1286,7 @@ function ShellFrame({
         ) : null}
 
         <main className="rs-canvas" id="workspace" tabIndex={-1}>
+          {tabs ? <SectionTabsBar tabs={tabs} /> : null}
           {children}
         </main>
 

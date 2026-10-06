@@ -233,23 +233,23 @@ export const APP_MARKETS_PATH = "/app/markets" as const;
 
 const APP_HOME_WORDS: Readonly<Record<"en" | "uk", Readonly<{ title: string; description: string }>>> = {
   en: {
-    title: "Ryntra app — buy a piece of a company from $1",
-    description: "Connect a Solana wallet, top up from $1 and buy a piece of a company. Popular companies, Autoinvest and your notifications — on one screen.",
+    title: "Ryntra app — stocks, crypto, memes and your own token",
+    description: "Connect a Solana wallet, top up, and buy tokenized stocks, crypto and memes — or launch your own token. Markets, bots and your notifications in one app.",
   },
   uk: {
-    title: "Застосунок Ryntra — частинка компанії від $1",
-    description: "Під'єднай гаманець Solana, поповни від $1 і купи частинку компанії. Популярні компанії, «Автоінвест» і сповіщення — на одному екрані.",
+    title: "Застосунок Ryntra — акції, крипта, меми й свій токен",
+    description: "Під'єднай гаманець Solana, поповни й купуй токенізовані акції, крипту й меми — або запусти свій токен. Ринки, боти й сповіщення в одному застосунку.",
   },
 };
 
 const APP_MARKETS_WORDS: Readonly<Record<"en" | "uk", Readonly<{ title: string; description: string }>>> = {
   en: {
-    title: "Tokenized stocks on Solana — markets · Ryntra",
-    description: "Listed and private companies, crypto and dollars on Solana: the price in $, the day's change, and a purchase in dollars on every company's page.",
+    title: "Markets — stocks, crypto and memes on Solana · Ryntra",
+    description: "One screener for tokenized stocks, private companies, crypto and memes on Solana: price, change, volume, liquidity and market cap, sorted the way you choose.",
   },
   uk: {
-    title: "Токенізовані акції на Solana — ринки · Ryntra",
-    description: "Публічні й приватні компанії, крипта й долари на Solana: ціна в $, зміна за день і купівля в доларах на сторінці кожної компанії.",
+    title: "Ринки — акції, крипта й меми на Solana · Ryntra",
+    description: "Один скринер токенізованих акцій, приватних компаній, крипти й мемів на Solana: ціна, зміна, обсяг, ліквідність і капіталізація — у порядку, який обираєш ти.",
   },
 };
 

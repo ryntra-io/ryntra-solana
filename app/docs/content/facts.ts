@@ -1,5 +1,6 @@
 import { PRODUCT_ROUTES } from "../../shell/product-routes.ts";
-import { MENU_DESTINATIONS, MENU_PAGE_LABELS, MENU_ROWS, MENU_SECTION_IDS, MENU_SECTION_LABELS, PAGE_LABELS, drawn, type MenuDestinationId, type MenuSectionId, type PageReadiness, type ProductPageId } from "../../shell/domains.ts";
+import { ASSISTANT, MENU_SECTIONS, MENU_SECTION_IDS, PAGE_LABELS, drawn, type MenuSectionId, type PageReadiness, type ProductPageId } from "../../shell/domains.ts";
+import type { DocsDestination } from "./model.ts";
 import { BUY_SHARE_PRESETS_PCT, DEFAULT_BUY_USD, MIN_BUY_USD } from "../../app/invest/company-model.ts";
 import { SUGGESTED_SOL_LAMPORTS } from "../../app/invest/funding-model.ts";
 import { DEFAULT_SALE_USD, MIN_SALE_USD, SALE_SHARE_PRESETS_PCT } from "../../app/invest/sale-model.ts";
@@ -212,18 +213,15 @@ export function levelRows(locale: "en" | "uk"): readonly (readonly string[])[] {
 export type ProductPageFact = Readonly<{ id: ProductPageId; href: string; section: MenuSectionId; label: Readonly<{ en: string; uk: string }>; sectionLabel: Readonly<{ en: string; uk: string }>; readiness: PageReadiness }>;
 
 /**
- * Only the pages the menu draws, section by section in the menu's order (the
- * menu you can see). A planned page and a page kept off the surface are
- * registered and drawn nowhere — not in the menu, not in the documentation's
- * table. A section that holds one row names itself by that row.
+ * Only the pages the menu draws, section by section in the menu's order. A
+ * planned page and a page kept off the surface are registered and drawn
+ * nowhere — not in the menu, not in the documentation's table.
  */
 export const PRODUCT_PAGES: readonly ProductPageFact[] = MENU_SECTION_IDS.flatMap((section) =>
-  MENU_ROWS[section].flatMap((ref): ProductPageFact[] => {
-    if (!("page" in ref)) return [];
-    const route = PRODUCT_ROUTES.find((row) => row.id === ref.page);
+  MENU_SECTIONS[section].pages.flatMap((id): ProductPageFact[] => {
+    const route = PRODUCT_ROUTES.find((row) => row.id === id);
     if (!route || !drawn(route)) return [];
-    const label = MENU_PAGE_LABELS[ref.page] ?? PAGE_LABELS[ref.page];
-    return [{ id: ref.page, href: route.href, section, label, sectionLabel: MENU_SECTION_LABELS[section] ?? label, readiness: route.readiness }];
+    return [{ id, href: route.href, section, label: PAGE_LABELS[id], sectionLabel: MENU_SECTIONS[section].label, readiness: route.readiness }];
   }),
 );
 
@@ -239,7 +237,7 @@ export function hrefOf(id: ProductPageId): string {
   return route.href;
 }
 
-/** Where a place of the menu that is not a registered page opens — Markets, Autoinvest, Top up, Ryntra — from the menu's own list. */
-export function destinationHref(id: MenuDestinationId): string {
-  return MENU_DESTINATIONS[id].href;
+/** Where a section of the menu or the assistant opens, from the menu's own list. */
+export function destinationHref(id: DocsDestination): string {
+  return id === "agent" ? ASSISTANT.href : MENU_SECTIONS[id].href;
 }

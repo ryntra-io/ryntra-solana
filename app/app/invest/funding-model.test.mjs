@@ -101,8 +101,9 @@ test("the card's words are the screens' words, in both languages", () => {
   assert.equal(uk("receiveUsdc"), "Отримати USDC");
   assert.equal(uk("cardUsdc"), "Купити карткою у своєму гаманці");
   assert.equal(uk("exchangeUsdc"), "Переказати з біржі");
-  assert.equal(uk("connectToBuy"), "Під'єднай гаманець — і купи частинку компанії від $1");
-  assert.equal(uk("fundFirst"), "Поповни — і купи першу частинку");
+  /* Since the menu v6.2 the words say only what is live — no «частинка компанії від $1». */
+  assert.equal(uk("connectToBuy"), "Під'єднай гаманець, щоб купувати");
+  assert.equal(uk("fundFirst"), "Поповни — і зроби першу купівлю");
   assert.equal(uk("needSol"), "Потрібно трохи SOL на мережу");
   for (const [key, pair] of Object.entries(INVEST_WORDS)) {
     assert.ok(pair.en.trim() && pair.uk.trim(), `${key} is said in both languages`);

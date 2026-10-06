@@ -116,18 +116,18 @@ export const BUY: DocPage = {
 export const AUTOINVEST_PAGE: DocPage = {
   slug: "invest/autoinvest",
   group: "invest",
-  destination: "autoinvest",
-  title: { en: "Autoinvest", uk: "«Автоінвест»" },
-  seoTitle: { en: "Autoinvest: three rules and a budget — Ryntra Docs", uk: "«Автоінвест»: три правила й бюджет — Документація Ryntra" },
+  destination: "bots",
+  title: { en: "Recurring buy", uk: "Регулярна купівля" },
+  seoTitle: { en: "Recurring buy: three rules and a budget — Ryntra Docs", uk: "Регулярна купівля: правила й бюджет — Документація Ryntra" },
   summary: {
     en: "Every day or week, when a price falls, or from every USDC payment: Ryntra reminds you and you sign each purchase. The monthly budget and the price condition.",
     uk: "Щодня чи щотижня, коли ціна впаде, або з кожної оплати USDC: Ryntra нагадує, кожну купівлю підписуєш ти. Бюджет місяця й «Умова ціни».",
   },
   sections: [
-    section("what", "What Autoinvest is", "Що таке «Автоінвест»", [
+    section("what", "What a recurring buy is", "Що таке регулярна купівля", [
       p(
-        "Autoinvest buys a piece of a company by a rule you set. When the rule falls due, Ryntra reminds you, and you sign each purchase; the money stays in your wallet until you do. A rule never buys anything on its own.",
-        "«Автоінвест» купує частинку компанії за правилом, яке задаєш ти. Коли настає час правила, Ryntra нагадує, а кожну купівлю підписуєш ти; гроші лежать у твоєму гаманці, доки ти не підпишеш. Правило саме нічого не купує.",
+        "A recurring buy (until 2026-10-06 called Autoinvest) buys a company by a rule you set; your rules live in Bots → My bots, and Bots → Catalog is where a new one starts. When the rule falls due, Ryntra reminds you, and you sign each purchase; the money stays in your wallet until you do. A rule never buys anything on its own.",
+        "Регулярна купівля (до 06.10.2026 — «Автоінвест») купує компанію за правилом, яке задаєш ти; твої правила — у «Боти → Мої боти», а новий починається з «Боти → Каталог». Коли настає час правила, Ryntra нагадує, а кожну купівлю підписуєш ти; гроші лежать у твоєму гаманці, доки ти не підпишеш. Правило саме нічого не купує.",
       ),
       table(
         { en: ["Rule", "When it reminds you", "For example"], uk: ["Правило", "Коли нагадує", "Наприклад"] },
@@ -148,13 +148,13 @@ export const AUTOINVEST_PAGE: DocPage = {
     section("set-up", "Set up a rule", "Налаштувати правило", [
       steps(
         [
-          "On a company's page press Autoinvest — or Add a rule under Autoinvest on Home, in Portfolio or on the Autoinvest page, or Buy weekly on a purchase's receipt.",
+          "On a company's page press Recurring buy — or Add a rule under Recurring buy on Home, in Portfolio or in Bots → My bots, or Buy weekly on a purchase's receipt.",
           `Choose the rule, the sum of each purchase — from ${AUTOINVEST.minimum} — and when. The sheet shows when the first reminder comes.`,
           "Press Turn on. Your wallet signs one message to save the rule — not a transaction.",
           "When the rule falls due, a reminder arrives in Ryntra, and in Telegram once it is connected. One tap opens a fresh Review for the rule's sum; sign it, and the receipt names the rule and the next purchase.",
         ],
         [
-          "На сторінці компанії натисни «Автоінвест» — або «Додати правило» в блоці «Автоінвест» на Головній, у Портфелі чи на сторінці «Автоінвест», або «Купувати щотижня» в квитанції купівлі.",
+          "На сторінці компанії натисни «Регулярна купівля» — або «Додати правило» в блоці «Регулярна купівля» на Головній, у Портфелі чи в «Боти → Мої боти», або «Купувати щотижня» в квитанції купівлі.",
           `Обери правило, суму кожної купівлі — від ${AUTOINVEST.minimum} — і коли. Аркуш покаже, коли прийде перше нагадування.`,
           "Натисни «Увімкнути». Гаманець підписує одне повідомлення, щоб зберегти правило, — не транзакцію.",
           "Коли настає час правила, нагадування приходить у Ryntra, а в Telegram — щойно його під'єднано. Один дотик відкриває свіжу «Перевірку» на суму правила; підпиши — і квитанція назве правило й наступну купівлю.",
@@ -164,17 +164,17 @@ export const AUTOINVEST_PAGE: DocPage = {
     section("reminders", "Reminders", "Нагадування", [
       list(
         [
-          "Your rules and the monthly budget are on Home, in Portfolio and on the Autoinvest page, each rule with its switch.",
+          "Your rules and the monthly budget are on Home, in Portfolio and in Bots → My bots, each rule with its switch.",
           "While a reminder is open, the company's page offers Buy $X by your rule first. A one-off purchase — on the page or in Spot — leaves the reminder open: a rule counts only a purchase made by it, and both say so.",
           `A reminder stays open for ${AUTOINVEST.reminderHours} hours. One you do not sign is marked Missed — Ryntra never buys it later and never doubles the next one.`,
-          "Pause stops the reminders; turn the rule on again and it counts from then. Deleting a rule keeps its purchases in History, each marked Autoinvest.",
+          "Pause stops the reminders; turn the rule on again and it counts from then. Deleting a rule keeps its purchases in History, each marked Recurring buy.",
           `A wallet holds up to ${AUTOINVEST.rules} rules. A purchase by a rule goes through the same Review, costs and signature as any other.`,
         ],
         [
-          "Твої правила й бюджет місяця — на Головній, у Портфелі й на сторінці «Автоінвест», кожне правило зі своїм перемикачем.",
+          "Твої правила й бюджет місяця — на Головній, у Портфелі й у «Боти → Мої боти», кожне правило зі своїм перемикачем.",
           "Поки нагадування відкрите, сторінка компанії першою пропонує «Купити $X за правилом». Звичайна купівля — на сторінці чи в Споті — лишає нагадування відкритим: правило рахує лише купівлю за правилом, і обидві про це кажуть.",
           `Нагадування діє ${AUTOINVEST.reminderHours} години. Непідписане позначається «Пропущено»: Ryntra не купує його пізніше й не подвоює наступне.`,
-          "Пауза зупиняє нагадування; увімкни правило знову — і відлік піде від тієї миті. Видалене правило лишає свої купівлі в Історії, кожну з позначкою «Автоінвест».",
+          "Пауза зупиняє нагадування; увімкни правило знову — і відлік піде від тієї миті. Видалене правило лишає свої купівлі в Історії, кожну з позначкою «Регулярна купівля».",
           `У гаманці може бути до ${AUTOINVEST.rules} правил. Купівля за правилом проходить ту саму «Перевірку», витрати й підпис, що й будь-яка інша.`,
         ],
       ),

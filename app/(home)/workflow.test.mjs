@@ -6,7 +6,7 @@ import { HOMEPAGE_COPY } from "../../lib/site/homepage-copy.ts";
 import { homepageModel } from "../../lib/site/homepage-model.ts";
 import { PRICE_CONDITION_DEFAULT_PCT, RULE_MINIMUM_USD } from "../../lib/autoinvest/limits.ts";
 import { LOSS_LIMIT_PRESETS } from "../../lib/plans/purchase.ts";
-import { MENU_DESTINATION_IDS } from "../shell/domains.ts";
+import { MENU_SECTION_IDS } from "../shell/domains.ts";
 import { PRODUCT_ROUTES } from "../shell/product-routes.ts";
 import { BUY, DERIVED, FIGURES, TRADE } from "./workflow-trade.ts";
 
@@ -68,9 +68,9 @@ test("every step stands on a place of the product and shows its readiness, read 
     assert.ok(page, `${id} stands on a registered page`);
     assert.equal(model.find((entry) => entry.id === id).status, STATUS_OF[page.readiness], `${id} carries the registry's readiness of ${page.id}`);
   }
-  /* Markets and «Автоінвест» are the menu's own destinations. */
-  for (const [id, destination] of [["company", "markets"], ["autoinvest", "autoinvest"]]) {
-    assert.ok(MENU_DESTINATION_IDS.includes(destination), `${id} stands on the menu's ${destination}`);
+  /* Markets and «Автоінвест» are sections of the menu — «Автоінвест» in «Боти» since the menu v6.2. */
+  for (const [id, section] of [["company", "markets"], ["autoinvest", "bots"]]) {
+    assert.ok(MENU_SECTION_IDS.includes(section), `${id} stands on the menu's ${section}`);
   }
   assert.deepEqual(model.map((entry) => entry.surface), ["markets", "company", "company", "wallet", "history", "autoinvest"]);
   /* Only what is built reaches a screen — every step stands on a place that works. */

@@ -37,8 +37,8 @@ export const ASSISTANT: DocPage = {
         ],
       ),
       p(
-        "Ryntra is in the menu as Ryntra, the AI assistant, and «Ask Ryntra» is a quiet button on Home; on a company's page and on a plan it also gives the Brief — what changed and what to check — and the Critic — the case against your idea.",
-        "Ryntra — у меню як «Ryntra — ШІ-помічник», а «Спитати Ryntra» — тиха кнопка на Головній; на сторінці компанії й у плані він ще дає Brief — що змінилося й що перевірити — і Critic — аргументи проти твоєї ідеї.",
+        "Ryntra is «Ask Ryntra» at the top of every page — it opens with the screen you are on as its context — and a row of More on a phone; on a company's page and on a plan it also gives the Brief — what changed and what to check — and the Critic — the case against your idea.",
+        "Ryntra — це «Спитати Ryntra» угорі кожної сторінки: він відкривається з екраном, на якому ти є, як контекстом, а на телефоні — рядок «Ще»; на сторінці компанії й у плані він ще дає Brief — що змінилося й що перевірити — і Critic — аргументи проти твоєї ідеї.",
       ),
     ]),
     section("answers", "How it answers", "Як він відповідає", [

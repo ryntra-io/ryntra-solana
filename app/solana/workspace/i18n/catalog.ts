@@ -184,6 +184,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "from this wallet yet.": "з цього гаманця поки що.",
   "Spot Buy": "Spot купівля",
   "Autoinvest": "Автоінвест",
+  "Recurring buy": "Регулярна купівля",
   "Spot Sell": "Spot продаж",
   "Filled": "Виконано",
   "In flight": "У дорозі",
@@ -972,6 +973,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "The transaction was never sent and the block it needed has passed. Nothing moved. You can trade again.":
     "Транзакцію не надсилали, а потрібний їй блок уже минув. Нічого не переміщено. Можна торгувати далі.",
   "Bridge": "Міст",
+  "Cross-chain": "Між мережами",
   "Transfer between networks": "Переказ між мережами",
   "Review bridge": "Перевірити міст",
   "Mainnet · read only": "Мейннет · лише читання",
@@ -2119,8 +2121,8 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Open in Phantom": "Відкрити в Phantom",
   "Install Phantom": "Встановити Phantom",
   /* «Простий»'s empty Portfolio: a guest, and a wallet with nothing yet. */
-  "Connect a wallet — and buy a piece of a company from $1": "Під'єднай гаманець — і купи частинку компанії від $1",
-  "Top up — and buy your first piece.": "Поповни — і купи першу частинку.",
+  "Connect a wallet — and see what you hold": "Під'єднай гаманець — і побач, що в тебе є",
+  "Top up — and make your first buy.": "Поповни — і зроби першу купівлю.",
   "Top up": "Поповнити",
   "Take your time. This review refreshes itself in": "Читайте спокійно. Цей огляд оновить себе через",
   "rebuilding": "перебудовуємо",

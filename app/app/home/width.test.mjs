@@ -16,9 +16,9 @@ const HOME_CSS = read("app/app/home/home.module.css");
 const ASIDE = read("app/app/home/home-aside.tsx");
 const HOLDINGS = read("app/solana/workspace/holdings/holdings-card.tsx");
 const HOLDINGS_CSS = read("app/solana/workspace/holdings/holdings.module.css");
-const MARKETS = read("app/app/markets/markets-surface.tsx");
+const MARKETS = read("app/app/markets/markets-screener.tsx");
+const SCREENER_CSS = read("app/app/markets/screener.module.css");
 const MARKETS_PLACE = read("app/app/markets/markets-place.tsx");
-const INVEST_CSS = read("app/app/invest/invest.module.css");
 
 test("Home: a main column and a right one from 1280 px; on a phone the right one comes under the main one", () => {
   assert.match(HOME_CSS, /@media \(min-width: 1280px\) \{\s*\.layout \{\s*grid-template-columns: minmax\(0, 1fr\) clamp\(/);
@@ -74,10 +74,11 @@ test("Portfolio: the main column and «Автоінвест» on the right from 
   assert.match(HOLDINGS_CSS, /@container holdings \(max-width: 820px\)/);
 });
 
-test("Markets: the full width, four columns from 1600 px, and «Усі» never ending on a half-empty row", () => {
-  assert.match(MARKETS, /const OVERVIEW = \{ companies: 8, private: 4, crypto: 8, memes: 4 \} as const;/);
-  assert.match(MARKETS_PLACE, /className=\{`\$\{styles\.page\} \$\{styles\.wide\}`\}/);
-  assert.match(INVEST_CSS, /@media \(min-width: 1600px\) \{\s*\.board \.rows \{\s*grid-template-columns: repeat\(4, minmax\(0, 1fr\)\);/);
-  assert.match(INVEST_CSS, /\[data-section="companies"\] \.rows > :nth-child\(n \+ 7\)/);
-  assert.match(INVEST_CSS, /\.board \.price \{\s*font-size: var\(--ry-fs-data-m\);/);
+test("Markets: one screener over the full width — fifty rows at a time, the columns following the screen", () => {
+  /* Since the menu v6.2 «Ринки» is one table, not a board of cards: it takes the canvas's width and draws its rows fifty at a time. */
+  assert.match(MARKETS, /const PAGE = 50;/);
+  assert.match(MARKETS_PLACE, /className=\{styles\.page\}/);
+  assert.match(SCREENER_CSS, /\.page \{\s*display: grid;\s*grid-template-columns: minmax\(0, 1fr\);/);
+  /* A phone keeps the asset, its price and its day on the screen. */
+  assert.match(SCREENER_CSS, /@media \(max-width: 760px\) \{\s*\.table \[data-col="liquidity"\]/);
 });

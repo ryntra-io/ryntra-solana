@@ -153,7 +153,7 @@ export function AutoinvestBlock({
             {word("autoinvest")}
           </h2>
           {compact ? (
-            <Link className={styles.sectionLink} href="/app/autoinvest" prefetch={false}>
+            <Link className={styles.sectionLink} href="/app/bots" prefetch={false}>
               {word("allRules")}
               <ArrowRight size={14} weight="bold" aria-hidden="true" />
             </Link>

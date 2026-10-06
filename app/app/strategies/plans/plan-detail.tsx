@@ -971,7 +971,7 @@ function TimelineItem({ entry, word, locale }: { entry: TradingPlan["journal"][n
 function Crumbs({ word, symbol }: { word: (w: PlanWord) => string; symbol?: string }) {
   return (
     <p className={styles.crumbs}>
-      <Link href="/app/strategies" prefetch={false}>
+      <Link href="/app/bots" prefetch={false}>
         {word("back")}
       </Link>
       {symbol ? (

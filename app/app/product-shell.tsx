@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { RyntraAppShell } from "@/app/shell/app-shell";
 import { PRODUCT_ROUTES } from "@/app/shell/product-routes";
 import { PRODUCT_SHELL_STRINGS, SHELL_CHROME_COPY } from "@/app/shell/chrome-copy";
@@ -9,14 +9,16 @@ import { SolanaConnectionControl } from "@/app/solana/workspace/connection";
 import { useSolanaI18n } from "@/app/solana/workspace/i18n/provider";
 import { WalletAccountIdentity } from "./account/account-control";
 import { FeedbackLauncher } from "./feedback/feedback-launcher";
+import { AskRyntraButton, WalletBalance } from "./header-tools";
 import { NotificationsBell } from "./notifications/bell";
 import { ProductSearch } from "./search/product-search";
 import "./product.css";
 import "./account/account.css";
 
 /**
- * The product's frame: the menu you can see on the rail, and the top bar —
- * search, the notifications bell, the wallet.
+ * The product's frame: the menu v6.2 on the rail, and the top bar — the
+ * search, «Спитати Ryntra», the notifications bell, the balance with
+ * «Поповнити», and the wallet.
  *
  * One control for the person in the header: the wallet. Since 2026-09-11 the
  * wallet is the account, and signing in (one signature that opens the
@@ -40,9 +42,18 @@ export function ProductShell({ children }: { children: ReactNode; signedIn: bool
         chrome={chrome}
         navGroups={[]}
         search={<ProductSearch locale={locale} />}
-        tools={<NotificationsBell locale={locale} />}
+        tools={
+          <>
+            {/* «Спитати Ryntra» with the screen as its context: the assistant is in the header, not a row. */}
+            <Suspense fallback={null}>
+              <AskRyntraButton locale={locale} />
+            </Suspense>
+            <NotificationsBell locale={locale} />
+          </>
+        }
         account={
           <div className="ry-product-account">
+            <WalletBalance locale={locale} />
             <SolanaConnectionControl
               identity={<WalletAccountIdentity />}
               compact

@@ -22,6 +22,9 @@ import {
   Path,
   PlusCircle,
   Repeat,
+  Robot,
+  RocketLaunch,
+  Wallet,
   Sparkle,
   Target,
   TrendUp,
@@ -44,16 +47,18 @@ import { readSearchIndex } from "./search-index";
  * anywhere.
  *
  * It navigates and only navigates. A company opens its page, a coin opens
- * Spot, an action opens the row of the menu it is; nothing here buys, signs
- * or moves anything. The index is the one Markets draws, read once a visit
+ * Spot, a pasted contract address opens its token's page, an action opens
+ * the place of the menu it is; nothing here buys, signs or moves anything. The index is the one Markets draws, read once a visit
  * from `/api/search` the first time the search opens, so a first keystroke
  * already finds the actions while the lists arrive.
  */
 
 const WORDS = {
-  open: { en: "Search: a company, a coin or an action", uk: "Пошук: компанія, монета чи дія" },
+  open: { en: "Search: name, ticker, address or action", uk: "Пошук: назва, тікер, адреса чи дія" },
   short: { en: "Search", uk: "Пошук" },
-  placeholder: { en: "A company, a coin or an action", uk: "Компанія, монета чи дія" },
+  placeholder: { en: "Name, ticker, contract address or action", uk: "Назва, тікер, адреса контракту чи дія" },
+  token: { en: "Token", uk: "Токен" },
+  byAddress: { en: "Open the token at this address", uk: "Відкрити токен за цією адресою" },
   close: { en: "Close", uk: "Закрити" },
   actions: { en: "Actions", uk: "Дії" },
   companies: { en: "Companies", uk: "Компанії" },
@@ -71,6 +76,11 @@ type Word = keyof typeof WORDS;
 const ACTION_ICONS: Readonly<Record<string, ReactNode>> = {
   home: <House size={18} weight="bold" />,
   explore: <Compass size={18} weight="bold" />,
+  trade: <ArrowsLeftRight size={18} weight="bold" />,
+  launch: <RocketLaunch size={18} weight="bold" />,
+  "launch-plus": <PlusCircle size={18} weight="bold" />,
+  bots: <Robot size={18} weight="bold" />,
+  money: <Wallet size={18} weight="bold" />,
   autoinvest: <Repeat size={18} weight="bold" />,
   swap: <ArrowsLeftRight size={18} weight="bold" />,
   spot: <ChartLine size={18} weight="bold" />,
@@ -164,6 +174,28 @@ export function ProductSearch({ locale }: { locale: WorkspaceLocale }) {
 
   /* The rows in the order they are drawn, so the arrows walk what the eye sees. */
   const groups: readonly Readonly<{ id: string; title: string; rows: readonly Result[] }>[] = [
+    {
+      /* A pasted contract address is a token: its page finds whether it is a company's, a launch's or a coin's. */
+      id: "address",
+      title: word("token"),
+      rows: results.address
+        ? [
+            {
+              key: `t:${results.address}`,
+              href: `/app/token/${results.address}`,
+              node: (
+                <>
+                  <span className={styles.glyph} aria-hidden="true"><MagnifyingGlass size={18} weight="bold" /></span>
+                  <span className={styles.name}>
+                    <span className={styles.title}>{word("byAddress")}</span>
+                    <span className={styles.hint} translate="no">{`${results.address.slice(0, 6)}…${results.address.slice(-6)}`}</span>
+                  </span>
+                </>
+              ),
+            },
+          ]
+        : [],
+    },
     {
       id: "actions",
       title: searching ? word("actions") : word("suggested"),

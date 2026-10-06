@@ -21,6 +21,7 @@
 import { jupiterBackgroundAllowed, noteJupiterResponse } from "../solana/jupiter-budget.ts";
 import { resolveJupiterCatalogEndpoint, type JupiterTier } from "../solana/quotes.ts";
 import { normalizeSpotMarket, rankMarkets, rankSearch, type SpotMarket, type SpotMarketListRow, type SpotView } from "./markets.ts";
+import { rankScreenerCoins, type ScreenerRow } from "../markets/screener.ts";
 
 const LITE_BASE = "https://lite-api.jup.ag/tokens/v2";
 const PRO_BASE = "https://api.jup.ag/tokens/v2";
@@ -257,6 +258,30 @@ export async function listSpotMarkets(view: Exclude<SpotView, "watchlist">, limi
     stale: reads.some((read) => read.stale) || !universe.ok || ranked.length < rankedReads.length,
     partial: !universe.ok,
     source: { label: `Jupiter Tokens API, ${endpoint.tier} tier`, tier: endpoint.tier },
+  };
+}
+
+/**
+ * The coins of «Ринки»: the same three ranked lists and the
+ * verified universe Spot reads — the same caches, no read of its own — with
+ * the figures Spot's compact list drops (the hour's change, market cap, the
+ * first pool's age, the organic score and the audit), the most traded of
+ * each kind.
+ */
+export async function listScreenerCoins(limit: Readonly<{ meme: number; crypto: number }>): Promise<Readonly<{ ok: true; rows: readonly ScreenerRow[]; observedAt: string; stale: boolean }> | SpotSourceFailure> {
+  const rankedReads = await Promise.all([readRanked("toptraded"), readRanked("toporganicscore"), readRanked("toptrending")]);
+  const universe = await readUniverse();
+  const ranked = rankedReads.filter((read): read is Extract<typeof read, { ok: true }> => read.ok);
+  if (ranked.length === 0 && !universe.ok) return universe;
+  const pool: SpotMarket[] = [];
+  for (const read of ranked) pool.push(...read.rows);
+  if (universe.ok) pool.push(...universe.rows);
+  const reads = [...ranked, ...(universe.ok ? [universe] : [])];
+  return {
+    ok: true,
+    rows: rankScreenerCoins(pool, limit, Date.now()),
+    observedAt: new Date(Math.max(...reads.map((read) => read.readAt))).toISOString(),
+    stale: reads.some((read) => read.stale) || !universe.ok || ranked.length < rankedReads.length,
   };
 }
 

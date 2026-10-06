@@ -1,7 +1,6 @@
-import { PortfolioTabs } from "@/app/app/portfolio/portfolio-tabs";
 import { PanelGrid } from "@/app/shell/panel";
 import { PageHead } from "../hub/parts.tsx";
-import { solanaServerLocale, solanaServerText } from "../i18n/server.ts";
+import { solanaServerText } from "../i18n/server.ts";
 import { HistoryCard } from "./history-card.tsx";
 
 export const dynamic = "force-dynamic";
@@ -26,14 +25,12 @@ export default async function SolanaHistoryPage({
   searchParams: Promise<{ action?: string; filter?: string }>;
 }) {
   const { text } = await solanaServerText();
-  const locale = await solanaServerLocale();
   const query = await searchParams;
   const selected = query.action?.trim() || null;
   const filter = query.filter === "pending" ? "NEEDS_YOU" : "ALL";
   return (
     <>
-      {/* History is Portfolio's: its tabs, this one current. */}
-      <PortfolioTabs locale={locale} />
+      {/* History is Portfolio's: the shell draws its tabs, this one current. */}
       <PageHead title="History" />
       <PanelGrid label={text("History")}>
         <HistoryCard key={filter} selectedAction={selected} initialFilter={filter} />

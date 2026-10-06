@@ -279,7 +279,7 @@ export function AccountProvider({ summary, children }: { summary: AccountSummary
 
 
 // Public financial preparation stays available during a private-account reset.
-const PUBLIC_PAGES = new Set(["/app", "/app/swap", "/app/send", "/app/receive", "/app/top-up", "/app/portfolio", "/app/activity", "/app/spot", "/app/perps", "/app/trends", "/app/ideas", "/app/results"]);
+const PUBLIC_PAGES = new Set(["/app", "/app/swap", "/app/send", "/app/receive", "/app/top-up", "/app/portfolio", "/app/activity", "/app/spot", "/app/perps", "/app/trends", "/app/ideas", "/app/bots", "/app/bots/catalog", "/app/markets"]);
 export function AccountDataBoundary({ children }: { children: ReactNode }) {
   const { privacyBlocked, sessionKey, locale, openLogin } = useAccount();
   const pathname = usePathname();

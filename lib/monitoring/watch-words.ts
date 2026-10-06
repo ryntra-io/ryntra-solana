@@ -53,7 +53,7 @@ export const WARN_HONEST_LIMIT = bi("Ryntra warns you; it does not sell for you.
 export const WATCH_WORDS = {
   /** Нагляд's section of positions. */
   positions: bi("Your positions", "Твої позиції"),
-  positionsEmpty: bi("You hold no company yet. Buy a piece from $1 — and Ryntra watches it here.", "Ти ще не маєш жодної компанії. Купи частинку від $1 — і Ryntra стежитиме за нею тут."),
+  positionsEmpty: bi("You hold no company yet. Buy one — and Ryntra watches it here.", "Ти ще не маєш жодної компанії. Купи її — і Ryntra стежитиме за нею тут."),
   positionsUnread: bi("Your positions could not be read just now. Ryntra reads them again in a moment.", "Позиції зараз не вдалося прочитати. Ryntra прочитає їх знову за мить."),
   positionsPartial: bi("Some of your positions could not be read just now — they are not shown until they are.", "Частину позицій зараз не вдалося прочитати — їх не показано, доки не прочитаємо."),
   limit: bi("limit", "межа"),

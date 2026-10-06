@@ -617,7 +617,7 @@ export function PlanBuilder({ mint, planId, budget, locale, carried = null, agen
   return (
     <section className={styles.page} aria-labelledby="plan-builder-title">
       <p className={styles.crumbs}>
-        <Link href="/app/strategies" prefetch={false}>
+        <Link href="/app/bots" prefetch={false}>
           {word("back")}
         </Link>
         <span aria-hidden="true">/</span>

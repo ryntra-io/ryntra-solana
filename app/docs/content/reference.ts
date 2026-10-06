@@ -296,7 +296,7 @@ export const GLOSSARY: DocPage = {
             ["Price impact", "How much your own order moves the market's price."],
             ["Liquidity", "How much can be traded in a market without moving its price far."],
             ["Wallet Standard", "The Solana convention that lets any compatible wallet connect to any app."],
-            ["For experienced investors", "What a trader reaches for: Spot, the stock screener and Trends under Trade in the menu and on top of Markets; the full plans, Results and History under Portfolio. The same checks before every signature."],
+            ["For experienced investors", "What a trader reaches for: the Markets screener with every column and order; Spot with the candlestick chart under Trade; the trade plans and their results under Bots; History under Portfolio. The same checks before every signature."],
           ],
           uk: [
             ["Застосунок", "Продукт на ryntra.io/app: вісім розділів меню і дванадцять сторінок у них, одне меню для всіх."],
@@ -314,7 +314,7 @@ export const GLOSSARY: DocPage = {
             ["Вплив на ціну", "Наскільки твоя власна угода зсуває ціну ринку."],
             ["Ліквідність", "Скільки можна проторгувати на ринку, не зсунувши ціну далеко."],
             ["Wallet Standard", "Домовленість Solana, що дає будь-якому сумісному гаманцю під'єднуватися до будь-якого застосунку."],
-            ["Для досвідчених", "Те, чим користується трейдер: Спот, скринер акцій і Тренди — у розділі «Торгувати» меню й угорі Ринків; повні плани, Результати й Історія — у Портфелі. Ті самі перевірки перед кожним підписом."],
+            ["Для досвідчених", "Те, чим користується трейдер: скринер Ринків з усіма колонками й порядками; Спот зі свічковим графіком — у розділі «Торгувати»; плани угод і їхні результати — у «Ботах»; Історія — у Портфелі. Ті самі перевірки перед кожним підписом."],
           ],
         },
       ),

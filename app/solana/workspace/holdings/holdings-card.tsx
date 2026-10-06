@@ -113,8 +113,8 @@ function categoryOf(holding: WalletHolding): Category {
 /**
  * What the connected wallet owns. The empty states are the beginner's, for
  * everyone, because there is one version: a guest reads «Під'єднай
- * гаманець — і купи частинку компанії від $1», a wallet with nothing yet
- * reads «Поповни — і купи першу частинку» and the way to top up.
+ * гаманець — і побач, що в тебе є», a wallet with nothing yet
+ * reads «Поповни — і зроби першу купівлю» and the way to top up.
  */
 export function HoldingsCard() {
   const { text, locale } = useSolanaI18n();
@@ -260,7 +260,7 @@ export function HoldingsCard() {
   if (!connection) {
     return (
       <Panel id="portfolio-value" title={text("Wallet")} w={12} h={8} essential stretch>
-        <WalletGate title={text("Connect a wallet — and buy a piece of a company from $1")} />
+        <WalletGate title={text("Connect a wallet — and see what you hold")} />
       </Panel>
     );
   }
@@ -387,7 +387,7 @@ export function HoldingsCard() {
         {/* A wallet with nothing of value yet — an empty SOL balance is not a position — reads its first step. */}
         {holdings.status === "ready" && holdings.complete && !searching && positions.length === 0 ? (
           <p className={styles.note} data-empty="wallet">
-            {text("Top up — and buy your first piece.")}{" "}
+            {text("Top up — and make your first buy.")}{" "}
             <Link href="/app/top-up">{text("Top up")}</Link>
           </p>
         ) : holdings.status === "ready" && holdings.complete && rows.length === 0 ? (
