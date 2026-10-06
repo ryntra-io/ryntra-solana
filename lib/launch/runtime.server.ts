@@ -7,6 +7,8 @@
  * `LAUNCH_PAUSED` and the reads go on.
  */
 
+import type { Connection } from "@solana/web3.js";
+
 import type { LaunchPresetsResponse } from "../api/v1/contract.ts";
 import { CREATOR_LOCK_IDS, CREATOR_LOCK_SCHEDULES } from "../core/launch/creator-lock.ts";
 import { configsOfPreset } from "../core/venues/meteora-dbc/launch.server.ts";
@@ -14,8 +16,21 @@ import { LAUNCH_PRESET_IDS, LAUNCH_PRESETS } from "../core/venues/meteora-dbc/pr
 import { getGuardRuntime } from "../guard/runtime.ts";
 import { storeSupportsConcurrentInstances, withBoundedCasRetry, type GuardStore } from "../guard/store.ts";
 import { FixedWindowLimiter, clientIp, type RateLimitDecision } from "../http-control.ts";
-import { LAUNCHES_PER_CREATOR_PER_DAY, launchConnection, launchNetwork, launchOpen, launchPair, launchPoolPayer, launchPoolPayerAddress, launchWritesHere, type LaunchNetwork } from "./config.server.ts";
-import type { LaunchDeps } from "./flow.server.ts";
+import { adoptLaunch } from "./adopt.server.ts";
+import {
+  LAUNCHES_PER_CREATOR_PER_DAY,
+  launchArchiveConnection,
+  launchConnection,
+  launchHistoryConnection,
+  launchNetwork,
+  launchOpen,
+  launchPair,
+  launchPoolPayer,
+  launchPoolPayerAddress,
+  launchWritesHere,
+  type LaunchNetwork,
+} from "./config.server.ts";
+import type { LaunchDeps, LaunchReadDeps } from "./flow.server.ts";
 import { DESCRIPTION_MAX, IMAGE_MAX_BYTES, IMAGE_TYPES, NAME_MAX, SYMBOL_MAX } from "./form.ts";
 
 /**
@@ -30,26 +45,44 @@ export function launchDeps(): LaunchDeps | null {
   if (network.cluster === "mainnet" && !storeSupportsConcurrentInstances(store)) return null;
   const poolPayer = launchPoolPayer(process.env, network);
   if (!poolPayer) return null;
-  return { network, connection: launchConnection(network), store, poolPayer, origin: network.origin, now: () => new Date() };
+  return { network, connection: launchConnection(network), store, poolPayer, origin: network.origin, now: () => new Date(), second: launchArchiveConnection(network) };
+}
+
+/**
+ * What reading a launch's record needs beyond the store and the main node: the second operator asked before a
+ * signature is called absent, and adopting a launch the chain shows Ryntra's pool payer created when the store has no
+ * record of it.
+ */
+export function launchReadHooks(network: LaunchNetwork, connection: Connection, store: GuardStore): Pick<LaunchReadDeps, "second" | "adopt"> {
+  const second = launchArchiveConnection(network);
+  const poolPayer = launchPoolPayerAddress(network);
+  const adopt = poolPayer
+    ? (token: string) => adoptLaunch({ network, connection, store, poolPayer, history: launchHistoryConnection(network), archive: second, now: () => new Date() }, token)
+    : null;
+  return { second, adopt };
 }
 
 /** What reading a launch's market needs — no key of Ryntra's, and no switch: a token's page reads while the lane is paused. */
-export function launchMarketDeps(): Pick<LaunchDeps, "network" | "connection" | "store" | "now"> | null {
+export function launchMarketDeps(): (Pick<LaunchDeps, "network" | "connection" | "store" | "now"> & Pick<LaunchReadDeps, "second" | "adopt">) | null {
   const network = launchNetwork();
   if (!network) return null;
-  return { network, connection: launchConnection(network), store: getGuardRuntime().store, now: () => new Date() };
+  const connection = launchConnection(network);
+  const store = getGuardRuntime().store;
+  return { network, connection, store, now: () => new Date(), ...launchReadHooks(network, connection, store) };
 }
 
 /** What reading a launch's page needs: the pool payer's address its receipt asks for, never its key. */
-export function launchViewDeps(): (Omit<LaunchDeps, "poolPayer"> & Readonly<{ poolPayer: string }>) | null {
+export function launchViewDeps(): (Omit<LaunchDeps, "poolPayer"> & Readonly<{ poolPayer: string }> & Pick<LaunchReadDeps, "adopt">) | null {
   const network = launchNetwork();
   const poolPayer = network ? launchPoolPayerAddress(network) : null;
   if (!network || !poolPayer) return null;
-  return { network, connection: launchConnection(network), store: getGuardRuntime().store, poolPayer, origin: network.origin, now: () => new Date() };
+  const connection = launchConnection(network);
+  const store = getGuardRuntime().store;
+  return { network, connection, store, poolPayer, origin: network.origin, now: () => new Date(), ...launchReadHooks(network, connection, store) };
 }
 
 /** What building and sending a trade or a claim needs: the market's, while the lane is open — the person's wallet signs and pays. */
-export function launchTradingDeps(): Pick<LaunchDeps, "network" | "connection" | "store" | "now"> | null {
+export function launchTradingDeps(): ReturnType<typeof launchMarketDeps> {
   return launchOpen() ? launchMarketDeps() : null;
 }
 

@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { getGuardRuntime } from "@/lib/guard/runtime";
 import { launchConnection, launchNetwork } from "@/lib/launch/config.server";
 import { readLaunchRecord } from "@/lib/launch/flow.server";
+import { launchReadHooks } from "@/lib/launch/runtime.server";
 import { parseSolanaAddress } from "@/lib/solana/address";
 import { readStockUniverse } from "@/lib/stocks/universe.server";
 
@@ -29,7 +30,9 @@ export default async function TokenByAddress({ params }: { params: Promise<{ min
 
   const network = launchNetwork();
   if (network) {
-    const launched = await readLaunchRecord({ store: getGuardRuntime().store, connection: launchConnection(network) }, network.cluster, mint).catch(() => null);
+    const store = getGuardRuntime().store;
+    const connection = launchConnection(network);
+    const launched = await readLaunchRecord({ store, connection, ...launchReadHooks(network, connection, store) }, network.cluster, mint).catch(() => null);
     if (launched) redirect(`/app/launch/${mint}`);
   }
 

@@ -38,11 +38,11 @@ import { launchPreset } from "../core/venues/meteora-dbc/presets.ts";
 import { createLaunchTradeVenue } from "../core/venues/meteora-dbc/trade.server.ts";
 import { launchPair, launchPoolFee } from "./config.server.ts";
 import { launchMarketReader } from "./trade-index.server.ts";
-import type { LaunchDeps, LaunchRecord } from "./flow.server.ts";
+import type { LaunchDeps, LaunchReadDeps, LaunchRecord } from "./flow.server.ts";
 import { readLaunchRecord } from "./flow.server.ts";
 import { noteGraduation } from "./graduation.server.ts";
 
-export type MarketDeps = Pick<LaunchDeps, "network" | "connection" | "store" | "now">;
+export type MarketDeps = Pick<LaunchDeps, "network" | "connection" | "store" | "now"> & Pick<LaunchReadDeps, "second" | "adopt">;
 
 /** How long a read of a token's market is served again. */
 const CACHE_MS = 5_000;

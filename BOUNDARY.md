@@ -9,10 +9,10 @@ moved counts as new. Generated at every update from the development history.
 
 | Since the tag | Files |
 |---|---|
-| New | 1,165 |
+| New | 1,166 |
 | Changed | 806 |
 | Unchanged | 929 |
-| Lines added / removed | +299,058 / −19,729 |
+| Lines added / removed | +299,643 / −19,729 |
 
 ## New since the tag
 
@@ -876,6 +876,7 @@ moved counts as new. Generated at every update from the development history.
 - `lib/guard/service.fixture.mjs`
 - `lib/guard/wallet-authorization.ts`
 - `lib/home/portfolio/adapters/conformance.fixture.mjs`
+- `lib/launch/adopt.server.ts`
 - `lib/launch/config.server.ts`
 - `lib/launch/creator.server.ts`
 - `lib/launch/flow.server.ts`

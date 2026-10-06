@@ -150,6 +150,8 @@ export type MeteoraDbcLaunchVenue = LaunchVenue &
     plainConfigFromData(data: Buffer): Record<string, unknown>;
     observe(token: Address): Promise<LaunchObservation>;
     observeCreation(signature: string, token: Address): Promise<CreationObservation>;
+    /** The token's curve when it sits on one of the presets' configs, in one read; null when none does — never a program scan. */
+    presetCurveOf(token: Address): Promise<Address | null>;
   }>;
 
 /** A config as the chain stores it: what «Чесний лаунч» judges, plus who claims and what the curve aims at. */
@@ -414,19 +416,30 @@ export function createMeteoraDbcLaunchVenue(args: Readonly<{
     return coder.decode<PoolConfig>(name, data);
   }
 
-  async function poolOf(token: Address) {
+  /** The token's curve on one of the presets' configs: its address follows from the config, so one read finds it. */
+  async function curveOnPresets(token: Address, strict: boolean): Promise<PublicKey | null> {
     const baseMint = new PublicKey(token);
     /* A Ryntra launch sits on one of the presets' configs: its curve's address follows from it, read directly. */
     const candidates = (await Promise.all(allConfigs().map(async ({ config: address }) => {
-      const config = await configOf(new PublicKey(address)).catch(() => null);
+      const config = await configOf(new PublicKey(address)).catch((error: unknown) => {
+        if (strict) throw error;
+        return null;
+      });
       return config ? deriveDbcPoolAddress(config.quoteMint, baseMint, new PublicKey(address)) : null;
     }))).filter((address): address is PublicKey => address !== null);
     /* One read for every candidate curve: only the config the token was launched on has an account there. */
-    const accounts = candidates.length ? await connection.getMultipleAccountsInfo(candidates, "confirmed").catch(() => []) : [];
+    const read = candidates.length ? connection.getMultipleAccountsInfo(candidates, "confirmed") : Promise.resolve([]);
+    const accounts = strict ? await read : await read.catch(() => []);
     const found = accounts.findIndex((info) => info !== null);
-    if (found >= 0) {
-      const account = await client.state.getPool(candidates[found]!).catch(() => null);
-      if (account) return { publicKey: candidates[found]!, account };
+    return found >= 0 ? candidates[found]! : null;
+  }
+
+  async function poolOf(token: Address) {
+    const baseMint = new PublicKey(token);
+    const curve = await curveOnPresets(token, false);
+    if (curve) {
+      const account = await client.state.getPool(curve).catch(() => null);
+      if (account) return { publicKey: curve, account };
     }
     const pool = await client.state.getPoolByBaseMint(baseMint);
     if (!pool) throw new LaunchRefusal("NO_POOL", "No curve for this token.");
@@ -822,6 +835,10 @@ export function createMeteoraDbcLaunchVenue(args: Readonly<{
         },
         graduated,
       };
+    },
+
+    async presetCurveOf(token: Address): Promise<Address | null> {
+      return (await curveOnPresets(token, true))?.toBase58() ?? null;
     },
 
     async observeCreation(signature: string, token: Address): Promise<CreationObservation> {

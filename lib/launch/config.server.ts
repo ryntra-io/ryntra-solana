@@ -227,6 +227,15 @@ export function launchHistoryEndpoint(network: LaunchNetwork): string {
   return "https://api.mainnet-beta.solana.com";
 }
 
+/* One per process: the history endpoint as a connection — signature lists back to a token's creation. */
+const HISTORIES = new Map<string, Connection>();
+export function launchHistoryConnection(network: LaunchNetwork): Connection {
+  const url = launchHistoryEndpoint(network);
+  const known = HISTORIES.get(url) ?? new Connection(url, { commitment: "confirmed", disableRetryOnRateLimit: true });
+  HISTORIES.set(url, known);
+  return known;
+}
+
 /** Asked for a transaction the main endpoint no longer keeps: the second operator still serves older ones. */
 export function launchArchiveEndpoint(network: LaunchNetwork): string {
   return launchIndexedEndpoint(network);

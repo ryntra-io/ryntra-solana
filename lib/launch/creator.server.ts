@@ -38,14 +38,14 @@ import { creatorEarningsCard, type CreatorEarningsCard } from "../core/launch/ea
 import { ClaimRefusal, buildCreatorClaim, earningsOf, mayClaim, observeCreatorClaim, readCreatorFees, type CreatorFeesObservation } from "../core/venues/meteora-dbc/claim.server.ts";
 import type { GuardStore } from "../guard/store.ts";
 import { compareWalletTransaction } from "../solana/wallet-modification.ts";
-import type { LaunchDeps, LaunchRecord } from "./flow.server.ts";
+import type { LaunchDeps, LaunchReadDeps, LaunchRecord } from "./flow.server.ts";
 import { launchPair } from "./config.server.ts";
-import { FEE_SHARE_INDEX, feeShareKey, readLaunchRecord, sendOnce, settleFeeSharing, type FeeShareIndex } from "./flow.server.ts";
+import { FEE_SHARE_INDEX, byDeadline, feeShareKey, readLaunchRecord, sendOnce, settleFeeSharing, type FeeShareIndex } from "./flow.server.ts";
 import { noteGraduation } from "./graduation.server.ts";
 import { forgetLaunchMarket } from "./market.server.ts";
 import { metadataOfUri } from "./metadata.server.ts";
 
-export type CabinetDeps = Pick<LaunchDeps, "network" | "connection" | "store" | "now">;
+export type CabinetDeps = Pick<LaunchDeps, "network" | "connection" | "store" | "now"> & Pick<LaunchReadDeps, "second" | "adopt">;
 
 /** How long one read of a cabinet may take inside the route's minute; launches past it are listed unread. */
 const CABINET_BUDGET_MS = 40_000;
@@ -55,6 +55,8 @@ const RECEIPTS = 50;
 /** How long a built claim waits for the signature. */
 export const CLAIM_BUILD_TTL_MS = 90 * 1000;
 const SEND_BUDGET = { confirmMs: 20_000, settleMs: 8_000 } as const;
+const CLAIM_ROUTE_MS = 50_000;
+const CLAIM_PART_MIN_MS = 6_000;
 
 const claimKey = (cluster: string, wallet: string, signature = "") => `solana:${cluster}:${wallet}:${signature}`;
 const buildKey = (cluster: string, id: string) => `${cluster}:${id}`;
@@ -246,6 +248,8 @@ export async function submitLaunchClaim(
   token: string,
   input: Readonly<{ buildId: string; wallet: string; signedWireBase64: readonly string[] }>,
 ): Promise<Readonly<{ ok: true; submit: LaunchClaimSubmitResponse }> | ClaimFailure> {
+  /* Every part of a claim inside the route's 60 s: a part with too little time left is not sent, and says so. */
+  const deadline = deps.now().getTime() + CLAIM_ROUTE_MS;
   const build = await deps.store.collection<ClaimBuildRecord>("launchClaimBuilds").get(buildKey(deps.network.cluster, input.buildId));
   if (!build || build.token !== token) return fail("LAUNCH_NOT_FOUND", "This claim was not built here.");
   if (build.wallet !== input.wallet) return fail("WALLET_MISMATCH", "This claim was built for another wallet.");
@@ -280,7 +284,11 @@ export async function submitLaunchClaim(
       failed.push({ signature: signatureOf(txs[index]!), reason: "not sent: the transaction before it did not land" });
       continue;
     }
-    const sent = await sendOnce(deps.connection, txs[index]!, Number(build.validUntil[index] ?? "0"), deps.now, SEND_BUDGET);
+    if (deadline - deps.now().getTime() < CLAIM_PART_MIN_MS) {
+      failed.push({ signature: signatureOf(txs[index]!), reason: "not sent: the claim took the route's time" });
+      continue;
+    }
+    const sent = await sendOnce(deps.connection, txs[index]!, Number(build.validUntil[index] ?? "0"), deps.now, { ...SEND_BUDGET, deadline }, { second: deps.second });
     if (sent.outcome === "REJECTED" || sent.outcome === "FAILED") {
       if (receipts.length === 0 && pending.length === 0) return fail("LAUNCH_SUBMIT_FAILED", sent.reason ?? "The network refused the claim.");
       failed.push({ signature: sent.signature, reason: (sent.reason ?? "the network refused it").slice(0, 300) });
@@ -290,7 +298,8 @@ export async function submitLaunchClaim(
       pending.push(sent.signature);
       continue;
     }
-    const receipt = await claimReceipt(deps, record, input.wallet, sent.signature);
+    /* A receipt not read before the route's deadline is pending: the cabinet reads it from the chain later. */
+    const receipt = await byDeadline(() => claimReceipt(deps, record, input.wallet, sent.signature), deadline, deps.now, null);
     if (receipt) receipts.push(receipt);
     else pending.push(sent.signature);
   }

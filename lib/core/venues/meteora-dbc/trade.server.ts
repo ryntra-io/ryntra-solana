@@ -28,6 +28,27 @@ import BN from "bn.js";
 import { curveFeeSplit, poolFeeSplit, priceFromSqrtX64, type LaunchFeeSplit, type LaunchTradeSide, type LaunchTradeVenue } from "./market.ts";
 import { dammPrice, type MarketState } from "./market.server.ts";
 
+/**
+ * What `owner` holds of `mint`, raw, in its associated token accounts under either token program — read by their
+ * addresses in one `getMultipleAccountsInfo`, never by an indexed request: the public node refuses
+ * `getTokenAccountsByOwner` («Indexed requests require a personal token», measured 2026-10-06), and that refusal was
+ * read as «holds nothing», so no launch could be bought or sold. A trade spends from exactly this account. An account
+ * is counted only when its program, mint and owner are the ones asked for. Throws when the read fails.
+ */
+export async function heldRaw(connection: Pick<Connection, "getMultipleAccountsInfo">, owner: PublicKey, mint: PublicKey): Promise<bigint> {
+  const programs = [TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID];
+  const addresses = programs.map((program) => getAssociatedTokenAddressSync(mint, owner, true, program));
+  const infos = await connection.getMultipleAccountsInfo(addresses, "confirmed");
+  let total = 0n;
+  infos.forEach((info, index) => {
+    if (!info || !info.owner.equals(programs[index]!) || info.data.length < 72) return;
+    const data = Buffer.from(info.data);
+    if (!data.subarray(0, 32).equals(mint.toBuffer()) || !data.subarray(32, 64).equals(owner.toBuffer())) return;
+    total += data.readBigUInt64LE(64);
+  });
+  return total;
+}
+
 /** Why a trade could not be quoted or built; the caller decides the person's words. */
 export class LaunchTradeRefusal extends Error {
   readonly code: "AMOUNT_ZERO" | "CURVE_COMPLETE" | "NO_POOL" | "POOL_SHAPE" | "BALANCE_LOW" | "QUOTE_FAILED";
@@ -264,10 +285,9 @@ export function createLaunchTradeVenue(
     }
   }
 
-  /** What `wallet` holds of `mint`, raw, across its token accounts under the mint's program. */
-  async function balanceOf(wallet: PublicKey, mint: PublicKey): Promise<bigint> {
-    const accounts = await connection.getTokenAccountsByOwner(wallet, { mint }, "confirmed").catch(() => ({ value: [] as { account: { data: Buffer } }[] }));
-    return accounts.value.reduce((total, entry) => total + Buffer.from(entry.account.data).readBigUInt64LE(64), 0n);
+  /** What `wallet` holds of `mint`, raw, in the account a trade spends from; a read that fails throws — never a zero. */
+  function balanceOf(wallet: PublicKey, mint: PublicKey): Promise<bigint> {
+    return heldRaw(connection, wallet, mint);
   }
 
   async function seal(tx: Transaction, payer: PublicKey): Promise<Readonly<{ wireBase64: string; validUntil: string }>> {

@@ -23,7 +23,7 @@ commit, named for what it released; the latest is from 2026-10-06.
 | `supabase/migrations/`, `supabase/prepared/` | The database schema migration by migration, and the prepared SQL that is applied by hand (corrections and rollbacks) |
 | `public/` | Static assets |
 
-2,900 files come from the development repository as released, and each test
+2,901 files come from the development repository as released, and each test
 sits beside the code it tests (`*.test.mjs`); `README.md`, `BOUNDARY.md`,
 `LICENSE`, `.gitignore` and the scripts of `package.json` are written for this
 snapshot.
@@ -85,15 +85,15 @@ build-tools).
 
 The code as it stood before the hackathon is tagged
 `pre-hackathon-baseline-2026-09-11` in the development repository — commit `7fc5776f`,
-2026-09-11. Measured against that tag, path by path, for the 2,900 files
+2026-09-11. Measured against that tag, path by path, for the 2,901 files
 that come from the development repository:
 
 | Since the tag | Files |
 |---|---|
-| New | 1,165 |
+| New | 1,166 |
 | Changed | 806 |
 | Unchanged | 929 |
-| Lines added / removed | +299,058 / −19,729 |
+| Lines added / removed | +299,643 / −19,729 |
 
 [BOUNDARY.md](BOUNDARY.md) lists every new and every changed file. Shipped since
 then, as the public build log records it:
@@ -136,6 +136,7 @@ then, as the public build log records it:
 | 2026-10-05 | Rewards ranks: a share of the fee Ryntra receives, growing with your rank |
 | 2026-10-06 | Ryntra Launch: your Solana token on a Meteora bonding curve in one signature |
 | 2026-10-06 | One menu around launch, trade and bots, and one screener for every asset |
+| 2026-10-06 | A launch that lands is always shown, and every launched token can be bought and sold |
 
 ## What is not here
 

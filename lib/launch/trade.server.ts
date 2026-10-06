@@ -28,19 +28,20 @@ import type {
 } from "../api/v1/contract.ts";
 import { priceMoveBps, uiAmount, type LaunchTrade } from "../core/venues/meteora-dbc/market.ts";
 import type { MarketState } from "../core/venues/meteora-dbc/market.server.ts";
-import { LaunchTradeRefusal, createLaunchTradeVenue, type LaunchTradeQuote } from "../core/venues/meteora-dbc/trade.server.ts";
+import { LaunchTradeRefusal, createLaunchTradeVenue, heldRaw, type LaunchTradeQuote } from "../core/venues/meteora-dbc/trade.server.ts";
 import { compareWalletTransaction } from "../solana/wallet-modification.ts";
-import type { LaunchDeps, LaunchRecord } from "./flow.server.ts";
+import type { LaunchDeps, LaunchReadDeps, LaunchRecord } from "./flow.server.ts";
 import { launchPair, launchPoolFee } from "./config.server.ts";
-import { readLaunchRecord, sendOnce } from "./flow.server.ts";
+import { byDeadline, readLaunchRecord, sendOnce } from "./flow.server.ts";
 import { forgetLaunchMarket } from "./market.server.ts";
 import { launchMarketReader } from "./trade-index.server.ts";
 
-export type TradeDeps = Pick<LaunchDeps, "network" | "connection" | "store" | "now">;
+export type TradeDeps = Pick<LaunchDeps, "network" | "connection" | "store" | "now"> & Pick<LaunchReadDeps, "second" | "adopt">;
 
 /** How long a built trade waits for the signature. */
 export const TRADE_BUILD_TTL_MS = 90 * 1000;
 const SEND_BUDGET = { confirmMs: 20_000, settleMs: 10_000 } as const;
+const TRADE_ROUTE_MS = 50_000;
 
 export type TradeFailure = Readonly<{ ok: false; code: ApiErrorCode; message: string }>;
 const fail = (code: ApiErrorCode, message: string): TradeFailure => ({ ok: false, code, message });
@@ -108,10 +109,8 @@ export async function readLaunchWallet(deps: TradeDeps, token: string, wallet: s
   } catch {
     return fail("VALIDATION_ERROR", "address: not a wallet");
   }
-  const held = async (mint: string) => {
-    const accounts = await deps.connection.getTokenAccountsByOwner(owner, { mint: new PublicKey(mint) }, "confirmed");
-    return accounts.value.reduce((total, entry) => total + Buffer.from(entry.account.data).readBigUInt64LE(64), 0n);
-  };
+  /* By the accounts' own addresses: the public node refuses the indexed read of a wallet's token accounts. */
+  const held = (mint: string) => heldRaw(deps.connection, owner, new PublicKey(mint));
   try {
     const [tokenRaw, pairRaw] = await Promise.all([held(token), held(record.pairMint)]);
     return { ok: true, wallet: { wallet, token, tokenRaw: tokenRaw.toString(), pairRaw: pairRaw.toString(), observedAt: deps.now().toISOString() } };
@@ -179,6 +178,8 @@ export async function buildLaunchTrade(deps: TradeDeps, token: string, input: La
 }
 
 export async function submitLaunchTrade(deps: TradeDeps, token: string, input: LaunchTradeSubmitRequest): Promise<Readonly<{ ok: true; submit: LaunchTradeSubmitResponse }> | TradeFailure> {
+  /* The send and the fill's read inside the route's 60 s: a fill not read in time is said as the quote's «≈». */
+  const deadline = deps.now().getTime() + TRADE_ROUTE_MS;
   const builds = deps.store.collection<TradeBuildRecord>("launchTradeBuilds");
   const build = await builds.get(buildKey(deps.network.cluster, input.buildId));
   if (!build || build.token !== token) return fail("LAUNCH_NOT_FOUND", "This trade was not built here.");
@@ -198,7 +199,7 @@ export async function submitLaunchTrade(deps: TradeDeps, token: string, input: L
   if (!(await deps.store.collection<TradeSend>("launchTradeSends").insertIfAbsent(buildKey(build.cluster, build.id), { cluster: build.cluster, id: build.id, at: deps.now().toISOString() }))) {
     return fail("LAUNCH_BUILD_USED", "This trade was already sent.");
   }
-  const sent = await sendOnce(deps.connection, tx, Number(build.validUntil), deps.now, SEND_BUDGET);
+  const sent = await sendOnce(deps.connection, tx, Number(build.validUntil), deps.now, { ...SEND_BUDGET, deadline }, { second: deps.second });
   forgetLaunchMarket(deps.network.cluster, token);
   if (sent.outcome === "REJECTED" || sent.outcome === "FAILED") {
     /* The program names its own refusal in its logs: the price moved past the slippage before the trade landed. */
@@ -206,7 +207,7 @@ export async function submitLaunchTrade(deps: TradeDeps, token: string, input: L
     return fail("LAUNCH_SUBMIT_FAILED", sent.reason ?? "The network refused the trade.");
   }
   const confirmed = sent.outcome === "CONFIRMED";
-  return { ok: true, submit: { signature: sent.signature, state: confirmed ? "CONFIRMED" : "PENDING", filled: confirmed ? await filledBy(deps, build, sent.signature) : null } };
+  return { ok: true, submit: { signature: sent.signature, state: confirmed ? "CONFIRMED" : "PENDING", filled: confirmed ? await byDeadline(() => filledBy(deps, build, sent.signature), deadline, deps.now, null) : null } };
 }
 
 /**
