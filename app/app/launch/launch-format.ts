@@ -35,7 +35,8 @@ export function formatPercent(value: number, locale: WorkspaceLocale, digits = 2
   return `${formatNumber(value, locale, digits)}${percentSign(locale)}`;
 }
 
-const percentSign = (locale: WorkspaceLocale) => (locale === "uk" ? " %" : "%");
+/* A no-break space in Ukrainian: «29,99 %» never breaks before its sign. */
+const percentSign = (locale: WorkspaceLocale) => (locale === "uk" ? "\u00A0%" : "%");
 
 export function formatBps(bps: number, locale: WorkspaceLocale): string {
   return formatPercent(bps / 100, locale, 2);

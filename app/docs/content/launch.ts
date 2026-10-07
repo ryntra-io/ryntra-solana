@@ -136,6 +136,16 @@ export const LAUNCH: DocPage = {
         `Купуй і продавай на сторінці токена: на кривій — власною інструкцією Meteora, після DEX — у його пулі; одна транзакція, яку підписує й оплачує твій гаманець, з комісією, прослизанням і «щонайменше» до підпису. Ryntra не додає своєї комісії ні на кривій, ні в пулі: вона заробляє як партнер конфігу — ${100 - CLASSIC.creatorTradingFeePct} % комісії кривої після частки Meteora, ${100 - CLASSIC.graduationFee.creatorPct} % комісії виходу на DEX і комісії власної замкненої ліквідності після DEX. Токен, що вийшов на DEX, можна обміняти й в Обміні — за комісією Обміну.`,
       ),
     ]),
+    section("log", "The flight log", "Бортовий журнал", [
+      p(
+        "Every token's page keeps its flight log: what happened to the token, the newest first, each entry with its time, its amount and the transaction anyone can open — the launch and the creator's first purchase, the creator's lock, every sale of the creator's with the share of what they bought sold by then, and the graduation to the DEX with who sent it. Anyone may send a full curve's graduation — Ryntra's executor, Meteora itself or any wallet — and the log names whoever did.",
+        "Сторінка кожного токена веде бортовий журнал: що відбувалося з токеном, найновіше зверху, кожен запис — з часом, сумою й транзакцією, яку може відкрити будь-хто: запуск і перша покупка творця, замок творця, кожен продаж творця з часткою куплених, проданих на той момент, і вихід на DEX — із тим, хто його запустив. Вихід повної кривої може надіслати будь-хто — виконавець Ryntra, сама Meteora чи будь-який гаманець, — і журнал називає того, хто це зробив.",
+      ),
+      p(
+        "When Ryntra places buy-side liquidity of its own on a graduated token, the log and the page show it as it stands: how much is in it, the prices it buys at below the market, what it has bought and holds, and every move up after the price, each with its transaction. It comes from Ryntra's own fees on that token. It is liquidity and nothing more — it does not hold the price and promises nothing, and unlike the share of the DEX pool it is not locked.",
+        "Коли Ryntra розміщує власну ліквідність на купівлю токена, що вийшов на DEX, журнал і сторінка показують її такою, як вона є: скільки в ній, за якими цінами під ринком вона купує, що купила й тримає, і кожен підйом слідом за ціною — кожен із транзакцією. Вона — з комісій самої Ryntra на цьому токені. Це ліквідність і нічого більше: ціну вона не тримає й нічого не обіцяє, і на відміну від частки в пулі DEX вона не замкнена.",
+      ),
+    ]),
     section("mine", "My launches", "Мої лаунчі", [
       p(
         "Launch → My launches is your creator's cabinet: each of your tokens with its way to the DEX, its volume and holders, and what it earned you by source — the curve's fee, the graduation fee, your locked liquidity's fees — every figure a program's own counter, never an estimate. «Claim» takes everything waiting in one transaction your wallet signs, and keeps a receipt read from the programs' own events.",

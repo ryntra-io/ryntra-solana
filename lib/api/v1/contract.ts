@@ -730,6 +730,23 @@
  * the creator's launches, the cabinet, a trade's quote — answer while it is
  * closed, and the token's read no longer answers `LAUNCH_PAUSED`. The link a
  * token's read names is its page until the referral route lands there.
+ *
+ * **1.32.0 — the flight log and Ryntra's liquidity.** Additive. `GET
+ * /api/v1/launch/{mint}/journal` — what happened to a launch, the newest
+ * first, each with its time, its amount and its transaction: the launch and
+ * the creator's first purchase, the creator's lock, the sharing of the
+ * creator's fees, every sale of the creator's (`CREATOR_SOLD`, with the share
+ * of what they bought sold by then — the event a holder's protection and a
+ * notification take), the graduation and who sent it (Ryntra's executor,
+ * Meteora's keeper or another wallet), and Ryntra's liquidity: its DLMM pool
+ * opened, placed, emptied to move up, moved up, added to (`FLOOR_POOL`,
+ * `FLOOR_PLACED`, `FLOOR_WITHDRAWN`, `FLOOR_RAISED`, `FLOOR_ADDED`). `floor` — Ryntra's liquidity as it
+ * stands: the pair currency in its steps, the token they bought and hold, the
+ * steps' prices; it holds no price and promises none — `floorUnread` when it is
+ * there but its position was not read. `complete` — whether everything the log
+ * rests on was read: the creator's trades whole and, once the token graduated,
+ * its graduation; read in part, the entries listed are the ones found, never
+ * «none». `capabilities.launch.journal` names the route.
  */
 
 import {
@@ -772,12 +789,13 @@ import { CREATOR_LOCK_IDS } from "../../core/launch/creator-lock.ts";
 import { FEE_SOURCES } from "../../core/launch/creator-earnings.ts";
 import { EARNINGS_CARD_SOURCE } from "../../core/launch/earnings-card.ts";
 import { FEE_SHARE_MAX_RECIPIENTS, FEE_SHARE_MIN_BPS, FEE_SHARE_MIN_RECIPIENTS, FEE_SHARE_TOTAL_BPS } from "../../core/launch/fee-shares.ts";
+import { JOURNAL_ACTORS, JOURNAL_KINDS } from "../../core/launch/autopilot.ts";
 import { LAUNCH_CHART_MARKERS, LAUNCH_HOLDER_LABELS, LAUNCH_RISK_CODES, LAUNCH_TRADE_SIDES, LAUNCH_TRADE_VENUES } from "../../core/venues/meteora-dbc/market.ts";
 import { LAUNCH_PRESET_IDS } from "../../core/venues/meteora-dbc/presets.ts";
 import { LaunchReceiptFactsSchema } from "../../core/venues/meteora-dbc/receipt.ts";
 
 export const API_MAJOR = 1;
-export const API_CONTRACT_VERSION = "1.31.0";
+export const API_CONTRACT_VERSION = "1.32.0";
 export const API_HEADER = "X-Ryntra-API";
 export const API_VERSION_HEADER = "X-Ryntra-API-Version";
 export const NETWORK = "solana:mainnet";
@@ -1232,6 +1250,8 @@ export const CapabilitiesSchema = z
         creators: z.literal("/api/v1/launch/creators/{address}").optional(),
         claimBuild: z.literal("/api/v1/launch/{mint}/claim/build").optional(),
         claimSubmit: z.literal("/api/v1/launch/{mint}/claim/submit").optional(),
+        /* 1.32.0 — the flight log and Ryntra's liquidity; absent on a deployment before it. */
+        journal: z.literal("/api/v1/launch/{mint}/journal").optional(),
       })
       .strict()
       .optional(),
@@ -9803,3 +9823,64 @@ export const LaunchClaimSubmitResponseSchema = z
   })
   .strict();
 export type LaunchClaimSubmitResponse = z.infer<typeof LaunchClaimSubmitResponseSchema>;
+
+/* ------------------------------------------------------------ the flight log (1.32.0) */
+
+/** One entry of a launch's flight log — every one with the transaction anyone can open. */
+export const LaunchJournalEventSchema = z
+  .object({
+    kind: z.enum(JOURNAL_KINDS),
+    at: Iso.nullable(),
+    signature: LaunchSignature,
+    actor: z.enum(JOURNAL_ACTORS),
+    /** The pair currency the event moved, raw; null when it moved none. */
+    pairRaw: LaunchRaw.nullable(),
+    /** The token the event moved, raw; null when it moved none. */
+    tokensRaw: LaunchRaw.nullable(),
+    /** Ryntra's liquidity: the lowest and the highest step's price, in the pair currency per token. */
+    priceLow: z.number().positive().nullable(),
+    priceHigh: z.number().positive().nullable(),
+    /** A sale of the creator's: the share sold by then, basis points — of what they bought here, or of the supply when they sold more. */
+    soldBps: z.number().int().min(0).max(1_000_000).nullable(),
+    soldOf: z.enum(["bought", "supply"]).nullable(),
+  })
+  .strict();
+export type LaunchJournalEventView = z.infer<typeof LaunchJournalEventSchema>;
+
+/** Ryntra's liquidity on a graduated launch as it stands: in steps below the price, from Ryntra's fees on this token. */
+export const LaunchFloorViewSchema = z
+  .object({
+    pool: Address,
+    position: Address,
+    /** The pair currency in the steps now, raw. */
+    pairRaw: LaunchRaw,
+    /** The token the steps bought and hold, raw. */
+    tokensRaw: LaunchRaw,
+    priceLow: z.number().positive(),
+    priceHigh: z.number().positive(),
+    /** Every amount the executor put in, raw. */
+    placedRaw: LaunchRaw,
+    observedAt: Iso,
+  })
+  .strict();
+export type LaunchFloorView = z.infer<typeof LaunchFloorViewSchema>;
+
+/** `GET /api/v1/launch/{mint}/journal` — the flight log, the newest first, and Ryntra's liquidity; public chain facts. */
+export const LaunchJournalResponseSchema = z
+  .object({
+    network: LaunchNetworkId,
+    token: Address,
+    pair: LaunchPairView,
+    tokenDecimals: z.number().int().min(0).max(18),
+    /** Ryntra's executor on this network — the wallet whose actions the log names as Ryntra's; null while there is none. */
+    executor: Address.nullable(),
+    events: z.array(LaunchJournalEventSchema).max(200),
+    /** Whether everything the log rests on was read: the creator's trades whole, and the graduation once the token graduated. */
+    complete: z.boolean(),
+    floor: LaunchFloorViewSchema.nullable(),
+    /** Ryntra's liquidity is there but its position could not be read now: said, never hidden. */
+    floorUnread: z.boolean(),
+    observedAt: Iso,
+  })
+  .strict();
+export type LaunchJournalResponse = z.infer<typeof LaunchJournalResponseSchema>;

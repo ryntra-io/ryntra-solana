@@ -61,7 +61,19 @@ const CREATOR_LAUNCHES = 5;
 const ROWS = 100;
 const POINTS = 2_000;
 
-const CACHE = new Map<string, Readonly<{ at: number; value: Promise<LaunchMarketResponse | null> }>>();
+/**
+ * What one read of a market knew beyond its response: the creator's own trades, whole or not — the flight log's
+ * «Творець продав» comes from them —, the supply, and the graduated pool's first transaction when its history was read.
+ */
+export type LaunchMarketFacts = Readonly<{
+  response: LaunchMarketResponse;
+  creatorTrades: readonly LaunchTrade[];
+  creatorTradesComplete: boolean;
+  supplyRaw: string;
+  graduated: Readonly<{ at: number; signature: string }> | null;
+}>;
+
+const CACHE = new Map<string, Readonly<{ at: number; value: Promise<LaunchMarketFacts | null> }>>();
 const CREATOR_CURVES = new Map<string, Readonly<{ at: number; value: number | null }>>();
 
 /** One trade of a transaction: its signature, side, who and how much — the same trade read twice is one. */
@@ -73,6 +85,11 @@ export function forgetLaunchMarket(cluster: string, token: string): void {
 }
 
 export function readLaunchMarket(deps: MarketDeps, token: string): Promise<LaunchMarketResponse | null> {
+  return readLaunchMarketFacts(deps, token).then((facts) => facts?.response ?? null);
+}
+
+/** The same read, with what it knew beyond the response — one read of the chain serves both. */
+export function readLaunchMarketFacts(deps: MarketDeps, token: string): Promise<LaunchMarketFacts | null> {
   const key = `${deps.network.cluster}:${token}`;
   const now = deps.now().getTime();
   const hit = CACHE.get(key);
@@ -91,7 +108,7 @@ async function curvesOf(reader: LaunchMarketReader, creator: string, now: number
   return value;
 }
 
-async function assemble(deps: MarketDeps, token: string): Promise<LaunchMarketResponse | null> {
+async function assemble(deps: MarketDeps, token: string): Promise<LaunchMarketFacts | null> {
   const record = await readLaunchRecord(deps, deps.network.cluster, token);
   if (!record || record.state === "PENDING") return null;
   const reader = launchMarketReader(deps);
@@ -185,7 +202,7 @@ async function assemble(deps: MarketDeps, token: string): Promise<LaunchMarketRe
   const referral = (await trading.referralAccount(state.curve.pairMint).catch(() => null)) !== null;
   const points = marketSeries({ trades: history.trades, openedAt: createdAt, openingPrice: state.openingPrice, priceNow: state.price, now, supply: supplyUi, pairUsd: 1 });
 
-  return {
+  const response: LaunchMarketResponse = {
     network: deps.network.chain,
     token,
     venue: state.graduated ? "pool" : "curve",
@@ -242,6 +259,13 @@ async function assemble(deps: MarketDeps, token: string): Promise<LaunchMarketRe
     creator: { address: creator, curves, tradesComplete: history.complete || creatorRead.complete },
     trading: { venue: state.graduated ? "pool" : "curve", pool: state.graduated?.pool ?? state.curve.pool, referral, jupiter: deps.network.jupiter && state.curve.migrated },
     observedAt: deps.now().toISOString(),
+  };
+  return {
+    response,
+    creatorTrades: known.filter((trade) => trade.trader === creator),
+    creatorTradesComplete: history.complete || creatorRead.complete,
+    supplyRaw: state.supplyRaw,
+    graduated: history.graduated,
   };
 }
 

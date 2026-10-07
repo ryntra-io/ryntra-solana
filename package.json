@@ -25,6 +25,7 @@
     "@circle-fin/app-kit": "^1.11.0",
     "@mayanfinance/swap-sdk": "15.2.2",
     "@meteora-ag/cp-amm-sdk": "1.5.1",
+    "@meteora-ag/dlmm": "1.9.14",
     "@meteora-ag/dynamic-bonding-curve-sdk": "1.5.13",
     "@meteora-ag/dynamic-fee-sharing-sdk": "1.1.0",
     "@meteora-ag/met-lock-sdk": "1.0.1",

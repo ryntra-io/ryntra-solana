@@ -31,7 +31,7 @@
  * fail in, and it is visible rather than silent: both lanes say so.
  */
 
-export const SOLANA_LANES = ["SEND", "SWAP", "BRIDGE", "CROSS_SWAP", "LAUNCH"] as const;
+export const SOLANA_LANES = ["SEND", "SWAP", "BRIDGE", "CROSS_SWAP", "LAUNCH", "LAUNCH_FLOOR"] as const;
 export type SolanaLane = (typeof SOLANA_LANES)[number];
 
 export type SolanaLaneState = "OPEN" | "PAUSED";
@@ -48,6 +48,12 @@ export type SolanaLaneState = "OPEN" | "PAUSED";
  * mainnet: creating a token, trading on its curve or pool and claiming its fees
  * through Ryntra. A launch's page and its market stay readable while the lane
  * is paused — people hold the tokens — but nothing is built or sent.
+ *
+ * `LAUNCH_FLOOR` is the sixth, added on 2026-10-07 with Launch's executor: the
+ * executor placing Ryntra's own liquidity on a graduated token and moving it.
+ * It spends Ryntra's money, so it opens by its own name and closes alone — the
+ * executor's graduations go on under `LAUNCH`; with `LAUNCH` paused nothing the
+ * executor does is sent.
  */
 export const SOLANA_LANE_STATE_ENV = {
   SEND: "RYNTRA_SOLANA_SEND_STATE",
@@ -55,6 +61,7 @@ export const SOLANA_LANE_STATE_ENV = {
   BRIDGE: "RYNTRA_SOLANA_BRIDGE_STATE",
   CROSS_SWAP: "RYNTRA_SOLANA_CROSS_SWAP_STATE",
   LAUNCH: "RYNTRA_SOLANA_LAUNCH_STATE",
+  LAUNCH_FLOOR: "RYNTRA_SOLANA_LAUNCH_FLOOR_STATE",
 } as const satisfies Record<SolanaLane, string>;
 
 /**

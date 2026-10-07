@@ -401,7 +401,8 @@ async function readSignature(
   return { outcome: "EXPIRED", slot: past };
 }
 
-async function signatureOutcome(connection: Connection, signature: string, validUntil: number, second: Connection | null = null): Promise<Sent["outcome"] | "EXPIRED"> {
+/** A sent signature's word from the chain: landed, failed, expired unseen, or not known yet. */
+export async function signatureOutcome(connection: Connection, signature: string, validUntil: number, second: Connection | null = null): Promise<Sent["outcome"] | "EXPIRED"> {
   return (await readSignature(connection, signature, validUntil, second)).outcome;
 }
 

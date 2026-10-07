@@ -26,7 +26,7 @@
  */
 
 export const API_MAJOR = 1 as const;
-export const API_CONTRACT_VERSION = "1.31.0" as const;
+export const API_CONTRACT_VERSION = "1.32.0" as const;
 export const API_HEADER = "X-Ryntra-API" as const;
 export const API_VERSION_HEADER = "X-Ryntra-API-Version" as const;
 export const NETWORK = "solana:mainnet" as const;
@@ -239,6 +239,8 @@ export type Capabilities = Readonly<{
     creators?: "/api/v1/launch/creators/{address}";
     claimBuild?: "/api/v1/launch/{mint}/claim/build";
     claimSubmit?: "/api/v1/launch/{mint}/claim/submit";
+    /* 1.32.0 */
+    journal?: "/api/v1/launch/{mint}/journal";
   }>;
   observedAt: string;
 }>;
@@ -4538,4 +4540,52 @@ export type LaunchClaimSubmitResponse = Readonly<{
   receipts: readonly LaunchClaimReceipt[];
   pending: readonly string[];
   failed: readonly Readonly<{ signature: string; reason: string }>[];
+}>;
+
+/* ------------------------------------------------------------ 1.32.0 — the flight log */
+
+export type LaunchJournalKind = "LAUNCHED" | "CREATOR_LOCKED" | "FEES_SHARED" | "CREATOR_SOLD" | "GRADUATED" | "FLOOR_POOL" | "FLOOR_PLACED" | "FLOOR_WITHDRAWN" | "FLOOR_RAISED" | "FLOOR_ADDED";
+/** Who did it: the creator, Ryntra's executor, Meteora's keeper, another wallet. */
+export type LaunchJournalActor = "creator" | "ryntra" | "meteora" | "other";
+
+/** One entry of a launch's flight log — every one with the transaction anyone can open. */
+export type LaunchJournalEvent = Readonly<{
+  kind: LaunchJournalKind;
+  at: string | null;
+  signature: string;
+  actor: LaunchJournalActor;
+  pairRaw: string | null;
+  tokensRaw: string | null;
+  /** Ryntra's liquidity: the lowest and the highest step's price, pair currency per token. */
+  priceLow: number | null;
+  priceHigh: number | null;
+  /** A sale of the creator's: the share sold by then, basis points — of what they bought, or of the supply. */
+  soldBps: number | null;
+  soldOf: "bought" | "supply" | null;
+}>;
+
+/** Ryntra's liquidity on a graduated launch as it stands: in steps below the price, from Ryntra's fees on this token. It holds no price. */
+export type LaunchFloorView = Readonly<{
+  pool: string;
+  position: string;
+  pairRaw: string;
+  tokensRaw: string;
+  priceLow: number;
+  priceHigh: number;
+  placedRaw: string;
+  observedAt: string;
+}>;
+
+/** `GET /api/v1/launch/{mint}/journal` — the newest first. `complete` false: something was not read (the creator's trades in part, or a graduation not known yet) — an entry not read is not «none». `floorUnread`: Ryntra's liquidity is there, its position not read now. */
+export type LaunchJournalResponse = Readonly<{
+  network: LaunchNetworkId;
+  token: string;
+  pair: LaunchPairView;
+  tokenDecimals: number;
+  executor: string | null;
+  events: readonly LaunchJournalEvent[];
+  complete: boolean;
+  floor: LaunchFloorView | null;
+  floorUnread: boolean;
+  observedAt: string;
 }>;

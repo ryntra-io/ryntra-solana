@@ -9,10 +9,10 @@ moved counts as new. Generated at every update from the development history.
 
 | Since the tag | Files |
 |---|---|
-| New | 1,236 |
+| New | 1,245 |
 | Changed | 813 |
 | Unchanged | 922 |
-| Lines added / removed | +318,535 / −19,827 |
+| Lines added / removed | +321,834 / −19,827 |
 
 ## New since the tag
 
@@ -121,6 +121,7 @@ moved counts as new. Generated at every update from the development history.
 - `app/api/v1/launch/[mint]/claim/build/route.ts`
 - `app/api/v1/launch/[mint]/claim/submit/route.ts`
 - `app/api/v1/launch/[mint]/creator/route.ts`
+- `app/api/v1/launch/[mint]/journal/route.ts`
 - `app/api/v1/launch/[mint]/market/route.ts`
 - `app/api/v1/launch/[mint]/route.ts`
 - `app/api/v1/launch/[mint]/trade/build/route.ts`
@@ -223,6 +224,7 @@ moved counts as new. Generated at every update from the development history.
 - `app/app/invest/use-wallet-reach.ts`
 - `app/app/invest/watch-surfaces.test.mjs`
 - `app/app/invest/watch.module.css`
+- `app/app/launch/[mint]/flight-log.tsx`
 - `app/app/launch/[mint]/launch-chart.tsx`
 - `app/app/launch/[mint]/page.tsx`
 - `app/app/launch/[mint]/token-market.tsx`
@@ -870,6 +872,8 @@ moved counts as new. Generated at every update from the development history.
 - `lib/core/core.test.mjs`
 - `lib/core/fee-policy.test.mjs`
 - `lib/core/fee-policy.ts`
+- `lib/core/launch/autopilot.test.mjs`
+- `lib/core/launch/autopilot.ts`
 - `lib/core/launch/creator-earnings.test.mjs`
 - `lib/core/launch/creator-earnings.ts`
 - `lib/core/launch/creator-lock.ts`
@@ -902,6 +906,7 @@ moved counts as new. Generated at every update from the development history.
 - `lib/core/venues/meteora-dbc/receipt.test.mjs`
 - `lib/core/venues/meteora-dbc/receipt.ts`
 - `lib/core/venues/meteora-dbc/trade.server.ts`
+- `lib/core/venues/meteora-dlmm/floor.server.ts`
 - `lib/development-repository.mjs`
 - `lib/evidence/address.ts`
 - `lib/evidence/budget.ts`
@@ -947,11 +952,15 @@ moved counts as new. Generated at every update from the development history.
 - `lib/guard/wallet-authorization.ts`
 - `lib/home/portfolio/adapters/conformance.fixture.mjs`
 - `lib/launch/adopt.server.ts`
+- `lib/launch/autopilot-chain.server.ts`
+- `lib/launch/autopilot.server.ts`
+- `lib/launch/autopilot.test.mjs`
 - `lib/launch/config.server.ts`
 - `lib/launch/creator.server.ts`
 - `lib/launch/flow.server.ts`
 - `lib/launch/form.ts`
 - `lib/launch/graduation.server.ts`
+- `lib/launch/journal.server.ts`
 - `lib/launch/launch.test.mjs`
 - `lib/launch/market.server.ts`
 - `lib/launch/metadata.server.ts`

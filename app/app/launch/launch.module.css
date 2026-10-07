@@ -1196,6 +1196,7 @@
 
 /* Every block of the page keeps its own name, for its place on a desk and for the eyes that find it. */
 .slotProgress,
+.slotLog,
 .slotTabs,
 .slotCreator {
   min-width: 0;
@@ -2927,4 +2928,152 @@
   color: var(--ry-muted);
   opacity: 1;
   cursor: not-allowed;
+}
+
+/* ── The flight log: each entry with its time, amount and transaction; Ryntra's liquidity above it ── */
+
+.logList {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.logItem {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 4px 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--ry-border);
+}
+
+.logItem:last-child {
+  border-bottom: 0;
+}
+
+.logIcon {
+  display: inline-flex;
+  align-self: start;
+  padding-top: 2px;
+  color: var(--ry-muted);
+}
+
+/* A sale of the creator's in the amber the page gives it everywhere: worth a look, never a verdict. */
+.logItem[data-kind="CREATOR_SOLD"] .logIcon {
+  color: var(--ry-caution);
+}
+
+.logText {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.logHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+}
+
+.logName {
+  font-size: var(--ry-fs-copy);
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--ry-text);
+}
+
+.logWhen {
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+}
+
+.logDetail {
+  font-size: var(--ry-fs-dense);
+  line-height: 1.5;
+  color: var(--ry-muted);
+  overflow-wrap: anywhere;
+}
+
+.logTx {
+  font-size: var(--ry-fs-dense);
+}
+
+/* Every figure in a sentence of the log in the mono face, tabular, in the ink of the text. */
+.figure {
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+  white-space: nowrap;
+}
+
+.floorBlock {
+  display: grid;
+  gap: 6px;
+  padding: var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+}
+
+/* The pool's link stays on the title's line: the title wraps inside its own room instead. */
+.floorHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--rt-evidence-cyan);
+}
+
+.floorTitle {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.floorHead .markLink {
+  flex: none;
+}
+
+/* The one sentence that keeps the liquidity from reading as a floor under the price: at reading size, never a footnote. */
+.floorNote {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  line-height: 1.5;
+  color: var(--ry-muted);
+}
+
+.floorLine {
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  line-height: 1.5;
+  color: var(--ry-text);
+  overflow-wrap: anywhere;
+}
+
+/*
+ * The log's quiet words at reading size, as its entries: what was not read, the way to the rest of it, when it was checked
+ * and every link in it are as much the log as the entries are.
+ */
+.slotLog .hint,
+.slotLog .unread,
+.slotLog .textButton,
+.slotLog .marksChecked,
+.slotLog .markLink {
+  font-size: var(--ry-fs-dense);
+}
+
+/* On a phone the transaction goes under its entry: the sentence keeps the width of the card. */
+@media (max-width: 560px) {
+  .logItem {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .logTx {
+    grid-column: 2;
+    justify-self: start;
+    min-height: 28px;
+  }
 }

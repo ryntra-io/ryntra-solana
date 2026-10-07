@@ -193,6 +193,30 @@ export function launchPoolPayerAddress(network: LaunchNetwork, env: NodeJS.Proce
   return launchPoolPayer(env, network)?.publicKey.toBase58() ?? null;
 }
 
+/**
+ * Ryntra's executor here — the wallet that sends a curve's graduation and holds Ryntra's own liquidity on graduated
+ * launches; null when there is none, and then nothing of it runs. Its key comes through
+ * `RYNTRA_LAUNCH_EXECUTOR_SECRET`, in the pool payer's formats. On mainnet only the key of the executor the attribution
+ * registry publishes is one: every action it takes is then one a counter can attribute.
+ */
+export function launchExecutor(env: NodeJS.ProcessEnv = process.env, network: LaunchNetwork | null = launchNetwork(env)): Keypair | null {
+  if (!network) return null;
+  const executor = keypairOf(env.RYNTRA_LAUNCH_EXECUTOR_SECRET);
+  if (!executor || network.cluster !== "mainnet") return executor;
+  return executor.publicKey.toBase58() === registryAddress("solana-launch-executor") ? executor : null;
+}
+
+/** The executor's address a token's log names — the registry's on mainnet, read without the key; the stand's own key's on devnet. */
+export function launchExecutorAddress(network: LaunchNetwork, env: NodeJS.ProcessEnv = process.env): string | null {
+  if (network.cluster === "mainnet") return registryAddress("solana-launch-executor");
+  return launchExecutor(env, network)?.publicKey.toBase58() ?? null;
+}
+
+/** Whether the executor may place and move Ryntra's liquidity now: its own operator stop says `OPEN`, and Launch's does. */
+export function launchFloorOpen(env: NodeJS.ProcessEnv = process.env): boolean {
+  return launchOpen(env) && resolveSolanaLaneState("LAUNCH_FLOOR", env) === "OPEN";
+}
+
 /** A secret key as configured: a JSON array of 64 bytes, or the base58 string a wallet exports. Null for anything else. */
 function keypairOf(raw: string | undefined): Keypair | null {
   const text = raw?.trim();

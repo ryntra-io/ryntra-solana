@@ -369,6 +369,16 @@ export const GUARD_COLLECTIONS = [
   /* Ryntra Launch: the routes' write windows shared by every instance, keyed `<route>:<address>:<window start>`, a
      version-checked count; an address's older windows are removed as it writes. A value in the same column; no DDL. */
   "launchLimits",
+  /* Ryntra Launch's executor: each action it sent and the chain confirmed — a graduation, Ryntra's liquidity placed,
+     moved or added to — keyed `solana:<cluster>:<token>:<signature>`, with the facts read from the confirmed
+     transaction; and a graduation sent by anyone else, found from the graduated pool's first transaction. Written once
+     each, never changed. A value in the same column; no DDL. */
+  "launchAutopilot",
+  /* Ryntra Launch's executor: Ryntra's liquidity on each graduated token — its pool, its position, its steps, what was
+     placed, the prices the executor read — keyed `solana:<cluster>:<token>`, a version-checked record. And the lease an
+     instance takes on a token while it acts on it, so two never act at once. A value in the same column; no DDL. */
+  "launchFloors",
+  "launchAutopilotLeases",
 ] as const;
 
 export type GuardCollectionName = (typeof GUARD_COLLECTIONS)[number];

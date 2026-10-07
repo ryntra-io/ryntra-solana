@@ -11,6 +11,7 @@ import type { LaunchCreatorResponse, LaunchHolderRow, LaunchMarketResponse, Laun
 import { explorerUrl, formatBps, formatCountShort, formatDate, formatMoneyShort, formatMove, formatPrice, formatRaw, rovingNext, shortAddress } from "../launch-format";
 import { launchWords, type LaunchWordKey } from "../launch-words";
 import styles from "../launch.module.css";
+import { FlightLog } from "./flight-log";
 import { LaunchChart, type OwnTrade } from "./launch-chart";
 import { TradePanel } from "./trade-panel";
 
@@ -322,6 +323,9 @@ export function TokenMarket({
         </section>
 
         <div className={styles.slotMarks}>{slots.marks}</div>
+
+        {/* The flight log reads again when the trades or the way to the DEX change, never on its own clock. */}
+        <FlightLog token={token} locale={locale} symbol={symbol} refresh={`${market.trades.read}:${market.trades.rows[0]?.signature ?? ""}:${market.progress.migrated}`} />
 
         <section className={`${styles.card} ${styles.slotTabs}`} ref={tabsRef}>
           <Tabs tab={tab} onTab={setTab} word={word} attention={market.risk.filter((fact) => fact.level === "attention").length} />

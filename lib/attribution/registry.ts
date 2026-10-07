@@ -44,9 +44,13 @@
  *   Launch's fees; the partner's fee claimer, the Squads multisig's vault
  *   that collects them later — not counted again, the same money arriving;
  *   and the wallet that pays for creating the pools, which only identifies
- *   them. None of them is used for anything else: the configs and the pool
- *   payer were created for Launch, and the partner's vault — a vault that
- *   existed before — is Launch's from the first config that names it.
+ *   them; and the executor, which sends a curve's graduation and holds
+ *   Ryntra's own liquidity on graduated launches — it takes no fee from
+ *   people and is paid none of the partner's; what it earns is the fee of its
+ *   own liquidity in its DLMM steps: a counter ignores it. None of them is used for
+ *   anything else: the configs, the pool payer and the executor were created
+ *   for Launch, and the partner's vault — a vault that existed before — is
+ *   Launch's from the first config that names it.
  *
  * A wallet that pays friends' rewards — the friends' payout wallet, and the
  * rewards wallet while it pays them too — is registered here and never
@@ -76,7 +80,7 @@ export const ATTRIBUTION_REGISTRY_VERSION = "1.0.0";
 export const REGISTRY_NETWORKS = [...NETWORK_IDS, "relay"] as const;
 export type RegistryNetwork = NetworkId | "relay";
 
-export const REGISTRY_ROLES = ["FEE", "PAYOUT_CASHBACK", "PAYOUT_FRIENDS", "PAYOUT_INTEGRATORS", "PAYOUT_REWARDS", "TREASURY", "LAUNCH_CONFIG", "LAUNCH_FEE_CLAIMER", "LAUNCH_POOL_PAYER"] as const;
+export const REGISTRY_ROLES = ["FEE", "PAYOUT_CASHBACK", "PAYOUT_FRIENDS", "PAYOUT_INTEGRATORS", "PAYOUT_REWARDS", "TREASURY", "LAUNCH_CONFIG", "LAUNCH_FEE_CLAIMER", "LAUNCH_POOL_PAYER", "LAUNCH_EXECUTOR"] as const;
 export type RegistryRole = (typeof REGISTRY_ROLES)[number];
 
 /** How the identity exists on its network. */
@@ -99,6 +103,8 @@ export const REGISTRY_KINDS = [
   "DBC_FEE_CLAIMER",
   /** The wallet that pays the rent of the pools Ryntra Launch creates. */
   "LAUNCH_POOL_PAYER",
+  /** The wallet that sends a launch's graduation and holds Ryntra's own liquidity on graduated launches. */
+  "LAUNCH_EXECUTOR",
 ] as const;
 export type RegistryKind = (typeof REGISTRY_KINDS)[number];
 
@@ -223,6 +229,9 @@ export const ATTRIBUTION_REGISTRY: readonly RegistryEntry[] = Object.freeze([
   { ...place("solana-launch-fee-claimer", "LAUNCH_FEE_CLAIMER", "DBC_FEE_CLAIMER", ["launch"], "NONE"), address: "22BZNVD9FuZPQvGwALBwhopSyxUCTuNNeTW1Lr1KsSvA" },
   /* Created 2026-10-06 for this job alone; its key is held outside this repository, and a launch pays it back in its own transaction. */
   { ...place("solana-launch-pool-payer", "LAUNCH_POOL_PAYER", "LAUNCH_POOL_PAYER", ["launch"], "NONE"), address: "H2Bzv5pcrEGug1STGbZhvX98DGb3SCFa4pnAtUwktyyV" },
+  /* The executor: a wallet of its own with a small budget, its key held outside this repository; the address is written
+     here when the wallet exists. */
+  place("solana-launch-executor", "LAUNCH_EXECUTOR", "LAUNCH_EXECUTOR", ["launch"], "NONE"),
 ]);
 
 /* ------------------------------------------------------------ validation */
@@ -278,7 +287,9 @@ export function validateRegistry(rows: readonly RegistryEntry[] = ATTRIBUTION_RE
               ? row.kind === "DBC_FEE_CLAIMER" && row.countedAs === "NONE"
               : row.role === "LAUNCH_POOL_PAYER"
                 ? row.kind === "LAUNCH_POOL_PAYER" && row.countedAs === "NONE"
-                : row.kind === "PAYOUT_WALLET" && row.countedAs === "SUPPLY_SIDE";
+                : row.role === "LAUNCH_EXECUTOR"
+                  ? row.kind === "LAUNCH_EXECUTOR" && row.countedAs === "NONE"
+                  : row.kind === "PAYOUT_WALLET" && row.countedAs === "SUPPLY_SIDE";
     if (!roleFits) problems.push(`${row.id}: the role, the kind and how it is counted disagree`);
     if (row.role !== "TREASURY" && row.products.length === 0) problems.push(`${row.id}: names no product`);
     if (row.kind === "JUPITER_REFERRAL_TOKEN_ACCOUNT" && (row.parent === null || row.mint === null)) problems.push(`${row.id}: a referral token account names its account and its mint`);
