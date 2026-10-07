@@ -18,7 +18,7 @@ export default async function PrivacyPage() {
   return (
     <>
       <h1>Privacy Policy</h1>
-      <p className="legal-updated">Effective date: September 29, 2026</p>
+      <p className="legal-updated">Effective date: October 7, 2026</p>
 
       <p>
         This Privacy Policy explains what data Ryntra (&ldquo;we&rdquo;, &ldquo;us&rdquo;) collects through{" "}

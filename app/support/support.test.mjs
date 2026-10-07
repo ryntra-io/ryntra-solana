@@ -76,6 +76,50 @@ test("the privacy policy's Android section says what stays on the phone, the wal
   assert.match(page, /<strong>Google Firebase Cloud Messaging<\/strong>/);
 });
 
+test("the privacy policy's Android section names the two permissions, the photo picker and a launch's public content (request 51)", () => {
+  const [en, uk] = LOCALES.map((locale) => JSON.stringify(ANDROID_PRIVACY[locale]));
+  for (const words of [en, uk]) {
+    assert.match(words, /\(CAMERA\)/);
+    assert.match(words, /\(POST_NOTIFICATIONS\)/);
+  }
+  assert.match(en, /Camera \(CAMERA\)/);
+  assert.match(en, /Notifications \(POST_NOTIFICATIONS\)/);
+  assert.match(en, /scan a wallet address or a payment QR code/);
+  assert.match(en, /take a picture for a token you launch/);
+  assert.match(en, /reminders and the state of your operations/);
+  assert.match(en, /system photo picker/);
+  assert.match(en, /with no permission to your photos or files/);
+  assert.match(en, /picture, name, ticker, description and links of a token you launch become public together with the token/);
+  assert.match(uk, /Камера \(CAMERA\)/);
+  assert.match(uk, /Сповіщення \(POST_NOTIFICATIONS\)/);
+  assert.match(uk, /системному вікні вибору фото/);
+  assert.match(uk, /Картинка, назва, тікер, опис і посилання токена, який ти запускаєш, стають публічними/);
+  /* The old line the phone outgrew cannot come back. */
+  assert.doesNotMatch(en + uk, /one permission|один дозвіл|location, camera|геолокації, камери/);
+});
+
+test("the Terms carry the content rules a launch agrees to, in both languages (request 52)", async () => {
+  const { LAUNCH_TERMS, LAUNCH_SECTION_ID } = await import("../legal/terms/launch.ts");
+  const [en, uk] = LOCALES.map((locale) => LAUNCH_TERMS[locale]);
+  assert.match(en.heading, /^10\. Tokens you launch$/);
+  assert.match(uk.heading, /^10\. Токени, які ти запускаєш$/);
+  assert.equal(uk.forbidden.length, en.forbidden.length);
+  assert.equal(uk.after.length, en.after.length);
+  const words = JSON.stringify(en);
+  for (const rule of [/impersonation/, /hateful/, /sexual content/, /violent/, /a scam/, /breaks the law/]) assert.match(words, rule);
+  assert.match(words, /may hide its picture, description and links on Ryntra's pages/);
+  assert.match(JSON.stringify(uk), /може сховати його картинку, опис і посилання/);
+  assert.equal(en.pointer, null);
+  assert.ok(uk.pointer);
+  const page = read("app/legal/terms/page.tsx");
+  assert.match(page, /<h2 id=\{LAUNCH_SECTION_ID\} lang=\{locale\}>/);
+  assert.match(page, /\{launch\.report\.before\} <a href=\{contactMailto\(\)\}>\{CONTACTS\.email\}<\/a>/);
+  assert.match(page, /the Ryntra app for Android/);
+  const numbers = [...page.matchAll(/<h2>(\d+)\./g)].map((match) => Number(match[1]));
+  assert.deepEqual(numbers, [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16]);
+  assert.equal(LAUNCH_SECTION_ID, "launch");
+});
+
 test("both pages are in the sitemap and the footer, the support page at both of its addresses", () => {
   assert.ok(hasUkAddress("/support"));
   assert.equal(localizedPath("/support", "uk"), "/uk/support");

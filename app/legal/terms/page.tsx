@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CONTACTS, contactMailto } from "@/lib/site/contacts";
 import { FEES, REWARDS } from "@/app/docs/content/facts";
+import { publicServerLocale } from "@/lib/site/server-locale";
+
+import { LAUNCH_SECTION_ID, launchTerms } from "./launch";
 
 export const metadata: Metadata = {
   title: "Terms of Use",
@@ -17,25 +20,34 @@ export const metadata: Metadata = {
  * ledger does not apply.
  */
 
-export default function TermsPage() {
+export default async function TermsPage() {
+  /* The Terms are English until a lawyer gives them Ukrainian; their section on
+     the tokens a person launches is written in both, and follows the reader's language. */
+  const locale = await publicServerLocale();
+  const launch = launchTerms(locale);
   return (
     <>
       <h1>Terms of Use</h1>
-      <p className="legal-updated">Effective date: October 5, 2026</p>
+      <p className="legal-updated">Effective date: October 7, 2026</p>
 
       <p>
         These Terms of Use (&ldquo;Terms&rdquo;) govern your access to and use of the Ryntra website at{" "}
-        <a href="https://ryntra.io">ryntra.io</a>, the Ryntra cabinet, the Ryntra Telegram bot and related
-        services (together, the &ldquo;Service&rdquo;). By using the Service you agree to these Terms. If you
+        <a href="https://ryntra.io">ryntra.io</a>, the Ryntra cabinet, the Ryntra app for Android, the Ryntra
+        Telegram bot and related services (together, the &ldquo;Service&rdquo;). By using the Service you agree to these Terms. If you
         do not agree, do not use the Service.
       </p>
+      {launch.pointer ? (
+        <p lang="uk">
+          {launch.pointer.text} <a href={`#${LAUNCH_SECTION_ID}`}>{launch.pointer.link}</a>.
+        </p>
+      ) : null}
 
       <h2>1. What Ryntra is</h2>
       <p>
         Ryntra is an independent, non-custodial trading and strategy platform for the Solana network. Today
         the Service lets you exchange assets on Solana (Swap and Spot, including tokenized stocks and other
         tokenized assets issued by third parties), move value between Solana and other networks (Bridge),
-        send and receive assets, see what a wallet holds (Portfolio), keep a record of your operations
+        send and receive assets, launch a token of your own (Launch), see what a wallet holds (Portfolio), keep a record of your operations
         (Activity and receipts), and take part in the Rewards and Points programme. Strategy features are in
         development and are marked as such in the Service. Ryntra is not an exchange, a broker, a custodian
         or an investment adviser, and it is not affiliated with, endorsed by, or operated by any wallet
@@ -125,7 +137,21 @@ export default function TermsPage() {
         <li>Do not impersonate Ryntra or misrepresent your affiliation with us.</li>
       </ul>
 
-      <h2>10. Third-party services</h2>
+      <h2 id={LAUNCH_SECTION_ID} lang={locale}>{launch.heading}</h2>
+      <p lang={locale}>{launch.intro}</p>
+      <ul lang={locale}>
+        {launch.forbidden.map((line) => (
+          <li key={line}>{line}</li>
+        ))}
+      </ul>
+      {launch.after.map((line) => (
+        <p key={line} lang={locale}>{line}</p>
+      ))}
+      <p lang={locale}>
+        {launch.report.before} <a href={contactMailto()}>{CONTACTS.email}</a> {launch.report.after}
+      </p>
+
+      <h2>11. Third-party services</h2>
       <p>
         The Service interoperates with third parties — wallet software, the Solana network and the other
         networks a bridge crosses, liquidity, routing and bridging providers, market data sources, token
@@ -134,7 +160,7 @@ export default function TermsPage() {
         execution, or the terms under which a token is issued.
       </p>
 
-      <h2>11. Intellectual property</h2>
+      <h2>12. Intellectual property</h2>
       <p>
         The Service, including its design, code, and content (excluding third-party materials and your own
         content), is owned by Ryntra and protected by applicable intellectual-property laws. We grant you a
@@ -142,7 +168,7 @@ export default function TermsPage() {
         non-commercial purposes. The notes, plans and other content you create in the Service remain yours.
       </p>
 
-      <h2>12. Disclaimers and limitation of liability</h2>
+      <h2>13. Disclaimers and limitation of liability</h2>
       <p>
         The Service is beta software provided <strong>&ldquo;as is&rdquo; and &ldquo;as available&rdquo;</strong>, without
         warranties of any kind, express or implied, including merchantability, fitness for a particular
@@ -154,7 +180,7 @@ export default function TermsPage() {
         losses caused by a compromised device or wallet.
       </p>
 
-      <h2>13. Termination</h2>
+      <h2>14. Termination</h2>
       <p>
         We may suspend or terminate your access to the Service at any time, including for violation of
         these Terms or abuse of the beta or Rewards programme. You may stop using the Service at any time
@@ -163,14 +189,14 @@ export default function TermsPage() {
         suspension, because Ryntra never holds them.
       </p>
 
-      <h2>14. Changes to these Terms</h2>
+      <h2>15. Changes to these Terms</h2>
       <p>
         We may update these Terms from time to time. The effective date above reflects the latest
         revision. Material changes will be announced in the Service. Continued use of the Service after
         changes take effect constitutes acceptance.
       </p>
 
-      <h2>15. Contact</h2>
+      <h2>16. Contact</h2>
       <p>
         Ryntra — <a href={contactMailto()}>{CONTACTS.email}</a>
       </p>

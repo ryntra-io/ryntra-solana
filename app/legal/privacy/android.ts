@@ -14,7 +14,11 @@
  * kind of note the phone takes (a plan's change); the registration removed on
  * the server when notifications are turned off or the person signs out; no
  * analytics or advertising dependency; asset logos loaded from their published
- * addresses.
+ * addresses. The permissions and a launch's picture were checked on 2026-10-07
+ * against the lines the phone's 1.11.0 (versionCode 6) build reads back:
+ * the camera, asked when the person scans or takes a launch's picture; the
+ * notifications, asked only when phone notifications are turned on; a launch's
+ * picture also from the system photo picker, with no storage permission.
  */
 
 export type AndroidPrivacyLocale = "en" | "uk";
@@ -54,8 +58,20 @@ export const ANDROID_PRIVACY: Readonly<Record<AndroidPrivacyLocale, AndroidPriva
         body: "then the phone's push token, the app's version, your language, your quiet hours and the kind of notes the phone takes (changes to your plans) are stored with your account, and the notes are delivered through Google Firebase Cloud Messaging. Turning phone notifications off or signing out removes this phone's registration from your account. While they are off, no push token is sent to Ryntra.",
       },
       {
-        lead: "Permissions",
-        body: "the app asks for one permission (to show notifications), and only when you turn them on. It does not use your location, camera, contacts, photos or advertising identifier, and it carries no third-party analytics or advertising library.",
+        lead: "Camera (CAMERA)",
+        body: "asked only when you choose to scan or to take a photo — to scan a wallet address or a payment QR code, and to take a picture for a token you launch. Nothing is recorded; a picture you take is sent to Ryntra only when you press to launch a token with it, and from then on it is at a public address even if you do not sign.",
+      },
+      {
+        lead: "Notifications (POST_NOTIFICATIONS)",
+        body: "declared for phone notifications — reminders and the state of your operations. The current version (1.11.0) has no phone notifications and does not ask for it; notes stay in the app's inbox. A version that brings phone notifications asks only when you turn them on.",
+      },
+      {
+        lead: "What the app does not ask for",
+        body: "access to your photos or files, your location, contacts, microphone, accounts or advertising identifier; it carries no third-party analytics or advertising library. You can refuse the camera or notifications, or take them back in the phone's settings, and the rest of the app keeps working.",
+      },
+      {
+        lead: "A token you launch",
+        body: "its picture can also be chosen in the phone's system photo picker, which hands the app only that one image, with no permission to your photos or files. The picture, name, ticker, description and links of a token you launch become public together with the token: anyone can see them on Ryntra's pages, in the app and at the public address the token names on the blockchain. Put nothing in them you do not want to be public. What a launched token may not carry is in the Terms of Use.",
       },
     ],
     pointer: null,
@@ -81,8 +97,20 @@ export const ANDROID_PRIVACY: Readonly<Record<AndroidPrivacyLocale, AndroidPriva
         body: "тоді push-токен телефона, версія застосунку, твоя мова, тихі години й вид нотаток, які отримує телефон (зміни твоїх планів), зберігаються з твоїм акаунтом, а нотатки доставляє Google Firebase Cloud Messaging. Вимкнення сповіщень на телефоні чи вихід видаляє реєстрацію цього телефона з твого акаунта. Поки сповіщення вимкнені, push-токен у Ryntra не надсилається.",
       },
       {
-        lead: "Дозволи",
-        body: "застосунок просить один дозвіл (показувати сповіщення) і лише тоді, коли ти їх вмикаєш. Він не використовує геолокації, камери, контактів, фото чи рекламного ідентифікатора й не містить сторонніх бібліотек аналітики чи реклами.",
+        lead: "Камера (CAMERA)",
+        body: "застосунок просить її лише тоді, коли ти обираєш сканувати чи зняти фото, — щоб сканувати адресу гаманця чи QR-код оплати й щоб зняти фото для токена, який ти запускаєш. Нічого не записується; зняте фото надсилається в Ryntra лише тоді, коли ти натискаєш запустити з ним токен, і відтоді лежить за публічною адресою, навіть якщо ти не підпишеш.",
+      },
+      {
+        lead: "Сповіщення (POST_NOTIFICATIONS)",
+        body: "оголошений для сповіщень на телефоні — нагадувань і стану твоїх операцій. Поточна версія (1.11.0) сповіщень на телефоні не має й цього дозволу не просить; нотатки лишаються у вхідних застосунку. Версія, що принесе сповіщення на телефоні, попросить його лише тоді, коли ти їх увімкнеш.",
+      },
+      {
+        lead: "Чого застосунок не просить",
+        body: "доступу до твоїх фото чи файлів, геолокації, контактів, мікрофона, облікових записів телефона чи рекламного ідентифікатора; сторонніх бібліотек аналітики чи реклами в ньому немає. Камеру чи сповіщення можна не дозволити або забрати в налаштуваннях телефона — решта застосунку працює далі.",
+      },
+      {
+        lead: "Токен, який ти запускаєш",
+        body: "його картинку можна також вибрати в системному вікні вибору фото, який передає застосунку лише це одне зображення, без дозволу на твої фото чи файли. Картинка, назва, тікер, опис і посилання токена, який ти запускаєш, стають публічними разом із токеном: їх бачить будь-хто на сторінках Ryntra, у застосунку й за публічною адресою, яку токен називає в блокчейні. Не вписуй туди нічого, що не має бути публічним. Чого не може містити запущений токен — в Умовах використання.",
       },
     ],
     pointer: { text: "Політика чинна англійською.", link: "Розділ про застосунок Ryntra для Android — українською" },

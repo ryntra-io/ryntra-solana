@@ -9,10 +9,10 @@ moved counts as new. Generated at every update from the development history.
 
 | Since the tag | Files |
 |---|---|
-| New | 1,260 |
+| New | 1,261 |
 | Changed | 813 |
 | Unchanged | 922 |
-| Lines added / removed | +325,550 / −19,834 |
+| Lines added / removed | +325,729 / −19,835 |
 
 ## New since the tag
 
@@ -380,6 +380,7 @@ moved counts as new. Generated at every update from the development history.
 - `app/health/route.test.mjs`
 - `app/legal/privacy/android.ts`
 - `app/legal/review/candidate-document.tsx`
+- `app/legal/terms/launch.ts`
 - `app/manifest.ts`
 - `app/methodology/methodology-copy.ts`
 - `app/methodology/page.tsx`
