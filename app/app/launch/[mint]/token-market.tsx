@@ -13,6 +13,7 @@ import { launchWords, type LaunchWordKey } from "../launch-words";
 import styles from "../launch.module.css";
 import { FlightLog } from "./flight-log";
 import { LaunchChart, type OwnTrade } from "./launch-chart";
+import { PoolPanel } from "./pool-panel";
 import { TradePanel } from "./trade-panel";
 
 type Tab = "trades" | "holders" | "risk";
@@ -282,6 +283,8 @@ export function TokenMarket({
         <div className={styles.slotTrade} ref={tradeRef} id="launch-trade">
           <TradePanel market={market} symbol={symbol} locale={locale} paused={paused} onTraded={() => void read()} />
         </div>
+        {/* After the DEX, a holder's position in the pool — drawn only for a wallet the entry is open to, or one holding a position here. */}
+        {market.progress.migrated ? <PoolPanel market={market} symbol={symbol} locale={locale} paused={paused} /> : null}
         <div className={styles.slotShare}>{slots.share}</div>
       </div>
 

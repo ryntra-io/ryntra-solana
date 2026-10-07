@@ -379,6 +379,15 @@ export const GUARD_COLLECTIONS = [
      instance takes on a token while it acts on it, so two never act at once. A value in the same column; no DDL. */
   "launchFloors",
   "launchAutopilotLeases",
+  /* Ryntra Launch, a holder's position in a graduated pool: the entry and the permission as built, kept to compare the
+     signed bytes with, keyed `<cluster>:<build id>`, and the mark that a build was sent once; the positions entered through
+     Ryntra, keyed `<cluster>:<wallet>:<position>` (PENDING before the send, OPEN once the chain confirms); and each claim
+     Ryntra's collector made for a position's owner, keyed `<cluster>:<position>:<signature>`, written once. A value in the
+     same column; no DDL. */
+  "launchHolderBuilds",
+  "launchHolderSends",
+  "launchHolderPositions",
+  "launchHolderClaims",
 ] as const;
 
 export type GuardCollectionName = (typeof GUARD_COLLECTIONS)[number];

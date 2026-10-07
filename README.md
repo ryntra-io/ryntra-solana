@@ -23,7 +23,7 @@ commit, named for what it released; the latest is from 2026-10-07.
 | `supabase/migrations/`, `supabase/prepared/` | The database schema migration by migration, and the prepared SQL that is applied by hand (corrections and rollbacks) |
 | `public/` | Static assets |
 
-2,980 files come from the development repository as released, and each test
+2,995 files come from the development repository as released, and each test
 sits beside the code it tests (`*.test.mjs`); `README.md`, `BOUNDARY.md`,
 `LICENSE`, `.gitignore` and the scripts of `package.json` are written for this
 snapshot.
@@ -85,15 +85,15 @@ build-tools).
 
 The code as it stood before the hackathon is tagged
 `pre-hackathon-baseline-2026-09-11` in the development repository — commit `7fc5776f`,
-2026-09-11. Measured against that tag, path by path, for the 2,980 files
+2026-09-11. Measured against that tag, path by path, for the 2,995 files
 that come from the development repository:
 
 | Since the tag | Files |
 |---|---|
-| New | 1,245 |
+| New | 1,260 |
 | Changed | 813 |
 | Unchanged | 922 |
-| Lines added / removed | +321,834 / −19,827 |
+| Lines added / removed | +325,550 / −19,834 |
 
 [BOUNDARY.md](BOUNDARY.md) lists every new and every changed file. Shipped since
 then, as the public build log records it:

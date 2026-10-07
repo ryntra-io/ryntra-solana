@@ -3077,3 +3077,377 @@
     min-height: 28px;
   }
 }
+
+/* ------------------------------------------------------------ a holder's position in the pool */
+
+.poolCard {
+  gap: var(--ry-s3);
+}
+
+.poolCard .suffix {
+  right: 12px;
+}
+
+.poolCard .affixed:has(.suffix) .input {
+  padding-right: 96px;
+  font-size: var(--ry-fs-data-m);
+}
+
+.poolHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ry-s2);
+}
+
+.poolLede {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  line-height: 1.5;
+  color: var(--ry-muted);
+}
+
+.collector {
+  display: grid;
+  gap: 6px;
+  padding: var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+}
+
+.collectorTitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.collectorTitle svg {
+  flex: none;
+  color: var(--ry-pnl-pos);
+}
+
+.collectorLine {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  line-height: 1.5;
+  color: var(--ry-muted);
+}
+
+.collectorBounds {
+  display: grid;
+  gap: 6px;
+  margin: 6px 0 0;
+  padding-left: 18px;
+  font-size: var(--ry-fs-dense);
+  line-height: 1.5;
+  color: var(--ry-text);
+}
+
+.simulator {
+  padding: var(--ry-s2) var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+}
+
+.simTable {
+  width: 100%;
+  margin-top: var(--ry-s2);
+  border-collapse: collapse;
+  font-size: var(--ry-fs-dense);
+}
+
+.simTable th,
+.simTable td {
+  padding: 6px 4px;
+  border-bottom: 1px solid var(--ry-border);
+  text-align: right;
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.simTable thead th {
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 500;
+  color: var(--ry-muted);
+}
+
+.simTable th:first-child {
+  text-align: left;
+}
+
+.simTable tbody th[data-dir="up"] {
+  color: var(--ry-pnl-pos);
+}
+
+.simTable tbody th[data-dir="down"] {
+  color: var(--ry-pnl-neg);
+}
+
+.simTable td[data-loss] {
+  color: var(--ry-pnl-neg);
+}
+
+.simTable tbody tr:last-child th,
+.simTable tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.notDeposit {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 6px;
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--ry-caution);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-caution-soft);
+  font-size: var(--ry-fs-dense);
+  line-height: 1.5;
+  color: var(--ry-text);
+}
+
+.notDeposit svg {
+  margin-top: 3px;
+  color: var(--ry-caution);
+}
+
+.positions {
+  display: grid;
+  gap: var(--ry-s2);
+  padding-top: var(--ry-s3);
+  border-top: 1px solid var(--ry-border);
+}
+
+.positionsTitle {
+  margin: 0;
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.positionList {
+  display: grid;
+  gap: var(--ry-s2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.positionRow {
+  display: grid;
+  gap: var(--ry-s2);
+  padding: var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+}
+
+.positionHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.positionWhen {
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+}
+
+.grantChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-pill);
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+}
+
+.grantChip[data-tone="on"] {
+  color: var(--ry-text);
+}
+
+.grantChip[data-tone="on"] svg {
+  color: var(--ry-pnl-pos);
+}
+
+.grantChip[data-tone="warn"] {
+  border-color: var(--ry-caution);
+  background: var(--ry-caution-soft);
+  color: var(--ry-text);
+  white-space: normal;
+}
+
+.grantChip[data-tone="warn"] svg {
+  flex: none;
+  color: var(--ry-caution);
+}
+
+.positionFigures {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ry-s2) var(--ry-s3);
+  margin: 0;
+}
+
+.positionFigures div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.positionFigures dt {
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+}
+
+.positionFigures dd {
+  margin: 0;
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-text);
+}
+
+.positionChange[data-dir="up"] {
+  color: var(--ry-pnl-pos);
+}
+
+.positionChange[data-dir="down"] {
+  color: var(--ry-pnl-neg);
+}
+
+.positionHolds {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+}
+
+.positionActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ry-s3);
+}
+
+.claimList {
+  display: grid;
+  gap: 6px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--ry-fs-dense);
+}
+
+.claimList li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ry-s2);
+}
+
+.positionsBoard {
+  display: grid;
+  gap: var(--ry-s4);
+  align-items: start;
+}
+
+/* On a wide desk the totals stand beside the positions; on a phone they come first. */
+@media (min-width: 1100px) {
+  .positionsBoard {
+    grid-template-columns: minmax(0, 1fr) 380px;
+  }
+
+  .positionsBoard > [data-area="totals"] {
+    grid-column: 2;
+    grid-row: 1;
+    position: sticky;
+    top: 88px;
+  }
+
+  .positionsBoard > .positionTokens {
+    grid-column: 1;
+    grid-row: 1;
+  }
+}
+
+.positionTokens {
+  display: grid;
+  gap: var(--ry-s3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.positionToken {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ry-s2);
+}
+
+.positionTokenMark {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-bg);
+  color: var(--ry-muted);
+}
+
+.positionTokenName {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--ry-fs-label);
+  color: var(--ry-text);
+}
+
+.positionTokens .positions {
+  padding-top: 0;
+  border-top: 0;
+}
+
+/* The card's own action: full width and firm, never orange — the page's one orange action is the trade's. */
+.poolAction {
+  width: 100%;
+  border-color: var(--ry-border-strong);
+  font-weight: 600;
+}
+
+.simSummary {
+  display: inline-grid;
+  gap: 2px;
+}
+
+.simWorst {
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-pnl-neg);
+}
+
+/* Large sums stay inside the card: the table scrolls in its own box, never the page. */
+.simScroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.poolCard .quoteValue {
+  overflow-wrap: anywhere;
+}
+
+.grantLine {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  line-height: 1.5;
+  color: var(--ry-text);
+}

@@ -34,12 +34,15 @@
 import type { Keypair, Transaction } from "@solana/web3.js";
 import { randomUUID } from "node:crypto";
 
+import { collectorShouldClaim, holderGrantState } from "../core/launch/holder.ts";
 import { FLOOR_RULE, addSample, binOfPrice, floorBudgetRaw, floorLadder, floorRaise, graduationActor, priceOfBin, readyToPlace, referenceBin, type FloorLadder, type FloorSample, type JournalActor } from "../core/launch/autopilot.ts";
+import type { HolderPool, HolderVenue } from "../core/venues/meteora-damm-v2/holder.server.ts";
 import type { FloorPool, FloorVenue } from "../core/venues/meteora-dlmm/floor.server.ts";
 import { withBoundedCasRetry, type GuardStore } from "../guard/store.ts";
 import type { LaunchNetwork } from "./config.server.ts";
 import type { LaunchRecord, Sent } from "./flow.server.ts";
 import { noteGraduation } from "./graduation.server.ts";
+import { allHolderPositions, dropHolderClaim, holderClaims, setHolderClaim, writeHolderClaim, type HolderClaimReceipt, type HolderPositionRecord } from "./holder.server.ts";
 
 export type AutopilotKind = "GRADUATED" | "FLOOR_POOL" | "FLOOR_PLACED" | "FLOOR_WITHDRAWN" | "FLOOR_RAISED" | "FLOOR_ADDED";
 
@@ -128,6 +131,8 @@ export type TxFacts = Readonly<{
   failed: boolean;
   /** The executor's own change of a mint, raw. */
   delta(mint: string): bigint;
+  /** Another wallet's change of a mint, raw — a holder's fees the collector paid to it. */
+  deltaOf(owner: string, mint: string): bigint;
 }>;
 
 export type CurveRead = Readonly<{
@@ -156,6 +161,8 @@ export type AutopilotChain = Readonly<{
   held(mint: string): Promise<bigint>;
   lamports(): Promise<bigint>;
   floor: FloorVenue;
+  /** Holders' positions in graduated pools: the pool, a position, and the collector's claim to the owner's own accounts. */
+  holder: Pick<HolderVenue, "pool" | "readPosition" | "buildCollectorClaim">;
   /** Signs with the executor (and a new account's key) on a fresh blockhash. */
   prepare(tx: Transaction, extra: readonly Keypair[]): Promise<Readonly<{ signature: string; validUntil: number }>>;
   send(tx: Transaction, validUntil: number): Promise<Sent>;
@@ -236,7 +243,114 @@ export async function runAutopilot(deps: AutopilotDeps, options: Readonly<{ only
       steps.push(...(await leased(deps, record.token, () => floor(deps, record, dammPool, end))));
     }
   } else if (graduated.length) steps.push({ token: "*", step: "FLOOR_CLOSED" });
+
+  /* Then the holders' positions: the fees their owners let Ryntra's collector bring to their wallets. */
+  steps.push(...(await collectForHolders(deps, end).catch((error: unknown) => [{ token: "*", step: `HOLDERS_ERROR: ${message(error)}` }])));
   return { state: "RAN", executor: deps.chain.executor, steps };
+}
+
+/**
+ * Ryntra's collector on the holders' positions (the decision of 2026-10-07): on a position whose permission
+ * is exactly Ryntra's two bits, with at least a dollar waiting and no claim of its in a day, the fees are claimed — the
+ * program pays them only to the owner's own accounts. Every claim is written down before the send and becomes a receipt
+ * from its confirmed transaction: what the owner's accounts received. A claim whose answer was lost is read again by the
+ * next pass; it never sends a second while the first may still land.
+ */
+async function collectForHolders(deps: AutopilotDeps, end: number): Promise<AutopilotStep[]> {
+  const rows = (await allHolderPositions(deps.store, deps.network.cluster)).filter((row) => row.state === "OPEN");
+  if (!rows.length) return [];
+  const steps: AutopilotStep[] = [];
+  const pools = new Map<string, HolderPool>();
+  for (const row of rows) {
+    if (deps.now().getTime() > end) break;
+    /* One instance at a time on a position: two passes never claim it together. */
+    const done = await leased(deps, `holder-${row.position}`, async () => {
+      try {
+        return await collectOne(deps, row, pools);
+      } catch (error) {
+        return [{ token: row.token, step: `HOLDER_ERROR: ${message(error)}` }];
+      }
+    });
+    steps.push(...done.map((step) => (step.step === "LEASED" ? { token: row.token, step: "HOLDER_LEASED" } : step)));
+    if (done.some((step) => step.step === "HOLDER_LOW_SOL")) break;
+  }
+  return steps;
+}
+
+async function collectOne(deps: AutopilotDeps, row: HolderPositionRecord, pools: Map<string, HolderPool>): Promise<AutopilotStep[]> {
+  const claims = await holderClaims(deps, row.position);
+  /* A claim sent and not read yet: read it first; nothing new is sent on the position meanwhile. */
+  const pending = claims.find((claim) => claim.state === "PENDING");
+  if (pending) {
+    return [await settleHolderClaim(deps, row.token, pending)];
+  }
+  const pool = pools.get(row.pool) ?? (await deps.chain.holder.pool(row.pool, row.token));
+  pools.set(row.pool, pool);
+  const read = await deps.chain.holder.readPosition(pool, row);
+  if (read.closed) {
+    return [{ token: row.token, step: "HOLDER_CLOSED" }];
+  }
+  if (!read.owner) {
+    return [{ token: row.token, step: "HOLDER_MOVED" }];
+  }
+  const grant = holderGrantState({ delegate: read.delegate, delegatedAmount: read.delegatedAmount, bitmask: read.bitmask, collector: deps.chain.executor });
+  if (grant !== "GRANTED") {
+    return [{ token: row.token, step: `HOLDER_${grant}` }];
+  }
+  const last = claims[0]?.sentAt ?? null;
+  if (!collectorShouldClaim({ claimablePairRaw: BigInt(read.unclaimedPairRaw), pairDecimals: pool.pairDecimals, pairIsDollar: row.pairDollar === true, lastClaimAt: last, now: deps.now().getTime() })) {
+    return [{ token: row.token, step: "HOLDER_WAIT" }];
+  }
+  if ((await deps.chain.lamports()) < EXECUTOR_FLOOR_LAMPORTS) {
+    return [{ token: row.token, step: "HOLDER_LOW_SOL" }];
+  }
+  const tx = await deps.chain.holder.buildCollectorClaim(pool, { collector: deps.chain.executor, owner: read.owner, position: row.position, nftMint: row.nftMint });
+  if (!tx) {
+    return [{ token: row.token, step: "HOLDER_NO_ACCOUNT" }];
+  }
+  const prepared = await deps.chain.prepare(tx, []);
+  const claim: HolderClaimReceipt = {
+    cluster: deps.network.cluster,
+    position: row.position,
+    owner: read.owner,
+    token: row.token,
+    pairMint: pool.pairMint,
+    signature: prepared.signature,
+    state: "PENDING",
+    sentAt: deps.now().toISOString(),
+    validUntil: prepared.validUntil,
+    at: null,
+    pairRaw: "0",
+    tokenRaw: "0",
+    lamports: null,
+  };
+  /* Written before the send: a lost answer still leaves the claim to read. */
+  await writeHolderClaim(deps.store, claim);
+  const sent = await deps.chain.send(tx, prepared.validUntil);
+  if (sent.outcome === "REJECTED" || sent.outcome === "FAILED") {
+    await dropHolderClaim(deps.store, claim);
+    return [{ token: row.token, step: "HOLDER_CLAIM_REFUSED", signature: sent.signature }];
+  }
+  return [await settleHolderClaim(deps, row.token, claim)];
+}
+
+/** A claim the collector sent, read from its transaction: a receipt of what the owner received, or let go when it never landed. */
+async function settleHolderClaim(deps: AutopilotDeps, token: string, claim: HolderClaimReceipt): Promise<AutopilotStep> {
+  const facts = await deps.chain.transaction(claim.signature);
+  if (facts && !facts.failed) {
+    await setHolderClaim(deps.store, { ...claim, state: "CONFIRMED", at: facts.at, pairRaw: facts.deltaOf(claim.owner, claim.pairMint).toString(), tokenRaw: facts.deltaOf(claim.owner, token).toString(), lamports: facts.lamportsSpent?.toString() ?? null });
+    return { token, step: "HOLDER_CLAIMED", signature: claim.signature };
+  }
+  if (facts?.failed) {
+    await dropHolderClaim(deps.store, claim);
+    return { token, step: "HOLDER_CLAIM_FAILED", signature: claim.signature };
+  }
+  const outcome = await deps.chain.outcome(claim.signature, claim.validUntil);
+  if (outcome === "EXPIRED" || outcome === "REJECTED" || outcome === "FAILED") {
+    await dropHolderClaim(deps.store, claim);
+    return { token, step: "HOLDER_CLAIM_LAPSED", signature: claim.signature };
+  }
+  return { token, step: "HOLDER_CLAIM_PENDING", signature: claim.signature };
 }
 
 const message = (error: unknown) => (error instanceof Error ? error.message.slice(0, 160) : "unknown");

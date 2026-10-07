@@ -26,7 +26,7 @@
  */
 
 export const API_MAJOR = 1 as const;
-export const API_CONTRACT_VERSION = "1.32.0" as const;
+export const API_CONTRACT_VERSION = "1.33.0" as const;
 export const API_HEADER = "X-Ryntra-API" as const;
 export const API_VERSION_HEADER = "X-Ryntra-API-Version" as const;
 export const NETWORK = "solana:mainnet" as const;
@@ -96,7 +96,10 @@ export type ApiErrorCode =
   | "LAUNCH_SLIPPAGE"
   /* 1.29.0 — the creator's cabinet */
   | "LAUNCH_SHARES_INVALID"
-  | "LAUNCH_NOTHING_TO_CLAIM";
+  | "LAUNCH_NOTHING_TO_CLAIM"
+  /* 1.33.0 — a holder's position in the pool */
+  | "LAUNCH_HOLDER_CLOSED"
+  | "LAUNCH_NOT_GRADUATED";
 
 /** 1.7.0: the stable ids a plan issue may carry beside its message. */
 export type PlanIssueCode =
@@ -241,6 +244,14 @@ export type Capabilities = Readonly<{
     claimSubmit?: "/api/v1/launch/{mint}/claim/submit";
     /* 1.32.0 */
     journal?: "/api/v1/launch/{mint}/journal";
+    /* 1.33.0 */
+    holder?: "/api/v1/launch/{mint}/holder/{address}";
+    holderQuote?: "/api/v1/launch/{mint}/holder/quote";
+    holderBuild?: "/api/v1/launch/{mint}/holder/build";
+    holderSubmit?: "/api/v1/launch/{mint}/holder/submit";
+    holderPermissionBuild?: "/api/v1/launch/{mint}/holder/permission/build";
+    holderPermissionSubmit?: "/api/v1/launch/{mint}/holder/permission/submit";
+    holders?: "/api/v1/launch/holders/{address}";
   }>;
   observedAt: string;
 }>;
@@ -4587,5 +4598,118 @@ export type LaunchJournalResponse = Readonly<{
   complete: boolean;
   floor: LaunchFloorView | null;
   floorUnread: boolean;
+  observedAt: string;
+}>;
+
+/* ------------------------------------------------------------ a holder's position in the pool (1.33.0) */
+
+export type LaunchHolderInput = "pair" | "token";
+/** The permission as Ryntra's collector reads it: GRANTED is the only state it acts on. */
+export type LaunchHolderGrantState = "GRANTED" | "NONE" | "OTHER_DELEGATE" | "WIDER" | "TRANSFERABLE";
+export type LaunchPositionPermission =
+  | "AddLiquidity"
+  | "RemoveLiquidity"
+  | "RemoveLiquidityToOwner"
+  | "ClaimPositionFee"
+  | "ClaimPositionFeeToOwner"
+  | "ClaimReward"
+  | "ClaimRewardToOwner"
+  | "LockPosition";
+
+/** A claim Ryntra's collector made for the position's owner: what the owner's own accounts received. */
+export type LaunchHolderClaim = Readonly<{ signature: string; at: string | null; pairRaw: string; tokenRaw: string }>;
+
+/** A position entered through Ryntra, and how it stands on chain now; `now` null — not read now. */
+export type LaunchHolderPositionView = Readonly<{
+  token: string;
+  pool: string;
+  position: string;
+  nftMint: string;
+  pending: boolean;
+  enteredAt: string;
+  entrySignature: string;
+  input: LaunchHolderInput;
+  enteredRaw: string;
+  enteredPairRaw: string;
+  feeRaw: string;
+  now: Readonly<{
+    state: "OPEN" | "MOVED" | "CLOSED";
+    tokenRaw: string;
+    pairRaw: string;
+    valuePairRaw: string;
+    feesPairRaw: string;
+    unclaimedPairRaw: string;
+    unclaimedTokenRaw: string;
+    claimedPairRaw: string;
+    grant: LaunchHolderGrantState;
+  }> | null;
+  collectedPairRaw: string;
+  claims: readonly LaunchHolderClaim[];
+}>;
+
+/** `GET /api/v1/launch/{mint}/holder/{address}` — the token's pool for a holder; `open` false — draw nothing of the entry. */
+export type LaunchHolderResponse = Readonly<{
+  network: LaunchNetworkId;
+  token: string;
+  pool: string | null;
+  open: boolean;
+  collector: string | null;
+  grant: Readonly<{ bitmask: number; permissions: readonly LaunchPositionPermission[] }>;
+  fee: Readonly<{ bps: number; charged: boolean }>;
+  compoundingBps: number | null;
+  pair: LaunchPairView;
+  tokenDecimals: number;
+  price: number | null;
+  positions: readonly LaunchHolderPositionView[];
+  observedAt: string;
+}>;
+
+export type LaunchHolderQuoteRequest = Readonly<{ wallet: string; input: LaunchHolderInput; amountRaw: string; slippageBps: number }>;
+export type LaunchHolderQuoteView = Readonly<{
+  input: LaunchHolderInput;
+  amountRaw: string;
+  feeRaw: string;
+  feeBps: number;
+  depositRaw: string;
+  swappedRaw: string;
+  positionTokenRaw: string;
+  positionPairRaw: string;
+  valuePairRaw: string;
+  positionValuePairRaw: string;
+  shareBps: number;
+  priceImpactBps: number;
+  grant: boolean;
+}>;
+export type LaunchHolderQuoteResponse = Readonly<{ quote: LaunchHolderQuoteView; price: number; observedAt: string }>;
+export type LaunchHolderBuildRequest = LaunchHolderQuoteRequest;
+export type LaunchHolderBuildResponse = Readonly<{ buildId: string; network: LaunchNetworkId; unsignedWireBase64: string; position: string; quote: LaunchHolderQuoteView; expiresAt: string }>;
+export type LaunchHolderSubmitRequest = Readonly<{ buildId: string; wallet: string; signedWireBase64: string }>;
+export type LaunchHolderSubmitResponse = Readonly<{ signature: string; state: "CONFIRMED" | "PENDING"; position: string }>;
+export type LaunchHolderPermissionBuildRequest = Readonly<{ wallet: string; position: string; action: "grant" | "revoke" }>;
+export type LaunchHolderPermissionBuildResponse = Readonly<{ buildId: string; network: LaunchNetworkId; unsignedWireBase64: string; action: "grant" | "revoke"; expiresAt: string }>;
+export type LaunchHolderPermissionSubmitRequest = LaunchHolderSubmitRequest;
+export type LaunchHolderPermissionSubmitResponse = Readonly<{ signature: string; state: "CONFIRMED" | "PENDING"; action: "grant" | "revoke" }>;
+
+/** The data of a holder's earnings card: what went in, what it is worth now, the fees, each currency apart, with its period. */
+export type HolderEarningsCard = Readonly<{
+  source: "ryntra.launch.holder-position-card@1";
+  kind: "holder-position";
+  wallet: string;
+  network: string;
+  period: Readonly<{ from: string; to: string }>;
+  positions: number;
+  unread: number;
+  amounts: ReadonlyArray<Readonly<{ pairMint: string; symbol: string; decimals: number; dollar: boolean; enteredRaw: string; valueRaw: string; feesRaw: string; collectedRaw: string }>>;
+  receipts: readonly string[];
+}>;
+
+/** `GET /api/v1/launch/holders/{address}` — «Мої позиції» across launches, and the card's data. */
+export type LaunchHolderPositionsResponse = Readonly<{
+  network: LaunchNetworkId;
+  wallet: string;
+  open: boolean;
+  collector: string | null;
+  positions: ReadonlyArray<LaunchHolderPositionView & Readonly<{ name: string | null; symbol: string | null; pair: LaunchPairView | null; tokenDecimals: number | null }>>;
+  card: HolderEarningsCard;
   observedAt: string;
 }>;

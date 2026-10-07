@@ -9,10 +9,10 @@ moved counts as new. Generated at every update from the development history.
 
 | Since the tag | Files |
 |---|---|
-| New | 1,245 |
+| New | 1,260 |
 | Changed | 813 |
 | Unchanged | 922 |
-| Lines added / removed | +321,834 / −19,827 |
+| Lines added / removed | +325,550 / −19,834 |
 
 ## New since the tag
 
@@ -121,6 +121,12 @@ moved counts as new. Generated at every update from the development history.
 - `app/api/v1/launch/[mint]/claim/build/route.ts`
 - `app/api/v1/launch/[mint]/claim/submit/route.ts`
 - `app/api/v1/launch/[mint]/creator/route.ts`
+- `app/api/v1/launch/[mint]/holder/[address]/route.ts`
+- `app/api/v1/launch/[mint]/holder/build/route.ts`
+- `app/api/v1/launch/[mint]/holder/permission/build/route.ts`
+- `app/api/v1/launch/[mint]/holder/permission/submit/route.ts`
+- `app/api/v1/launch/[mint]/holder/quote/route.ts`
+- `app/api/v1/launch/[mint]/holder/submit/route.ts`
 - `app/api/v1/launch/[mint]/journal/route.ts`
 - `app/api/v1/launch/[mint]/market/route.ts`
 - `app/api/v1/launch/[mint]/route.ts`
@@ -130,6 +136,7 @@ moved counts as new. Generated at every update from the development history.
 - `app/api/v1/launch/[mint]/wallet/[address]/route.ts`
 - `app/api/v1/launch/build/route.ts`
 - `app/api/v1/launch/creators/[address]/route.ts`
+- `app/api/v1/launch/holders/[address]/route.ts`
 - `app/api/v1/launch/metadata/route.ts`
 - `app/api/v1/launch/presets/route.ts`
 - `app/api/v1/launch/quote/route.ts`
@@ -227,6 +234,7 @@ moved counts as new. Generated at every update from the development history.
 - `app/app/launch/[mint]/flight-log.tsx`
 - `app/app/launch/[mint]/launch-chart.tsx`
 - `app/app/launch/[mint]/page.tsx`
+- `app/app/launch/[mint]/pool-panel.tsx`
 - `app/app/launch/[mint]/token-market.tsx`
 - `app/app/launch/[mint]/trade-panel.tsx`
 - `app/app/launch/launch-format.ts`
@@ -237,6 +245,8 @@ moved counts as new. Generated at every update from the development history.
 - `app/app/launch/new/launch-flow.tsx`
 - `app/app/launch/new/page.tsx`
 - `app/app/launch/paused-note.tsx`
+- `app/app/launch/positions/page.tsx`
+- `app/app/launch/positions/positions-board.tsx`
 - `app/app/launch/share-link.tsx`
 - `app/app/lens/ask-ryn-lens.tsx`
 - `app/app/lens/lens-open.ts`
@@ -879,6 +889,8 @@ moved counts as new. Generated at every update from the development history.
 - `lib/core/launch/creator-lock.ts`
 - `lib/core/launch/earnings-card.ts`
 - `lib/core/launch/fee-shares.ts`
+- `lib/core/launch/holder.test.mjs`
+- `lib/core/launch/holder.ts`
 - `lib/core/launch/moderation.test.mjs`
 - `lib/core/launch/moderation.ts`
 - `lib/core/networks/solana.ts`
@@ -890,6 +902,7 @@ moved counts as new. Generated at every update from the development history.
 - `lib/core/solana-swap/refusal.ts`
 - `lib/core/solana-swap/settle.ts`
 - `lib/core/venues/jupiter.ts`
+- `lib/core/venues/meteora-damm-v2/holder.server.ts`
 - `lib/core/venues/meteora-dbc/claim.server.ts`
 - `lib/core/venues/meteora-dbc/creator-lock.server.ts`
 - `lib/core/venues/meteora-dbc/fee-sharing.server.ts`
@@ -960,6 +973,8 @@ moved counts as new. Generated at every update from the development history.
 - `lib/launch/flow.server.ts`
 - `lib/launch/form.ts`
 - `lib/launch/graduation.server.ts`
+- `lib/launch/holder.server.ts`
+- `lib/launch/holder.test.mjs`
 - `lib/launch/journal.server.ts`
 - `lib/launch/launch.test.mjs`
 - `lib/launch/market.server.ts`

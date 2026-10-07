@@ -747,6 +747,26 @@
  * rests on was read: the creator's trades whole and, once the token graduated,
  * its graduation; read in part, the entries listed are the ones found, never
  * «none». `capabilities.launch.journal` names the route.
+ *
+ * **1.33.0 — a holder's position in a graduated launch's pool.** Additive.
+ * One coin into the token's DAMM v2 pool through Meteora's Zap, and in the
+ * same signature the permission Ryntra's collector asks for: an SPL Approve of
+ * 0 on the position NFT's account and the program's bitmask with two bits —
+ * `ClaimPositionFeeToOwner`, `ClaimRewardToOwner` — with which the program pays
+ * the fees only to the owner's own token accounts; the collector cannot close,
+ * split, move, lock or take liquidity out of the position, and «Відкликати» is
+ * one signature. `GET /api/v1/launch/{mint}/holder/{address}` — the pool,
+ * whether the entry is built for this wallet (`open`), the collector, Ryntra's
+ * share at entry (`fee`: its rate and whether it is charged here), and the
+ * wallet's positions in the pool with what each holds and is worth now, the
+ * fees waiting and claimed, its permission (`grant`) and what the collector
+ * brought; `POST …/holder/{quote,build,submit}` — the entry; `POST
+ * …/holder/permission/{build,submit}` — «Увімкнути» or «Відкликати»; `GET
+ * /api/v1/launch/holders/{address}` — «Мої позиції» across launches with the
+ * holder's earnings card data. Until our own security review and a lawyer's
+ * opinion the entry is built on mainnet only for the operator's own wallets —
+ * `LAUNCH_HOLDER_CLOSED` for anyone else; `LAUNCH_NOT_GRADUATED` while the token
+ * is on its curve. `capabilities.launch.holder*` name the routes.
  */
 
 import {
@@ -790,12 +810,13 @@ import { FEE_SOURCES } from "../../core/launch/creator-earnings.ts";
 import { EARNINGS_CARD_SOURCE } from "../../core/launch/earnings-card.ts";
 import { FEE_SHARE_MAX_RECIPIENTS, FEE_SHARE_MIN_BPS, FEE_SHARE_MIN_RECIPIENTS, FEE_SHARE_TOTAL_BPS } from "../../core/launch/fee-shares.ts";
 import { JOURNAL_ACTORS, JOURNAL_KINDS } from "../../core/launch/autopilot.ts";
+import { HOLDER_CARD_SOURCE, HOLDER_GRANT_STATES, POSITION_PERMISSIONS } from "../../core/launch/holder.ts";
 import { LAUNCH_CHART_MARKERS, LAUNCH_HOLDER_LABELS, LAUNCH_RISK_CODES, LAUNCH_TRADE_SIDES, LAUNCH_TRADE_VENUES } from "../../core/venues/meteora-dbc/market.ts";
 import { LAUNCH_PRESET_IDS } from "../../core/venues/meteora-dbc/presets.ts";
 import { LaunchReceiptFactsSchema } from "../../core/venues/meteora-dbc/receipt.ts";
 
 export const API_MAJOR = 1;
-export const API_CONTRACT_VERSION = "1.32.0";
+export const API_CONTRACT_VERSION = "1.33.0";
 export const API_HEADER = "X-Ryntra-API";
 export const API_VERSION_HEADER = "X-Ryntra-API-Version";
 export const NETWORK = "solana:mainnet";
@@ -900,6 +921,11 @@ export const ERROR_CODES = [
   "LAUNCH_SHARES_INVALID",
   /** No source holds a fee for this wallet now; nothing was built. */
   "LAUNCH_NOTHING_TO_CLAIM",
+  /* 1.33.0 — a holder's position in the pool */
+  /** Entering the pool is not open to this wallet yet; nothing was built. */
+  "LAUNCH_HOLDER_CLOSED",
+  /** The token is still on its curve: its pool opens when it reaches the DEX. */
+  "LAUNCH_NOT_GRADUATED",
 ] as const;
 export type ApiErrorCode = (typeof ERROR_CODES)[number];
 
@@ -998,6 +1024,8 @@ export const ERROR_STATUS: Readonly<Record<ApiErrorCode, number>> = {
   LAUNCH_SLIPPAGE: 409,
   LAUNCH_SHARES_INVALID: 422,
   LAUNCH_NOTHING_TO_CLAIM: 409,
+  LAUNCH_HOLDER_CLOSED: 403,
+  LAUNCH_NOT_GRADUATED: 409,
 };
 
 /* ------------------------------------------------------------ capabilities */
@@ -1252,6 +1280,14 @@ export const CapabilitiesSchema = z
         claimSubmit: z.literal("/api/v1/launch/{mint}/claim/submit").optional(),
         /* 1.32.0 — the flight log and Ryntra's liquidity; absent on a deployment before it. */
         journal: z.literal("/api/v1/launch/{mint}/journal").optional(),
+        /* 1.33.0 — a holder's position in the pool; absent on a deployment before it. */
+        holder: z.literal("/api/v1/launch/{mint}/holder/{address}").optional(),
+        holderQuote: z.literal("/api/v1/launch/{mint}/holder/quote").optional(),
+        holderBuild: z.literal("/api/v1/launch/{mint}/holder/build").optional(),
+        holderSubmit: z.literal("/api/v1/launch/{mint}/holder/submit").optional(),
+        holderPermissionBuild: z.literal("/api/v1/launch/{mint}/holder/permission/build").optional(),
+        holderPermissionSubmit: z.literal("/api/v1/launch/{mint}/holder/permission/submit").optional(),
+        holders: z.literal("/api/v1/launch/holders/{address}").optional(),
       })
       .strict()
       .optional(),
@@ -9884,3 +9920,208 @@ export const LaunchJournalResponseSchema = z
   })
   .strict();
 export type LaunchJournalResponse = z.infer<typeof LaunchJournalResponseSchema>;
+
+/* ------------------------------------------------------------ a holder's position in the pool (1.33.0) */
+
+const HolderInput = z.enum(["pair", "token"]);
+
+/** A claim Ryntra's collector made for the position's owner: what the owner's own accounts received, read from the confirmed transaction. */
+export const LaunchHolderClaimSchema = z.object({ signature: LaunchSignature, at: Iso.nullable(), pairRaw: LaunchRaw, tokenRaw: LaunchRaw }).strict();
+
+/** A position entered through Ryntra, and how it stands on chain now. */
+export const LaunchHolderPositionSchema = z
+  .object({
+    token: Address,
+    pool: Address,
+    position: Address,
+    nftMint: Address,
+    /** The entry was sent and its answer is not in yet: read again, never enter twice. */
+    pending: z.boolean(),
+    enteredAt: Iso,
+    entrySignature: z.string().max(90),
+    input: HolderInput,
+    /** What the entry spent of its coin, Ryntra's share included, raw. */
+    enteredRaw: LaunchRaw,
+    /** Its value in the pair currency at the entry's price, raw. */
+    enteredPairRaw: LaunchRaw,
+    /** Ryntra's share taken at entry, in the input coin, raw. */
+    feeRaw: LaunchRaw,
+    /** The position now; null when its chain could not be read now. */
+    now: z
+      .object({
+        /** OPEN — the wallet holds it; MOVED — its NFT left the wallet; CLOSED — the position no longer exists. */
+        state: z.enum(["OPEN", "MOVED", "CLOSED"]),
+        tokenRaw: LaunchRaw,
+        pairRaw: LaunchRaw,
+        /** What it holds, in the pair currency at the pool's price now, raw. */
+        valuePairRaw: LaunchRaw,
+        /** The fees it earned in the pair currency — claimed by anyone, plus waiting now. */
+        feesPairRaw: LaunchRaw,
+        unclaimedPairRaw: LaunchRaw,
+        unclaimedTokenRaw: LaunchRaw,
+        claimedPairRaw: LaunchRaw,
+        /** The permission as Ryntra's collector reads it: GRANTED is the only state it acts on. */
+        grant: z.enum(HOLDER_GRANT_STATES),
+      })
+      .strict()
+      .nullable(),
+    /** What Ryntra's collector brought to the owner's wallet, in the pair currency, raw. */
+    collectedPairRaw: LaunchRaw,
+    claims: z.array(LaunchHolderClaimSchema).max(20),
+  })
+  .strict();
+export type LaunchHolderPositionView = z.infer<typeof LaunchHolderPositionSchema>;
+
+/** `GET /api/v1/launch/{mint}/holder/{address}` — the token's pool for a holder, and the wallet's positions in it. */
+export const LaunchHolderResponseSchema = z
+  .object({
+    network: LaunchNetworkId,
+    token: Address,
+    /** The graduated pool; null while the token is on its curve. */
+    pool: Address.nullable(),
+    /** Whether the entry is built for this wallet here. */
+    open: z.boolean(),
+    /** Ryntra's collector — the delegate the permission names; null while this network has none. */
+    collector: Address.nullable(),
+    /** What the permission asks for: the program's bitmask and its bits by name. */
+    grant: z.object({ bitmask: z.number().int().min(0).max(255), permissions: z.array(z.enum(POSITION_PERMISSIONS)).max(8) }).strict(),
+    /** Ryntra's share at entry: the policy's rate on the part Zap swaps, and whether it is charged here. */
+    fee: z.object({ bps: LaunchBps, charged: z.boolean() }).strict(),
+    /** In a compounding pool, the share of the LP fee that stays in the pool by itself; the rest is claimable. */
+    compoundingBps: LaunchBps.nullable(),
+    pair: LaunchPairView,
+    tokenDecimals: z.number().int().min(0).max(18),
+    /** The token's price in the pair currency now; null while it is on its curve. */
+    price: z.number().nonnegative().nullable(),
+    positions: z.array(LaunchHolderPositionSchema).max(50),
+    observedAt: Iso,
+  })
+  .strict();
+export type LaunchHolderResponse = z.infer<typeof LaunchHolderResponseSchema>;
+
+export const LaunchHolderQuoteRequestSchema = z
+  .object({ wallet: Address, input: HolderInput, amountRaw: LaunchRaw, slippageBps: z.number().int().min(10).max(1_000) })
+  .strict();
+export type LaunchHolderQuoteRequest = z.infer<typeof LaunchHolderQuoteRequestSchema>;
+
+/** The entry's figures before the signature. */
+export const LaunchHolderQuoteSchema = z
+  .object({
+    input: HolderInput,
+    /** What the wallet spends of its coin, raw — Ryntra's share included. */
+    amountRaw: LaunchRaw,
+    /** Ryntra's share, in the input coin, raw; "0" where it is not charged. */
+    feeRaw: LaunchRaw,
+    feeBps: LaunchBps,
+    depositRaw: LaunchRaw,
+    /** ≈ the part Zap swaps into the other coin; the program counts it exactly. */
+    swappedRaw: LaunchRaw,
+    positionTokenRaw: LaunchRaw,
+    positionPairRaw: LaunchRaw,
+    /** What the wallet spends, Ryntra's share included, in the pair currency at the price now, raw. */
+    valuePairRaw: LaunchRaw,
+    /** ≈ the position's worth right after the entry at the price now, raw: the swap's pool fee and price move are not in it. */
+    positionValuePairRaw: LaunchRaw,
+    shareBps: LaunchBps,
+    priceImpactBps: z.number().int().min(0).max(10_000),
+    /** Whether the collector's permission goes in the same signature. */
+    grant: z.boolean(),
+  })
+  .strict();
+export type LaunchHolderQuoteView = z.infer<typeof LaunchHolderQuoteSchema>;
+
+export const LaunchHolderQuoteResponseSchema = z.object({ quote: LaunchHolderQuoteSchema, price: z.number().nonnegative(), observedAt: Iso }).strict();
+export type LaunchHolderQuoteResponse = z.infer<typeof LaunchHolderQuoteResponseSchema>;
+
+export const LaunchHolderBuildRequestSchema = LaunchHolderQuoteRequestSchema;
+export type LaunchHolderBuildRequest = LaunchHolderQuoteRequest;
+
+export const LaunchHolderBuildResponseSchema = z
+  .object({
+    buildId: LaunchBuildId,
+    network: LaunchNetworkId,
+    /** One transaction: the entry, and the permission where the network has a collector. The new position's NFT key has signed it. */
+    unsignedWireBase64: z.string().min(1),
+    position: Address,
+    quote: LaunchHolderQuoteSchema,
+    expiresAt: Iso,
+  })
+  .strict();
+export type LaunchHolderBuildResponse = z.infer<typeof LaunchHolderBuildResponseSchema>;
+
+export const LaunchHolderSubmitRequestSchema = z.object({ buildId: LaunchBuildId, wallet: Address, signedWireBase64: z.string().min(1).max(4_000) }).strict();
+export type LaunchHolderSubmitRequest = z.infer<typeof LaunchHolderSubmitRequestSchema>;
+
+export const LaunchHolderSubmitResponseSchema = z.object({ signature: LaunchSignature, state: z.enum(["CONFIRMED", "PENDING"]), position: Address }).strict();
+export type LaunchHolderSubmitResponse = z.infer<typeof LaunchHolderSubmitResponseSchema>;
+
+export const LaunchHolderPermissionBuildRequestSchema = z.object({ wallet: Address, position: Address, action: z.enum(["grant", "revoke"]) }).strict();
+export type LaunchHolderPermissionBuildRequest = z.infer<typeof LaunchHolderPermissionBuildRequestSchema>;
+
+export const LaunchHolderPermissionBuildResponseSchema = z
+  .object({ buildId: LaunchBuildId, network: LaunchNetworkId, unsignedWireBase64: z.string().min(1), action: z.enum(["grant", "revoke"]), expiresAt: Iso })
+  .strict();
+export type LaunchHolderPermissionBuildResponse = z.infer<typeof LaunchHolderPermissionBuildResponseSchema>;
+
+export const LaunchHolderPermissionSubmitRequestSchema = LaunchHolderSubmitRequestSchema;
+export type LaunchHolderPermissionSubmitRequest = LaunchHolderSubmitRequest;
+
+export const LaunchHolderPermissionSubmitResponseSchema = z
+  .object({ signature: LaunchSignature, state: z.enum(["CONFIRMED", "PENDING"]), action: z.enum(["grant", "revoke"]) })
+  .strict();
+export type LaunchHolderPermissionSubmitResponse = z.infer<typeof LaunchHolderPermissionSubmitResponseSchema>;
+
+/** The data of a holder's earnings card: what went in, what it is worth now, the fees, each currency apart, with its period. */
+export const HolderEarningsCardSchema = z
+  .object({
+    source: z.literal(HOLDER_CARD_SOURCE),
+    kind: z.literal("holder-position"),
+    wallet: Address,
+    network: z.string().min(1).max(40),
+    period: z.object({ from: Iso, to: Iso }).strict(),
+    positions: z.number().int().min(0),
+    unread: z.number().int().min(0),
+    amounts: z
+      .array(
+        z
+          .object({
+            pairMint: Address,
+            symbol: z.string().min(1).max(12),
+            decimals: z.number().int().min(0).max(18),
+            dollar: z.boolean(),
+            enteredRaw: LaunchRaw,
+            valueRaw: LaunchRaw,
+            feesRaw: LaunchRaw,
+            collectedRaw: LaunchRaw,
+          })
+          .strict(),
+      )
+      .max(10),
+    receipts: z.array(z.string().max(90)).max(200),
+  })
+  .strict();
+export type HolderEarningsCardView = z.infer<typeof HolderEarningsCardSchema>;
+
+/** `GET /api/v1/launch/holders/{address}` — «Мої позиції»: every position the wallet entered through Ryntra, and its card. */
+export const LaunchHolderPositionsResponseSchema = z
+  .object({
+    network: LaunchNetworkId,
+    wallet: Address,
+    open: z.boolean(),
+    /** Ryntra's collector on this network; null while there is none. */
+    collector: Address.nullable(),
+    positions: z
+      .array(
+        LaunchHolderPositionSchema.extend({
+          name: z.string().max(64).nullable(),
+          symbol: z.string().max(16).nullable(),
+          pair: LaunchPairView.nullable(),
+          tokenDecimals: z.number().int().min(0).max(18).nullable(),
+        }).strict(),
+      )
+      .max(200),
+    card: HolderEarningsCardSchema,
+    observedAt: Iso,
+  })
+  .strict();
+export type LaunchHolderPositionsResponse = z.infer<typeof LaunchHolderPositionsResponseSchema>;

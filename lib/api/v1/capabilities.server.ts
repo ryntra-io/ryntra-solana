@@ -239,6 +239,13 @@ function launchCapability(env: NodeJS.ProcessEnv): Pick<Capabilities, "launch"> 
       claimBuild: "/api/v1/launch/{mint}/claim/build",
       claimSubmit: "/api/v1/launch/{mint}/claim/submit",
       journal: "/api/v1/launch/{mint}/journal",
+      holder: "/api/v1/launch/{mint}/holder/{address}",
+      holderQuote: "/api/v1/launch/{mint}/holder/quote",
+      holderBuild: "/api/v1/launch/{mint}/holder/build",
+      holderSubmit: "/api/v1/launch/{mint}/holder/submit",
+      holderPermissionBuild: "/api/v1/launch/{mint}/holder/permission/build",
+      holderPermissionSubmit: "/api/v1/launch/{mint}/holder/permission/submit",
+      holders: "/api/v1/launch/holders/{address}",
     },
   };
 }

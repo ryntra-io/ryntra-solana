@@ -18,6 +18,7 @@ import { partnerEarnedRaw } from "../core/launch/autopilot.ts";
 import { readCreatorFees } from "../core/venues/meteora-dbc/claim.server.ts";
 import { dammPrice } from "../core/venues/meteora-dbc/market.server.ts";
 import { heldRaw } from "../core/venues/meteora-dbc/trade.server.ts";
+import { createHolderVenue } from "../core/venues/meteora-damm-v2/holder.server.ts";
 import { createFloorVenue } from "../core/venues/meteora-dlmm/floor.server.ts";
 import { getGuardRuntime } from "../guard/runtime.ts";
 import type { AutopilotChain, AutopilotDeps, TxFacts } from "./autopilot.server.ts";
@@ -137,6 +138,10 @@ export function autopilotChain(network: LaunchNetwork, executor: Keypair): Autop
         lamportsSpent: index >= 0 ? BigInt((meta.preBalances[index] ?? 0) - (meta.postBalances[index] ?? 0)) : null,
         failed: meta.err !== null,
         delta: (mint) => of(meta.postTokenBalances, mint) - of(meta.preTokenBalances, mint),
+        deltaOf: (wallet, mint) => {
+          const rows = (list: typeof meta.preTokenBalances) => (list ?? []).filter((row) => row.owner === wallet && row.mint === mint).reduce((total, row) => total + BigInt(row.uiTokenAmount.amount), 0n);
+          return rows(meta.postTokenBalances) - rows(meta.preTokenBalances);
+        },
       };
       return facts;
     },
@@ -158,6 +163,8 @@ export function autopilotChain(network: LaunchNetwork, executor: Keypair): Autop
     held: (mint) => heldRaw(connection, owner, new PublicKey(mint)),
     lamports: async () => BigInt(await connection.getBalance(owner, "confirmed")),
     floor: createFloorVenue({ connection, cluster: network.cluster }),
+    /* The collector claims only: no entry is built here, so no share and no Zap. */
+    holder: createHolderVenue({ connection, zap: network.zap, collector: owner.toBase58(), fee: null }),
     prepare,
     send,
     outcome: (signature, validUntil) => signatureOutcome(connection, signature, validUntil, second),

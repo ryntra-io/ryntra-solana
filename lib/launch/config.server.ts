@@ -75,6 +75,12 @@ export type LaunchNetwork = Readonly<{
    * is: a fee is never taken that the person's rewards do not see.
    */
   tradesRecorded: boolean;
+  /**
+   * Whether Meteora's Zap program on this network is the one its SDK speaks to: a holder's one-coin entry into a
+   * graduated pool goes through it. Devnet's Zap is older than its SDK (its ledger instructions are unknown to it,
+   * 07.10), so the stand builds the same entry from the pool's own swap and add-liquidity.
+   */
+  zap: boolean;
 }>;
 
 /* The devnet rehearsal of 05.10 (run 3, creator's share 40 %): its three configs and its test pair currencies. */
@@ -99,6 +105,7 @@ const DEVNET: Omit<LaunchNetwork, "origin"> = {
   feeWallet: "9WBQamBC9Amdzzrq8QANXweZCKpfhLMLvPQJzMBgFbbu",
   /* The stand records no launch trade: the pool's Ryntra fee is built and proven on chain, and charged where trades are recorded. */
   tradesRecorded: false,
+  zap: false,
 };
 
 const USDC: LaunchPair = { mint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", symbol: "USDC", decimals: 6, usdPrice: 1, dollar: true };
@@ -125,6 +132,7 @@ const MAINNET: LaunchNetwork = {
   jupiter: true,
   feeWallet: SOLANA_FEE_WALLET,
   tradesRecorded: false,
+  zap: true,
 };
 
 /**
