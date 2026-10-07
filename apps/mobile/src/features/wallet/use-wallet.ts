@@ -139,6 +139,18 @@ export function useWallet() {
     },
     [wallet],
   )
+  /**
+   * Several exact transactions signed in one wallet prompt — a launch with its
+   * lock, a claim in two parts — handed back in the order given, never sent.
+   */
+  const signTransactions = useCallback(
+    async (unsignedWireBase64: readonly string[]): Promise<string[]> => {
+      const unsigned = unsignedWireBase64.map((wire) => getTransactionDecoder().decode(getBase64Encoder().encode(wire)))
+      const signed = await wallet.signTransactions(unsigned)
+      return signed.map((transaction) => getBase64Decoder().decode(getTransactionEncoder().encode(transaction)))
+    },
+    [wallet],
+  )
 
   useEffect(() => {
     if (!switching.current || wallet.account) return
@@ -169,5 +181,7 @@ export function useWallet() {
     signMessage: wallet.signMessages,
     /** Exact reviewed bytes signed in the wallet, for the trade flow only; the server submits. */
     signTransaction,
+    /** Several exact transactions in one prompt, for Launch; the server sends them. */
+    signTransactions,
   }
 }

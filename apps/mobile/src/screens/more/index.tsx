@@ -1,6 +1,6 @@
 import Constants from 'expo-constants'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Linking, Pressable } from 'react-native'
 
 import { Card } from '@/components/card'
@@ -8,11 +8,21 @@ import { DoorRow } from '@/components/door-row'
 import type { IconName } from '@/components/icon'
 import { Screen } from '@/components/screen'
 import { Txt } from '@/components/txt'
+import { launchWords } from '@/features/launch/copy'
+import { useLaunchOpen } from '@/features/launch/use-launch'
 import { webHrefOf } from '@/features/monitoring/deep-link'
 import { unreadCount } from '@/features/monitoring/monitoring-model'
 import { useSurface } from '@/features/plans/use-plans'
 import { useAccount } from '@/features/session/use-account'
-import { DOOR_DESTINATIONS, MORE_PAGES, PLACES_COPY, type MorePage } from '@/features/shell/places'
+import { MONEY_COPY } from '@/features/money/copy'
+import {
+  DOOR_DESTINATIONS,
+  MONEY_PAGES,
+  MORE_PAGES,
+  PLACES_COPY,
+  type MoneyPage,
+  type MorePage,
+} from '@/features/shell/places'
 import { WalletPanel } from '@/features/wallet/wallet-panel'
 import {
   LOCALE_PREFERENCES,
@@ -69,12 +79,18 @@ const COPY: Copy<MoreCopy> = {
   },
 }
 
+/** The icon of each door of «Гроші». */
+const MONEY_ICONS: Readonly<Record<MoneyPage, IconName>> = {
+  topUp: 'add-circle-outline',
+  send: 'arrow-up-outline',
+  receive: 'arrow-down-outline',
+  link: 'link-outline',
+}
+
 /** The icon of each page «Ще» holds. */
 const PAGE_ICONS: Readonly<Record<MorePage, IconName>> = {
   swap: 'swap-horizontal-outline',
   bridge: 'git-compare-outline',
-  send: 'arrow-up-outline',
-  receive: 'arrow-down-outline',
   rewards: 'gift-outline',
   predictions: 'stats-chart-outline',
 }
@@ -145,32 +161,36 @@ function LanguagePicker({ labels }: { labels: MoreCopy['locales'] }) {
 }
 
 /**
- * «Ще» — one version for everyone, guests included (canon v5.3 В28, §3): the
- * web's pages first, in the Owner's order — Обмін (Trade on a swap), Міст,
- * Надіслати, Отримати (the wallet's own address), Винагороди, Демо-прогнози;
- * a page only ryntra.io has built is marked ↗ and opens there. Then the
- * wallet and its monitoring, the appearance and the language, and where the
- * product lives. No switch of depth: what «Профі» held lives a tap deeper in
- * the places themselves. `receive=1` — the web's `/app/receive` — opens the
- * address at once; closing it drops the word, so it opens once.
+ * «Ще» — one version for everyone, guests included (canon v5.3 В28, §3):
+ * «Лаунч · Свій токен» first while Launch is served (M33), then «Гроші» (M31) — Поповнити (the top-up sheet), Надіслати, Отримати,
+ * Посилання на оплату — then the web's pages in the Owner's order: Обмін
+ * (Trade on a swap), Міст, Винагороди, Демо-прогнози; a page only ryntra.io
+ * has built is marked ↗ and opens there. Then the wallet and its monitoring,
+ * the appearance and the language, and where the product lives. No switch of
+ * depth: what «Профі» held lives a tap deeper in the places themselves.
+ * `receive=1` — an older link to the address — opens «Отримати».
  */
 export function MoreScreen() {
   const router = useRouter()
   const copy = useCopy(COPY)
   const places = useCopy(PLACES_COPY)
+  const money = useCopy(MONEY_COPY)
   const locale = useLocale()
   const account = useAccount()
   const unread = unreadCount(useSurface(account.session, locale))
   const version = Constants.expoConfig?.version ?? '—'
   const { receive } = useLocalSearchParams<{ receive?: string }>()
-  const [receiving, setReceiving] = useState(false)
-  const closeReceive = () => {
-    setReceiving(false)
-    if (receive) router.setParams({ receive: '' })
-  }
-  const open = (page: MorePage) => {
+  const [toppingUp, setToppingUp] = useState(false)
+  const launch = useLaunchOpen()
+  const launchWord = launchWords(locale)
+  useEffect(() => {
+    if (receive !== '1') return
+    router.setParams({ receive: '' })
+    router.push('/money/receive' as never)
+  }, [receive, router])
+  const open = (page: MorePage | MoneyPage) => {
     const destination = DOOR_DESTINATIONS[page]
-    if (destination.kind === 'sheet') setReceiving(true)
+    if (destination.kind === 'sheet') setToppingUp(true)
     else if (destination.kind === 'screen') router.push(destination.path as never)
     else {
       const web = webHrefOf(destination.path)
@@ -179,6 +199,29 @@ export function MoreScreen() {
   }
   return (
     <Screen title={copy.title}>
+      {launch.open ? (
+        <Card padded={false}>
+          <DoorRow
+            icon="rocket-outline"
+            label={launchWord('place')}
+            line={launchWord('placeLine')}
+            onPress={() => router.push('/launch' as never)}
+            last
+          />
+        </Card>
+      ) : null}
+      <SectionLabel>{money.money}</SectionLabel>
+      <Card padded={false}>
+        {MONEY_PAGES.map((page, index) => (
+          <DoorRow
+            key={page}
+            icon={MONEY_ICONS[page]}
+            label={money.pages[page]}
+            onPress={() => open(page)}
+            last={index === MONEY_PAGES.length - 1}
+          />
+        ))}
+      </Card>
       <Card padded={false}>
         {MORE_PAGES.map((page, index) => (
           <DoorRow
@@ -226,10 +269,10 @@ export function MoreScreen() {
         ) : null}
       </Card>
       <TopUpSheet
-        visible={receiving || receive === '1'}
+        visible={toppingUp}
         address={account.address}
-        purpose="receive"
-        onClose={closeReceive}
+        purpose="top-up"
+        onClose={() => setToppingUp(false)}
         onConnect={() => void account.connect()}
         connecting={account.busy === 'connect'}
       />

@@ -4,6 +4,7 @@ import { requireWalletProof } from "@/lib/api/v1/proof";
 import { setRuleStatus } from "@/lib/autoinvest/service";
 import { getGuardRuntime } from "@/lib/guard/runtime";
 import { storeSurvivesColdStart } from "@/lib/guard/store";
+import { readsEnabledReference, ruleForReader } from "@/lib/autoinvest/wire";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,5 +24,5 @@ export async function POST(request: Request, { params }: Readonly<{ params: Prom
   if (!runtime.writes.allowed || !storeSurvivesColdStart(runtime.store)) return apiFailure("UNAVAILABLE", "Rules need a durable store; this deployment does not have one.");
   const changed = await setRuleStatus(runtime.store, proof.address, id, body.body.status);
   if (!changed.ok) return apiFailure(changed.code, changed.message);
-  return apiJson({ rule: changed.rule } satisfies RuleResponse);
+  return apiJson({ rule: ruleForReader(changed.rule, readsEnabledReference(proof.carrier, request.headers)) } satisfies RuleResponse);
 }

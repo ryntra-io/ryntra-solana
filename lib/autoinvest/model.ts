@@ -31,6 +31,12 @@
  * before the condition is met is over. The order route judges the condition
  * once more on its own facts.
  *
+ * **The floor** (1.31.0): a rule on a token of the venue's list — a coin, a
+ * meme, a new token — judges the token's liquidity and age with its price
+ * condition, every time it would remind: under the floor, or its figures not
+ * read, the occurrence is `deferred` the same way, says why once, and is
+ * judged again while it is open. The order route judges the floor once more.
+ *
  * **«З кожної оплати»**: the rule takes its share of every event the wallet's
  * watch numbered after the last one it took — counted from the instant it was
  * turned on, never an event to or from an account the person named as their
@@ -49,9 +55,10 @@ import { SOLANA_MAINNET_USDC_MINT } from "../solana/send-kinds.ts";
 import type { SolanaWalletAction } from "../solana/action-ledger.ts";
 import { RULE_OCCURRENCES_KEPT, type AutoinvestRule, type RuleBinding, type RuleOccurrence, type RulePayments } from "../api/v1/contract.ts";
 import { fitsBudget, usdcOutOf } from "./budget.ts";
-import { dipTriggerUsd, purchasePriceUsd, usablePrice, type DipPrice } from "./dip.ts";
+import { dipTriggerUsd, keptPriceUsd, purchasePriceUsd, usablePrice, type DipPrice } from "./dip.ts";
 import { PAYMENT_EVENTS_KEPT, PAYMENT_QUEUE_LISTED } from "./limits.ts";
 import { contributionCents, usdOfMicro, type PaymentDirection } from "./payments.ts";
+import { checkFloor, floorLine, isListedToken, type RuleFloorCheck } from "./floor.ts";
 import { checkPriceCondition, type PriceCheck, type PriceFacts } from "./price-condition.ts";
 import { isReadableSchedule, latestDueAtOrBefore, nextDueAfter, reminderOpenUntil, RULE_REMINDER_HOURS } from "./schedule.ts";
 import type { AutoinvestRuleDraft, AutoinvestRuleRecord, StoredDip, StoredOccurrence, StoredPaymentEvent, StoredPayments } from "./store.ts";
@@ -93,6 +100,8 @@ export function projectOccurrence(occurrence: StoredOccurrence, rows: readonly S
     condition: occurrence.condition,
     amountUsd: occurrence.amountUsd ?? null,
     events: occurrence.events ?? null,
+    /* 1.31.0: only where the floor was judged — a company's occurrence reads as it did. */
+    ...(occurrence.floor ? { floor: occurrence.floor } : {}),
   };
   /* Nothing was reminded of a held occurrence, so nothing can have been bought under it. */
   if (occurrence.state === "held") return { ...base, state: "held", signature: null, spentUsd: null, boughtAt: null };
@@ -108,7 +117,7 @@ export function projectOccurrence(occurrence: StoredOccurrence, rows: readonly S
 
 /** The trigger a reference point and a fall make, to a millionth of a dollar. */
 function triggerOf(dip: StoredDip): number {
-  return Math.round(dipTriggerUsd(dip.anchorUsd, dip.dropPct) * 1e6) / 1e6;
+  return keptPriceUsd(dipTriggerUsd(dip.anchorUsd, dip.dropPct));
 }
 
 /** When the wallet's USDC was last read, and whether the read proved itself — the watch's word, for the rule's projection. */
@@ -170,13 +179,15 @@ export function projectRule(record: AutoinvestRuleRecord, rows: readonly SolanaW
  * next one decides. `market` is the rule's company: the price read now and
  * the Scaled UI multiplier a purchase's units are counted in («Якщо впаде»),
  * and the facts its price condition is judged on — null when they could not
- * be read, which never passes.
+ * be read, which never passes. On a token of the venue's list (1.31.0),
+ * `floor` is the floor judged on the venue's figures read this pass; absent
+ * or null, it is `unavailable`, which never passes either.
  */
 export type TickContext = Readonly<{
   rows: readonly SolanaWalletAction[] | null;
   remainingUsd: number | null;
   budgetUnknown?: boolean;
-  market?: Readonly<{ price: DipPrice | null; multiplier: number | null; condition?: PriceFacts | null }> | null;
+  market?: Readonly<{ price: DipPrice | null; multiplier: number | null; condition?: PriceFacts | null; floor?: RuleFloorCheck | null }> | null;
   /** 1.19.0: the wallet's watch — the numbered events and the person's own accounts; null when it could not be read, which gathers nothing. */
   payments?: PaymentsWatchView | null;
 }>;
@@ -199,6 +210,21 @@ function judged(record: AutoinvestRuleRecord, context: TickContext, nowMs: numbe
   return checkPriceCondition(record.priceCondition.limitPct, context.market?.condition ?? null, nowMs);
 }
 
+/** The floor judged on this pass's figures (1.31.0); null on a company's rule, which stands on none. */
+function floored(record: AutoinvestRuleRecord, context: TickContext, nowMs: number): RuleFloorCheck | null {
+  if (!isListedToken(record.asset)) return null;
+  return context.market?.floor ?? checkFloor(null, nowMs);
+}
+
+/** What a purchase that could be offered now waits on: the price condition and the floor, each where the rule has one. */
+type Gates = Readonly<{ check: PriceCheck | null; floor: RuleFloorCheck | null; met: boolean }>;
+
+function gates(record: AutoinvestRuleRecord, context: TickContext, nowMs: number): Gates {
+  const check = judged(record, context, nowMs);
+  const floor = floored(record, context, nowMs);
+  return { check, floor, met: (check === null || check.verdict === "met") && (floor === null || floor.verdict === "met") };
+}
+
 type Recheck = Readonly<{ occurrence: StoredOccurrence; remind: boolean; held: boolean }>;
 
 /**
@@ -208,16 +234,16 @@ type Recheck = Readonly<{ occurrence: StoredOccurrence; remind: boolean; held: b
  * the reason changed, so a waiting rule is not rewritten every five minutes.
  */
 function recheckDeferred(record: AutoinvestRuleRecord, occurrence: StoredOccurrence, context: TickContext, nowMs: number): Recheck | null {
-  const check = judged(record, context, nowMs);
-  if (check === null || check.verdict === "met") {
+  const { check, floor, met } = gates(record, context, nowMs);
+  if (met) {
     if (context.budgetUnknown) return null;
     if (context.remainingUsd !== null && !fitsBudget(occurrenceSumUsd(record, occurrence), context.remainingUsd)) {
-      return { occurrence: { ...occurrence, state: "held", openUntil: iso(nowMs), condition: check }, remind: false, held: true };
+      return { occurrence: { ...occurrence, state: "held", openUntil: iso(nowMs), condition: check, floor }, remind: false, held: true };
     }
-    return { occurrence: { ...occurrence, state: "due", remindedAt: iso(nowMs), condition: check }, remind: true, held: false };
+    return { occurrence: { ...occurrence, state: "due", remindedAt: iso(nowMs), condition: check, floor }, remind: true, held: false };
   }
-  if (check.verdict === occurrence.condition?.verdict) return null;
-  return { occurrence: { ...occurrence, condition: check }, remind: false, held: false };
+  if (check?.verdict === occurrence.condition?.verdict && floor?.verdict === occurrence.floor?.verdict) return null;
+  return { occurrence: { ...occurrence, condition: check, floor }, remind: false, held: false };
 }
 
 type Settled = Readonly<{ occurrences: StoredOccurrence[]; changed: boolean; bought: readonly Readonly<{ occurrence: StoredOccurrence; row: SolanaWalletAction }>[] }>;
@@ -292,9 +318,9 @@ function advanceSchedule(record: AutoinvestRuleRecord, context: TickContext, now
       /* A due whose day already passed (the service was down past it) is missed at once — never reminded late, never caught up. */
       const open = nowMs <= openUntil;
       const fits = context.remainingUsd === null || fitsBudget(record.amountUsd, context.remainingUsd);
-      /* The price condition is judged only for a purchase that could be offered: open and within the budget. */
-      const check = open && fits ? judged(record, context, nowMs) : null;
-      const state = !open ? "missed" : !fits ? "held" : check !== null && check.verdict !== "met" ? "deferred" : "due";
+      /* The price condition and the floor are judged only for a purchase that could be offered: open and within the budget. */
+      const gate = open && fits ? gates(record, context, nowMs) : null;
+      const state = !open ? "missed" : !fits ? "held" : gate !== null && !gate.met ? "deferred" : "due";
       const occurrence: StoredOccurrence = {
         dueAt: iso(latest),
         openUntil: iso(state === "held" ? latest : openUntil),
@@ -304,9 +330,10 @@ function advanceSchedule(record: AutoinvestRuleRecord, context: TickContext, now
         spentUsd: null,
         boughtAt: null,
         trigger: null,
-        condition: check,
+        condition: gate?.check ?? null,
         amountUsd: null,
         events: null,
+        floor: gate?.floor ?? null,
       };
       occurrences.push(occurrence);
       if (state === "due") remind = occurrence;
@@ -338,7 +365,7 @@ function advanceDip(record: AutoinvestRuleRecord, context: TickContext, nowMs: n
   for (const { occurrence, row } of settled.bought) {
     const paid = purchasePriceUsd(row, record.asset.decimals, context.market?.multiplier ?? null) ?? occurrence.trigger?.priceUsd ?? null;
     if (paid === null) continue;
-    dip = { ...dip, anchorUsd: Math.round(paid * 1e6) / 1e6, anchorAt: occurrence.boughtAt ?? iso(nowMs), anchorFrom: "purchase", armed: false, heldAt: null };
+    dip = { ...dip, anchorUsd: keptPriceUsd(paid), anchorAt: occurrence.boughtAt ?? iso(nowMs), anchorFrom: "purchase", armed: false, heldAt: null };
     changed = true;
   }
 
@@ -386,9 +413,9 @@ function advanceDip(record: AutoinvestRuleRecord, context: TickContext, nowMs: n
       const fits = context.remainingUsd === null || fitsBudget(record.amountUsd, context.remainingUsd);
       const facts = { priceUsd: price, anchorUsd: dip.anchorUsd };
       if (fits) {
-        /* The crossing is judged against the rule's price condition: met, it reminds; otherwise it waits, deferred, and says why once. */
-        const check = judged(record, context, nowMs);
-        const deferred = check !== null && check.verdict !== "met";
+        /* The crossing is judged against the rule's price condition and the floor: met, it reminds; otherwise it waits, deferred, and says why once. */
+        const gate = gates(record, context, nowMs);
+        const deferred = !gate.met;
         const occurrence: StoredOccurrence = {
           dueAt: iso(nowMs),
           openUntil: iso(nowMs + REMINDER_MS),
@@ -398,9 +425,10 @@ function advanceDip(record: AutoinvestRuleRecord, context: TickContext, nowMs: n
           spentUsd: null,
           boughtAt: null,
           trigger: facts,
-          condition: check,
+          condition: gate.check,
           amountUsd: null,
           events: null,
+          floor: gate.floor,
         };
         occurrences.push(occurrence);
         if (deferred) defer = occurrence;
@@ -409,7 +437,7 @@ function advanceDip(record: AutoinvestRuleRecord, context: TickContext, nowMs: n
         changed = true;
       } else if (dip.heldAt === null) {
         /* Held once per crossing: the rule stays armed, so the purchase is reminded of the moment it fits — the 1st, or a larger budget. */
-        occurrences.push({ dueAt: iso(nowMs), openUntil: iso(nowMs), state: "held", remindedAt: null, signature: null, spentUsd: null, boughtAt: null, trigger: facts, condition: null, amountUsd: null, events: null });
+        occurrences.push({ dueAt: iso(nowMs), openUntil: iso(nowMs), state: "held", remindedAt: null, signature: null, spentUsd: null, boughtAt: null, trigger: facts, condition: null, amountUsd: null, events: null, floor: null });
         dip = { ...dip, heldAt: iso(nowMs) };
         held = true;
         changed = true;
@@ -531,9 +559,9 @@ function advancePayments(record: AutoinvestRuleRecord, context: TickContext, now
     const amountUsd = payments.gatheredCents / 100;
     const dueAt = iso(nowMs);
     const fits = context.remainingUsd === null || fitsBudget(amountUsd, context.remainingUsd);
-    /* The price condition is judged only for a purchase that could be offered: within the budget. */
-    const check = fits ? judged(record, context, nowMs) : null;
-    const state = !fits ? "held" : check !== null && check.verdict !== "met" ? "deferred" : "due";
+    /* The price condition and the floor are judged only for a purchase that could be offered: within the budget. */
+    const gate = fits ? gates(record, context, nowMs) : null;
+    const state = !fits ? "held" : gate !== null && !gate.met ? "deferred" : "due";
     const occurrence: StoredOccurrence = {
       dueAt,
       openUntil: iso(state === "held" ? nowMs : nowMs + REMINDER_MS),
@@ -543,9 +571,10 @@ function advancePayments(record: AutoinvestRuleRecord, context: TickContext, now
       spentUsd: null,
       boughtAt: null,
       trigger: null,
-      condition: check,
+      condition: gate?.check ?? null,
       amountUsd,
       events: payments.gatheredCount,
+      floor: gate?.floor ?? null,
     };
     occurrences.push(occurrence);
     payments = takeGathered(payments, dueAt);
@@ -581,7 +610,7 @@ export function openOccurrenceOf(record: AutoinvestRuleRecord, rows: readonly So
   return null;
 }
 
-export type RuleOrderRefusal = Readonly<{ ok: false; status: 404 | 409; code: "RULE_NOT_FOUND" | "RULE_NOT_DUE" | "RULE_MISMATCH" | "RULE_BUDGET_EXHAUSTED" | "RULE_PRICE_CONDITION"; message: string }>;
+export type RuleOrderRefusal = Readonly<{ ok: false; status: 404 | 409 | 503; code: "RULE_NOT_FOUND" | "RULE_NOT_DUE" | "RULE_MISMATCH" | "RULE_BUDGET_EXHAUSTED" | "RULE_PRICE_CONDITION" | "RULE_LIQUIDITY_LOW" | "UNAVAILABLE"; message: string }>;
 
 /** Why the price condition refuses a rule's purchase now, in one sentence. */
 function conditionRefusal(check: PriceCheck): string {
@@ -599,10 +628,12 @@ function conditionRefusal(check: PriceCheck): string {
  * deferred; the order must be the rule's own purchase: its sum of USDC for its
  * company; (1.13.0) the purchase must fit what is left of the month's budget;
  * and (1.18.0) a rule with a price condition must meet it now, on the facts
- * the route reads itself — missing facts never pass. Anything else is refused
- * before a byte is built, so a reminder cannot buy twice, cannot buy something
- * else, two reminders cannot spend past the ceiling, and a rule never buys
- * above the person's limit or on old data.
+ * the route reads itself — missing facts never pass; and (1.31.0) a rule on a
+ * token of the venue's list must find it on the floor now, on the figures the
+ * route reads itself. Anything else is refused before a byte is built, so a
+ * reminder cannot buy twice, cannot buy something else, two reminders cannot
+ * spend past the ceiling, and a rule never buys above the person's limit, on
+ * old data or into a thin pool.
  */
 export function judgeRuleOrder(
   record: AutoinvestRuleRecord | null,
@@ -612,6 +643,7 @@ export function judgeRuleOrder(
   nowMs: number,
   remainingUsd: number | null = null,
   conditionFacts: PriceFacts | null = null,
+  floor: RuleFloorCheck | null = null,
 ): Readonly<{ ok: true; occurrence: StoredOccurrence }> | RuleOrderRefusal {
   if (!record) return { ok: false, status: 404, code: "RULE_NOT_FOUND", message: "No such rule for this wallet." };
   if (record.status !== "active") return { ok: false, status: 409, code: "RULE_NOT_DUE", message: "The rule is paused; turn it on to buy under its reminders." };
@@ -634,6 +666,12 @@ export function judgeRuleOrder(
   if (record.priceCondition) {
     const check = checkPriceCondition(record.priceCondition.limitPct, conditionFacts, nowMs);
     if (check.verdict !== "met") return { ok: false, status: 409, code: "RULE_PRICE_CONDITION", message: conditionRefusal(check) };
+  }
+  if (isListedToken(record.asset)) {
+    const judgedFloor = floor ?? checkFloor(null, nowMs);
+    /* Under the floor is a refusal; a figure that could not be read is unavailability — the rule's purchase waits either way. */
+    if (judgedFloor.verdict === "below") return { ok: false, status: 409, code: "RULE_LIQUIDITY_LOW", message: `${floorLine(judgedFloor, record.asset.symbol, "en")}; a rule never buys into a thin pool.` };
+    if (judgedFloor.verdict !== "met") return { ok: false, status: 503, code: "UNAVAILABLE", message: "The token's liquidity cannot be read right now; a rule never buys without it. Try again in a moment." };
   }
   return { ok: true, occurrence };
 }

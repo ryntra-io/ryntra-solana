@@ -3,7 +3,7 @@
 import { X } from "@phosphor-icons/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import type { ExecutionPlanBinding } from "@/lib/api/v1/contract";
+import type { ExecutionPlanBinding, RuleBinding } from "@/lib/api/v1/contract";
 import { WRAPPED_SOL_MINT } from "@/lib/solana/send-kinds";
 import type { SpotMarketListRow, SpotView } from "@/lib/spot/markets";
 import { isSpotView } from "@/lib/spot/markets";
@@ -44,6 +44,7 @@ export function SpotWorkspace({
   initialPlan,
   initialSide = null,
   initialAmount = null,
+  initialRule = null,
 }: {
   initialMint: string | null;
   initialView: SpotView | null;
@@ -51,6 +52,8 @@ export function SpotWorkspace({
   /** The side and the sum an asset page carried in (`?side=&amount=`), read once and forgotten by the address. */
   initialSide?: "BUY" | "SELL" | null;
   initialAmount?: string | null;
+  /** 1.31.0: a rule's reminder the address named (`?rule=&due=`) — the ticket is its purchase while it is open. */
+  initialRule?: RuleBinding | null;
 }) {
   const { text, locale } = useSolanaI18n();
   /* Spot is a tool of Markets' «Для досвідчених»: one version, and its face
@@ -78,6 +81,23 @@ export function SpotWorkspace({
     const url = new URL(window.location.href);
     url.searchParams.delete("plan");
     url.searchParams.delete("v");
+    window.history.replaceState(null, "", `${url.pathname}?${url.searchParams.toString()}`);
+  }, []);
+  /* A rule's reminder (1.31.0), kept in the address so a reload still opens its purchase; leaving it is the person's own act. */
+  const [ruleBinding, setRuleBinding] = useState<RuleBinding | null>(initialRule);
+  const buyByRule = useCallback((binding: RuleBinding) => {
+    setRuleBinding(binding);
+    const url = new URL(window.location.href);
+    url.searchParams.set("rule", binding.ruleId);
+    url.searchParams.set("due", binding.dueAt);
+    window.history.replaceState(null, "", `${url.pathname}?${url.searchParams.toString()}`);
+  }, []);
+  const leaveRule = useCallback(() => {
+    setRuleBinding(null);
+    const url = new URL(window.location.href);
+    url.searchParams.delete("rule");
+    url.searchParams.delete("due");
+    url.searchParams.delete("from");
     window.history.replaceState(null, "", `${url.pathname}?${url.searchParams.toString()}`);
   }, []);
   /* The carried intent is the ticket's opening state, not the address's memory: a reload does not type the sum again. */
@@ -253,6 +273,9 @@ export function SpotWorkspace({
         proving={proof.state.status === "signing"}
         onProve={() => void proof.prove()}
         onLeavePlan={leavePlan}
+        ruleBinding={ruleBinding}
+        onRuleBuy={buyByRule}
+        onLeaveRule={leaveRule}
       />
 
       <TradingState market={marketValue} holdings={holdings} fills={fills} pro={pro} onRefresh={refresh} />

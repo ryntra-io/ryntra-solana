@@ -59,6 +59,7 @@ import {
   type RevokeResponse,
   type RuleBudgetRequest,
   type RuleBudgetResponse,
+  type RuleAssetResponse,
   type RuleCreateRequest,
   type RuleDeleteResponse,
   type RuleListResponse,
@@ -315,6 +316,8 @@ export function createRyntraApiClient(options: RyntraApiClientOptions) {
       get: (ruleId: string) => call<RuleResponse>("GET", `/api/v1/rules/${encodeURIComponent(ruleId)}`, undefined, true),
       setStatus: (ruleId: string, request: RuleStatusRequest) => call<RuleResponse>("POST", `/api/v1/rules/${encodeURIComponent(ruleId)}/status`, request, true),
       remove: (ruleId: string) => call<RuleDeleteResponse>("DELETE", `/api/v1/rules/${encodeURIComponent(ruleId)}`, undefined, true),
+      /* 1.31.0 — what a rule on a token would stand on, before it is written: the floor and the facts of its risk. Public: no bearer. */
+      asset: (mint: string) => call<RuleAssetResponse>("GET", `/api/v1/rules/asset?mint=${encodeURIComponent(mint)}`, undefined, false),
       /* 1.13.0 — «Бюджет місяця»: the wallet's own ceiling for every rule; only the person sets it. */
       budget: {
         get: () => call<RuleBudgetResponse>("GET", "/api/v1/rules/budget", undefined, true),

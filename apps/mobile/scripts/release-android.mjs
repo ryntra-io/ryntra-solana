@@ -29,7 +29,8 @@
  * the one apksigner command the Owner runs to sign it: apksigner's own
  * prompt takes the passwords, so they never pass through this script, Gradle
  * or the environment. `--verify=<apk>` then reads the signed APK — its
- * package and version against app.json, its signature, its alignment and its
+ * package and version against app.json, the permissions it declares (none
+ * that app.json blocks), its signature, its alignment and its
  * one signer's SHA-256, refused when that is the shared debug certificate.
  *
  * Nothing here reads a password or a key: the four RYNTRA_RELEASE_* variables
@@ -119,6 +120,17 @@ const app = JSON.parse(
 // Uncompressed native libraries on 16 KB pages, everything else on 4 bytes — what Android 15+ phones load.
 const aligned = (file) => read(zipalign, ['-c', '-P', '16', '4', file]).ok
 
+// What the built APK declares, read back from the file: none of app.json's blocked permissions may survive.
+function permissions(file) {
+  const dump = read(aapt2, ['dump', 'permissions', file])
+  if (!dump.ok) fail(`aapt2 could not read the permissions:\n${dump.out}`)
+  const declared = [...dump.out.matchAll(/uses-permission(?:-sdk-23)?: name='([^']+)'/g)].map((m) => m[1])
+  for (const name of declared) console.log(name)
+  const survived = (app.android.blockedPermissions ?? []).filter((name) => declared.includes(name))
+  if (survived.length) fail(`blocked in app.json, still declared: ${survived.join(', ')}`)
+  console.log(`${declared.length} declared; none of the ${app.android.blockedPermissions?.length ?? 0} blocked`)
+}
+
 /* ---- --verify: the signed APK before it goes anywhere ---- */
 if (verifyApk) {
   const file = resolve(verifyApk)
@@ -135,6 +147,8 @@ if (verifyApk) {
   if (name !== app.version || code !== String(app.android.versionCode)) {
     fail(`the version is ${name} (${code}), app.json says ${app.version} (${app.android.versionCode})`)
   }
+  step('permissions')
+  permissions(file)
   step('the signature')
   const signature = read(apksigner, ['verify', '--verbose', '--print-certs', file])
   if (!signature.ok) fail(`apksigner does not verify it:\n${signature.out}`)
@@ -225,6 +239,11 @@ const size = statSync(target).size
 console.log(
   `${target}\n${(size / 1024 / 1024).toFixed(1)} MB · version ${app.version} · versionCode ${app.android.versionCode} · ${commit}`,
 )
+
+if (!aab && aapt2) {
+  step('permissions')
+  permissions(target)
+}
 
 if (unsigned) {
   const signed = join(dist, `${base}.apk`)

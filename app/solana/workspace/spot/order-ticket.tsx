@@ -4,8 +4,15 @@ import { ArrowUpRight, CheckCircle, Warning, XCircle } from "@phosphor-icons/rea
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { occurrenceAt, purchaseSumUsd, reminderOpenNow, ruleForMint } from "@/app/app/invest/autoinvest-model";
+import { BudgetSheet } from "@/app/app/invest/budget-sheet";
 import { RuleReminderNotice } from "@/app/app/invest/rule-reminder-notice";
-import type { ExecutionPlanBinding, TradingPlan } from "@/lib/api/v1/contract";
+import { useAutoinvestRules } from "@/app/app/invest/use-rules";
+import { AutoinvestPanel } from "@/app/app/stocks/[ticker]/autoinvest-sheet";
+import type { AutoinvestRule, ExecutionPlanBinding, RuleBinding, RuleOccurrence, TradingPlan } from "@/lib/api/v1/contract";
+import { rulePurchaseHref } from "@/lib/autoinvest/links";
+import { ruleWhenLine, usdWord } from "@/lib/autoinvest/words";
+import { companyFromTokenName } from "@/lib/stocks/shelf";
 import { displayAmount, parseHumanAmount } from "@/lib/solana/amounts";
 import { isScaledMultiplier, rawFromScaledRaw, scaledAmountString } from "@/lib/stocks/units";
 import { explorerTxUrl } from "@/lib/solana/explorer";
@@ -37,6 +44,11 @@ function ryntraServiceFee(order: object): RyntraServiceFee | null {
   return typeof candidate.basisPoints === "number" && typeof candidate.mechanism === "string" ? candidate : null;
 }
 
+/** «Щотижня · ср о 19:00» → «щотижня · ср о 19:00»: only the first letter, so «Wed» keeps its own. */
+function lowerFirst(text: string): string {
+  return text ? `${text.charAt(0).toLowerCase()}${text.slice(1)}` : text;
+}
+
 function holdingOf(holdings: HoldingsState, mint: string): SpotHolding | null {
   if (!holdings.value) return null;
   if (mint === WRAPPED_SOL_MINT) return holdings.value.find((row) => row.kind === "NATIVE_SOL") ?? null;
@@ -63,6 +75,16 @@ function holdingOf(holdings: HoldingsState, mint: string): SpotHolding | null {
  * Review still decides. While an autoinvest rule's reminder is open for the
  * token, a purchase here is said to leave it open, with the way to the rule's
  * own purchase.
+ *
+ * **«Ринок · Регулярно»** (1.31.0): beside the market order stands the
+ * recurring buy on every token — a company, a coin, a meme or a new token —
+ * the rule's own flow inside the ticket: written there, managed there, its
+ * floor and its facts of risk before the button. **Under a rule's reminder**
+ * (`?rule=&due=`, a token's reminder lands here) the ticket is the rule's
+ * purchase: buy, in USDC, the rule's sum and nothing else, `origin.rule` on
+ * the order — the server judges the reminder, the budget, the price
+ * condition and the floor again — and the person's signature on a fresh
+ * Review, as every purchase.
  */
 export function OrderTicket({
   market,
@@ -78,6 +100,9 @@ export function OrderTicket({
   onLeavePlan,
   initialSide = null,
   initialAmount = null,
+  ruleBinding = null,
+  onRuleBuy,
+  onLeaveRule,
 }: {
   market: SpotMarket | null;
   fallback: Readonly<{ mint: string; symbol: string; decimals: number | null; icon: string | null; category: SpotMarket["category"] }> | null;
@@ -94,6 +119,11 @@ export function OrderTicket({
   /** The side and the sum an asset page carried in, the ticket's opening state only. */
   initialSide?: SpotSide | null;
   initialAmount?: string | null;
+  /** 1.31.0: the rule's reminder the address named (`?rule=&due=`), or null: the ticket is the rule's purchase while it is open. */
+  ruleBinding?: RuleBinding | null;
+  /** A reminder bought from the rule's own panel here: the ticket turns into its purchase. */
+  onRuleBuy?: (binding: RuleBinding) => void;
+  onLeaveRule?: () => void;
 }) {
   const { text, locale } = useSolanaI18n();
   const { connection } = useSolanaConnection();
@@ -102,6 +132,17 @@ export function OrderTicket({
   /* A carried sum survives the first market's arrival (the market reads after the ticket mounts); every later change of market is a new ticket. */
   const carriedAmount = useRef(initialAmount !== null);
   const [quoteMint, setQuoteMint] = useState<string>(SPOT_QUOTE_ASSETS[0].mint);
+  /* «Ринок · Регулярно» (1.31.0): the order now, or the rule that reminds of it. */
+  const [orderType, setOrderType] = useState<"market" | "recurring">("market");
+  const [budgetOpen, setBudgetOpen] = useState(false);
+  const [ruleBusy, setRuleBusy] = useState(false);
+  /* The wallet's rules, read behind its proof — the token's own rule, and the reminder the address named. */
+  const rulesRead = useAutoinvestRules(proven);
+  const [clockMs, setClockMs] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = window.setInterval(() => setClockMs(Date.now()), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   /* The plan, read behind the wallet's proof — the same read My strategies
      makes. A plan is BUY in USDC by construction, so the ticket is set to
@@ -164,6 +205,38 @@ export function OrderTicket({
   const issuerLine = availability.allowed && availability.notice === "ISSUER_TERMS" ? (market?.issuer?.label ?? null) : null;
   const baseMint = market?.mint ?? fallback?.mint ?? null;
   const baseSymbol = market?.symbol ?? fallback?.symbol ?? "";
+
+  /*
+   * The reminder the address named: the rule must be the wallet's, its token
+   * this market, and the reminder open now — then the ticket is its purchase.
+   * Anything else is said in one line, and the ticket offers no plain order in
+   * its place until the person leaves the rule.
+   */
+  const boundRule: AutoinvestRule | null = ruleBinding ? (rulesRead.state.rules.find((rule) => rule.id === ruleBinding.ruleId) ?? null) : null;
+  const boundOccurrence: RuleOccurrence | null = boundRule && ruleBinding ? occurrenceAt(boundRule, ruleBinding.dueAt) : null;
+  const ruleState: "unproven" | "loading" | "ready" | "gone" | "wrongMarket" | "bought" | "pending" | "deferred" | "closed" | null = !ruleBinding
+    ? null
+    : !proven
+      ? "unproven"
+      : rulesRead.state.status === "idle" || rulesRead.state.status === "loading"
+        ? "loading"
+        : !boundRule
+          ? "gone"
+          : boundRule.asset.mint !== baseMint
+            ? "wrongMarket"
+            : boundOccurrence && reminderOpenNow(boundRule, clockMs)?.dueAt === boundOccurrence.dueAt
+              ? "ready"
+              : boundOccurrence?.state === "bought"
+                ? "bought"
+                : boundOccurrence?.state === "pending"
+                  ? "pending"
+                  : boundOccurrence?.state === "deferred"
+                    ? "deferred"
+                    : "closed";
+  const underRule = ruleState === "ready";
+  const ruleSumUsd = underRule && boundRule ? purchaseSumUsd(boundRule, boundOccurrence) : null;
+  /* The token's own rule, for «Регулярно»: managed where it stands, written where there is none. */
+  const tokenRule = baseMint && rulesRead.state.status === "ready" ? ruleForMint(rulesRead.state.rules, baseMint) : null;
   const baseIcon = market?.icon ?? fallback?.icon ?? null;
   const baseHolding = baseMint ? holdingOf(holdings, baseMint) : null;
   const baseDecimals = baseHolding?.decimals ?? market?.decimals ?? fallback?.decimals ?? null;
@@ -199,6 +272,16 @@ export function OrderTicket({
     setAmount("");
   }, [baseMint]);
 
+  /* The rule's purchase is a purchase of its sum in USDC: the side, the asset paid with and the sum are set and held — after the new market's reset above, which runs in the same commit. */
+  useEffect(() => {
+    if (ruleSumUsd === null) return;
+    setOrderType("market");
+    setSide("BUY");
+    setQuoteMint(SPOT_QUOTE_ASSETS[0].mint);
+    /* The sum as typed by hand: «5», «5.50» — never «5.00». */
+    setAmount(Number.isInteger(ruleSumUsd) ? String(ruleSumUsd) : ruleSumUsd.toFixed(2));
+  }, [ruleSumUsd, baseMint]);
+
   /* A sale typed in scaled units travels to the hook as the base amount behind it; the hook and the routes keep speaking raw. */
   const hookAmount = useMemo(() => {
     if (side !== "SELL" || scaledBase === null || baseDecimals === null) return amount;
@@ -206,7 +289,7 @@ export function OrderTicket({
     if (!parsed.ok) return amount;
     return plainAmount(rawFromScaledRaw(BigInt(parsed.raw), scaledBase).toString(), baseDecimals);
   }, [amount, side, scaledBase, baseDecimals]);
-  const ticket = useSpotTicket({ connection, side, baseMint, baseDecimals, baseSymbol, quote, amount: hookAmount, planBinding: underPlan ? planBinding : null, text, onSettled, onRefresh });
+  const ticket = useSpotTicket({ connection, side, baseMint, baseDecimals, baseSymbol, quote, amount: hookAmount, planBinding: underPlan ? planBinding : null, ruleBinding: underRule ? ruleBinding : null, text, onSettled: () => { onSettled(); void rulesRead.reload(); }, onRefresh });
   const { inputMint, inputDecimals, outputDecimals, quoted, quoting, phase, prepared, settled, attempt } = ticket;
 
   const inputHolding = inputMint ? holdingOf(holdings, inputMint) : null;
@@ -298,6 +381,36 @@ export function OrderTicket({
     else if (planState === "loading") cta = { label: text("Reading the plan…"), disabled: true };
     else cta = { label: text("Not under this plan"), disabled: true };
   }
+  /* The same for a rule's reminder: no plain order stands in for the rule's purchase. */
+  if (ruleState && ruleState !== "ready" && action !== "RECOVER" && phase !== "SETTLED") {
+    if (ruleState === "unproven") cta = { label: proving ? text("Confirming…") : text("Confirm wallet"), disabled: proving || !onProve, onClick: onProve };
+    else if (ruleState === "loading") cta = { label: text("Reading the rule…"), disabled: true };
+    else cta = { label: text("Not under this rule"), disabled: true };
+  }
+  /* What the server says of a rule's purchase, in the person's words. */
+  const ruleRefusal = (() => {
+    const code = ticket.actionFailure?.code ?? null;
+    if (code === "RULE_LIQUIDITY_LOW") return text("The token's pool is under the floor for a recurring buy now — the rule's purchase waits.");
+    if (code === "RULE_PRICE_CONDITION") return text("The rule's price condition is not met right now — its purchase waits.");
+    if (code === "RULE_BUDGET_EXHAUSTED") return text("What is left of this month's budget does not cover the rule's purchase.");
+    if (code === "RULE_NOT_DUE" || code === "RULE_NOT_FOUND" || code === "RULE_MISMATCH") return text("This reminder can no longer be bought — read the rule again.");
+    /* Under a rule these two are the rule's own: a token's figures unread, or a token flagged since the rule was written — never a plan's or an issuer's words. */
+    if (ruleBinding && code === "UNAVAILABLE") return text("The token's liquidity or price cannot be read right now — try again in a moment.");
+    if (ruleBinding && code === "ASSET_NOT_OFFERED") return text("Jupiter's audit flags this token, or Ryntra no longer supports it — the rule does not buy it.");
+    return null;
+  })();
+  const ruleLine = (() => {
+    if (!ruleState) return null;
+    if (ruleState === "ready" && boundRule && ruleSumUsd !== null) return `${usdWord(ruleSumUsd, locale === "uk" ? "uk" : "en")} · ${ruleWhenLine(boundRule, locale === "uk" ? "uk" : "en")}`;
+    if (ruleState === "unproven") return text("Confirm your wallet to buy by your rule.");
+    if (ruleState === "loading") return text("Reading the rule…");
+    if (ruleState === "gone") return text("This rule is no longer in your wallet.");
+    if (ruleState === "wrongMarket") return text("This market is not the rule's token.");
+    if (ruleState === "bought") return text("This reminder's purchase is already bought.");
+    if (ruleState === "pending") return text("A purchase under this reminder is already on its way.");
+    if (ruleState === "deferred") return text("The rule's purchase waits — its rule says why.");
+    return text("This reminder has closed. The next one comes on the rule's day.");
+  })();
   const planReview = prepared?.planReview ?? (ticket.actionFailure?.planReview ?? null);
   /* The plan's price bound, for the stock block to say plainly when this order's per-share price is above it. */
   const planMaxPerShare = underPlan && plan ? plan.current.rules.entry.maxPricePerShare : null;
@@ -370,7 +483,7 @@ export function OrderTicket({
             {settledTone === "matched" ? <CheckCircle size={26} weight="fill" /> : settledTone === "risk" ? <XCircle size={26} weight="fill" /> : <Warning size={26} weight="fill" />}
           </div>
           <div className={styles.settledHead} data-tone={settledTone}>
-            <span className={styles.settledKicker}>{filledSide === null ? text("Swap") : filledSide === "BUY" ? text("Market buy") : text("Market sell")}{filledBaseSymbol ? ` · ${filledBaseSymbol}` : ""}</span>
+            <span className={styles.settledKicker}>{ruleBinding && filledSide === "BUY" ? text("Bought by your rule") : filledSide === null ? text("Swap") : filledSide === "BUY" ? text("Market buy") : text("Market sell")}{filledBaseSymbol ? ` · ${filledBaseSymbol}` : ""}</span>
             <b>{settledHeadline}</b>
           </div>
           {outcome.kind === "FILLED" && filledBase !== null ? (
@@ -420,7 +533,7 @@ export function OrderTicket({
               <Link className={styles.ghost} href="/app/activity">{text("History")}</Link>
             </div>
           ) : null}
-          <button type="button" className={outcome.kind === "FILLED" ? styles.secondary : styles.cta} onClick={() => { ticket.reset(); setAmount(""); onRefresh(); }}>
+          <button type="button" className={outcome.kind === "FILLED" ? styles.secondary : styles.cta} onClick={() => { ticket.reset(); setAmount(""); onRefresh(); if (ruleBinding) onLeaveRule?.(); }}>
             {outcome.kind === "NOTHING_HAPPENED" ? text("Trade again") : text("New order")}
           </button>
         </div>
@@ -429,6 +542,117 @@ export function OrderTicket({
       {phase !== "SETTLED" || !settled ? (
         <>
           {planBinding && planState ? <PlanChip plan={plan} state={planState} onLeave={() => onLeavePlan?.()} /> : null}
+          {ruleBinding && ruleState ? (
+            <div className={styles.planChip} data-state={ruleState === "ready" ? "ready" : ruleState === "loading" || ruleState === "unproven" ? ruleState : "notFound"} data-rule-chip>
+              <div className={styles.planChipText}>
+                <b>
+                  {text("By your rule")}
+                  {boundRule ? (
+                    <>
+                      {" · "}
+                      <Link href="/app/bots" prefetch={false} translate="no">
+                        {boundRule.name}
+                      </Link>
+                    </>
+                  ) : null}
+                </b>
+                <span translate="no">{ruleLine}</span>
+              </div>
+              <button type="button" className={styles.planChipLeave} onClick={() => onLeaveRule?.()} aria-label={text("Trade without the rule")} title={text("Trade without the rule")} disabled={busy}>
+                ×
+              </button>
+            </div>
+          ) : null}
+          {/* «Ринок · Регулярно»: the order now, or the rule that reminds of it — on every token. */}
+          <div className={styles.ticketRow}>
+            <div
+              className={styles.orderTypes}
+              role="tablist"
+              aria-label={text("Order type")}
+              onKeyDown={(event) => {
+                /* The arrows move between the two order types, as a tab list does. */
+                if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+                const next = orderType === "market" ? "recurring" : "market";
+                if (next === "recurring" && (!baseMint || underRule || busy || phase === "REVIEW")) return;
+                if (next === "market" && ruleBusy) return;
+                event.preventDefault();
+                setOrderType(next);
+                event.currentTarget.querySelector<HTMLButtonElement>(`[data-order-type="${next}"]`)?.focus();
+              }}
+            >
+              <button type="button" role="tab" id="spot-order-market" tabIndex={orderType === "market" ? 0 : -1} className={styles.orderTypeTab} aria-selected={orderType === "market"} onClick={() => setOrderType("market")} disabled={ruleBusy} data-order-type="market">
+                {text("Market")}
+              </button>
+              <button
+                type="button"
+                role="tab"
+                id="spot-order-recurring"
+                aria-controls="spot-order-panel"
+                tabIndex={orderType === "recurring" ? 0 : -1}
+                className={styles.orderTypeTab}
+                aria-selected={orderType === "recurring"}
+                onClick={() => setOrderType("recurring")}
+                disabled={!baseMint || underRule || busy || phase === "REVIEW"}
+                data-order-type="recurring"
+              >
+                {text("Recurring")}
+              </button>
+            </div>
+            {orderType === "market" && baseHolding && baseDecimals !== null ? (
+              <span>
+                {text("You hold")} <b>{formatAmount(baseNumber(baseHolding.amountRaw, baseHolding.decimals), locale)} {baseSymbol}</b>
+              </span>
+            ) : null}
+          </div>
+          {orderType === "recurring" && baseMint ? (
+            !connection ? (
+              <div className={styles.recurringGuest} role="tabpanel">
+                <p>{text("A rule reminds you on its day — you sign every purchase. Your money stays in your wallet.")}</p>
+                <WalletConnectRow />
+              </div>
+            ) : !proven ? (
+              <div className={styles.recurringGuest} role="tabpanel">
+                <p>{text("Confirm your wallet to set or see a rule on this token.")}</p>
+                <button type="button" className={styles.cta} disabled={proving || !onProve} onClick={onProve}>
+                  {proving ? text("Confirming…") : text("Confirm wallet")}
+                </button>
+              </div>
+            ) : rulesRead.state.status !== "ready" ? (
+              <p className={styles.note} role="tabpanel">{rulesRead.state.status === "failed" ? text("Your rules could not be read right now.") : text("Reading the rule…")}</p>
+            ) : (
+              <div role="tabpanel" id="spot-order-panel" aria-labelledby="spot-order-recurring" className={styles.recurringPanel}>
+                <AutoinvestPanel
+                  key={`${baseMint}:${tokenRule?.id ?? "new"}`}
+                  mode={tokenRule ? { kind: "manage", rule: tokenRule } : { kind: "compose", amountUsd: null }}
+                  mint={baseMint}
+                  name={isStockMarket ? companyFromTokenName(market?.name ?? baseSymbol) || baseSymbol : baseSymbol}
+                  icon={baseIcon}
+                  preIpo={false}
+                  truth=""
+                  priceUsd={market?.price ?? null}
+                  token={!isStockMarket}
+                  budget={rulesRead.state.budget}
+                  locale={locale}
+                  onBusy={setRuleBusy}
+                  onClose={() => setOrderType("market")}
+                  onConnect={() => undefined}
+                  onCreate={rulesRead.create}
+                  onSetStatus={rulesRead.setStatus}
+                  onRemove={rulesRead.remove}
+                  onEditBudget={() => setBudgetOpen(true)}
+                  onMarkOwn={rulesRead.markOwn}
+                  onBuyNow={(rule, occurrence) => {
+                    /* A token's reminder is bought here; a company's on its own page, where its Review is. */
+                    if (!isStockMarket && onRuleBuy) onRuleBuy({ ruleId: rule.id, dueAt: occurrence.dueAt });
+                    else window.location.assign(rulePurchaseHref(rule, occurrence.dueAt));
+                  }}
+                />
+              </div>
+            )
+          ) : null}
+          <BudgetSheet open={budgetOpen} budget={rulesRead.state.budget} locale={locale} onClose={() => setBudgetOpen(false)} onSave={rulesRead.setBudget} onClear={rulesRead.clearBudget} />
+          {orderType === "market" ? (
+          <>
           <div className={styles.sides} role="group" aria-label={text("Side")}>
             {(["BUY", "SELL"] as const).map((entry) => (
               <button
@@ -437,7 +661,7 @@ export function OrderTicket({
                 className={styles.side}
                 data-side={entry}
                 aria-pressed={side === entry}
-                disabled={busy || phase === "REVIEW" || (underPlan && entry === "SELL")}
+                disabled={busy || phase === "REVIEW" || ((underPlan || underRule) && entry === "SELL")}
                 onClick={() => {
                   setSide(entry);
                   setAmount("");
@@ -446,15 +670,6 @@ export function OrderTicket({
                 {entry === "BUY" ? text("Buy") : text("Sell")}
               </button>
             ))}
-          </div>
-
-          <div className={styles.ticketRow}>
-            <span className={styles.orderType}>{text("Market")}</span>
-            {baseHolding && baseDecimals !== null ? (
-              <span>
-                {text("You hold")} <b>{formatAmount(baseNumber(baseHolding.amountRaw, baseHolding.decimals), locale)} {baseSymbol}</b>
-              </span>
-            ) : null}
           </div>
 
           <div className={styles.amountBox}>
@@ -481,7 +696,7 @@ export function OrderTicket({
                 spellCheck={false}
                 placeholder="0.0"
                 value={amount}
-                disabled={busy || !baseMint}
+                disabled={busy || !baseMint || underRule}
                 aria-label={side === "BUY" ? `${text("Spend")}, ${inputSymbol}` : `${text("Amount")}, ${inputSymbol}`}
                 onChange={(event) => setAmount(event.target.value.replace(/,/g, "."))}
               />
@@ -490,7 +705,7 @@ export function OrderTicket({
                   label={text("Pay with")}
                   value={quote.mint}
                   options={SPOT_QUOTE_ASSETS.filter((asset) => asset.mint !== baseMint)}
-                  disabled={busy || phase === "REVIEW"}
+                  disabled={busy || phase === "REVIEW" || underRule}
                   onChange={(mint) => { setQuoteMint(mint); setAmount(""); }}
                 />
               ) : (
@@ -502,7 +717,7 @@ export function OrderTicket({
             </div>
             {/* The dollar value of what is typed, wherever it is not a dollar already. */}
             {inputUsd !== null && (side === "SELL" || quote.symbol !== "USDC") ? <span className={styles.usdLine}>≈ {formatUsdPrice(inputUsd, locale)}</span> : null}
-            {connection ? (
+            {connection && !underRule ? (
               <div className={styles.quickFills}>
                 {([["25%", 1n, 4n], ["50%", 1n, 2n], ["75%", 3n, 4n], ["MAX", 1n, 1n]] as const).map(([label, numerator, denominator]) => (
                   <button key={label} type="button" disabled={!inputHolding || holdings.status !== "ready" || busy || phase === "REVIEW"} onClick={() => fillShare(numerator, denominator)}>
@@ -654,22 +869,29 @@ export function OrderTicket({
                   `${text("slippage up to")} ${(prepared.order.slippageBps / 100).toFixed(2)}%`,
                 ].filter(Boolean).join(" · ")}</dd>
               </div>
-              <div data-verdict={planReview ? planReview.verdict : underPlan ? "loading" : "none"}>
-                <dt>{text("Your plan")}</dt>
-                <dd>{planReview ? (planReview.verdict === "ready" ? text("Within the plan") : planReview.verdict === "attention" ? text("Within the plan · your call") : `${text("Outside the plan")}${planRefusalSentence(planReview, text) ? ` — ${planRefusalSentence(planReview, text)}` : ""}`) : planBinding ? text("Reading the plan…") : text("No plan — a plain order")}</dd>
-              </div>
+              {underRule && boundRule && ruleSumUsd !== null ? (
+                <div data-verdict="rule">
+                  <dt>{text("Your rule")}</dt>
+                  <dd translate="no">{`${usdWord(ruleSumUsd, locale === "uk" ? "uk" : "en")} · ${boundRule.name} · ${lowerFirst(ruleWhenLine(boundRule, locale === "uk" ? "uk" : "en"))}`}</dd>
+                </div>
+              ) : (
+                <div data-verdict={planReview ? planReview.verdict : underPlan ? "loading" : "none"}>
+                  <dt>{text("Your plan")}</dt>
+                  <dd>{planReview ? (planReview.verdict === "ready" ? text("Within the plan") : planReview.verdict === "attention" ? text("Within the plan · your call") : `${text("Outside the plan")}${planRefusalSentence(planReview, text) ? ` — ${planRefusalSentence(planReview, text)}` : ""}`) : planBinding ? text("Reading the plan…") : text("No plan — a plain order")}</dd>
+                </div>
+              )}
             </dl>
           ) : null}
           {reviewWarnings.length > 0 ? <p className={styles.warning}>{text("Review this order carefully.")}</p> : null}
           {blocked ? <p className={styles.error}>{text("This asset did not pass Ryntra's checks, so no order is offered for it.")}</p> : null}
           {ticket.quoteFailureMessage && amountOk && !blocked ? <p className={styles.error}>{ticket.quoteFailureMessage}</p> : null}
-          {ticket.actionFailureMessage ? <p className={styles.error}>{ticket.actionFailureMessage}</p> : null}
+          {ruleRefusal ? <p className={styles.error}>{ruleRefusal}</p> : ticket.actionFailureMessage ? <p className={styles.error}>{ticket.actionFailureMessage}</p> : null}
           {connection && (holdings.status === "unavailable" || holdings.partial) ? (
             <p className={styles.note}>{text("Some balances could not be read.")} <button className={styles.ghost} type="button" onClick={onRefresh} disabled={busy}>{text("Read again")}</button></p>
           ) : null}
           {phase === "RECOVERY" && settled?.recovery ? <p className={styles.warning}>{settled.recovery}</p> : null}
           {/* A rule's reminder open for this token: a purchase here leaves it open — said before the action, with the way to the rule's own purchase. */}
-          {connection && side === "BUY" ? <RuleReminderNotice mint={baseMint} proven={proven} locale={locale} className={styles.ruleReminder} /> : null}
+          {connection && side === "BUY" && !ruleBinding ? <RuleReminderNotice mint={baseMint} proven={proven} locale={locale} className={styles.ruleReminder} onBuy={!isStockMarket ? onRuleBuy : undefined} /> : null}
 
           {!connection && !attempt ? (
             <WalletConnectRow />
@@ -690,6 +912,8 @@ export function OrderTicket({
           ) : null}
           {connection && phase === "IDLE" && quoted && ticket.secondsLeft !== null && ticket.secondsLeft <= 0 ? (
             <p className={styles.note}>{text("The quote expired; a fresh one is on its way.")}</p>
+          ) : null}
+          </>
           ) : null}
         </>
       ) : null}

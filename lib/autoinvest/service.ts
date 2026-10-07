@@ -2,16 +2,20 @@
  * «Автоінвест» — the rule's lifecycle and the month's budget.
  *
  * Write a rule, read the wallet's rules, pause one or turn it on again,
- * remove one — for the wallet that proved itself and nobody else. The company
- * is resolved by mint from the confirmed stock universe, the way a plan's is
- * (`lib/plans/service.ts`): a rule never names a token nobody confirms, and a
- * company the issuer is not selling right now is refused with that reason.
+ * remove one — for the wallet that proved itself and nobody else. The asset
+ * is resolved by mint (`./asset.ts`): a company of the confirmed stock
+ * universe, the way a plan's is — a company the issuer is not selling right
+ * now is refused with that reason — or (1.31.0) any token of the venue's list
+ * that stands on the floor: a coin, a meme, a new token.
  *
  * «Регулярно» reminds first at the next instant its day and time name on the
  * person's clock; turned on again, it starts from now — nothing a pause
  * skipped is caught up. «Якщо впаде» takes its reference point from the price
  * the company's page shows when it is written, and again whenever it is
- * turned on after a pause; a price that cannot be read writes nothing.
+ * turned on after a pause; a price that cannot be read writes nothing. A
+ * token's price condition (1.31.0) takes its reference the same way — the
+ * market price when the rule is turned on — and a token is turned on again
+ * only while it stands on the floor.
  *
  * The month's budget is the person's own ceiling for every rule; only the
  * person sets it, changes it or removes it. Its spend is read from History at
@@ -25,17 +29,15 @@
 
 import { RULE_LIST_LIMIT, RULE_MINIMUM_USD, type AutoinvestRule, type RuleBudget, type RuleKind, type RuleOccurrenceState, type RulePaymentsRequest, type RuleStatus } from "../api/v1/contract.ts";
 import { withBoundedCasRetry, type GuardStore } from "../guard/store.ts";
-import { planAssetOf } from "../plans/service.ts";
 import { listSolanaWalletActions, type SolanaWalletAction } from "../solana/action-ledger.ts";
-import { eventStateAt } from "../stocks/instrument.ts";
 import { lifecycleEventFor } from "../stocks/lifecycle-events.ts";
-import { isRetiredMint, RETIRED_REASON } from "../stocks/retired.ts";
-import { companyDisplayName } from "../stocks/shelf.ts";
 import { findStockRow, type StockRow } from "../stocks/universe.server.ts";
+import { readTokenMarket, resolveRuleAsset, type RuleAssetDeps } from "./asset.ts";
 import { budgetMonth, fitsBudget, remainingOf, spendInMonth } from "./budget.ts";
-import { usablePrice } from "./dip.ts";
+import { keptPriceUsd, usablePrice } from "./dip.ts";
+import { checkFloor, isListedToken, type RuleFloorCheck } from "./floor.ts";
 import { PRICE_CONDITION_MAX_PCT, PRICE_CONDITION_MIN_PCT, RULE_DIP_MAX_PCT, RULE_DIP_MIN_PCT } from "./limits.ts";
-import { isPriceConditionLimit, priceFactsOf, type PriceFacts } from "./price-condition.ts";
+import { anchorFactsOf, isPriceConditionLimit, priceFactsOf, type PriceFacts } from "./price-condition.ts";
 import { dueOfIdentity } from "./links.ts";
 import { projectOccurrence, projectRule, releaseOwnEvents, rowsOfRule, type PaymentsRead } from "./model.ts";
 import { freshWatch, markOwnAccount, readPaymentWatch, usdcAccountOf, writePaymentWatch, type PaymentWatchRecord } from "./payment-watch.ts";
@@ -56,7 +58,7 @@ import {
   type StoredPayments,
 } from "./store.ts";
 
-export type RuleFailure = Readonly<{ ok: false; code: "ASSET_UNCONFIRMED" | "RULE_NOT_FOUND" | "RULE_LIMIT_REACHED" | "VALIDATION_ERROR" | "UNAVAILABLE"; message: string }>;
+export type RuleFailure = Readonly<{ ok: false; code: "ASSET_UNCONFIRMED" | "RULE_LIQUIDITY_LOW" | "RULE_NOT_FOUND" | "RULE_LIMIT_REACHED" | "VALIDATION_ERROR" | "UNAVAILABLE"; message: string }>;
 export type RuleWriteResult = Readonly<{ ok: true; rule: AutoinvestRule }> | RuleFailure;
 export type BudgetResult = Readonly<{ ok: true; budget: RuleBudget }> | RuleFailure;
 
@@ -69,11 +71,17 @@ export type RuleDeps = Readonly<{
   lifecycle?: typeof lifecycleEventFor;
   /** 1.19.0: the wallet's USDC account; the tests pass one. */
   usdcAccount?: (owner: string) => Promise<string>;
+  /** 1.31.0: the venue's list, one token and many; the tests pass their own. */
+  readMarket?: RuleAssetDeps["readMarket"];
+  readMarkets?: RuleAssetDeps["readMarkets"];
 }>;
 
+/** The asset readers a rule's dependencies carry. */
+function assetDeps(deps: RuleDeps): RuleAssetDeps {
+  return { now: deps.now, findRow: deps.findRow, readMarket: deps.readMarket, readMarkets: deps.readMarkets, lifecycle: deps.lifecycle };
+}
+
 const iso = (ms: number): string => new Date(ms).toISOString();
-/** A price per unit kept to a millionth of a dollar. */
-const toMillionth = (usd: number): number => Math.round(usd * 1e6) / 1e6;
 
 function nowOf(deps: RuleDeps): Date {
   return (deps.now ?? (() => new Date()))();
@@ -109,6 +117,28 @@ export async function conditionFactsOf(mint: string, deps: RuleDeps = {}): Promi
   if (!found || !found.ok || !found.row || found.row.representation.mint !== mint) return null;
   const universeAt = found.universe ? Date.parse(found.universe.marketsObservedAt) : Number.NaN;
   return priceFactsOf(found.row, Number.isFinite(universeAt) ? universeAt : null);
+}
+
+/**
+ * What the order route judges a rule's purchase on, read now (1.31.0): the
+ * facts of its price condition — the company's row, or a token's price now
+ * against the price when the rule was turned on — and, on a token of the
+ * venue's list, the floor. A read that fails leaves the facts null and the
+ * floor `unavailable`: neither passes.
+ */
+export async function ruleOrderFactsOf(
+  record: Pick<AutoinvestRuleRecord, "asset" | "priceCondition">,
+  deps: RuleDeps = {},
+): Promise<Readonly<{ condition: PriceFacts | null; floor: RuleFloorCheck | null; flagged: boolean }>> {
+  const nowMs = nowOf(deps).getTime();
+  if (!isListedToken(record.asset)) return { condition: record.priceCondition ? await conditionFactsOf(record.asset.mint, deps) : null, floor: null, flagged: false };
+  const market = await readTokenMarket(record.asset.mint, nowMs, assetDeps(deps));
+  const anchor = record.priceCondition && typeof record.priceCondition.referenceUsd === "number" && record.priceCondition.referenceAt ? { referenceUsd: record.priceCondition.referenceUsd, referenceAt: record.priceCondition.referenceAt } : null;
+  return {
+    condition: record.priceCondition ? anchorFactsOf(anchor, market?.price ? { usd: market.price.usd, atMs: market.price.observedAtMs } : null) : null,
+    floor: market?.floor ?? checkFloor(null, nowMs),
+    flagged: market?.flagged ?? false,
+  };
 }
 
 /** The price a company's page shows, per unit as the wallet shows it, while it is fresh; null otherwise. A row with no time of its own was read with the universe just now. */
@@ -180,28 +210,27 @@ export async function createRule(store: GuardStore, input: RuleInput, deps: Rule
   if (existing.length >= RULE_LIST_LIMIT) {
     return { ok: false, code: "RULE_LIMIT_REACHED", message: `A wallet holds at most ${RULE_LIST_LIMIT} rules; remove one first.` };
   }
-  /* A token Ryntra no longer supports is named by no new rule, and no provider is asked about it. */
-  if (isRetiredMint(input.mint)) return { ok: false, code: "ASSET_UNCONFIRMED", message: `Autoinvest cannot name that token. ${RETIRED_REASON}` };
-  const found = await (deps.findRow ?? findStockRow)(input.mint);
-  if (!found.ok) return { ok: false, code: "UNAVAILABLE", message: found.reason };
-  const row = found.row && found.row.representation.mint === input.mint ? found.row : null;
-  if (!row) return { ok: false, code: "ASSET_UNCONFIRMED", message: "Autoinvest names a company: that mint is not a confirmed stock representation." };
-  const rep = row.representation;
-  if (!row.lifecycle.tradable || rep.tradingHalted === true) {
-    return { ok: false, code: "ASSET_UNCONFIRMED", message: "The issuer is not offering new purchases of this company right now." };
-  }
+  /* A company the issuer confirms, or a token of the venue's list on the floor now (1.31.0). */
+  const resolved = await resolveRuleAsset(input.mint, assetDeps(deps));
+  if (!resolved.ok) return { ok: false, code: resolved.code, message: resolved.message };
+  const { asset, name, row } = resolved.inspected;
+  const listed = isListedToken(asset);
   const now = nowOf(deps);
-  /* The registry's event read with the clock: a conversion window past its cut-off is closed, whatever the file still says. */
-  const lifecycle = (deps.lifecycle ?? lifecycleEventFor)(input.mint);
-  if (lifecycle && eventStateAt(lifecycle, now.getTime()) !== "conversion-open") return { ok: false, code: "ASSET_UNCONFIRMED", message: lifecycle.note };
   const at = now.toISOString();
+  /* The price a person reads now: the company's page, or the token's market — fresh, or nothing. */
+  const readPrice = (): number | null => (row ? pagePriceOf(row, now.getTime()) : usablePrice(resolved.inspected.price, now.getTime()));
+  /* Read only where the rule stands on it: a fall's reference point, or a token's condition. */
+  const priceNow = dipAsk || (priceCondition !== null && listed) ? readPrice() : null;
+  const unreadPrice = listed ? "The token's price could not be read right now; try again." : "The company's price could not be read right now; try again.";
   let dip: StoredDip | null = null;
   if (dipAsk) {
     /* The reference point is the price the page shows now; without one the rule would fall from nothing. */
-    const price = pagePriceOf(row, now.getTime());
-    if (price === null) return { ok: false, code: "UNAVAILABLE", message: "The company's price could not be read right now; try again." };
-    dip = { dropPct: dipAsk.dropPct, timeZone: dipAsk.timeZone, anchorUsd: toMillionth(price), anchorAt: at, anchorFrom: "enabled", armed: true, heldAt: null };
+    if (priceNow === null) return { ok: false, code: "UNAVAILABLE", message: unreadPrice };
+    dip = { dropPct: dipAsk.dropPct, timeZone: dipAsk.timeZone, anchorUsd: keptPriceUsd(priceNow), anchorAt: at, anchorFrom: "enabled", armed: true, heldAt: null };
   }
+  /* A token's condition stands against its market price now — the price when the rule is turned on; a company's against its own reference, read at every judgement. */
+  if (priceCondition !== null && listed && priceNow === null) return { ok: false, code: "UNAVAILABLE", message: unreadPrice };
+  const storedCondition = priceCondition === null ? null : listed && priceNow !== null ? { limitPct: priceCondition.limitPct, referenceUsd: keptPriceUsd(priceNow), referenceAt: at } : { limitPct: priceCondition.limitPct };
   let payments: StoredPayments | null = null;
   if (paymentsAsk) {
     /* Events count from now: nothing the wallet's watch numbered before this rule is its. */
@@ -219,7 +248,6 @@ export async function createRule(store: GuardStore, input: RuleInput, deps: Rule
       events: [],
     };
   }
-  const preIpo = rep.instrument?.class === "pre-ipo";
   const record: AutoinvestRuleRecord = {
     schema: "ryntra.autoinvest-rule",
     schemaVersion: "1.0.0",
@@ -227,13 +255,13 @@ export async function createRule(store: GuardStore, input: RuleInput, deps: Rule
     owner: input.owner,
     network: "solana:mainnet",
     kind,
-    asset: planAssetOf(row),
-    name: companyDisplayName(rep.underlying.name ?? rep.name, preIpo ? null : rep.underlying.symbol).slice(0, 128),
+    asset,
+    name,
     amountUsd: Math.round(input.amountUsd * 100) / 100,
     schedule,
     dip,
     payments,
-    priceCondition: priceCondition ? { limitPct: priceCondition.limitPct } : null,
+    priceCondition: storedCondition,
     status: "active",
     locale: input.locale,
     nextDueAt: schedule ? iso(nextDueAfter(schedule, now.getTime())) : null,
@@ -318,14 +346,26 @@ export async function getRule(store: GuardStore, owner: string, ruleId: string, 
  * reminder stays open to its end — it was already sent. Turning it on starts
  * from now: a «Регулярно» rule's next due is the next instant its schedule
  * names, a «Якщо впаде» rule's reference point is the price now — nothing the
- * pause skipped is caught up.
+ * pause skipped is caught up. A rule on a token of the venue's list (1.31.0)
+ * is turned on again only while the token stands on the floor, and its price
+ * condition takes the price now as its reference again.
  */
 export async function setRuleStatus(store: GuardStore, owner: string, ruleId: string, status: RuleStatus, deps: RuleDeps = {}): Promise<RuleWriteResult> {
   const first = await readRule(store, owner, ruleId);
   if (!first) return { ok: false, code: "RULE_NOT_FOUND", message: "No such rule for this wallet." };
+  const resuming = status === "active" && first.status !== "active";
+  const listed = isListedToken(first.asset);
+  /* A token turned on again stands on the floor now, as when it was written — read before the write, so a token nobody could read changes nothing. */
+  let tokenPrice: number | null = null;
+  if (resuming && listed) {
+    const resolved = await resolveRuleAsset(first.asset.mint, assetDeps(deps));
+    if (!resolved.ok) return { ok: false, code: resolved.code, message: resolved.message };
+    tokenPrice = usablePrice(resolved.inspected.price, nowOf(deps).getTime());
+    if (tokenPrice === null && (first.kind === "dip" || first.priceCondition !== null)) return { ok: false, code: "UNAVAILABLE", message: "The token's price could not be read right now; try again." };
+  }
   /* A «Якщо впаде» rule turned on again falls from the price now: read before the write, so a price nobody could read changes nothing. */
-  let price: number | null = null;
-  if (status === "active" && first.status !== "active" && first.kind === "dip") {
+  let price: number | null = listed ? tokenPrice : null;
+  if (resuming && !listed && first.kind === "dip") {
     const found = await (deps.findRow ?? findStockRow)(first.asset.mint).catch(() => null);
     const row = found && found.ok && found.row && found.row.representation.mint === first.asset.mint ? found.row : null;
     price = row ? pagePriceOf(row, nowOf(deps).getTime()) : null;
@@ -339,13 +379,16 @@ export async function setRuleStatus(store: GuardStore, owner: string, ruleId: st
     if (read.status === status) return read;
     const nowMs = nowOf(deps).getTime();
     const { version: _version, ...rest } = read;
-    const resumedDip = status === "active" && read.dip && price !== null ? { ...read.dip, anchorUsd: toMillionth(price), anchorAt: iso(nowMs), anchorFrom: "enabled" as const, armed: true, heldAt: null } : read.dip;
+    const resumedDip = status === "active" && read.dip && price !== null ? { ...read.dip, anchorUsd: keptPriceUsd(price), anchorAt: iso(nowMs), anchorFrom: "enabled" as const, armed: true, heldAt: null } : read.dip;
     const resumedPayments = status === "active" && read.payments && resumedSeq !== null ? { ...read.payments, since: iso(nowMs), lastSeq: Math.max(read.payments.lastSeq, resumedSeq - 1) } : read.payments;
+    /* A token's condition stands against the price when the rule is turned on — now again. */
+    const resumedCondition = status === "active" && read.priceCondition && listed && tokenPrice !== null ? { limitPct: read.priceCondition.limitPct, referenceUsd: keptPriceUsd(tokenPrice), referenceAt: iso(nowMs) } : read.priceCondition;
     const next = {
       ...rest,
       status,
       dip: resumedDip,
       payments: resumedPayments,
+      priceCondition: resumedCondition,
       nextDueAt: status === "active" && read.schedule ? iso(nextDueAfter(read.schedule, nowMs)) : null,
       updatedAt: iso(nowMs),
     };

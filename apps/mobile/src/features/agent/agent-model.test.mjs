@@ -226,9 +226,9 @@ test('handoffs: none twice, one primary first, and each onto the phone’s own p
     primary: false,
     words: { kind: 'asset', symbol: 'SOL' },
   })
-  // Results live on the plans until the phone's own Results screen (M13) — said as what it opens.
-  assert.equal(handoffView(kept[2], []).path, '/plans')
-  assert.deepEqual(handoffView(kept[2], []).words, { kind: 'plans' })
+  // Results open the phone's own Results screen (M13).
+  assert.equal(handoffView(kept[2], []).path, '/results')
+  assert.deepEqual(handoffView(kept[2], []).words, { kind: 'results' })
   assert.deepEqual(handoffView(kept[0], []).words, { kind: 'server' })
   // A stock named by its symbol opens its own asset when the turn carries its address, else the Stocks list.
   const stocks = { kind: 'stocks', href: '/app/stocks/NVDAx', label: 'Open NVDAx on Stocks', primary: false }

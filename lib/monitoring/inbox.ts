@@ -4,7 +4,7 @@
  * is not this wallet's is not found.
  */
 
-import { BUDGET_HREF, companyHref, dueOfIdentity, rulePurchaseHref, symbolOfIdentity } from "../autoinvest/links.ts";
+import { assetHrefOfRef, BUDGET_HREF, dueOfIdentity, rulePurchaseHref, symbolOfIdentity } from "../autoinvest/links.ts";
 import { readRule } from "../autoinvest/store.ts";
 import type { GuardStore } from "../guard/store.ts";
 import { swapHref } from "../stocks/conversion-watch.ts";
@@ -51,7 +51,7 @@ export async function resolveInboxLink(store: GuardStore, owner: string, id: str
       if (rule && due) return `${rulePurchaseHref(rule, due)}&from=monitoring`;
       /* The rule was removed since: its company, a plain purchase. */
       const symbol = symbolOfIdentity(inbox.triggerId);
-      return symbol ? companyHref(symbol) : "/app/markets";
+      return symbol ? assetHrefOfRef(symbol) : "/app/markets";
     }
     const monitor = (await listMonitors(store, owner)).find((row) => row.id === inbox.monitorId);
     const href = monitor?.href ?? "/app/alerts";

@@ -4,6 +4,7 @@ import { join, relative } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 
+import { MONEY_COPY } from '../money/copy.ts'
 import { webHrefOf } from '../monitoring/deep-link.ts'
 import {
   CHANGES_PATH,
@@ -13,6 +14,7 @@ import {
   listsPath,
   MARKETS_TOOL_PATHS,
   MARKETS_TOOLS,
+  MONEY_PAGES,
   MORE_PAGES,
   placeDoors,
   PLACES_COPY,
@@ -38,15 +40,29 @@ function appFiles(dir = SRC) {
 
 const pathname = (path) => path.split('?')[0]
 
-test('«Ще» holds the web’s pages in the Owner’s order, in both languages', () => {
-  assert.deepEqual(MORE_PAGES, ['swap', 'bridge', 'send', 'receive', 'rewards', 'predictions'])
+test('«Ще» holds «Гроші» first, then the web’s pages in the Owner’s order, in both languages', () => {
+  assert.deepEqual(MONEY_PAGES, ['topUp', 'send', 'receive', 'link'])
+  assert.deepEqual(
+    MONEY_PAGES.map((page) => MONEY_COPY.uk.pages[page]),
+    ['Поповнити', 'Надіслати', 'Отримати', 'Посилання на оплату'],
+  )
+  assert.deepEqual(
+    MONEY_PAGES.map((page) => MONEY_COPY.en.pages[page]),
+    ['Top up', 'Send', 'Receive', 'Payment link'],
+  )
+  // Send, Receive and a payment link are the phone's own screens now (M31); the top-up is the phone's own sheet.
+  assert.deepEqual(DOOR_DESTINATIONS.topUp, { kind: 'sheet', sheet: 'top-up' })
+  assert.deepEqual(DOOR_DESTINATIONS.send, { kind: 'screen', path: '/money/send' })
+  assert.deepEqual(DOOR_DESTINATIONS.receive, { kind: 'screen', path: '/money/receive' })
+  assert.deepEqual(DOOR_DESTINATIONS.link, { kind: 'screen', path: '/money/receive?tab=link' })
+  assert.deepEqual(MORE_PAGES, ['swap', 'bridge', 'rewards', 'predictions'])
   assert.deepEqual(
     MORE_PAGES.map((page) => PLACES_COPY.uk.pages[page]),
-    ['Обмін', 'Міст', 'Надіслати', 'Отримати', 'Винагороди', 'Демо-прогнози'],
+    ['Обмін', 'Міст', 'Винагороди', 'Демо-прогнози'],
   )
   assert.deepEqual(
     MORE_PAGES.map((page) => PLACES_COPY.en.pages[page]),
-    ['Swap', 'Bridge', 'Send', 'Receive', 'Rewards', 'Demo predictions'],
+    ['Swap', 'Bridge', 'Rewards', 'Demo predictions'],
   )
 })
 
@@ -97,7 +113,7 @@ test('a door opens a route the router knows, a sheet, or a ryntra.io page — ne
     } else if (destination.kind === 'web') {
       assert.equal(webHrefOf(destination.path), `https://ryntra.io${destination.path}`, door)
     } else {
-      assert.equal(destination.sheet, 'receive')
+      assert.equal(destination.sheet, 'top-up')
     }
   }
   // The Academy has no page a customer can open yet: not a row until it has one (canon §0.0 rule 10).

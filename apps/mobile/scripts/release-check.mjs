@@ -61,6 +61,28 @@ check(
   paths.join(', '),
 )
 
+/* ---- permissions the app does not use (the store's review, versionCode 5) ---- */
+// The template's overlay and storage, and the biometrics androidx.biometric brings through expo-secure-store
+// (the session never asks for a fingerprint): declared by libraries, never used, removed from the manifest.
+const BLOCKED = [
+  'android.permission.SYSTEM_ALERT_WINDOW',
+  'android.permission.READ_EXTERNAL_STORAGE',
+  'android.permission.WRITE_EXTERNAL_STORAGE',
+  'android.permission.USE_BIOMETRIC',
+  'android.permission.USE_FINGERPRINT',
+]
+const blocked = app.android?.blockedPermissions ?? []
+const unblocked = BLOCKED.filter((name) => !blocked.includes(name))
+check('unused permissions blocked in app.json', unblocked.length === 0, unblocked.join(', ') || `${blocked.length} blocked`)
+const manifest = join(root, 'android/app/src/main/AndroidManifest.xml')
+if (existsSync(manifest)) {
+  const src = readFileSync(manifest, 'utf8')
+  const kept = BLOCKED.filter(
+    (name) => !new RegExp(`android:name="${name}"[^>]*tools:node="remove"`).test(src),
+  )
+  check('generated manifest removes them (run expo prebuild after a change)', kept.length === 0, kept.join(', '))
+}
+
 /* ---- signing ---- */
 check('release signing plugin registered', (app.plugins ?? []).includes(PLUGIN), PLUGIN)
 check('release signing plugin present with its guard', existsSync(join(root, PLUGIN)) && read(PLUGIN).includes(MARK))

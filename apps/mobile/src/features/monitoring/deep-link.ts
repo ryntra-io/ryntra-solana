@@ -43,7 +43,7 @@ const QUESTION_MAX = 2000
 
 /** The app's own routes a link may name directly — left as they are. */
 const NATIVE_PATHS =
-  /^\/(?:\(tabs\)(?:\/|$)|trade(?:\?|$)|plans(?:\/|$)|monitoring(?:\/|$)|asset\/|history(?:\?|$)|rewards(?:\?|$)|search(?:\?|$)|ryn(?:\?|$)|changes(?:\?|$)|lists(?:\?|$)|gallery(?:\?|$)|_sitemap(?:\?|$)|$)/
+  /^\/(?:\(tabs\)(?:\/|$)|trade(?:\?|$)|plans(?:\/|$)|monitoring(?:\/|$)|asset\/|history(?:\?|$)|results(?:\?|$)|rewards(?:\?|$)|search(?:\?|$)|ryn(?:\?|$)|changes(?:\?|$)|lists(?:\?|$)|money\/(?:send|receive)(?:\?|$)|launch(?:\/|\?|$)|gallery(?:\?|$)|_sitemap(?:\?|$)|$)/
 
 export type MapOptions = Readonly<{
   /** Carry the sum a link names — only for Ryntra's own handoffs, where the person wrote it (see above). */
@@ -196,8 +196,8 @@ function agentPathOf(name: string, params: URLSearchParams, options: MapOptions)
     case '/app/activity':
       return '/history'
     case '/app/results':
-      // Results live on each plan until the phone has its own Results screen (M13).
-      return '/plans'
+      // The phone's own Results screen (M13): the plans' and the rules' outcomes.
+      return '/results'
     case '/app/markets':
     case '/app/stocks':
       // Both are Markets on the web since one version: the companies first.
@@ -209,8 +209,10 @@ function agentPathOf(name: string, params: URLSearchParams, options: MapOptions)
     case '/app/rewards':
       return '/rewards'
     case '/app/receive':
-      // The wallet's own address, in «Ще»'s sheet.
-      return '/(tabs)/more?receive=1'
+      // «Отримати»: the address, and a payment link a tap away (M31).
+      return '/money/receive'
+    case '/app/send':
+      return '/money/send'
     case '/app/strategies/new': {
       const plan = params.get('plan')
       const draft = params.get('draft')
@@ -228,6 +230,11 @@ function agentPathOf(name: string, params: URLSearchParams, options: MapOptions)
     default:
       break
   }
+  // Ryntra Launch (M33): the form, «Мої лаунчі» and a token's page — the share link a creator posts opens here.
+  if (name === '/app/launch' || name === '/app/launch/new') return '/launch'
+  if (name === '/app/launch/mine') return '/launch/mine'
+  const launched = /^\/app\/launch\/([^/]+)$/.exec(name)
+  if (launched) return MINT.test(launched[1] ?? '') ? `/launch/${launched[1]}` : '/launch'
   const asset = /^\/app\/assets\/([^/]+)$/.exec(name)
   if (asset) return MINT.test(asset[1] ?? '') ? `/asset/${asset[1]}` : '/(tabs)/markets'
   const stock = /^\/app\/stocks\/([^/]+)$/.exec(name)

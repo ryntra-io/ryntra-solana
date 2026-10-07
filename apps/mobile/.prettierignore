@@ -13,3 +13,6 @@ src/uniwind-types.d.ts
 # The API client pinned by content from the web line (src/lib/api/v1/PIN.json) — never edited here
 /src/lib/api/v1/types.ts
 /src/lib/api/v1/client.ts
+
+# Launch moderation, copied by content from the web line (src/features/launch/moderation.ts)
+/src/features/launch/moderation.ts

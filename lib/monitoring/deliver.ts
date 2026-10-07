@@ -8,7 +8,7 @@
  */
 
 import { deliverToTelegramChannel } from "../account/notifications.ts";
-import { BUDGET_HREF, companyHref, dueOfIdentity, rulePurchaseHref, symbolOfIdentity } from "../autoinvest/links.ts";
+import { assetHrefOfRef, BUDGET_HREF, dueOfIdentity, rulePurchaseHref, symbolOfIdentity } from "../autoinvest/links.ts";
 import { readRule } from "../autoinvest/store.ts";
 import { reminderTelegramText } from "../autoinvest/words.ts";
 import type { GuardStore } from "../guard/store.ts";
@@ -62,7 +62,7 @@ async function reminderMessage(store: GuardStore, inbox: InboxRecord): Promise<R
   const rule = await readRule(store, inbox.owner, inbox.subject.id).catch(() => null);
   const due = dueOfIdentity(inbox.triggerId, inbox.subject.id);
   const symbol = symbolOfIdentity(inbox.triggerId);
-  const href = `${APP}${rule && due ? rulePurchaseHref(rule, due) : symbol ? companyHref(symbol) : inbox.href}`;
+  const href = `${APP}${rule && due ? rulePurchaseHref(rule, due) : symbol ? assetHrefOfRef(symbol) : inbox.href}`;
   const words = inbox.text?.[inbox.locale] ?? { title: inbox.title, reason: inbox.reason };
   return { href, text: reminderTelegramText(words, href), button: inbox.cta };
 }

@@ -14,9 +14,9 @@ export async function generateMetadata() {
 }
 
 /**
- * «Боти → Каталог»: what can be set up today. Since «Меню 1»
- * — «Регулярна купівля» on a company's page (for any token with liquidity once
- * «Регулярна купівля для всього» is live) and the trade plan. Every other bot
+ * «Боти → Каталог»: what can be set up today — «Регулярна купівля» on any
+ * token with liquidity (1.31.0: «Регулярно» beside «Ринок» in every token's
+ * order, a company's sheet on its page) and the trade plan. Every other bot
  * arrives here when it is on production — never before (rule 10).
  */
 export default async function BotsCatalogPage() {
@@ -43,8 +43,8 @@ export default async function BotsCatalogPage() {
               <p className={styles.botScope}>{word("recurringFor")}</p>
             </div>
             <div className={styles.botActions}>
-              <Link className="rw-btn rw-btn--primary" href="/app/markets?tab=stocks" prefetch={false}>
-                <span>{word("pickCompany")}</span>
+              <Link className="rw-btn rw-btn--primary" href="/app/markets" prefetch={false}>
+                <span>{word("pickToken")}</span>
                 <ArrowRight size={16} weight="bold" aria-hidden="true" />
               </Link>
               <Link className="rw-btn" href="/app/bots" prefetch={false}>

@@ -21,7 +21,7 @@ import { requireWalletProof } from "../../api/v1/proof.ts";
 import type { PlanReview } from "../../api/v1/contract.ts";
 import { isTokenPlanAsset } from "../../api/v1/contract.ts";
 import { judgeRuleOrder } from "../../autoinvest/model.ts";
-import { conditionFactsOf as ruleConditionFacts, ledgerOf, remainingFor } from "../../autoinvest/service.ts";
+import { ledgerOf, remainingFor, ruleOrderFactsOf } from "../../autoinvest/service.ts";
 import { listRuleRecords, readBudgetRecord, readRule } from "../../autoinvest/store.ts";
 import { loadIssuerKey } from "../../agent-control/issuer.ts";
 import { readsOf } from "../../evidence/conditions.ts";
@@ -114,9 +114,12 @@ const intentTerms: PipelineStep<SwapPrepareContext, SwapRefusal> = {
       /* 1.13.0: the month's budget, from the same History — two reminders open at once cannot spend past the person's ceiling. */
       const budget = ruleRecord ? await readBudgetRecord(store, input.taker) : null;
       const remaining = budget ? remainingFor(budget, await listRuleRecords(store, input.taker), ruleRows, Date.now()) : null;
-      /* 1.18.0: a rule with a price condition is judged on the server's own row of its company, read now — a row nobody could read never passes. */
-      const conditionFacts = ruleRecord?.priceCondition ? await ruleConditionFacts(ruleRecord.asset.mint) : null;
-      const judged = judgeRuleOrder(ruleRecord, origin.rule, input, ruleRows, Date.now(), remaining, conditionFacts);
+      /* 1.18.0: a rule with a price condition is judged on the server's own row of its company, read now — a row nobody could read never passes.
+         1.31.0: a token's rule on the venue's own figures read now — its price against the price when the rule was turned on, and the floor. */
+      const facts = ruleRecord ? await ruleOrderFactsOf(ruleRecord) : { condition: null, floor: null, flagged: false };
+      /* A token the venue's audit flagged, or Ryntra stopped supporting, since its rule was written is bought by no rule. */
+      if (facts.flagged) return refuse(409, "ASSET_NOT_OFFERED", "The venue's own audit flags this token, or Ryntra no longer supports it; a rule does not buy it.");
+      const judged = judgeRuleOrder(ruleRecord, origin.rule, input, ruleRows, Date.now(), remaining, facts.condition, facts.floor);
       if (!judged.ok) return refuse(judged.status, judged.code, judged.message);
     }
     return NEXT;

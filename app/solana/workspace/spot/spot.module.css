@@ -900,6 +900,75 @@
   font-weight: 600;
 }
 
+/* «Ринок · Регулярно» (1.31.0): the order types as one quiet segmented chip — the chosen one inked, the other muted; never orange. */
+.orderTypes {
+  display: inline-grid;
+  grid-auto-flow: column;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-chip);
+}
+
+.orderTypeTab {
+  min-height: 40px;
+  padding: 0 var(--ry-s4);
+  border: 0;
+  border-radius: var(--ry-r-focus-md);
+  background: transparent;
+  color: var(--ry-muted);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 120ms ease-out, color 120ms ease-out;
+}
+
+/* A finger's size on a phone. */
+@media (max-width: 720px) {
+  .orderTypeTab {
+    min-height: 44px;
+  }
+}
+
+/* Held by the rule's purchase: the sum and the sale read as not for changing. */
+.amountInput:disabled,
+.side:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.orderTypeTab:hover:not(:disabled) {
+  color: var(--ry-text);
+}
+
+.orderTypeTab[aria-selected="true"] {
+  background: var(--ry-elevated);
+  color: var(--ry-text);
+}
+
+.orderTypeTab:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+/* The rule's flow inside the ticket, and the line a guest or an unproven wallet reads in its place. */
+.recurringPanel {
+  display: grid;
+}
+
+.recurringGuest {
+  display: grid;
+  gap: var(--ry-s3);
+}
+
+.recurringGuest p {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+}
+
 .amountBox {
   display: grid;
   gap: var(--ry-s3);
@@ -1230,7 +1299,8 @@
   color: var(--ry-text);
 }
 
-.ruleReminder a {
+.ruleReminder a,
+.ruleReminder button {
   display: inline-flex;
   align-items: center;
   justify-self: start;
@@ -1243,6 +1313,16 @@
   text-underline-offset: 3px;
 }
 
+/* The rule's purchase in place, on a token's own ticket: a button that reads as the link beside it. */
+.ruleReminder button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.ruleReminder button:hover,
 .ruleReminder a:hover {
   text-decoration-color: var(--ry-text);
 }

@@ -266,7 +266,7 @@ export function destinationOfCard(card: AgentCard): string | null {
 export type HandoffWords =
   | Readonly<{ kind: 'server' }>
   | Readonly<{ kind: 'asset'; symbol: string | null }>
-  | Readonly<{ kind: 'plans' | 'stocks' | 'markets' | 'portfolio' | 'history' | 'inbox' }>
+  | Readonly<{ kind: 'plans' | 'results' | 'stocks' | 'markets' | 'portfolio' | 'history' | 'inbox' }>
 
 export type HandoffView = Readonly<{
   handoff: AgentHandoff
@@ -312,6 +312,7 @@ export function handoffView(handoff: AgentHandoff, cards: readonly AgentCard[]):
 function wordsFor(path: string, cards: readonly AgentCard[]): HandoffWords {
   const bare = path.split('?')[0] ?? path
   if (bare === '/plans') return { kind: 'plans' }
+  if (bare === '/results') return { kind: 'results' }
   if (bare === '/(tabs)/portfolio') return { kind: 'portfolio' }
   if (bare === '/history') return { kind: 'history' }
   if (bare === '/monitoring') return { kind: 'inbox' }

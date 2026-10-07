@@ -135,6 +135,7 @@ const EN = {
     portfolio: 'Open Portfolio',
     history: 'Open History',
     inbox: 'Open alerts',
+    results: 'Open Results',
   },
   openAsset: (symbol: string | null) => (symbol ? `Open ${symbol}` : 'Open the asset'),
   // the doors into the conversation from elsewhere
@@ -265,6 +266,7 @@ const UK: AgentCopy = {
     portfolio: 'Відкрити портфель',
     history: 'Відкрити історію',
     inbox: 'Відкрити сповіщення',
+    results: 'Відкрити результати',
   },
   openAsset: (symbol) => (symbol ? `Відкрити ${symbol}` : 'Відкрити актив'),
   askRyn: 'Спитати Ryntra',

@@ -84,3 +84,22 @@ export function deferralLine(check: PriceCheck, name: string, nowMs: number, tim
   }
   return lang === "uk" ? `${name} — зараз немає орієнтира` : `${name} — no reference right now`;
 }
+
+/**
+ * A token's condition while its rule is written (1.31.0): the reference is
+ * the price now, kept when the rule is turned on, so the line says the
+ * ceiling it makes — «Орієнтир — ціна зараз $150,00: правило не купить
+ * дорожче за $157,50».
+ */
+export function anchorNowLine(priceUsd: number, limitPct: number, lang: RuleLocale): string {
+  const ceiling = priceWord(priceUsd * (1 + limitPct / 100), lang);
+  return lang === "uk"
+    ? `Орієнтир — ціна зараз ${priceWord(priceUsd, "uk")}: правило не купить дорожче за ${ceiling}.`
+    : `The reference is the price now, ${priceWord(priceUsd, "en")}: the rule won't buy above ${ceiling}.`;
+}
+
+/** A token rule's anchor as it stands: «$150,00 · до $157,50» · «$150.00 · up to $157.50». */
+export function anchorStandingLine(referenceUsd: number, limitPct: number, lang: RuleLocale): string {
+  const ceiling = priceWord(referenceUsd * (1 + limitPct / 100), lang);
+  return lang === "uk" ? `${priceWord(referenceUsd, "uk")} · купує до ${ceiling}` : `${priceWord(referenceUsd, "en")} · buys up to ${ceiling}`;
+}

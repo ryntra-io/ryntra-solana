@@ -43,7 +43,8 @@ import {
   RULE_PAYMENT_MODES,
   RULE_STATUSES,
   RuleConditionCheckSchema,
-  RulePriceConditionSchema,
+  RuleFloorCheckSchema,
+  RulePriceConditionStateSchema,
   RuleScheduleSchema,
   RuleTriggerSchema,
 } from "../api/v1/contract.ts";
@@ -62,7 +63,7 @@ export const StoredOccurrenceSchema = z
   .object({
     dueAt: Iso,
     openUntil: Iso,
-    /** `deferred` (1.18.0): the price condition held the purchase back; the tick judges it again while the occurrence is open. */
+    /** `deferred` (1.18.0): the price condition held the purchase back — 1.31.0: or the floor of a token of the venue's list; the tick judges it again while the occurrence is open. */
     state: z.enum(["due", "bought", "missed", "held", "deferred"]),
     remindedAt: Iso.nullable(),
     signature: z.string().min(64).max(128).nullable(),
@@ -75,6 +76,8 @@ export const StoredOccurrenceSchema = z
     /** A «З кожної оплати» occurrence's own sum and how many events gathered it (1.19.0); null — the rule's sum — on every other. */
     amountUsd: z.number().finite().positive().nullable().default(null),
     events: z.number().int().min(0).nullable().default(null),
+    /** The floor's judgement that opened or deferred it, on a token of the venue's list (1.31.0); null on a company's rule and on every occurrence written before it. */
+    floor: RuleFloorCheckSchema.nullable().default(null),
   })
   .strict();
 export type StoredOccurrence = z.output<typeof StoredOccurrenceSchema>;
@@ -152,8 +155,8 @@ export const AutoinvestRuleRecordSchema = z
     dip: StoredDipSchema.nullable().default(null),
     /** A «З кожної оплати» rule's (1.19.0); absent — null — on every rule written before it. */
     payments: StoredPaymentsSchema.nullable().default(null),
-    /** «Умова ціни» (1.18.0); absent — null, no condition — on every rule written before it. */
-    priceCondition: RulePriceConditionSchema.nullable().default(null),
+    /** «Умова ціни» (1.18.0); absent — null, no condition — on every rule written before it. 1.31.0: on a token of the venue's list, with the price it stands against. */
+    priceCondition: RulePriceConditionStateSchema.nullable().default(null),
     status: z.enum(RULE_STATUSES),
     /** The language a one-language channel (Telegram) carries the reminder in: the one the rule was written in. */
     locale: z.enum(["en", "uk"]),

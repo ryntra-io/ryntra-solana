@@ -103,10 +103,12 @@ export function usdWord(amount: number, locale: RuleLocale): string {
   return `$${figure}`;
 }
 
-/** A price per unit: «$335,95» · «$335.95»; under a dollar, four places. */
+/** A price per unit: «$335,95» · «$335.95»; under a dollar, four places; under a cent (a meme, 1.31.0), four significant digits — «$0.00001834». */
 export function priceWord(usd: number, locale: RuleLocale): string {
+  const tag = locale === "uk" ? "uk-UA" : "en-US";
+  if (usd > 0 && usd < 0.01) return `$${new Intl.NumberFormat(tag, { maximumSignificantDigits: 4, minimumSignificantDigits: 2 }).format(usd)}`;
   const places = usd >= 1 ? 2 : 4;
-  return `$${new Intl.NumberFormat(locale === "uk" ? "uk-UA" : "en-US", { minimumFractionDigits: places, maximumFractionDigits: places }).format(usd)}`;
+  return `$${new Intl.NumberFormat(tag, { minimumFractionDigits: places, maximumFractionDigits: places }).format(usd)}`;
 }
 
 /** A due instant on the rule's own clock: «чт, 24 вер. о 19:00» · «Thu, Sep 24 at 19:00». */

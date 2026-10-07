@@ -185,8 +185,9 @@ test('a market, an asset passport and a stock open the asset or the list; Portfo
   assert.deepEqual(mapDeepLink('/app/stocks/NVDAx'), { path: '/lists?tab=stock', kind: 'native' })
   assert.deepEqual(mapDeepLink('/app/portfolio'), { path: '/(tabs)/portfolio', kind: 'native' })
   assert.deepEqual(mapDeepLink('/app/activity'), { path: '/history', kind: 'native' })
-  // Until the phone's own Results screen (M13), a plan's results are on the plan.
-  assert.deepEqual(mapDeepLink('/app/results'), { path: '/plans', kind: 'native' })
+  // Results are the phone's own screen (M13).
+  assert.deepEqual(mapDeepLink('/app/results'), { path: '/results', kind: 'native' })
+  assert.deepEqual(mapDeepLink('ryntra://results?plan=abc'), { path: '/results?plan=abc', kind: 'native' })
 })
 
 test("the builder handoffs carry Ryntra's draft, a market rule and — from Ryntra only — a budget", () => {
@@ -256,7 +257,9 @@ test('one version: every address «Профі» owned opens its place a tap deep
   assert.deepEqual(mapDeepLink('https://ryntra.io/app/trends'), { path: '/lists?tab=crypto', kind: 'native' })
   assert.deepEqual(mapDeepLink('https://ryntra.io/app/swap'), { path: '/trade?mode=swap', kind: 'native' })
   assert.deepEqual(mapDeepLink('https://ryntra.io/app/rewards'), { path: '/rewards', kind: 'native' })
-  assert.deepEqual(mapDeepLink('https://ryntra.io/app/receive'), { path: '/(tabs)/more?receive=1', kind: 'native' })
+  // «Гроші» are the phone's own (M31): Receive and Send open their screens.
+  assert.deepEqual(mapDeepLink('https://ryntra.io/app/receive'), { path: '/money/receive', kind: 'native' })
+  assert.deepEqual(mapDeepLink('https://ryntra.io/app/send'), { path: '/money/send', kind: 'native' })
   // Markets on one of M2's lists — the address «Профі»'s Markets answered — is the lists screen on that list.
   assert.deepEqual(mapDeepLink('ryntra:///(tabs)/markets?tab=watchlist'), {
     path: '/lists?tab=watchlist',
@@ -268,11 +271,11 @@ test('one version: every address «Профі» owned opens its place a tap deep
     kind: 'native',
   })
   // The screens one version adds are the app's own routes.
-  for (const own of ['/changes', '/lists?tab=stock', '/lists']) {
+  for (const own of ['/changes', '/lists?tab=stock', '/lists', '/money/send', '/money/receive?tab=link']) {
     assert.deepEqual(mapDeepLink(`ryntra://${own.slice(1)}`), { path: own, kind: 'native' })
   }
   // A page only the web has built still goes to the resolver, which opens ryntra.io and says so.
-  for (const web of ['/app/bridge', '/app/send', '/app/predictions']) {
+  for (const web of ['/app/bridge', '/app/predictions']) {
     assert.deepEqual(mapDeepLink(`https://ryntra.io${web}`), {
       path: `/monitoring/open?href=${encodeURIComponent(web)}`,
       kind: 'web',
@@ -290,4 +293,15 @@ test('an issuer event’s own link opens the resolver on the token’s swap or s
   // Anything else on a stock's path is the Stocks list, as before; a symbol that is not one never reaches the resolver.
   assert.equal(mapDeepLink('https://ryntra.io/app/stocks/SPACEX?convert=yes').path, '/lists?tab=stock')
   assert.equal(mapDeepLink('https://ryntra.io/app/stocks/%3Cscript%3E?convert=1').path, '/lists?tab=stock')
+})
+
+test('a Launch link opens the phone’s own Launch: the form, «Мої лаунчі» and a token’s page (M33)', () => {
+  const mint = 'So11111111111111111111111111111111111111112'
+  assert.deepEqual(mapDeepLink('https://ryntra.io/app/launch/new'), { path: '/launch', kind: 'native' })
+  assert.deepEqual(mapDeepLink('/app/launch'), { path: '/launch', kind: 'native' })
+  assert.deepEqual(mapDeepLink('/app/launch/mine'), { path: '/launch/mine', kind: 'native' })
+  assert.deepEqual(mapDeepLink(`https://ryntra.io/app/launch/${mint}`), { path: `/launch/${mint}`, kind: 'native' })
+  assert.deepEqual(mapDeepLink('/app/launch/not-a-mint!'), { path: '/launch', kind: 'native' })
+  assert.deepEqual(mapDeepLink(`/launch/${mint}`), { path: `/launch/${mint}`, kind: 'native' })
+  assert.deepEqual(mapDeepLink('/launch/mine'), { path: '/launch/mine', kind: 'native' })
 })

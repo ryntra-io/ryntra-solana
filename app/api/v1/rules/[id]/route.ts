@@ -4,6 +4,7 @@ import { requireWalletProof } from "@/lib/api/v1/proof";
 import { deleteRule, getRule } from "@/lib/autoinvest/service";
 import { getGuardRuntime } from "@/lib/guard/runtime";
 import { storeSurvivesColdStart } from "@/lib/guard/store";
+import { readsEnabledReference, ruleForReader } from "@/lib/autoinvest/wire";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,7 +20,7 @@ export async function GET(request: Request, { params }: Readonly<{ params: Promi
   if (!proof.ok) return proof.response;
   const read = await getRule(getGuardRuntime().store, proof.address, id);
   if (!read.ok) return apiFailure(read.code, read.message);
-  return apiJson({ rule: read.rule } satisfies RuleResponse);
+  return apiJson({ rule: ruleForReader(read.rule, readsEnabledReference(proof.carrier, request.headers)) } satisfies RuleResponse);
 }
 
 export async function DELETE(request: Request, { params }: Readonly<{ params: Promise<{ id: string }> }>) {

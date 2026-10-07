@@ -3,14 +3,21 @@
     "name": "Ryntra",
     "slug": "ryntra",
     "scheme": "ryntra",
-    "version": "1.9.0",
+    "version": "1.10.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "automatic",
     "backgroundColor": "#080D13",
     "android": {
       "package": "io.ryntra.app",
-      "versionCode": 4,
+      "versionCode": 5,
+      "blockedPermissions": [
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT"
+      ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-foreground.png",
         "monochromeImage": "./assets/images/adaptive-monochrome.png",
@@ -31,6 +38,11 @@
               "scheme": "https",
               "host": "ryntra.io",
               "pathPrefix": "/app/strategies"
+            },
+            {
+              "scheme": "https",
+              "host": "ryntra.io",
+              "pathPrefix": "/app/launch"
             }
           ],
           "category": [
@@ -77,6 +89,21 @@
       ],
       "expo-image",
       "expo-secure-store",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Ryntra uses the camera to scan a wallet address or a payment code.",
+          "recordAudioAndroid": false,
+          "barcodeScannerEnabled": true
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Ryntra uses the camera to take a picture for a token you launch.",
+          "microphonePermission": false
+        }
+      ],
       [
         "expo-notifications",
         {

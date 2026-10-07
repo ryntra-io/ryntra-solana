@@ -2,14 +2,15 @@
 
 import { CheckCircle, X } from "@phosphor-icons/react";
 import Link from "next/link";
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 
 import { browserTimeZone, deferredNow, firstDue, lastSettled, openingSchedule, purchaseSumUsd, reminderOpenNow, RULE_MAX_USD, ruleZone, timeOfInput, withCadence } from "@/app/app/invest/autoinvest-model";
 import { BudgetRow } from "@/app/app/invest/budget-row";
 import { dollars, MIN_BUY_USD, parseDollars } from "@/app/app/invest/company-model";
 import { buyByRuleWord, investWords, numberLocale, routeMinimumLine, setAsideExample, setMinimumWord, type InvestWord } from "@/app/app/invest/invest-words";
-import { conditionNowLine, conditionShort, deferralLine } from "@/app/app/invest/price-condition-view";
+import { anchorNowLine, anchorStandingLine, conditionNowLine, conditionShort, deferralLine } from "@/app/app/invest/price-condition-view";
 import { useConditionFacts } from "@/app/app/invest/use-condition-facts";
+import { useRuleAsset } from "@/app/app/invest/use-rule-asset";
 import { useQuoteRoute, useRouteMinimum } from "@/app/app/invest/use-route-minimum";
 import type { RuleWrite } from "@/app/app/invest/use-rules";
 import { Help } from "@/app/shell/help";
@@ -17,8 +18,9 @@ import type { WorkspaceLocale } from "@/app/shell/locale";
 import { useSolanaConnection } from "@/app/solana/workspace/connection";
 import { MarketIcon } from "@/app/solana/workspace/spot/market-list";
 import { useWalletProof } from "@/app/solana/workspace/wallet-proof";
-import type { AutoinvestRule, RuleBudget, RuleCreateRequest, RuleKind, RuleOccurrence, RulePaymentEvent, RuleStatus } from "@/lib/api/v1/contract";
+import type { AutoinvestRule, RuleAssetRead, RuleBudget, RuleCreateRequest, RuleKind, RuleOccurrence, RulePaymentEvent, RuleStatus } from "@/lib/api/v1/contract";
 import { dipTriggerUsd } from "@/lib/autoinvest/dip";
+import { ageWord, floorLine, floorMetLine, isListedToken } from "@/lib/autoinvest/floor";
 import {
   PAYMENT_FIXED_MAX_USD,
   PAYMENT_FIXED_MIN_USD,
@@ -73,6 +75,16 @@ import company from "./company.module.css";
  * picks 2 %, 10 % or «Без умови», with how the price stands now. A rule that
  * has it says so, and a purchase it deferred says why — the reason, the
  * figure and the data's time.
+ *
+ * **Any token with liquidity** (1.31.0): the same sheet on a coin, a meme or
+ * a new token reads what a rule on it would stand on from the server
+ * (`useRuleAsset`) — the floor, and for a meme or a new token the facts of
+ * its risk, said before the button; a token under the floor, flagged by the
+ * venue's audit or unread offers no «Увімкнути». A token's «Умова ціни»
+ * stands against the price when the rule is turned on and opens on «Без
+ * умови»: a fixed point is a ceiling, and a recurring buy keeps buying unless
+ * the person sets one. The sheet also stands inside Spot's order
+ * (`variant: "ticket"`): no head, no close — the ticket's own tab leaves it.
  */
 
 /** A new rule — on a sum (a receipt's), and how often it opens: daily unless said (a receipt's «Купувати щотижня» says weekly) — or an existing rule to manage. */
@@ -135,6 +147,12 @@ export type AutoinvestSheetProps = Readonly<{
   onBuyNow: (rule: AutoinvestRule, occurrence: RuleOccurrence) => void;
   /** 1.19.0: «Мій рахунок» — a counted payment's other side is the person's own account; absent where the page cannot write it. */
   onMarkOwn?: (signature: string) => Promise<RuleWrite>;
+  /** 1.31.0: a token of the venue's list — a coin, a meme, a new token — rather than a company; the sheet reads its floor and its facts of risk. */
+  token?: boolean;
+  /** 1.31.0: `ticket` stands inside Spot's order — no head and no close; `sheet` (the default) a dialog over the page. */
+  variant?: "sheet" | "ticket";
+  /** What stands in the one action's place while no wallet is connected — the ticket's own connect row. */
+  connectAction?: ReactNode;
 }>;
 
 export function AutoinvestSheet(props: AutoinvestSheetProps) {
@@ -198,6 +216,54 @@ function lastWord(state: RuleOccurrence["state"]): InvestWord {
 /** The limits the sheet offers, and «Без умови». */
 const CONDITION_CHOICES: readonly (number | null)[] = [...PRICE_CONDITION_PRESETS_PCT, null];
 
+/**
+ * The facts of a meme's or a new token's risk, before the button: its age,
+ * liquidity, the ten largest holders, who can still mint or freeze, the
+ * organic score and Jupiter's list — each a fact as the venue states it,
+ * never a verdict.
+ */
+function RiskFacts({ read, locale, compact = false }: Readonly<{ read: RuleAssetRead; locale: WorkspaceLocale; compact?: boolean }>) {
+  const word = investWords(locale);
+  const lang = locale === "uk" ? "uk" : "en";
+  const numbers = numberLocale(locale);
+  const risk = read.risk;
+  if (!risk) return null;
+  const pct = (value: number) => `${new Intl.NumberFormat(numbers, { maximumFractionDigits: value < 10 ? 1 : 0 }).format(value)}${lang === "uk" ? " %" : "%"}`;
+  /* Liquidity as the market's header says it: «$7,2 млн» · «$7.2M». */
+  const usd = (value: number) => `$${new Intl.NumberFormat(numbers, { notation: "compact", maximumFractionDigits: 1 }).format(value)}`;
+  const authority = (disabled: boolean | null) => (disabled === null ? word("riskNotStated") : disabled ? word("riskClosed") : word("riskOpen"));
+  /* In Spot the market's header already states the age, the liquidity and the top holders: the ticket keeps only what it lacks. */
+  const rows: readonly (readonly [string, string, "risk" | undefined])[] = [
+    ...(compact
+      ? []
+      : ([
+          [word("riskAge"), risk.ageHours === null ? word("riskNotStated") : ageWord(risk.ageHours, lang), undefined],
+          [word("riskLiquidity"), risk.liquidityUsd === null ? word("riskNotStated") : usd(risk.liquidityUsd), undefined],
+          [word("riskTopHolders"), risk.topHoldersPct === null ? word("riskNotStated") : pct(risk.topHoldersPct), risk.topHoldersPct !== null && risk.topHoldersPct >= 50 ? "risk" : undefined],
+        ] as const)),
+    [word("riskMint"), authority(risk.mintAuthorityDisabled), risk.mintAuthorityDisabled === false ? "risk" : undefined],
+    [word("riskFreeze"), authority(risk.freezeAuthorityDisabled), risk.freezeAuthorityDisabled === false ? "risk" : undefined],
+    [word("riskOrganic"), risk.organicScore === null ? word("riskNotStated") : `${Math.round(risk.organicScore)} / 100`, undefined],
+    [word("riskVerified"), risk.verified ? word("riskVerifiedYes") : word("riskVerifiedNo"), risk.verified ? undefined : "risk"],
+  ];
+  return (
+    <section className={company.riskFacts} aria-label={word("riskFacts")} data-risk-facts>
+      <p className={company.limitLabel}>{word("riskFacts")}</p>
+      <dl className={company.riskGrid}>
+        {rows.map(([label, value, tone]) => (
+          <div key={label}>
+            <dt>{label}</dt>
+            <dd translate="no" data-caution={tone === "risk" ? "true" : undefined}>
+              {value}
+            </dd>
+          </div>
+        ))}
+      </dl>
+      <p className={company.ruleNote}>{word("riskSource")}</p>
+    </section>
+  );
+}
+
 function AutoinvestFlow({
   mode,
   mint,
@@ -221,6 +287,9 @@ function AutoinvestFlow({
   onEditBudget,
   onBuyNow,
   onMarkOwn,
+  token: tokenProp = false,
+  variant = "sheet",
+  connectAction = null,
 }: AutoinvestSheetProps & { titleId: string; onBusy: (busy: boolean) => void }) {
   const word = investWords(locale);
   const numbers = numberLocale(locale);
@@ -236,6 +305,12 @@ function AutoinvestFlow({
     const timer = window.setInterval(() => setNowMs(Date.now()), 20_000);
     return () => window.clearInterval(timer);
   }, []);
+  /* A token of the venue's list (1.31.0): what a rule on it would stand on, read from the server while a rule is being written. */
+  const token = mode.kind === "manage" ? isListedToken(mode.rule.asset) : tokenProp;
+  const tokenRead = useRuleAsset(mint, token && mode.kind === "compose");
+  const tokenFacts = tokenRead.read;
+  /* A token's reference is its price now, fresh from the read — the price a fall counts from and a condition stands against. */
+  const tokenPrice = tokenFacts?.priceUsd ?? null;
   const [kind, setKind] = useState<RuleKind>("schedule");
   const [dropPct, setDropPct] = useState<number>(DEFAULT_DROP);
   /* «З кожної оплати»: the mode and its one figure — the round-up to $1 unless the person picks another. */
@@ -252,11 +327,12 @@ function AutoinvestFlow({
    * the company's row (Home's «Додати правило») reads it, and turns nothing
    * on until it knows whether there is a reference to offer.
    */
-  const [limitPct, setLimitPct] = useState<number | null>(conditionReference === null ? null : PRICE_CONDITION_DEFAULT_PCT);
-  const conditionRead = useConditionFacts(mint, conditionReference !== null && (mode.kind === "compose" || mode.rule.priceCondition !== null), conditionFacts);
+  /* A token opens on «Без умови»: its reference is a fixed point, so a limit is a ceiling the person sets on purpose. */
+  const [limitPct, setLimitPct] = useState<number | null>(token || conditionReference === null ? null : PRICE_CONDITION_DEFAULT_PCT);
+  const conditionRead = useConditionFacts(mint, !token && conditionReference !== null && (mode.kind === "compose" || mode.rule.priceCondition !== null), conditionFacts);
   const conditionFresh = conditionRead.facts;
-  const reference: PriceReference | null = conditionReference ?? conditionFresh?.reference ?? null;
-  const referencePending = conditionReference === undefined && conditionRead.status !== "ready" && conditionRead.status !== "failed";
+  const reference: PriceReference | null = token ? (tokenPrice !== null ? "enabled" : null) : (conditionReference ?? conditionFresh?.reference ?? null);
+  const referencePending = token ? tokenRead.status === "idle" || tokenRead.status === "loading" : conditionReference === undefined && conditionRead.status !== "ready" && conditionRead.status !== "failed";
   const [amountText, setAmountText] = useState(String(mode.kind === "compose" && mode.amountUsd !== null ? Math.max(MIN_BUY_USD, Math.round(mode.amountUsd * 100) / 100) : RULE_DEFAULT_USD));
   /* «Щодня · $1» unless the sheet was opened for another cadence: «щодня по $1» is two taps. */
   const [schedule, setSchedule] = useState<RuleSchedule>(() => openingSchedule(Date.now(), browserTimeZone(), mode.kind === "compose" ? mode.cadence : undefined));
@@ -303,7 +379,10 @@ function AutoinvestFlow({
     if (kind === "payments" && found !== null && found > thresholdUsd) setThresholdUsd(found);
   }, [kind, routeMinimum, thresholdUsd]);
 
-  const head = (title: string) => (
+  const ticket = variant === "ticket";
+  const bodyClass = ticket ? `${company.sheetBody} ${company.ticketBody}` : company.sheetBody;
+  const head = (title: string) =>
+    ticket ? null : (
     <div className={company.sheetHead}>
       <span className={company.grab} aria-hidden="true" />
       <MarketIcon mint={mint} icon={icon} symbol={name} size={32} className={company.sheetLogo} />
@@ -331,7 +410,7 @@ function AutoinvestFlow({
   if (made) {
     const next = made.nextDueAt && made.schedule ? dueWords(Date.parse(made.nextDueAt), made.schedule.timeZone, lang) : null;
     return (
-      <div className={company.sheetBody} data-sheet="autoinvest-on">
+      <div className={bodyClass} data-sheet="autoinvest-on">
         {head(`${word("autoinvest")} · ${name}`)}
         <div className={company.receipt} data-tone="matched" role="status">
           <span className={company.receiptMark} aria-hidden="true">
@@ -340,7 +419,13 @@ function AutoinvestFlow({
           <p className={company.receiptTitle}>{word("autoinvestOn")}</p>
           <p className={company.receiptSub}>{ruleSentence(made, name, lang)}</p>
           {next ? <p className={company.receiptWatch}>{`${word("firstPurchase")}: ${next}`}</p> : null}
-          {made.priceCondition ? <p className={company.receiptWatch} translate="no">{`${word("priceCondition")}: ${conditionShort(made.priceCondition.limitPct, reference, lang)}`}</p> : null}
+          {made.priceCondition ? (
+            <p className={company.receiptWatch} translate="no">
+              {typeof made.priceCondition.referenceUsd === "number"
+                ? `${word("priceCondition")}: ${anchorStandingLine(made.priceCondition.referenceUsd, made.priceCondition.limitPct, lang)}`
+                : `${word("priceCondition")}: ${conditionShort(made.priceCondition.limitPct, reference, lang)}`}
+            </p>
+          ) : null}
           {made.dip ? <p className={company.receiptWatch} translate="no">{`${word("remindAt")} ${priceWord(made.dip.triggerUsd, lang)} ${word("orLower")}`}</p> : null}
           {made.payments ? <p className={company.receiptWatch} translate="no">{`${word("remindFrom")} ${usdWord(made.amountUsd, lang)} · ${word("countingSince")} ${dueWords(Date.parse(made.payments.since), made.payments.timeZone, lang)}`}</p> : null}
         </div>
@@ -379,13 +464,25 @@ function AutoinvestFlow({
       const result = await run();
       setChanging(false);
       if (!result.ok) {
-        setFailure(result.code === "UNAVAILABLE" && rule.dip ? word("priceUnknownNow") : word("ruleChangeFailed"));
+        setFailure(
+          result.code === "RULE_LIQUIDITY_LOW"
+            ? word("floorRefusesTurnOn")
+            : result.code === "ASSET_UNCONFIRMED" && token
+              ? word("tokenNotSupported")
+              : result.code === "UNAVAILABLE" && (rule.dip || token)
+                ? token
+                  ? word("tokenUnreadable")
+                  : word("priceUnknownNow")
+                : word("ruleChangeFailed"),
+        );
         return;
       }
       after?.();
     };
+    /* A token's purchase held back by its floor says so first: a thin pool is the reason whatever the price says. */
+    const floorHeld = deferred?.floor && deferred.floor.verdict !== "met" ? deferred.floor : null;
     return (
-      <div className={company.sheetBody} data-sheet="autoinvest-rule">
+      <div className={bodyClass} data-sheet="autoinvest-rule">
         {head(`${word("autoinvest")} · ${name}`)}
         <div className={company.ruleSummary}>
           {/* A «З кожної оплати» rule's figure is what it has gathered; its minimum is the line under it. */}
@@ -429,11 +526,21 @@ function AutoinvestFlow({
           )}
           {rule.priceCondition ? (
             <div>
-              <dt>{word("priceCondition")}</dt>
-              <dd translate="no">{conditionShort(rule.priceCondition.limitPct, reference, lang)}</dd>
+              <dt>{typeof rule.priceCondition.referenceUsd === "number" ? word("priceWhenOn") : word("priceCondition")}</dt>
+              <dd translate="no">
+                {typeof rule.priceCondition.referenceUsd === "number" ? anchorStandingLine(rule.priceCondition.referenceUsd, rule.priceCondition.limitPct, lang) : conditionShort(rule.priceCondition.limitPct, reference, lang)}
+              </dd>
             </div>
           ) : null}
-          {deferred?.condition ? (
+          {floorHeld ? (
+            <div data-deferral={`floor-${floorHeld.verdict}`}>
+              <dt>{word("purchaseDeferred")}</dt>
+              <dd translate="no">
+                {floorLine(floorHeld, "", lang)}
+                <span>{`${word("checksAgainUntil")} ${dueWords(Date.parse(deferred?.openUntil ?? ""), zone, lang)}`}</span>
+              </dd>
+            </div>
+          ) : deferred?.condition ? (
             <div data-deferral={deferred.condition.verdict}>
               <dt>{word("purchaseDeferred")}</dt>
               <dd translate="no">
@@ -494,7 +601,8 @@ function AutoinvestFlow({
               <button type="button" className="rw-btn rw-btn--primary" disabled={changing} onClick={() => void change(() => onSetStatus(rule.id, "active"))}>
                 {changing ? word("turningOn") : word("turnOnAgain")}
               </button>
-            ) : (
+            ) : ticket ? null : (
+              /* In the ticket the rule simply stands: nothing to close, and the ticket's one orange action stays the order's. */
               <button type="button" className="rw-btn rw-btn--primary" disabled={changing} onClick={onClose}>
                 {word("done")}
               </button>
@@ -518,7 +626,9 @@ function AutoinvestFlow({
   const valid = amount !== null && amount >= MIN_BUY_USD && amount <= RULE_MAX_USD;
   const first = kind === "schedule" ? firstDue(schedule, nowMs) : null;
   const weekdays = WEEKDAY_SHORT[lang];
-  const trigger = priceUsd !== null && priceUsd > 0 ? dipTriggerUsd(priceUsd, dropPct) : null;
+  /* A fall counts from the price now: the token's own from the read, the company's from its page. */
+  const fallFrom = token ? tokenPrice : priceUsd;
+  const trigger = fallFrom !== null && fallFrom > 0 ? dipTriggerUsd(fallFrom, dropPct) : null;
   /* How the price stands against the reference now, judged at the limit chosen — the same judgement the rule's tick makes. */
   const conditionNow = reference && limitPct !== null ? checkPriceCondition(limitPct, conditionFresh, nowMs) : null;
 
@@ -567,7 +677,19 @@ function AutoinvestFlow({
     const result = await onCreate(request);
     setStep("idle");
     if (!result.ok || !result.rule) {
-      setFailure(result.ok ? word("autoinvestFailed") : result.code === "RULE_LIMIT_REACHED" ? word("ruleLimit") : result.code === "UNAVAILABLE" && kind === "dip" ? word("priceUnknownNow") : word("autoinvestFailed"));
+      setFailure(
+        result.ok
+          ? word("autoinvestFailed")
+          : result.code === "RULE_LIMIT_REACHED"
+            ? word("ruleLimit")
+            : result.code === "RULE_LIQUIDITY_LOW"
+              ? word("noRuleOnToken")
+              : result.code === "UNAVAILABLE" && (kind === "dip" || token)
+                ? token
+                  ? word("tokenUnreadable")
+                  : word("priceUnknownNow")
+                : word("autoinvestFailed"),
+      );
       return;
     }
     setMade(result.rule);
@@ -577,8 +699,25 @@ function AutoinvestFlow({
   const minimumUsd = noRoute && routeMinimum.state === "found" ? routeMinimum.minimumUsd : null;
   const minimumLine = !noRoute || amount === null ? null : minimumUsd !== null ? routeMinimumLine(locale, dollars(amount, numbers), name, dollars(minimumUsd, numbers)) : routeMinimum.state === "finding" ? word("findingMinimum") : word("unavailableNow");
 
+  /* A token no rule can name now: under the floor, flagged, or unread — said before the button, and the button turns nothing on. */
+  const tokenBlock: string | null = !token
+    ? null
+    : tokenRead.status === "refused"
+      ? word("noRuleOnToken")
+      : tokenRead.status === "failed"
+        ? word("tokenUnreadable")
+        : tokenFacts?.refusal
+          ? tokenFacts.refusal.code === "RULE_LIQUIDITY_LOW"
+            ? word("noRuleOnToken")
+            : word("flaggedSuspicious")
+          : tokenFacts?.floor && tokenFacts.floor.verdict !== "met"
+            ? word("tokenUnreadable")
+            : null;
+
   const cta = ((): Readonly<{ label: string; disabled: boolean; run?: () => void }> => {
     if (!connection) return { label: word("connectWallet"), disabled: false };
+    if (token && referencePending) return { label: word("reading"), disabled: true };
+    if (tokenBlock) return { label: word("turnOn"), disabled: true };
     if (kind === "payments") {
       if (payMode === "fixed" && !fixedValid) return { label: word("turnOn"), disabled: true };
       /* The reminders' sums must route into the company: the minimum is raised to the company's own before the rule can be turned on. */
@@ -600,15 +739,51 @@ function AutoinvestFlow({
     return { label: word("turnOn"), disabled: kind === "schedule" ? first === null : trigger === null };
   })();
 
+  /* A token no rule can name: what it stands on and why, and nothing to fill in for a rule that cannot be turned on. */
+  if (token && tokenBlock) {
+    return (
+      <div className={bodyClass} data-sheet="autoinvest" data-blocked>
+        {head(`${word("autoinvest")} · ${name}`)}
+        {tokenFacts?.class === "meme" ? <RiskFacts read={tokenFacts} locale={locale} compact={ticket} /> : null}
+        {tokenFacts?.floor ? (
+          <p className={company.floorLine} data-floor={tokenFacts.floor.verdict} translate="no">
+            <b>{word("floorTitle")}</b>
+            <span>{tokenFacts.floor.verdict === "met" ? floorMetLine(tokenFacts.floor, lang) : floorLine(tokenFacts.floor, "", lang)}</span>
+          </p>
+        ) : null}
+        {/* One tone with the floor's line, and the next step where there is one: the market order beside it. */}
+        <p className={company.blockNote} role="status" data-token-block>
+          {tokenBlock}
+        </p>
+        {ticket ? (
+          <div className={company.sheetActions}>
+            <button type="button" className="rw-btn" onClick={onClose}>
+              {word("buyAtMarket")}
+            </button>
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
   return (
-    <div className={company.sheetBody} data-sheet="autoinvest" data-kind={kind}>
+    <div className={bodyClass} data-sheet="autoinvest" data-kind={kind}>
       {head(`${word("autoinvest")} · ${name}`)}
       {preIpo ? <SheetTruth truth={truth} eventLine={eventLine} /> : null}
+      {/* A token's standing before anything else: the floor for a recurring buy and, for a meme or a new token, the facts of its risk. */}
+      {token && tokenFacts?.class === "meme" ? <RiskFacts read={tokenFacts} locale={locale} compact={ticket} /> : null}
+      {token && tokenFacts?.floor ? (
+        <p className={company.floorLine} data-floor={tokenFacts.floor.verdict} translate="no">
+          <b>{word("floorTitle")}</b>
+          <span>{tokenFacts.floor.verdict === "met" ? floorMetLine(tokenFacts.floor, lang) : floorLine(tokenFacts.floor, "", lang)}</span>
+        </p>
+      ) : null}
 
       <div className={company.kindSwitch} role="group" aria-label={word("ruleKind")}>
         {KINDS.map((option) => (
           <button key={option} type="button" className={company.chip} aria-pressed={kind === option} disabled={step !== "idle"} onClick={() => setKind(option)}>
-            {option === "dip" ? word("ifFalls") : option === "payments" ? word("fromPayments") : word("regularly")}
+            {/* In Spot's order the tab already says «Регулярно»: the schedule's chip names what it is. */}
+            {option === "dip" ? word("ifFalls") : option === "payments" ? word("fromPayments") : ticket ? word("scheduleShort") : word("regularly")}
           </button>
         ))}
       </div>
@@ -795,7 +970,7 @@ function AutoinvestFlow({
             </div>
           </div>
           <p id={`${titleId}-first`} className={company.estimate} aria-live="polite" translate="no">
-            {trigger !== null && priceUsd !== null ? `${word("remindAt")} ${priceWord(trigger, lang)} ${word("orLower")} · ${word("priceNow")} ${priceWord(priceUsd, lang)}` : word("priceUnknownNow")}
+            {trigger !== null && fallFrom !== null ? `${word("remindAt")} ${priceWord(trigger, lang)} ${word("orLower")} · ${word("priceNow")} ${priceWord(fallFrom, lang)}` : word("priceUnknownNow")}
           </p>
           <p className={company.ruleNote}>{word("oneReminderPerFall")}</p>
         </>
@@ -821,7 +996,11 @@ function AutoinvestFlow({
               {conditionLine(limitPct, reference, lang)}
             </p>
           ) : null}
-          {conditionNow ? (
+          {token && limitPct !== null && tokenPrice !== null ? (
+            <p className={company.ruleNote} data-condition-now="anchor" translate="no">
+              {anchorNowLine(tokenPrice, limitPct, lang)}
+            </p>
+          ) : conditionNow ? (
             <p className={company.ruleNote} data-condition-now={conditionNow.verdict} translate="no">
               {conditionNowLine(conditionNow, lang)}
             </p>
@@ -837,12 +1016,27 @@ function AutoinvestFlow({
       {failure ? <p className={company.sheetError}>{failure}</p> : null}
 
       <div className={company.sheetActions}>
-        <button type="button" className="rw-btn rw-btn--primary" disabled={cta.disabled} onClick={cta.run ?? (() => void enable())}>
-          {cta.label}
-        </button>
+        {!connection && connectAction ? (
+          connectAction
+        ) : (
+          <button type="button" className="rw-btn rw-btn--primary" disabled={cta.disabled} onClick={cta.run ?? (() => void enable())}>
+            {cta.label}
+          </button>
+        )}
       </div>
     </div>
   );
+}
+
+/**
+ * The same rule, inside Spot's order (1.31.0): «Регулярно» beside «Ринок» on
+ * every token — the flow without its dialog, its head or its close.
+ */
+export function AutoinvestPanel(props: Omit<AutoinvestSheetProps, "open" | "variant"> & Readonly<{ onBusy?: (busy: boolean) => void }>) {
+  const titleId = useId();
+  const { onBusy, ...rest } = props;
+  const noteBusy = useCallback((busy: boolean) => onBusy?.(busy), [onBusy]);
+  return <AutoinvestFlow {...rest} open variant="ticket" titleId={titleId} onBusy={noteBusy} />;
 }
 
 /**

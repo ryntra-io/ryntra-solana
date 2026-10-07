@@ -58,6 +58,22 @@ export const PAYMENT_EVENT_MIN_USD = 0.01;
 export const PAYMENT_OWN_ACCOUNTS_LIMIT = 20;
 
 /**
+ * The floor a token of the venue's list must stand on for a rule to name it
+ * (1.31.0, «Регулярна купівля для всього»): the venue's liquidity in its
+ * pools, in dollars, and the age of its first pool, in hours. A tokenized
+ * stock is confirmed by its issuer instead and stands on no floor. The
+ * figures were proposed for memes and checked against the venue's own lists on
+ * 2026-10-07: of 147 unverified tokens across the day's trending and traded
+ * lists, 47 stood on it; under $25 000 four in ten carried an organic score
+ * below 20 (mostly bot trading), above it one in ten; and a $100 purchase
+ * into a $25 000 pool moves the price about 0,8 %.
+ */
+export const RULE_FLOOR_LIQUIDITY_USD = 25_000;
+export const RULE_FLOOR_AGE_HOURS = 24;
+/** How old the floor's facts may be and still decide — the same half hour a price is read within. */
+export const RULE_FLOOR_MAX_AGE_MINUTES = 30;
+
+/**
  * «Бюджет місяця» (1.13.0): the least and the most a month's ceiling is (a
  * dollar since 1.16.0), and the ceilings the sheets offer — the first is
  * «щодня по $1» for the longest month, so a dollar a day is never held on the

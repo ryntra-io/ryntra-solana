@@ -97,7 +97,8 @@ test("an ordinary purchase closed beside an open reminder does not end the rule'
 
 test("Spot says it too: a purchase there leaves the reminder open, with the way to the rule's own purchase", () => {
   assert.match(TICKET, /import \{ RuleReminderNotice \} from "@\/app\/app\/invest\/rule-reminder-notice"/);
-  assert.match(TICKET, /connection && side === "BUY" \? <RuleReminderNotice mint=\{baseMint\} proven=\{proven\} locale=\{locale\} className=\{styles\.ruleReminder\} \/> : null/);
+  /* 1.31.0: not while the ticket is the rule's own purchase; on a token, the purchase opens in place. */
+  assert.match(TICKET, /connection && side === "BUY" && !ruleBinding \? <RuleReminderNotice mint=\{baseMint\} proven=\{proven\} locale=\{locale\} className=\{styles\.ruleReminder\} onBuy=\{!isStockMarket \? onRuleBuy : undefined\} \/> : null/);
   assert.ok(TICKET.indexOf("<RuleReminderNotice") < TICKET.indexOf("className={styles.cta} disabled={cta.disabled}"), "said before the action");
   assert.match(NOTICE, /useAutoinvestRules\(proven\)/);
   assert.match(NOTICE, /reminderOpenNow\(rule, nowMs\)/);

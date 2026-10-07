@@ -11,7 +11,8 @@ import type { WorkspaceLocale } from "@/app/shell/locale";
 import { MarketIcon } from "@/app/solana/workspace/spot/market-list";
 import { useWalletProof } from "@/app/solana/workspace/wallet-proof";
 import type { AutoinvestRule, RuleBudget } from "@/lib/api/v1/contract";
-import { rulePurchaseHref } from "@/lib/autoinvest/links";
+import { ruleAssetHref, rulePurchaseHref } from "@/lib/autoinvest/links";
+import { SOLANA_MAINNET_USDC_MINT } from "@/lib/solana/send-kinds";
 import { dueWords, priceWord, ruleWhenLine, usdWord } from "@/lib/autoinvest/words";
 import { isRetiredMint } from "@/lib/stocks/retired";
 import { companyFromTokenName, type ShelfCard } from "@/lib/stocks/shelf";
@@ -40,9 +41,11 @@ import { useAutoinvestRules } from "./use-rules";
  * line opens the budget's sheet — also where the note that the budget is
  * spent lands (`?budget=edit`); it shows once there is a rule or a ceiling,
  * so a wallet with neither reads one line and «Додати правило». «Додати
- * правило» asks for which company — the ones the wallet owns and the popular
- * ones — and opens the same rule sheet the company's page has. Nothing here
- * is orange: the page's one orange action is «Купити» or the step before it.
+ * правило» asks for which token — what the wallet holds (a company, a coin, a
+ * meme; 1.31.0) and the popular companies — and opens the same rule sheet the
+ * company's page and Spot's «Регулярно» have; a token's card opens its market
+ * in Spot. Nothing here is orange: the page's one orange action is «Купити»
+ * or the step before it.
  *
  * `compact` is Home's right column: the same rules with their switches, each
  * in one line — the sum and the next purchase — by the nearest purchase,
@@ -53,7 +56,8 @@ import { useAutoinvestRules } from "./use-rules";
 /** How many rules Home's column names; the rest are on «Автоінвест»'s own page. */
 const COMPACT_SHOWN = 3;
 
-type Pick = Readonly<{ mint: string; name: string; icon: string | null; ticker: string; price: number | null }>;
+/** A token a rule may be written for: a company, or (1.31.0) a coin, a meme or a new token of the venue's list. */
+type Pick = Readonly<{ mint: string; name: string; icon: string | null; ticker: string; price: number | null; token: boolean }>;
 
 export function AutoinvestBlock({
   locale,
@@ -92,15 +96,20 @@ export function AutoinvestBlock({
   const owned = useMemo<readonly Pick[]>(() => {
     if (holdings.status !== "ready") return [];
     return holdings.data
-      /* A token Ryntra no longer supports is never offered for a rule. */
-      .filter((holding) => holding.catalog?.category === "stock" && holding.mint && !isRetiredMint(holding.mint))
-      .map((holding) => ({
-        mint: holding.mint as string,
-        name: companyFromTokenName(holding.catalog?.name ?? holding.name ?? holding.catalog?.symbol ?? ""),
-        icon: holding.catalog?.icon ?? null,
-        ticker: holding.catalog?.symbol ?? holding.symbol ?? "",
-        price: holding.catalog?.usdPrice && Number.isFinite(Number(holding.catalog.usdPrice)) ? Number(holding.catalog.usdPrice) : null,
-      }))
+      /* Any token the wallet holds that the venue lists (1.31.0) — never the dollars a rule pays with, never a token Ryntra no longer supports; the server judges the floor. */
+      .filter((holding) => (holding.catalog?.category === "stock" || holding.catalog?.category === "crypto" || holding.catalog?.category === "meme") && holding.mint && holding.mint !== SOLANA_MAINNET_USDC_MINT && !isRetiredMint(holding.mint))
+      .map((holding) => {
+        const token = holding.catalog?.category !== "stock";
+        const ticker = holding.catalog?.symbol ?? holding.symbol ?? "";
+        return {
+          mint: holding.mint as string,
+          name: token ? ticker : companyFromTokenName(holding.catalog?.name ?? holding.name ?? holding.catalog?.symbol ?? ""),
+          icon: holding.catalog?.icon ?? null,
+          ticker,
+          price: holding.catalog?.usdPrice && Number.isFinite(Number(holding.catalog.usdPrice)) ? Number(holding.catalog.usdPrice) : null,
+          token,
+        };
+      })
       .filter((row) => row.ticker && row.name);
   }, [holdings]);
   const [popular, setPopular] = useState<readonly ShelfCard[]>([]);
@@ -217,6 +226,7 @@ export function AutoinvestBlock({
         preIpo={false}
         truth=""
         priceUsd={picked?.price ?? null}
+        token={picked?.token ?? false}
         budget={state.budget}
         locale={locale}
         onClose={() => setPicked(null)}
@@ -242,7 +252,7 @@ function RuleCard({ rule, budget, icon, locale, busy, onToggle, compact = false 
   const held = !due && !deferred && heldByBudget(rule, budget);
   const active = rule.status === "active";
   const zone = ruleZone(rule);
-  const href = due ? rulePurchaseHref(rule, due.dueAt) : `/app/stocks/${encodeURIComponent(rule.asset.symbol)}`;
+  const href = due ? rulePurchaseHref(rule, due.dueAt) : ruleAssetHref(rule);
   const stateLine = !active
     ? word("onPause")
     : due
@@ -303,7 +313,7 @@ function RuleCard({ rule, budget, icon, locale, busy, onToggle, compact = false 
   );
 }
 
-/** «Для якої компанії?» — what the wallet owns, then the popular companies; the rest is on Markets. */
+/** «Для якого токена?» — what the wallet holds, then the popular companies; every other token is on Markets, «Регулярно» in its order. */
 function CompanyPicker({ open, locale, owned, popular, onClose, onPick }: { open: boolean; locale: WorkspaceLocale; owned: readonly Pick[]; popular: readonly ShelfCard[]; onClose: () => void; onPick: (pick: Pick) => void }) {
   const word = investWords(locale);
   const dialog = useRef<HTMLDialogElement>(null);
@@ -327,7 +337,7 @@ function CompanyPicker({ open, locale, owned, popular, onClose, onPick }: { open
     for (const card of popular) {
       if (seen.has(card.mint)) continue;
       seen.add(card.mint);
-      rows.push({ pick: { mint: card.mint, name: card.name, icon: card.icon, ticker: card.ticker, price: card.price }, group: "popular" });
+      rows.push({ pick: { mint: card.mint, name: card.name, icon: card.icon, ticker: card.ticker, price: card.price, token: false }, group: "popular" });
     }
     return rows;
   }, [owned, popular]);
@@ -353,14 +363,14 @@ function CompanyPicker({ open, locale, owned, popular, onClose, onPick }: { open
           <div className={`${company.sheetHead} ${company.sheetHeadPlain}`}>
             <span className={company.grab} aria-hidden="true" />
             <h2 id={titleId} className={company.sheetTitle}>
-              {word("pickCompany")}
+              {word("pickToken")}
             </h2>
             <button type="button" className={company.sheetClose} onClick={onClose} aria-label={word("close")}>
               <X size={18} weight="bold" aria-hidden="true" />
             </button>
           </div>
           {choices.length === 0 ? (
-            <p className={company.sheetNote}>{word("pickFromMarkets")}</p>
+            <p className={company.sheetNote}>{word("pickTokenFromMarkets")}</p>
           ) : (
             <ul className={block.picks}>
               {choices.map(({ pick, group }, index) => (
@@ -375,8 +385,8 @@ function CompanyPicker({ open, locale, owned, popular, onClose, onPick }: { open
             </ul>
           )}
           <div className={company.sheetActions}>
-            <Link className={company.quietButton} href="/app/markets?tab=companies" prefetch={false}>
-              {word("allCompanies")}
+            <Link className={company.quietButton} href="/app/markets" prefetch={false}>
+              {word("allTokens")}
             </Link>
           </div>
         </div>

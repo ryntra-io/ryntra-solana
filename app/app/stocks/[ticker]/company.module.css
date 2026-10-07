@@ -2511,3 +2511,134 @@ body:has(dialog[data-warn][open]) .buy {
     animation: none;
   }
 }
+
+/* «Регулярна купівля для всього»: the rule's flow inside Spot's order — the ticket is its frame, so no card, no head, no rise. */
+.ticketBody {
+  max-width: none;
+  max-height: none;
+  overflow: visible;
+  gap: var(--ry-s3);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  animation: none;
+}
+
+@media (min-width: 720px) {
+  .ticketBody {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+  }
+}
+
+/* The floor for a recurring buy: one quiet line — its title and what the token stands on; under it, the caution colour. */
+.floorLine {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: var(--ry-s2) var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card, 12px);
+  font-size: var(--ry-fs-data);
+  line-height: var(--ry-lh-body);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-muted);
+}
+
+.floorLine b {
+  font-size: var(--ry-fs-dense);
+  font-weight: 500;
+  color: var(--ry-text);
+}
+
+/* Amber as text: mixed with the text's own ink, so it reads at 4.5:1 on the light card and stays amber on the dark one. */
+.floorLine[data-floor="below"] span,
+.floorLine[data-floor="unavailable"] span {
+  color: color-mix(in srgb, var(--ry-caution) 62%, var(--ry-text));
+}
+
+/* A meme's or a new token's facts of risk, before the button: a label, the venue's figures, and their source in one line. */
+.riskFacts {
+  display: grid;
+  gap: var(--ry-s2);
+}
+
+.riskFacts .ruleNote {
+  text-align: start;
+}
+
+/* In the ticket's narrow column a row reads as a label over its value — a date or a ceiling never breaks across two columns. */
+.ticketBody .review > div {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2px;
+  padding: var(--ry-s2) var(--ry-s3);
+}
+
+.ticketBody .review dd {
+  justify-items: start;
+  text-align: start;
+}
+
+/* The facts of risk as the market's header draws its figures: two to a row, a small label over a firm value; the last odd one across. */
+.riskGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ry-s2) var(--ry-s3);
+  margin: 0;
+  padding: var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+}
+
+.riskGrid > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.riskGrid > div:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+
+.riskGrid dt {
+  font-size: var(--ry-fs-data);
+  line-height: var(--ry-lh-tight);
+  color: var(--ry-muted);
+}
+
+.riskGrid dd {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+}
+
+.riskGrid dd[data-caution="true"] {
+  color: color-mix(in srgb, var(--ry-caution) 62%, var(--ry-text));
+}
+
+/* A floor that is met says so, in the ink of a fact that holds. */
+.floorLine[data-floor="met"] span {
+  color: var(--ry-pnl-pos);
+}
+
+/* Why no rule can be set: the floor's own caution tone, one tone for one reason. */
+.blockNote {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  line-height: var(--ry-lh-body);
+  color: color-mix(in srgb, var(--ry-caution) 62%, var(--ry-text));
+  text-align: center;
+  text-wrap: balance;
+}
+
+/* In the ticket's narrow column the rule's kinds take the dense size; a name that still does not fit wraps inside its own cell. */
+.ticketBody .kindSwitch .chip {
+  min-width: 0;
+  font-size: var(--ry-fs-dense);
+  padding-inline: var(--ry-s1);
+}

@@ -4,10 +4,26 @@
  * tick, the delivery and the deep link read one definition.
  */
 
+const MINT_SHAPE = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+
+/** Whether a rule's asset is a token of the venue's list (1.31.0) rather than a company. */
+function listedToken(asset: Readonly<{ kind?: string | null }>): boolean {
+  return asset.kind === "crypto" || asset.kind === "meme";
+}
+
+/**
+ * What a note carries to find its asset again: a company's symbol, or
+ * (1.31.0) a token's mint — a token's symbol names nothing for certain.
+ */
+export function assetRefOf(asset: Readonly<{ symbol: string; mint: string; kind?: string | null }>): string {
+  return listedToken(asset) ? asset.mint : asset.symbol;
+}
+
 /**
  * The trigger identity of one occurrence: a reminder is written once per rule
- * and due instant, whatever the ticks. It carries the company's symbol after
- * `@`, so a note still leads to its company after the rule is removed.
+ * and due instant, whatever the ticks. It carries the company's symbol — a
+ * token's mint (1.31.0) — after `@`, so a note still leads to its asset after
+ * the rule is removed.
  */
 export function reminderIdentity(ruleId: string, dueAt: string, symbol: string): string {
   return `autoinvest:${ruleId}:${new Date(Date.parse(dueAt)).toISOString()}@${encodeURIComponent(symbol)}`;
@@ -39,14 +55,14 @@ export function dueOfIdentity(identity: string, ruleId: string): string | null {
   return Number.isFinite(Date.parse(due)) ? due : null;
 }
 
-/** The company symbol a reminder's identity carries, or null. */
+/** The company symbol — or a token's mint (1.31.0) — a reminder's identity carries, or null. */
 export function symbolOfIdentity(identity: string): string | null {
   if (!identity.startsWith("autoinvest:")) return null;
   const at = identity.lastIndexOf("@");
   if (at < 0) return null;
   try {
     const symbol = decodeURIComponent(identity.slice(at + 1));
-    return /^[A-Za-z0-9._-]{1,32}$/.test(symbol) ? symbol : null;
+    return /^[A-Za-z0-9._-]{1,32}$/.test(symbol) || MINT_SHAPE.test(symbol) ? symbol : null;
   } catch {
     return null;
   }
@@ -57,13 +73,29 @@ export function companyHref(symbol: string): string {
   return `/app/stocks/${encodeURIComponent(symbol)}`;
 }
 
+/** The same for what a note carries: a token's mint opens its market (1.31.0), a company's symbol its page. */
+export function assetHrefOfRef(ref: string): string {
+  return MINT_SHAPE.test(ref) ? `/app/spot?mint=${encodeURIComponent(ref)}` : companyHref(ref);
+}
+
+/** A rule's asset on its own, no reminder: the company's page, or the token's market in Spot (1.31.0). */
+export function ruleAssetHref(rule: Readonly<{ asset: Readonly<{ symbol: string; mint: string; kind?: string | null }> }>): string {
+  return listedToken(rule.asset) ? `/app/spot?mint=${encodeURIComponent(rule.asset.mint)}` : companyHref(rule.asset.symbol);
+}
+
 /** The monitor id a rule's notes carry — the contract's `mon_` shape, derived from the rule id; a rule is not a monitor and no monitor has it. */
 export function ruleMonitorId(ruleId: string): string {
   return `mon_${ruleId.slice("rule_".length, "rule_".length + 24)}`;
 }
 
-/** Where one tap on a reminder lands: the company, with the rule and the occurrence — the page reads the rule afresh and opens the Review on its sum. */
-export function rulePurchaseHref(rule: Readonly<{ id: string; asset: Readonly<{ symbol: string }> }>, dueAt: string): string {
+/**
+ * Where one tap on a reminder lands: the company, with the rule and the
+ * occurrence — the page reads the rule afresh and opens the Review on its
+ * sum; a token of the venue's list (1.31.0) — its market in Spot, the order
+ * set to the rule's purchase the same way.
+ */
+export function rulePurchaseHref(rule: Readonly<{ id: string; asset: Readonly<{ symbol: string; mint: string; kind?: string | null }> }>, dueAt: string): string {
+  if (listedToken(rule.asset)) return `/app/spot?mint=${encodeURIComponent(rule.asset.mint)}&rule=${rule.id}&due=${encodeURIComponent(dueAt)}`;
   return `/app/stocks/${encodeURIComponent(rule.asset.symbol)}?rule=${rule.id}&due=${encodeURIComponent(dueAt)}`;
 }
 

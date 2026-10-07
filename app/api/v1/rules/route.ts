@@ -4,6 +4,7 @@ import { requireWalletProof } from "@/lib/api/v1/proof";
 import { createRule, listRules } from "@/lib/autoinvest/service";
 import { getGuardRuntime } from "@/lib/guard/runtime";
 import { storeSurvivesColdStart } from "@/lib/guard/store";
+import { readsEnabledReference, ruleForReader } from "@/lib/autoinvest/wire";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -28,7 +29,7 @@ export async function GET(request: Request) {
   const proof = await requireWalletProof(request, "read");
   if (!proof.ok) return proof.response;
   const listed = await listRules(getGuardRuntime().store, proof.address);
-  return apiJson({ address: proof.address, rules: [...listed.rules], total: listed.total, budget: listed.budget } satisfies RuleListResponse);
+  return apiJson({ address: proof.address, rules: listed.rules.map((rule) => ruleForReader(rule, readsEnabledReference(proof.carrier, request.headers))), total: listed.total, budget: listed.budget } satisfies RuleListResponse);
 }
 
 export async function POST(request: Request) {
@@ -53,5 +54,5 @@ export async function POST(request: Request) {
     locale: read.body.locale,
   });
   if (!created.ok) return apiFailure(created.code, created.message);
-  return apiJson({ rule: created.rule } satisfies RuleResponse, 201);
+  return apiJson({ rule: ruleForReader(created.rule, readsEnabledReference(proof.carrier, request.headers)) } satisfies RuleResponse, 201);
 }

@@ -56,6 +56,8 @@ import type { AutoinvestRule, CompanyPath, RuleBudget, RuleConditionCheck, RuleO
 import { useCopy, useLocale } from '@/lib/i18n'
 import { CompanyPathStrip } from '@/screens/asset/company-path'
 import { AttentionRow } from '@/screens/home/blocks'
+import { LaunchDoneSamples, LaunchMineSamples, LaunchTokenSamples } from '@/screens/launch/launch-samples'
+import { MoneySamples } from '@/screens/money/money-samples'
 import { PaymentEvents } from '@/screens/autoinvest/autoinvest-sheet'
 import { RuleCard } from '@/screens/autoinvest/rule-card'
 import { SAMPLE_BUY_CHECKS, SAMPLE_BUY_FEES } from '@/screens/invest/buy-samples'
@@ -509,7 +511,13 @@ export function GalleryScreen() {
   const checkRows = (key: keyof typeof SAMPLE_BUY_CHECKS) => {
     const check = SAMPLE_BUY_CHECKS[key]
     const ryntraFee = ryntraFeeFigures(SAMPLE_BUY_FEES[key], locale)
-    return buyCheckRows(check, { unit: check.company.unit, company: check.company.name, locale, words: buyCopy, ryntraFee })
+    return buyCheckRows(check, {
+      unit: check.company.unit,
+      company: check.company.name,
+      locale,
+      words: buyCopy,
+      ryntraFee,
+    })
   }
   const convertCopy = useCopy(CONVERT_COPY)
   const pathCopy = useCopy(COMPANY_PATH_COPY)
@@ -606,6 +614,15 @@ export function GalleryScreen() {
             </Pressable>
           }
         >
+          <Section title="Launch · a token's page">
+            <LaunchTokenSamples />
+          </Section>
+          <Section title="Launch · My launches and a claim">
+            <LaunchMineSamples />
+          </Section>
+          <Section title="Launch · the launch's end">
+            <LaunchDoneSamples />
+          </Section>
           <Section title="Note on the phone">
             <Card className="gap-2">
               <Txt variant="ui" tone="muted">
@@ -670,14 +687,8 @@ export function GalleryScreen() {
             />
           </Section>
           <Section title="Purchase · the four rows and the receipt">
-            <BuyReviewTable
-              rows={checkRows('apple')}
-              words={buyCopy}
-            />
-            <BuyReviewTable
-              rows={checkRows('openai')}
-              words={buyCopy}
-            />
+            <BuyReviewTable rows={checkRows('apple')} words={buyCopy} />
+            <BuyReviewTable rows={checkRows('openai')} words={buyCopy} />
             <BuyReviewTable rows={checkRows('dollar')} words={buyCopy} />
             {reserveFirst ? (
               <ReserveFirstLine
@@ -709,6 +720,9 @@ export function GalleryScreen() {
                 />
               </Card>
             ))}
+          </Section>
+          <Section title="Money · Send, the Review and a payment link">
+            <MoneySamples />
           </Section>
           <Section title="Home-screen widget · Portfolio">
             <WidgetSamples />
@@ -803,10 +817,7 @@ export function GalleryScreen() {
                 onPress={() => undefined}
               />
             ))}
-            <BuyReviewTable
-              rows={checkRows('apple')}
-              words={buyCopy}
-            />
+            <BuyReviewTable rows={checkRows('apple')} words={buyCopy} />
             <RuleMarkLine
               line={`${ruleCopy.byRule} · ${ruleWhenLine(SAMPLE_RULE, locale)}`}
               next={wholeParts(

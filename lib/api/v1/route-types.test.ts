@@ -486,7 +486,8 @@ export type RouteChecks = [
   /* 1.19.0: a «З кожної оплати» rule's terms on the wire are the stored ones, and its whole state is what the projection says. */
   Same<Pick<NonNullable<z.output<typeof AutoinvestRuleSchema>["payments"]>, "mode" | "roundToUsd" | "fixedUsd" | "percent" | "timeZone" | "since" | "gatheredCount">, Pick<StoredPayments, "mode" | "roundToUsd" | "fixedUsd" | "percent" | "timeZone" | "since" | "gatheredCount">>,
   Same<NonNullable<z.output<typeof AutoinvestRuleSchema>["payments"]>, ReturnType<typeof projectPayments>>,
-  Same<Omit<z.output<typeof RuleOccurrenceSchema>, "state">, Omit<StoredOccurrence, "state">>,
+  Same<Omit<z.output<typeof RuleOccurrenceSchema>, "state" | "floor">, Omit<StoredOccurrence, "state" | "floor">>,
+  Same<NonNullable<z.output<typeof RuleOccurrenceSchema>["floor"]>, NonNullable<StoredOccurrence["floor"]>>,
   Same<Exclude<z.output<typeof RuleOccurrenceSchema>["state"], "pending">, StoredOccurrence["state"]>,
   /* 1.13.0 — «Якщо впаде»: the wire's `dip` is the stored one plus the trigger it computes; the month's budget is what the service projects; a reminder's state on the surface is the rule's occurrence state */
   Same<Omit<NonNullable<z.output<typeof AutoinvestRuleSchema>["dip"]>, "triggerUsd">, StoredDip>,
@@ -619,7 +620,7 @@ export type RouteChecks = [
 ];
 
 /* Every entry must be `true`; a `never` anywhere fails this assignment. */
-export const routeChecks: RouteChecks = [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true];
+export const routeChecks: RouteChecks = [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true];
 
 /**
  * 1.22.0 — «Гроші»: the v1 money shapes equal the types their routes build from

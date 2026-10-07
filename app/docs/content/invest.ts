@@ -120,25 +120,25 @@ export const AUTOINVEST_PAGE: DocPage = {
   title: { en: "Recurring buy", uk: "Регулярна купівля" },
   seoTitle: { en: "Recurring buy: three rules and a budget — Ryntra Docs", uk: "Регулярна купівля: правила й бюджет — Документація Ryntra" },
   summary: {
-    en: "Every day or week, when a price falls, or from every USDC payment: Ryntra reminds you and you sign each purchase. The monthly budget and the price condition.",
-    uk: "Щодня чи щотижня, коли ціна впаде, або з кожної оплати USDC: Ryntra нагадує, кожну купівлю підписуєш ти. Бюджет місяця й «Умова ціни».",
+    en: "Any token with liquidity, on a schedule, when its price falls or from every payment: Ryntra reminds you, you sign each buy. Floor, budget, price condition.",
+    uk: "Будь-який токен із ліквідністю — за розкладом, коли ціна впаде, з кожної оплати: Ryntra нагадує, кожну купівлю підписуєш ти. Поріг, бюджет, умова ціни.",
   },
   sections: [
     section("what", "What a recurring buy is", "Що таке регулярна купівля", [
       p(
-        "A recurring buy (until 2026-10-06 called Autoinvest) buys a company by a rule you set; your rules live in Bots → My bots, and Bots → Catalog is where a new one starts. When the rule falls due, Ryntra reminds you, and you sign each purchase; the money stays in your wallet until you do. A rule never buys anything on its own.",
-        "Регулярна купівля (до 06.10.2026 — «Автоінвест») купує компанію за правилом, яке задаєш ти; твої правила — у «Боти → Мої боти», а новий починається з «Боти → Каталог». Коли настає час правила, Ryntra нагадує, а кожну купівлю підписуєш ти; гроші лежать у твоєму гаманці, доки ти не підпишеш. Правило саме нічого не купує.",
+        "A recurring buy (until 2026-10-06 called Autoinvest) buys any token with liquidity — a tokenized company, a coin like SOL, a meme or a new token — by a rule you set; your rules live in Bots → My bots, and a new one starts from Recurring next to Market in any token's order, or from Bots → Catalog. When the rule falls due, Ryntra reminds you, and you sign each purchase; the money stays in your wallet until you do. A rule never buys anything on its own.",
+        "Регулярна купівля (до 06.10.2026 — «Автоінвест») купує будь-який токен із ліквідністю — токенізовану компанію, монету на кшталт SOL, мем чи новий токен — за правилом, яке задаєш ти; твої правила — у «Боти → Мої боти», а новий починається з «Регулярно» поруч із «Ринок» в ордері будь-якого токена або з «Боти → Каталог». Коли настає час правила, Ryntra нагадує, а кожну купівлю підписуєш ти; гроші лежать у твоєму гаманці, доки ти не підпишеш. Правило саме нічого не купує.",
       ),
       table(
         { en: ["Rule", "When it reminds you", "For example"], uk: ["Правило", "Коли нагадує", "Наприклад"] },
         {
           en: [
-            ["Regularly", "Every day, every week or every month, on your day and at your time", "$1 of NVIDIA every day at 14:00"],
+            ["Regularly", "Every day, every week or every month, on your day and at your time", "$1 of SOL every day at 14:00"],
             ["If it falls", `When the price drops the per cent you choose below its reference point — ${AUTOINVEST.dipPresets}`, `If NVIDIA falls ${DIP}% — buy $20 more`],
             ["From every payment", `A round-up of each USDC payment to ${AUTOINVEST.roundupSteps}, a sum from each payment, or a per cent of what comes in`, "A $3.40 payment → $0.60 into NVIDIA"],
           ],
           uk: [
-            ["Регулярно", "Щодня, щотижня чи щомісяця — у твій день і о твоїй годині", "$1 у NVIDIA щодня о 14:00"],
+            ["Регулярно", "Щодня, щотижня чи щомісяця — у твій день і о твоїй годині", "$1 у SOL щодня о 14:00"],
             ["Якщо впаде", `Коли ціна опуститься на обраний відсоток нижче точки відліку — ${AUTOINVEST.dipPresets}`, `Якщо NVIDIA впаде на ${DIP}% — докупити $20`],
             ["З кожної оплати", `Округлення кожної оплати USDC до ${AUTOINVEST.roundupSteps}, сума з кожної оплати або відсоток із надходжень`, "Оплата $3,40 → $0,60 у NVIDIA"],
           ],
@@ -148,13 +148,13 @@ export const AUTOINVEST_PAGE: DocPage = {
     section("set-up", "Set up a rule", "Налаштувати правило", [
       steps(
         [
-          "On a company's page press Recurring buy — or Add a rule under Recurring buy on Home, in Portfolio or in Bots → My bots, or Buy weekly on a purchase's receipt.",
+          "In Spot press Recurring next to Market in any token's order — or Recurring buy on a company's page, Add a rule under Recurring buy on Home, in Portfolio or in Bots → My bots, or Buy weekly on a purchase's receipt.",
           `Choose the rule, the sum of each purchase — from ${AUTOINVEST.minimum} — and when. The sheet shows when the first reminder comes.`,
           "Press Turn on. Your wallet signs one message to save the rule — not a transaction.",
           "When the rule falls due, a reminder arrives in Ryntra, and in Telegram once it is connected. One tap opens a fresh Review for the rule's sum; sign it, and the receipt names the rule and the next purchase.",
         ],
         [
-          "На сторінці компанії натисни «Регулярна купівля» — або «Додати правило» в блоці «Регулярна купівля» на Головній, у Портфелі чи в «Боти → Мої боти», або «Купувати щотижня» в квитанції купівлі.",
+          "У Споті натисни «Регулярно» поруч із «Ринок» в ордері будь-якого токена — або «Регулярна купівля» на сторінці компанії, «Додати правило» в блоці «Регулярна купівля» на Головній, у Портфелі чи в «Боти → Мої боти», або «Купувати щотижня» в квитанції купівлі.",
           `Обери правило, суму кожної купівлі — від ${AUTOINVEST.minimum} — і коли. Аркуш покаже, коли прийде перше нагадування.`,
           "Натисни «Увімкнути». Гаманець підписує одне повідомлення, щоб зберегти правило, — не транзакцію.",
           "Коли настає час правила, нагадування приходить у Ryntra, а в Telegram — щойно його під'єднано. Один дотик відкриває свіжу «Перевірку» на суму правила; підпиши — і квитанція назве правило й наступну купівлю.",
@@ -165,14 +165,14 @@ export const AUTOINVEST_PAGE: DocPage = {
       list(
         [
           "Your rules and the monthly budget are on Home, in Portfolio and in Bots → My bots, each rule with its switch.",
-          "While a reminder is open, the company's page offers Buy $X by your rule first. A one-off purchase — on the page or in Spot — leaves the reminder open: a rule counts only a purchase made by it, and both say so.",
+          "While a reminder is open, the company's page — or the token's order in Spot — offers Buy $X by your rule first. A one-off purchase leaves the reminder open: a rule counts only a purchase made by it, and both say so.",
           `A reminder stays open for ${AUTOINVEST.reminderHours} hours. One you do not sign is marked Missed — Ryntra never buys it later and never doubles the next one.`,
           "Pause stops the reminders; turn the rule on again and it counts from then. Deleting a rule keeps its purchases in History, each marked Recurring buy.",
           `A wallet holds up to ${AUTOINVEST.rules} rules. A purchase by a rule goes through the same Review, costs and signature as any other.`,
         ],
         [
           "Твої правила й бюджет місяця — на Головній, у Портфелі й у «Боти → Мої боти», кожне правило зі своїм перемикачем.",
-          "Поки нагадування відкрите, сторінка компанії першою пропонує «Купити $X за правилом». Звичайна купівля — на сторінці чи в Споті — лишає нагадування відкритим: правило рахує лише купівлю за правилом, і обидві про це кажуть.",
+          "Поки нагадування відкрите, сторінка компанії — чи ордер токена в Споті — першою пропонує «Купити $X за правилом». Звичайна купівля лишає нагадування відкритим: правило рахує лише купівлю за правилом, і обидві про це кажуть.",
           `Нагадування діє ${AUTOINVEST.reminderHours} години. Непідписане позначається «Пропущено»: Ryntra не купує його пізніше й не подвоює наступне.`,
           "Пауза зупиняє нагадування; увімкни правило знову — і відлік піде від тієї миті. Видалене правило лишає свої купівлі в Історії, кожну з позначкою «Регулярна купівля».",
           `У гаманці може бути до ${AUTOINVEST.rules} правил. Купівля за правилом проходить ту саму «Перевірку», витрати й підпис, що й будь-яка інша.`,
@@ -182,12 +182,12 @@ export const AUTOINVEST_PAGE: DocPage = {
     section("dip", "If it falls", "Якщо впаде", [
       list(
         [
-          `Choose the sum and how far the price should fall — ${AUTOINVEST.dipPresets}. The reference point is the company's price when you turn the rule on; the sheet shows the price the reminder comes at.`,
+          `Choose the sum and how far the price should fall — ${AUTOINVEST.dipPresets}. The reference point is the token's price when you turn the rule on; the sheet shows the price the reminder comes at.`,
           "When the price is read at or below that line, one reminder comes — one per fall. If the price comes back above the line and falls again, that is a new reminder.",
           "After a purchase by the rule, the reference point moves to what that purchase paid; turning the rule on again after a pause starts from the price then.",
         ],
         [
-          `Обери суму й на скільки має впасти ціна — ${AUTOINVEST.dipPresets}. Точка відліку — ціна компанії, коли ти вмикаєш правило; аркуш показує ціну, при якій прийде нагадування.`,
+          `Обери суму й на скільки має впасти ціна — ${AUTOINVEST.dipPresets}. Точка відліку — ціна токена, коли ти вмикаєш правило; аркуш показує ціну, при якій прийде нагадування.`,
           "Щойно ціна опиняється на цій позначці або нижче, приходить одне нагадування — одне на падіння. Якщо ціна повернулася вище позначки й знову впала — це нове нагадування.",
           "Після купівлі за правилом точка відліку переходить на ціну цієї купівлі; увімкнене знову після паузи правило рахує від тодішньої ціни.",
         ],
@@ -196,14 +196,28 @@ export const AUTOINVEST_PAGE: DocPage = {
     section("payments", "From every payment", "З кожної оплати", [
       list(
         [
-          `The third kind of rule sets money aside for a company from your wallet's own USDC on Solana: round every payment up to the next ${AUTOINVEST.roundupSteps}, a fixed sum from every payment (${AUTOINVEST.fixedFrom}–${AUTOINVEST.fixedTo}), or a per cent of every USDC that comes in (${AUTOINVEST.percentPresets}).`,
+          `The third kind of rule sets money aside for a token from your wallet's own USDC on Solana: round every payment up to the next ${AUTOINVEST.roundupSteps}, a fixed sum from every payment (${AUTOINVEST.fixedFrom}–${AUTOINVEST.fixedTo}), or a per cent of every USDC that comes in (${AUTOINVEST.percentPresets}).`,
           "A payment is a USDC transfer to someone else that your wallet signed; money that came in is USDC someone else sent you. Each one counts once, from the moment the rule is on. Swaps, Ryntra purchases, bridges and transfers between your own accounts never count; a transfer to your other wallet can be marked My account, and such transfers stop counting.",
-          `What the rule sets aside gathers — the money stays in your wallet — until it reaches the rule's minimum, ${AUTOINVEST.minimum} or the company's own when its route starts higher. Then one reminder, «From payments: $1.30 → Apple», opens a fresh Review with the price condition, and only your signature buys. The monthly budget counts it; a switch pauses it. Ryntra never names a shop; a payment's Solana Pay label is shown when it has one.`,
+          `What the rule sets aside gathers — the money stays in your wallet — until it reaches the rule's minimum, ${AUTOINVEST.minimum} or the token's own when its route starts higher. Then one reminder, «From payments: $1.30 → Apple», opens a fresh Review with the price condition, and only your signature buys. The monthly budget counts it; a switch pauses it. Ryntra never names a shop; a payment's Solana Pay label is shown when it has one.`,
         ],
         [
-          `Третій вид правила відкладає гроші в компанію з USDC твого гаманця в Solana: округлення кожної оплати до ${AUTOINVEST.roundupSteps}, фіксована сума з кожної оплати (${ukDecimal(AUTOINVEST.fixedFrom)}–${AUTOINVEST.fixedTo}) або відсоток із кожного надходження USDC (${AUTOINVEST.percentPresets}).`,
+          `Третій вид правила відкладає гроші в токен із USDC твого гаманця в Solana: округлення кожної оплати до ${AUTOINVEST.roundupSteps}, фіксована сума з кожної оплати (${ukDecimal(AUTOINVEST.fixedFrom)}–${AUTOINVEST.fixedTo}) або відсоток із кожного надходження USDC (${AUTOINVEST.percentPresets}).`,
           "Оплата — переказ USDC комусь іншому, який підписав твій гаманець; надходження — USDC, які тобі надіслав хтось інший. Кожна подія рахується один раз, від миті, коли правило ввімкнено. Обміни, купівлі в Ryntra, мости й перекази між твоїми рахунками не рахуються; переказ на твій інший гаманець можна позначити «Мій рахунок», і такі перекази більше не рахуються.",
-          `Відкладене копиться — гроші лежать у твоєму гаманці — доки не набереться мінімум правила: ${AUTOINVEST.minimum} або мінімум самої компанії, коли її маршрут починається вище. Тоді одне нагадування «З оплат: $1,30 → Apple» відкриває свіжу «Перевірку» з «Умовою ціни», і купує лише твій підпис. Бюджет місяця це рахує; пауза — перемикачем. Магазин Ryntra не називає; мітку Solana Pay оплати показує, коли вона є.`,
+          `Відкладене копиться — гроші лежать у твоєму гаманці — доки не набереться мінімум правила: ${AUTOINVEST.minimum} або мінімум самого токена, коли його маршрут починається вище. Тоді одне нагадування «З оплат: $1,30 → Apple» відкриває свіжу «Перевірку» з «Умовою ціни», і купує лише твій підпис. Бюджет місяця це рахує; пауза — перемикачем. Магазин Ryntra не називає; мітку Solana Pay оплати показує, коли вона є.`,
+        ],
+      ),
+    ]),
+    section("floor", "Memes and new tokens", "Меми й нові токени", [
+      list(
+        [
+          `A rule on a coin, a meme or a new token stands on a floor: ${AUTOINVEST.floorUsd.en} of liquidity in its pools and ${AUTOINVEST.floorHours} hours since its first pool, as Jupiter's list states them now. A tokenized company is confirmed by its issuer instead.`,
+          "Before Turn on, the sheet of a meme or of a token Jupiter has not verified shows the facts of its risk: its age, its liquidity, how much the ten largest holders keep, whether anyone can still mint more or freeze holders' tokens, its organic score and whether Jupiter verified it. They are facts, not a verdict.",
+          "Every time the rule would remind you, Ryntra reads the floor again. Under it — or when the figures cannot be read — the purchase is deferred: one note says why, and the rule checks again while the reminder is open. The order of a rule's purchase is refused under the floor too. A token flagged suspicious by Jupiter's own audit takes no rule.",
+        ],
+        [
+          `Правило на монету, мем чи новий токен стоїть на порозі: ${AUTOINVEST.floorUsd.uk} ліквідності в його пулах і ${AUTOINVEST.floorHours} годин від першого пулу — як їх зараз показує список Jupiter. Токенізовану компанію натомість підтверджує емітент.`,
+          "Перед «Увімкнути» аркуш мему чи токена, якого Jupiter не перевірив, показує факти ризику: вік, ліквідність, скільки тримає десятка найбільших власників, чи може хтось іще випускати нові токени чи заморожувати токени власників, органічну оцінку й чи перевірив його Jupiter. Це факти, не вирок.",
+          "Щоразу, коли правило мало б нагадати, Ryntra читає поріг знову. Нижче порогу — або коли цифр не прочитати — купівлю відкладено: одна нотатка каже чому, а правило перевіряє знову, поки нагадування відкрите. Ордер купівлі за правилом нижче порогу теж не пройде. На токен, який власний аудит Jupiter позначає підозрілим, правило не ставиться.",
         ],
       ),
     ]),
@@ -227,11 +241,13 @@ export const AUTOINVEST_PAGE: DocPage = {
           `On a company with a reference — PreStocks' valuation for a private company, the issuer's reference per share for a listed one — a rule can carry Price condition: don't buy if it costs more than N% above the reference — ${AUTOINVEST.conditionPresets}, ${AUTOINVEST.conditionDefault} unless you choose another, or No condition. The sheet shows how the price stands now.`,
           `When the rule falls due, Ryntra checks the price against the reference. Within your limit, the reminder comes as usual. Above it — or when the price or the reference is more than ${AUTOINVEST.conditionMaxAgeMinutes} minutes old, or missing — the purchase is deferred: one note in the bell and in Notifications on Home says why, with the figure and the time of the data, and the rule checks again while the reminder is open. Never met, it is marked Missed.`,
           "PreStocks' valuation is PreStocks' own figure — not a fair price and not a market price. The Review of a rule's purchase carries the condition's line: how far the price stands from the reference, the reference, your limit and the time of the data.",
+          "On a coin, a meme or a new token the reference is its market price when you turn the rule on — and again whenever you turn it on after a pause: don't buy if it costs more than N% above it. It starts at No condition: a fixed price is a ceiling, and a recurring buy keeps buying unless you set one.",
         ],
         [
           `Для компанії з орієнтиром — оцінкою PreStocks для приватної компанії, орієнтиром емітента за акцію для публічної — правило може мати «Умову ціни»: не купувати, якщо дорожче за орієнтир більш ніж на N % — ${AUTOINVEST.conditionPresets}, ${AUTOINVEST.conditionDefault}, якщо ти не обереш інше, або «Без умови». Аркуш показує, як ціна стоїть зараз.`,
           `Коли настає час правила, Ryntra порівнює ціну з орієнтиром. У межах твого ліміту нагадування приходить, як завжди. Понад ліміт — або коли ціна чи орієнтир старші за ${AUTOINVEST.conditionMaxAgeMinutes} хвилин чи їх немає — купівлю відкладено: одна нотатка в дзвіночку й у «Сповіщеннях» на Головній каже чому, з числом і часом даних, а правило перевіряє знову, поки нагадування відкрите. Якщо умову так і не виконано — «Пропущено».`,
           "Оцінка PreStocks — власна цифра PreStocks, не справедлива ціна й не ринкова. «Перевірка» купівлі за правилом має рядок умови: наскільки ціна відходить від орієнтира, сам орієнтир, твій ліміт і час даних.",
+          "Для монети, мему чи нового токена орієнтир — його ринкова ціна, коли ти вмикаєш правило, і знову щоразу, коли вмикаєш його після паузи: не купувати, якщо дорожче за неї більш ніж на N %. Типово — «Без умови»: незмінна ціна — це стеля, і регулярна купівля купує далі, доки ти її не поставиш.",
         ],
       ),
     ]),

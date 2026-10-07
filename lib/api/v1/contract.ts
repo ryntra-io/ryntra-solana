@@ -750,8 +750,11 @@ import {
   RULE_LIST_LIMIT,
   RULE_MAXIMUM_USD,
   RULE_MINIMUM_USD,
+  RULE_FLOOR_AGE_HOURS,
+  RULE_FLOOR_LIQUIDITY_USD,
   RULE_OCCURRENCES_KEPT,
 } from "../../autoinvest/limits.ts";
+import { RULE_ASSET_CLASSES, RULE_FLOOR_VERDICTS } from "../../autoinvest/floor.ts";
 import { PAYMENT_DIRECTIONS, RULE_PAYMENT_MODES } from "../../autoinvest/payments.ts";
 import { PRICE_CONDITION_VERDICTS, PRICE_REFERENCES } from "../../autoinvest/price-condition.ts";
 import { RULE_CADENCES as SCHEDULE_CADENCES, isTimeZone as isTimeZoneName } from "../../autoinvest/schedule.ts";
@@ -774,7 +777,7 @@ import { LAUNCH_PRESET_IDS } from "../../core/venues/meteora-dbc/presets.ts";
 import { LaunchReceiptFactsSchema } from "../../core/venues/meteora-dbc/receipt.ts";
 
 export const API_MAJOR = 1;
-export const API_CONTRACT_VERSION = "1.30.0";
+export const API_CONTRACT_VERSION = "1.31.0";
 export const API_HEADER = "X-Ryntra-API";
 export const API_VERSION_HEADER = "X-Ryntra-API-Version";
 export const NETWORK = "solana:mainnet";
@@ -830,6 +833,8 @@ export const ERROR_CODES = [
   "RULE_NOT_FOUND",
   /** The wallet already holds as many rules as a wallet may; pause is not delete — remove one first. */
   "RULE_LIMIT_REACHED",
+  /** 1.31.0: the token stands below the floor a rule names a token of the venue's list on — its liquidity or its age; the message says which. */
+  "RULE_LIQUIDITY_LOW",
   /* 1.21.0 — «Ryntra попередить» */
   /** «Ryntra попередить» warns through a channel: connect Telegram first. */
   "CHANNEL_REQUIRED",
@@ -953,6 +958,7 @@ export const ERROR_STATUS: Readonly<Record<ApiErrorCode, number>> = {
   AGENT_BUSY: 409,
   RULE_NOT_FOUND: 404,
   RULE_LIMIT_REACHED: 409,
+  RULE_LIQUIDITY_LOW: 422,
   CHANNEL_REQUIRED: 409,
   PRICE_UNAVAILABLE: 503,
   AMOUNT_INVALID: 400,
@@ -1089,6 +1095,15 @@ export const CapabilitiesSchema = z
             percentMax: z.number().int().positive(),
             eventsKept: z.number().int().positive(),
             ownAccount: z.literal("/api/v1/rules/payments/own"),
+          })
+          .strict()
+          .optional(),
+        /** 1.31.0: what a rule may name — a company, a coin, a meme or a new token — the floor a token of the venue's list stands on, and the route that reads a token's standing before a rule is written. */
+        assets: z
+          .object({
+            classes: z.array(z.enum(RULE_ASSET_CLASSES)).min(1),
+            floor: z.object({ liquidityUsd: z.number().positive(), ageHours: z.number().int().positive() }).strict(),
+            read: z.literal("/api/v1/rules/asset"),
           })
           .strict()
           .optional(),
@@ -5737,6 +5752,8 @@ export const SWAP_ORDER_ERROR_CODES_V1 = [
   "RULE_BUDGET_EXHAUSTED",
   /* 1.18.0 — the rule's price condition is not met now: the price stands above its reference by more than the limit, or the data are not fresh. */
   "RULE_PRICE_CONDITION",
+  /* 1.31.0 — a rule's token of the venue's list stands below the floor now: a rule never buys into a thin pool (figures that cannot be read are UNAVAILABLE). */
+  "RULE_LIQUIDITY_LOW",
   "STORE_NOT_DURABLE",
   ...SWAP_OWNER_LOCK_ERROR_CODES_V1,
   "PROVIDER_KEY_MISSING",
@@ -8322,6 +8339,46 @@ export const RulePriceConditionSchema = z.object({ limitPct: z.number().int().mi
 export type RulePriceCondition = z.infer<typeof RulePriceConditionSchema>;
 
 /**
+ * 1.31.0: a rule's price condition as it stands. On a token of the venue's
+ * list the reference is the market price when the rule was turned on —
+ * `referenceUsd` per token and `referenceAt`, taken again whenever the rule is
+ * turned on after a pause; absent on a company's rule, whose reference is the
+ * issuer's or PreStocks' read at every judgement.
+ */
+export const RulePriceConditionStateSchema = z
+  .object({
+    limitPct: z.number().int().min(PRICE_CONDITION_MIN_PCT).max(PRICE_CONDITION_MAX_PCT),
+    referenceUsd: z.number().finite().positive().optional(),
+    referenceAt: Iso.optional(),
+  })
+  .strict();
+export type RulePriceConditionState = z.infer<typeof RulePriceConditionStateSchema>;
+
+/* The floor a rule's token of the venue's list stands on — `lib/autoinvest/floor.ts` and `lib/autoinvest/limits.ts`, so a page reads them without this module. */
+export { RULE_ASSET_CLASSES, RULE_FLOOR_VERDICTS, RULE_FLOOR_LIQUIDITY_USD, RULE_FLOOR_AGE_HOURS };
+
+/**
+ * 1.31.0: one judgement of the floor a rule's token of the venue's list
+ * stands on. `verdict`: `met` its liquidity and its age are on the floor ·
+ * `below` one is under it · `unavailable` a figure is missing or older than
+ * half an hour. `liquidityUsd` the venue's liquidity in the token's pools;
+ * `ageHours` whole hours since its first pool; `dataAt` when the figures were
+ * read; `checkedAt` when it was judged.
+ */
+export const RuleFloorCheckSchema = z
+  .object({
+    verdict: z.enum(RULE_FLOOR_VERDICTS),
+    liquidityUsd: z.number().finite().nonnegative().nullable(),
+    floorUsd: z.number().finite().positive(),
+    ageHours: z.number().int().min(0).nullable(),
+    minAgeHours: z.number().int().min(0),
+    dataAt: Iso.nullable(),
+    checkedAt: Iso,
+  })
+  .strict();
+export type RuleFloorCheck = z.infer<typeof RuleFloorCheckSchema>;
+
+/**
  * 1.18.0: one judgement of a rule's price condition. `verdict`: `met` the
  * purchase may be offered · `above` the price stands above the reference by
  * more than the limit · `stale` the price or the reference is older than the
@@ -8371,6 +8428,8 @@ export const RuleOccurrenceSchema = z
     amountUsd: z.number().finite().positive().nullable(),
     /** 1.19.0: on a «З кожної оплати» occurrence, how many payments or incoming transfers its sum gathered; null on the other kinds. */
     events: z.number().int().min(0).nullable(),
+    /** 1.31.0: on a rule's token of the venue's list, the floor's judgement that opened the reminder or deferred it — the last that changed its verdict; absent on a company's rule. */
+    floor: RuleFloorCheckSchema.optional(),
   })
   .strict();
 export type RuleOccurrence = z.infer<typeof RuleOccurrenceSchema>;
@@ -8495,9 +8554,15 @@ export const AutoinvestRuleSchema = z
     network: z.literal(NETWORK),
     /** `schedule` — «Регулярно»; 1.13.0: `dip` — «Якщо впаде»; 1.19.0: `payments` — «З кожної оплати». */
     kind: z.enum(RULE_KINDS),
-    /** A confirmed stock representation — the identity; the plan's own asset shape. */
+    /**
+     * A confirmed stock representation — the identity; the plan's own asset
+     * shape. 1.31.0: or a token of the venue's list on the floor — `kind`
+     * `crypto` (verified by the venue, not a meme) or `meme` (a meme, or a
+     * token the venue has not verified, whose `issuer` is then
+     * `unverified`), priced per token.
+     */
     asset: PlanAssetSchema,
-    /** The company as a person names it («Apple») — a word for a sentence, never the identity. */
+    /** The company as a person names it («Apple»); 1.31.0: a token's symbol («SOL») — a word for a sentence, never the identity. */
     name: z.string().min(1).max(128),
     /** The sum every purchase is; 1.19.0: on a «З кожної оплати» rule, the least sum a reminder opens at — each reminder names its own. */
     amountUsd: RuleUsd,
@@ -8507,8 +8572,8 @@ export const AutoinvestRuleSchema = z
     dip: RuleDipSchema.nullable(),
     /** 1.19.0: a «З кожної оплати» rule's terms, what waits and the counted events; null on the other kinds. */
     payments: RulePaymentsSchema.nullable(),
-    /** 1.18.0: «Умова ціни» — the most the price may stand above its reference for the rule to offer its purchase; null: no condition. */
-    priceCondition: RulePriceConditionSchema.nullable(),
+    /** 1.18.0: «Умова ціни» — the most the price may stand above its reference for the rule to offer its purchase; null: no condition. 1.31.0: on a token of the venue's list, with the price it stands against. */
+    priceCondition: RulePriceConditionStateSchema.nullable(),
     status: z.enum(RULE_STATUSES),
     /** The next instant a reminder falls due; null on a paused rule and on a «Якщо впаде» rule (the price decides). */
     nextDueAt: Iso.nullable(),
@@ -8519,6 +8584,44 @@ export const AutoinvestRuleSchema = z
   })
   .strict();
 export type AutoinvestRule = z.infer<typeof AutoinvestRuleSchema>;
+
+/**
+ * 1.31.0: `GET /api/v1/rules/asset?mint=` — what a rule on a token would
+ * stand on, read before it is written: the asset as a rule names it, its
+ * class, the price now with its time, and — on a token of the venue's list —
+ * the floor's judgement and the facts of its risk. `refusal` says why no rule
+ * can name it (the same code and message `POST /api/v1/rules` would answer);
+ * null when one can. Public data: no wallet is read.
+ */
+export const RuleAssetReadSchema = z
+  .object({
+    asset: PlanAssetSchema,
+    name: z.string().min(1).max(128),
+    class: z.enum(RULE_ASSET_CLASSES),
+    priceUsd: z.number().finite().positive().nullable(),
+    priceAt: Iso.nullable(),
+    /** The reference a price condition would stand against: the company's own, or `enabled` — the price now, kept when the rule is turned on; null: none, and no condition is offered. */
+    reference: z.enum(PRICE_REFERENCES).nullable(),
+    floor: RuleFloorCheckSchema.nullable(),
+    risk: z
+      .object({
+        verified: z.boolean(),
+        ageHours: z.number().int().min(0).nullable(),
+        liquidityUsd: z.number().finite().nonnegative().nullable(),
+        topHoldersPct: z.number().finite().min(0).max(100).nullable(),
+        mintAuthorityDisabled: z.boolean().nullable(),
+        freezeAuthorityDisabled: z.boolean().nullable(),
+        organicScore: z.number().finite().min(0).max(100).nullable(),
+      })
+      .strict()
+      .nullable(),
+    refusal: z.object({ code: z.enum(["ASSET_UNCONFIRMED", "RULE_LIQUIDITY_LOW"]), message: z.string().min(1).max(400) }).strict().nullable(),
+    observedAt: Iso,
+  })
+  .strict();
+export type RuleAssetRead = z.infer<typeof RuleAssetReadSchema>;
+export const RuleAssetResponseSchema = z.object({ read: RuleAssetReadSchema }).strict();
+export type RuleAssetResponse = z.infer<typeof RuleAssetResponseSchema>;
 
 /**
  * `POST /api/v1/rules` — the company by mint and the sum; «Регулярно» names

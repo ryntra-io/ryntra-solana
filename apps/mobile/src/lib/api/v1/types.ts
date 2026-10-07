@@ -26,7 +26,7 @@
  */
 
 export const API_MAJOR = 1 as const;
-export const API_CONTRACT_VERSION = "1.24.0" as const;
+export const API_CONTRACT_VERSION = "1.30.0" as const;
 export const API_HEADER = "X-Ryntra-API" as const;
 export const API_VERSION_HEADER = "X-Ryntra-API-Version" as const;
 export const NETWORK = "solana:mainnet" as const;
@@ -75,7 +75,26 @@ export type ApiErrorCode =
   /* 1.22.0 — «Гроші» */
   | "AMOUNT_INVALID"
   | "MINT_UNREADABLE"
-  | "PAY_LINK_NOT_FOUND";
+  | "PAY_LINK_NOT_FOUND"
+  /* 1.25.0 — Ryntra Launch */
+  | "LAUNCH_UNAVAILABLE"
+  | "LAUNCH_NAME_BORROWED"
+  | "LAUNCH_IMAGE_INVALID"
+  | "LAUNCH_LIMIT"
+  | "LAUNCH_PAUSED"
+  | "LAUNCH_FIRST_BUY_ABOVE_CAP"
+  | "LAUNCH_BUILD_EXPIRED"
+  | "LAUNCH_BUILD_USED"
+  | "LAUNCH_SIGNED_OTHER_BYTES"
+  | "LAUNCH_SUBMIT_FAILED"
+  | "LAUNCH_NOT_FOUND"
+  /* 1.27.0 — a launch's market and trading on it */
+  | "LAUNCH_BALANCE_LOW"
+  | "LAUNCH_GRADUATING"
+  | "LAUNCH_SLIPPAGE"
+  /* 1.29.0 — the creator's cabinet */
+  | "LAUNCH_SHARES_INVALID"
+  | "LAUNCH_NOTHING_TO_CLAIM";
 
 /** 1.7.0: the stable ids a plan issue may carry beside its message. */
 export type PlanIssueCode =
@@ -195,6 +214,27 @@ export type Capabilities = Readonly<{
     recipient: "/api/v1/money/recipient";
     returned: "/api/v1/money/send/returned";
     transfer: "/api/solana/transfer";
+  }>;
+  /** 1.25.0: Ryntra Launch — present only where Launch is served, with the network it launches on. */
+  launch?: Readonly<{
+    network: LaunchNetworkId;
+    presets: "/api/v1/launch/presets";
+    metadata: "/api/v1/launch/metadata";
+    quote: "/api/v1/launch/quote";
+    build: "/api/v1/launch/build";
+    submit: "/api/v1/launch/submit";
+    token: "/api/v1/launch/{mint}";
+    /* 1.27.0 */
+    market: "/api/v1/launch/{mint}/market";
+    wallet: "/api/v1/launch/{mint}/wallet/{address}";
+    tradeQuote: "/api/v1/launch/{mint}/trade/quote";
+    tradeBuild: "/api/v1/launch/{mint}/trade/build";
+    tradeSubmit: "/api/v1/launch/{mint}/trade/submit";
+    creator: "/api/v1/launch/{mint}/creator";
+    /* 1.29.0 */
+    creators?: "/api/v1/launch/creators/{address}";
+    claimBuild?: "/api/v1/launch/{mint}/claim/build";
+    claimSubmit?: "/api/v1/launch/{mint}/claim/submit";
   }>;
   observedAt: string;
 }>;
@@ -1800,6 +1840,32 @@ export type RewardsPoints = Readonly<{
   excluded: boolean;
 }>;
 
+export type RewardRank = "BRONZE" | "SILVER" | "GOLD" | "SAPPHIRE" | "DIAMOND";
+
+/** The rank over the last 30 days and the level-1 share of the received fee it pays (Growth line, rules 2.0.0). */
+export type RewardsRank = Readonly<{
+  rank: RewardRank;
+  points: string;
+  fromTrades: string;
+  fromFriends: string;
+  fromLaunches: string;
+  rankFrom: string;
+  next: Readonly<{ rank: RewardRank; at: string; toGo: string; friendShare: number }> | null;
+  friendShare: number;
+  secondLevelShare: number;
+  ladder: readonly Readonly<{ rank: RewardRank; from: string; friendShare: number }>[];
+  windowDays: number;
+  rulesVersion: string;
+}>;
+
+export type RewardAchievement = "FIRST_FRIEND" | "FIVE_FRIENDS" | "LAUNCH_ON_DEX";
+
+/** Every rank reached since ranks began (with the points it begins at) and the achievements held, each with the moment it was earned (Growth line). `LAUNCH_ON_DEX` is absent until earned. */
+export type RewardsAchievements = Readonly<{
+  ranks: readonly Readonly<{ rank: RewardRank; reached: boolean; at: string | null; from: string }>[];
+  badges: readonly Readonly<{ id: RewardAchievement; earned: boolean; at: string | null }>[];
+}>;
+
 /** `GET /api/rewards?address=&locale=` — read-only; a claim is not described here. */
 export type RewardsResponse = Readonly<{
   ok: true;
@@ -1820,6 +1886,10 @@ export type RewardsResponse = Readonly<{
   claim: Readonly<{ state: RewardClaimState; text: string; signature: string | null }> | null;
   invitedBy: string | null;
   points: RewardsPoints | null;
+  /** Null when the rank could not be read; absent from a deployment before ranks. */
+  rank?: RewardsRank | null;
+  /** Null when the badges could not be read; absent from a deployment before badges. */
+  achievements?: RewardsAchievements | null;
   started: boolean;
 }>;
 
@@ -4056,3 +4126,366 @@ export type PaySubmitRequest = Readonly<{ intentId: string; signedWireBase64: st
 export type PaySubmitResponse = Readonly<{ data: Readonly<{ signature: string; view: PayPublicView | null }> }>;
 
 export type PaySubmitError = Readonly<{ error: Readonly<{ code: PaySubmitErrorCode; message: string }> }>;
+
+/* ------------------------------------------------------------ 1.25.0 — Ryntra Launch */
+
+/**
+ * «Запустити токен» — one set of routes for the web and the phone, served only
+ * where `capabilities.launch` is present. No bearer or cookie: the creator's
+ * signature inside the transaction is the proof. The phone signs with its
+ * wallet the bytes `build` returns (the creation and, when chosen, the lock)
+ * and hands both to `submit` unchanged.
+ */
+export type LaunchPresetId = "classic" | "protected" | "community";
+export type LaunchLockId = "1m-3m" | "3m-6m" | "6m-12m";
+export type LaunchNetworkId = "solana:devnet" | "solana:mainnet";
+
+export type LaunchPreset = Readonly<{
+  id: LaunchPresetId;
+  name: Readonly<{ uk: string; en: string }>;
+  pair: Readonly<{ mint: string; symbol: string; decimals: number }>;
+  startMarketCapUsd: number;
+  graduationMarketCapUsd: number;
+  sniperFee: Readonly<{ startBps: number; endBps: number; seconds: number }>;
+  creatorTradingFeePct: number;
+  graduationFee: Readonly<{ pct: number; creatorPct: number }>;
+  firstBuyCapBps: number;
+  lpLockedForeverPct: 100;
+}>;
+
+/** `GET /api/v1/launch/presets` */
+export type LaunchPresetsResponse = Readonly<{
+  network: LaunchNetworkId;
+  presets: readonly LaunchPreset[];
+  locks: readonly Readonly<{ id: LaunchLockId; cliffDays: number; vestDays: number }>[];
+  limits: Readonly<{ nameMax: number; symbolMax: number; descriptionMax: number; imageMaxBytes: number; imageTypes: readonly string[]; launchesPerDay: number }>;
+}>;
+
+/** `POST /api/v1/launch/metadata` — the picture's bytes as base64, the fields as typed. */
+export type LaunchMetadataRequest = Readonly<{ name: string; symbol: string; description: string; website: string; x: string; telegram: string; imageBase64: string }>;
+export type LaunchMetadataResponse = Readonly<{ metadataUri: string; imageUrl: string; name: string; symbol: string }>;
+
+/** `POST /api/v1/launch/quote` */
+export type LaunchQuoteRequest = Readonly<{ preset: LaunchPresetId; amountRaw: string }>;
+export type LaunchQuoteResponse = Readonly<{ preset: LaunchPresetId; pairMint: string; amountInRaw: string; tokensOutRaw: string; capRaw: string; maxAmountInRaw: string; withinCap: boolean }>;
+
+/** `POST /api/v1/launch/build` */
+export type LaunchBuildRequest = Readonly<{
+  creator: string;
+  preset: LaunchPresetId;
+  metadataUri: string;
+  firstBuyRaw: string;
+  lock: LaunchLockId | null;
+  /** 1.29.0, «Спільнота» only: the creator's fees shared — the creator among two to five wallets, basis points adding up to 10 000. */
+  feeShares?: readonly LaunchFeeShare[];
+}>;
+/** One wallet's share of a launch's creator fees, whole basis points (at least 100). */
+export type LaunchFeeShare = Readonly<{ address: string; bps: number }>;
+export type LaunchBuildResponse = Readonly<{
+  buildId: string;
+  network: LaunchNetworkId;
+  unsignedWireBase64: string;
+  lockUnsignedWireBase64: string | null;
+  token: string;
+  firstBuyOutRaw: string;
+  payerCoveredLamports: string;
+  creatorCostLamports: string;
+  expiresAt: string;
+  /** 1.29.0: the sharing of the creator's fees, signed already by the new mint; the creator signs it too. */
+  splitUnsignedWireBase64?: string | null;
+  feeVault?: string | null;
+}>;
+
+/** `POST /api/v1/launch/submit` */
+export type LaunchSubmitRequest = Readonly<{ buildId: string; creator: string; signedWireBase64: string; signedLockWireBase64: string | null; signedSplitWireBase64?: string | null }>;
+export type LaunchLock = Readonly<{ schedule: LaunchLockId; escrow: string; signature: string | null; state: "LOCKED" | "PENDING" | "FAILED"; reason: string | null }>;
+/** 1.29.0: «Спільнота» sharing the creator's fees — SHARED once the vault holds the curve's creator role; FAILED, the creator keeps every fee. */
+export type LaunchFeeSharing = Readonly<{ vault: string; shares: readonly LaunchFeeShare[]; signature: string | null; state: "SHARED" | "PENDING" | "FAILED"; reason: string | null }>;
+export type LaunchSubmitResponse = Readonly<{ token: string; signature: string; state: "LAUNCHED" | "PENDING"; lock: LaunchLock | null; feeSharing?: LaunchFeeSharing | null; tokenPath: string }>;
+
+export type LaunchMarkCode = "MINT_REVOKED" | "NO_FREEZE" | "METADATA_FIXED" | "NO_TRANSFER_HOOK" | "CURVE_HOLDS_FUNDS" | "LP_LOCKED_FOREVER" | "CREATOR_BUY_LOCKED";
+
+/** The launch receipt's facts, as the chain shows them; every mark names the account where anyone can see it. */
+export type LaunchReceiptFacts = Readonly<{
+  source: "ryntra.solana.launch-receipt.facts@1";
+  network: "solana";
+  cluster: "mainnet" | "devnet";
+  preset: LaunchPresetId;
+  config: string;
+  token: string;
+  pool: string;
+  creator: string;
+  created: Readonly<{ signature: string; slot: number; at: string | null }>;
+  creatorFirstBuy: Readonly<{ quoteInRaw: string; tokensOutRaw: string; capRaw: string }> | null;
+  creatorLock?: Readonly<{ escrow: string; lockedRaw: string; cliffAt: string; endsAt: string }> | null;
+  /** 1.29.0: the vault holding the curve's creator role and the shares written in it, from the chain. */
+  feeSharing?: Readonly<{ vault: string; shares: readonly LaunchFeeShare[] }> | null;
+  token2022: Readonly<{
+    supplyRaw: string;
+    decimals: number;
+    mintAuthority: null;
+    freezeAuthority: null;
+    transferHookProgram: null;
+    metadataUpdateAuthority: null;
+    metadataPointerAuthority: null;
+    extensions: readonly ("MetadataPointer" | "TokenMetadata")[];
+  }>;
+  curve: Readonly<{ quoteReserveRaw: string; migrationQuoteThresholdRaw: string; progressBps: number; migrated: boolean }>;
+  graduated: Readonly<{
+    pool: string;
+    compounding: true;
+    compoundingFeeBps: number;
+    feeFallsWithMarketCap: true;
+    positions: readonly Readonly<{ position: string; owner: string; permanentLockedLiquidity: string }>[];
+  }> | null;
+  marks: readonly Readonly<{ code: LaunchMarkCode; account: string }>[];
+  observedAt: string;
+}>;
+
+/** `GET /api/v1/launch/{mint}` */
+export type LaunchTokenResponse = Readonly<{
+  network: LaunchNetworkId;
+  token: string;
+  name: string;
+  symbol: string;
+  description: string;
+  image: string | null;
+  links: Readonly<{ website: string | null; x: string | null; telegram: string | null }>;
+  preset: LaunchPresetId;
+  creator: string;
+  launchedAt: string;
+  signature: string;
+  progressBps: number | null;
+  migrated: boolean | null;
+  lock: (LaunchLock & Readonly<{ cliffAt: string | null; endsAt: string | null }>) | null;
+  /** 1.29.0 */
+  feeSharing?: LaunchFeeSharing | null;
+  receipt: LaunchReceiptFacts | null;
+  receiptProblems: readonly string[];
+  shareLink: string;
+  observedAt: string;
+}>;
+
+/* ------------------------------------------------------------ 1.27.0 — a launch's market and trading on it */
+
+/**
+ * The token's market as the chain shows it — `GET /api/v1/launch/{mint}/market`
+ * — and a buy or a sale on its curve or, after graduation, in its pool:
+ * quote, build (the wallet signs, the fee payer and only signer), submit (the
+ * bytes unchanged but for the wallet's own fee and guard instructions). The
+ * facts of risk are codes with figures: a client says them in its own words,
+ * never as a verdict.
+ */
+export type LaunchTradeSide = "buy" | "sell";
+export type LaunchTradeVenue = "curve" | "pool";
+export type LaunchHolderLabel = "creator" | "sniper" | "bundle" | "curve" | "pool" | "lock";
+export type LaunchRiskCode =
+  | "CREATOR_SOLD"
+  | "CREATOR_HOLDS"
+  | "BUNDLE_HOLDS"
+  | "SNIPERS_HOLD"
+  | "TOP10_HOLD"
+  | "FEW_HOLDERS"
+  | "HOLDERS_UNCOUNTED"
+  | "YOUNG"
+  | "CREATOR_OTHER_CURVES"
+  | "OPENING_UNREAD"
+  | "HISTORY_PARTIAL";
+export type LaunchMoney = Readonly<{ pair: number; usd: number | null }>;
+
+export type LaunchTradeRow = Readonly<{
+  signature: string;
+  at: string;
+  side: LaunchTradeSide;
+  venue: LaunchTradeVenue;
+  trader: string;
+  payer: string;
+  traderLabels: readonly LaunchHolderLabel[];
+  tokensRaw: string;
+  pairRaw: string;
+  feeRaw: string;
+  marketCapPair: number;
+}>;
+
+export type LaunchHolderRow = Readonly<{ owner: string; amountRaw: string; shareBps: number; labels: readonly LaunchHolderLabel[] }>;
+
+export type LaunchRiskFact = Readonly<{
+  code: LaunchRiskCode;
+  level: "attention" | "info";
+  values: Readonly<Record<string, number>>;
+  source: Readonly<{ kind: "tx" | "account"; id: string }> | null;
+}>;
+
+export type LaunchCreatorLaunch = Readonly<{
+  token: string;
+  name: string;
+  symbol: string;
+  preset: LaunchPresetId;
+  launchedAt: string;
+  progressBps: number | null;
+  migrated: boolean | null;
+  /** How much the creator sold, by `creatorSoldOf`; 0 when nothing; null when not read. */
+  creatorSoldBps: number | null;
+  /** Of what they bought here, or of the supply when they sold more than that. */
+  creatorSoldOf: "bought" | "supply" | null;
+}>;
+
+/** `GET /api/v1/launch/{mint}/market` */
+export type LaunchMarketResponse = Readonly<{
+  network: LaunchNetworkId;
+  token: string;
+  venue: LaunchTradeVenue;
+  pair: Readonly<{ mint: string; symbol: string; decimals: number; dollar: boolean }>;
+  supplyRaw: string;
+  tokenDecimals: number;
+  price: LaunchMoney;
+  marketCap: LaunchMoney;
+  sinceLaunchBps: number;
+  liquidity: LaunchMoney;
+  volume24h: LaunchMoney & Readonly<{ complete: boolean }>;
+  progress: Readonly<{ bps: number; migrated: boolean; reserveRaw: string; thresholdRaw: string }>;
+  curveFee: Readonly<{ nowBps: number | null; endBps: number; sniperUntil: string | null }> | null;
+  holders: Readonly<{
+    count: number;
+    atLeast: boolean;
+    rows: readonly LaunchHolderRow[];
+    groups: Readonly<{
+      creatorBps: number;
+      snipers: Readonly<{ shareBps: number; wallets: number }> | null;
+      /** `atLeast`: the history was read in part — a floor, not a count. */
+      bundle: Readonly<{ shareBps: number; wallets: number; atLeast: boolean }> | null;
+      top10Bps: number;
+    }>;
+  }>;
+  trades: Readonly<{ rows: readonly LaunchTradeRow[]; complete: boolean; read: number }>;
+  chart: Readonly<{
+    points: readonly Readonly<{ t: number; marketCapPair: number }>[];
+    markers: readonly Readonly<{ t: number; kind: "creator-buy" | "creator-sell" | "graduated"; signature: string }>[];
+  }>;
+  risk: readonly LaunchRiskFact[];
+  /** `tradesComplete`: every trade of the creator's wallet on this token was read; false — «the creator sold» may be missing. */
+  creator: Readonly<{ address: string; curves: number | null; tradesComplete: boolean }>;
+  trading: Readonly<{ venue: LaunchTradeVenue; pool: string; referral: boolean; jupiter: boolean }>;
+  observedAt: string;
+}>;
+
+/** `GET /api/v1/launch/{mint}/creator` — read after the market. */
+export type LaunchCreatorResponse = Readonly<{ network: LaunchNetworkId; token: string; creator: string; launches: readonly LaunchCreatorLaunch[]; observedAt: string }>;
+
+/** `GET /api/v1/launch/{mint}/wallet/{address}` */
+export type LaunchWalletResponse = Readonly<{ wallet: string; token: string; tokenRaw: string; pairRaw: string; observedAt: string }>;
+
+/** `POST /api/v1/launch/{mint}/trade/quote` */
+export type LaunchTradeQuoteRequest = Readonly<{ side: LaunchTradeSide; amountRaw: string; slippageBps: number }>;
+export type LaunchTradeQuoteResponse = Readonly<{
+  venue: LaunchTradeVenue;
+  side: LaunchTradeSide;
+  amountInRaw: string;
+  amountOutRaw: string;
+  minimumOutRaw: string;
+  amountLeftRaw: string;
+  slippageBps: number;
+  feeBps: number;
+  fee: Readonly<{ totalRaw: string; creatorRaw: string | null; ryntraRaw: string; meteoraRaw: string; liquidityRaw: string | null }>;
+  priceMoveBps: number;
+  marketCapAfter: LaunchMoney;
+  referral: boolean;
+  observedAt: string;
+}>;
+
+/** `POST /api/v1/launch/{mint}/trade/build` */
+export type LaunchTradeBuildRequest = Readonly<{ wallet: string; side: LaunchTradeSide; amountRaw: string; slippageBps: number }>;
+export type LaunchTradeBuildResponse = Readonly<{ buildId: string; network: LaunchNetworkId; unsignedWireBase64: string; quote: LaunchTradeQuoteResponse; expiresAt: string }>;
+
+/** `POST /api/v1/launch/{mint}/trade/submit` */
+export type LaunchTradeSubmitRequest = Readonly<{ buildId: string; wallet: string; signedWireBase64: string }>;
+export type LaunchTradeSubmitResponse = Readonly<{ signature: string; state: "CONFIRMED" | "PENDING"; filled: Readonly<{ tokensRaw: string; pairRaw: string }> | null }>;
+/* ------------------------------------------------------------ 1.29.0 — the creator's cabinet */
+
+/**
+ * «Мої лаунчі» — `GET /api/v1/launch/creators/{address}`: the wallet's launches
+ * as their creator and those whose creator fees it shares in, what the
+ * creator's side earned by source (every figure a program's own counter) and
+ * the wallet's part; «Забрати» — `POST …/{mint}/claim/build` and `…/claim/submit`
+ * — with a receipt read back from the programs' events. `earnings` null —
+ * not read now, never zero.
+ */
+export type LaunchFeeSource = "curve" | "graduation" | "lp";
+export type LaunchSourceEarnings = Readonly<{ earnedRaw: string; unclaimedRaw: string }>;
+export type LaunchPairView = Readonly<{ mint: string; symbol: string; decimals: number; dollar: boolean }>;
+export type LaunchEarnings = Readonly<{
+  role: Readonly<{ curve: LaunchSourceEarnings; graduation: LaunchSourceEarnings; lp: LaunchSourceEarnings; earnedRaw: string; unclaimedRaw: string }>;
+  mine: Readonly<{ shareBps: number; earnedRaw: string; unclaimedRaw: string; claimedRaw: string }>;
+}>;
+export type LaunchCabinetRow = Readonly<{
+  token: string;
+  name: string;
+  symbol: string;
+  image: string | null;
+  preset: LaunchPresetId;
+  creator: string;
+  role: "creator" | "recipient";
+  launchedAt: string;
+  pair: LaunchPairView;
+  progressBps: number | null;
+  migrated: boolean | null;
+  earnings: LaunchEarnings | null;
+  feeSharing: LaunchFeeSharing | null;
+  claimable: boolean;
+}>;
+export type LaunchClaimReceipt = Readonly<{
+  token: string;
+  name: string;
+  symbol: string;
+  signature: string;
+  at: string | null;
+  pair: LaunchPairView;
+  paid: Readonly<{ curve: string; graduation: string; lp: string }>;
+  vaultPaidRaw: string | null;
+  receivedRaw: string;
+}>;
+/** The creator earnings card's data: from the chain and the claim receipts, with its period; each currency apart. */
+export type CreatorEarningsCard = Readonly<{
+  source: "ryntra.launch.creator-earnings-card@1";
+  kind: "creator";
+  wallet: string;
+  network: LaunchNetworkId;
+  period: Readonly<{ from: string; to: string }>;
+  launches: number;
+  graduated: number;
+  unread: number;
+  amounts: readonly Readonly<{ pairMint: string; symbol: string; decimals: number; dollar: boolean; earnedRaw: string; claimedRaw: string }>[];
+  receipts: readonly string[];
+}>;
+export type LaunchCreatorCabinetResponse = Readonly<{
+  network: LaunchNetworkId;
+  wallet: string;
+  launches: readonly LaunchCabinetRow[];
+  receipts: readonly LaunchClaimReceipt[];
+  card: CreatorEarningsCard;
+  observedAt: string;
+}>;
+
+/** `POST /api/v1/launch/{mint}/claim/build` */
+export type LaunchClaimBuildRequest = Readonly<{ wallet: string }>;
+export type LaunchClaimBuildResponse = Readonly<{
+  buildId: string;
+  network: LaunchNetworkId;
+  unsignedWireBase64: readonly string[];
+  sources: readonly LaunchFeeSource[];
+  expectedRaw: string;
+  /** The wallet's SOL the network simulated the claim taking; null when not simulated. */
+  networkCostLamports: string | null;
+  pair: LaunchPairView;
+  expiresAt: string;
+}>;
+
+/** `POST /api/v1/launch/{mint}/claim/submit` */
+export type LaunchClaimSubmitRequest = Readonly<{ buildId: string; wallet: string; signedWireBase64: readonly string[] }>;
+/** PARTIAL — the first transaction landed and a later one did not (`failed`): part was taken, the rest still waits. */
+export type LaunchClaimSubmitResponse = Readonly<{
+  state: "CONFIRMED" | "PENDING" | "PARTIAL";
+  receipts: readonly LaunchClaimReceipt[];
+  pending: readonly string[];
+  failed: readonly Readonly<{ signature: string; reason: string }>[];
+}>;

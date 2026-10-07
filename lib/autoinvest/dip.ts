@@ -27,6 +27,17 @@ import { usdcOutOf } from "./budget.ts";
 /** How old a price may be and still decide a crossing. */
 export const DIP_PRICE_MAX_AGE_MS = 30 * 60_000;
 
+/**
+ * A price per unit as a rule keeps it: to a millionth of a dollar from a
+ * dollar up; under a dollar (a coin, a meme, 1.31.0) to eight significant
+ * digits — a millionth would round $0.00000366 to $0.000004, or a cheaper
+ * token to nothing.
+ */
+export function keptPriceUsd(usd: number): number {
+  if (!Number.isFinite(usd) || usd <= 0) return usd;
+  return usd >= 1 ? Math.round(usd * 1e6) / 1e6 : Number(usd.toPrecision(8));
+}
+
 /** The price at which a rule reminds: the point less N %. */
 export function dipTriggerUsd(anchorUsd: number, dropPct: number): number {
   return anchorUsd * (1 - dropPct / 100);

@@ -7,7 +7,11 @@
  * called so — never a fair price); for a listed one, the reference per share
  * the screener's «Відхилення» is drawn against — the issuer's quote, or the
  * market feed where one is configured. The price is the token's own on the
- * venue, on the reference's basis (per token, per share).
+ * venue, on the reference's basis (per token, per share). For a token of the
+ * venue's list (1.31.0) — a coin, a meme, a new token — the reference is the
+ * market price when the rule was turned on (`enabled`), kept on the rule and
+ * taken again whenever it is turned on after a pause: it is a fixed point, so
+ * only the price now must be fresh.
  *
  * **The condition** is «Не купувати, якщо дорожче за орієнтир більш ніж на
  * N %»: the price may stand at most N % above the reference — a discount
@@ -32,8 +36,8 @@ export { PRICE_CONDITION_DEFAULT_PCT, PRICE_CONDITION_MAX_PCT, PRICE_CONDITION_M
 /** How old the price and its reference may be and still decide — the same half hour a fall is read within (`./dip.ts`). */
 export const PRICE_CONDITION_MAX_AGE_MS = PRICE_CONDITION_MAX_AGE_MINUTES * 60_000;
 
-/** Whose figure the price is set against: PreStocks' valuation of a token, or the listed company's reference per share. */
-export const PRICE_REFERENCES = ["prestocks", "issuer", "market"] as const;
+/** Whose figure the price is set against: PreStocks' valuation of a token, the listed company's reference per share, or (1.31.0) a token's market price when its rule was turned on. */
+export const PRICE_REFERENCES = ["prestocks", "issuer", "market", "enabled"] as const;
 export type PriceReference = (typeof PRICE_REFERENCES)[number];
 
 /** `met` the rule may offer its purchase · `above` dearer than the limit · `stale` the data are too old · `unavailable` a figure is missing. */
@@ -41,6 +45,9 @@ export const PRICE_CONDITION_VERDICTS = ["met", "above", "stale", "unavailable"]
 export type PriceConditionVerdict = (typeof PRICE_CONDITION_VERDICTS)[number];
 
 export type PriceCondition = Readonly<{ limitPct: number }>;
+
+/** 1.31.0: a token's market price when its rule was turned on — the reference a coin's condition stands against. */
+export type PriceAnchor = Readonly<{ referenceUsd: number; referenceAt: string }>;
 
 /** What the condition is judged on: the price and the reference, each with the instant it stands for. */
 export type PriceFacts = Readonly<{
@@ -94,11 +101,13 @@ export function checkPriceCondition(limitPct: number, facts: PriceFacts | null |
     checkedAt,
   };
   const deviationPct = deviationOf(base.priceUsd, base.referenceUsd);
-  const times = [facts?.priceAtMs, facts?.referenceAtMs].filter(instant);
+  /* The price when the rule was turned on is a fixed point: its age is the rule's, never staleness — only the price now must be fresh. */
+  const fixed = facts?.reference === "enabled";
+  const times = (fixed ? [facts?.priceAtMs] : [facts?.priceAtMs, facts?.referenceAtMs]).filter(instant);
   const dataAt = times.length > 0 ? new Date(Math.min(...times)).toISOString() : null;
   if (!facts || base.reference === null || deviationPct === null) return { ...base, deviationPct, dataAt, verdict: "unavailable" };
   const old = (at: number | null): boolean => !instant(at) || nowMs - at > PRICE_CONDITION_MAX_AGE_MS;
-  if (facts.referenceStale || old(facts.priceAtMs) || old(facts.referenceAtMs)) return { ...base, deviationPct, dataAt, verdict: "stale" };
+  if (facts.referenceStale || old(facts.priceAtMs) || (!fixed && old(facts.referenceAtMs))) return { ...base, deviationPct, dataAt, verdict: "stale" };
   return { ...base, deviationPct, dataAt, verdict: deviationPct > limitPct ? "above" : "met" };
 }
 
@@ -155,6 +164,22 @@ export function priceFactsOf(row: PriceFactsRow, marketObservedAtMs: number | nu
   };
 }
 
+/**
+ * The facts a token of the venue's list states (1.31.0): its market price
+ * now, with the time it was read, against the price when its rule was turned
+ * on. No anchor, no price — `unavailable`.
+ */
+export function anchorFactsOf(anchor: PriceAnchor | null | undefined, price: Readonly<{ usd: number | null; atMs: number | null }> | null): PriceFacts {
+  return {
+    reference: "enabled",
+    priceUsd: price?.usd ?? null,
+    priceAtMs: price?.atMs ?? null,
+    referenceUsd: anchor?.referenceUsd ?? null,
+    referenceAtMs: anchor ? parsed(anchor.referenceAt) : null,
+    referenceStale: false,
+  };
+}
+
 /* ------------------------------------------------------------ words */
 
 /**
@@ -176,6 +201,10 @@ const REFERENCE_PHRASES: Readonly<Record<PriceReference, Readonly<Record<RuleLoc
   market: {
     en: { name: "Market reference", against: "the market reference", of: "the market reference" },
     uk: { name: "Біржовий орієнтир", against: "біржовий орієнтир", of: "біржового орієнтира" },
+  },
+  enabled: {
+    en: { name: "Price when turned on", against: "the price when the rule was turned on", of: "the price when the rule was turned on" },
+    uk: { name: "Ціна при ввімкненні", against: "ціну при ввімкненні правила", of: "ціни при ввімкненні правила" },
   },
 };
 

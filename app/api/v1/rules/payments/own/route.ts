@@ -4,6 +4,7 @@ import { requireWalletProof } from "@/lib/api/v1/proof";
 import { markOwnPaymentAccount } from "@/lib/autoinvest/service";
 import { getGuardRuntime } from "@/lib/guard/runtime";
 import { storeSurvivesColdStart } from "@/lib/guard/store";
+import { readsEnabledReference, ruleForReader } from "@/lib/autoinvest/wire";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -29,5 +30,5 @@ export async function POST(request: Request) {
   if (!runtime.writes.allowed || !storeSurvivesColdStart(runtime.store)) return apiFailure("UNAVAILABLE", "Rules need a durable store; this deployment does not have one.");
   const marked = await markOwnPaymentAccount(runtime.store, proof.address, read.body.signature);
   if (!marked.ok) return apiFailure(marked.code, marked.message);
-  return apiJson({ address: proof.address, rules: [...marked.rules], total: marked.total, budget: marked.budget } satisfies RuleListResponse);
+  return apiJson({ address: proof.address, rules: marked.rules.map((rule) => ruleForReader(rule, readsEnabledReference(proof.carrier, request.headers))), total: marked.total, budget: marked.budget } satisfies RuleListResponse);
 }

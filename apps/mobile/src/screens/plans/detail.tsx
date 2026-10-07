@@ -7,6 +7,7 @@ import { BOTTOM_ACTION_INSET, BottomAction } from '@/components/bottom-action'
 import { Button } from '@/components/button'
 import { Card } from '@/components/card'
 import { Chip } from '@/components/chip'
+import { DoorRow } from '@/components/door-row'
 import { FactRow } from '@/components/fact-row'
 import { Field } from '@/components/field'
 import { Icon } from '@/components/icon'
@@ -640,6 +641,18 @@ export function PlanDetailScreen() {
             </Card>
           )}
         </Section>
+
+        {plan.status !== 'draft' ? (
+          <Card padded={false} className="px-4">
+            <DoorRow
+              icon="analytics-outline"
+              label={copy.results}
+              line={copy.resultsLine}
+              onPress={() => router.push({ pathname: '/results', params: { plan: plan.id, from: 'plan' } })}
+              last
+            />
+          </Card>
+        ) : null}
 
         {plan.journal.length > 0 ? (
           <Section title={copy.activity}>

@@ -14,8 +14,9 @@
  *   with their sorts; crypto and memes, the watchlist beside them).
  * - **Портфель** — beside the positions: Стратегії (the plans), Результати,
  *   Історія.
- * - **Ще** — Обмін, Міст, Надіслати, Отримати, Винагороди, Демо-прогнози, in
- *   the web's order.
+ * - **Ще** — «Гроші» first (Поповнити · Надіслати · Отримати · Посилання на
+ *   оплату, M31), then Обмін, Міст, Винагороди, Демо-прогнози, in the web's
+ *   order.
  *
  * A door opens the phone's own screen where the phone has one. A page only the
  * web has built opens ryntra.io and says so — never a dead row. The Academy
@@ -28,7 +29,7 @@ import type { Copy } from '../../lib/i18n.ts'
 /** Where a door leads: a screen of the phone, a sheet over the place, or a page only ryntra.io has built. */
 export type PlaceDestination =
   | Readonly<{ kind: 'screen'; path: string }>
-  | Readonly<{ kind: 'sheet'; sheet: 'receive' }>
+  | Readonly<{ kind: 'sheet'; sheet: 'top-up' }>
   | Readonly<{ kind: 'web'; path: string }>
 
 /** Home's one door a tap deeper: M10's Home — what changed and what needs a look. */
@@ -63,25 +64,35 @@ export const PORTFOLIO_DOORS = ['strategies', 'results', 'history'] as const
 export type PortfolioDoor = (typeof PORTFOLIO_DOORS)[number]
 
 /**
- * «Ще»'s pages in the order the Owner named them (2026-09-24), the web's own:
- * Обмін · Міст · Надіслати · Отримати · Винагороди · Демо-прогнози.
+ * «Гроші» — «Ще»'s first section (M31):
+ * Поповнити (the top-up the web leads to — the phone's own sheet) · Надіслати ·
+ * Отримати · Посилання на оплату (Receive on its request).
  */
-export const MORE_PAGES = ['swap', 'bridge', 'send', 'receive', 'rewards', 'predictions'] as const
+export const MONEY_PAGES = ['topUp', 'send', 'receive', 'link'] as const
+export type MoneyPage = (typeof MONEY_PAGES)[number]
+
+/**
+ * «Ще»'s other pages in the order the Owner named them (2026-09-24), the web's
+ * own: Обмін · Міст · Винагороди · Демо-прогнози.
+ */
+export const MORE_PAGES = ['swap', 'bridge', 'rewards', 'predictions'] as const
 export type MorePage = (typeof MORE_PAGES)[number]
 
 /**
- * Where each door of Portfolio and «Ще» leads. Results live on ryntra.io until
- * the phone has its own screen (M13); Bridge, Send and the prediction demo are
- * the web's pages; Receive is the wallet's own address in a sheet.
+ * Where each door of Portfolio and «Ще» leads. Results are the phone's own
+ * screen (M13); Bridge and the prediction demo are the web's pages; «Гроші» is
+ * the phone's own — the top-up a sheet over «Ще».
  */
-export const DOOR_DESTINATIONS: Readonly<Record<PortfolioDoor | MorePage, PlaceDestination>> = {
+export const DOOR_DESTINATIONS: Readonly<Record<PortfolioDoor | MorePage | MoneyPage, PlaceDestination>> = {
   strategies: { kind: 'screen', path: '/plans' },
-  results: { kind: 'web', path: '/app/results' },
+  results: { kind: 'screen', path: '/results' },
   history: { kind: 'screen', path: '/history' },
   swap: { kind: 'screen', path: '/trade?mode=swap' },
   bridge: { kind: 'web', path: '/app/bridge' },
-  send: { kind: 'web', path: '/app/send' },
-  receive: { kind: 'sheet', sheet: 'receive' },
+  topUp: { kind: 'sheet', sheet: 'top-up' },
+  send: { kind: 'screen', path: '/money/send' },
+  receive: { kind: 'screen', path: '/money/receive' },
+  link: { kind: 'screen', path: '/money/receive?tab=link' },
   rewards: { kind: 'screen', path: '/rewards' },
   predictions: { kind: 'web', path: '/app/predictions' },
 }
@@ -102,6 +113,7 @@ export function placeDoors(): readonly Readonly<{ place: string; door: string; d
       destination: { kind: 'screen', path: MARKETS_TOOL_PATHS[tool] } as const,
     })),
     ...PORTFOLIO_DOORS.map((door) => ({ place: 'portfolio', door, destination: DOOR_DESTINATIONS[door] })),
+    ...MONEY_PAGES.map((door) => ({ place: 'more', door, destination: DOOR_DESTINATIONS[door] })),
     ...MORE_PAGES.map((door) => ({ place: 'more', door, destination: DOOR_DESTINATIONS[door] })),
   ]
 }
@@ -137,8 +149,6 @@ export const PLACES_COPY: Copy<PlacesCopy> = {
     pages: {
       swap: 'Swap',
       bridge: 'Bridge',
-      send: 'Send',
-      receive: 'Receive',
       rewards: 'Rewards',
       predictions: 'Demo predictions',
     },
@@ -162,8 +172,6 @@ export const PLACES_COPY: Copy<PlacesCopy> = {
     pages: {
       swap: 'Обмін',
       bridge: 'Міст',
-      send: 'Надіслати',
-      receive: 'Отримати',
       rewards: 'Винагороди',
       predictions: 'Демо-прогнози',
     },

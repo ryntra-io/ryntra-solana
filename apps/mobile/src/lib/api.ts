@@ -8,7 +8,7 @@
 
 import type { SiwsVerifyBody } from '@/features/session/siws'
 
-import { createRyntraApiClient, RyntraApiError, type RyntraApiClient } from './api/v1/client.ts'
+import { createRyntraApiClient, RyntraApiError, RyntraRouteError, type RyntraApiClient } from './api/v1/client.ts'
 import {
   API_CONTRACT_VERSION,
   type AgentBudgetState,
@@ -16,22 +16,33 @@ import {
   type AgentMessageRequest,
   type AgentMessageResponse,
   type AgentSessionOpenRequest,
+  type AddressEvidenceRead,
   type AgentSessionResponse,
   type ApiClient,
   type ApiSession,
   type Capabilities,
   type ChallengeResponse,
   type ExecutionPlanBinding,
+  type PayLinkCreateRequest,
+  type PayLinkListResponse,
+  type PayLinkResponse,
+  type PaySubmitRequest,
+  type PaySubmitResponse,
+  type PayTransactionRequest,
+  type PayTransactionResponse,
   type PlanAssetRead,
   type PlanCreateRequest,
   type PlanListResponse,
   type PlanResponse,
+  type PlanMemoryResponse,
   type PlanResultsResponse,
   type PlanReview,
   type PlanStatusRequest,
   type PlanUpdateRequest,
   type PlanVersionResponse,
   type PopularCompaniesResponse,
+  type RecipientCheckQuery,
+  type RecipientCheckResponse,
   type RuleBinding,
   type RuleBudgetRequest,
   type RuleBudgetResponse,
@@ -42,8 +53,16 @@ import {
   type RulePaymentOwnRequest,
   type RuleResponse,
   type RuleStatus,
+  type SendReturnedRequest,
+  type SendReturnedResponse,
   type SwapCheck,
   type TelegramChannelResponse,
+  type TransferAdoptResponse,
+  type TransferPlanRequest,
+  type TransferRecoverResponse,
+  type TransferReviewResponse,
+  type TransferSettleRequest,
+  type TransferSettleResponse,
   type VerifyResponse,
   type WatchlistMergeResponse,
   type WatchlistResponse,
@@ -662,7 +681,7 @@ function v1Client(session: Session | null, signal?: AbortSignal, timeoutMs = REQ
   })
 }
 
-/** A pinned-client refusal into the app's error; a network failure is rethrown as the plain error it is. */
+/** A pinned-client refusal — a v1 route's or a consumed route's — into the app's error; a network failure is rethrown as the plain error it is. */
 async function v1<T>(work: () => Promise<T>): Promise<T> {
   try {
     return await work()
@@ -670,6 +689,12 @@ async function v1<T>(work: () => Promise<T>): Promise<T> {
     if (error instanceof RyntraApiError) {
       if (error.code === 'NETWORK') throw new Error(error.message)
       throw new ApiError(error.code, error.message, error.status, error.minimumAppVersion)
+    }
+    // A route outside /api/v1 (the transfer and the link's own routes) refuses in its own shape — kept whole as details.
+    if (error instanceof RyntraRouteError) {
+      if (error.code === 'NETWORK') throw new Error(error.message)
+      const { code: _code, message: _message, ...details } = error.details ?? {}
+      throw new ApiError(error.code, error.message, error.status, null, details)
     }
     throw error
   }
@@ -1145,9 +1170,20 @@ export type {
   PlanAssetKind,
   PlanAssetRead,
   PlanCheck,
+  PlanCheckId,
+  PlanCostPart,
   PlanJournalEntry,
+  PlanMemoryCitation,
+  PlanMemoryFact,
+  PlanMemoryResponse,
+  PlanNoTradeOutcome,
+  PlanNoTradeReason,
   PlanningPrice,
+  PlanPosition,
+  PlanPositionRow,
   PlanResult,
+  PlanResultsResponse,
+  PlanResultsSummary,
   PlanReview,
   PlanRules,
   PlanSizing,
@@ -1170,6 +1206,10 @@ export type PlansApi = Readonly<{
   ) => Promise<PlanResponse>
   version: (session: Session, planId: string, version: number, signal?: AbortSignal) => Promise<PlanVersionResponse>
   results: (session: Session, planId: string, signal?: AbortSignal) => Promise<PlanResultsResponse>
+  /** 1.9.0: every plan's results at once — the operations, the positions, the plans that made no trade, the summary. */
+  allResults: (session: Session, signal?: AbortSignal) => Promise<PlanResultsResponse>
+  /** 1.9.0: the wallet's memory — facts over its own records, each citing the record it stands on. */
+  memory: (session: Session, signal?: AbortSignal) => Promise<PlanMemoryResponse>
   /** Public (1.7.0): any mint resolved the way a create resolves it — the asset a plan would carry, the planning price now or null. */
   asset: (mint: string, signal?: AbortSignal) => Promise<PlanAssetRead>
 }>
@@ -1183,6 +1223,8 @@ export const plansApi: PlansApi = {
   setStatus: (session, planId, request, signal) => v1(() => v1Client(session, signal).plans.setStatus(planId, request)),
   version: (session, planId, version, signal) => v1(() => v1Client(session, signal).plans.version(planId, version)),
   results: (session, planId, signal) => v1(() => v1Client(session, signal).plans.results(planId)),
+  allResults: (session, signal) => v1(() => v1Client(session, signal).plans.allResults()),
+  memory: (session, signal) => v1(() => v1Client(session, signal).plans.memory()),
   asset: (mint, signal) => v1(() => v1Client(null, signal).plans.asset(mint)),
 }
 
@@ -1475,4 +1517,103 @@ export function revokeDevice(session: Session, deviceId: string, signal?: AbortS
       session,
     },
   )
+}
+
+/* ---- «Гроші»: Send, a payment link, the recipient check (contract 1.22.0, §3r) ---- */
+
+export type {
+  AddressEvidenceRead,
+  PayLink,
+  PayLinkExpiration,
+  PayLinkStatus,
+  RecipientCheckResponse,
+  RecipientProblem,
+  SendReturnedResponse,
+  TransferCheck,
+  TransferInput,
+  TransferRecovery,
+  TransferReview,
+  TransferSettleResult,
+} from './api/v1/types.ts'
+export { PAY_LINK_EXPIRATIONS } from './api/v1/types.ts'
+
+/** A settle observes the chain before it answers; it may take most of a minute. */
+const SETTLE_TIMEOUT_MS = 60_000
+
+/** What was typed, pasted or scanned into «Кому» — an address, a Solana Pay request or a Ryntra link — and the one decision. Public. */
+export function checkRecipient(query: RecipientCheckQuery, signal?: AbortSignal): Promise<RecipientCheckResponse> {
+  return v1(() => v1Client(null, signal).money.recipient(query))
+}
+
+/** What the security source keeps about one plain address — one line beside the recipient check, as on the web. Public. */
+export function readAddressEvidence(address: string, signal?: AbortSignal): Promise<AddressEvidenceRead> {
+  return v1(() => v1Client(null, signal, 20_000).research.addressEvidence(address))
+}
+
+/** The exact transfer and its Review, with «Перевірка» counted by the server (`check`). No session: the review proof binds it. */
+export function planTransfer(request: TransferPlanRequest, signal?: AbortSignal): Promise<TransferReviewResponse> {
+  return v1(() => v1Client(null, signal, 25_000).transfer.plan(request))
+}
+
+/** What the wallet returned, read against the Review: `settle`, `adopt` or `stop`, and the signature when it signed. */
+export function readReturned(request: SendReturnedRequest, signal?: AbortSignal): Promise<SendReturnedResponse> {
+  return v1(() => v1Client(null, signal).money.returned(request))
+}
+
+/** A wallet that added only its fee and guard instructions: the Review re-read and re-signed for those bytes. */
+export function adoptTransfer(request: TransferSettleRequest, signal?: AbortSignal): Promise<TransferAdoptResponse> {
+  return v1(() => v1Client(null, signal, 25_000).transfer.adopt(request))
+}
+
+/** Submit once and observe: 200 with the receipt, or the open outcome — never sent again. */
+export function settleTransfer(request: TransferSettleRequest, signal?: AbortSignal): Promise<TransferSettleResponse> {
+  return v1(() => v1Client(null, signal, SETTLE_TIMEOUT_MS).transfer.settle(request))
+}
+
+/** One signature read again, over the session's bearer; the outcome is `primary` and `independent`, never `attempt.state`. */
+export function recoverTransfer(
+  session: Session,
+  signature: string,
+  signal?: AbortSignal,
+): Promise<TransferRecoverResponse> {
+  return v1(() => v1Client(session, signal, 25_000).transfer.recover({ network: 'mainnet', signature }))
+}
+
+/** A payment link for the session's own wallet — the recipient is never a field. */
+export function createPayLink(
+  session: Session,
+  request: PayLinkCreateRequest,
+  signal?: AbortSignal,
+): Promise<PayLinkResponse> {
+  return v1(() => v1Client(session, signal, 20_000).pay.create(request))
+}
+
+/** The session's own links, newest first. */
+export function listPayLinks(session: Session, signal?: AbortSignal): Promise<PayLinkListResponse> {
+  return v1(() => v1Client(session, signal).pay.list())
+}
+
+/** One link as its page reads it — the chain observed when the last read is older than eight seconds. Public. */
+export function readPayLink(id: string, signal?: AbortSignal): Promise<PayLinkResponse> {
+  return v1(() => v1Client(null, signal).pay.get(id))
+}
+
+/** The unsigned transfer that pays a Ryntra link, its reference inside, pinned for three minutes; the payer is the session's wallet. */
+export function payLinkTransaction(
+  session: Session,
+  id: string,
+  request: PayTransactionRequest,
+  signal?: AbortSignal,
+): Promise<PayTransactionResponse> {
+  return v1(() => v1Client(session, signal, 25_000).pay.transaction(id, request))
+}
+
+/** The signed payment of a link, sent once. */
+export function submitPayLink(
+  session: Session,
+  id: string,
+  request: PaySubmitRequest,
+  signal?: AbortSignal,
+): Promise<PaySubmitResponse> {
+  return v1(() => v1Client(session, signal, SETTLE_TIMEOUT_MS).pay.submit(id, request))
 }

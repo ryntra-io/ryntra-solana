@@ -30,6 +30,13 @@
  * sum that reached the rule's minimum opens one reminder on exactly that sum
  * — «З оплат: $1,30 → Apple».
  *
+ * A rule on a token of the venue's list (1.31.0) — a coin, a meme, a new
+ * token — reads the token's price and its floor from one read of the venue a
+ * pass: its «Якщо впаде» falls from the market price, its price condition
+ * stands against the price when it was turned on, and under the floor — or
+ * its figures unread — a purchase is deferred like any the condition holds
+ * back, one note saying why.
+ *
  * The note opens a fresh Review on the rule's sum; it is never permission to
  * trade, and nothing here reads a quote, builds an order or touches a wallet.
  */
@@ -40,12 +47,14 @@ import { claimTrigger, inboxOf, newInboxId, readPreferences, type InboxRecord } 
 import type { SolanaWalletAction } from "../solana/action-ledger.ts";
 import { isRetiredMint } from "../stocks/retired.ts";
 import { readStockUniverse } from "../stocks/universe.server.ts";
+import { readTokenMarkets, type TokenMarket } from "./asset.ts";
 import { budgetMonth, spendInMonth } from "./budget.ts";
 import { dipTriggerUsd, usablePrice, type DipPrice } from "./dip.ts";
-import { budgetMonitorId, budgetSpentIdentity, budgetSubjectId, deferralIdentity, reminderIdentity, ruleMonitorId } from "./links.ts";
+import { assetRefOf, budgetMonitorId, budgetSpentIdentity, budgetSubjectId, deferralIdentity, reminderIdentity, ruleMonitorId } from "./links.ts";
+import { checkFloor, floorDeferralWords, isListedToken, type RuleFloorCheck } from "./floor.ts";
 import { advanceRule, type PaymentsWatchView } from "./model.ts";
 import { readPaymentWatch, refreshPaymentWatch, type PaymentWatchRecord } from "./payment-watch.ts";
-import { deferralWords, priceFactsOf, type PriceFacts } from "./price-condition.ts";
+import { anchorFactsOf, deferralWords, priceFactsOf, type PriceFacts } from "./price-condition.ts";
 import { readLedger, remainingFor, type RuleDeps } from "./service.ts";
 import { listAllRuleRecords, readBudgetRecord, readRule, replaceRule, type AutoinvestBudgetRecord, type AutoinvestRuleRecord, type StoredOccurrence } from "./store.ts";
 import { budgetSpentWords, dipReminderWords, paymentsReminderWords, reminderWords, type ReminderWords } from "./words.ts";
@@ -55,8 +64,10 @@ import { budgetSpentWords, dipReminderWords, paymentsReminderWords, reminderWord
  * the Scaled UI multiplier («Якщо впаде»), and the facts its price condition
  * is judged on (1.18.0) — absent or null when they could not be read.
  */
-export type DipMarket = Readonly<{ price: DipPrice | null; multiplier: number | null; condition?: PriceFacts | null }>;
+export type DipMarket = Readonly<{ price: DipPrice | null; multiplier: number | null; condition?: PriceFacts | null; floor?: RuleFloorCheck | null }>;
 export type DipMarkets = (mints: readonly string[]) => Promise<ReadonlyMap<string, DipMarket>>;
+/** 1.31.0: the tokens of the venue's list the rules name, read once a pass; the tests pass their own. */
+export type TokenMarkets = (mints: readonly string[], nowMs: number) => Promise<ReadonlyMap<string, TokenMarket>>;
 /** 1.19.0: the wallet's watch, read and folded for this pass; the tests pass their own. */
 export type PaymentWatchReader = (
   store: GuardStore,
@@ -71,7 +82,24 @@ export type PaymentWatchReader = (
  * chain is read on the next pass.
  */
 export const PAYMENTS_PASS_BUDGET_MS = 20_000;
-export type TickDeps = RuleDeps & Readonly<{ markets?: DipMarkets; paymentWatch?: PaymentWatchReader }>;
+export type TickDeps = RuleDeps & Readonly<{ markets?: DipMarkets; tokenMarkets?: TokenMarkets; paymentWatch?: PaymentWatchReader }>;
+
+/**
+ * A token rule's world from the venue's read (1.31.0): the market price for a
+ * fall, a multiplier of one (a token is counted in itself), the price now
+ * against the price when the rule was turned on, and the floor — `unavailable`
+ * when the read did not carry the token.
+ */
+export function tokenRuleMarket(record: Pick<AutoinvestRuleRecord, "priceCondition">, market: TokenMarket | undefined, nowMs: number): DipMarket {
+  const condition = record.priceCondition;
+  const anchor = condition && typeof condition.referenceUsd === "number" && condition.referenceAt ? { referenceUsd: condition.referenceUsd, referenceAt: condition.referenceAt } : null;
+  return {
+    price: market?.price ?? null,
+    multiplier: 1,
+    condition: condition ? anchorFactsOf(anchor, market?.price ? { usd: market.price.usd, atMs: market.price.observedAtMs } : null) : null,
+    floor: market?.floor ?? checkFloor(null, nowMs),
+  };
+}
 
 /** The companies' prices and the facts their price conditions read, from the one universe the company pages read — one read for every rule in the pass. */
 export async function readDipMarkets(mints: readonly string[]): Promise<ReadonlyMap<string, DipMarket>> {
@@ -105,11 +133,13 @@ function zoneOf(rule: Pick<AutoinvestRuleRecord, "schedule" | "dip" | "payments"
  * met travels as every reminder does.
  */
 export async function writeDeferral(store: GuardStore, rule: ReminderRule, occurrence: StoredOccurrence, nowMs: number): Promise<boolean> {
-  if (!occurrence.condition) return false;
+  /* The floor first: a thin pool is the reason whatever the price says. */
+  const floorHeld = occurrence.floor && occurrence.floor.verdict !== "met" ? occurrence.floor : null;
+  if (!occurrence.condition && !floorHeld) return false;
   const at = new Date(nowMs).toISOString();
-  const identity = deferralIdentity(rule.id, occurrence.dueAt, rule.asset.symbol);
+  const identity = deferralIdentity(rule.id, occurrence.dueAt, assetRefOf(rule.asset));
   if (!(await claimTrigger(store, identity, at))) return false;
-  const words = deferralWords({ name: rule.name, check: occurrence.condition, timeZone: zoneOf(rule), nowMs });
+  const words = floorHeld ? floorDeferralWords({ name: rule.name, check: floorHeld }) : deferralWords({ name: rule.name, check: occurrence.condition as NonNullable<StoredOccurrence["condition"]>, timeZone: zoneOf(rule), nowMs });
   const own = words[rule.locale];
   const inboxId = newInboxId();
   const note: InboxRecord = {
@@ -146,7 +176,7 @@ export async function writeReminder(store: GuardStore, rule: ReminderRule, occur
   const words = wordsOf(rule, occurrence);
   if (!words) return false;
   const at = new Date(nowMs).toISOString();
-  const identity = reminderIdentity(rule.id, occurrence.dueAt, rule.asset.symbol);
+  const identity = reminderIdentity(rule.id, occurrence.dueAt, assetRefOf(rule.asset));
   if (!(await claimTrigger(store, identity, at))) return false;
   const inboxId = newInboxId();
   const own = words[rule.locale];
@@ -230,9 +260,10 @@ function mayOpen(record: AutoinvestRuleRecord, market: DipMarket | undefined, no
   return record.nextDueAt !== null && Date.parse(record.nextDueAt) <= nowMs;
 }
 
-/** Whether the tick reads a rule's company this pass: a «Якщо впаде» rule always; a rule with a price condition when it falls due or waits on it. */
+/** Whether the tick reads a rule's company this pass: a «Якщо впаде» rule always; a rule with a price condition when it falls due or waits on it; a token's rule (its floor) whenever it is on. */
 function readsMarket(record: AutoinvestRuleRecord, nowMs: number): boolean {
   if (record.kind === "dip") return record.status === "active" || record.occurrences.some((occurrence) => occurrence.state === "due");
+  if (isListedToken(record.asset)) return record.status === "active";
   if (!record.priceCondition || record.status !== "active") return false;
   /* A «З кожної оплати» rule may reach its minimum on any pass: the universe is read once for the whole pass anyway. */
   if (record.kind === "payments") return true;
@@ -251,8 +282,15 @@ export async function tickAutoinvest(store: GuardStore, nowMs: number, deps: Tic
   const records = await listAllRuleRecords(store);
   const byOwner = new Map<string, AutoinvestRuleRecord[]>();
   for (const record of records) byOwner.set(record.owner, [...(byOwner.get(record.owner) ?? []), record]);
-  const marketMints = [...new Set(records.filter((record) => !isRetiredMint(record.asset.mint) && readsMarket(record, nowMs)).map((record) => record.asset.mint))];
+  const reading = records.filter((record) => !isRetiredMint(record.asset.mint) && readsMarket(record, nowMs));
+  /* Companies from the one universe the company pages read; tokens of the venue's list from one read of the venue (1.31.0). */
+  const marketMints = [...new Set(reading.filter((record) => !isListedToken(record.asset)).map((record) => record.asset.mint))];
+  const tokenMints = [...new Set(reading.filter((record) => isListedToken(record.asset)).map((record) => record.asset.mint))];
   const markets: ReadonlyMap<string, DipMarket> = marketMints.length > 0 ? await (deps.markets ?? readDipMarkets)(marketMints).catch(() => new Map<string, DipMarket>()) : new Map<string, DipMarket>();
+  const tokens: ReadonlyMap<string, TokenMarket> =
+    tokenMints.length > 0
+      ? await (deps.tokenMarkets ?? ((mints: readonly string[], at: number) => readTokenMarkets(mints, at, { readMarkets: deps.readMarkets })))(tokenMints, nowMs).catch(() => new Map<string, TokenMarket>())
+      : new Map<string, TokenMarket>();
 
   let reminded = 0;
   let deferred = 0;
@@ -287,7 +325,9 @@ export async function tickAutoinvest(store: GuardStore, nowMs: number, deps: Tic
         await withBoundedCasRetry(async () => {
           const current = await readRule(store, owner, listed.id);
           if (!current) return true;
-          const market = markets.get(current.asset.mint);
+          /* A token flagged since its rule was written reminds of nothing, like a token Ryntra no longer supports. */
+          if (isListedToken(current.asset) && tokens.get(current.asset.mint)?.flagged) return true;
+          const market = isListedToken(current.asset) ? tokenRuleMarket(current, tokens.get(current.asset.mint), nowMs) : markets.get(current.asset.mint);
           const opening = budget !== null && mayOpen(current, market, nowMs, watch);
           const history = current.occurrences.some((occurrence) => occurrence.state === "due") || opening ? await rowsOf() : null;
           const budgetUnknown = opening && (budget === "unknown" || history === null);

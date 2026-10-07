@@ -52,6 +52,9 @@ import {
   PAYMENT_PERCENT_MIN,
   PAYMENT_ROUNDUP_STEPS_USD,
   RULE_PAYMENT_MODES,
+  RULE_ASSET_CLASSES,
+  RULE_FLOOR_AGE_HOURS,
+  RULE_FLOOR_LIQUIDITY_USD,
   PRICE_CONDITION_DEFAULT_PCT,
   PRICE_CONDITION_MAX_AGE_MINUTES,
   PRICE_CONDITION_MAX_PCT,
@@ -145,6 +148,8 @@ export function buildCapabilities(deps: Readonly<{ env?: NodeJS.ProcessEnv; now?
         eventsKept: PAYMENT_EVENTS_KEPT,
         ownAccount: "/api/v1/rules/payments/own",
       },
+      /* 1.31.0: «Регулярна купівля для всього» — any token with liquidity: a company, a coin, a meme or a new token on the floor. */
+      assets: { classes: [...RULE_ASSET_CLASSES], floor: { liquidityUsd: RULE_FLOOR_LIQUIDITY_USD, ageHours: RULE_FLOOR_AGE_HOURS }, read: "/api/v1/rules/asset" },
     },
     attribution: { referralAccount: resolveServiceFeeConfig(env).jupiterReferralAccount, stats: "/api/stats" },
     /* 1.8.0: Ryn — its routes, whether a model composes the words here, the tools by kind and the boundary said as a fact. */

@@ -15,6 +15,8 @@ import {
   PRICE_CONDITION_MAX_AGE_MINUTES,
   PRICE_CONDITION_PRESETS_PCT,
   RULE_DIP_PRESETS_PCT,
+  RULE_FLOOR_AGE_HOURS,
+  RULE_FLOOR_LIQUIDITY_USD,
   RULE_LIST_LIMIT,
 } from "../../../lib/autoinvest/limits.ts";
 import { RULE_REMINDER_HOURS } from "../../../lib/autoinvest/schedule.ts";
@@ -122,6 +124,9 @@ export const AUTOINVEST = {
   fixedFrom: `$${PAYMENT_FIXED_MIN_USD.toFixed(2)}`,
   fixedTo: `$${PAYMENT_FIXED_MAX_USD}`,
   percentPresets: PAYMENT_PERCENT_PRESETS.map((pct) => `${pct}%`).join(" · "),
+  /* The floor a meme or a new token stands on for a rule: its liquidity and its hours on the market. */
+  floorUsd: { en: `$${new Intl.NumberFormat("en-US").format(RULE_FLOOR_LIQUIDITY_USD)}`, uk: `$${new Intl.NumberFormat("uk-UA").format(RULE_FLOOR_LIQUIDITY_USD)}` },
+  floorHours: RULE_FLOOR_AGE_HOURS,
 } as const;
 
 /** The loss limits a purchase in Simple offers, per cent below the price it is bought at (the published presets). */

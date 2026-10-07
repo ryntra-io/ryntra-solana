@@ -10,6 +10,7 @@ import { TurboModuleRegistry, type TurboModule } from 'react-native'
  */
 interface ClipboardModule extends TurboModule {
   setString: (content: string) => void
+  getString: () => Promise<string>
 }
 
 const clipboard = TurboModuleRegistry.get<ClipboardModule>('Clipboard')
@@ -21,4 +22,15 @@ export function copyText(text: string): boolean {
   if (!clipboard) return false
   clipboard.setString(text)
   return true
+}
+
+/** What the clipboard holds, read only when the person pressed «Вставити»; null when it is empty or cannot be read. */
+export async function pasteText(): Promise<string | null> {
+  if (!clipboard) return null
+  try {
+    const text = (await clipboard.getString()).trim()
+    return text.length > 0 ? text : null
+  } catch {
+    return null
+  }
 }

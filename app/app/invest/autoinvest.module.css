@@ -215,7 +215,8 @@
 
 /* The price condition holds the purchase back: a wait, said in the caution colour — nothing to buy until the rule judges it met. */
 .rule[data-state="deferred"] .ruleState {
-  color: var(--ry-caution);
+  /* Amber as text, mixed with the text's ink: 4.5:1 on the light card, amber on the dark one. */
+  color: color-mix(in srgb, var(--ry-caution) 62%, var(--ry-text));
 }
 
 .rule[data-state="paused"] .ruleName {
