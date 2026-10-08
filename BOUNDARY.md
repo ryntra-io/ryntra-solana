@@ -9,10 +9,10 @@ moved counts as new. Generated at every update from the development history.
 
 | Since the tag | Files |
 |---|---|
-| New | 1,289 |
-| Changed | 814 |
-| Unchanged | 921 |
-| Lines added / removed | +331,136 / −19,860 |
+| New | 1,305 |
+| Changed | 816 |
+| Unchanged | 919 |
+| Lines added / removed | +335,547 / −20,082 |
 
 ## New since the tag
 
@@ -424,12 +424,18 @@ moved counts as new. Generated at every update from the development history.
 - `app/solana/workspace/holdings/plan-link.tsx`
 - `app/solana/workspace/rewards/badge.tsx`
 - `app/solana/workspace/rewards/badges-card.tsx`
+- `app/solana/workspace/rewards/card-motion.ts`
+- `app/solana/workspace/rewards/invite-banner.tsx`
+- `app/solana/workspace/rewards/invite.module.css`
 - `app/solana/workspace/rewards/leaderboard-view.tsx`
 - `app/solana/workspace/rewards/league-copy.ts`
 - `app/solana/workspace/rewards/league-pages.tsx`
 - `app/solana/workspace/rewards/leagues.module.css`
+- `app/solana/workspace/rewards/live-card.module.css`
+- `app/solana/workspace/rewards/live-card.tsx`
 - `app/solana/workspace/rewards/rank-card.tsx`
 - `app/solana/workspace/rewards/rank-copy.ts`
+- `app/solana/workspace/rewards/referral-copy.ts`
 - `app/solana/workspace/rewards/rewards-tabs.tsx`
 - `app/solana/workspace/rewards/season-card.tsx`
 - `app/solana/workspace/rewards/season-view.tsx`
@@ -974,11 +980,18 @@ moved counts as new. Generated at every update from the development history.
 - `lib/growth/badges.test.mjs`
 - `lib/growth/badges.ts`
 - `lib/growth/card-copy.ts`
+- `lib/growth/card-face.ts`
+- `lib/growth/card-icon.server.ts`
+- `lib/growth/card-mood.ts`
+- `lib/growth/card-motion.test.mjs`
+- `lib/growth/card-scene.ts`
 - `lib/growth/card-store.ts`
 - `lib/growth/leaderboard.ts`
 - `lib/growth/league-store.ts`
 - `lib/growth/league-view.ts`
 - `lib/growth/leagues.test.mjs`
+- `lib/growth/mp4.test.mjs`
+- `lib/growth/mp4.ts`
 - `lib/growth/public-address.ts`
 - `lib/growth/referral-destination.ts`
 - `lib/growth/seasons.ts`
@@ -1118,6 +1131,9 @@ moved counts as new. Generated at every update from the development history.
 - `lib/rewards/rank.test.mjs`
 - `lib/rewards/rank.ts`
 - `lib/rewards/record.server.test.mjs`
+- `lib/rewards/referral-state.server.ts`
+- `lib/rewards/referral-state.test.mjs`
+- `lib/rewards/referral-window.test.mjs`
 - `lib/rewards/reliability.test.mjs`
 - `lib/rewards/rules.ts`
 - `lib/rewards/swap-settlement.ts`
@@ -1676,6 +1692,7 @@ moved counts as new. Generated at every update from the development history.
 - `app/solana/workspace/trade/swap-context.tsx`
 - `app/solana/workspace/wallet-gate.module.css`
 - `app/solana/workspace/wallet-gate.tsx`
+- `app/solana/workspace/wallet-proof.tsx`
 - `app/stellar/destinations.ts`
 - `app/stellar/page.tsx`
 - `app/stellar/stellar.test.mjs`
@@ -1885,6 +1902,7 @@ moved counts as new. Generated at every update from the development history.
 - `lib/rewards/ledger.ts`
 - `lib/rewards/model.ts`
 - `lib/rewards/record.server.ts`
+- `lib/rewards/referral-flow.test.mjs`
 - `lib/rewards/referral.ts`
 - `lib/rewards/reserve.ts`
 - `lib/rewards/treasury.server.ts`

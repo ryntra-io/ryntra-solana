@@ -12,7 +12,8 @@ import { useWalletProof } from "../wallet-proof.tsx";
 import { rankCopy } from "./rank-copy.ts";
 import { BadgesCard, type AchievementsSummary } from "./badges-card.tsx";
 import { RankCard, type RankSummary } from "./rank-card.tsx";
-import { ReferralCard } from "./referral-card.tsx";
+import { ReferralCard, useReferral } from "./referral-card.tsx";
+import { referralCopy } from "./referral-copy.ts";
 import { SeasonCard } from "./season-card.tsx";
 import styles from "./rewards.module.css";
 
@@ -127,6 +128,11 @@ export function RewardsCard() {
   const [loading, setLoading] = useState(false);
   const inFlight = useRef<AbortController | null>(null);
   const [copied, setCopied] = useState(false);
+  const [codeCopied, setCodeCopied] = useState(false);
+  const inviteWords = referralCopy(locale);
+  /* Read once for the whole page: an open invitation goes to the top, where
+     somebody who followed a link sees it before anything else. */
+  const referral = useReferral(address, proven, summary?.invitedBy ?? null);
 
   const load = useCallback(async (force = false) => {
     if (!address || !proven || currentKey.current !== key) return;
@@ -215,6 +221,17 @@ export function RewardsCard() {
     }
   }, [summary]);
 
+  const copyCode = useCallback(async () => {
+    if (!summary?.referral) return;
+    try {
+      await navigator.clipboard.writeText(summary.referral.code);
+      setCodeCopied(true);
+      window.setTimeout(() => setCodeCopied(false), 2_000);
+    } catch {
+      /* The code stays on screen and is selectable. */
+    }
+  }, [summary]);
+
   const share = useCallback(async () => {
     if (!summary?.referral) return;
     const data = { title: "Ryntra", url: summary.referral.link };
@@ -245,7 +262,7 @@ export function RewardsCard() {
       <div className={styles.gateFrame}>
         {/* The state somebody who has just followed a link is actually in: no
             wallet at all. The invitation belongs here more than anywhere. */}
-        <ReferralCard key={address} wallet={address} invitedBy={null} proven={false} onProve={prove} onBound={() => void load()} />
+        <ReferralCard key={address} wallet={address} invitedBy={null} proven={false} referral={referral} onProve={prove} onBound={() => void load()} />
         <WalletGate title={text("Connect a wallet to see what you have earned.")} />
       </div>
     );
@@ -255,7 +272,7 @@ export function RewardsCard() {
       <div className={styles.gateFrame}>
         {/* Before a wallet is proven: somebody who has just followed a link
             should see who invited them without being asked to sign first. */}
-        <ReferralCard key={address} wallet={address} invitedBy={null} proven={false} onProve={prove} onBound={() => void load()} />
+        <ReferralCard key={address} wallet={address} invitedBy={null} proven={false} referral={referral} onProve={prove} onBound={() => void load()} />
         <div className={styles.confirm}>
           <p className={styles.confirmLead}>{text("Confirm this wallet to see your rewards.")}</p>
           <button type="button" className={styles.claim} onClick={() => void prove()} disabled={proof.state.status === "signing"}>
@@ -291,7 +308,26 @@ export function RewardsCard() {
   const sourceFigure = (kind: "cashback" | "l1" | "l2"): string =>
     dollars(kind === "cashback" ? summary.cashback : kind === "l1" ? summary.referralL1 : summary.referralL2);
 
+  /* A carried invitation leads the page — one that did not bind on its own,
+     or another inviter's link offered as the one change (the server returns it
+     only while the change is possible). Too late, or settled with nothing new,
+     it lives in the invite panel: an answer, not a call to act. */
+  const invitationFirst = Boolean(referral.state?.pending) && referral.state?.binding?.open !== false;
+  const referralCard = (
+    <ReferralCard
+      key={address}
+      wallet={address}
+      invitedBy={summary.invitedBy}
+      proven={proven}
+      referral={referral}
+      onProve={prove}
+      onBound={() => void load()}
+    />
+  );
+
   return (
+    <>
+    {invitationFirst ? <div className={styles.invitationTop}>{referralCard}</div> : null}
     <div className={styles.workspace}>
       {/* What is theirs, what it is waiting on, and where it came from. */}
       <section className={`${styles.panel} ${styles.earn}`} id="rewards-earnings" aria-label={text("Available to claim")}>
@@ -389,6 +425,7 @@ export function RewardsCard() {
             </div>
 
             {summary.referral ? (
+              <>
               <div className={styles.linkRow}>
                 <input className={styles.link} readOnly value={summary.referral.link} aria-label={text("Your referral link")} onFocus={(event) => event.currentTarget.select()} />
                 <div className={styles.linkActions}>
@@ -402,36 +439,48 @@ export function RewardsCard() {
                   </button>
                 </div>
               </div>
+              {/* The code on its own, for a friend who would rather type it
+                  than open a link: the field takes either. */}
+              <div className={styles.codeRow}>
+                <span className={styles.codeLabel}>{inviteWords.yourCode}</span>
+                <button
+                  type="button"
+                  className={styles.codeChip}
+                  data-done={codeCopied ? "true" : "false"}
+                  onClick={() => void copyCode()}
+                  aria-label={`${inviteWords.copyCode}: ${summary.referral.code}`}
+                  title={inviteWords.copyCode}
+                >
+                  <span translate="no">{summary.referral.code}</span>
+                  {codeCopied ? <Check size={14} weight="bold" aria-hidden="true" /> : <Copy size={14} aria-hidden="true" />}
+                </button>
+                <span className={styles.codeDone} role="status">{codeCopied ? inviteWords.copied : ""}</span>
+              </div>
+              </>
             ) : null}
 
             <dl className={styles.tiles}>
               <div className={styles.tile}>
-                <dt>{text("Direct referrals")}</dt>
+                <dt>{text("Friends")}</dt>
                 <dd translate="no">{summary.referrals.level1}</dd>
               </div>
               <div className={styles.tile}>
-                <dt>{text("Level 2 referrals")}</dt>
+                <dt>{text("Their friends")}</dt>
                 <dd translate="no">{summary.referrals.level2}</dd>
               </div>
               <div className={styles.tile} data-tone={usdNumber(summary.referralL1) > 0 ? "money" : undefined}>
-                <dt>{text("L1 earned")}</dt>
+                <dt>{text("Earned from friends")}</dt>
                 <dd translate="no">{dollars(summary.referralL1)}</dd>
               </div>
               <div className={styles.tile} data-tone={usdNumber(summary.referralL2) > 0 ? "money" : undefined}>
-                <dt>{text("L2 earned")}</dt>
+                <dt>{text("Earned from their friends")}</dt>
                 <dd translate="no">{dollars(summary.referralL2)}</dd>
               </div>
             </dl>
 
-            {/* Who invited this wallet — pending, offered or settled. */}
-            <ReferralCard
-              key={address}
-              wallet={address}
-              invitedBy={summary.invitedBy}
-              proven={proven}
-              onProve={prove}
-              onBound={() => void load()}
-            />
+            {/* Who invited this wallet — offered or settled; an open
+                invitation is drawn at the top of the page instead. */}
+            {invitationFirst ? null : referralCard}
           </section>
         </div>
 
@@ -501,5 +550,6 @@ export function RewardsCard() {
         </details>
       </div>
     </div>
+    </>
   );
 }

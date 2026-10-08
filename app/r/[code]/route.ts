@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { secureCookies } from "@/lib/auth/cookie-policy";
 import { referralDestination } from "@/lib/growth/referral-destination";
-import { normalizeReferralCode, REFERRAL_COOKIE } from "@/lib/rewards/referral";
+import { carriedCodeHolds, normalizeReferralCode, REFERRAL_COOKIE, REFERRAL_COOKIE_AT } from "@/lib/rewards/referral";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,6 +23,16 @@ export const dynamic = "force-dynamic";
  * thirty-day cookie and nothing else, which also means an unclaimed code costs
  * nobody anything and expires on its own.
  *
+ * ## First touch
+ *
+ * A code carried for less than a day is not replaced by a later link. The
+ * invitation binds on its own the moment the browser proves a wallet, so a
+ * link that overwrote a fresh one would let anybody who gets a person to open
+ * one — a redirect, a shortened URL — take the binding. After a day the newer
+ * link wins: a stale code from a month ago must not beat the friend who just
+ * sent theirs. A different code is always chosen deliberately with «Change
+ * code» on «Винагороди», or, after binding, the one change.
+ *
  * ## Why an unknown code still redirects
  *
  * A mistyped or expired link lands a person in the product rather than on an
@@ -38,10 +48,21 @@ export async function GET(req: NextRequest, context: { params: Promise<{ code: s
   /* «Винагороди», or the product page the link names (`?to=`, this site's `/app` only). */
   const destination = referralDestination(new URL(req.url).searchParams.get("to"), req.url);
   const response = NextResponse.redirect(destination, 302);
-  if (normalized) {
+  const carried = normalizeReferralCode(req.cookies.get(REFERRAL_COOKIE)?.value ?? "");
+  const holds = carried !== null && carriedCodeHolds(req.cookies.get(REFERRAL_COOKIE_AT)?.value, Date.now());
+  if (normalized && !holds) {
     response.cookies.set({
       name: REFERRAL_COOKIE,
       value: normalized,
+      httpOnly: true,
+      sameSite: "lax",
+      secure: secureCookies(),
+      path: "/",
+      maxAge: THIRTY_DAYS_SECONDS,
+    });
+    response.cookies.set({
+      name: REFERRAL_COOKIE_AT,
+      value: String(Date.now()),
       httpOnly: true,
       sameSite: "lax",
       secure: secureCookies(),

@@ -26,7 +26,7 @@
  */
 
 export const API_MAJOR = 1 as const;
-export const API_CONTRACT_VERSION = "1.34.0" as const;
+export const API_CONTRACT_VERSION = "1.35.0" as const;
 export const API_HEADER = "X-Ryntra-API" as const;
 export const API_VERSION_HEADER = "X-Ryntra-API-Version" as const;
 export const NETWORK = "solana:mainnet" as const;
@@ -1595,7 +1595,7 @@ export type RewardPendingReason = (typeof REWARD_PENDING_REASONS)[number];
 export const REWARD_CLAIM_STATES = ["CLAIMING", "SUBMITTED_UNKNOWN", "PAID", "FAILED"] as const;
 export type RewardClaimState = (typeof REWARD_CLAIM_STATES)[number];
 
-export const REFERRAL_REFUSALS = ["SELF_REFERRAL", "UNKNOWN_CODE", "ALREADY_REFERRED", "ALREADY_EARNING", "CYCLE"] as const;
+export const REFERRAL_REFUSALS = ["SELF_REFERRAL", "UNKNOWN_CODE", "ALREADY_REFERRED", "ALREADY_EARNING", "CYCLE", "ALREADY_CHANGED"] as const;
 export type ReferralRefusal = (typeof REFERRAL_REFUSALS)[number];
 
 export const MONITOR_STATUSES = ["watching", "needs_attention", "paused", "unavailable"] as const;
@@ -1922,15 +1922,23 @@ export type RewardsError = Readonly<{ error: "rate limited" }> | Readonly<{ erro
 
 export type RewardsReferralPreview = Readonly<{ code: string; inviterMasked: string; codeMasked: string }>;
 
+/** Whether the proven wallet can still take an inviter: before its first trade (`until` null), seven days after it, then not. */
+export type RewardsReferralBinding = Readonly<{ open: boolean; until: string | null }>;
+
 export type RewardsReferralState = Readonly<{
   ok: true;
   pending: RewardsReferralPreview | null;
   confirmed: Readonly<{ inviterMasked: string; codeMasked: string | null }> | null;
+  binding?: RewardsReferralBinding;
+  /** With an inviter: whether it can still be changed — once, inside the same window. */
+  change?: RewardsReferralBinding;
+  /** True on the read that bound the carried invitation on its own. */
+  bound?: true;
 }>;
 
 export type RewardsReferralGetResponse = Readonly<{ ok: true; found: true; preview: RewardsReferralPreview }> | Readonly<{ ok: true; found: false; preview: null }> | RewardsReferralState;
 
-export type RewardsReferralRequest = Readonly<{ action: "pending"; code: string }> | Readonly<{ action: "dismiss" }> | Readonly<{ action: "confirm"; code: string; address: string }>;
+export type RewardsReferralRequest = Readonly<{ action: "pending"; code: string }> | Readonly<{ action: "dismiss" }> | Readonly<{ action: "confirm"; code: string; address: string }> | Readonly<{ action: "change"; code: string; address: string }>;
 
 export type RewardsReferralError = Readonly<{ error: "rate limited" | "forbidden origin" | "bad request" }> | Readonly<{ ok: false; found: false; reason: "REFERRAL_CODE_NOT_FOUND" }> | Readonly<{ ok: false; reason: "PROOF_REQUIRED"; proof: false }> | Readonly<{ ok: false; reason: ReferralRefusal }>;
 

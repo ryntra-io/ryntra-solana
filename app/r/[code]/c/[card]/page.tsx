@@ -9,7 +9,10 @@ import "@/app/site/frozen/primitives.css";
 import "@/app/site/frozen/module.css";
 import { cardOrigin } from "@/app/api/growth/cards/origin";
 import { getGuardRuntime } from "@/lib/guard/runtime";
+import { LiveCard } from "@/app/solana/workspace/rewards/live-card";
 import { cardPercent, cardWords } from "@/lib/growth/card-copy";
+import { cardFace } from "@/lib/growth/card-face";
+import { cardIconDataUri } from "@/lib/growth/card-icon.server";
 import { readTradeCard } from "@/lib/growth/card-store";
 import { heldDays, tradeCardImagePath, tradeCardPath, type TradeCard } from "@/lib/growth/trade-cards";
 import { normalizeReferralCode } from "@/lib/rewards/referral";
@@ -25,7 +28,9 @@ import styles from "./card-page.module.css";
  * actions go through `/r/<code>`, which remembers the code in this browser
  * and lands the person where they chose — the token, or how cashback works.
  * It speaks the reader's language when they chose one on this site, else the
- * language the card was posted in; the picture keeps its own. Its preview on X is the card's own versioned picture. Not for search engines:
+ * language the card was posted in; the card keeps its own. The card plays
+ * alive here — this is where a tap on the picture in X or Telegram lands —
+ * and its preview there is the card's own versioned still. Not for search engines:
  * it is one person's post, not a page of the site.
  */
 
@@ -83,6 +88,7 @@ export default async function TradeCardPage({ params }: { params: Params }) {
   const word = cardWords(locale);
   const figure = figureOf(card, locale);
   const through = (to: string) => `/r/${encodeURIComponent(card.code)}?to=${encodeURIComponent(to)}`;
+  const face = cardFace(card, await origin(), await cardIconDataUri(card.token.icon));
 
   return (
     <div className="rx" data-ry-ground="midnight">
@@ -90,8 +96,8 @@ export default async function TradeCardPage({ params }: { params: Params }) {
       <PublicHeader locale={locale} mainId="main" ctaTone="quiet" />
       <main id="main" className={`rx-shell ${styles.page}`}>
         <figure className={styles.figure}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className={styles.card} src={tradeCardImagePath(card)} width={1200} height={630} alt={cardWords(card.locale).alt(card.token.symbol, figureOf(card))} />
+          {/* The still stands in until the card can move — and stays for a browser without scripts. */}
+          <LiveCard face={face} replayLabel={word.replay} poster={tradeCardImagePath(card)} />
         </figure>
         <div className={styles.text}>
           <h1 className={styles.title}>{word.tradeLine(card.token.symbol, figure, daysOf(card))}</h1>

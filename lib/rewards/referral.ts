@@ -22,10 +22,14 @@ import { z } from "zod";
  *
  * ## What binds, and when
  *
- * Opening a link binds nothing. Canon §0.6 and the owner's instruction agree:
- * no registration wall, no automatic wallet prompt, no account created by a
- * click. The code is held until the person proves a wallet through the sign-in
- * this product already has, and the attribution is written then — once.
+ * Opening a link binds nothing by itself. Canon §0.6 and the owner's
+ * instruction agree: no registration wall, no automatic wallet prompt, no
+ * account created by a click. The code is held in the
+ * browser, and the attribution is written on its own the first time that
+ * browser proves a wallet — no button to find (08.10: two
+ * friends never saw the old «Confirm»). It can be changed once, while the
+ * window below is open; the inviter before the change keeps what settled
+ * before it.
  */
 
 /* Crockford-style alphabet minus vowels: no words, no ambiguous glyphs. */
@@ -43,9 +47,19 @@ export function mintReferralCode(bytes: Uint8Array = randomBytes(16)): string {
   return code;
 }
 
-/** Normalize what a person typed or a link carried. Case and dashes are noise. */
+/**
+ * Normalize what a person typed or a link carried. Case and dashes are noise.
+ *
+ * A whole link is accepted too — `ryntra.io/r/<code>`, with or without the
+ * scheme, a trailing slash, a `?to=` or a card path after it. Friends paste
+ * what they were sent, and what they were sent is usually the link; answering
+ * "code not found" to the very thing the inviter copied is the kind of wall
+ * that makes people stop. Only the segment after `/r/` is read, and it still
+ * has to be a code.
+ */
 export function normalizeReferralCode(value: string): string | null {
-  const cleaned = value.trim().toUpperCase().replace(/[\s-]/g, "");
+  const linked = /(?:^|\/)r\/([^/?#\s]+)/i.exec(value.trim());
+  const cleaned = (linked ? linked[1] : value).trim().toUpperCase().replace(/[\s-]/g, "");
   return REFERRAL_CODE_PATTERN.test(cleaned) ? cleaned : null;
 }
 
@@ -57,17 +71,38 @@ export const RewardAccountSchema = z
     /** Who invited them. Null when nobody did, and it never becomes null again. */
     referrer: z.string().min(32).max(64).nullable(),
     referredAt: z.string().datetime({ offset: true }).nullable(),
+    /**
+     * The inviter before the one change a wallet may make, and since when they
+     * were it. Kept so an operation that settled before the change — recorded
+     * late, or retried — still pays the inviter it belonged to
+     * (`referrerAt`). Null until a change happens.
+     */
+    previousReferrer: z.string().min(32).max(64).nullable().default(null),
+    previousReferredAt: z.string().datetime({ offset: true }).nullable().default(null),
+    /** How many times the inviter was changed: 0 or 1, never more. */
+    referrerChanges: z.number().int().min(0).max(1).default(0),
     createdAt: z.string().datetime({ offset: true }),
     /**
      * True once this wallet has produced or received any eligible reward.
      *
-     * The gate on changing a referrer. Before it, an attribution that arrived
-     * late — the link was opened, the wallet proved a day later — can still be
-     * written. After it, the graph has already decided who was paid what, and
-     * rewriting it would either owe somebody twice or take back money that was
-     * already shown as theirs.
+     * The gate on adding a referrer, together with `earningSince`. Before the
+     * first earning an attribution can always be written; for seven days after
+     * it one still can, and it pays the inviter only on what settles after the
+     * binding. Past that, the wallet's inviter question is closed.
      */
     earning: z.boolean(),
+    /**
+     * When this wallet first earned — its own first trade, or a friend's trade
+     * that paid it — which is when the seven-day window to add an inviter
+     * starts (`referralBindWindow`).
+     *
+     * Null on a wallet that has not earned, and on a record that was already
+     * earning before this field existed: for those the moment is recovered
+     * from the wallet's own oldest reward or Points row the first time
+     * somebody asks, never guessed as "now", because "now" would hand a
+     * months-old earner a fresh window.
+     */
+    earningSince: z.string().datetime({ offset: true }).nullable().default(null),
     /**
      * How many wallets have confirmed this one as their inviter, and how many
      * sit one level below those.
@@ -91,6 +126,66 @@ export const RewardAccountSchema = z
 
 export type RewardAccount = z.output<typeof RewardAccountSchema>;
 
+/** How long after the first earning an inviter can still be added. */
+export const REFERRAL_BIND_WINDOW_DAYS = 7;
+const REFERRAL_BIND_WINDOW_MS = REFERRAL_BIND_WINDOW_DAYS * 24 * 60 * 60 * 1000;
+
+export type ReferralBindWindow = Readonly<{
+  /** May an inviter be added at `now`? */
+  open: boolean;
+  /**
+   * The last moment one may be: null while the wallet has not earned (no
+   * deadline yet) and when the first earning cannot be dated (closed).
+   */
+  until: string | null;
+}>;
+
+/**
+ * The window in which a wallet may still take an inviter.
+ *
+ * Before the first earning there is no deadline. After it, seven days — for a
+ * link opened before that first trade and for a code typed in during those
+ * seven days alike, because both are the same deliberate act: the person sees
+ * who invited them and confirms. A link opened after the first trade is that
+ * same act too. Nothing earned before the binding moves:
+ * `referralLevelsAt` pays an inviter only on operations settled after it.
+ *
+ * A wallet that is earning but whose first earning cannot be dated is closed,
+ * not open: fail-closed is the only safe reading of "we do not know".
+ */
+export function referralBindWindow(
+  account: Pick<RewardAccount, "earning" | "earningSince"> | null,
+  now: string,
+): ReferralBindWindow {
+  if (!account?.earning) return { open: true, until: null };
+  const since = account.earningSince ? Date.parse(account.earningSince) : Number.NaN;
+  const at = Date.parse(now);
+  if (!Number.isFinite(since) || !Number.isFinite(at)) return { open: false, until: null };
+  const until = since + REFERRAL_BIND_WINDOW_MS;
+  return { open: at <= until, until: new Date(until).toISOString() };
+}
+
+/**
+ * What `earningSince` becomes when an accrual writes a wallet's record.
+ *
+ * Used by both writers — money rewards and Points — so the two cannot drift.
+ * `at` is when the operation settled, not when this write runs: a retry hours
+ * later must not push the window forward. An earlier operation recorded late
+ * moves the moment back, never forward. A record already earning without a
+ * moment stays without one here; `ensureEarningSince` dates it from its rows.
+ */
+export function nextEarningSince(
+  owner: Pick<RewardAccount, "earning" | "earningSince">,
+  earnsNow: boolean,
+  at: string,
+): string | null {
+  if (!earnsNow) return owner.earningSince;
+  if (!Number.isFinite(Date.parse(at))) return owner.earningSince;
+  if (owner.earning && !owner.earningSince) return null;
+  if (!owner.earningSince) return at;
+  return Date.parse(at) < Date.parse(owner.earningSince) ? at : owner.earningSince;
+}
+
 export const ReferralCodeRecordSchema = z
   .object({
     code: z.string().regex(REFERRAL_CODE_PATTERN),
@@ -107,6 +202,8 @@ export const REFERRAL_REFUSALS = [
   "ALREADY_REFERRED",
   "ALREADY_EARNING",
   "CYCLE",
+  /** The one change of inviter has already been made. */
+  "ALREADY_CHANGED",
 ] as const;
 
 export type ReferralRefusalCode = (typeof REFERRAL_REFUSALS)[number];
@@ -132,6 +229,8 @@ export function decideReferralBind(
     referrer: string | null;
     account: RewardAccount | null;
     referrerChain: readonly string[];
+    /** When the confirmation happens — the seven-day window is measured to it. */
+    now: string;
   }>,
 ): ReferralBindDecision {
   if (!args.referrer) return { ok: false, code: "UNKNOWN_CODE", reason: "That referral link does not belong to anybody." };
@@ -143,11 +242,11 @@ export function decideReferralBind(
       ? { ok: true }
       : { ok: false, code: "ALREADY_REFERRED", reason: "This wallet already has an inviter, and an inviter does not change." };
   }
-  if (args.account?.earning) {
+  if (!referralBindWindow(args.account, args.now).open) {
     return {
       ok: false,
       code: "ALREADY_EARNING",
-      reason: "This wallet has already earned rewards, so its inviter is settled.",
+      reason: `This wallet started earning more than ${REFERRAL_BIND_WINDOW_DAYS} days ago, so an inviter can no longer be added.`,
     };
   }
   if (args.referrerChain.includes(args.wallet)) {
@@ -176,13 +275,61 @@ export function referralLevels(
   return { l1, l2 };
 }
 
-/** Delayed bookkeeping uses the graph that existed at settlement. A later
- * invitation cannot acquire an operation that already happened. */
-export function referralLevelsAt(trader: RewardAccount | null, parent: RewardAccount | null, settledAt: string) {
+/**
+ * Who invited this wallet at a moment: the inviter since `referredAt`, the one
+ * before the change between `previousReferredAt` and that, nobody before.
+ */
+export function referrerAt(
+  account: Pick<RewardAccount, "referrer" | "referredAt" | "previousReferrer" | "previousReferredAt"> | null,
+  settledAt: string,
+): string | null {
   const at = Date.parse(settledAt);
-  if (!Number.isFinite(at) || !trader?.referredAt || Date.parse(trader.referredAt) > at) return { l1: null, l2: null };
-  const ancestor = parent?.referredAt && Date.parse(parent.referredAt) <= at ? parent : null;
-  return referralLevels(trader, ancestor);
+  if (!account || !Number.isFinite(at)) return null;
+  if (account.referrer && account.referredAt && Date.parse(account.referredAt) <= at) return account.referrer;
+  if (account.previousReferrer && account.previousReferredAt && Date.parse(account.previousReferredAt) <= at) return account.previousReferrer;
+  return null;
+}
+
+/** Delayed bookkeeping uses the graph that existed at settlement. A later
+ * invitation — or a later change of inviter — cannot acquire an operation that
+ * already happened. `parent` must be the account of `referrerAt(trader)`. */
+export function referralLevelsAt(trader: RewardAccount | null, parent: RewardAccount | null, settledAt: string) {
+  const l1 = referrerAt(trader, settledAt);
+  if (!l1) return { l1: null, l2: null };
+  const l2 = parent?.wallet === l1 ? referrerAt(parent, settledAt) : null;
+  if (!l2 || l2 === trader?.wallet || l2 === l1) return { l1, l2: null };
+  return { l1, l2 };
+}
+
+/**
+ * May this wallet change its inviter to that one? Once, inside the window.
+ *
+ * Pure, beside `decideReferralBind`, for the same reason. The same inviter
+ * again is not a change and is fine; the rest is the bind rules — not
+ * yourself, not a cycle — plus the two limits of a change.
+ */
+export function decideReferralChange(
+  args: Readonly<{
+    wallet: string;
+    referrer: string | null;
+    account: RewardAccount;
+    referrerChain: readonly string[];
+    now: string;
+  }>,
+): ReferralBindDecision {
+  if (!args.referrer) return { ok: false, code: "UNKNOWN_CODE", reason: "That referral link does not belong to anybody." };
+  if (args.referrer === args.wallet) return { ok: false, code: "SELF_REFERRAL", reason: "A wallet cannot invite itself." };
+  if (args.account.referrer === args.referrer) return { ok: true };
+  if (args.account.referrerChanges >= 1) {
+    return { ok: false, code: "ALREADY_CHANGED", reason: "This wallet has already changed its inviter once." };
+  }
+  if (!referralBindWindow(args.account, args.now).open) {
+    return { ok: false, code: "ALREADY_EARNING", reason: `This wallet started earning more than ${REFERRAL_BIND_WINDOW_DAYS} days ago, so its inviter is final.` };
+  }
+  if (args.referrerChain.includes(args.wallet)) {
+    return { ok: false, code: "CYCLE", reason: "That would make two wallets invite each other." };
+  }
+  return { ok: true };
 }
 
 /**
@@ -194,6 +341,22 @@ export function referralLevelsAt(trader: RewardAccount | null, parent: RewardAcc
  * one that spends it.
  */
 export const REFERRAL_COOKIE = "rref";
+
+/**
+ * When the carried code was taken (epoch milliseconds), beside it. First touch
+ * holds for `REFERRAL_FIRST_TOUCH_MS`: a link opened within that time does not
+ * replace the code (a redirect cannot take a binding that is about to happen);
+ * after it, a fresh link from a friend wins over a stale one the person no
+ * longer remembers. A code without this cookie is treated as stale.
+ */
+export const REFERRAL_COOKIE_AT = "rref_at";
+export const REFERRAL_FIRST_TOUCH_MS = 24 * 60 * 60 * 1000;
+
+/** Does a carried code still hold against a newly opened link? */
+export function carriedCodeHolds(carriedAt: string | null | undefined, nowMs: number): boolean {
+  const at = Number(carriedAt);
+  return Number.isFinite(at) && at > 0 && at <= nowMs && nowMs - at < REFERRAL_FIRST_TOUCH_MS;
+}
 
 /**
  * A wallet as it is shown to somebody who is not its owner.

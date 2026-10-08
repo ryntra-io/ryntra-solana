@@ -7,7 +7,7 @@ import { accrueRewards } from "./accrue.ts";
 import { eligibleForRewards, rewardsActivation } from "./activation.ts";
 import { ensureRewardAccount, readRewardAccount } from "./ledger.ts";
 import { accrualRef, isParMint, REWARD_PAR_MINTS, rewardEntryKey, RewardEntrySchema, type RewardEntry } from "./model.ts";
-import { referralLevelsAt, RewardAccountSchema, type RewardAccount } from "./referral.ts";
+import { nextEarningSince, referralLevelsAt, referrerAt, RewardAccountSchema, type RewardAccount } from "./referral.ts";
 import { completeBenefitJob, enqueueBenefitJob } from "./benefit-jobs.ts";
 import { readRankStanding, rewardRulesFor } from "./rank-store.ts";
 import { rewardRulesOf, type RewardRank } from "./rules.ts";
@@ -134,7 +134,10 @@ async function recordRewardsCore(
     if (prior && prior.trader !== args.trader) return { state: "SKIPPED", reason: "This fee already belongs to another trader." };
     if (prior?.valuationsComplete || prior?.entries.every(entry => entry.usdMicros !== null)) return { state: "RECORDED", created: 0, existing: prior.entries.length };
     const account = await ensureRewardAccount(store, args.trader, now);
-    const above = account.referrer ? await readRewardAccount(store, account.referrer) : null;
+    /* The inviter at settlement — the one before a change, for an operation
+       that settled before it — and that inviter's own account for Level 2. */
+    const inviterAtSettlement = referrerAt(account, settledAt);
+    const above = inviterAtSettlement ? await readRewardAccount(store, inviterAtSettlement) : null;
     const levels = prior ? { l1: prior.entries.find(entry => entry.type === "REFERRAL_L1")?.recipient ?? null, l2: prior.entries.find(entry => entry.type === "REFERRAL_L2")?.recipient ?? null } : referralLevelsAt(account, above, settledAt);
     const rules = prior ? rewardRulesOf(prior.rules) : rulesInForce ?? await rewardRulesFor(store, settledAt, now, env);
     /* The inviter's share follows the inviter's rank when the trade settled —
@@ -204,9 +207,13 @@ async function recordRewardsCore(
       if (!accounts.has(entry.recipient)) accounts.set(entry.recipient, await ensureRewardAccount(store, entry.recipient, now));
     }
     for (const owner of accounts.values()) {
-      const earning = owner.earning || accrual.entries.some(entry => entry.recipient === owner.wallet);
+      const earnsNow = accrual.entries.some(entry => entry.recipient === owner.wallet);
+      const earning = owner.earning || earnsNow;
+      /* The first earning dates the seven days in which an inviter can still
+         be added, measured from the trade rather than from this write. */
+      const earningSince = nextEarningSince(owner, earnsNow, settledAt);
       writes.push({ collection: "rewardAccounts", key: owner.wallet, expectedVersion: owner.version,
-        next: RewardAccountSchema.parse({ ...owner, earning, version: owner.version + 1 }) });
+        next: RewardAccountSchema.parse({ ...owner, earning, earningSince, version: owner.version + 1 }) });
     }
     const snapshot: RewardAccrualRecord = { version: 0, trader: args.trader, entries: canonicalEntries, ...(rules.version === "2.0.0" ? { rules: "2.0.0" as const } : {}) };
     writes.push({ collection: "rewardAccruals", key: ref, expectedVersion: null, next: snapshot });

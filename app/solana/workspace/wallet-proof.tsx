@@ -90,6 +90,16 @@ export function useWalletProof() {
         if (res.ok && data.ok) {
           setState({ status: "proven", address: signed.address, expiresAt: data.expiresAt ?? null });
           if (action === "signin") announceAccountChange();
+          /* Its own channel, not the account's (that one refreshes the shell):
+             the invitation line listens here and binds the moment a wallet is
+             proven, on any page. */
+          try {
+            const proven = new BroadcastChannel("ryntra-wallet-proven");
+            proven.postMessage(signed.address);
+            proven.close();
+          } catch {
+            /* No BroadcastChannel: the line binds on the next page instead. */
+          }
           return true;
         }
         if (res.status === 409) setState({ status: "taken", reason: "Another account already linked this wallet." });

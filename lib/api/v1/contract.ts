@@ -786,6 +786,17 @@
  * `ryntra.solana.launch-trade-receipt.facts@1`, as a swap's; a trade still in
  * flight is settled from the chain first. `capabilities.launch.tradeReceipt`
  * names it. A client that does not know `LAUNCH` reads the row as a swap.
+ *
+ * **1.35.0 — the referral binds on its own (the Growth line's «Ріст v6-9»).**
+ * `GET /api/rewards/referral` and `POST` share `RewardsReferralStateSchema`,
+ * which gains three optional keys: `binding` (`{ open, until }` — with no
+ * inviter yet, whether one can still be added: before the first trade `until`
+ * null, for seven days after it the last moment, then `open` false), `change`
+ * (the same shape — with an inviter, whether the one change is still open) and
+ * `bound: true` (the read that bound the carried code on its own). `POST`
+ * takes the action `change`; `REFERRAL_REFUSALS_V1` gains `ALREADY_CHANGED`.
+ * A client that skips unknown keys is unaffected; one that parses the state
+ * strictly must take the new keys and treat an unknown refusal as a refusal.
  */
 
 import {
@@ -835,7 +846,7 @@ import { LAUNCH_PRESET_IDS } from "../../core/venues/meteora-dbc/presets.ts";
 import { LaunchReceiptFactsSchema } from "../../core/venues/meteora-dbc/receipt.ts";
 
 export const API_MAJOR = 1;
-export const API_CONTRACT_VERSION = "1.34.0";
+export const API_CONTRACT_VERSION = "1.35.0";
 export const API_HEADER = "X-Ryntra-API";
 export const API_VERSION_HEADER = "X-Ryntra-API-Version";
 export const NETWORK = "solana:mainnet";
@@ -4275,7 +4286,8 @@ export type RewardsError = z.infer<typeof RewardsErrorSchema>;
 
 /* ---- rewards: the referral */
 
-export const REFERRAL_REFUSALS_V1 = ["SELF_REFERRAL", "UNKNOWN_CODE", "ALREADY_REFERRED", "ALREADY_EARNING", "CYCLE"] as const;
+/** `ALREADY_CHANGED` (Growth v6-9): the one change of inviter was already made. A new value — a strict client should treat unknown ones as a refusal. */
+export const REFERRAL_REFUSALS_V1 = ["SELF_REFERRAL", "UNKNOWN_CODE", "ALREADY_REFERRED", "ALREADY_EARNING", "CYCLE", "ALREADY_CHANGED"] as const;
 
 /** A code and whose it is, masked. */
 export const RewardsReferralPreviewSchema = z
@@ -4283,12 +4295,29 @@ export const RewardsReferralPreviewSchema = z
   .strict();
 export type RewardsReferralPreview = z.infer<typeof RewardsReferralPreviewSchema>;
 
+/**
+ * A window on the proven wallet's own read (Growth v6-9; optional fields — a
+ * client that ignores unknown keys is unaffected, one that parses this state
+ * strictly must take the new keys): `binding` — with no inviter yet, whether one can still be added:
+ * always before the first trade (`until` null), for seven days after it
+ * (`until` the last moment), then not (`open` false); `change` — with an
+ * inviter, whether it can still be changed: once, inside that same window.
+ */
+export const RewardsReferralBindingSchema = z
+  .object({ open: z.boolean(), until: z.string().datetime({ offset: true }).nullable() })
+  .strict();
+export type RewardsReferralBinding = z.infer<typeof RewardsReferralBindingSchema>;
+
 /** What is being considered and what is decided; `codeMasked` is null on an inviter read from the account rather than a code. */
 export const RewardsReferralStateSchema = z
   .object({
     ok: z.literal(true),
     pending: RewardsReferralPreviewSchema.nullable(),
     confirmed: z.object({ inviterMasked: RewMasked, codeMasked: RewMasked.nullable() }).strict().nullable(),
+    binding: RewardsReferralBindingSchema.optional(),
+    change: RewardsReferralBindingSchema.optional(),
+    /** True on the read that bound the carried invitation on its own. */
+    bound: z.literal(true).optional(),
   })
   .strict();
 export type RewardsReferralState = z.infer<typeof RewardsReferralStateSchema>;
@@ -4299,7 +4328,10 @@ export type RewardsReferralState = z.infer<typeof RewardsReferralStateSchema>;
  * masked (a code that does not normalise is `found: false`). Without it, it
  * reports the code this browser carries (the `rref` cookie) as `pending`, and —
  * only for the `rw` cookie's own wallet named by `address`, never over the
- * bearer — an inviter already `confirmed` (clearing the cookie). Errors
+ * bearer — binds that code on its own while the window is open (`bound: true`,
+ * the one write this read makes), then answers the inviter `confirmed` with
+ * `change`, or, with none, `binding`. A carried code for another inviter stays
+ * `pending` only while the one change is still open. Errors
  * (`RewardsReferralErrorSchema`): 429 `{ error: "rate limited" }`.
  */
 export const RewardsReferralGetResponseSchema = z.union([
@@ -4318,6 +4350,8 @@ export const RewardsReferralRequestSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("pending"), code: z.string().min(1).max(40) }),
   z.object({ action: z.literal("dismiss") }),
   z.object({ action: z.literal("confirm"), code: z.string().min(1).max(40), address: Address }),
+  /** Growth v6-9: the one change of inviter, inside the window (a plain binding with none yet). */
+  z.object({ action: z.literal("change"), code: z.string().min(1).max(40), address: Address }),
 ]);
 export type RewardsReferralRequest = z.input<typeof RewardsReferralRequestSchema>;
 
@@ -4326,7 +4360,8 @@ export type RewardsReferralRequest = z.input<typeof RewardsReferralRequestSchema
  * limiter and the site's origin check (a bearer does not skip it). `pending`
  * (Change code) answers the code as `pending` and sets the cookie; `dismiss`
  * answers both null and clears it; `confirm` binds the inviter once and answers
- * it `confirmed` — it needs the `rw` cookie for exactly `address` (the native
+ * it `confirmed` (`ALREADY_EARNING`: the seven days after the wallet's first
+ * trade are over) — it needs the `rw` cookie for exactly `address` (the native
  * bearer is not read here). Errors (`RewardsReferralErrorSchema`): 429
  * `{ error: "rate limited" }`, 403 `{ error: "forbidden origin" }`, 400 · 413 ·
  * 415 `{ error: "bad request" }`, 404 `{ ok: false, found: false, reason:

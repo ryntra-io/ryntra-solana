@@ -1,4 +1,5 @@
 import { withBoundedCasRetry, type GuardStore } from "../guard/store.ts";
+import { listPointsEntries } from "../points/ledger.ts";
 import {
   formatUsdMicros,
   rewardEntryKey,
@@ -9,11 +10,14 @@ import {
 } from "./model.ts";
 import {
   decideReferralBind,
+  decideReferralChange,
   mintReferralCode,
+  referralBindWindow,
   referralLevels,
   RewardAccountSchema,
   ReferralCodeRecordSchema,
   type ReferralBindDecision,
+  type ReferralBindWindow,
   type ReferralCodeRecord,
   type RewardAccount,
 } from "./referral.ts";
@@ -46,6 +50,9 @@ const ENTRIES = "rewardEntries" as const;
 const ACCOUNTS = "rewardAccounts" as const;
 const CODES = "rewardCodes" as const;
 const EDGES = "rewardReferralEdges" as const;
+
+/** How far back `bindReferrer`'s `at` may reach: the trade being settled, not an earlier one. */
+const BIND_AT_MAX_AGE_MS = 10 * 60 * 1000;
 
 /* ------------------------------------------------------------------ entries */
 
@@ -204,6 +211,7 @@ export async function ensureRewardAccount(
       referredAt: null,
       createdAt: now,
       earning: false,
+      earningSince: null,
       version: 0,
     });
     const written = await accounts.compareAndSet(wallet, null, record);
@@ -229,14 +237,24 @@ export async function walletForCode(store: GuardStore, code: string): Promise<st
  *
  * The ancestry passed to the decision is read here rather than by the caller,
  * so a route cannot forget to check for a cycle.
+ *
+ * `at` — for the core's swap path, which binds the invitation a browser carries
+ * in the moment of a confirmed trade: the binding then dates from that trade's
+ * settlement, so the trade itself pays the inviter. It is honoured only within
+ * `BIND_AT_MAX_AGE_MS` before `now`, never after `now`, and never before the
+ * wallet's first earning — the trade being settled is the only thing it can
+ * reach. Otherwise the binding dates from `now`.
  */
 export async function bindReferrer(
   store: GuardStore,
-  args: Readonly<{ wallet: string; code: string; now: string }>,
+  args: Readonly<{ wallet: string; code: string; now: string; at?: string }>,
 ): Promise<ReferralBindDecision> {
   const referrer = await walletForCode(store, args.code);
   return withBoundedCasRetry(async () => {
-    const account = await ensureRewardAccount(store, args.wallet, args.now);
+    /* Dated first: a record that was earning before `earningSince` existed
+       gets its moment from its own rows, so the window below is measured from
+       the first trade rather than refused for want of a date. */
+    const account = await ensureEarningSince(store, args.wallet, args.now);
     if (referrer === args.wallet) return { ok: false, code: "SELF_REFERRAL", reason: "A wallet cannot invite itself." } as const;
     const chain: string[] = [];
     const ancestors: RewardAccount[] = [];
@@ -252,13 +270,19 @@ export async function bindReferrer(
       ancestors.push(above);
       cursor = above.referrer;
     }
-    const decision = decideReferralBind({ wallet: args.wallet, referrer, account, referrerChain: chain });
+    const decision = decideReferralBind({ wallet: args.wallet, referrer, account, referrerChain: chain, now: args.now });
     if (!decision.ok) return decision;
     if (account.referrer) return decision;
+    const at = args.at ? Date.parse(args.at) : Number.NaN;
+    const nowMs = Date.parse(args.now);
+    const since = account.earningSince ? Date.parse(account.earningSince) : Number.NEGATIVE_INFINITY;
+    const referredAt = Number.isFinite(at) && at <= nowMs && nowMs - at <= BIND_AT_MAX_AGE_MS && at >= since
+      ? new Date(at).toISOString()
+      : args.now;
     const next = RewardAccountSchema.parse({
       ...account,
       referrer,
-      referredAt: args.now,
+      referredAt,
       version: account.version + 1,
     });
     // Fence every ancestor read in the same transaction as the binding. Two
@@ -278,6 +302,88 @@ export async function bindReferrer(
     await reconcileReferralEdges(store, args.wallet, args.now);
     return decision;
   });
+}
+
+/**
+ * Change this wallet's inviter, once, inside the window (`decideReferralChange`).
+ *
+ * A wallet with no inviter yet is simply bound. Otherwise the old inviter and
+ * the moment they became it move to `previousReferrer` / `previousReferredAt`,
+ * so anything that settled before the change keeps paying them; the new
+ * inviter is paid from now on. Nothing already written moves.
+ *
+ * The count edges follow the graph: the old inviter loses this wallet at
+ * Level 1, the old inviter's inviter loses it at Level 2, and the wallet's own
+ * friends move from the old inviter's Level 2 to the new one's.
+ */
+export async function changeReferrer(
+  store: GuardStore,
+  args: Readonly<{ wallet: string; code: string; now: string }>,
+): Promise<ReferralBindDecision> {
+  const current = await readRewardAccount(store, args.wallet);
+  if (!current?.referrer) return bindReferrer(store, args);
+  const referrer = await walletForCode(store, args.code);
+  let old: Readonly<{ referrer: string; grand: string | null }> | null = null;
+  const decision = await withBoundedCasRetry(async () => {
+    const account = await ensureEarningSince(store, args.wallet, args.now);
+    if (!account.referrer) return { ok: false, code: "UNKNOWN_CODE", reason: "The inviter moved while changing it; try again." } as const;
+    if (referrer === args.wallet) return { ok: false, code: "SELF_REFERRAL", reason: "A wallet cannot invite itself." } as const;
+    const chain: string[] = [];
+    const ancestors: RewardAccount[] = [];
+    let cursor = referrer;
+    while (cursor) {
+      if (chain.includes(cursor) || cursor === args.wallet) {
+        return { ok: false, code: "CYCLE", reason: "This invitation would create a referral cycle." } as const;
+      }
+      if (chain.length >= 256) throw new Error("The referral ancestry could not be verified within its read budget.");
+      chain.push(cursor);
+      const above = await readRewardAccount(store, cursor);
+      if (!above) break;
+      ancestors.push(above);
+      cursor = above.referrer;
+    }
+    const verdict = decideReferralChange({ wallet: args.wallet, referrer, account, referrerChain: chain, now: args.now });
+    if (!verdict.ok || account.referrer === referrer) return verdict;
+    const previous = await readRewardAccount(store, account.referrer);
+    old = { referrer: account.referrer, grand: previous?.referrer ?? null };
+    const next = RewardAccountSchema.parse({
+      ...account,
+      referrer,
+      referredAt: args.now,
+      previousReferrer: account.referrer,
+      previousReferredAt: account.referredAt,
+      referrerChanges: account.referrerChanges + 1,
+      version: account.version + 1,
+    });
+    const written = await store.compareAndSetMany([
+      { collection: ACCOUNTS, key: args.wallet, expectedVersion: account.version, next },
+      ...ancestors.map(ancestor => ({ collection: ACCOUNTS, key: ancestor.wallet, expectedVersion: ancestor.version, next: { ...ancestor, version: ancestor.version + 1 } })),
+    ]);
+    return written ? verdict : false;
+  });
+  if (decision.ok && old) await moveReferralEdges(store, args.wallet, old, args.now);
+  return decision;
+}
+
+/** The count edges of a wallet whose inviter changed: take the old ones away, then assert the new. Non-fatal. */
+async function moveReferralEdges(
+  store: GuardStore,
+  wallet: string,
+  old: Readonly<{ referrer: string; grand: string | null }>,
+  now: string,
+): Promise<void> {
+  try {
+    const edges = store.collection<{ wallet: string }>(EDGES);
+    await edges.delete(`${old.referrer}:L1:${wallet}`);
+    if (old.grand && old.grand !== wallet) await edges.delete(`${old.grand}:L2:${wallet}`);
+    const children = await edges.valuesWithPrefix(`${wallet}:L1:`);
+    for (const child of children) await edges.delete(`${old.referrer}:L2:${child.wallet}`);
+    await refreshReferralCounts(store, old.referrer, now);
+    if (old.grand) await refreshReferralCounts(store, old.grand, now);
+  } catch (failure) {
+    console.warn(`rewards: referral edges did not move: ${failure instanceof Error ? failure.message : String(failure)}`);
+  }
+  await reconcileReferralEdges(store, wallet, now);
 }
 
 /**
@@ -369,21 +475,107 @@ async function refreshReferralCounts(
 }
 
 /**
- * Mark a wallet as having earned, which is what closes its inviter question.
+ * Mark a wallet as having earned, which starts the seven days in which it can
+ * still take an inviter.
  *
- * Non-fatal and idempotent: a wallet already marked is left alone, and a failed
- * mark costs nothing but a later chance to change an inviter that in practice
- * nobody is trying to change.
+ * Non-fatal and idempotent: a wallet already marked is left alone. `at` is when
+ * the earning operation settled; without it, the write's own moment.
  */
-export async function markEarning(store: GuardStore, wallet: string, now: string): Promise<void> {
+export async function markEarning(store: GuardStore, wallet: string, now: string, at: string = now): Promise<void> {
   const accounts = store.versioned<RewardAccount>(ACCOUNTS);
   await withBoundedCasRetry(async () => {
     const account = await ensureRewardAccount(store, wallet, now);
     if (account.earning) return true;
-    const next = RewardAccountSchema.parse({ ...account, earning: true, version: account.version + 1 });
+    const next = RewardAccountSchema.parse({ ...account, earning: true, earningSince: at, version: account.version + 1 });
     const written = await accounts.compareAndSet(wallet, account.version, next);
     return written ? true : false;
   });
+}
+
+/**
+ * The oldest moment this wallet earned, from its own rows.
+ *
+ * Reward rows carry the settlement of the operation that paid them; Points
+ * rows the same. The settlement is preferred to when the row was written,
+ * because a retry can write a row hours later. Two prefix reads of one
+ * wallet's rows — nothing that grows with the product.
+ */
+export async function earliestEarningAt(store: GuardStore, wallet: string): Promise<string | null> {
+  const [rewards, points] = await Promise.all([
+    store.collection<RewardEntry>(ENTRIES).valuesWithPrefix(rewardEntryPrefix(wallet)),
+    listPointsEntries(store, wallet),
+  ]);
+  let earliest = Number.POSITIVE_INFINITY;
+  for (const row of rewards) {
+    const entry = RewardEntrySchema.safeParse(row);
+    if (!entry.success || entry.data.recipient !== wallet || entry.data.type === "CLAIM" || entry.data.type === "ADJUSTMENT") continue;
+    const at = Date.parse(entry.data.source?.settledAt ?? entry.data.createdAt);
+    if (Number.isFinite(at) && at < earliest) earliest = at;
+  }
+  for (const entry of points) {
+    if (entry.wallet !== wallet || BigInt(entry.points) <= 0n) continue;
+    const at = Date.parse(entry.source?.settledAt ?? entry.createdAt);
+    if (Number.isFinite(at) && at < earliest) earliest = at;
+  }
+  return Number.isFinite(earliest) ? new Date(earliest).toISOString() : null;
+}
+
+/**
+ * This wallet's record with its first earning dated, when it can be.
+ *
+ * A record marked earning before `earningSince` existed has no moment. It is
+ * dated once from the wallet's own oldest row and written back, so the window
+ * is the same on every later read; a record with no row to date it from stays
+ * undated and therefore closed. Every other record is returned as it is.
+ */
+export async function ensureEarningSince(store: GuardStore, wallet: string, now: string): Promise<RewardAccount> {
+  const accounts = store.versioned<RewardAccount>(ACCOUNTS);
+  let dated: RewardAccount | null = null;
+  await withBoundedCasRetry(async () => {
+    const account = await ensureRewardAccount(store, wallet, now);
+    if (!account.earning || account.earningSince) { dated = account; return true; }
+    const earliest = await earliestEarningAt(store, wallet);
+    if (!earliest) { dated = account; return true; }
+    const next = RewardAccountSchema.parse({ ...account, earningSince: earliest, version: account.version + 1 });
+    if (!await accounts.compareAndSet(wallet, account.version, next)) return false;
+    dated = next;
+    return true;
+  });
+  return dated!;
+}
+
+/**
+ * Whether this wallet may still take an inviter, as its own page asks it.
+ *
+ * Read-only: an undated earning record is dated from its rows for the answer;
+ * writing the date back is `ensureEarningSince`'s (a binding, and the proven
+ * wallet's own read in `readReferralState`). Null when the
+ * wallet already has an inviter, because that question is settled.
+ */
+export async function readReferralBindWindow(
+  store: GuardStore,
+  account: RewardAccount | null,
+  now: string,
+): Promise<ReferralBindWindow | null> {
+  if (account?.referrer) return null;
+  if (account?.earning && !account.earningSince) {
+    return referralBindWindow({ earning: true, earningSince: await earliestEarningAt(store, account.wallet) }, now);
+  }
+  return referralBindWindow(account, now);
+}
+
+/**
+ * Whether this wallet may still change its inviter: once, inside the same
+ * window. Read-only, like `readReferralBindWindow`.
+ */
+export async function readReferralChangeWindow(
+  store: GuardStore,
+  account: RewardAccount,
+  now: string,
+): Promise<ReferralBindWindow> {
+  if (account.referrerChanges >= 1) return { open: false, until: null };
+  const window = await readReferralBindWindow(store, { ...account, referrer: null }, now);
+  return window ?? { open: false, until: null };
 }
 
 /** The two levels owed against this trader's operation. */

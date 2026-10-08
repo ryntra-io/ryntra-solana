@@ -942,6 +942,7 @@ function ShellFrame({
   lang,
   dir,
   strings,
+  notice,
   children,
 }: {
   workspace: Workspace;
@@ -984,6 +985,8 @@ function ShellFrame({
   lang?: string;
   dir?: "ltr" | "rtl";
   strings?: ShellStrings;
+  /** One line above the section's tabs and the page — a notice that belongs to every page (the invitation line). */
+  notice?: ReactNode;
   children: ReactNode;
 }) {
   const { prefs, toggleNav, toggleInspector } = useShell();
@@ -1286,6 +1289,7 @@ function ShellFrame({
         ) : null}
 
         <main className="rs-canvas" id="workspace" tabIndex={-1}>
+          {notice}
           {tabs ? <SectionTabsBar tabs={tabs} /> : null}
           {children}
         </main>
@@ -1323,6 +1327,7 @@ export function RyntraAppShell({
   dir,
   strings,
   chrome,
+  notice,
   children,
 }: {
   workspaceId: string;
@@ -1404,6 +1409,8 @@ export function RyntraAppShell({
    * keeps the English it has always had.
    */
   chrome?: ShellChromeCopy;
+  /** One line above the section's tabs and the page, on every page (the invitation line). */
+  notice?: ReactNode;
   children: ReactNode;
 }) {
   const pathname = usePagePath();
@@ -1456,6 +1463,7 @@ export function RyntraAppShell({
             lang={lang}
             dir={dir}
             strings={strings}
+            notice={notice}
           >
             {children}
           </ShellFrame>

@@ -26,11 +26,12 @@ function ukCount(n: number, one: string, few: string, many: string): string {
 
 const NBSP = " ";
 
-/** A result in hundredths of a percent, signed, one decimal: +30.0% / −12.5 %. */
+/** A result in hundredths of a percent, signed, one decimal, thousands apart: +30.0% / −12.5 % / +1,250.0% / +1 250,0 %. */
 export function cardPercent(bps: number, locale: CardLocale): string {
   const sign = bps > 0 ? "+" : bps < 0 ? "−" : "";
-  const text = (Math.abs(bps) / 100).toFixed(1);
-  return locale === "uk" ? `${sign}${text.replace(".", ",")}${NBSP}%` : `${sign}${text}%`;
+  const [whole, tenth] = (Math.abs(bps) / 100).toFixed(1).split(".");
+  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, locale === "uk" ? NBSP : ",");
+  return locale === "uk" ? `${sign}${grouped},${tenth}${NBSP}%` : `${sign}${grouped}.${tenth}%`;
 }
 
 /** Dollars from micros, to the cent: $1,234.56 / $1 234,56 — signed when asked. */
@@ -134,6 +135,13 @@ export type CardWords = Readonly<{
   /** The post's text: the trade, never a promise. */
   postText: (symbol: string, figure: string | null, days: number | null) => string;
   retry: string;
+  /** The live card and what can be taken from it. */
+  replay: string;
+  saveImage: string;
+  saveVideo: string;
+  shareVideo: string;
+  makingVideo: string;
+  videoFailed: string;
 }>;
 
 const EN: CardWords = {
@@ -180,6 +188,12 @@ const EN: CardWords = {
   back: "All trades",
   postText: (symbol, figure, days) => EN.tradeLine(symbol, figure, days),
   retry: "Try again",
+  replay: "Play again",
+  saveImage: "Save image",
+  saveVideo: "Save video",
+  shareVideo: "Share video",
+  makingVideo: "Making the video…",
+  videoFailed: "The video could not be made here. The image still works.",
 };
 
 const UK: CardWords = {
@@ -226,6 +240,12 @@ const UK: CardWords = {
   back: "Усі угоди",
   postText: (symbol, figure, days) => UK.tradeLine(symbol, figure, days),
   retry: "Спробувати ще раз",
+  replay: "Показати ще раз",
+  saveImage: "Зберегти картинку",
+  saveVideo: "Зберегти відео",
+  shareVideo: "Поділитися відео",
+  makingVideo: "Готуємо відео…",
+  videoFailed: "Відео тут не вдалося зробити. Картинка працює.",
 };
 
 export function cardWords(locale: CardLocale): CardWords {

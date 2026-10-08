@@ -1,7 +1,7 @@
 import { resolveInternalWallets } from "../admin/internal-wallets.ts";
 import { withBoundedCasRetry, type GuardStore, type GuardAtomicVersionedWrite } from "../guard/store.ts";
 import { ensureRewardAccount, readRewardAccount } from "../rewards/ledger.ts";
-import { referralLevelsAt, RewardAccountSchema, type RewardAccount } from "../rewards/referral.ts";
+import { nextEarningSince, referralLevelsAt, referrerAt, RewardAccountSchema, type RewardAccount } from "../rewards/referral.ts";
 import type { SolanaWalletAction } from "../solana/action-ledger.ts";
 import { accruePoints, eligibleVolume, type PointsStatedUsd } from "./accrue.ts";
 import { listPointsDay, listPointsEntries } from "./ledger.ts";
@@ -81,15 +81,25 @@ async function recordPointsCore(
     // other operation changed this day's rows while they were being read.
     const fence = await identities.get(dayKey);
     const account = await ensureRewardAccount(store, action.wallet, now);
-    const above = account.referrer ? await readRewardAccount(store, account.referrer) : null;
+    /* The inviter at settlement — the one before a change, for an operation
+       that settled before it — and that inviter's own account for Level 2. */
+    const inviterAtSettlement = referrerAt(account, settledAt);
+    const above = inviterAtSettlement ? await readRewardAccount(store, inviterAtSettlement) : null;
     const levels = referralLevelsAt(account, above, settledAt);
     const dayEntries = await listPointsDay(store, action.wallet, day);
     /* The inviter is a customer too: an internal inviter earns nothing. */
     const referrerL1 = levels.l1 && !internal.wallets.has(levels.l1) ? levels.l1 : null;
+    /* One qualified-referral bonus per friend, whoever invited them: a change of
+       inviter must not pay the bonus a second time. The friend's own fence key
+       answers for bonuses written since it existed; the previous inviter's
+       rows answer for the ones before. */
+    const qualifiedBefore = async (inviter: string) => (await listPointsEntries(store, inviter)).some(
+      (entry) => entry.reason === "QUALIFIED_REFERRAL" && entry.source?.trader === action.wallet,
+    );
     const referrerAlreadyQualified = referrerL1
-      ? (await listPointsEntries(store, referrerL1)).some(
-          (entry) => entry.reason === "QUALIFIED_REFERRAL" && entry.source?.trader === action.wallet,
-        )
+      ? await identities.has(`qualified-friend:${action.wallet}`)
+        || await qualifiedBefore(referrerL1)
+        || (account.previousReferrer && account.previousReferrer !== referrerL1 ? await qualifiedBefore(account.previousReferrer) : false)
       : false;
 
     const accrual = accruePoints({
@@ -116,8 +126,10 @@ async function recordPointsCore(
       if (await collection.has(key)) continue;
       if (parsed.reason === "QUALIFIED_REFERRAL") {
         const qualificationKey = `qualified:${parsed.wallet}:${action.wallet}`;
-        if (await identities.has(qualificationKey)) continue;
+        const friendKey = `qualified-friend:${action.wallet}`;
+        if (await identities.has(qualificationKey) || await identities.has(friendKey)) continue;
         writes.push({ collection: "pointsAccruals", key: qualificationKey, expectedVersion: null, next: { version: 0 } });
+        writes.push({ collection: "pointsAccruals", key: friendKey, expectedVersion: null, next: { version: 0 } });
       }
       writes.push({ collection: "pointsEntries", key, expectedVersion: null, next: { ...parsed, version: 0 } });
       created.push(parsed);
@@ -126,9 +138,12 @@ async function recordPointsCore(
     const accounts = new Map<string, RewardAccount>([[account.wallet, account]]);
     if (above) accounts.set(above.wallet, above);
     for (const owner of accounts.values()) {
-      const earning = owner.earning || created.some(entry => entry.wallet === owner.wallet && BigInt(entry.points) > 0n);
+      const earnsNow = created.some(entry => entry.wallet === owner.wallet && BigInt(entry.points) > 0n);
+      const earning = owner.earning || earnsNow;
+      /* Same moment as money rewards: the settlement that first earned. */
+      const earningSince = nextEarningSince(owner, earnsNow, settledAt);
       writes.push({ collection: "rewardAccounts", key: owner.wallet, expectedVersion: owner.version,
-        next: RewardAccountSchema.parse({ ...owner, earning, version: owner.version + 1 }) });
+        next: RewardAccountSchema.parse({ ...owner, earning, earningSince, version: owner.version + 1 }) });
     }
     writes.push({ collection: "pointsAccruals", key: operationKey, expectedVersion: prior?.version ?? null,
       next: { version: (prior?.version ?? -1) + 1, day, entries: prior?.entries ?? accrual.entries, valued: volume.usdMicros !== null } as { version: number } });

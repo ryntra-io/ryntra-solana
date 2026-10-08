@@ -52,7 +52,9 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
   gap: var(--ry-s3);
-  align-items: stretch;
+  /* Each panel its own height: a long invitation panel must not open a void
+     in the rank card beside it. */
+  align-items: start;
 }
 
 /* ── Shared vocabulary ─────────────────────────────────────────────────── */
@@ -1330,4 +1332,113 @@
   .rowText { grid-area: text; }
   .rowAt { grid-area: at; justify-self: end; }
   .rowAmount { grid-area: amount; min-width: 0; }
+}
+
+/* ── The invitation and the code ──────────────────────────────────────── */
+
+/* An open invitation leads the page: somebody who followed a link sees who
+   invited them before the figures, and before their first trade. */
+.invitationTop {
+  max-width: 760px;
+  margin: 0 0 var(--ry-s3);
+}
+
+/* The inviter's own code beside their link — for friends who type. */
+.codeRow {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  flex-wrap: wrap;
+}
+
+.codeLabel {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-dense);
+}
+
+.codeChip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  min-height: 44px;
+  padding: 0 var(--ry-s3);
+  border: 1px dashed var(--ry-border-strong);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-bg);
+  color: var(--ry-text);
+  font: inherit;
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-data);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: background 150ms ease-out, border-color 150ms ease-out;
+}
+
+.codeChip svg {
+  flex: none;
+  color: var(--ry-muted);
+}
+
+.codeChip:hover {
+  background: var(--ry-hover);
+}
+
+.codeChip:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+}
+
+.codeChip[data-done="true"] {
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--ry-verified) 45%, var(--ry-border));
+}
+
+.codeChip[data-done="true"] svg {
+  color: var(--ry-verified);
+}
+
+.codeDone {
+  color: var(--ry-verified);
+  font-size: var(--ry-fs-dense);
+}
+
+/* Bound: the inviter row, and under it the one change while it is possible. */
+.invitedStack {
+  display: grid;
+  gap: var(--ry-s2);
+}
+
+.changeHint {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 0 var(--ry-s3);
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-dense);
+  line-height: 1.5;
+}
+
+.inlineAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ry-text);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.inlineAction:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+  border-radius: 4px;
 }

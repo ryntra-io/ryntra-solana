@@ -5,12 +5,14 @@ import { consumeSolanaReadRequest, readAgentControlJson } from "@/lib/agent-cont
 import { secureCookies } from "@/lib/auth/cookie-policy";
 import { getGuardRuntime } from "@/lib/guard/runtime";
 import { privateNoStoreHeaders } from "@/lib/http-control";
-import { bindReferrer, readRewardAccount, walletForCode } from "@/lib/rewards/ledger";
+import { bindReferrer, changeReferrer, readReferralChangeWindow, readRewardAccount, walletForCode } from "@/lib/rewards/ledger";
+import { readReferralState } from "@/lib/rewards/referral-state.server";
 import {
   maskCode,
   maskWallet,
   normalizeReferralCode,
   REFERRAL_COOKIE,
+  REFERRAL_COOKIE_AT,
 } from "@/lib/rewards/referral";
 import { mutationOriginAllowed } from "@/lib/security";
 import { getWalletProof } from "@/lib/session";
@@ -21,30 +23,28 @@ export const dynamic = "force-dynamic";
 /**
  * `/api/rewards/referral` — who invited you, before it is decided.
  *
- * ## Why binding stopped happening on its own
+ * ## How binding happens
  *
- * The first version wrote the attribution during the ordinary read of
- * `/api/rewards`, the moment a code and a proven wallet first existed together.
- * It worked, it was idempotent, and it was too quiet: a person never saw who
- * they were being attached to, and somebody who opened the wrong link — a
- * friend sent two, an old one was still in the browser — had no moment at which
- * to notice or correct it. An attribution that decides where money goes for the
- * life of an account should not happen as a side effect of loading a page.
+ * The first version wrote the attribution silently while `/api/rewards` loaded;
+ * the second waited for a «Confirm» button that most people never saw — the
+ * case of 08.10: friends who opened a link and traded were never bound. Now
+ * a link leaves a pending code in the browser (first touch: a later link does
+ * not replace it), and the browser's proven wallet binds it on its own, on its
+ * first read here, while the window is open — before the first trade and seven
+ * days after it (`readReferralState`).
  *
- * So a link now creates a **pending** referral and nothing else, and binding is
- * this route's own action, taken deliberately.
+ * ## What each verb does
  *
- * ## What each verb does, and what it deliberately does not
+ * `GET` reports the carried code (or previews `?code=`) with the inviter
+ * **masked**, needs no wallet, and for the proven wallet's own read makes the
+ * one write described above and says what can still change (`binding`,
+ * `change`).
  *
- * `GET` reads the pending code from the browser's cookie, or previews a code
- * given in the query, and answers with the inviter **masked**. It needs no
- * wallet: the whole point is that somebody arriving from a link can see who
- * invited them before they connect anything. It writes nothing.
- *
- * `POST` carries one of three actions. `pending` replaces the code being
- * considered — that is *Change code*, and it still binds nothing. `dismiss`
- * throws the invitation away. `confirm` is the only one that writes an
- * attribution, and it is the only one that requires a proven wallet.
+ * `POST` carries one of four actions. `pending` replaces the code being
+ * considered (Change code) and binds nothing by itself; `dismiss` throws the
+ * invitation away; `confirm` binds explicitly (for a wallet whose own read did
+ * not); `change` makes the one change of inviter inside the window. The last
+ * two need a proven wallet.
  *
  * ## Enumeration, and why a preview is safe without a session
  *
@@ -63,6 +63,7 @@ const ActionSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("pending"), code: z.string().min(1).max(40) }),
   z.object({ action: z.literal("dismiss") }),
   z.object({ action: z.literal("confirm"), code: z.string().min(1).max(40), address: z.string().regex(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/) }),
+  z.object({ action: z.literal("change"), code: z.string().min(1).max(40), address: z.string().regex(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/) }),
 ]);
 
 /** The inviter behind a code, masked, or null when the code belongs to nobody. */
@@ -89,28 +90,19 @@ export async function GET(req: NextRequest) {
     return json({ ok: true, found: preview !== null, preview });
   }
 
-  /* What this browser is currently carrying, if anything. */
+  /* What this browser carries, and — for its proven wallet only — the binding:
+     `readReferralState` decides, including the one write a GET makes. */
   const carried = req.cookies.get(REFERRAL_COOKIE)?.value ?? null;
   const normalized = carried ? normalizeReferralCode(carried) : null;
-  const pending = normalized ? await inviterFor(normalized) : null;
-
-  /* A wallet that already has an inviter can never take another, so a pending
-     code sitting in its browser is noise. It is reported as settled and the
-     cookie is cleared rather than left to be offered again on every visit. */
   const proof = await getWalletProof();
-  if (proof && proof.chain === "solana" && proof.address === req.nextUrl.searchParams.get("address")) {
-    const account = await readRewardAccount(getGuardRuntime().store, proof.address);
-    if (account?.referrer) {
-      const response = json({
-        ok: true,
-        pending: null,
-        confirmed: { inviterMasked: maskWallet(account.referrer), codeMasked: null },
-      });
-      if (carried) response.cookies.delete(REFERRAL_COOKIE);
-      return response;
-    }
+  const own = proof && proof.chain === "solana" && proof.address === req.nextUrl.searchParams.get("address") ? proof.address : null;
+  const read = await readReferralState(getGuardRuntime().store, { wallet: own, carried: normalized, now: new Date().toISOString() });
+  const response = json(read.body);
+  if (carried && read.clearCookie) {
+    response.cookies.delete(REFERRAL_COOKIE);
+    response.cookies.delete(REFERRAL_COOKIE_AT);
   }
-  return json({ ok: true, pending, confirmed: null });
+  return response;
 }
 
 export async function POST(req: NextRequest) {
@@ -127,6 +119,7 @@ export async function POST(req: NextRequest) {
   if (parsed.data.action === "dismiss") {
     const response = json({ ok: true, pending: null, confirmed: null });
     response.cookies.delete(REFERRAL_COOKIE);
+    response.cookies.delete(REFERRAL_COOKIE_AT);
     return response;
   }
 
@@ -147,6 +140,16 @@ export async function POST(req: NextRequest) {
       path: "/",
       maxAge: THIRTY_DAYS_SECONDS,
     });
+    /* Chosen on purpose, so it holds as a first touch from now. */
+    response.cookies.set({
+      name: REFERRAL_COOKIE_AT,
+      value: String(Date.now()),
+      httpOnly: true,
+      sameSite: "lax",
+      secure: secureCookies(),
+      path: "/",
+      maxAge: THIRTY_DAYS_SECONDS,
+    });
     return response;
   }
 
@@ -158,18 +161,27 @@ export async function POST(req: NextRequest) {
   }
   const store = getGuardRuntime().store;
   const now = new Date().toISOString();
-  const decision = await bindReferrer(store, { wallet: proof.address, code, now });
+  /* `change`: the one change of inviter, inside the window; with no inviter
+     yet it is a plain binding. */
+  const decision = parsed.data.action === "change"
+    ? await changeReferrer(store, { wallet: proof.address, code, now })
+    : await bindReferrer(store, { wallet: proof.address, code, now });
   if (!decision.ok) {
-    /* Self-referral, a cycle, an inviter already settled, a wallet already
-       earning. Every one of them is fail-closed and the code is the whole of
-       what the surface needs to word it. */
+    /* Self-referral, a cycle, an inviter already settled, a wallet whose
+       seven days after its first trade are over. Every one of them is
+       fail-closed and the code is the whole of what the surface needs to word
+       it. */
     return json({ ok: false, reason: decision.code }, 409);
   }
+  const account = await readRewardAccount(store, proof.address);
+  const change = account ? await readReferralChangeWindow(store, account, now) : { open: false, until: null };
   const response = json({
     ok: true,
     pending: null,
     confirmed: { inviterMasked: preview.inviterMasked, codeMasked: preview.codeMasked },
+    change,
   });
   response.cookies.delete(REFERRAL_COOKIE);
+  response.cookies.delete(REFERRAL_COOKIE_AT);
   return response;
 }

@@ -4,6 +4,8 @@ import { z } from "zod";
 import { consumeSolanaReadRequest, readAgentControlJson } from "@/lib/agent-control/http";
 import { getGuardRuntime } from "@/lib/guard/runtime";
 import { cardPercent, cardWords } from "@/lib/growth/card-copy";
+import { cardFace } from "@/lib/growth/card-face";
+import { cardIconDataUri } from "@/lib/growth/card-icon.server";
 import { listShareableTrades, makeTradeCard, tokenFacts } from "@/lib/growth/card-store";
 import { heldDays, tradeCardImagePath, tradeCardPath, tradeKey } from "@/lib/growth/trade-cards";
 import { privateNoStoreHeaders } from "@/lib/http-control";
@@ -22,7 +24,8 @@ export const maxDuration = 30;
  * `GET /api/growth/cards?address=<wallet>[&mint=<mint>]` — the wallet's
  * trades a card can be made of, newest first, measured from its receipts.
  * `POST /api/growth/cards` — `{ address, trade, locale, amounts }` — the card
- * of one of them: its page and its versioned picture.
+ * of one of them: its page, its versioned picture and the face the live
+ * card and its film are drawn from.
  *
  * Both only behind the wallet's own proof: a person's trades and the cards of
  * them are theirs to show. The request names a trade, never a figure — every
@@ -118,6 +121,8 @@ export async function POST(req: NextRequest) {
         image: `${origin}${tradeCardImagePath(card)}`,
         text: cardWords(card.locale).postText(card.token.symbol, figure, card.trade.kind === "SELL" ? heldDays(card.trade.openedAt, card.trade.at) : null),
         alt: cardWords(card.locale).alt(card.token.symbol, figure),
+        /* Everything the live card draws, written here from the stored card: the browser formats and counts nothing of its own. */
+        face: cardFace(card, origin, await cardIconDataUri(card.token.icon)),
       },
     });
   } catch {

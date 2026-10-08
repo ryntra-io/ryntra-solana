@@ -1,12 +1,15 @@
 "use client";
 
-import { ArrowClockwise, CaretLeft, Check, Copy, ShareNetwork, TelegramLogo, X, XLogo } from "@phosphor-icons/react";
+import { ArrowClockwise, CaretLeft, Check, Copy, DownloadSimple, FilmStrip, ShareNetwork, TelegramLogo, X, XLogo } from "@phosphor-icons/react";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 import { cardDate, cardPercent, cardPrice, cardWords, type CardLocale } from "@/lib/growth/card-copy";
+import type { CardFace } from "@/lib/growth/card-face";
 
 import { useSolanaConnection } from "../connection.tsx";
 import { useSolanaI18n } from "../i18n/provider.tsx";
+import { cardFileName, filmSupported, makeCardFilm, saveBlob } from "./card-motion";
+import { LiveCard, type LiveCardHandle } from "./live-card";
 import styles from "./share.module.css";
 
 /**
@@ -23,7 +26,10 @@ import styles from "./share.module.css";
  *
  * The sheet lists the trades newest first — losses with gains, there is no
  * filter for wins — and a chosen trade becomes a card on the server from the
- * receipts; the dollar amounts are off until the person turns them on.
+ * receipts; the dollar amounts are off until the person turns them on. The
+ * card plays alive in the sheet (`live-card.tsx`); its picture is what X and
+ * Telegram show under the link, and it can be saved as an image or, where the
+ * browser can make one, as a film to post.
  */
 
 type Trade = Readonly<{
@@ -39,7 +45,9 @@ type Trade = Readonly<{
   decimals: number | null;
 }>;
 
-type Made = Readonly<{ id: string; url: string; image: string; text: string; alt: string }>;
+type Made = Readonly<{ id: string; url: string; image: string; text: string; alt: string; face: CardFace }>;
+
+type FilmState = "idle" | "making" | "failed";
 
 type ListState = { status: "idle" | "none" } | { status: "ready"; trades: readonly Trade[]; complete: boolean };
 type CardState = { status: "drawing" } | { status: "ready"; card: Made } | { status: "failed" };
@@ -195,10 +203,10 @@ function TradeList({ trades, locale, onChoose }: Readonly<{ trades: readonly Tra
     <section aria-label={word.listLabel}>
       <h3 className={styles.listLabel}>{word.listLabel}</h3>
       <ul className={styles.list}>
-        {trades.map((trade) => {
+        {trades.map((trade, index) => {
           const tone = trade.kind === "SELL" && trade.resultBps !== null ? (trade.resultBps > 0 ? "up" : trade.resultBps < 0 ? "down" : undefined) : undefined;
           return (
-            <li key={trade.key}>
+            <li key={trade.key} style={{ "--i": Math.min(index, 8) } as React.CSSProperties}>
               <button type="button" className={styles.trade} onClick={() => onChoose(trade)}>
                 <span className={styles.tradeName}>
                   <span className={styles.tradeSymbol} translate="no">
@@ -224,13 +232,34 @@ function CardStep({ address, trade, locale }: Readonly<{ address: string; trade:
   const word = cardWords(locale);
   const [amounts, setAmounts] = useState(false);
   const [state, setState] = useState<CardState>({ status: "drawing" });
-  const [loaded, setLoaded] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [film, setFilm] = useState<FilmState>("idle");
+  const [canFilm, setCanFilm] = useState(false);
+  const [canShareFiles, setCanShareFiles] = useState(false);
+  const [liveReady, setLiveReady] = useState(false);
+  /* On a phone the film made by the first tap, waiting for the second, which hands it to an app inside the tap. */
+  const [madeFilm, setMadeFilm] = useState<File | null>(null);
+  const live = useRef<LiveCardHandle | null>(null);
   const amountsId = useId();
+
+  useEffect(() => {
+    void filmSupported().then(setCanFilm);
+    try {
+      /* A phone hands the film to X's app; a desk saves it — a desk's share menu has no X to give it to. */
+      const probe = new File([new Uint8Array(1)], "probe.mp4", { type: "video/mp4" });
+      const touch = window.matchMedia("(pointer: coarse)").matches;
+      setCanShareFiles(touch && typeof navigator.canShare === "function" && navigator.canShare({ files: [probe] }));
+    } catch {
+      setCanShareFiles(false);
+    }
+  }, []);
 
   const make = useCallback(async (withAmounts: boolean) => {
     setState({ status: "drawing" });
-    setLoaded(false);
+    setFilm("idle");
+    setMadeFilm(null);
+    setLiveReady(false);
+    live.current = null;
     try {
       const response = await fetch("/api/growth/cards", {
         method: "POST",
@@ -238,7 +267,7 @@ function CardStep({ address, trade, locale }: Readonly<{ address: string; trade:
         body: JSON.stringify({ address, trade: trade.key, locale, amounts: withAmounts }),
       });
       const body = (await response.json().catch(() => null)) as { card?: Made } | null;
-      if (!response.ok || !body?.card) {
+      if (!response.ok || !body?.card?.face) {
         setState({ status: "failed" });
         return;
       }
@@ -263,34 +292,90 @@ function CardStep({ address, trade, locale }: Readonly<{ address: string; trade:
   };
 
   const card = state.status === "ready" ? state.card : null;
+
+
+  /* The picture X shows under the link, as a file — from this site, whatever host the link names. */
+  const saveImage = async () => {
+    if (!card) return;
+    try {
+      const own = new URL(card.image);
+      const response = await fetch(`${own.pathname}${own.search}`);
+      if (!response.ok) throw new Error(String(response.status));
+      saveBlob(await response.blob(), cardFileName(card.face, card.id, "png"));
+    } catch {
+      window.open(card.image, "_blank", "noopener");
+    }
+  };
+
+  /*
+   * The film, made only when asked. On a desk it is saved as soon as it is
+   * made. On a phone the share sheet must open inside a tap, and making takes
+   * longer than a tap lasts: the first tap makes it, the button then says
+   * «Share video», and that tap hands it to an app.
+   */
+  const shareFilm = async () => {
+    if (!card || !live.current || film === "making") return;
+    if (canShareFiles && madeFilm) {
+      try {
+        await navigator.share({ files: [madeFilm], text: `${card.text} ${card.url}` });
+      } catch (error) {
+        /* Closing the share sheet is not a failure; anything else falls back to saving. */
+        if ((error as { name?: string })?.name !== "AbortError") saveBlob(madeFilm, madeFilm.name);
+      }
+      return;
+    }
+    setFilm("making");
+    try {
+      const blob = await makeCardFilm(card.face, live.current.assets, live.current.fonts);
+      if (canShareFiles) setMadeFilm(new File([blob], cardFileName(card.face, card.id, "mp4"), { type: "video/mp4" }));
+      else saveBlob(blob, cardFileName(card.face, card.id, "mp4"));
+      setFilm("idle");
+    } catch {
+      setFilm("failed");
+    }
+  };
+  const filmWaiting = film === "making";
+
   const xHref = card ? `https://x.com/intent/post?text=${encodeURIComponent(card.text)}&url=${encodeURIComponent(card.url)}` : undefined;
   const tgHref = card ? `https://t.me/share/url?url=${encodeURIComponent(card.url)}&text=${encodeURIComponent(card.text)}` : undefined;
 
   return (
     <div className={styles.step}>
-      <div className={styles.preview} data-state={state.status === "failed" ? "failed" : card && loaded ? "ready" : "drawing"} aria-busy={!(card && loaded)}>
-        {card ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img key={card.image} src={card.image} alt={card.alt} width={1200} height={630} onLoad={() => setLoaded(true)} onError={() => setState({ status: "failed" })} />
-        ) : null}
-        {state.status === "failed" ? (
-          <p className={styles.previewNote} role="alert">
-            {word.failed}{" "}
-            <button type="button" className={styles.retry} onClick={() => void make(amounts)} aria-label={word.retry} title={word.retry}>
-              <ArrowClockwise size={16} weight="bold" aria-hidden="true" />
-            </button>
-          </p>
-        ) : !(card && loaded) ? (
-          <p className={styles.previewNote} aria-live="polite">
-            {word.drawing}
-          </p>
-        ) : null}
-      </div>
+      {card ? (
+        <LiveCard
+          key={card.id}
+          className={styles.live}
+          face={card.face}
+          replayLabel={word.replay}
+          onReady={(handle) => {
+            live.current = handle;
+            setLiveReady(true);
+          }}
+        />
+      ) : (
+        <div className={`${styles.preview} ${styles.live}`} data-state={state.status === "failed" ? "failed" : "drawing"} aria-busy={state.status !== "failed"}>
+          {state.status === "failed" ? (
+            <p className={styles.previewNote} role="alert">
+              {word.failed}{" "}
+              <button type="button" className={styles.retry} onClick={() => void make(amounts)} aria-label={word.retry} title={word.retry}>
+                <ArrowClockwise size={16} weight="bold" aria-hidden="true" />
+              </button>
+            </p>
+          ) : (
+            <p className={styles.previewNote} aria-live="polite">
+              {word.drawing}
+            </p>
+          )}
+        </div>
+      )}
 
       <label className={styles.toggle} htmlFor={amountsId}>
         <span className={styles.toggleText}>
           <span>{word.amounts}</span>
-          {!amounts ? <span className={styles.toggleNote}>{word.amountsNote}</span> : null}
+          {/* Kept in place when on, so the sheet does not jump. */}
+          <span className={styles.toggleNote} data-hidden={amounts || undefined} aria-hidden={amounts || undefined}>
+            {word.amountsNote}
+          </span>
         </span>
         <input id={amountsId} type="checkbox" role="switch" className={styles.switch} checked={amounts} onChange={(event) => setAmounts(event.target.checked)} />
       </label>
@@ -309,7 +394,22 @@ function CardStep({ address, trade, locale }: Readonly<{ address: string; trade:
             {copied ? <Check size={16} weight="bold" aria-hidden="true" /> : <Copy size={16} aria-hidden="true" />}
             {copied ? word.copied : word.copy}
           </button>
+          <button type="button" className="rw-btn" disabled={!card || !liveReady} onClick={() => void saveImage()}>
+            <DownloadSimple size={16} weight="bold" aria-hidden="true" />
+            {word.saveImage}
+          </button>
+          {canFilm ? (
+            <button type="button" className="rw-btn" disabled={!card || !liveReady || filmWaiting} onClick={() => void shareFilm()} aria-busy={filmWaiting}>
+              <FilmStrip size={16} weight="bold" aria-hidden="true" />
+              {filmWaiting ? word.makingVideo : madeFilm ? word.shareVideo : word.saveVideo}
+            </button>
+          ) : null}
         </div>
+        {film === "failed" ? (
+          <p className={styles.lead} role="status">
+            {word.videoFailed}
+          </p>
+        ) : null}
       </div>
     </div>
   );

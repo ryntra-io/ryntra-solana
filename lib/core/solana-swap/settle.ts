@@ -15,7 +15,9 @@
  */
 
 import { recordOperationPoints } from "../../points/record.server.ts";
+import { bindReferrer } from "../../rewards/ledger.ts";
 import { recordOperationRewards } from "../../rewards/record.server.ts";
+import { normalizeReferralCode } from "../../rewards/referral.ts";
 import { swapFeePrice } from "../../rewards/swap-settlement.ts";
 import { recordPlanExecution } from "../../plans/service.ts";
 import { actionFeeFromServiceFee, recordSolanaAction } from "../../solana/action-ledger.ts";
@@ -76,6 +78,8 @@ export type SwapSettleContext = SwapSignedGuardContext & {
   at: string | null;
   network: SolanaNetwork | null;
   swapRow: Awaited<ReturnType<typeof recordSolanaAction>> | null;
+  /** The invitation code a browser carries (the `rref` cookie), or null; it binds the taker at this trade. */
+  referralCode: string | null;
   /** The final answer, set by the last step. */
   answer: Readonly<{ status: number; body: Record<string, unknown> }> | null;
 };
@@ -591,6 +595,18 @@ const rewardsAndPoints: PipelineStep<SwapSettleContext, SwapSettleStop> = {
     const observed = need(context.observed, "observed");
     const store = need(context.store, "store");
     const at = need(context.at, "at");
+    /* A friend who trades without signing in binds here, before the share is
+       written, so this very trade counts to the inviter. The binding never
+       fails the trade and its answer is not read: a refusal (too late, the
+       same inviter, a cycle) or a thrown read budget leaves the swap as it is. */
+    const referralCode = context.referralCode ? normalizeReferralCode(context.referralCode) : null;
+    if (referralCode) {
+      try {
+        await bindReferrer(store, { wallet: bundle.taker, code: referralCode, now: at, at: observed.observation.observedAt });
+      } catch (error) {
+        console.error(`referral binding at settle skipped: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
     await recordOperationRewards(store, {
       fee: facts.fees.serviceFee,
       trader: bundle.taker,
@@ -678,12 +694,14 @@ export const SOLANA_SWAP_SETTLE = definePipeline<SwapSettleContext, SwapSettleSt
   ],
 });
 
-export type SwapSettleRequest = Pick<SwapSettleContext, "bundle" | "proof" | "signedTransactionBase64" | "reviewedTransactionBase64">;
+export type SwapSettleRequest = Pick<SwapSettleContext, "bundle" | "proof" | "signedTransactionBase64" | "reviewedTransactionBase64"> &
+  Partial<Pick<SwapSettleContext, "referralCode">>;
 
 /** A fresh context for one admitted execute request. */
 export function swapSettleContext(request: SwapSettleRequest): SwapSettleContext {
   return {
     ...request,
+    referralCode: request.referralCode ?? null,
     signedInspection: null,
     adoption: null,
     adoptedLane: null,

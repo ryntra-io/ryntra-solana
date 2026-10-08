@@ -6,6 +6,7 @@ import { PRODUCT_ROUTES } from "@/app/shell/product-routes";
 import { PRODUCT_SHELL_STRINGS, SHELL_CHROME_COPY } from "@/app/shell/chrome-copy";
 import { MenuPreferences } from "@/app/shell/menu-preferences";
 import { SolanaConnectionControl } from "@/app/solana/workspace/connection";
+import { InviteBanner } from "@/app/solana/workspace/rewards/invite-banner";
 import { useSolanaI18n } from "@/app/solana/workspace/i18n/provider";
 import { WalletAccountIdentity } from "./account/account-control";
 import { FeedbackLauncher } from "./feedback/feedback-launcher";
@@ -79,6 +80,8 @@ export function ProductShell({ children }: { children: ReactNode; signedIn: bool
            places last. The way to say something is never further than the
            rail's foot. */
         viewExtras={<FeedbackLauncher />}
+        /* A friend's invitation, above the section's tabs on every page but «Винагороди», until it binds (then once, that it did). */
+        notice={<InviteBanner />}
       >
         {children}
       </RyntraAppShell>

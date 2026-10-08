@@ -36,7 +36,7 @@ import { positionSteps } from "./trader-pnl.ts";
  */
 
 /** The revision of the card's drawing: a new one gives every card a new version, so X fetches it again. */
-export const TRADE_CARD_ART_REVISION = "2026-10-06.1";
+export const TRADE_CARD_ART_REVISION = "2026-10-08.1";
 
 export const TRADE_CARD_SCHEMA = "ryntra.growth.trade-card";
 

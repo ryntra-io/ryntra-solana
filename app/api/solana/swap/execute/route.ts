@@ -10,6 +10,7 @@ import {
   type SwapExecutionBundle,
 } from "@/lib/solana/swap-execution-review";
 import { readSwapCarrier, walletMismatch } from "@/lib/solana/swap-carrier.server";
+import { REFERRAL_COOKIE } from "@/lib/rewards/referral";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -89,6 +90,20 @@ function refuseBeforeSubmit(
   return failure(status, code, message, rate, { ...extra, submitBoundary: "NOT_CROSSED" });
 }
 
+/** The invitation a browser carries from `/r/<code>` (the phone sends no cookie). */
+function carriedReferralCode(request: Request): string | null {
+  for (const part of (request.headers.get("cookie") ?? "").split(";")) {
+    const separator = part.indexOf("=");
+    if (separator < 0 || part.slice(0, separator).trim() !== REFERRAL_COOKIE) continue;
+    try {
+      return decodeURIComponent(part.slice(separator + 1).trim()) || null;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
 export async function POST(request: Request) {
   const rate = consumeAgentControlRequest(request.headers);
   if (!rate.allowed) return refuseBeforeSubmit(429, "RATE_LIMITED", "Too many requests.", rate);
@@ -137,6 +152,7 @@ export async function POST(request: Request) {
     proof,
     signedTransactionBase64,
     reviewedTransactionBase64,
+    referralCode: carriedReferralCode(request),
   });
   const run = await settleSolanaSwap(context);
   if (!run.completed) {

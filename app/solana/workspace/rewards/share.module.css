@@ -65,12 +65,24 @@
   border-radius: var(--ry-r-landing, 20px) var(--ry-r-landing, 20px) 0 0;
   background: var(--ry-card);
   box-shadow: var(--ry-shadow-elevated);
-  animation: rise 220ms var(--rt-ease, ease-out);
+  animation: rise 340ms cubic-bezier(0.2, 0.9, 0.25, 1.08);
+}
+
+/* The sheet opens with a motion of its own: the ground dims, the sheet rises
+   and settles, the trades arrive one after another. */
+.sheet[open] {
+  animation: dim 220ms ease-out;
+}
+
+@keyframes dim {
+  from {
+    background-color: rgb(0 0 0 / 0);
+  }
 }
 
 @keyframes rise {
   from {
-    transform: translateY(16px);
+    transform: translateY(28px) scale(0.97);
     opacity: 0;
   }
   to {
@@ -79,10 +91,33 @@
   }
 }
 
+.list li {
+  animation: arrive 280ms ease-out both;
+  animation-delay: calc(80ms + var(--i, 0) * 40ms);
+}
+
+@keyframes arrive {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .body {
+  .body,
+  .sheet[open],
+  .list li {
     animation: none;
   }
+}
+
+/* On a phone the live card reaches nearly to the sheet's edges: it is the point of the sheet. */
+.live {
+  margin-inline: calc(-1 * var(--ry-s5) + 6px);
+}
+
+.actions svg {
+  flex: none;
 }
 
 @media (min-width: 720px) {
@@ -90,7 +125,12 @@
     align-items: center;
   }
 
+  .live {
+    margin-inline: 0;
+  }
+
   .body {
+    max-width: 720px;
     padding: var(--ry-s5) var(--ry-s6) var(--ry-s6);
     border-bottom: 1px solid var(--ry-border);
     border-radius: var(--ry-r-landing, 20px);
@@ -286,6 +326,10 @@
 .toggleNote {
   color: var(--ry-muted);
   font-size: var(--ry-fs-label-sm, 0.75rem);
+}
+
+.toggleNote[data-hidden] {
+  visibility: hidden;
 }
 
 /* A switch drawn on the checkbox itself: the product's `min-width: 44px` on
