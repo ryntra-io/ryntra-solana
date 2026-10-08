@@ -93,7 +93,7 @@ that come from the development repository:
 | New | 1,289 |
 | Changed | 814 |
 | Unchanged | 921 |
-| Lines added / removed | +331,133 / −19,860 |
+| Lines added / removed | +331,136 / −19,860 |
 
 [BOUNDARY.md](BOUNDARY.md) lists every new and every changed file. Shipped since
 then, as the public build log records it:
