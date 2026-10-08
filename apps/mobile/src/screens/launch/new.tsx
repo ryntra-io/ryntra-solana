@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router'
 import { useState } from 'react'
-import { Pressable, View } from 'react-native'
+import { Linking, Pressable, View } from 'react-native'
 
 import { BOTTOM_ACTION_INSET, BottomAction } from '@/components/bottom-action'
 import { Card } from '@/components/card'
@@ -43,6 +43,7 @@ import { choosePicture, takePicture } from '@/features/launch/picture'
 import { useLaunchCreate, type LaunchCreate } from '@/features/launch/use-create'
 import { useLaunchOpen, useLaunchPresets } from '@/features/launch/use-launch'
 import { useNow } from '@/hooks/use-now'
+import { TERMS_URL } from '@/lib/legal'
 import type { LaunchPreset, LaunchPresetsResponse } from '@/lib/api/v1/types'
 import { useLocale, useSharedCopy, type Locale } from '@/lib/i18n'
 
@@ -65,7 +66,7 @@ export function LaunchNewScreen() {
   const open = launchOpen.open
   const presets = useLaunchPresets(open === true)
   const create = useLaunchCreate(presets.data ?? null)
-  const back = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/more'))
+  const back = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)'))
 
   if (open === false || launchOpen.failed) {
     return (
@@ -659,6 +660,7 @@ function ReviewSection({ create, word, locale }: { create: LaunchCreate; word: L
                   sol: formatNumber(Number(lock ? COST_ESTIMATE_SOL.locked : COST_ESTIMATE_SOL.plain), locale, 3),
                 })
           }
+          mono={false}
         />
       </View>
       <View className="flex-row items-start gap-2 pt-1">
@@ -667,6 +669,19 @@ function ReviewSection({ create, word, locale }: { create: LaunchCreate; word: L
           {word('reviewFixed')}
         </Txt>
       </View>
+      <Pressable
+        accessibilityRole="link"
+        onPress={() => void Linking.openURL(TERMS_URL).catch(() => undefined)}
+        hitSlop={8}
+        className="min-h-11 justify-center"
+      >
+        <Txt variant="ui" tone="muted">
+          {word('termsLead')}{' '}
+          <Txt variant="ui" tone="brand">
+            {word('terms')}
+          </Txt>
+        </Txt>
+      </Pressable>
     </Card>
   )
 }

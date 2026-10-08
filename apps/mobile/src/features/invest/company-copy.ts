@@ -1,11 +1,11 @@
 import type { Copy } from '../../lib/i18n.ts'
 
 /**
- * The words of a company's facts at rest (M23) — the head's line under the
+ * The words of a company's facts at rest — the head's line under the
  * name, «Ключові показники», «Про компанію», «Що ти купуєш» and «Торги на
- * Solana» — the web's own for the same page (`RYN-COMPANY-PAGE-001`, its
+ * Solana» — the web's own for the same page, its
  * `invest-words.ts`), in the phone's «ти». A time the phone adds beside a
- * figure (canon §2: every figure carries its time) is said the way the web says
+ * figure (every figure carries its time) is said the way the web says
  * a mark's time («на 16:07»).
  */
 

@@ -6,7 +6,7 @@ import { Txt } from '@/components/txt'
 import { PLANS_COPY } from '@/features/plans/copy'
 import { strategyBlock } from '@/features/plans/plan-model'
 import type { PlanCheck, PlanReview } from '@/lib/api'
-import { useCopy } from '@/lib/i18n'
+import { useCopy, useLocale } from '@/lib/i18n'
 import { formatUsd } from '@/utils/format'
 
 const VERDICT_TONE: Readonly<Record<PlanReview['verdict'], ChipTone>> = {
@@ -41,6 +41,7 @@ function CheckLine({ check, tone }: { check: PlanCheck; tone: 'danger' | 'warnin
  */
 export function StrategyBlock({ review, symbol }: { review: PlanReview; symbol: string }) {
   const copy = useCopy(PLANS_COPY)
+  const locale = useLocale()
   const block = strategyBlock(review)
   return (
     <Card className="gap-1">
@@ -60,7 +61,7 @@ export function StrategyBlock({ review, symbol }: { review: PlanReview; symbol: 
       ))}
       <Txt variant="labelSm" tone="faint" className="pt-1">
         {copy.checksHeld(block.passed)}
-        {block.fitUsd !== null ? ` · ${copy.fits(formatUsd(block.fitUsd))}` : ''}
+        {block.fitUsd !== null ? ` · ${copy.fits(formatUsd(block.fitUsd, locale))}` : ''}
       </Txt>
     </Card>
   )

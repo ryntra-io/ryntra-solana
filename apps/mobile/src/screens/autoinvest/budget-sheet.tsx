@@ -25,9 +25,9 @@ import { type, useTheme } from '@/theme'
 
 /**
  * «Бюджет місяця» — the person's own ceiling for every rule in a calendar
- * month (canon v5.1 §4.1, §11, В19; M16), a sheet like the purchase's: a sum
- * in dollars under «Не більше на місяць» (canon v5.3 В29; M20), from $1 (canon
- * v5.5 В35; M21), typed or $31 · $50 · $100 · $200 — the first a dollar a day
+ * month, a sheet like the purchase's: a sum
+ * in dollars under «Не більше на місяць», from $1
+ * (M21), typed or $31 · $50 · $100 · $200 — the first a dollar a day
  * for the longest month — what the month has taken so far («Цього місяця $45 з
  * $100»), one line on what the ceiling does and one on what counts,
  * «Зберегти» — and «Прибрати бюджет» while there is one. Only the person sets
@@ -100,7 +100,7 @@ function BudgetFlow({ onClose }: { onClose: () => void }) {
   return (
     <Sheet visible title={copy.monthBudget} onClose={close} scroll>
       <View className="gap-4 pb-2">
-        {/* The budget's sum is the month's ceiling for all rules — never one purchase (canon v5.3 В29). */}
+        {/* The budget's sum is the month's ceiling for all rules — never one purchase. */}
         <View className="gap-0.5">
           <Txt variant="labelSm" tone="faint" caps className="text-center" importantForAccessibility="no">
             {copy.atMostPerMonth}

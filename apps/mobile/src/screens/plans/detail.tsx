@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useState } from 'react'
-import { Linking, Pressable, RefreshControl, ScrollView, View } from 'react-native'
+import { Pressable, RefreshControl, ScrollView, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { BOTTOM_ACTION_INSET, BottomAction } from '@/components/bottom-action'
@@ -59,6 +59,7 @@ import {
 } from '@/lib/api'
 import { useCopy, useLocale, useSharedCopy, type Locale } from '@/lib/i18n'
 import { useTheme } from '@/theme'
+import { openLink } from '@/lib/open-link'
 import {
   formatAge,
   formatAmount,
@@ -102,44 +103,45 @@ function RulesFacts({
 }) {
   const perUnit = copy.perUnit[unit]
   const rows: { label: string; value: string; detail?: string | null }[] = [
-    { label: copy.entryRule, value: `${formatPrice(rules.entry.pricePerShare)} ${perUnit}` },
+    { label: copy.entryRule, value: `${formatPrice(rules.entry.pricePerShare, locale)} ${perUnit}` },
     {
       label: copy.maxPriceRule,
       value:
         rules.entry.maxPricePerShare === null
           ? copy.noBound
-          : `${formatPrice(rules.entry.maxPricePerShare)} ${perUnit}`,
+          : `${formatPrice(rules.entry.maxPricePerShare, locale)} ${perUnit}`,
       detail: rules.entry.maxPricePerShare === null ? copy.reportedOnly : null,
     },
     {
       label: copy.validity,
       value: rules.entry.validUntil ? formatDay(rules.entry.validUntil, now, locale) : copy.validityNone,
     },
-    { label: copy.budgetRule, value: formatUsd(rules.capital.budgetUsd) },
-    { label: copy.reserveRule, value: formatUsd(rules.capital.reserveForCostsUsd) },
+    { label: copy.budgetRule, value: formatUsd(rules.capital.budgetUsd, locale) },
+    { label: copy.reserveRule, value: formatUsd(rules.capital.reserveForCostsUsd, locale) },
     {
       label: copy.invalidationRule,
-      value: `${formatPrice(rules.risk.invalidationPerShare)} ${perUnit}`,
+      value: `${formatPrice(rules.risk.invalidationPerShare, locale)} ${perUnit}`,
       detail: copy.ruleNote,
     },
-    { label: copy.plannedRisk, value: formatUsd(rules.risk.plannedRiskUsd) },
-    { label: copy.costsRule, value: `${(rules.risk.costBufferBps / 100).toFixed(2)}%` },
+    { label: copy.plannedRisk, value: formatUsd(rules.risk.plannedRiskUsd, locale) },
+    { label: copy.costsRule, value: `${formatAmount(rules.risk.costBufferBps / 100, 2, locale)}%` },
     {
       label: copy.targetRule,
-      value: rules.exit.targetPerShare === null ? copy.none : `${formatPrice(rules.exit.targetPerShare)} ${perUnit}`,
+      value:
+        rules.exit.targetPerShare === null ? copy.none : `${formatPrice(rules.exit.targetPerShare, locale)} ${perUnit}`,
     },
     {
       label: copy.timeExitRule,
       value: rules.exit.timeExitAt ? formatDay(rules.exit.timeExitAt, now, locale) : copy.none,
     },
-    { label: copy.slippageRule, value: `${(rules.execution.maxSlippageBps / 100).toFixed(2)}%` },
+    { label: copy.slippageRule, value: `${formatAmount(rules.execution.maxSlippageBps / 100, 2, locale)}%` },
     { label: copy.quoteAgeRule, value: `${rules.execution.maxQuoteAgeSeconds} s` },
     {
       label: copy.deviationRule,
       value:
         rules.execution.maxReferenceDeviationPct === null
           ? copy.noBound
-          : `${rules.execution.maxReferenceDeviationPct}%`,
+          : `${formatAmount(rules.execution.maxReferenceDeviationPct, 6, locale)}%`,
       detail: rules.execution.maxReferenceDeviationPct === null ? copy.reportedOnly : null,
     },
     {
@@ -149,7 +151,7 @@ function RulesFacts({
     },
     {
       label: copy.liquidityRule,
-      value: rules.execution.minLiquidityUsd === null ? copy.none : formatUsd(rules.execution.minLiquidityUsd),
+      value: rules.execution.minLiquidityUsd === null ? copy.none : formatUsd(rules.execution.minLiquidityUsd, locale),
     },
   ]
   return (
@@ -189,7 +191,7 @@ function MarketRules({
           <FactRow
             key={`${condition.metric}:${condition.window}`}
             label={metricLabel(metric, condition.metric, locale)}
-            value={`${copy.operator[condition.operator]} ${thresholdText(metric, condition.threshold, flags)} · ${condition.window}`}
+            value={`${copy.operator[condition.operator]} ${thresholdText(metric, condition.threshold, flags, locale)} · ${condition.window}`}
             detail={`${copy.mode[condition.mode]} · ${copy.modeHint[condition.mode]}`}
             mono={false}
             last={index === rules.evidenceConditions.length - 1}
@@ -200,7 +202,17 @@ function MarketRules({
   )
 }
 
-function SizingCard({ sizing, unit, copy }: { sizing: PlanSizing; unit: UnitBasis; copy: PlansCopy }) {
+function SizingCard({
+  sizing,
+  unit,
+  copy,
+  locale,
+}: {
+  sizing: PlanSizing
+  unit: UnitBasis
+  copy: PlansCopy
+  locale: Locale
+}) {
   return (
     <Card className="gap-1">
       <View className="flex-row items-end justify-between pb-1">
@@ -210,10 +222,10 @@ function SizingCard({ sizing, unit, copy }: { sizing: PlanSizing; unit: UnitBasi
         <Chip label={copy.limitedBy[sizing.limitedBy]} caps={false} />
       </View>
       <Txt variant="dataLg">
-        {formatAmount(sizing.units, 4)} {copy.units[unit]}
+        {formatAmount(sizing.units, 4, locale)} {copy.units[unit]}
       </Txt>
-      <FactRow label={copy.plannedSpend} value={formatUsd(sizing.notionalUsd)} />
-      <FactRow label={copy.lossPerUnit} value={formatPrice(sizing.lossPerShareUsd)} last />
+      <FactRow label={copy.plannedSpend} value={formatUsd(sizing.notionalUsd, locale)} />
+      <FactRow label={copy.lossPerUnit} value={formatPrice(sizing.lossPerShareUsd, locale)} last />
       <Txt variant="labelSm" tone="faint" className="pt-2">
         {copy.sizeNote}
       </Txt>
@@ -273,7 +285,7 @@ function NowCard({
             variant="dataLg"
             tone={now.vsMax === 'above' ? 'warning' : now.vsInvalidation === 'below' ? 'danger' : 'fg'}
           >
-            {formatPrice(now.pricePerUnit)}{' '}
+            {formatPrice(now.pricePerUnit, locale)}{' '}
             <Txt variant="ui" tone="faint">
               {perUnit}
             </Txt>
@@ -296,11 +308,13 @@ function NowCard({
           {now.unitBasis === 'share' ? (
             <FactRow
               label={copy.reference}
-              value={now.reference === null ? copy.referenceUnavailable : `${formatPrice(now.reference)} ${perUnit}`}
+              value={
+                now.reference === null ? copy.referenceUnavailable : `${formatPrice(now.reference, locale)} ${perUnit}`
+              }
               detail={
                 now.deviationPct === null
                   ? null
-                  : `${copy.deviation} ${formatPercent(now.deviationPct)} · ${now.vsDeviation === 'within' ? copy.withinBound : now.vsDeviation === 'above' ? copy.aboveBound : now.vsDeviation === 'noBound' ? copy.noBound : copy.unknown}`
+                  : `${copy.deviation} ${formatPercent(now.deviationPct, locale)} · ${now.vsDeviation === 'within' ? copy.withinBound : now.vsDeviation === 'above' ? copy.aboveBound : now.vsDeviation === 'noBound' ? copy.noBound : copy.unknown}`
               }
               last
             />
@@ -369,7 +383,7 @@ export function PlanDetailScreen() {
   const [actionError, setActionError] = useState<string | null>(null)
   const version = usePlanVersion(account.session, planId, versionOpen)
 
-  const back = () => (router.canGoBack() ? router.back() : router.replace('/plans'))
+  const back = () => (router.canGoBack() ? router.back() : router.replace('/bots'))
   // Leaving the sheet without cancelling forgets the reason, so no later action inherits it.
   const closeCancel = () => {
     setCancelOpen(false)
@@ -520,25 +534,28 @@ export function PlanDetailScreen() {
           </View>
         ) : null}
 
-        <SizingCard sizing={sizing} unit={unit} copy={copy} />
+        <SizingCard sizing={sizing} unit={unit} copy={copy} locale={locale} />
 
         <Card padded={false} className="px-4">
-          <FactRow label={copy.entryRule} value={`${formatPrice(rules.entry.pricePerShare)} ${copy.perUnit[unit]}`} />
+          <FactRow
+            label={copy.entryRule}
+            value={`${formatPrice(rules.entry.pricePerShare, locale)} ${copy.perUnit[unit]}`}
+          />
           <FactRow
             label={copy.maxPriceRule}
             value={
               rules.entry.maxPricePerShare === null
                 ? copy.noBound
-                : `${formatPrice(rules.entry.maxPricePerShare)} ${copy.perUnit[unit]}`
+                : `${formatPrice(rules.entry.maxPricePerShare, locale)} ${copy.perUnit[unit]}`
             }
           />
           <FactRow
             label={copy.invalidationRule}
-            value={`${formatPrice(rules.risk.invalidationPerShare)} ${copy.perUnit[unit]}`}
+            value={`${formatPrice(rules.risk.invalidationPerShare, locale)} ${copy.perUnit[unit]}`}
             detail={copy.ruleNote}
           />
-          <FactRow label={copy.budgetRule} value={formatUsd(rules.capital.budgetUsd)} />
-          <FactRow label={copy.plannedRisk} value={formatUsd(rules.risk.plannedRiskUsd)} last />
+          <FactRow label={copy.budgetRule} value={formatUsd(rules.capital.budgetUsd, locale)} />
+          <FactRow label={copy.plannedRisk} value={formatUsd(rules.risk.plannedRiskUsd, locale)} last />
         </Card>
 
         <NowCard
@@ -620,7 +637,7 @@ export function PlanDetailScreen() {
                 <Pressable
                   key={execution.signature}
                   accessibilityRole="link"
-                  onPress={() => void Linking.openURL(explorerUrl(execution.signature))}
+                  onPress={() => openLink(explorerUrl(execution.signature))}
                   className={`flex-row items-center gap-3 py-2.5 ${index === plan.executions.length - 1 ? '' : 'border-b border-line'}`}
                 >
                   <View className="flex-1 gap-0.5">
@@ -764,7 +781,12 @@ export function PlanDetailScreen() {
       >
         {version.data && plan ? (
           <View className="gap-3 pb-2">
-            <SizingCard sizing={version.data.version.sizing} unit={unitBasisOf(plan.asset)} copy={copy} />
+            <SizingCard
+              sizing={version.data.version.sizing}
+              unit={unitBasisOf(plan.asset)}
+              copy={copy}
+              locale={locale}
+            />
             <RulesFacts
               rules={version.data.version.rules}
               unit={unitBasisOf(plan.asset)}

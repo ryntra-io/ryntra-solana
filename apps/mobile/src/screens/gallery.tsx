@@ -58,6 +58,7 @@ import { CompanyPathStrip } from '@/screens/asset/company-path'
 import { AttentionRow } from '@/screens/home/blocks'
 import { LaunchDoneSamples, LaunchMineSamples, LaunchTokenSamples } from '@/screens/launch/launch-samples'
 import { MoneySamples } from '@/screens/money/money-samples'
+import { TokenRuleSamples } from '@/screens/autoinvest/token-rule-samples'
 import { PaymentEvents } from '@/screens/autoinvest/autoinvest-sheet'
 import { RuleCard } from '@/screens/autoinvest/rule-card'
 import { SAMPLE_BUY_CHECKS, SAMPLE_BUY_FEES } from '@/screens/invest/buy-samples'
@@ -614,6 +615,9 @@ export function GalleryScreen() {
             </Pressable>
           }
         >
+          <Section title="Recurring buy · any token (M35)">
+            <TokenRuleSamples />
+          </Section>
           <Section title="Launch · a token's page">
             <LaunchTokenSamples />
           </Section>
@@ -761,7 +765,7 @@ export function GalleryScreen() {
             ))}
             <Card padded={false} className="px-4">
               <HoldingRow
-                row={portfolioRow(SAMPLE_SPACEX_HOLDING)}
+                row={portfolioRow(SAMPLE_SPACEX_HOLDING, locale)}
                 copy={portfolioCopy}
                 onPress={() => {}}
                 last

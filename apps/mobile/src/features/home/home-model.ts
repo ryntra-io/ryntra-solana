@@ -13,6 +13,7 @@
  */
 
 import type { MarketRow, MonitoringCard, MonitoringSurface, Session, TradingPlan } from '../../lib/api.ts'
+import type { Locale } from '../../lib/i18n.ts'
 import { DASH, formatUsd, isToday } from '../../utils/format.ts'
 import { planForCard, type NoteTarget } from '../monitoring/monitoring-model.ts'
 import { entryExpired, groupPlans, plansForCard } from '../plans/plan-model.ts'
@@ -308,9 +309,9 @@ export function plansBlock(plans: readonly TradingPlan[]): PlansBlock {
 export const HIDDEN_AMOUNT = '••••'
 
 /** A USD figure as Home shows it: hidden when the person asked, a dash when unknown. */
-export function money(value: number | null | undefined, hidden: boolean): string {
+export function money(value: number | null | undefined, hidden: boolean, locale: Locale): string {
   if (hidden) return HIDDEN_AMOUNT
-  return formatUsd(value)
+  return formatUsd(value, locale)
 }
 
 /* ---- freshness ---- */

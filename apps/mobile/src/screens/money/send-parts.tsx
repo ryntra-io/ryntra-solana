@@ -1,4 +1,4 @@
-import { Linking, View } from 'react-native'
+import { View } from 'react-native'
 
 import { Button } from '@/components/button'
 import { Card } from '@/components/card'
@@ -23,6 +23,7 @@ import { useNow } from '@/hooks/use-now'
 import type { TransferCheck } from '@/lib/api'
 import { useCopy, useLocale } from '@/lib/i18n'
 import { formatAt } from '@/utils/format'
+import { openLink } from '@/lib/open-link'
 
 /**
  * «Перевірка» of a transfer: the server's rows, what to read before
@@ -191,7 +192,7 @@ export function SendDoneCard({ done, onAgain }: { done: SendDone; onAgain: () =>
           title={words.explorer}
           variant={done.outcome === 'open' ? 'secondary' : 'ghost'}
           size="lg"
-          onPress={() => void Linking.openURL(explorerUrl(done.signature!))}
+          onPress={() => openLink(explorerUrl(done.signature!))}
         />
       ) : null}
       {done.outcome === 'open' ? again : null}
@@ -266,7 +267,7 @@ export function SendPendingCard({
         title={words.explorer}
         size="sm"
         variant="ghost"
-        onPress={() => void Linking.openURL(explorerUrl(pending.signature))}
+        onPress={() => openLink(explorerUrl(pending.signature))}
       />
     </Card>
   )

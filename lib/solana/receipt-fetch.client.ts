@@ -21,6 +21,10 @@
  * finished, so somebody who cleared their site data lost a receipt the server
  * still held.
  *
+ * A launch's trade is a `SWAP` row whose origin names its token: its receipt
+ * is kept with the trade's record, and the launch's own receipt route answers
+ * it by the wallet and the signature.
+ *
  * `SEND` and the CCTP `BRIDGE` lane are absent deliberately. Both mint from a
  * bundle held in the browser, and re-issuing them needs the private
  * wallet-scoped archive that waits on a Solana sign-in this repository does not
@@ -29,6 +33,7 @@
  */
 
 import type { SolanaWalletAction } from "./action-ledger.ts";
+import { isLaunchOrigin } from "./action-origin.ts";
 
 /** Whether the server could produce this row's receipt if asked. */
 export function receiptFetchable(action: Pick<SolanaWalletAction, "lane" | "outcome" | "signature">): boolean {
@@ -49,19 +54,20 @@ export type FetchedReceipt = Readonly<{ ok: true; receipt: Record<string, unknow
  * sentence for a customer screen.
  */
 export async function fetchReceiptForAction(
-  action: Pick<SolanaWalletAction, "lane" | "outcome" | "signature" | "actionId">,
+  action: Pick<SolanaWalletAction, "lane" | "outcome" | "signature" | "actionId"> & Partial<Pick<SolanaWalletAction, "wallet" | "origin">>,
   owner: string | null,
   fetchImpl: typeof fetch = fetch,
 ): Promise<FetchedReceipt> {
   if (!receiptFetchable(action)) return { ok: false };
+  const launch = launchReceiptRequest(action, owner);
   const request =
     action.lane === "CROSS_SWAP"
-      ? { path: "/api/solana/cross-swap/receipt", body: { intentDigest: action.actionId } }
-      : { path: "/api/solana/swap/recover", body: { owner, signature: action.signature } };
+      ? { path: "/api/solana/cross-swap/receipt", body: { intentDigest: action.actionId } as object, headers: {} }
+      : launch ?? { path: "/api/solana/swap/recover", body: { owner, signature: action.signature } as object, headers: {} };
   try {
     const response = await fetchImpl(request.path, {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: { "content-type": "application/json", ...request.headers },
       body: JSON.stringify(request.body),
     });
     const payload = (await response.json()) as { data?: { receipt?: unknown }; receipt?: unknown } | null;
@@ -74,4 +80,23 @@ export async function fetchReceiptForAction(
   } catch {
     return { ok: false };
   }
+}
+
+/**
+ * A launch's trade asks its own route — the token's, by the wallet that sent it and the signature; the route settles a
+ * trade still in flight from the chain first, so the same request is History's «Check what happened». Null for any
+ * other row.
+ */
+export function launchReceiptRequest(
+  action: Pick<SolanaWalletAction, "lane" | "signature"> & Partial<Pick<SolanaWalletAction, "wallet" | "origin">>,
+  owner: string | null,
+): Readonly<{ path: string; body: object; headers: Readonly<Record<string, string>> }> | null {
+  if (action.lane !== "SWAP" || action.signature === null || !isLaunchOrigin(action.origin)) return null;
+  const wallet = owner ?? action.wallet ?? null;
+  if (!wallet) return null;
+  return {
+    path: `/api/v1/launch/${encodeURIComponent(action.origin.token)}/trade/receipt`,
+    body: { wallet, signature: action.signature },
+    headers: { "X-Ryntra-API": "1" },
+  };
 }

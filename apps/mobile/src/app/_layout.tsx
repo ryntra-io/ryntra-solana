@@ -41,11 +41,14 @@ function RootStack() {
         <Stack.Screen name="asset/[mint]" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="search" options={{ animation: 'fade' }} />
         <Stack.Screen name="changes" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="lists" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="trade" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="ryn" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="history" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="rewards" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="bots/index" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="money/index" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="settings" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="token/[mint]" options={{ animation: 'fade' }} />
         <Stack.Screen name="money/send" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="money/receive" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="launch/index" options={{ animation: 'fade' }} />

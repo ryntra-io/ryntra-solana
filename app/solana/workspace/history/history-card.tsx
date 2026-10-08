@@ -1,19 +1,19 @@
 "use client";
 
-import { ArrowLineDownLeft, ArrowLineUpRight, ArrowUpRight, ArrowsLeftRight, ChartLineUp, Check, CopySimple, Globe } from "@phosphor-icons/react";
+import { ArrowLineDownLeft, ArrowLineUpRight, ArrowUpRight, ArrowsLeftRight, ChartLineUp, Check, CopySimple, Globe, RocketLaunch } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import { useWalletData } from "@/app/app/wallet-data";
 import { Panel } from "@/app/shell/panel";
 import { crossSwapTarget } from "@/lib/solana/action-lanes";
-import { isSpotOrigin } from "@/lib/solana/action-origin";
+import { isLaunchOrigin, isSpotOrigin } from "@/lib/solana/action-origin";
 import type { SolanaWalletAction } from "@/lib/solana/action-ledger";
 import { displayAmount, scaleRawAmount } from "@/lib/solana/amounts";
 import { downloadTextFile } from "@/lib/solana/download.client";
 import { explorerTxUrl } from "@/lib/solana/explorer";
 import { filterHistory, HISTORY_FILTERS, historyCounts, historyExportName, historyPage, historyToCsv, type HistoryFilter } from "@/lib/solana/history-view";
-import { fetchReceiptForAction, receiptFetchable } from "@/lib/solana/receipt-fetch.client";
+import { fetchReceiptForAction, launchReceiptRequest, receiptFetchable } from "@/lib/solana/receipt-fetch.client";
 import { findReceiptForAction, receiptBinding } from "@/lib/solana/receipt-view";
 import { downloadReceipt, storeBoundSolanaReceipt } from "@/lib/solana/send-receipt-vault.client";
 import { isRetiredMint } from "@/lib/stocks/retired";
@@ -49,6 +49,21 @@ function leg(movement: SolanaWalletAction["out"]): string | null {
   return name === null ? amount : `${amount} ${name}`;
 }
 
+/**
+ * A launched token's count as a row's title says it: 47.3K, 1.7M from ten thousand up, else a few places — a new token is
+ * bought in hundreds of thousands, and its whole figure would push its name off a phone's line. The row's own details
+ * keep the exact figure.
+ */
+function tokenLeg(movement: SolanaWalletAction["out"]): string | null {
+  const value = legNumber(movement);
+  if (movement === null || value === null) return leg(movement);
+  const amount =
+    value >= 10_000
+      ? new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 }).format(value)
+      : value.toLocaleString("en-US", { maximumFractionDigits: value >= 1 ? 2 : 6 });
+  return movement.symbol === null ? amount : `${amount} ${movement.symbol}`;
+}
+
 function legNumber(movement: SolanaWalletAction["out"]): number | null {
   if (movement === null || movement.decimals === null) return null;
   const value = Number(scaleRawAmount(movement.amountRaw, movement.decimals).replace(/,/g, ""));
@@ -71,6 +86,7 @@ type Page = ReturnType<typeof historyPage>;
 
 function PageGlyph({ page, side }: { page: Page; side: "BUY" | "SELL" | null }) {
   if (page === "SPOT") return <ChartLineUp size={18} weight="bold" aria-hidden="true" data-side={side ?? undefined} />;
+  if (page === "LAUNCH") return <RocketLaunch size={18} weight="bold" aria-hidden="true" data-side={side ?? undefined} />;
   if (page === "SWAP") return <ArrowsLeftRight size={18} weight="bold" aria-hidden="true" />;
   if (page === "BRIDGE") return <Globe size={18} weight="bold" aria-hidden="true" />;
   if (page === "RECEIVE") return <ArrowLineDownLeft size={18} weight="bold" aria-hidden="true" />;
@@ -146,6 +162,18 @@ export function HistoryCard({ selectedAction = null, initialFilter = "ALL" }: { 
         side: buy ? "BUY" : "SELL",
       };
     }
+    if (page === "LAUNCH" && isLaunchOrigin(action.origin)) {
+      /* A launch's trade reads like a purchase or a sale on Spot, under the place it was made. */
+      const buy = action.origin.side === "BUY";
+      const asset = tokenLeg(buy ? action.in : action.out);
+      const counter = buy ? out : got;
+      const verb = buy ? text("Bought") : text("Sold");
+      return {
+        title: asset ? `${verb} ${asset}` : verb,
+        sub: counter ? `${buy ? text("for") : text("received")} ${counter} · ${text("Launch")}` : text("Launch"),
+        side: buy ? "BUY" : "SELL",
+      };
+    }
     if (page === "SWAP") {
       const title = out && got ? `${text("Swapped")} ${out} → ${got}` : out ? `${text("Swapped")} ${out}` : text("Swapped");
       return { title, sub: text("Swap"), side: null };
@@ -164,6 +192,7 @@ export function HistoryCard({ selectedAction = null, initialFilter = "ALL" }: { 
   const filterLabel = (option: HistoryFilter): string => {
     if (option === "ALL") return text("All");
     if (option === "SPOT") return text("Spot");
+    if (option === "LAUNCH") return text("Launch");
     if (option === "SWAP") return text("Swap");
     if (option === "BRIDGE") return text("Bridge");
     if (option === "SEND") return text("Sent");
@@ -213,10 +242,12 @@ export function HistoryCard({ selectedAction = null, initialFilter = "ALL" }: { 
     if (!owner || action.signature === null || checking !== null) return;
     setChecking(action.actionId);
     try {
-      const response = await fetch("/api/solana/swap/recover", {
+      /* A launch's trade is settled by its own receipt route; a swap by its recovery. */
+      const launch = launchReceiptRequest(action, owner);
+      const response = await fetch(launch?.path ?? "/api/solana/swap/recover", {
         method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ owner, signature: action.signature }),
+        headers: { "content-type": "application/json", ...(launch?.headers ?? {}) },
+        body: JSON.stringify(launch?.body ?? { owner, signature: action.signature }),
       });
       const payload = await response.json() as { receipt?: unknown };
       if (response.ok && payload.receipt !== undefined) {
@@ -307,7 +338,8 @@ export function HistoryCard({ selectedAction = null, initialFilter = "ALL" }: { 
                     const tx = solanaTransactionOf(action);
                     const outNumber = legNumber(action.out);
                     const inNumber = legNumber(action.in);
-                    const spot = isSpotOrigin(action.origin) ? action.origin : null;
+                    /* A Spot order and a launch's trade both have a side: the price is per unit of what was bought or sold. */
+                    const spot = isSpotOrigin(action.origin) || isLaunchOrigin(action.origin) ? action.origin : null;
                     /* The price a fill achieved: the quote leg per unit of the market. */
                     const price = spot && outNumber !== null && inNumber !== null
                       ? spot.side === "BUY" ? outNumber / inNumber : inNumber / outNumber
@@ -355,7 +387,21 @@ export function HistoryCard({ selectedAction = null, initialFilter = "ALL" }: { 
                                   <dd translate="no">1 {priceBase.symbol} ≈ {price.toLocaleString("en-US", { maximumSignificantDigits: 6 })} {priceQuote.symbol}</dd>
                                 </div>
                               ) : null}
-                              {action.fee && action.fee.collected && action.fee.amountRaw && action.fee.decimals !== null ? (
+                              {page === "LAUNCH" && action.fee && action.fee.amountRaw && action.fee.decimals !== null ? (
+                                /* On a launch the fee is the curve's or the pool's own — what the person paid — with Ryntra's part of it. */
+                                <>
+                                  <div>
+                                    <dt>{text("Fee")}</dt>
+                                    <dd translate="no">{displayAmount(action.fee.amountRaw, action.fee.decimals)} {action.fee.symbol ?? ""}</dd>
+                                  </div>
+                                  {action.fee.ryntraRaw ? (
+                                    <div>
+                                      <dt>{text("Ryntra's part of the fee")}</dt>
+                                      <dd translate="no">{displayAmount(action.fee.ryntraRaw, action.fee.decimals)} {action.fee.symbol ?? ""}</dd>
+                                    </div>
+                                  ) : null}
+                                </>
+                              ) : action.fee && action.fee.collected && action.fee.amountRaw && action.fee.decimals !== null ? (
                                 <div>
                                   <dt>{text("Ryntra fee")}</dt>
                                   <dd translate="no">{displayAmount(action.fee.amountRaw, action.fee.decimals)} {action.fee.symbol ?? ""}</dd>

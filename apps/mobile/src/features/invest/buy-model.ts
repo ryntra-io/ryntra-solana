@@ -1,7 +1,6 @@
 /**
- * A company and its purchase in dollars on the beginner's path — the pure half (canon v5.1
- * §2, §4, §7, §8; M15; v5.2 В25–В27, the issuer's fee of a private company's
- * token, M18).
+ * A company and its purchase in dollars on the beginner's path — the pure half
+ * (M15; the issuer's fee of a private company's token, M18).
  *
  * What a beginner reads about a company and about a purchase is decided here
  * once and tested: the one line of truth about what the token is (from the
@@ -38,12 +37,12 @@ import {
 
 const numberTag = (locale: Locale): string => (locale === 'uk' ? 'uk-UA' : 'en-US')
 
-/* ---- the truth (canon §7) ---- */
+/* ---- the truth ---- */
 
 /**
  * One line, from the issuer's documents, about what the person actually buys.
  * A listed company's token tracks the share's price; a private company's token
- * — PreStocks', the one issuer of private companies (canon v5.2 В25–В27) — is
+ * — PreStocks', the one issuer of private companies — is
  * not a share at all, and its line leads with that: it stands before the
  * figures on the page and in the purchase. An issuer with no documents read is
  * no line: the page and the Review say «не перевірено» instead of a guess.
@@ -83,7 +82,7 @@ export function truthLine(
   }
 }
 
-/* ---- the exchange (canon §8) ---- */
+/* ---- the exchange ---- */
 
 export type ExchangeState = 'open' | 'closed'
 
@@ -111,7 +110,7 @@ export function exchangeState(
 /* ---- the sum ---- */
 
 /**
- * The least a purchase in dollars is — a dollar (canon v5.5 В35: «Може хтось
+ * The least a purchase in dollars is — a dollar («Може хтось
  * хоче на долар купляти. Кожний день по долару»). It was $10, from the v5.0
  * draft, which had copied Jupiter's minimums for its DCA vault, Trigger orders
  * and the gasless swap; a plain swap order has none. The web's own.
@@ -119,14 +118,14 @@ export function exchangeState(
 export const MIN_BUY_USD = 1
 export const MAX_BUY_USD = 1_000_000
 /**
- * The sum the sheet opens on — $10 (the Owner's word, 2026-09-25: «зроби, щоб
+ * The sum the sheet opens on — $10 (chosen 2026-09-25: «зроби, щоб
  * було 10»). A default, not advice: every sum from a dollar is the person's
  * own, on their own budget, and nothing on the sheet recommends one.
  */
 export const DEFAULT_BUY_USD = 10
 /**
  * The quick choices are shares of the dollars the wallet pays with — 25 %,
- * 50 %, 75 % and 100 % (the Owner's word, 2026-09-25: «у відсотках: 25, 50,
+ * 50 %, 75 % and 100 % (chosen 2026-09-25: «у відсотках: 25, 50,
  * 75 і 100»); the sum itself stays free to type.
  */
 export const BUY_SHARE_PRESETS_PCT = [25, 50, 75, 100] as const
@@ -192,7 +191,7 @@ export function parseDollars(text: string, locale: Locale): number | null {
   return Number.isFinite(value) && value > 0 ? value : null
 }
 
-/* ---- no route for the sum: the company's own minimum (canon v5.5 В35) ---- */
+/* ---- no route for the sum: the company's own minimum ---- */
 
 /**
  * Where the live quote gives no route for the sum asked, the company says its
@@ -307,7 +306,7 @@ function multiplierRatio(multiplier: number): Readonly<{ num: bigint; den: bigin
  * company, tokens for a private one — from the raw amount the order states. A
  * mint with the Scaled UI Amount extension counts its scaled unit, the one
  * priced as a share; the multiplier is applied here once and nowhere else
- * (canon B.9). Eight places, truncated: a balance is never rounded up.
+ * Eight places, truncated: a balance is never rounded up.
  */
 export function unitsFromRaw(
   raw: string | null | undefined,
@@ -325,7 +324,7 @@ export function unitsFromRaw(
   return Number.isFinite(value) ? value : null
 }
 
-/** A count of shares or tokens, four decimals at most (canon §2, rule 2); a real but tiny one is never printed as zero. */
+/** A count of shares or tokens, four decimals at most; a real but tiny one is never printed as zero. */
 export function formatShareUnits(value: number, locale: Locale): string {
   const tag = numberTag(locale)
   if (value > 0 && value < 0.0001) return `< ${new Intl.NumberFormat(tag, { minimumFractionDigits: 4 }).format(0.0001)}`
@@ -405,7 +404,7 @@ const numeric = (value: string | null | undefined): number | null => {
 const lamportsOf = (value: string | null | undefined): bigint => (value && /^\d+$/.test(value) ? BigInt(value) : 0n)
 
 /**
- * «Усі витрати» — what the purchase costs beyond what it buys (canon §4): the
+ * «Усі витрати» — what the purchase costs beyond what it buys: the
  * venue's own dollar values of what leaves and what arrives, whose difference
  * already holds every fee inside the route, Ryntra's too, the issuer's fee on
  * the token's transfer (the route quotes what arrives after it) and the price
@@ -440,7 +439,7 @@ function reserveUsdOf(rentFeeLamports: string | null, solUsd: number): number | 
 
 /**
  * The line «Перевірка» says before its four rows when the order's one-time
- * reserve is more than the purchase (canon v5.5 В35): the reserve and the sum
+ * reserve is more than the purchase: the reserve and the sum
  * in dollars, as the server counted them on the exact order — `first` is the
  * server's own judgement; null when it said no reserve, no figure, or not more.
  * The reserve stays in the person's wallet; it is never a cost.
@@ -461,7 +460,7 @@ export function approxUsd(value: number, locale: Locale): string {
   return `≈ $${new Intl.NumberFormat(tag, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)}`
 }
 
-/* ---- the issuer's fee (canon v5.2 §7, §12) ---- */
+/* ---- the issuer's fee ---- */
 
 /** `u64::MAX`: the value a mint's fee config stores for «no cap». */
 export const NO_FEE_CAP_RAW = '18446744073709551615'
@@ -502,7 +501,7 @@ export function isDollarMint(mint: string): boolean {
 }
 
 /**
- * Which dollars pay (canon §4: USDC and USDT in the quick choice): the
+ * Which dollars pay (USDC and USDT in the quick choice): the
  * person's pick; else USDC, unless the wallet is known to hold no USDC and
  * holds some USDT. A balance not read is not a zero.
  */
@@ -519,19 +518,19 @@ export function offersPayChoice(usdtRaw: bigint | null): boolean {
   return usdtRaw !== null && usdtRaw > 0n
 }
 
-/* ---- «Перевірка» — exactly four rows (canon §4) ---- */
+/* ---- «Перевірка» — exactly four rows ---- */
 
 export type BuyRowKey = 'spend' | 'get' | 'costs' | 'what'
 
 export type BuyRow = Readonly<{
   key: BuyRowKey
   value: string
-  /** The issuer's own fee inside «Усі витрати», a line of its own (canon §12); null on every other row. */
+  /** The issuer's own fee inside «Усі витрати», a line of its own; null on every other row. */
   fee: string | null
   /**
    * A quieter line under the value: the dollar's name, the least that arrives —
    * and under «Усі витрати» the token account's one-time reserve, a line of its
-   * own, never among the costs (canon v5.5 В35).
+   * own, never among the costs.
    */
   sub: string | null
   /** Said in amber: a private company's line, or a truth not verified. */
@@ -650,8 +649,8 @@ export function buyEstimate(
  * Усі витрати · Що це**: the dollars that leave the wallet, the company's
  * units that arrive and the least that may — in the unit the wallet shows,
  * through the token's multiplier — everything it costs with the issuer's own
- * fee on a line of its own and the account's one-time reserve apart (canon
- * v5.5 В35), and what the token is with the issuer's event said to a buyer.
+ * fee on a line of its own and the account's one-time reserve apart,
+ * and what the token is with the issuer's event said to a buyer.
  * The quote's `check` carries no reserve; the order's carries the one its
  * simulation proved. Drawn, never counted here — the web draws the same
  * `check`, so the same sum says the same figures; a figure the server could
@@ -698,7 +697,7 @@ export function buyCheckRows(
         input.ryntraFee ?? null,
         words,
       ),
-      // The reserve stays in the wallet, on the token's account: said apart, never joined to the costs (canon v5.5 В35).
+      // The reserve stays in the wallet, on the token's account: said apart, never joined to the costs.
       sub: check.reserve?.usd ? words.reserve(approxUsd(check.reserve.usd, locale)) : null,
       caution: false,
     },
@@ -732,7 +731,7 @@ export function buyOrderRows(
     company: string
     truth: string | null
     preIpo: boolean
-    /** The issuer's event said again under «Що це» (the IPO and conversion watch, canon v5.2 В27; M19); null for none. */
+    /** The issuer's event said again under «Що це» (the IPO and conversion watch; M19); null for none. */
     eventLine?: string | null
     /** The mint's own fee on the transfer that delivers the token; null when it charges none. */
     issuerFee?: IssuerFee | null
@@ -960,7 +959,7 @@ export type ComposeAction =
   | Readonly<{ kind: 'sign-in' }>
   | Readonly<{ kind: 'minimum' }>
   | Readonly<{ kind: 'enter' }>
-  /** No route for the sum: the one action puts the company's own minimum in (canon v5.5 В35) — never a dead button. */
+  /** No route for the sum: the one action puts the company's own minimum in — never a dead button. */
   | Readonly<{ kind: 'use-minimum'; usd: number }>
   /** No route for the sum, and the company's own minimum is being read: the button names the sum and waits. */
   | Readonly<{ kind: 'finding-minimum'; usd: number }>

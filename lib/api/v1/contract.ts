@@ -767,6 +767,25 @@
  * opinion the entry is built on mainnet only for the operator's own wallets —
  * `LAUNCH_HOLDER_CLOSED` for anyone else; `LAUNCH_NOT_GRADUATED` while the token
  * is on its curve. `capabilities.launch.holder*` name the routes.
+ *
+ * **1.34.0 — a launch's trades in History, with a receipt.** Additive. A buy or
+ * a sale of a Ryntra launch — on its curve or in its graduated pool — is a
+ * `SWAP` row of `POST /api/solana/activity` whose `origin` is `{ surface:
+ * "LAUNCH", side, token, venue }` (`venue`: `curve` or `pool`): `IN_FLIGHT`
+ * from the send, `DONE` with the legs the chain shows, `FAILED` when nothing
+ * moved. Its `fee` is Ryntra's part of the trade's fee — on the curve the
+ * partner's part of the trading fee and Meteora's referral, in the pool the
+ * referral — read from the swap event; the person paid nothing on top of the
+ * curve's or the pool's fee. `POST /api/v1/launch/{mint}/trade/submit` answers
+ * also `receiptHash` (the trade's Outcome Receipt, once the chain answered in
+ * time; null otherwise) and `shareLink` (the launch's page through the
+ * person's own referral code, for «Поділитися угодою»; null when it could not
+ * be made). `POST /api/v1/launch/{mint}/trade/receipt` with `{ wallet,
+ * signature }` — the trade's issuer-signed Outcome Receipt
+ * (`LaunchTradeReceiptResponseSchema`): its facts are chunked JSON under
+ * `ryntra.solana.launch-trade-receipt.facts@1`, as a swap's; a trade still in
+ * flight is settled from the chain first. `capabilities.launch.tradeReceipt`
+ * names it. A client that does not know `LAUNCH` reads the row as a swap.
  */
 
 import {
@@ -816,7 +835,7 @@ import { LAUNCH_PRESET_IDS } from "../../core/venues/meteora-dbc/presets.ts";
 import { LaunchReceiptFactsSchema } from "../../core/venues/meteora-dbc/receipt.ts";
 
 export const API_MAJOR = 1;
-export const API_CONTRACT_VERSION = "1.33.0";
+export const API_CONTRACT_VERSION = "1.34.0";
 export const API_HEADER = "X-Ryntra-API";
 export const API_VERSION_HEADER = "X-Ryntra-API-Version";
 export const NETWORK = "solana:mainnet";
@@ -1288,6 +1307,8 @@ export const CapabilitiesSchema = z
         holderPermissionBuild: z.literal("/api/v1/launch/{mint}/holder/permission/build").optional(),
         holderPermissionSubmit: z.literal("/api/v1/launch/{mint}/holder/permission/submit").optional(),
         holders: z.literal("/api/v1/launch/holders/{address}").optional(),
+        /* 1.34.0 — a trade's receipt; absent on a deployment before it. */
+        tradeReceipt: z.literal("/api/v1/launch/{mint}/trade/receipt").optional(),
       })
       .strict()
       .optional(),
@@ -3935,14 +3956,21 @@ const ActFee = z
   })
   .strict();
 
-/** Where the action was started: Spot with a side, and the plan version (with the Review's id) an order was made under. */
+/**
+ * Where the action was started: Spot with a side, and the plan version (with the Review's id) an order was made under.
+ * 1.34.0: `LAUNCH` — a buy or a sale of a Ryntra launch on its curve or in its graduated pool, with the token and the venue.
+ */
 const ActOrigin = z
   .object({
-    surface: z.enum(["SPOT"]),
+    surface: z.enum(["SPOT", "LAUNCH"]),
     side: z.enum(["BUY", "SELL"]),
     plan: ExecutionPlanBindingSchema.extend({ reviewId: z.string().min(8).max(64) }).strict().optional(),
     /** 1.12.0: the autoinvest reminder a purchase was made under — the row the rule reads its occurrence from. */
     rule: RuleBindingSchema.optional(),
+    /** 1.34.0, `LAUNCH` only: the launched token. */
+    token: Address.optional(),
+    /** 1.34.0, `LAUNCH` only: where the trade ran — the bonding curve, or the DAMM v2 pool it graduated into. */
+    venue: z.enum(["curve", "pool"]).optional(),
   })
   .strict();
 
@@ -4606,7 +4634,7 @@ export const SWAP_SERVICE_FEE_STATES_V1 = ["NONE", "UNCONFIGURED", "NOT_APPLIED"
  */
 export const SwapServiceFeeSchema = z
   .object({
-    mechanism: z.enum(["JUPITER_REFERRAL", "JUPITER_PLATFORM_FEE", "RELAY_APP_FEE", "MAYAN_REFERRER", "NONE"]),
+    mechanism: z.enum(["JUPITER_REFERRAL", "JUPITER_PLATFORM_FEE", "RELAY_APP_FEE", "MAYAN_REFERRER", "METEORA_LAUNCH", "NONE"]),
     state: z.enum(SWAP_SERVICE_FEE_STATES_V1),
     basisPoints: z.number().int().min(0).max(10_000),
     requestedBasisPoints: z.number().int().min(0).max(10_000),
@@ -4615,7 +4643,7 @@ export const SwapServiceFeeSchema = z
     decimals: z.number().int().min(0).max(24).nullable(),
     amountRaw: SwapDigits.nullable(),
     usd: z.number().finite().nullable(),
-    accrual: z.enum(["JUPITER_REFERRAL_TOKEN_ACCOUNT", "FEE_WALLET_TOKEN_ACCOUNT", "RELAY_APP_BALANCE_USDC", "MAYAN_ONCHAIN_REFERRER", "NONE"]),
+    accrual: z.enum(["JUPITER_REFERRAL_TOKEN_ACCOUNT", "FEE_WALLET_TOKEN_ACCOUNT", "RELAY_APP_BALANCE_USDC", "MAYAN_ONCHAIN_REFERRER", "METEORA_PARTNER_VAULT", "NONE"]),
     providerRetainedPercent: z.number().int().min(0).max(100).nullable(),
     settlement: z
       .object({
@@ -9725,9 +9753,30 @@ export const LaunchTradeSubmitResponseSchema = z
     state: z.enum(["CONFIRMED", "PENDING"]),
     /** What the trade did, from the program's own event in the confirmed transaction; null when it could not be read yet. */
     filled: z.object({ tokensRaw: LaunchRaw, pairRaw: LaunchRaw }).strict().nullable(),
+    /** 1.34.0: the trade's Outcome Receipt, once the chain answered in time; null otherwise — `…/trade/receipt` has it later. */
+    receiptHash: SwapDigest.nullable().optional(),
+    /** 1.34.0: the launch's page through the person's own referral code, for «Поділитися угодою»; null when it could not be made. */
+    shareLink: z.string().url().max(300).nullable().optional(),
   })
   .strict();
 export type LaunchTradeSubmitResponse = z.infer<typeof LaunchTradeSubmitResponseSchema>;
+
+/** 1.34.0 — `POST /api/v1/launch/{mint}/trade/receipt`: a trade's receipt, by the wallet that sent it and its signature. */
+export const LaunchTradeReceiptRequestSchema = z.object({ wallet: Address, signature: LaunchSignature }).strict();
+export type LaunchTradeReceiptRequest = z.infer<typeof LaunchTradeReceiptRequestSchema>;
+
+/**
+ * The trade as Ryntra settled it: `DONE` with its issuer-signed Outcome Receipt; `SENT` while the chain has not
+ * answered (no receipt yet — never «failed»); `FAILED` when nothing moved.
+ */
+export const LaunchTradeReceiptResponseSchema = z
+  .object({
+    signature: LaunchSignature,
+    state: z.enum(["SENT", "DONE", "FAILED"]),
+    receipt: SwapReceiptSchema.nullable(),
+  })
+  .strict();
+export type LaunchTradeReceiptResponse = z.infer<typeof LaunchTradeReceiptResponseSchema>;
 
 /* ------------------------------------------------------------ Ryntra Launch — the creator's cabinet (1.29.0) */
 

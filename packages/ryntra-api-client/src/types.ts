@@ -26,7 +26,7 @@
  */
 
 export const API_MAJOR = 1 as const;
-export const API_CONTRACT_VERSION = "1.33.0" as const;
+export const API_CONTRACT_VERSION = "1.34.0" as const;
 export const API_HEADER = "X-Ryntra-API" as const;
 export const API_VERSION_HEADER = "X-Ryntra-API-Version" as const;
 export const NETWORK = "solana:mainnet" as const;
@@ -252,6 +252,8 @@ export type Capabilities = Readonly<{
     holderPermissionBuild?: "/api/v1/launch/{mint}/holder/permission/build";
     holderPermissionSubmit?: "/api/v1/launch/{mint}/holder/permission/submit";
     holders?: "/api/v1/launch/holders/{address}";
+    /* 1.34.0 — a trade's receipt */
+    tradeReceipt?: "/api/v1/launch/{mint}/trade/receipt";
   }>;
   observedAt: string;
 }>;
@@ -1796,11 +1798,16 @@ export type ActivityAction = Readonly<{
     note: string | null;
   }> | null;
   origin: Readonly<{
-    surface: "SPOT";
+    /** 1.34.0: `LAUNCH` — a buy or a sale of a Ryntra launch, with its token and venue. */
+    surface: "SPOT" | "LAUNCH";
     side: "BUY" | "SELL";
     plan?: Readonly<{ planId: string; version: number; reviewId: string }>;
     /** 1.12.0: the autoinvest reminder a purchase was made under. */
     rule?: RuleBinding;
+    /** 1.34.0, `LAUNCH` only: the launched token. */
+    token?: string;
+    /** 1.34.0, `LAUNCH` only: the bonding curve, or the DAMM v2 pool it graduated into. */
+    venue?: "curve" | "pool";
   }> | null;
   providerRef: string | null;
   statedUsd: number | null;
@@ -2037,7 +2044,7 @@ export type SwapOrderRequest = Readonly<{
 }>;
 
 export type SwapServiceFee = Readonly<{
-  mechanism: "JUPITER_REFERRAL" | "JUPITER_PLATFORM_FEE" | "RELAY_APP_FEE" | "MAYAN_REFERRER" | "NONE";
+  mechanism: "JUPITER_REFERRAL" | "JUPITER_PLATFORM_FEE" | "RELAY_APP_FEE" | "MAYAN_REFERRER" | "METEORA_LAUNCH" | "NONE";
   state: SwapServiceFeeState;
   basisPoints: number;
   requestedBasisPoints: number;
@@ -2046,7 +2053,7 @@ export type SwapServiceFee = Readonly<{
   decimals: number | null;
   amountRaw: string | null;
   usd: number | null;
-  accrual: "JUPITER_REFERRAL_TOKEN_ACCOUNT" | "FEE_WALLET_TOKEN_ACCOUNT" | "RELAY_APP_BALANCE_USDC" | "MAYAN_ONCHAIN_REFERRER" | "NONE";
+  accrual: "JUPITER_REFERRAL_TOKEN_ACCOUNT" | "FEE_WALLET_TOKEN_ACCOUNT" | "RELAY_APP_BALANCE_USDC" | "MAYAN_ONCHAIN_REFERRER" | "METEORA_PARTNER_VAULT" | "NONE";
   providerRetainedPercent: number | null;
   settlement: Readonly<{
     userPaidRaw: string | null;
@@ -4462,7 +4469,19 @@ export type LaunchTradeBuildResponse = Readonly<{ buildId: string; network: Laun
 
 /** `POST /api/v1/launch/{mint}/trade/submit` */
 export type LaunchTradeSubmitRequest = Readonly<{ buildId: string; wallet: string; signedWireBase64: string }>;
-export type LaunchTradeSubmitResponse = Readonly<{ signature: string; state: "CONFIRMED" | "PENDING"; filled: Readonly<{ tokensRaw: string; pairRaw: string }> | null }>;
+export type LaunchTradeSubmitResponse = Readonly<{
+  signature: string;
+  state: "CONFIRMED" | "PENDING";
+  filled: Readonly<{ tokensRaw: string; pairRaw: string }> | null;
+  /** 1.34.0: the trade's Outcome Receipt, once the chain answered in time; null otherwise. */
+  receiptHash?: string | null;
+  /** 1.34.0: the launch's page through the person's own referral code, for «Поділитися угодою». */
+  shareLink?: string | null;
+}>;
+
+/** 1.34.0 — `POST /api/v1/launch/{mint}/trade/receipt`: a trade's receipt, by the wallet that sent it and its signature. */
+export type LaunchTradeReceiptRequest = Readonly<{ wallet: string; signature: string }>;
+export type LaunchTradeReceiptResponse = Readonly<{ signature: string; state: "SENT" | "DONE" | "FAILED"; receipt: SwapReceipt | null }>;
 /* ------------------------------------------------------------ 1.29.0 — the creator's cabinet */
 
 /**

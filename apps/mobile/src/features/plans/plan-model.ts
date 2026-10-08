@@ -44,7 +44,7 @@ export function assetKindOf(asset: PlanAsset): PlanAssetKind {
 
 /**
  * Whose token a stock plan stands on, as its lines name it. A plan written on
- * the token of an issuer Ryntra no longer supports (canon v5.2 В26) stays the
+ * the token of an issuer Ryntra no longer supports stays the
  * record it is — only its issuer is said as no longer supported.
  */
 export function planIssuerLabel(asset: PlanAsset, retired: string): string {
@@ -156,6 +156,31 @@ export function priceText(value: number): string {
 
 export function moneyText(value: number): string {
   return Number.isFinite(value) ? value.toFixed(2).replace(/\.?0+$/, '') : ''
+}
+
+/** The draft's figure fields, shown in the person's own shape — «236,12» in Ukrainian; `parseDecimal` reads either mark. */
+const FIGURE_FIELDS = [
+  'entryPrice',
+  'maxPrice',
+  'budget',
+  'reserve',
+  'invalidation',
+  'plannedRisk',
+  'costBufferPct',
+  'target',
+  'maxSlippagePct',
+  'maxDeviationPct',
+  'minLiquidity',
+] as const
+
+export function draftInLocale(draft: PlanDraft, locale: 'en' | 'uk'): PlanDraft {
+  if (locale !== 'uk') return draft
+  const shaped: Record<string, string> = {}
+  for (const field of FIGURE_FIELDS) {
+    const value = draft[field]
+    if (typeof value === 'string' && /^-?\d+\.\d+$/.test(value)) shaped[field] = value.replace('.', ',')
+  }
+  return { ...draft, ...shaped }
 }
 
 /** A new plan from the asset's own figures: the entry at the price the desk knows, the bound two per cent above it, thirty days, the execution defaults. */

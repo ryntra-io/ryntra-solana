@@ -94,6 +94,38 @@ function chunkedFacts(receipt: ReceiptRecord, prefix: string): Record<string, un
   }
 }
 
+/** A launch's trade, as its receipt's own facts say it: what was spent and what arrived. */
+export type LaunchTradeReceiptSummary = Readonly<{
+  side: "buy" | "sell";
+  spent: Readonly<{ amountRaw: string; symbol: string; decimals: number }>;
+  received: Readonly<{ amountRaw: string; symbol: string; decimals: number }>;
+}>;
+
+export function launchTradeReceiptSummary(receipt: ReceiptRecord): LaunchTradeReceiptSummary | null {
+  const facts = chunkedFacts(receipt, "ryntra.solana.launch-trade-receipt.facts@1:");
+  if (!facts || facts.schema !== "ryntra.solana.launch-trade-receipt-facts") return null;
+  const token = object(facts.token);
+  const pair = object(facts.pair);
+  const observed = object(facts.observed);
+  if (!token || !pair || !observed || (facts.side !== "buy" && facts.side !== "sell")) return null;
+  const leg = (asset: Record<string, unknown>, amountRaw: unknown) =>
+    typeof asset.symbol === "string" && typeof asset.decimals === "number" && typeof amountRaw === "string" && /^[0-9]+$/.test(amountRaw) ? { amountRaw, symbol: asset.symbol, decimals: asset.decimals } : null;
+  const tokens = leg(token, observed.tokensRaw);
+  const money = leg(pair, observed.pairRaw);
+  if (!tokens || !money) return null;
+  return facts.side === "buy" ? { side: "buy", spent: money, received: tokens } : { side: "sell", spent: tokens, received: money };
+}
+
+/** A launch's trade: the network, the wallet that sent it and its signature. */
+type LaunchTradeFacts = Readonly<{ network: "mainnet" | "devnet"; wallet: string; signature: string }>;
+function launchTradeFacts(receipt: ReceiptRecord): LaunchTradeFacts | null {
+  const facts = chunkedFacts(receipt, "ryntra.solana.launch-trade-receipt.facts@1:");
+  if (!facts || facts.schema !== "ryntra.solana.launch-trade-receipt-facts") return null;
+  if (facts.network !== "mainnet" && facts.network !== "devnet") return null;
+  if (typeof facts.wallet !== "string" || typeof facts.signature !== "string") return null;
+  return { network: facts.network, wallet: facts.wallet, signature: facts.signature };
+}
+
 type SendFacts = Readonly<{ network: "mainnet" | "devnet"; sender: string; signature: string }>;
 function sendFacts(receipt: ReceiptRecord): SendFacts | null {
   const facts = chunkedFacts(receipt, "ryntra.solana.send-receipt.facts@1:");
@@ -343,6 +375,19 @@ export function receiptBinding(receipt: ReceiptRecord): ReceiptBinding | null {
       signature: swap.signature,
       wallet: null,
       network: "mainnet",
+      destination: null,
+    };
+  }
+
+  /* A launch's trade is a Swap-lane row of the wallet that sent it, on the network its facts name. */
+  const launch = launchTradeFacts(receipt);
+  if (launch && outcomeHash === launch.signature && outcomeRef === SOLANA_CAIP2[launch.network]) {
+    return {
+      lane: "SWAP",
+      actionId: launch.signature,
+      signature: launch.signature,
+      wallet: launch.wallet,
+      network: launch.network,
       destination: null,
     };
   }

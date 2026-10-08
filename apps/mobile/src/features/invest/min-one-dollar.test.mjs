@@ -31,8 +31,8 @@ import {
 import { INVEST_COPY } from './copy.ts'
 
 /**
- * «Від $1» on the phone (M21; canon v5.5 В35, the Owner's word «Чому 10? …
- * Кожний день по долару»; the web's `RYN-MIN-ONE-DOLLAR-001`): a purchase, an
+ * «Від $1» on the phone (M21, «Чому 10? …
+ * Кожний день по долару»; the web's: a purchase, an
  * «Автоінвест» rule and the month's budget from one dollar; the sheets open on
  * $10 — a default, never advice; the purchase's quick choices are shares of
  * the wallet's dollars; a company without a route at the sum says its own
@@ -129,7 +129,7 @@ test('no route for the sum: the ladder above it, in order, and only «no route»
   assert.match(LADDER, /await ladderMinimum\(\{/)
   // The one action puts the minimum in — on the purchase and before a rule is turned on.
   assert.match(BUY_SHEET, /words\.setMinimum\(sum\(action\.usd\)\), onPress: \(\) => buy\.pickSum\(action\.usd\)/)
-  // A «З оплат» rule (M26) asks whether a dollar routes — the least its reminders open at — the other kinds their sum.
+  // A «З оплат» rule asks whether a dollar routes — the least its reminders open at — the other kinds their sum.
   assert.match(RULE_SHEET, /const routedSum = paying \? RULE_MIN_USD : amount/)
   assert.match(RULE_SHEET, /useQuoteRoute\(USDC_MINT, company\.mint, routedSum, true\)/)
   assert.match(RULE_SHEET, /onPress: \(\) => setAmountText\(String\(least\)\)/)
@@ -259,7 +259,6 @@ function texts(value) {
 }
 
 test('the words, in both languages: the reserve apart, the company’s own minimum, a dollar everywhere, no advice', () => {
-  const NB = String.fromCharCode(0xa0)
   assert.equal(BUY_COPY.uk.reserve('≈ $0,24'), '≈ $0,24 у SOL разово лишаються в гаманці на рахунку токена')
   assert.equal(BUY_COPY.en.reserve('≈ $0.24'), '≈ $0.24 in SOL, once — it stays in your wallet, on the token’s account')
   assert.equal(
@@ -276,9 +275,13 @@ test('the words, in both languages: the reserve apart, the company’s own minim
   assert.equal(BUY_COPY.en.setMinimum('$5'), 'Use $5')
   assert.equal(BUY_COPY.uk.minimum, 'Мінімум — $1')
   assert.equal(BUY_COPY.en.minimum, 'The minimum is $1')
-  assert.equal(INVEST_COPY.uk.guestHeadline, `Купи частинку компанії від${NB}$1`)
-  assert.equal(INVEST_COPY.en.guestHeadline, `Buy a piece of a company from${NB}$1`)
-  assert.equal(AUTOINVEST_COPY.uk.noRulesYet, 'Купуй частинками — від $1 щодня, щотижня або коли ціна впаде.')
+  assert.equal(INVEST_COPY.uk.guestHeadline, 'Запускай. Торгуй. Автоматизуй.')
+  assert.equal(INVEST_COPY.en.guestHeadline, 'Launch. Trade. Automate.')
+  // The web's words since a rule names any token (1.31.0): what a rule buys and that each buy is the person's signature.
+  assert.equal(
+    AUTOINVEST_COPY.uk.noRulesYet,
+    'Правил ще немає. Правило купує токен щодня, щотижня, коли ціна впаде або з кожної оплати — кожну купівлю підписуєш ти.',
+  )
   for (const copy of [BUY_COPY, INVEST_COPY, AUTOINVEST_COPY]) {
     for (const text of [...texts(copy.en), ...texts(copy.uk)]) {
       assert.doesNotMatch(text, /(from|від|Мінімум —|minimum is)[\s ]*\$10(?![\d,.])/i, `no old minimum: ${text}`)

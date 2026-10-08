@@ -72,7 +72,7 @@ export function LaunchMineScreen() {
   const launchOpen = useLaunchOpen()
   const open = launchOpen.open
   const cabinet = useCreatorCabinet(open === true ? account.address : null)
-  const back = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/more'))
+  const back = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)'))
   const data = cabinet.data && cabinet.data.wallet === account.address ? cabinet.data : null
 
   let body: React.ReactNode

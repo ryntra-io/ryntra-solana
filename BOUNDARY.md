@@ -9,10 +9,10 @@ moved counts as new. Generated at every update from the development history.
 
 | Since the tag | Files |
 |---|---|
-| New | 1,261 |
-| Changed | 813 |
-| Unchanged | 922 |
-| Lines added / removed | +325,729 / −19,835 |
+| New | 1,289 |
+| Changed | 814 |
+| Unchanged | 921 |
+| Lines added / removed | +331,133 / −19,860 |
 
 ## New since the tag
 
@@ -132,6 +132,7 @@ moved counts as new. Generated at every update from the development history.
 - `app/api/v1/launch/[mint]/route.ts`
 - `app/api/v1/launch/[mint]/trade/build/route.ts`
 - `app/api/v1/launch/[mint]/trade/quote/route.ts`
+- `app/api/v1/launch/[mint]/trade/receipt/route.ts`
 - `app/api/v1/launch/[mint]/trade/submit/route.ts`
 - `app/api/v1/launch/[mint]/wallet/[address]/route.ts`
 - `app/api/v1/launch/build/route.ts`
@@ -477,7 +478,7 @@ moved counts as new. Generated at every update from the development history.
 - `apps/mobile/scripts/release-check.mjs`
 - `apps/mobile/scripts/theme-css.mjs`
 - `apps/mobile/src/app/(tabs)/_layout.tsx`
-- `apps/mobile/src/app/(tabs)/agent.tsx`
+- `apps/mobile/src/app/(tabs)/create.tsx`
 - `apps/mobile/src/app/(tabs)/index.tsx`
 - `apps/mobile/src/app/(tabs)/markets.tsx`
 - `apps/mobile/src/app/(tabs)/more.tsx`
@@ -485,13 +486,14 @@ moved counts as new. Generated at every update from the development history.
 - `apps/mobile/src/app/+native-intent.tsx`
 - `apps/mobile/src/app/_layout.tsx`
 - `apps/mobile/src/app/asset/[mint].tsx`
+- `apps/mobile/src/app/bots/index.tsx`
 - `apps/mobile/src/app/changes.tsx`
 - `apps/mobile/src/app/gallery.tsx`
 - `apps/mobile/src/app/history.tsx`
 - `apps/mobile/src/app/launch/[mint].tsx`
 - `apps/mobile/src/app/launch/index.tsx`
 - `apps/mobile/src/app/launch/mine.tsx`
-- `apps/mobile/src/app/lists.tsx`
+- `apps/mobile/src/app/money/index.tsx`
 - `apps/mobile/src/app/money/receive.tsx`
 - `apps/mobile/src/app/money/send.tsx`
 - `apps/mobile/src/app/monitoring/index.tsx`
@@ -505,6 +507,8 @@ moved counts as new. Generated at every update from the development history.
 - `apps/mobile/src/app/rewards.tsx`
 - `apps/mobile/src/app/ryn.tsx`
 - `apps/mobile/src/app/search.tsx`
+- `apps/mobile/src/app/settings.tsx`
+- `apps/mobile/src/app/token/[mint].tsx`
 - `apps/mobile/src/app/trade.tsx`
 - `apps/mobile/src/components/asset-icon.tsx`
 - `apps/mobile/src/components/asset-row.tsx`
@@ -542,15 +546,20 @@ moved counts as new. Generated at every update from the development history.
 - `apps/mobile/src/features/agent/use-agent.ts`
 - `apps/mobile/src/features/autoinvest/autoinvest.test.mjs`
 - `apps/mobile/src/features/autoinvest/copy.ts`
+- `apps/mobile/src/features/autoinvest/floor.ts`
 - `apps/mobile/src/features/autoinvest/payments.ts`
 - `apps/mobile/src/features/autoinvest/price-condition.test.mjs`
 - `apps/mobile/src/features/autoinvest/price-condition.ts`
 - `apps/mobile/src/features/autoinvest/rule-model.ts`
 - `apps/mobile/src/features/autoinvest/schedule.ts`
 - `apps/mobile/src/features/autoinvest/surfaces.test.mjs`
+- `apps/mobile/src/features/autoinvest/token-rules.test.mjs`
 - `apps/mobile/src/features/autoinvest/use-condition.ts`
+- `apps/mobile/src/features/autoinvest/use-rule-asset.ts`
 - `apps/mobile/src/features/autoinvest/use-rules.ts`
 - `apps/mobile/src/features/autoinvest/words.ts`
+- `apps/mobile/src/features/bots/bots.test.mjs`
+- `apps/mobile/src/features/bots/bots.ts`
 - `apps/mobile/src/features/history/copy.ts`
 - `apps/mobile/src/features/history/history-model.ts`
 - `apps/mobile/src/features/history/use-history.ts`
@@ -592,6 +601,8 @@ moved counts as new. Generated at every update from the development history.
 - `apps/mobile/src/features/launch/chart-geometry.ts`
 - `apps/mobile/src/features/launch/copy.ts`
 - `apps/mobile/src/features/launch/form.ts`
+- `apps/mobile/src/features/launch/hidden-model.ts`
+- `apps/mobile/src/features/launch/hidden.ts`
 - `apps/mobile/src/features/launch/launch-api.ts`
 - `apps/mobile/src/features/launch/launch-flow.ts`
 - `apps/mobile/src/features/launch/launch-format.ts`
@@ -600,9 +611,13 @@ moved counts as new. Generated at every update from the development history.
 - `apps/mobile/src/features/launch/moderation.ts`
 - `apps/mobile/src/features/launch/picture-bytes.ts`
 - `apps/mobile/src/features/launch/picture.ts`
+- `apps/mobile/src/features/launch/report.test.mjs`
+- `apps/mobile/src/features/launch/report.ts`
 - `apps/mobile/src/features/launch/use-create.ts`
 - `apps/mobile/src/features/launch/use-launch.ts`
 - `apps/mobile/src/features/markets/copy.ts`
+- `apps/mobile/src/features/markets/screener.test.mjs`
+- `apps/mobile/src/features/markets/screener.ts`
 - `apps/mobile/src/features/markets/ukrainian.test.mjs`
 - `apps/mobile/src/features/money/copy.ts`
 - `apps/mobile/src/features/money/money-model.ts`
@@ -640,6 +655,8 @@ moved counts as new. Generated at every update from the development history.
 - `apps/mobile/src/features/rewards/copy.ts`
 - `apps/mobile/src/features/rewards/rewards-model.ts`
 - `apps/mobile/src/features/rewards/use-rewards.ts`
+- `apps/mobile/src/features/session/account-deletion.test.mjs`
+- `apps/mobile/src/features/session/account-deletion.ts`
 - `apps/mobile/src/features/session/session-api.ts`
 - `apps/mobile/src/features/session/session-binder.tsx`
 - `apps/mobile/src/features/session/session-client.ts`
@@ -657,6 +674,7 @@ moved counts as new. Generated at every update from the development history.
 - `apps/mobile/src/features/shell/shell.ts`
 - `apps/mobile/src/features/shell/use-quick-actions.ts`
 - `apps/mobile/src/features/trade/copy.ts`
+- `apps/mobile/src/features/trade/rule-ticket.ts`
 - `apps/mobile/src/features/trade/trade-cues.test.mjs`
 - `apps/mobile/src/features/trade/trade-cues.ts`
 - `apps/mobile/src/features/trade/trade-flow.ts`
@@ -700,11 +718,13 @@ moved counts as new. Generated at every update from the development history.
 - `apps/mobile/src/lib/gallery-route.test.mjs`
 - `apps/mobile/src/lib/haptics.ts`
 - `apps/mobile/src/lib/i18n.ts`
+- `apps/mobile/src/lib/legal.ts`
 - `apps/mobile/src/lib/locale.test.mjs`
 - `apps/mobile/src/lib/locale.ts`
 - `apps/mobile/src/lib/network.ts`
 - `apps/mobile/src/lib/offline-model.test.mjs`
 - `apps/mobile/src/lib/offline-model.ts`
+- `apps/mobile/src/lib/open-link.ts`
 - `apps/mobile/src/lib/preferences.ts`
 - `apps/mobile/src/lib/query-keep.ts`
 - `apps/mobile/src/lib/search.test.mjs`
@@ -728,6 +748,8 @@ moved counts as new. Generated at every update from the development history.
 - `apps/mobile/src/screens/autoinvest/rule-card.tsx`
 - `apps/mobile/src/screens/autoinvest/rule-reminder-notice.tsx`
 - `apps/mobile/src/screens/autoinvest/rules-block.tsx`
+- `apps/mobile/src/screens/autoinvest/token-rule-samples.tsx`
+- `apps/mobile/src/screens/bots/index.tsx`
 - `apps/mobile/src/screens/gallery.tsx`
 - `apps/mobile/src/screens/history/index.tsx`
 - `apps/mobile/src/screens/history/receipt-sheet.tsx`
@@ -749,9 +771,9 @@ moved counts as new. Generated at every update from the development history.
 - `apps/mobile/src/screens/launch/parts.tsx`
 - `apps/mobile/src/screens/launch/token.tsx`
 - `apps/mobile/src/screens/launch/trade-panel.tsx`
-- `apps/mobile/src/screens/markets/companies.tsx`
 - `apps/mobile/src/screens/markets/index.tsx`
 - `apps/mobile/src/screens/markets/search.tsx`
+- `apps/mobile/src/screens/money/hub.tsx`
 - `apps/mobile/src/screens/money/link-card.tsx`
 - `apps/mobile/src/screens/money/money-samples.tsx`
 - `apps/mobile/src/screens/money/pay-link-panel.tsx`
@@ -766,7 +788,6 @@ moved counts as new. Generated at every update from the development history.
 - `apps/mobile/src/screens/more/index.tsx`
 - `apps/mobile/src/screens/plans/builder.tsx`
 - `apps/mobile/src/screens/plans/detail.tsx`
-- `apps/mobile/src/screens/plans/index.tsx`
 - `apps/mobile/src/screens/plans/pick-stock.tsx`
 - `apps/mobile/src/screens/plans/plan-row.tsx`
 - `apps/mobile/src/screens/plans/strategy-block.tsx`
@@ -776,8 +797,11 @@ moved counts as new. Generated at every update from the development history.
 - `apps/mobile/src/screens/results/index.tsx`
 - `apps/mobile/src/screens/results/result-sheet.tsx`
 - `apps/mobile/src/screens/rewards/index.tsx`
+- `apps/mobile/src/screens/settings/index.tsx`
 - `apps/mobile/src/screens/trade/asset-picker.tsx`
 - `apps/mobile/src/screens/trade/index.tsx`
+- `apps/mobile/src/screens/trade/recurring-panel.tsx`
+- `apps/mobile/src/screens/trade/rule-parts.tsx`
 - `apps/mobile/src/screens/widget-samples.tsx`
 - `apps/mobile/src/theme/index.ts`
 - `apps/mobile/src/theme/render-css.mjs`
@@ -798,6 +822,7 @@ moved counts as new. Generated at every update from the development history.
 - `lib/admin/seen-wallets.server.ts`
 - `lib/admin/seen-wallets.test.mjs`
 - `lib/admin/seen-wallets.ts`
+- `lib/agent-control/adapters/meteora-launch.ts`
 - `lib/agent/answer.ts`
 - `lib/agent/budget.test.mjs`
 - `lib/agent/budget.ts`
@@ -919,6 +944,7 @@ moved counts as new. Generated at every update from the development history.
 - `lib/core/venues/meteora-dbc/presets.ts`
 - `lib/core/venues/meteora-dbc/receipt.test.mjs`
 - `lib/core/venues/meteora-dbc/receipt.ts`
+- `lib/core/venues/meteora-dbc/trade-receipt.ts`
 - `lib/core/venues/meteora-dbc/trade.server.ts`
 - `lib/core/venues/meteora-dlmm/floor.server.ts`
 - `lib/development-repository.mjs`
@@ -980,6 +1006,8 @@ moved counts as new. Generated at every update from the development history.
 - `lib/launch/launch.test.mjs`
 - `lib/launch/market.server.ts`
 - `lib/launch/metadata.server.ts`
+- `lib/launch/record.server.ts`
+- `lib/launch/record.test.mjs`
 - `lib/launch/runtime.server.ts`
 - `lib/launch/trade-index.server.ts`
 - `lib/launch/trade.server.ts`
@@ -1693,6 +1721,7 @@ moved counts as new. Generated at every update from the development history.
 - `lib/agent-control/adapter-projection.ts`
 - `lib/agent-control/adapters/base-evm.test.mjs`
 - `lib/agent-control/adapters/base-evm.ts`
+- `lib/agent-control/adapters/index.ts`
 - `lib/agent-control/adapters/jupiter-swap.ts`
 - `lib/agent-control/adapters/solana-token-2022.test.mjs`
 - `lib/agent-control/adapters/solana-token-2022.ts`

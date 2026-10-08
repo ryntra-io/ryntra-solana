@@ -1,4 +1,3 @@
-import { useQuery } from '@tanstack/react-query'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useEffect, useMemo, useState } from 'react'
 import { Pressable, Share, ToastAndroid, View } from 'react-native'
@@ -19,7 +18,6 @@ import { useCreatePayLink, useMyPayLinks } from '@/features/money/use-pay-links'
 import { useAccount } from '@/features/session/use-account'
 import {
   ApiError,
-  fetchHoldings,
   needsSignIn,
   PAY_LINK_EXPIRATIONS,
   USDC_MINT,
@@ -29,6 +27,7 @@ import {
 import { canCopy, copyText } from '@/lib/clipboard'
 import { feel } from '@/lib/haptics'
 import { useCopy, useLocale, useSharedCopy } from '@/lib/i18n'
+import { useHoldings } from '@/features/portfolio/use-portfolio'
 
 import { LinkCard } from './link-card'
 
@@ -147,13 +146,7 @@ function RequestPanel() {
   const create = useCreatePayLink(session)
   const links = useMyPayLinks(session)
 
-  const holdings = useQuery({
-    queryKey: ['trade', 'holdings', account.address ?? ''],
-    queryFn: ({ signal }) => fetchHoldings(account.address!, signal),
-    enabled: account.address !== null,
-    staleTime: 20_000,
-    retry: 1,
-  })
+  const holdings = useHoldings(account.address)
   const tokens = useMemo<readonly LinkToken[]>(() => {
     const held = sendAssets(holdings.data?.data.holdings ?? [])
       .filter((asset) => asset.mint !== null && asset.mint !== USDC_MINT)

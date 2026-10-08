@@ -9,7 +9,7 @@ import { Txt } from '@/components/txt'
 import { COMPANY_COPY, type CompanyCopy } from '@/features/invest/company-copy'
 import {
   aboutFacts,
-  dayNumeric,
+  chartDay,
   issuerFeeText,
   privateStats,
   tradingDay,
@@ -30,8 +30,8 @@ import { useCopy, useLocale, type Locale } from '@/lib/i18n'
 import { formatMoment, formatPrice } from '@/utils/format'
 
 /**
- * A company's facts at rest (M23) — the web's company page
- * (`RYN-COMPANY-PAGE-001`) under the purchase, each block a set of figures
+ * A company's facts at rest — the web's company page
+ * under the purchase, each block a set of figures
  * with its label and, under the block, where they come from and when:
  * «Ключові показники» (a private company's valuation, the price over the
  * year), «Про компанію» (a private company's standing, where the share lists),
@@ -63,7 +63,7 @@ export function CompanyFacts({
 }) {
   const words = useCopy(COMPANY_COPY)
   const locale = useLocale()
-  // A market read kept from another day names its day (M9).
+  // A market read kept from another day names its day.
   const now = useNow(60_000)
   const { row } = asset
   const rep = row.representation
@@ -228,7 +228,7 @@ function KeyStats({
             </Txt>
             {yearStartsLate(range, now) ? (
               <Txt variant="ui" tone="faint" tabular>
-                {words.since(dayNumeric(range.since, locale))}
+                {words.since(chartDay(range.since, locale))}
               </Txt>
             ) : null}
           </View>
@@ -257,7 +257,7 @@ function KeyStats({
                 {formatPrice(range.low, locale)}
               </Txt>
               <Txt variant="labelSm" tone="faint">
-                {`${words.yearLow} · ${dayNumeric(range.lowAt, locale)}`}
+                {`${words.yearLow} · ${chartDay(range.lowAt, locale)}`}
               </Txt>
             </View>
             <View className="items-end gap-0.5">
@@ -265,7 +265,7 @@ function KeyStats({
                 {formatPrice(range.high, locale)}
               </Txt>
               <Txt variant="labelSm" tone="faint">
-                {`${words.yearHigh} · ${dayNumeric(range.highAt, locale)}`}
+                {`${words.yearHigh} · ${chartDay(range.highAt, locale)}`}
               </Txt>
             </View>
           </View>

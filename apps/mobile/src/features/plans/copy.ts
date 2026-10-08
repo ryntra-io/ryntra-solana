@@ -9,8 +9,8 @@ import type { DraftNeed, StartingPriceSource } from './plan-model.ts'
  * beside every one.
  */
 const EN = {
-  // The place's own word since one version: Portfolio's «Стратегії» opens this list (canon v5.3 §3).
-  title: 'Strategies',
+  // The place's own word since one version: Portfolio's «Стратегії» opens this list.
+  title: 'Trade plans',
   newPlan: 'New plan',
   monitoring: 'Monitoring',
   cardShared: (symbol: string) =>
@@ -254,11 +254,11 @@ export type PlansCopy = {
 }
 
 const UK: PlansCopy = {
-  title: 'Стратегії',
+  title: 'Плани угод',
   monitoring: 'Моніторинг',
   cardShared: (symbol: string) => `На ${symbol} два твої плани; моніторинг не каже, про який із них ця нотатка.`,
   newPlan: 'Новий план',
-  attention: 'Потребують уваги',
+  attention: 'Потребує уваги',
   active: 'Активні',
   drafts: 'Чернетки',
   closed: 'Закриті',

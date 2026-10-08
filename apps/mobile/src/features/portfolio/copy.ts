@@ -9,6 +9,7 @@ const EN = {
   priced: (priced: number, of: number) => `Priced ${priced} of ${of}`,
   withoutPrice: (count: number) => `${count} without a price`,
   notInTotal: 'not in the total',
+  readingPrices: 'Reading prices…',
   groups: {
     stock: 'Tokenized stocks',
     crypto: 'Crypto',
@@ -23,7 +24,7 @@ const EN = {
   heldBack: (at: string) => `Refresh could not read the balances · showing ${at}`,
   notUpdated: 'not updated',
   emptyTitle: 'Nothing here yet',
-  emptyDetail: 'Your first piece — in Markets.',
+  emptyDetail: 'Buy your first token in Markets, or launch your own.',
   history: 'History',
   rewards: 'Rewards',
   markets: 'Markets',
@@ -65,6 +66,7 @@ const UK: PortfolioCopy = {
   priced: (priced, of) => `Оцінено ${priced} з ${of}`,
   withoutPrice: (count) => `${count} без ціни`,
   notInTotal: 'не в сумі',
+  readingPrices: 'Читаю ціни…',
   groups: {
     stock: 'Токенізовані акції',
     crypto: 'Крипто',
@@ -79,7 +81,7 @@ const UK: PortfolioCopy = {
   heldBack: (at) => `Оновлення не прочитало баланси · показано ${at}`,
   notUpdated: 'не оновлено',
   emptyTitle: 'Поки що порожньо',
-  emptyDetail: 'Перша частинка — у Ринках.',
+  emptyDetail: 'Купи перший токен у Ринках або запусти свій.',
   history: 'Історія',
   rewards: 'Винагороди',
   markets: 'Ринки',

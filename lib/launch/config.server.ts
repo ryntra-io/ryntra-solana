@@ -64,17 +64,22 @@ export type LaunchNetwork = Readonly<{
   /** Whether Jupiter routes this network, so a graduated token can also be traded there. Devnet has no Jupiter. */
   jupiter: boolean;
   /**
-   * Ryntra's fee wallet on this network: a graduated launch is a new token, and a direct trade in its pool carries the
-   * policy's Ryntra fee into this wallet, as a trade of it through Jupiter does. A trade's page reads the fee it finds
-   * moved here as part of what the trade cost. Null: no fee wallet.
+   * Ryntra's fee wallet on this network: a graduated launch is a new token, and a direct trade in its pool may carry the
+   * policy's Ryntra fee into this wallet, as a trade of it through Jupiter does (`poolFeeCharged`). A trade's page reads
+   * the fee it finds moved here as part of what the trade cost. Null: no fee wallet.
    */
   feeWallet: string | null;
   /**
-   * Whether a launch's trade is recorded here the way every Ryntra fee is — its row in History and /stats, the
-   * cashback and the inviter's share of the fee, its receipt. Ryntra's own fee in the pool is charged only where it
-   * is: a fee is never taken that the person's rewards do not see.
+   * Whether a launch's trade is recorded here the way every Ryntra trade is — its row in History with a receipt,
+   * `/stats`, and Ryntra's part of its fee handed to the rewards core as the cashback's base (`record.server.ts`).
    */
   tradesRecorded: boolean;
+  /**
+   * Whether a direct trade in a graduated pool carries Ryntra's own fee for a new token. Not yet: the rewards rules do
+   * not count a launch's fee for the cashback, and a fee is never taken that the person's rewards do not see. In the pool
+   * Ryntra's part is Meteora's referral until then.
+   */
+  poolFeeCharged: boolean;
   /**
    * Whether Meteora's Zap program on this network is the one its SDK speaks to: a holder's one-coin entry into a
    * graduated pool goes through it. Devnet's Zap is older than its SDK (its ledger instructions are unknown to it,
@@ -103,8 +108,10 @@ const DEVNET: Omit<LaunchNetwork, "origin"> = {
   jupiter: false,
   /* The rehearsal's owner on devnet stands in for Ryntra's fee wallet; on mainnet it is the attribution registry's. */
   feeWallet: "9WBQamBC9Amdzzrq8QANXweZCKpfhLMLvPQJzMBgFbbu",
-  /* The stand records no launch trade: the pool's Ryntra fee is built and proven on chain, and charged where trades are recorded. */
-  tradesRecorded: false,
+  /* The stand records its trades like mainnet — its rows and receipts, no rewards; the pool's Ryntra fee is built and
+     proven on chain and charged nowhere yet. */
+  tradesRecorded: true,
+  poolFeeCharged: false,
   zap: false,
 };
 
@@ -114,9 +121,9 @@ const registryAddress = (id: string): string | null => ATTRIBUTION_REGISTRY.find
 
 /*
  * Mainnet: the two configs created on 2026-10-05 (the creator's share 40 %), the attribution registry's rows —
- * the partner's vault owns Ryntra's referral accounts, Ryntra's fee wallet. A launch's trade is not yet recorded the way a
- * Ryntra fee is (History, cashback, the inviter's share), so no Ryntra fee is taken in a graduated pool: on the curve Ryntra
- * earns as the config's partner, inside the curve's own fee.
+ * the partner's vault owns Ryntra's referral accounts, Ryntra's fee wallet. A launch's trade is recorded like every trade
+ * (History with a receipt, /stats, the rewards core's call); on the curve Ryntra earns as the config's partner inside the
+ * curve's own fee, with Meteora's referral, and no Ryntra fee is taken in a graduated pool until the rewards rules count it.
  */
 const MAINNET: LaunchNetwork = {
   cluster: "mainnet",
@@ -131,7 +138,8 @@ const MAINNET: LaunchNetwork = {
   referralOwner: registryAddress("solana-launch-fee-claimer"),
   jupiter: true,
   feeWallet: SOLANA_FEE_WALLET,
-  tradesRecorded: false,
+  tradesRecorded: true,
+  poolFeeCharged: false,
   zap: true,
 };
 
@@ -312,8 +320,9 @@ export const LAUNCHES_PER_HOUR = 60;
  * The Ryntra fee a direct trade in a graduated launch's pool carries: after the curve the token is a new token like
  * any other, so the policy's rate for that class (MEME), into the network's fee wallet. Its class by Jupiter's
  * verification and age is read with the mainnet catalogue; a new launch is not verified yet. None without a fee wallet,
- * and none where the trade is not recorded for the person's cashback, History and receipt.
+ * none where the trade is not recorded for the person's History and receipt, and none until the fee is charged here —
+ * when the rewards rules count it for the cashback.
  */
 export function launchPoolFee(network: LaunchNetwork): Readonly<{ wallet: string; bps: number }> | null {
-  return network.feeWallet && network.tradesRecorded ? { wallet: network.feeWallet, bps: FEE_POLICY_V2.MEME.bps } : null;
+  return network.feeWallet && network.tradesRecorded && network.poolFeeCharged ? { wallet: network.feeWallet, bps: FEE_POLICY_V2.MEME.bps } : null;
 }

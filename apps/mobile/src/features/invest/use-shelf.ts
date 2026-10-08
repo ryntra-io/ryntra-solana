@@ -22,8 +22,7 @@ import {
  * and Markets under one key, read again every two minutes while either is
  * open. The route builds the universe in about twenty seconds when its cache
  * is cold, so the device keeps the last shelf it read and shows it at once —
- * with its own time, never as fresh — until the new one answers (canon §2,
- * rule 14: a copy and a skeleton, not an empty screen).
+ * with its own time, never as fresh — until the new one answers ( * rule 14: a copy and a skeleton, not an empty screen).
  */
 const storage = createMMKV({ id: 'ryntra.shelf' })
 const KEPT = 'companies'
@@ -63,7 +62,7 @@ export function useCompanyShelf() {
 /**
  * The issuer's event on a token — its swap window before a cut-off — where the shelf names it: this session's read,
  * else the device's last one. A company's page says it before the issuer's own read of the token answers, so a
- * private token's deadline stands before its price from the first frame (M27). Asks nothing of its own.
+ * private token's deadline stands before its price from the first frame. Asks nothing of its own.
  */
 export function useShelfEvents(): Readonly<{
   eventOf: (mint: string) => IssuerEvent | null

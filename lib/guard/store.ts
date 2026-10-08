@@ -358,6 +358,12 @@ export const GUARD_COLLECTIONS = [
      are compared with; it lives minutes. And each build that was sent, under the same key, so a build is sent once. */
   "launchTradeBuilds",
   "launchTradeSends",
+  /* Ryntra Launch: a trade that was sent, keyed `<cluster>:<signature>` — what the wallet reviewed, where its settlement
+     stands, and its Outcome Receipt once the chain answered. Kept: it is the receipt History reads. */
+  "launchTradeRecords",
+  /* Ryntra Launch: a trade's Outcome Receipt, keyed `<cluster>:<signature>` — minted once, the first settlement's; every
+     later settlement reads it. */
+  "launchTradeReceipts",
   "launchFeeShares",
   "launchClaims",
   "launchClaimBuilds",

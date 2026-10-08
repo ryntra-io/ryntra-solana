@@ -1,5 +1,5 @@
 /**
- * «Автоінвест» on the phone — the pure half (canon v5.1 §4.1, §11, B.3; M16).
+ * «Автоінвест» on the phone — the pure half (M16).
  *
  * A rule is the person's company and a sum in dollars, and when it reminds:
  * «Регулярно» — how often and when on their own clock; «Якщо впаде» — when the
@@ -47,14 +47,14 @@ import {
 
 /**
  * The contract's bounds (`capabilities.rules`): the least and the most a rule's
- * purchase is — a dollar since 1.16.0 (canon v5.5 В35: «Кожний день по
+ * purchase is — a dollar since 1.16.0 («Кожний день по
  * долару»; it was $10 from the v5.0 draft) — and how many rules a wallet holds.
  */
 export const RULE_MIN_USD = 1
 export const RULE_MAX_USD = 100_000
 export const RULE_LIST_LIMIT = 20
 /**
- * The sum a new rule's sheet opens on — $10 (the Owner's word, 2026-09-25),
+ * The sum a new rule's sheet opens on — $10 (chosen 2026-09-25),
  * beside «Щотижня». A default, not advice: the sum and how often are the
  * person's own, on their own budget, from a dollar. The web's own.
  */
@@ -225,7 +225,7 @@ export function dipRequest(
 
 /**
  * The least and the most a month's ceiling is (`capabilities.rules.budget`; a
- * dollar since 1.16.0, canon v5.5 В35), and the ceilings the sheets offer — the
+ * dollar since 1.16.0, and the ceilings the sheets offer — the
  * web's own: the first is «щодня по $1» for the longest month, so a dollar a
  * day is never held on the 31st.
  */
@@ -233,7 +233,7 @@ export const BUDGET_MIN_USD = 1
 export const BUDGET_MAX_USD = 1_000_000
 export const BUDGET_PRESETS_USD = [31, 50, 100, 200] as const
 
-/** What the month has taken — settled and still unknown alike, as the server counts it — and the share of the ceiling (0–1); null without one. */
+/** What the month has taken — settled and still unknown alike, as the server counts it — and the share of the ceiling; null without one. */
 export function monthUse(budget: RuleBudget): Readonly<{ countedUsd: number; share: number | null }> {
   const countedUsd = Math.round((budget.spentUsd + budget.unknownUsd) * 100) / 100
   const share =
@@ -242,7 +242,7 @@ export function monthUse(budget: RuleBudget): Readonly<{ countedUsd: number; sha
 }
 
 /**
- * The month's budget as its own line (canon v5.3 В29; M20) — in the block on
+ * The month's budget as its own line — in the block on
  * Home and in Portfolio, and in a new rule's sheet: without a ceiling,
  * «Бюджет не задано · Задати»; with one, «Бюджет місяця $10 з $50 · Змінити»
  * over its bar, and once it is spent the rules stand until the 1st. Null
@@ -321,8 +321,8 @@ export function openOccurrence(rule: AutoinvestRule, nowMs: number): RuleOccurre
 }
 
 /**
- * A purchase the rule's price condition holds back right now (1.18.0, canon
- * v5.5 В37): the rule on, the occurrence `deferred` and its window not passed
+ * A purchase the rule's price condition holds back right now (1.18.0):
+ * the rule on, the occurrence `deferred` and its window not passed
  * — said with why, and nothing offered; the rule judges it again. The web's
  * own (`deferredNow`).
  */
@@ -421,8 +421,8 @@ export function ruleFace(rule: AutoinvestRule, budget: RuleBudget | null, nowMs:
 }
 
 /**
- * The reminder a company's page and Trade offer to buy under right now
- * (canon v5.3 В29; M20): open, the rule on, its window not passed and the
+ * The reminder a company's page and Trade offer to buy under right now:
+ * open, the rule on, its window not passed and the
  * month's budget covering it — the card's own «Час твоєї покупки». While it
  * stands, the page's first action is «Купити $20 за правилом» and an
  * ordinary purchase says the reminder stays open: the rule counts only a
@@ -440,7 +440,7 @@ export function reminderOffer(
 }
 
 /**
- * «Пропущено» (canon §4.1, §11): the rule's last reminder passed without a
+ * «Пропущено»: the rule's last reminder passed without a
  * signature — said under the card's line, with no action, while nothing
  * newer stands in its place (no reminder open, no purchase deferred, the
  * budget not holding it).
@@ -547,14 +547,25 @@ export function dueOfIdentity(identity: string, ruleId: string): string | null {
   return isInstant(due) ? due : null
 }
 
-/** The company symbol a reminder's identity carries after `@` — so a note still names its company once its rule is gone. */
+const MINT_SHAPE = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/
+
+/** Whether what a reminder's identity carries is a token's mint (1.31.0) rather than a company's symbol. */
+export function isMintRef(ref: string | null | undefined): ref is string {
+  return typeof ref === 'string' && MINT_SHAPE.test(ref)
+}
+
+/**
+ * The company symbol a reminder's identity carries after `@` — or (1.31.0) a
+ * token's mint, since a token's symbol names nothing for certain — so a note
+ * still names its asset once its rule is gone.
+ */
 export function symbolOfIdentity(identity: string): string | null {
   if (!identity.startsWith('autoinvest:')) return null
   const at = identity.lastIndexOf('@')
   if (at < 0) return null
   try {
     const symbol = decodeURIComponent(identity.slice(at + 1))
-    return /^[A-Za-z0-9._-]{1,32}$/.test(symbol) ? symbol : null
+    return /^[A-Za-z0-9._-]{1,32}$/.test(symbol) || MINT_SHAPE.test(symbol) ? symbol : null
   } catch {
     return null
   }
@@ -572,7 +583,46 @@ export function reminderOfNote(
   return { ruleId, dueAt: dueOfIdentity(identity, ruleId), symbol: symbolOfIdentity(identity) }
 }
 
-/** Where one tap on a reminder lands on the phone: the company, with the rule and the occurrence. */
+/**
+ * Where one tap on a reminder lands on the phone (1.31.0): a company's on its
+ * page, the purchase bound to the rule; a token's — a coin, a meme, a new
+ * token — in Trade, the ticket as the rule's purchase (the web's
+ * `/app/spot?mint=&rule=&due=`). A token is known by its rule's
+ * `asset.kind`, or, once the rule is gone, by the mint its note carried.
+ */
+export type RuleBuyRoute = Readonly<{ pathname: '/trade' | '/asset/[mint]'; params: Readonly<Record<string, string>> }>
+
+export function ruleBuyRoute(
+  input: Readonly<{ mint: string; symbol?: string | null; token: boolean; ruleId: string; dueAt: string | null }>,
+): RuleBuyRoute {
+  if (!input.token) return { pathname: '/asset/[mint]', params: rulePurchaseParams(input) }
+  return {
+    pathname: '/trade',
+    params: {
+      mint: input.mint,
+      ...(input.symbol && !MINT_SHAPE.test(input.symbol) ? { symbol: input.symbol } : {}),
+      side: 'buy',
+      rule: input.ruleId,
+      ...(input.dueAt ? { due: input.dueAt } : {}),
+    },
+  }
+}
+
+/** The same for a rule the wallet holds: its asset's kind decides. */
+export function ruleBuyRouteOf(
+  rule: Pick<AutoinvestRule, 'id' | 'asset'>,
+  dueAt: string | null,
+): RuleBuyRoute {
+  return ruleBuyRoute({
+    mint: rule.asset.mint,
+    symbol: rule.asset.symbol,
+    token: rule.asset.kind === 'crypto' || rule.asset.kind === 'meme',
+    ruleId: rule.id,
+    dueAt,
+  })
+}
+
+/** Where one tap on a company's reminder lands on the phone: the company, with the rule and the occurrence. */
 export function rulePurchaseParams(
   input: Readonly<{ mint: string; symbol?: string | null; ruleId: string; dueAt: string | null }>,
 ): Readonly<{ mint: string; category: string; rule: string } & Record<string, string>> {
@@ -588,11 +638,12 @@ export function rulePurchaseParams(
 /* ---- the server's word ---- */
 
 /**
- * A refusal of the order route under a reminder (1.12.0–1.18.0): closed, not
+ * A refusal of the order route under a reminder (1.12.0–1.31.0): closed, not
  * this wallet's rule, not the rule's purchase, over the month's budget, the
- * price condition not met on the server's own figures.
+ * price condition not met on the server's own figures, a token's pool under
+ * the floor.
  */
-export type RuleRefusal = 'closed' | 'gone' | 'mismatch' | 'budget' | 'condition'
+export type RuleRefusal = 'closed' | 'gone' | 'mismatch' | 'budget' | 'condition' | 'floor'
 
 export function ruleRefusalOf(code: string | null | undefined): RuleRefusal | null {
   switch (code) {
@@ -606,6 +657,8 @@ export function ruleRefusalOf(code: string | null | undefined): RuleRefusal | nu
       return 'budget'
     case 'RULE_PRICE_CONDITION':
       return 'condition'
+    case 'RULE_LIQUIDITY_LOW':
+      return 'floor'
     default:
       return null
   }

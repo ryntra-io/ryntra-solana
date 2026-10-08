@@ -15,19 +15,19 @@ import { formatAt, formatPrice, isToday } from '@/utils/format'
 export type SimpleWarning = Readonly<{ key: string; text: string; tone: 'warning' | 'danger' }>
 
 /**
- * A company's page at rest, on the beginner's path (canon v5.1 §2): its logo and its
+ * A company's page at rest, on the beginner's path: its logo and its
  * name — never the ticker as a title — and under the name who the company is,
- * as the web's head says it (M23): the ticker on its exchange («NVDA ·
+ * as the web's head says it: the ticker on its exchange («NVDA ·
  * Nasdaq»), «Приватна компанія», or a public company's private token
  * («SPACEX · токен PreStocks»); one price in dollars, the day's change and the
  * local time of the price. A private company says what its token is not under
  * its name, before any figure — its issuer's own line («Це не акція OpenAI ·
  * комісія емітента 3% на кожен переказ · емітент може заморозити чи забрати
- * токен», canon §7) — and under its price the one number it carries: the price against PreStocks'
- * own valuation (canon v5.2 В27). «Шлях компанії» (M24, as the web's
- * `RYN-COMPANY-PATH-001` draws it) stands under the name, where the company has
+ * токен» — and under its price the one number it carries: the price against PreStocks'
+ * own valuation. «Шлях компанії» (M24, as the web's
+ * draws it) stands under the name, where the company has
  * a path to say. An issuer's event about the token — a window to swap it before
- * a cut-off (M19) — stands between the name and the price: before any figure;
+ * a cut-off — stands between the name and the price: before any figure;
  * where the path stands, the event is the path's own line. Warnings stay at
  * rest: the beginner's path never hides a risk, only the technical words around
  * it.
@@ -63,11 +63,11 @@ export function SimpleHead({
   privateLine: string | null
   /** A private company's price against its issuer's valuation; null when there is none to say. */
   markLine?: string | null
-  /** The valuation is still being read: its line is a shape holding its place (M27). */
+  /** The valuation is still being read: its line is a shape holding its place. */
   markPending?: boolean
   /** «Шлях компанії» under the name, where the company has a path; null for none. */
   path?: ReactNode
-  /** The issuer's read is still on its way: the line under the name is a shape until it lands, so nothing moves (M27). */
+  /** The issuer's read is still on its way: the line under the name is a shape until it lands, so nothing moves. */
   issuerPending?: boolean
   /** The issuer's event and, for a holder, its actions — before any figure; null for none. */
   event?: ReactNode
@@ -75,7 +75,7 @@ export function SimpleHead({
   locale: Locale
   warnings: readonly SimpleWarning[]
 }) {
-  // A price kept from another day names its day (M9).
+  // A price kept from another day names its day.
   const now = useNow(60_000)
   return (
     <View className="gap-4">
@@ -143,10 +143,10 @@ export function SimpleHead({
 
 /**
  * What a listed company's token is, as the label from its issuer's documents
- * (canon §7) — «Трекер із забезпеченням» — its line waiting in «Що ти купуєш»
+ * — «Трекер із забезпеченням» — its line waiting in «Що ти купуєш»
  * below, as the web's purchase card has it on a phone, so «Купити» stands on
- * the first screen (M23) — and whether the exchange the share lists on is open
- * (canon §8): closed, the token still trades and its price may drift from the
+ * the first screen — and whether the exchange the share lists on is open:
+ * closed, the token still trades and its price may drift from the
  * share's.
  */
 export function TruthBlock({

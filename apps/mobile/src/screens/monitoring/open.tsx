@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useEffect, useRef } from 'react'
-import { Linking, Pressable, View } from 'react-native'
+import { Pressable, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { Card } from '@/components/card'
@@ -10,13 +10,14 @@ import { Skeleton } from '@/components/skeleton'
 import { StateView } from '@/components/state-view'
 import { Txt } from '@/components/txt'
 import { AUTOINVEST_COPY } from '@/features/autoinvest/copy'
-import { isInstant, isRuleId, rulePurchaseParams } from '@/features/autoinvest/rule-model'
+import { isInstant, isMintRef, isRuleId, ruleBuyRoute } from '@/features/autoinvest/rule-model'
+import { isListedToken } from '@/features/autoinvest/floor'
 import { useRule } from '@/features/autoinvest/use-rules'
 import { useCompanyShelf } from '@/features/invest/use-shelf'
 import { recordJourney } from '@/features/journeys/journey-store'
 import { MONITORING_COPY } from '@/features/monitoring/copy'
 import { webHrefOf } from '@/features/monitoring/deep-link'
-import { listsPath } from '@/features/shell/places'
+import { marketsPath } from '@/features/markets/screener'
 import { parseNoteRef, type NoteTarget } from '@/features/monitoring/monitoring-model'
 import { useMarkRead, useResolvedNote } from '@/features/monitoring/use-monitoring'
 import { PLANS_COPY } from '@/features/plans/copy'
@@ -25,6 +26,7 @@ import { SessionGate } from '@/features/wallet/wallet-gate'
 import { useNow } from '@/hooks/use-now'
 import { useCopy, useLocale, useSharedCopy } from '@/lib/i18n'
 import { PlanRow } from '@/screens/plans/plan-row'
+import { openLink } from '@/lib/open-link'
 
 const first = (value: string | string[] | undefined): string | undefined => (Array.isArray(value) ? value[0] : value)
 const SYMBOL = /^[A-Za-z0-9._-]{1,32}$/
@@ -90,8 +92,10 @@ export function OpenNoteScreen() {
         : null
   const ruleRead = useRule(session, ruleTarget?.ruleId ?? null)
   // A rule that is gone still opens its company when the reminder named it: the page says the rule is gone.
-  const goneMint =
-    ruleTarget?.symbol && shelf.shelf
+  // A token's note carries its mint after `@` (1.31.0): the token itself, whatever the shelf knows.
+  const goneMint = isMintRef(ruleTarget?.symbol)
+    ? ruleTarget.symbol
+    : ruleTarget?.symbol && shelf.shelf
       ? ([...shelf.shelf.companies, ...shelf.shelf.privateCompanies].find((card) => card.ticker === ruleTarget.symbol)
           ?.mint ?? null)
       : null
@@ -142,7 +146,7 @@ export function OpenNoteScreen() {
       done.current = true
       if (resolved.note?.unread) mark(resolved.note.id)
       const href = webHrefOf(resolved.target.href)
-      if (href) void Linking.openURL(href)
+      if (href) openLink(href)
     } else if (resolved.target.kind === 'budget') {
       // The month's autoinvest budget, spent: Home with the budget's sheet, as the web's own link opens it.
       done.current = true
@@ -172,10 +176,11 @@ export function OpenNoteScreen() {
     if (!mint) return
     done.current = true
     if (noteId && noteUnread) mark(noteId)
-    router.replace({
-      pathname: '/asset/[mint]',
-      params: rulePurchaseParams({ mint, symbol: rule?.asset.symbol ?? ruleSymbol, ruleId, dueAt: ruleDue }),
-    })
+    // A company's purchase on its page; a token's (1.31.0) in Trade — known by its rule, or by the mint its note carried.
+    const token = rule ? isListedToken(rule.asset) : isMintRef(ruleSymbol)
+    router.replace(
+      ruleBuyRoute({ mint, symbol: rule?.asset.symbol ?? ruleSymbol, token, ruleId, dueAt: ruleDue }) as never,
+    )
   }, [ruleId, ruleDue, ruleSymbol, ruleRead.read, ruleRead.rule, goneMint, noteId, noteUnread, mark, router])
 
   // An issuer's event by its link: the token's page with the swap's sheet — or, a symbol the shelf does not know, the
@@ -190,7 +195,7 @@ export function OpenNoteScreen() {
       })
     } else if (stockUnknown) {
       done.current = true
-      router.replace(listsPath('stock') as never)
+      router.replace(marketsPath('stocks') as never)
     }
   }, [stockSymbol, stockAction, stockMint, stockUnknown, router])
 
@@ -198,7 +203,7 @@ export function OpenNoteScreen() {
   useEffect(() => {
     if (done.current || !web || ref) return
     done.current = true
-    void Linking.openURL(web)
+    openLink(web)
   }, [web, ref])
 
   const resolving = (
@@ -219,7 +224,7 @@ export function OpenNoteScreen() {
         icon="globe-outline"
         title={copy.webTitle}
         detail={copy.webDetail}
-        action={{ title: copy.openOnWeb, onPress: () => void Linking.openURL(web) }}
+        action={{ title: copy.openOnWeb, onPress: () => openLink(web) }}
       />
     )
   } else if (!ref && !ruleTarget) {
@@ -339,7 +344,7 @@ export function OpenNoteScreen() {
         detail={copy.webDetail}
         action={
           href
-            ? { title: copy.openOnWeb, onPress: () => void Linking.openURL(href) }
+            ? { title: copy.openOnWeb, onPress: () => openLink(href) }
             : { title: copy.backToInbox, onPress: toInbox }
         }
       />

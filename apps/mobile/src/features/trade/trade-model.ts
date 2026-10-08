@@ -119,7 +119,7 @@ const UNIT_MARKS: Readonly<Record<Locale, Readonly<{ group: string; fraction: st
 }
 
 /** Raw units as the person reads them: the whole part, then the fraction with trailing zeros gone, at most `maxFraction` places. */
-export function formatUnits(raw: string, decimals: number, maxFraction = 6, locale: Locale = 'en'): string {
+export function formatUnits(raw: string, decimals: number, maxFraction: number, locale: Locale): string {
   if (!/^\d+$/.test(raw)) return '—'
   const marks = UNIT_MARKS[locale]
   const padded = raw.padStart(decimals + 1, '0')
@@ -131,7 +131,7 @@ export function formatUnits(raw: string, decimals: number, maxFraction = 6, loca
 }
 
 /** Raw units as an amount field holds them — no grouping, the language's own fraction mark («1234.5» · «1234,5»). */
-export function unitsForField(raw: string, decimals: number, locale: Locale = 'en'): string {
+export function unitsForField(raw: string, decimals: number, locale: Locale): string {
   return formatUnits(raw, decimals, decimals, locale).split(UNIT_MARKS[locale].group).join('')
 }
 
@@ -144,8 +144,8 @@ function lamportsTotal(lamports: readonly string[]): string {
 }
 
 /** Lamports as SOL with six places — the network fee's own unit. */
-export function lamportsToSol(...lamports: readonly string[]): string {
-  return formatUnits(lamportsTotal(lamports), 9, 6)
+export function lamportsToSol(lamports: readonly string[], locale: Locale): string {
+  return formatUnits(lamportsTotal(lamports), 9, 6, locale)
 }
 
 /** Seconds a Review still has; zero once its window closed. */
@@ -361,7 +361,7 @@ function fixed(value: number, places: number, locale: Locale): string {
 }
 
 /** Ryntra's fee as one line: the rate, with the amount or the dollar figure the provider stated beside it — never a figure worked out here. */
-export function serviceFeeText(fee: SwapOrderCore['ryntraFee'], locale: Locale = 'en'): string {
+export function serviceFeeText(fee: SwapOrderCore['ryntraFee'], locale: Locale): string {
   if (!fee || fee.basisPoints === 0) return TRADE_COPY[locale].none
   const rate = `${fixed(fee.basisPoints / 100, 2, locale)}%`
   if (fee.amountRaw && fee.decimals !== null) {
@@ -394,7 +394,7 @@ export function reviewView(
     exact: boolean
     findings?: readonly SwapPolicyVerdict['findings'][number][]
   }>,
-  locale: Locale = 'en',
+  locale: Locale,
 ): ReviewView | null {
   const payDecimals = decimalsOf(input.decimals, input.pay)
   const receiveDecimals = decimalsOf(input.decimals, input.receive)

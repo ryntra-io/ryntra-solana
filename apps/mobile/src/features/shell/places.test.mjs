@@ -7,18 +7,17 @@ import { fileURLToPath } from 'node:url'
 import { MONEY_COPY } from '../money/copy.ts'
 import { webHrefOf } from '../monitoring/deep-link.ts'
 import {
+  BOTS_CATALOG_PATH,
+  BOTS_PATH,
   CHANGES_PATH,
   DOOR_DESTINATIONS,
-  FORMER_PRO_SCREENS,
-  isMarketsList,
-  listsPath,
-  MARKETS_TOOL_PATHS,
-  MARKETS_TOOLS,
   MONEY_PAGES,
-  MORE_PAGES,
+  MONEY_PATH,
+  MORE_ROWS,
   placeDoors,
   PLACES_COPY,
   PORTFOLIO_DOORS,
+  SETTINGS_PATH,
 } from './places.ts'
 
 const SRC = fileURLToPath(new URL('../../', import.meta.url))
@@ -40,64 +39,66 @@ function appFiles(dir = SRC) {
 
 const pathname = (path) => path.split('?')[0]
 
-test('«Ще» holds «Гроші» first, then the web’s pages in the Owner’s order, in both languages', () => {
-  assert.deepEqual(MONEY_PAGES, ['topUp', 'send', 'receive', 'link'])
+test('«Ще» opens Торгувати · Боти · Гроші · Винагороди · Ryntra · Налаштування, with the web’s captions', () => {
+  assert.deepEqual(MORE_ROWS, ['trade', 'bots', 'money', 'rewards', 'ryntra', 'settings'])
   assert.deepEqual(
-    MONEY_PAGES.map((page) => MONEY_COPY.uk.pages[page]),
+    MORE_ROWS.map((row) => PLACES_COPY.uk.rows[row].label),
+    ['Торгувати', 'Боти', 'Гроші', 'Винагороди', 'Ryntra', 'Налаштування'],
+  )
+  assert.deepEqual(
+    MORE_ROWS.map((row) => PLACES_COPY.en.rows[row].label),
+    ['Trade', 'Bots', 'Money', 'Rewards', 'Ryntra', 'Settings'],
+  )
+  // The web's captions (`MENU_SECTIONS`, `ASSISTANT`), word for word.
+  assert.deepEqual(
+    MORE_ROWS.map((row) => PLACES_COPY.uk.rows[row].caption),
+    ['Спот і обмін', 'Регулярна купівля, плани', 'Поповнення й перекази', 'Бали, таблиці, сезон', 'ШІ-помічник', null],
+  )
+  assert.deepEqual(DOOR_DESTINATIONS.trade, { kind: 'screen', path: '/trade' })
+  assert.deepEqual(DOOR_DESTINATIONS.bots, { kind: 'screen', path: BOTS_PATH })
+  assert.deepEqual(DOOR_DESTINATIONS.money, { kind: 'screen', path: MONEY_PATH })
+  assert.deepEqual(DOOR_DESTINATIONS.ryntra, { kind: 'screen', path: '/ryn' })
+  assert.deepEqual(DOOR_DESTINATIONS.settings, { kind: 'screen', path: SETTINGS_PATH })
+  assert.equal(BOTS_CATALOG_PATH, '/bots?tab=catalog')
+})
+
+test('nothing that is not on production is a row: no Pools, no Perps, no prediction demo, no Launch row (the bar holds it)', () => {
+  const words = JSON.stringify([PLACES_COPY.en.rows, PLACES_COPY.uk.rows])
+  assert.doesNotMatch(words, /Pools|Пули|Perps|Перпи|Безстрокові|predictions|прогноз|Launch|Лаунч/i)
+})
+
+test('«Гроші» holds the web’s tabs Поповнити · Надіслати · Отримати · Між мережами, the payment link beside Отримати', () => {
+  assert.deepEqual(MONEY_PAGES, ['topUp', 'send', 'receive', 'link', 'bridge'])
+  assert.deepEqual(
+    MONEY_PAGES.filter((page) => page !== 'bridge').map((page) => MONEY_COPY.uk.pages[page]),
     ['Поповнити', 'Надіслати', 'Отримати', 'Посилання на оплату'],
   )
-  assert.deepEqual(
-    MONEY_PAGES.map((page) => MONEY_COPY.en.pages[page]),
-    ['Top up', 'Send', 'Receive', 'Payment link'],
-  )
-  // Send, Receive and a payment link are the phone's own screens now (M31); the top-up is the phone's own sheet.
+  assert.equal(PLACES_COPY.uk.bridge, 'Між мережами')
+  assert.equal(PLACES_COPY.en.bridge, 'Cross-chain')
+  // Send, Receive and a payment link are the phone's own screens; the top-up is the phone's own sheet.
   assert.deepEqual(DOOR_DESTINATIONS.topUp, { kind: 'sheet', sheet: 'top-up' })
   assert.deepEqual(DOOR_DESTINATIONS.send, { kind: 'screen', path: '/money/send' })
   assert.deepEqual(DOOR_DESTINATIONS.receive, { kind: 'screen', path: '/money/receive' })
   assert.deepEqual(DOOR_DESTINATIONS.link, { kind: 'screen', path: '/money/receive?tab=link' })
-  assert.deepEqual(MORE_PAGES, ['swap', 'bridge', 'rewards', 'predictions'])
-  assert.deepEqual(
-    MORE_PAGES.map((page) => PLACES_COPY.uk.pages[page]),
-    ['Обмін', 'Міст', 'Винагороди', 'Демо-прогнози'],
-  )
-  assert.deepEqual(
-    MORE_PAGES.map((page) => PLACES_COPY.en.pages[page]),
-    ['Swap', 'Bridge', 'Rewards', 'Demo predictions'],
-  )
+  assert.deepEqual(DOOR_DESTINATIONS.bridge, { kind: 'web', path: '/app/bridge' })
 })
 
-test('Markets’ «Для досвідчених» is Спот · Акції · Тренди: Trade and M2’s lists', () => {
-  assert.equal(PLACES_COPY.uk.experienced, 'Для досвідчених')
-  assert.deepEqual(MARKETS_TOOLS, ['spot', 'stocks', 'trends'])
-  assert.deepEqual(
-    MARKETS_TOOLS.map((tool) => PLACES_COPY.uk.tools[tool]),
-    ['Спот', 'Акції', 'Тренди'],
-  )
-  assert.deepEqual(MARKETS_TOOL_PATHS, { spot: '/trade', stocks: '/lists?tab=stock', trends: '/lists?tab=crypto' })
-  assert.equal(listsPath('watchlist'), '/lists?tab=watchlist')
-  for (const list of ['watchlist', 'stock', 'crypto', 'meme']) assert.ok(isMarketsList(list), list)
-  for (const other of ['', 'stocks', 'memes', 'Watchlist', null, 1]) assert.equal(isMarketsList(other), false)
-})
-
-test('Portfolio’s doors beside the positions: Стратегії · Результати · Історія', () => {
+test('Portfolio’s doors beside the positions: Боти · Історія — plans and results left for «Боти»', () => {
   assert.deepEqual(
     PORTFOLIO_DOORS.map((door) => PLACES_COPY.uk.doors[door]),
-    ['Стратегії', 'Результати', 'Історія'],
+    ['Боти', 'Історія'],
   )
-  assert.deepEqual(DOOR_DESTINATIONS.strategies, { kind: 'screen', path: '/plans' })
   assert.deepEqual(DOOR_DESTINATIONS.history, { kind: 'screen', path: '/history' })
-})
-
-test('every screen «Профі» drew as a place is one door into one of the five — two taps with the tab’s own', () => {
-  const doors = placeDoors()
-  for (const screen of FORMER_PRO_SCREENS) {
-    const reach = doors.filter(
-      (door) => door.destination.kind === 'screen' && pathname(door.destination.path) === screen,
-    )
-    assert.ok(reach.length > 0, `${screen} has no door`)
-  }
+  assert.equal(PLACES_COPY.uk.active(1), '1 активний')
+  assert.equal(PLACES_COPY.uk.active(2), '2 активні')
+  assert.equal(PLACES_COPY.uk.active(5), '5 активних')
+  assert.equal(PLACES_COPY.uk.active(12), '12 активних')
+  assert.equal(PLACES_COPY.uk.active(21), '21 активний')
+  assert.equal(PLACES_COPY.en.active(2), '2 active')
   assert.deepEqual(
-    doors.filter((door) => door.place === 'home').map((door) => door.destination),
+    placeDoors()
+      .filter((door) => door.place === 'home')
+      .map((door) => door.destination),
     [{ kind: 'screen', path: CHANGES_PATH }],
   )
 })
@@ -116,7 +117,7 @@ test('a door opens a route the router knows, a sheet, or a ryntra.io page — ne
       assert.equal(destination.sheet, 'top-up')
     }
   }
-  // The Academy has no page a customer can open yet: not a row until it has one (canon §0.0 rule 10).
+  // The Academy has no page a customer can open yet: not a row until it has one.
   assert.equal(
     placeDoors().some((door) => /academ/i.test(door.door)),
     false,
@@ -126,12 +127,11 @@ test('a door opens a route the router knows, a sheet, or a ryntra.io page — ne
 test('both languages carry every word', () => {
   for (const locale of ['en', 'uk']) {
     const copy = PLACES_COPY[locale]
-    for (const key of ['whatChanged', 'experienced', 'onWeb', 'openInSpot', 'createPlan']) {
+    for (const key of ['whatChanged', 'bridge', 'onWeb', 'openInSpot', 'createPlan', 'watchAdd', 'watchRemove']) {
       assert.ok(copy[key].length > 0, `${locale}.${key}`)
     }
-    for (const tool of MARKETS_TOOLS) assert.ok(copy.tools[tool] && copy.toolLines[tool], `${locale}.${tool}`)
+    for (const row of MORE_ROWS) assert.ok(copy.rows[row].label, `${locale}.${row}`)
     for (const door of PORTFOLIO_DOORS) assert.ok(copy.doors[door], `${locale}.${door}`)
-    for (const page of MORE_PAGES) assert.ok(copy.pages[page], `${locale}.${page}`)
     assert.match(copy.watchFull(20), /20/)
     assert.doesNotMatch(JSON.stringify(copy), /\bRyn\b/)
   }

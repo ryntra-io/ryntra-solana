@@ -1,4 +1,4 @@
-import { Linking, Share, ToastAndroid, View } from 'react-native'
+import { Share, ToastAndroid, View } from 'react-native'
 
 import { Button } from '@/components/button'
 import { Card } from '@/components/card'
@@ -15,6 +15,7 @@ import { canCopy, copyText } from '@/lib/clipboard'
 import { feel } from '@/lib/haptics'
 import { useCopy, useLocale } from '@/lib/i18n'
 import { formatAt } from '@/utils/format'
+import { openLink } from '@/lib/open-link'
 
 /**
  * A payment link once it exists: its state first — «Очікує оплати» until the
@@ -101,7 +102,7 @@ export function LinkCard({ link: initial, onNew }: { link: PayLink; onNew?: () =
             title={words.explorer}
             variant="secondary"
             size="lg"
-            onPress={() => void Linking.openURL(explorerUrl(link.paid!.signature))}
+            onPress={() => openLink(explorerUrl(link.paid!.signature))}
           />
         ) : (
           <>

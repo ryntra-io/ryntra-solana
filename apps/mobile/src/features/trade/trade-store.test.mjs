@@ -4,10 +4,10 @@ import { createRequire } from 'node:module'
 import { test } from 'node:test'
 
 /*
- * The one attempt per wallet is the record that stops a duplicate (canon Part
- * A §10.3): a signature whose send could not be confirmed must reach the
+ * The one attempt per wallet is the record that stops a duplicate:
+ * a signature whose send could not be confirmed must reach the
  * screen at once, so its one action is the check — never a new purchase the
- * store would refuse. Seen on the Owner's Seeker on 2026-09-28 (M26's
+ * store would refuse. Seen on a Seeker on 2026-09-28 (M26's
  * acceptance): the send failed after the signature, the attempt was stored,
  * and the purchase sheet went on offering «Купити» because the React Compiler
  * had kept the first render's read of the store by the wallet alone. The hook

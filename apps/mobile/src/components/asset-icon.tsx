@@ -1,5 +1,5 @@
 import { Image } from 'expo-image'
-import { View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
 import { Txt } from '@/components/txt'
 
@@ -28,6 +28,12 @@ export function AssetIcon({ symbol, icon, size = 40 }: AssetIconProps) {
           accessibilityIgnoresInvertColors
         />
       ) : null}
+      {/* A hairline ring keeps a dark logo apart from a dark page, and a light one from a light page. */}
+      <View
+        pointerEvents="none"
+        className="rounded-pill border-line"
+        style={{ position: 'absolute', width: size, height: size, borderWidth: StyleSheet.hairlineWidth * 2 }}
+      />
     </View>
   )
 }

@@ -26,7 +26,7 @@ const clock = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-dig
 
 /**
  * Ukrainian groups with a space and decimals with a comma — «$1 409,69»,
- * «+0,27%» (canon §2, rule 2). The dollar sign stays in front, as the web
+ * «+0,27%». The dollar sign stays in front, as the web
  * line writes it; the English shapes below are unchanged.
  */
 const ukMoney = new Intl.NumberFormat('uk-UA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -80,7 +80,7 @@ function isFinite_(value: unknown): value is number {
  * millionth four significant digits — a meme's per-token price is never
  * written as $0.00; a dash when unknown.
  */
-export function formatPrice(value: number | null | undefined, locale: Locale = 'en'): string {
+export function formatPrice(value: number | null | undefined, locale: Locale): string {
   if (!isFinite_(value)) return DASH
   if (locale === 'uk') return ukPrice(value)
   if (value === 0) return usd.format(0)
@@ -103,7 +103,7 @@ function ukPrice(value: number): string {
 }
 
 /** A USD amount of money — always two decimals ($1,234.56 · $1 234,56); a positive amount under a cent says so; a dash when unknown. */
-export function formatUsd(value: number | null | undefined, locale: Locale = 'en'): string {
+export function formatUsd(value: number | null | undefined, locale: Locale): string {
   if (!isFinite_(value)) return DASH
   const cent = locale === 'uk' ? '<$0,01' : '<$0.01'
   if (value > 0 && value < 0.005) return cent
@@ -113,7 +113,7 @@ export function formatUsd(value: number | null | undefined, locale: Locale = 'en
 }
 
 /** A signed USD change (+$12.30, −$0.45 · +$12,30); a dash when unknown. */
-export function formatUsdSigned(value: number | null | undefined, locale: Locale = 'en'): string {
+export function formatUsdSigned(value: number | null | undefined, locale: Locale): string {
   if (!isFinite_(value)) return DASH
   const rounded = Math.round(Math.abs(value) * 100) / 100
   const money = (amount: number) => (locale === 'uk' ? `$${ukMoney.format(amount)}` : usd.format(amount))
@@ -126,14 +126,14 @@ export function formatUsdSigned(value: number | null | undefined, locale: Locale
  * Spot keeps the K, M and B in both languages, the comma is Ukrainian's), a dash
  * when unknown.
  */
-export function formatUsdCompact(value: number | null | undefined, locale: Locale = 'en'): string {
+export function formatUsdCompact(value: number | null | undefined, locale: Locale): string {
   if (!isFinite_(value)) return DASH
   const text = compact.format(value)
   return `$${locale === 'uk' ? text.replace('.', ',') : text}`
 }
 
 /** A signed percentage (+0.27%, −1.20% · +0,27%); a dash when unknown. */
-export function formatPercent(value: number | null | undefined, locale: Locale = 'en'): string {
+export function formatPercent(value: number | null | undefined, locale: Locale): string {
   if (!isFinite_(value)) return DASH
   const rounded = Math.round(Math.abs(value) * 100) / 100
   const sign = rounded === 0 ? '' : value > 0 ? '+' : '−'
@@ -179,7 +179,7 @@ export function shortAddress(address: string | null | undefined, edge = 4): stri
 const NUMBER_TAG: Readonly<Record<Locale, string>> = { en: 'en-US', uk: 'uk-UA' }
 
 /** A token amount with up to `maxFractionDigits` decimals, trailing zeros trimmed; a dash when unknown. */
-export function formatAmount(value: number | null | undefined, maxFractionDigits = 6, locale: Locale = 'en'): string {
+export function formatAmount(value: number | null | undefined, maxFractionDigits: number, locale: Locale): string {
   if (!isFinite_(value)) return DASH
   return new Intl.NumberFormat(NUMBER_TAG[locale], { maximumFractionDigits: maxFractionDigits }).format(value)
 }
@@ -258,7 +258,7 @@ export function isToday(iso: string | null | undefined, now: number): boolean {
  * A time with its preposition, as a line says it: «о 14:32», «вчора о
  * 22:30», «3 жовт. о 08:30» — "at 14:32", "yesterday at 22:30", "3 Oct at
  * 08:30". A read kept from another day names its day, so it never reads as
- * today's (M9). A dash when absent or unparsable.
+ * today's. A dash when absent or unparsable.
  */
 export function formatAt(iso: string | null | undefined, now: number, locale: Locale = 'en'): string {
   if (!iso) return DASH
@@ -291,13 +291,27 @@ export function formatBarTime(
 }
 
 /** A whole count (holders, traders) with thousands separators (9,997 · 9 997); a dash when unknown. */
-export function formatCount(value: number | null | undefined, locale: Locale = 'en'): string {
+export function formatCount(value: number | null | undefined, locale: Locale): string {
   if (!isFinite_(value)) return DASH
   return new Intl.NumberFormat(NUMBER_TAG[locale], { maximumFractionDigits: 0 }).format(value)
 }
 
 /** A percentage with no sign for shares of a whole (top holders 30.7% · 30,7%); a dash when unknown. */
-export function formatShare(value: number | null | undefined, locale: Locale = 'en'): string {
+export function formatShare(value: number | null | undefined, locale: Locale): string {
   if (!isFinite_(value)) return DASH
   return `${new Intl.NumberFormat(NUMBER_TAG[locale], { maximumFractionDigits: 1 }).format(value)}%`
+}
+
+/**
+ * A sentence or figure the server printed in the English shape, said in the
+ * language's: in Ukrainian «$1,234.50» reads «$1 234,50» and «0.25%» «0,25%»;
+ * English is left as it came. Only figures change, never the words.
+ */
+export function localizeFigures(text: string, locale: Locale): string {
+  if (locale !== 'uk') return text
+  return text.replace(/\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+\.\d+/g, (figure) => {
+    const [whole, fraction] = figure.split('.')
+    const grouped = whole.replace(/,/g, ' ')
+    return fraction === undefined ? grouped : `${grouped},${fraction}`
+  })
 }

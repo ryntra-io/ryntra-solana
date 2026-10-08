@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 
 /*
- * «Автоінвест» made clear on the phone (canon v5.3 В29; M20, part 2) — the
+ * «Автоінвест» made clear on the phone (M20, part 2) — the
  * web's own (`app/app/invest/autoinvest-surfaces.test.mjs`): the block on
  * Home and in Portfolio for every connected wallet, the rule's purchase first
  * while its reminder is open and the ordinary purchase second, saying the
@@ -20,6 +20,7 @@ const code = (path) =>
 
 const HOME = code('screens/home/investor.tsx')
 const PORTFOLIO = code('screens/portfolio/index.tsx')
+const BOTS = code('screens/bots/index.tsx')
 const BLOCK = code('screens/autoinvest/rules-block.tsx')
 const ROW = code('screens/autoinvest/budget-row.tsx')
 const RULE_SHEET = code('screens/autoinvest/autoinvest-sheet.tsx')
@@ -41,15 +42,14 @@ test('«Автоінвест» is on Home for every connected wallet — not hel
   assert.doesNotMatch(BLOCK, /<Button[^>]*\n?[^>]*variant="primary"/, 'nothing in the block is orange')
 })
 
-test('Portfolio lists the rules — the same block, after the positions, and in an empty wallet too', () => {
-  assert.match(PORTFOLIO, /import \{ RulesBlock \} from '@\/screens\/autoinvest\/rules-block'/)
-  assert.match(PORTFOLIO, /const rules = <RulesBlock session=\{account\.session\} place="portfolio" \/>/)
-  const positions = PORTFOLIO.indexOf('view.groups.map(')
-  const after = PORTFOLIO.indexOf('<View className="pt-6">{rules}</View>')
-  assert.ok(positions > 0 && after > positions, 'after the positions and the dust')
-  const empty = PORTFOLIO.slice(PORTFOLIO.indexOf('view && view.empty'), PORTFOLIO.indexOf('} else if (view) {'))
-  assert.match(empty, /\{rules\}/, 'a wallet with nothing in it may still hold rules')
-  assert.ok(PORTFOLIO.indexOf('<RulesBlock') > 0 && PORTFOLIO.includes('<WalletGate'), 'a guest reads the wallet gate')
+test('the rules live in «Боти → Мої боти»: the same block, before the plans; Portfolio keeps only the door', () => {
+  assert.match(BOTS, /import \{ RulesBlock \} from '@\/screens\/autoinvest\/rules-block'/)
+  assert.match(BOTS, /<RulesBlock session=\{account\.session\} place="bots" \/>/)
+  assert.ok(BOTS.indexOf('<RulesBlock') < BOTS.indexOf('<MyPlans />'), 'the rules first, then the plans')
+  assert.ok(BOTS.includes('<SessionGate'), 'the rules are read behind the wallet’s session')
+  // Portfolio no longer draws the block: «Боти · N активні» is its door, counted only from what was read.
+  assert.doesNotMatch(PORTFOLIO, /<RulesBlock/)
+  assert.match(PORTFOLIO, /activeCount\(rules\.data\?\.rules \?\? null, plans\.data\?\.plans \?\? null\)/)
 })
 
 test('the month’s budget is its own line: «Бюджет не задано · Задати» or «Бюджет місяця $10 з $50 · Змінити»', () => {
@@ -110,7 +110,7 @@ test('while a rule’s reminder is open, the company’s first action is the rul
     /variant="secondary"/,
     'the ordinary purchase is quiet — one orange action on the screen',
   )
-  // The rule's purchase is the orange one — unless the wallet holds a token whose issuer's swap is open (M19): then
+  // The rule's purchase is the orange one — unless the wallet holds a token whose issuer's swap is open: then
   // the swap above is the page's one orange action and every purchase steps back.
   assert.match(
     branch.slice(first, second),
@@ -118,7 +118,7 @@ test('while a rule’s reminder is open, the company’s first action is the rul
     'the rule’s purchase is the orange one',
   )
   // While the reminder speaks through its purchase, the rule's card steps back.
-  assert.match(ASSET, /\{company && offer \? null : companyRule \? \(/)
+  assert.match(ASSET, /\{\(company \|\| !isStock\) && offer \? null : companyRule \? \(/)
   // The ordinary purchase says so before any sum; the reminder's own sheet buys «$X за правилом».
   assert.match(ASSET, /openReminder=\{offerUsd !== null \? \{ amountUsd: offerUsd \} : null\}/)
   assert.match(
@@ -136,17 +136,18 @@ test('while a rule’s reminder is open, the company’s first action is the rul
 
 test('Trade says it too: a Buy there leaves the reminder open, with the way to the rule’s own purchase', () => {
   assert.match(TRADE, /import \{ RuleReminderNotice \} from '@\/screens\/autoinvest\/rule-reminder-notice'/)
+  // Not beside the rule's own purchase (1.31.0): there the ticket is it; on a token the notice turns the ticket into it.
   assert.match(
     TRADE,
-    /mode === 'buy' && account\.session \? \(\s*<RuleReminderNotice session=\{account\.session\} mint=\{legs\.receive\?\.mint \?\? null\} \/>/,
+    /mode === 'buy' && account\.session && !ruleAsk \? \(\s*<RuleReminderNotice\s+session=\{account\.session\}\s+mint=\{legs\.receive\?\.mint \?\? null\}\s+onBuy=\{\(binding\) => setRuleAsk\(binding\)\}/,
   )
   assert.ok(TRADE.indexOf('<RuleReminderNotice') < TRADE.indexOf('<BottomAction'), 'said before the action')
   assert.match(NOTICE, /useRules\(session\)/)
   assert.match(NOTICE, /reminderOffer\(rule, rules\.data\?\.budget \?\? null, now\)/)
   assert.match(
     NOTICE,
-    /pathname: '\/asset\/\[mint\]',\s*params: rulePurchaseParams\(/,
-    'the company’s page, bound to the rule',
+    /if \(onBuy && isListedToken\(rule\.asset\)\) onBuy\(\{ ruleId: rule\.id, dueAt: due\.dueAt \}\)\s*else router\.push\(ruleBuyRouteOf\(rule, due\.dueAt\) as never\)/,
+    'the company’s page, bound to the rule — a token’s, this ticket',
   )
   assert.match(
     NOTICE,
@@ -156,8 +157,8 @@ test('Trade says it too: a Buy there leaves the reminder open, with the way to t
 })
 
 /*
- * «З кожної оплати» on the phone (canon v5.5 В38; M26) — the web's
- * `RYN-PAY-TRIGGERS-001`, contract 1.19.0: a third kind in the rule's sheet,
+ * «З кожної оплати» on the phone — the web's,
+ * contract 1.19.0: a third kind in the rule's sheet,
  * a reminder bought on exactly the sum it gathered wherever it is offered, the
  * newest payments in the rule's sheet with «Мій рахунок» asked once more — and
  * nothing that names the other side of a transfer.
@@ -167,7 +168,10 @@ const API = code('lib/api.ts')
 
 test('a new rule’s sheet offers a third kind, «З оплат», and writes it on the least its reminders open at', () => {
   assert.match(RULE_SHEET, /const KINDS: readonly RuleKind\[\] = \['schedule', 'dip', 'payments'\]/)
-  assert.match(RULE_SHEET, /value === 'payments' \? copy\.fromPayments : copy\.regularly/)
+  assert.match(
+    RULE_SHEET,
+    /value === 'payments'\s*\? copy\.fromPayments\s*: variant === 'panel'\s*\? copy\.scheduleShort\s*: copy\.regularly/,
+  )
   // What to set aside, from the server's own bounds; the example on the tick's own arithmetic.
   assert.match(RULE_SHEET, /const payBounds = usePaymentBounds\(\)/)
   assert.match(RULE_SHEET, /copy\.modeRoundup[\s\S]*copy\.modeFixed[\s\S]*copy\.modePercent/)

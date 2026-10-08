@@ -185,6 +185,9 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Spot Buy": "Spot купівля",
   "Autoinvest": "Автоінвест",
   "Recurring buy": "Регулярна купівля",
+  /* A launch's trade in History: its place, and Ryntra's part of the curve's or the pool's own fee. */
+  "Launch": "Лаунч",
+  "Ryntra's part of the fee": "Частка Ryntra в комісії",
   "Spot Sell": "Spot продаж",
   "Filled": "Виконано",
   "In flight": "У дорозі",
@@ -2426,6 +2429,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
     "Власні внутрішні ліміти Ryntra тут не застосовуються. Вони фіксуються як доказ і нічого не вирішують щодо цього переказу.",
   "Send receipt": "Квитанція Send",
   "Swap receipt": "Квитанція Swap",
+  "Launch trade receipt": "Квитанція угоди лаунчу",
   "Verification": "Перевірка",
   "Verify this receipt": "Перевірити цю квитанцію",
   "Matched": "Збігається",

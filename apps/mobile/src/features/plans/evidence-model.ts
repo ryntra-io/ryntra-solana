@@ -12,6 +12,7 @@
 
 import type { EvidenceCondition, EvidenceMetricDefinition, EvidenceMetricId } from '../../lib/api.ts'
 import type { Locale } from '../../lib/i18n.ts'
+import { formatAmount, formatCount, formatUsdCompact } from '../../utils/format.ts'
 
 const CARRIED = /^([a-z0-9_]{1,64}):(24h|7d|now):(gt|gte|lt|lte):(-?\d{1,15}(?:\.\d{1,6})?)$/
 
@@ -72,26 +73,24 @@ export function metricLabel(metric: EvidenceMetricDefinition | null, id: string,
   return metric ? metric.words[locale].label : id.replace(/_/g, ' ')
 }
 
-const compact = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 })
-const whole = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 })
-
-/** A rule's figure in its unit: dollars compact, a share as a percent, a count whole, an authority as present or renounced. */
+/** A rule's figure in its unit and the reader's number shape: dollars compact, a share as a percent, a count whole, an authority as present or renounced. */
 export function thresholdText(
   metric: EvidenceMetricDefinition | null,
   threshold: number,
   flags: Readonly<{ present: string; renounced: string }>,
+  locale: Locale,
 ): string {
   switch (metric?.unit) {
     case 'usd':
-      return `${threshold < 0 ? '−' : ''}$${compact.format(Math.abs(threshold))}`
+      return `${threshold < 0 ? '−' : ''}${formatUsdCompact(Math.abs(threshold), locale)}`
     case 'percent':
-      return `${threshold}%`
+      return `${formatAmount(threshold, 6, locale)}%`
     case 'count':
     case 'wallets':
-      return whole.format(threshold)
+      return formatCount(threshold, locale)
     case 'flag':
       return threshold >= 1 ? flags.present : flags.renounced
     default:
-      return String(threshold)
+      return formatAmount(threshold, 6, locale)
   }
 }

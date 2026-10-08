@@ -1,4 +1,5 @@
 import { Chip, type ChipTone } from '@/components/chip'
+import { useLocale } from '@/lib/i18n'
 import { formatPercent } from '@/utils/format'
 
 export type DeviationChipProps = {
@@ -18,12 +19,13 @@ function toneFor(deviationPct: number | null): ChipTone {
 
 /** How far the on-chain price sits from its reference — the one number a stock buyer reads first. */
 export function DeviationChip({ deviationPct, reference }: DeviationChipProps) {
+  const locale = useLocale()
   return (
     <Chip
-      label={`${formatPercent(deviationPct)} vs ${reference}`}
+      label={`${formatPercent(deviationPct, locale)} vs ${reference}`}
       tone={toneFor(deviationPct)}
       mono
-      accessibilityLabel={`Deviation ${formatPercent(deviationPct)} against ${reference}`}
+      accessibilityLabel={`Deviation ${formatPercent(deviationPct, locale)} against ${reference}`}
     />
   )
 }

@@ -923,6 +923,23 @@
   flex: 1 1 auto;
 }
 
+/* The two actions side by side, half the card each, the link above them; on a card too narrow for both labels on one
+   line each takes the whole width rather than break its words. */
+.shareRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.5rem), 1fr));
+}
+
+.shareRow > .shareLink {
+  grid-column: 1 / -1;
+}
+
+.shareRow > :global(.rw-btn) {
+  min-width: 0;
+  padding-inline: var(--ry-s2);
+  white-space: nowrap;
+}
+
 .shareLink {
   flex: 1 1 220px;
   min-width: 0;
@@ -937,6 +954,12 @@
   font-size: var(--ry-fs-label);
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* The share card: the token's link, and under it a card of the person's own trade when there is one. */
+.shareCard {
+  display: grid;
+  gap: var(--ry-s3);
 }
 
 /* ── The token's page ────────────────────────────────────────────────── */
@@ -2130,6 +2153,57 @@
   font-size: var(--ry-fs-section);
   font-weight: 600;
   color: var(--ry-text);
+}
+
+/* What the trade cost or brought, at the size of a figure: the money is not a footnote. */
+.tradeDoneAmount {
+  margin: 0;
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-copy);
+  color: var(--ry-text);
+}
+
+/* The trade's transaction and its receipt, side by side at a readable size; on a narrow card one under the other. */
+.tradeLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s2) var(--ry-s4);
+}
+
+.tradeLinks .markLink {
+  font-size: var(--ry-fs-dense);
+}
+
+/* «Another trade»: the way back, quiet — after a trade the panel has no loud action. */
+.tradeAgain {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  justify-self: start;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ry-text);
+  font: inherit;
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tradeAgain:hover {
+  color: var(--ry-accent);
+}
+
+.tradeAgain:focus-visible {
+  outline: 2px solid var(--ry-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* While a trade's own share stands in the panel, the token's link below it waits: one way to share at a time. */
+.asideCol:has([data-trade-done]) .slotShare {
+  display: none;
 }
 
 /* The trades' column names: drawn on a desk, only read on a phone, where each row says its own short words. */

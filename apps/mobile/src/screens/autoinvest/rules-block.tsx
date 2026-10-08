@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query'
 import { useRouter } from 'expo-router'
 import { useState } from 'react'
 import { Pressable, Switch, View } from 'react-native'
@@ -12,11 +13,12 @@ import { AUTOINVEST_COPY, type AutoinvestCopy } from '@/features/autoinvest/copy
 import {
   missedOf,
   purchaseSumUsd,
+  ruleBuyRouteOf,
   ruleFace,
-  rulePurchaseParams,
   writeFailureWords,
   zoneOfRule,
 } from '@/features/autoinvest/rule-model'
+import { isListedToken, tokenWriteFailure } from '@/features/autoinvest/floor'
 import { useRules, useRuleWrites } from '@/features/autoinvest/use-rules'
 import {
   dayWords,
@@ -35,10 +37,11 @@ import { shelfCardFor, type ShelfCard } from '@/features/invest/shelf'
 import { usePopularCompanies } from '@/features/invest/use-popular'
 import { useCompanyShelf } from '@/features/invest/use-shelf'
 import { recordJourney } from '@/features/journeys/journey-store'
+import { marketsPath } from '@/features/markets/screener'
 import { usePortfolio } from '@/features/portfolio/use-portfolio'
 import { useAccount } from '@/features/session/use-account'
 import { useNow } from '@/hooks/use-now'
-import type { AutoinvestRule, RuleBudget, RuleOccurrence, Session } from '@/lib/api'
+import { fetchMarketsByMints, type AutoinvestRule, type RuleBudget, type RuleOccurrence, type Session } from '@/lib/api'
 import { useCopy, useLocale, type Locale } from '@/lib/i18n'
 import { companyItem, ShelfRow } from '@/screens/invest/shelf-ui'
 import { useTheme } from '@/theme'
@@ -50,7 +53,7 @@ import { BudgetSheet } from './budget-sheet'
 
 /**
  * «Автоінвест» — one block on Home and in Portfolio, for every connected
- * wallet (canon v5.1 §3, §4.1, §11, v5.3 В29; M16, M20). The month's budget
+ * wallet (M16, M20). The month's budget
  * as its own line — «Бюджет не задано · Задати», or «Бюджет місяця $45 з
  * $100 · Змінити» over its bar (spent, «Бюджет вичерпано · Правила стоять до
  * 1-го числа») — once there is a rule or a ceiling for it to bound; the
@@ -78,7 +81,7 @@ export function RulesBlock({ session, place }: { session: Session | null; place:
 }
 
 /** Where the block stands — the journey a tap on it records starts there. */
-export type RulesPlace = 'home' | 'portfolio'
+export type RulesPlace = 'home' | 'bots'
 
 /** A wallet not signed in: its rules are read behind its session — one line, one quiet way in. */
 function SignInForRules({ copy }: { copy: AutoinvestCopy }) {
@@ -133,25 +136,34 @@ function SignedInRules({ session, place, copy }: { session: Session; place: Rule
 
   const list = rules.data?.rules ?? null
   const budget = rules.data?.budget ?? null
-  const iconOf = (mint: string) => shelfCardFor(shelf.shelf, mint)?.icon ?? null
+  // A token's logo from its market row (1.31.0): the shelf knows the companies only.
+  const tokenMints = (list ?? []).filter((rule) => isListedToken(rule.asset)).map((rule) => rule.asset.mint)
+  const tokenRows = useQuery({
+    queryKey: ['rules', 'icons', tokenMints.join(',')],
+    queryFn: ({ signal }) => fetchMarketsByMints(tokenMints, signal),
+    enabled: tokenMints.length > 0,
+    staleTime: 10 * 60_000,
+    retry: 1,
+  })
+  const iconOf = (mint: string) =>
+    shelfCardFor(shelf.shelf, mint)?.icon ?? tokenRows.data?.rows.find((row) => row.mint === mint)?.icon ?? null
 
   const buyNow = (rule: AutoinvestRule, occurrence: RuleOccurrence) => {
     recordJourney('home_go', { from: place, to: 'rule-buy' })
     setManaging(null)
-    router.push({
-      pathname: '/asset/[mint]',
-      params: rulePurchaseParams({
-        mint: rule.asset.mint,
-        symbol: rule.asset.symbol,
-        ruleId: rule.id,
-        dueAt: occurrence.dueAt,
-      }),
-    })
+    // A company's purchase on its page; a token's (1.31.0) in Trade, the ticket as the rule's purchase.
+    router.push(ruleBuyRouteOf(rule, occurrence.dueAt) as never)
   }
   const open = (rule: AutoinvestRule) => {
     // The face the card draws is the one a tap acts on.
     const face = ruleFace(rule, budget, now)
     if (face.kind === 'due') buyNow(rule, face.occurrence)
+    // A token's card opens its trade (1.31.0, the web's own): «Регулярно» there, the rule managed beside «Ринок».
+    else if (isListedToken(rule.asset))
+      router.push({
+        pathname: '/trade',
+        params: { mint: rule.asset.mint, symbol: rule.asset.symbol, side: 'buy', order: 'recurring' },
+      })
     else setManaging(rule)
   }
   const toggle = async (rule: AutoinvestRule, on: boolean) => {
@@ -159,7 +171,13 @@ function SignedInRules({ session, place, copy }: { session: Session; place: Rule
     setSwitching(rule.id)
     const result = await writes.setStatus(rule.id, on ? 'active' : 'paused')
     setSwitching(null)
-    if (!result.ok) setFailure(writeFailureWords(result.code, copy, { write: 'change', dip: rule.dip !== null }))
+    if (!result.ok) {
+      // A token turned on again stands on the floor again (1.31.0): its refusal in its own words.
+      const tokenFailure = isListedToken(rule.asset) ? tokenWriteFailure(result.code, 'change') : null
+      setFailure(
+        tokenFailure ? copy[tokenFailure] : writeFailureWords(result.code, copy, { write: 'change', dip: rule.dip !== null }),
+      )
+    }
   }
   const addRule = () => setPicking(true)
 
@@ -243,6 +261,7 @@ function SignedInRules({ session, place, copy }: { session: Session; place: Rule
             preIpo: false,
             truth: null,
             priceUsd: null,
+            token: isListedToken(managing.asset),
           }}
           budget={budget}
           onClose={() => setManaging(null)}
@@ -258,9 +277,15 @@ function SignedInRules({ session, place, copy }: { session: Session; place: Rule
         onPick={(company) => {
           recordJourney('home_go', { from: place, to: 'rule-new' })
           setPicking(false)
+          // The token's own page with its rule's sheet: a company's, a coin's or a meme's (1.31.0).
           router.push({
             pathname: '/asset/[mint]',
-            params: { mint: company.mint, symbol: company.ticker, category: 'stock', autoinvest: '1' },
+            params: {
+              mint: company.mint,
+              symbol: company.ticker,
+              ...(company.category ? { category: company.category } : {}),
+              autoinvest: '1',
+            },
           })
         }}
       />
@@ -387,12 +412,15 @@ export function HomeRuleCard({
 }
 
 /**
- * «Додати правило» → «Для якої компанії?»: the companies the wallet owns
- * first, then the popular ones — the server's list, the web's own (1.20.0),
- * without what the wallet owns; «Усі компанії» opens Markets. A tap opens the
- * company with its «Автоінвест» sheet.
+ * «Додати правило» → «Для якого токена?» (1.31.0): what the wallet holds — a
+ * company, a coin, a meme; never the dollars a rule pays with — then the
+ * popular companies, the server's list, the web's own (1.20.0), without what
+ * the wallet holds; «Усі токени — на Ринках» opens Markets, where «Регулярно»
+ * stands on every token. A tap opens the token with its rule's sheet; the
+ * server judges the floor.
  */
-type PickedCompany = Pick<ShelfCard, 'mint' | 'ticker' | 'name' | 'icon' | 'price' | 'change24h'>
+type PickedCompany = Pick<ShelfCard, 'mint' | 'ticker' | 'name' | 'icon' | 'price' | 'change24h'> &
+  Readonly<{ category?: 'stock' | 'crypto' | 'meme' }>
 
 function CompanyPicker({
   visible,
@@ -418,7 +446,24 @@ function CompanyPicker({
   const held = new Set(
     (holdings.view?.rows ?? []).filter((row) => row.amount > 0 && !row.native).map((row) => row.mint),
   )
-  const owned = cards ? [...cards.companies, ...cards.privateCompanies].filter((card) => held.has(card.mint)) : []
+  const ownedCompanies: PickedCompany[] = cards
+    ? [...cards.companies, ...cards.privateCompanies]
+        .filter((card) => held.has(card.mint))
+        .map((card) => ({ ...card, category: 'stock' as const }))
+    : []
+  // The coins and memes the wallet holds that the venue prices — SOL among them; a rule on one is named by its symbol.
+  const ownedTokens: PickedCompany[] = (holdings.view?.rows ?? [])
+    .filter((row) => row.amount > 0 && (row.group === 'crypto' || row.group === 'meme') && row.price !== null && row.listed)
+    .map((row) => ({
+      mint: row.mint,
+      ticker: row.symbol,
+      name: row.symbol,
+      icon: row.icon,
+      price: row.price as number,
+      change24h: row.dayChangePct,
+      category: row.group === 'meme' ? ('meme' as const) : ('crypto' as const),
+    }))
+  const owned = [...ownedCompanies, ...ownedTokens]
   const popular = (listed.data?.companies ?? []).filter((company) => !held.has(company.mint))
   const today = invest.today
   const section = (title: string, list: readonly PickedCompany[]) =>
@@ -442,7 +487,7 @@ function CompanyPicker({
       </View>
     ) : null
   return (
-    <Sheet visible title={copy.pickCompany} onClose={onClose} scroll>
+    <Sheet visible title={copy.pickToken} onClose={onClose} scroll>
       <View className="gap-4 pb-2">
         {cards || listed.data ? (
           <>
@@ -484,11 +529,11 @@ function CompanyPicker({
           <Skeleton className="h-40 rounded-sm" accessibilityRole="progressbar" />
         )}
         <Button
-          title={copy.allCompanies}
+          title={copy.allTokens}
           variant="secondary"
           onPress={() => {
             onClose()
-            router.navigate('/(tabs)/markets')
+            router.navigate(marketsPath('all') as never)
           }}
         />
       </View>

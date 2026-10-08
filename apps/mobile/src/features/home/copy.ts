@@ -8,7 +8,7 @@ import type { TrendingClass } from './home-model.ts'
  * Figures come formatted; the unit and the time sit beside each.
  */
 const EN = {
-  // the screen: Home one tap deeper since one version (canon v5.3 §3)
+  // the screen: Home one tap deeper since one version
   title: 'What changed',
   asOf: (time: string) => `as of ${time}`,
   offline: 'No connection · last read shown',
@@ -92,22 +92,22 @@ const UK: HomeCopy = {
   asOf: (time) => `станом на ${time}`,
   offline: 'Немає з’єднання · показано останнє прочитане',
   attention: 'Потребує уваги',
-  nothingNeedsYou: 'Нічого не потребує вашої уваги',
+  nothingNeedsYou: 'Нічого не потребує твоєї уваги',
   lastChecked: (moment) => `Перевірено ${moment}`,
-  notChecked: 'Ваші плани ще не перевірялися',
+  notChecked: 'Твої плани ще не перевірялися',
   recoveryTitle: 'Підписана транзакція чекає відповіді',
-  recoveryDetail: 'Перевірте її перед усім іншим. Нічого не надсилається повторно.',
+  recoveryDetail: 'Перевір її перед усім іншим. Нічого не надсилається повторно.',
   modes: { buy: 'Купівля', sell: 'Продаж', swap: 'Обмін' },
   whichPlan: (symbol, count) => `Який план ${symbol}? · ${count}`,
   paper: 'Паперовий',
   opensOnWeb: 'Відкривається на ryntra.io',
-  entryExpired: 'Вхід прострочено — напишіть нову версію або скасуйте план',
-  signInForPlans: 'Увійдіть гаманцем, щоб бачити свої плани й нотатки.',
+  entryExpired: 'Вхід прострочено — напиши нову версію або скасуй план',
+  signInForPlans: 'Увійди гаманцем, щоб бачити свої плани й нотатки.',
   couldNotRead: 'Зараз не вдалося прочитати',
   portfolio: 'Портфель',
   hideAmounts: 'Сховати суми',
   showAmounts: 'Показати суми',
-  connectForPortfolio: 'Підключіть гаманець, щоб бачити його активи.',
+  connectForPortfolio: 'Під’єднай гаманець, щоб бачити його активи.',
   emptyPortfolio: 'У цьому гаманці ще немає токенів.',
   plans: 'Плани',
   allPlans: (count) => `Усі плани · ${count}`,
@@ -119,7 +119,7 @@ const UK: HomeCopy = {
   since: (time) => `з ${time}`,
   over24h: '24 год',
   allWatchlist: (count) => `Усі · ${count}`,
-  emptyWatchlist: 'Позначте актив зіркою в Ринках, щоб тримати його тут.',
+  emptyWatchlist: 'Познач актив зіркою в Ринках, щоб тримати його тут.',
   notPricedThen: 'не мав ціни під час останнього перегляду',
   stale: 'Застаріло · останні відомі цифри',
   notListed: (count) => `${count} не в списку майданчика`,
@@ -129,7 +129,7 @@ const UK: HomeCopy = {
   noMovers: 'У списку зараз немає рухів, які варто показати.',
   changed: 'Коротко',
   nothingChanged: (time) => `Нічого нового з ${time}`,
-  firstLook: 'Ваш перший перегляд. Наступного разу тут буде те, що змінилося відтоді.',
+  firstLook: 'Твій перший перегляд. Наступного разу тут буде те, що змінилося відтоді.',
   notesLine: (count, since) =>
     since
       ? count === 1
@@ -150,8 +150,8 @@ const UK: HomeCopy = {
     PARTIAL: 'Баланси прочитано частково',
     UNAVAILABLE: 'Баланси не вдалося прочитати',
   },
-  guestDetail: 'Ваш портфель, плани й нотатки йдуть за гаманцем, який ви підключите. Ключі його не покидають.',
-  connectedDetail: 'Підключено · без входу. Планам і нотаткам потрібен підпис вашого гаманця.',
+  guestDetail: 'Твій портфель, плани й нотатки йдуть за гаманцем, який ти під’єднаєш. Ключі його не покидають.',
+  connectedDetail: 'Під’єднано · без входу. Планам і нотаткам потрібен підпис твого гаманця.',
   trade: 'Торгівля',
   monitoring: 'Моніторинг',
 }

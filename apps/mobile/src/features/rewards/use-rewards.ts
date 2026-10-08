@@ -21,6 +21,6 @@ export function useRewards(session: Session | null, locale: Locale) {
     refetchInterval: 120_000,
     retry: 1,
   })
-  const view = useMemo((): RewardsView | null => (query.data ? rewardsView(query.data) : null), [query.data])
+  const view = useMemo((): RewardsView | null => (query.data ? rewardsView(query.data, locale) : null), [query.data, locale])
   return { query, view }
 }

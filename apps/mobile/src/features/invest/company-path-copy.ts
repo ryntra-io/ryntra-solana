@@ -1,8 +1,8 @@
 import type { Copy } from '../../lib/i18n.ts'
 
 /**
- * The words of «Шлях компанії» (M24) — the web's own for the same strip
- * (`RYN-COMPANY-PATH-001`, its `company-path-words.ts`), word for word, so the
+ * The words of «Шлях компанії» — the web's own for the same strip
+ * (its `company-path-words.ts`), word for word, so the
  * phone and ryntra.io say one thing: the steps' names, the line under each,
  * what each token is, the swap's deadline and the issuer's rule, where each
  * fact was read. No judgement, no advice.

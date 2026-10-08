@@ -39,7 +39,7 @@ import type { projectPayments } from "../../autoinvest/model.ts";
 import type { ConditionKind, FindingFacts, FindingOutcome, MonitorStatus } from "../../monitoring/engine.ts";
 import type { QuietHours } from "../../monitoring/quiet-hours.ts";
 import type { OutcomeReceiptArtifact } from "../../agent-control/artifacts.ts";
-import type { SolanaActionOrigin, SolanaActionOriginRequest } from "../../solana/action-origin.ts";
+import type { SolanaActionOrigin, SolanaActionOriginRequest, SpotActionOrigin } from "../../solana/action-origin.ts";
 import type { SolanaAssetPassportSchema, SolanaPolicyVerdict, SplTransferPreflight } from "../../solana/contracts.ts";
 import type { JupiterExecutableOrder, JupiterExecutableOrderFailure, JupiterExecuteFailure, JupiterExecuteReport, JupiterOrderFailure, JupiterOrderQuote } from "../../solana/quotes.ts";
 import type { ReserveSendAttemptResult, SendAttemptState } from "../../solana/send-attempt.ts";
@@ -476,7 +476,7 @@ export type RouteChecks = [
   Same<z.output<typeof SwapVerdictSchema>, SwapPolicyVerdict>,
   /* the rule list in its order, not only as a set */
   Mutual<typeof SWAP_POLICY_RULES_V1, typeof SWAP_POLICY_RULES>,
-  Same<z.output<typeof SwapOriginSchema>, SolanaActionOrigin>,
+  Same<z.output<typeof SwapOriginSchema>, SpotActionOrigin>,
   Same<z.output<typeof SwapOriginRequestSchema>, SolanaActionOriginRequest>,
   /* 1.12.0 — the rule a purchase was made under travels unchanged from the order onto the History row */
   Same<z.output<typeof RuleBindingSchema>, NonNullable<SolanaActionOrigin["rule"]>>,

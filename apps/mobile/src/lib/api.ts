@@ -51,6 +51,7 @@ import {
   type RuleListResponse,
   type RuleOccurrenceState,
   type RulePaymentOwnRequest,
+  type RuleAssetResponse,
   type RuleResponse,
   type RuleStatus,
   type SendReturnedRequest,
@@ -145,6 +146,14 @@ export type ApiInit = Readonly<{
   timeoutMs?: number
 }>
 
+/**
+ * What the phone says it reads beyond what its pinned contract's first reader
+ * knew (1.31.0): a token's price condition against the price when its rule
+ * was turned on — the reference `enabled`, which the server sends a native
+ * client only behind this header (the phone of 1.30.0 would not know it).
+ */
+export const READS_HEADER: Readonly<Record<string, string>> = { 'X-Ryntra-Reads': 'rule-reference-enabled' }
+
 export async function apiRequest<T>(
   method: 'GET' | 'POST' | 'PUT' | 'DELETE',
   path: string,
@@ -155,7 +164,7 @@ export async function apiRequest<T>(
   const timer = setTimeout(() => controller.abort(), init.timeoutMs ?? REQUEST_TIMEOUT_MS)
   init.signal?.addEventListener('abort', () => controller.abort(), { once: true })
   try {
-    const headers: Record<string, string> = { accept: 'application/json', 'X-Ryntra-API': '1' }
+    const headers: Record<string, string> = { accept: 'application/json', 'X-Ryntra-API': '1', ...READS_HEADER }
     if (body !== undefined) headers['content-type'] = 'application/json'
     if (init.session) headers.authorization = `Bearer ${init.session.token}`
     if (init.acceptLanguage) headers['accept-language'] = init.acceptLanguage
@@ -357,7 +366,7 @@ export function fetchCandles(mint: string, timeframe: Timeframe, signal?: AbortS
   return apiGet<CandlesResponse>(`/api/spot/candles?mint=${mint}&tf=${timeframe}`, { signal })
 }
 
-/* ---- Stocks (the web line's RYN-STOCKS-CORE-001) ---- */
+/* ---- Stocks (the web line's ---- */
 
 export type StockIssuerId = 'xstocks' | 'backpack' | 'ondo' | 'prestocks' | (string & {})
 
@@ -627,6 +636,12 @@ export type StockUniverseRow = Readonly<{
   period: SessionPeriod
   volume: number | null
   liquidity: number | null
+  /** `listed-equity` or `pre-ipo` — a private company's token (PreStocks), «Це не акція» (request 26, served since 2026-09-23). */
+  kind?: 'listed-equity' | 'pre-ipo' | (string & {})
+  /** Whether the issuer offers a new purchase; absent reads as offered. */
+  tradable?: boolean
+  /** A private company's token against PreStocks' own valuation, per cent; null for a listed stock. */
+  markPremium?: number | null
 }>
 
 export type StockUniverseResponse = Readonly<{
@@ -655,7 +670,7 @@ export function fetchStockUniverseFull(signal?: AbortSignal): Promise<StockUnive
   return apiGet<StockUniverseFull>('/api/stocks/universe', { signal, timeoutMs: 35_000 })
 }
 
-/* ---- Native session and private routes (contract 1.3.0 — the client pinned in ./api/v1) ---- */
+/* ---- Native session and private routes (contract 1.3.0 — the client pinned in./api/v1) ---- */
 
 /**
  * The v1 client for one request: the pinned package over the app's fetch with
@@ -673,7 +688,9 @@ function v1Client(session: Session | null, signal?: AbortSignal, timeoutMs = REQ
       const timer = setTimeout(() => controller.abort(), timeoutMs)
       signal?.addEventListener('abort', () => controller.abort(), { once: true })
       try {
-        return await fetch(input, { ...init, signal: controller.signal })
+        const headers = new Headers(init?.headers)
+        for (const [name, value] of Object.entries(READS_HEADER)) headers.set(name, value)
+        return await fetch(input, { ...init, headers, signal: controller.signal })
       } finally {
         clearTimeout(timer)
       }
@@ -800,7 +817,7 @@ export function mergeWatchlist(
   )
 }
 
-/* ---- Trade: the swap routes — the app signs, the server submits (canon Part A §10.3, contract §5) ---- */
+/* ---- Trade: the swap routes — the app signs, the server submits (contract §5) ---- */
 
 export const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'
 export const USDT_MINT = 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB'
@@ -1015,6 +1032,8 @@ export type HoldingsResponse = Readonly<{
     held?: number
     tokenRead?: HoldingsCoverage
     observedAt: string
+    /** Whether the venue's catalogue answered for the prices; `ABSENT` when it did not. */
+    catalog?: Readonly<{ status: 'PRESENT'; missing?: readonly string[] }> | Readonly<{ status: 'ABSENT'; reason?: string }>
   }>
 }>
 
@@ -1250,7 +1269,13 @@ export type {
   RulePayments,
   RulePaymentsRequest,
   RulePriceCondition,
+  RulePriceConditionState,
   RulePriceReference,
+  RuleAssetClass,
+  RuleAssetRead,
+  RuleAssetResponse,
+  RuleFloorCheck,
+  RuleFloorVerdict,
   RuleSchedule,
   RuleStatus,
 } from './api/v1/types.ts'
@@ -1277,9 +1302,15 @@ export type RulesApi = Readonly<{
    * for it, so it goes through the app's own request, bearer and header alike.
    */
   markOwn: (session: Session, signature: string, signal?: AbortSignal) => Promise<RuleListResponse>
+  /**
+   * 1.31.0: what a rule on a token would stand on, before it is written — the
+   * asset and its class, the price now, the floor and, for a meme or a new
+   * token, the facts of its risk; `refusal` why no rule can name it. Public.
+   */
+  asset: (mint: string, signal?: AbortSignal) => Promise<RuleAssetResponse>
 }>
 
-/** A rule only schedules a reminder (canon B.3): nothing here buys, and every purchase is the wallet's own signature on a fresh Review. */
+/** A rule only schedules a reminder: nothing here buys, and every purchase is the wallet's own signature on a fresh Review. */
 export const rulesApi: RulesApi = {
   list: (session, signal) => v1(() => v1Client(session, signal).rules.list()),
   get: (session, ruleId, signal) => v1(() => v1Client(session, signal).rules.get(ruleId)),
@@ -1295,6 +1326,7 @@ export const rulesApi: RulesApi = {
       signal,
       session,
     }),
+  asset: (mint, signal) => v1(() => v1Client(null, signal).rules.asset(mint)),
 }
 
 /**

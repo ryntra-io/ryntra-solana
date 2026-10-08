@@ -37,9 +37,10 @@ import { creatorLockSchedule, type CreatorLockId } from "../core/launch/creator-
 import { feeShareProblems, type FeeShare } from "../core/launch/fee-shares.ts";
 import type { GuardStore } from "../guard/store.ts";
 import { ensureRewardAccount } from "../rewards/ledger.ts";
-import { LAUNCHES_PER_CREATOR_PER_DAY, LAUNCHES_PER_HOUR, POOL_PAYER_FLOOR_LAMPORTS, launchPair, type LaunchNetwork } from "./config.server.ts";
+import { LAUNCHES_PER_CREATOR_PER_DAY, LAUNCHES_PER_HOUR, POOL_PAYER_FLOOR_LAMPORTS, launchPair, launchWritesHere, type LaunchNetwork } from "./config.server.ts";
 import { checkLaunchForm } from "./form.ts";
 import { metadataOfUri } from "./metadata.server.ts";
+import { beginLaunchTrade, failLaunchTrade } from "./record.server.ts";
 
 /** How long a built launch waits for the creator's signature. */
 export const BUILD_TTL_MS = 2 * 60 * 1000;
@@ -371,14 +372,14 @@ async function statusOn(connection: Connection, signature: string, minSlot: numb
   return minSlot !== null && !(Number(read.context?.slot) >= minSlot) ? undefined : null;
 }
 
-type SignatureRead = Readonly<{ outcome: Sent["outcome"] | "EXPIRED"; /** The slot past the blockhash the «absent» answers were read at. */ slot: number | null }>;
+export type SignatureRead = Readonly<{ outcome: Sent["outcome"] | "EXPIRED"; /** The slot past the blockhash the «absent» answers were read at. */ slot: number | null }>;
 
 /**
  * The chain's word on a signature: confirmed, refused, expired (its blockhash passed and it never landed), or not known
  * yet. Expired only when the chain is past the blockhash's height by a margin and every node asked answered — from that
  * slot or later — that it has no such signature: a read that failed, or came from a node behind, is not «absent».
  */
-async function readSignature(
+export async function readSignature(
   connection: Connection,
   signature: string,
   validUntil: number,
@@ -607,6 +608,29 @@ export async function submitLaunch(
   };
   /* Written before the send: a launch the network has not answered for yet is still found, and its page reads the chain to finish it. */
   await writeLaunch(deps.store, pending);
+  /* The creator's first purchase is a trade on the curve like any other: its History row before the send, settled from
+     the creation's own transaction by History or the reconciliation. */
+  const firstBuy = BigInt(build.firstBuyInRaw) > 0n && deps.network.tradesRecorded && launchWritesHere(deps.network);
+  if (firstBuy) {
+    const pair = launchPair(deps.network, build.preset);
+    await beginLaunchTrade(deps, {
+      cluster: build.cluster,
+      signature,
+      wallet: build.creator,
+      side: "buy",
+      venue: "curve",
+      token: { mint: build.token, symbol: build.symbol.slice(0, 24), decimals: launchPreset(build.preset)?.token.decimals ?? 6 },
+      pair: { mint: build.pairMint, symbol: pair.symbol, decimals: pair.decimals, dollar: pair.dollar },
+      curve: build.pool,
+      config: build.config,
+      pool: null,
+      buildId: build.id,
+      reviewDigest: `0x${build.messageSha256}`,
+      validUntil: build.validUntil,
+      /* Quoted by what it buys: the curve was fresh, the amount exact — no fee split was shown. */
+      quote: { amountInRaw: build.firstBuyInRaw, amountOutRaw: build.firstBuyOutRaw, minimumOutRaw: build.firstBuyOutRaw, slippageBps: 0, feeRaw: null, ryntraRaw: null },
+    }).catch(() => undefined);
+  }
   /* The mint is a fresh key only this creation opens: its account on chain is the launch landed, whatever a node says of the signature. */
   const sent = await sendOnce(deps.connection, creation, Number(build.validUntil), deps.now, { ...CREATION_BUDGET, deadline }, {
     second: deps.second,
@@ -614,6 +638,7 @@ export async function submitLaunch(
   });
   if (sent.outcome === "REJECTED" || sent.outcome === "FAILED") {
     await removeLaunch(deps.store, pending);
+    if (firstBuy) await failLaunchTrade(deps, build.cluster, signature, sent.reason ?? "The network refused the launch.").catch(() => undefined);
     /* Refused before the chain saw it: it cost nobody anything, so it counts against no limit. A failure on chain cost the payer its fee and stays counted. */
     if (sent.outcome === "REJECTED") await deps.store.collection<LaunchAttempt>("launchAttempts").delete(creatorKey(build.cluster, build.creator, build.id));
     return fail("SUBMIT_FAILED", sent.reason ?? "The network refused the launch.");

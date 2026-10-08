@@ -9,7 +9,8 @@
  */
 
 import { SOL_MINT, USDC_MINT, type ActionMovement, type WalletAction } from '../../lib/api.ts'
-import { DASH, shortAddress } from '../../utils/format.ts'
+import type { Locale } from '../../lib/i18n.ts'
+import { DASH, formatAmount, formatUsd, shortAddress } from '../../utils/format.ts'
 import { formatUnits } from '../trade/trade-model.ts'
 
 /** The system program stands for native SOL in a Send's record. */
@@ -106,7 +107,7 @@ function marketMint(movement: ActionMovement): string | null {
   return movement.mint
 }
 
-function legOf(movement: ActionMovement | null, known: KnownMints): HistoryLeg | null {
+function legOf(movement: ActionMovement | null, known: KnownMints, locale: Locale): HistoryLeg | null {
   if (movement === null) return null
   const mint = marketMint(movement)
   const facts = mint ? (known.get(mint) ?? BUILT_IN_MINTS.get(mint) ?? null) : null
@@ -117,11 +118,11 @@ function legOf(movement: ActionMovement | null, known: KnownMints): HistoryLeg |
     symbol,
     amountRaw: movement.amountRaw,
     decimals,
-    amountText: decimals === null ? DASH : formatUnits(movement.amountRaw, decimals, Math.min(6, decimals)),
+    amountText: decimals === null ? DASH : formatUnits(movement.amountRaw, decimals, Math.min(6, decimals), locale),
   }
 }
 
-function feeOf(action: WalletAction, known: KnownMints): HistoryFee | null {
+function feeOf(action: WalletAction, known: KnownMints, locale: Locale): HistoryFee | null {
   const fee = action.fee ?? null
   if (!fee) return null
   const assetMint = fee.asset ?? null
@@ -130,16 +131,16 @@ function feeOf(action: WalletAction, known: KnownMints): HistoryFee | null {
   const symbol = fee.symbol ?? facts?.symbol ?? null
   let text = DASH
   if (fee.amountRaw && decimals !== null && symbol)
-    text = `${formatUnits(fee.amountRaw, decimals, Math.min(6, decimals))} ${symbol}`
+    text = `${formatUnits(fee.amountRaw, decimals, Math.min(6, decimals), locale)} ${symbol}`
   else if (fee.usd !== null && Number.isFinite(fee.usd))
-    text = `$${fee.usd < 1 ? fee.usd.toFixed(4).replace(/0+$/, '').replace(/\.$/, '') : fee.usd.toFixed(2)}`
-  else if (fee.basisPoints !== null) text = `${(fee.basisPoints / 100).toFixed(2)}%`
+    text = fee.usd < 1 ? `$${formatAmount(fee.usd, 4, locale)}` : formatUsd(fee.usd, locale)
+  else if (fee.basisPoints !== null) text = `${formatAmount(fee.basisPoints / 100, 2, locale)}%`
   return { collected: fee.collected, text, basisPoints: fee.basisPoints, usd: fee.usd }
 }
 
-export function historyRow(action: WalletAction, known: KnownMints = BUILT_IN_MINTS): HistoryRow {
-  const out = legOf(action.out, known)
-  const arrived = legOf(action.in, known)
+export function historyRow(action: WalletAction, locale: Locale, known: KnownMints = BUILT_IN_MINTS): HistoryRow {
+  const out = legOf(action.out, known, locale)
+  const arrived = legOf(action.in, known, locale)
   const mints = [out?.mint ?? null, arrived?.mint ?? null].filter((mint): mint is string => mint !== null)
   return {
     id: action.actionId,
@@ -149,7 +150,7 @@ export function historyRow(action: WalletAction, known: KnownMints = BUILT_IN_MI
     updatedAt: action.updatedAt,
     out,
     in: arrived,
-    fee: feeOf(action, known),
+    fee: feeOf(action, known, locale),
     statedUsd: typeof action.statedUsd === 'number' && Number.isFinite(action.statedUsd) ? action.statedUsd : null,
     signature: action.signature ?? null,
     sourceTx: action.sourceTx ?? null,
@@ -177,8 +178,12 @@ export function unresolvedMints(actions: readonly WalletAction[], known: KnownMi
 }
 
 /** The statement, newest first, with what the app knows folded in. */
-export function historyRows(actions: readonly WalletAction[], known: KnownMints = BUILT_IN_MINTS): HistoryRow[] {
-  return actions.map((action) => historyRow(action, known)).sort((a, b) => Date.parse(b.at) - Date.parse(a.at))
+export function historyRows(
+  actions: readonly WalletAction[],
+  locale: Locale,
+  known: KnownMints = BUILT_IN_MINTS,
+): HistoryRow[] {
+  return actions.map((action) => historyRow(action, locale, known)).sort((a, b) => Date.parse(b.at) - Date.parse(a.at))
 }
 
 /** The rows that touched one asset. */

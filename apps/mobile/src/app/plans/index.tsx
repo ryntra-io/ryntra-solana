@@ -1,6 +1,6 @@
-import { PlansScreen } from '@/screens/plans'
+import { Redirect } from 'expo-router'
 
-/** `/plans` — the wallet's plans as a capability, reached from More (and later Home and the Agent). */
+/** `/plans` — the plans live in «Боти → Мої боти» since the menu v6.2; a saved link lands there. */
 export default function PlansRoute() {
-  return <PlansScreen />
+  return <Redirect href="/bots" />
 }

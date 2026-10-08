@@ -556,7 +556,11 @@ export function createMeteoraDbcLaunchVenue(args: Readonly<{
       const tx = buyRaw.gtn(0)
         ? await client.creator.createPoolWithFirstBuy({
             createPoolParam,
-            /* minimumAmountOut is the quoted amount itself: the transaction fails rather than land above or below it. */
+            /* minimumAmountOut is the quoted amount itself: the transaction fails rather than land above or below it.
+               No referral account, on purpose: with one the program does not grant the first swap its minimum fee, and the
+               creator's purchase pays the curve's opening fee instead — on a protected curve about half the tokens
+               (measured on devnet 2026-10-08: 99 990 699 114 raw instead of 197 960 754 204 for 1 USDC). A referral is a
+               fifth of Meteora's part; it is never worth the creator's tokens. Every later trade carries it. */
             firstBuyParam: { buyer: creator, receiver: creator, buyAmount: buyRaw, minimumAmountOut: outRaw, referralTokenAccount: null },
           })
         : await client.creator.createPool(createPoolParam);

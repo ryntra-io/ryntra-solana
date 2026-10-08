@@ -1,7 +1,7 @@
 const { withAppBuildGradle } = require('expo/config-plugins')
 
 /**
- * Release signing with the Owner's keystore, which lives outside the
+ * Release signing with the publisher's release keystore, which lives outside the
  * repository. A release reaches it one of two ways:
  *
  * - signed by the build, from the environment:
@@ -10,13 +10,13 @@ const { withAppBuildGradle } = require('expo/config-plugins')
  *     RYNTRA_RELEASE_KEY_ALIAS          the key alias
  *     RYNTRA_RELEASE_KEY_PASSWORD       the key password
  * - built unsigned when RYNTRA_RELEASE_UNSIGNED=1 asks for it
- *   (`app-release-unsigned.apk`), then signed by the Owner with apksigner,
+ *   (`app-release-unsigned.apk`), then signed by the publisher with apksigner,
  *   whose own prompt takes the passwords — they never pass through the build.
  *
  * The generated `android/app/build.gradle` signs release builds with the
  * shared Expo debug key by default — a key every Expo project ships, so a
  * release signed with it would let any app pass as Ryntra. This plugin
- * replaces that: the release build type signs with the Owner's key when the
+ * replaces that: the release build type signs with the publisher's release key when the
  * variables are set, and a release task with neither the variables nor the
  * unsigned request stops before it builds. Nothing here reads, copies or
  * prints a key.
@@ -39,7 +39,7 @@ const SIGNING_CONFIG = (indent) =>
 
 const GUARD = `
 ${MARK}
-// A release task signs with the Owner's keystore from the environment, or builds unsigned for the Owner's apksigner when RYNTRA_RELEASE_UNSIGNED=1; it is never signed with the shared debug key.
+// A release task signs with the publisher's release keystore from the environment, or builds unsigned for the publisher's apksigner when RYNTRA_RELEASE_UNSIGNED=1; it is never signed with the shared debug key.
 gradle.taskGraph.whenReady { graph ->
     def wantsRelease = graph.allTasks.any { task ->
         task.project == project && (task.name.startsWith('assembleRelease') || task.name.startsWith('bundleRelease') || task.name.startsWith('packageRelease'))
@@ -47,13 +47,13 @@ gradle.taskGraph.whenReady { graph ->
     if (!wantsRelease) return
     if (System.getenv('RYNTRA_RELEASE_UNSIGNED') == '1') {
         if (System.getenv('RYNTRA_RELEASE_KEYSTORE')) {
-            throw new GradleException("Ryntra release: RYNTRA_RELEASE_UNSIGNED and RYNTRA_RELEASE_KEYSTORE are both set. Build unsigned for the Owner's apksigner, or signed from the environment, not both.")
+            throw new GradleException("Ryntra release: RYNTRA_RELEASE_UNSIGNED and RYNTRA_RELEASE_KEYSTORE are both set. Build unsigned for the publisher's apksigner, or signed from the environment, not both.")
         }
         return
     }
     def missing = ['RYNTRA_RELEASE_KEYSTORE', 'RYNTRA_RELEASE_KEYSTORE_PASSWORD', 'RYNTRA_RELEASE_KEY_ALIAS', 'RYNTRA_RELEASE_KEY_PASSWORD'].findAll { !System.getenv(it) }
     if (!missing.isEmpty()) {
-        throw new GradleException("Ryntra release: " + missing.join(', ') + " not set. The Owner's keystore stays outside the repository and reaches the build through these variables only, or RYNTRA_RELEASE_UNSIGNED=1 builds an unsigned APK for the Owner to sign with apksigner (docs/release/RELEASE.md).")
+        throw new GradleException("Ryntra release: " + missing.join(', ') + " not set. The publisher's release keystore stays outside the repository and reaches the build through these variables only, or RYNTRA_RELEASE_UNSIGNED=1 builds an unsigned APK for the publisher to sign with apksigner (docs/release/RELEASE.md).")
     }
     def keystore = new File(System.getenv('RYNTRA_RELEASE_KEYSTORE'))
     if (!keystore.isFile()) {
@@ -80,7 +80,7 @@ function withReleaseSigning(config) {
       return mod
     }
 
-    // 1. The release build type signs with the Owner's key — the debug key is never its fallback.
+    // 1. The release build type signs with the publisher's release key — the debug key is never its fallback.
     const debugFallback = /(buildTypes \{[\s\S]*?release \{[^}]*?)signingConfig signingConfigs\.debug/
     if (!debugFallback.test(src)) {
       throw new Error(

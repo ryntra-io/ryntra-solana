@@ -2,7 +2,7 @@
  * The phone's push side, behind one small interface: permission, the
  * provider's device token, the taps and the arrivals. The implementation
  * is `expo-notifications` over Firebase Cloud Messaging — the provider the
- * server delivers through. Without the Owner's Firebase client
+ * server delivers through. Without a Firebase client
  * configuration in the build the token cannot be read and the phone says
  * so honestly; everything else (the inbox, the taps, the preferences)
  * works without it. No token is ever logged.

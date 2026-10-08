@@ -11,7 +11,7 @@
  * root. No link carries authorization: the exact plan opens and its own
  * Review reads today's figures.
  *
- * Ryntra's handoffs (M11) are the same web paths — the builder, the Spot
+ * Ryntra's handoffs are the same web paths — the builder, the Spot
  * ticket, an asset, Portfolio, History, Results — and pass through here
  * too, so a handoff and a shared link land on the same screen. A handoff
  * opens a place, never an action: Trade takes its own fresh quote and
@@ -23,7 +23,8 @@
 
 import { contextParam, parseContextParam } from '../agent/context.ts'
 import { isInstant, isRuleId } from '../autoinvest/rule-model.ts'
-import { isMarketsList, listsPath } from '../shell/places.ts'
+import { marketsPath, screenerTabOf, type ScreenerTab } from '../markets/screener.ts'
+import { BOTS_CATALOG_PATH, BOTS_PATH, MONEY_PATH } from '../shell/places.ts'
 import { LEGACY_TAB_ROUTES } from '../shell/shell.ts'
 import { BUDGET_EDIT_PATH } from './monitoring-model.ts'
 
@@ -32,6 +33,7 @@ const NOTE = /^(inb_|mon_)[0-9a-f]{24}$/
 const SYMBOL = /^[A-Za-z0-9._-]{1,32}$/
 const DEV_CLIENT = /^[a-z][a-z0-9+.-]*:\/\/expo-development-client(?:[/?#]|$)/i
 const PLAN = /^plan_[0-9a-f]{32}$/
+const RULE = /^rule_[0-9a-f]{32}$/
 const MINT = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/
 const DRAFT = /^agd_[0-9a-f]{24}$/
 const VERSION = /^[1-9][0-9]{0,3}$/
@@ -43,7 +45,7 @@ const QUESTION_MAX = 2000
 
 /** The app's own routes a link may name directly — left as they are. */
 const NATIVE_PATHS =
-  /^\/(?:\(tabs\)(?:\/|$)|trade(?:\?|$)|plans(?:\/|$)|monitoring(?:\/|$)|asset\/|history(?:\?|$)|results(?:\?|$)|rewards(?:\?|$)|search(?:\?|$)|ryn(?:\?|$)|changes(?:\?|$)|lists(?:\?|$)|money\/(?:send|receive)(?:\?|$)|launch(?:\/|\?|$)|gallery(?:\?|$)|_sitemap(?:\?|$)|$)/
+  /^\/(?:\(tabs\)(?:\/|$)|trade(?:\?|$)|plans\/|bots(?:\?|$)|monitoring(?:\/|$)|asset\/|token\/|history(?:\?|$)|results(?:\?|$)|rewards(?:\?|$)|search(?:\?|$)|ryn(?:\?|$)|changes(?:\?|$)|settings(?:\?|$)|money(?:\/(?:send|receive))?(?:\?|$)|launch(?:\/|\?|$)|gallery(?:\?|$)|_sitemap(?:\?|$)|$)/
 
 export type MapOptions = Readonly<{
   /** Carry the sum a link names — only for Ryntra's own handoffs, where the person wrote it (see above). */
@@ -97,15 +99,17 @@ export function mapDeepLink(url: string, options: MapOptions = {}): MappedLink {
   const name = pathname(path)
   const params = query(path)
 
-  // The built shell's Trade and Strategies tabs: the same surfaces, with the link's own query kept.
+  // The older shells' tabs — Trade, Strategies, the Agent, the bar's «+»: where they lead now, the link's own query kept.
   const legacy = (LEGACY_TAB_ROUTES as Readonly<Record<string, string>>)[name]
   if (legacy) {
     const search = params.toString()
     return { path: search ? `${legacy}?${search}` : legacy, kind: 'native' }
   }
-  // Markets on one of M2's lists — «Профі»'s Markets until one version (canon v5.3 В28): the lists screen on that list.
-  const list = params.get('tab')
-  if (name === '/(tabs)/markets' && isMarketsList(list)) return { path: listsPath(list), kind: 'native' }
+  // Markets on a list of an older shell (M2's `/lists`, the tab's `stock`, `meme`): the screener on the same assets.
+  if (name === '/lists') return { path: screenerPath(params, 'all'), kind: 'native' }
+  if (name === '/(tabs)/markets' && params.toString()) return { path: screenerPath(params, 'all'), kind: 'native' }
+  // The plans live in «Боти → Мої боти» since the menu v6.2; a plan's own page stays where it was.
+  if (name === '/plans') return { path: BOTS_PATH, kind: 'native' }
   if (NATIVE_PATHS.test(path)) return { path, kind: 'native' }
 
   if (name === '/app/alerts/open') {
@@ -117,13 +121,13 @@ export function mapDeepLink(url: string, options: MapOptions = {}): MappedLink {
   const plan = /^\/app\/strategies\/plans\/([^/]+)$/.exec(name)
   if (plan) {
     const id = plan[1] ?? ''
-    if (!PLAN.test(id)) return { path: '/plans', kind: 'native' }
+    if (!PLAN.test(id)) return { path: BOTS_PATH, kind: 'native' }
     return {
       path: params.get('from') === 'monitoring' ? `/plans/${id}?from=monitoring` : `/plans/${id}`,
       kind: 'native',
     }
   }
-  if (name === '/app/strategies' || name === '/app/strategies/plans') return { path: '/plans', kind: 'native' }
+  if (name === '/app/strategies' || name === '/app/strategies/plans') return { path: BOTS_PATH, kind: 'native' }
 
   const ryn = agentPathOf(name, params, options)
   if (ryn !== null) return { path: ryn, kind: 'native' }
@@ -133,6 +137,17 @@ export function mapDeepLink(url: string, options: MapOptions = {}): MappedLink {
     return { path: `/monitoring/open?href=${encodeURIComponent(path)}`, kind: 'web' }
   }
   return { path: '/', kind: 'unknown' }
+}
+
+/** A link's query as the screener reads it. */
+function paramsOf(params: URLSearchParams): Record<string, string> {
+  return Object.fromEntries(params.entries())
+}
+
+/** The screener on the tab a link asks for, or on `fallback` when it asks for none. */
+function screenerPath(params: URLSearchParams, fallback: ScreenerTab): string {
+  const asked = paramsOf(params)
+  return marketsPath(asked.tab || asked.kind || asked.mode ? screenerTabOf(asked) : fallback)
 }
 
 function withQuery(path: string, entries: readonly (readonly [string, string | null])[]): string {
@@ -146,9 +161,10 @@ function withQuery(path: string, entries: readonly (readonly [string, string | n
  * The web pages Ryntra hands off to — and a shared link may name — on the
  * phone's own screens: Ryntra itself, the Spot ticket (Trade) or the asset,
  * the builder with a draft or a carried rule, Home (with the month's budget),
- * Markets, the Stocks and Trends lists, Swap, Portfolio, History, Rewards and
- * Receive — the same places on both since one version (canon v5.3 В28, §3).
- * Null when the path is none of them.
+ * Markets on a tab (the stock screener and Trends lead there), «Боти» (the
+ * plans, the results, the recurring buy), a token by its address, Swap,
+ * Portfolio, History, Rewards, Top up and Receive — the same places on both,
+ * the menu v6.2. Null when the path is none of them.
  */
 function agentPathOf(name: string, params: URLSearchParams, options: MapOptions): string | null {
   const rawMint = params.get('mint')
@@ -163,7 +179,7 @@ function agentPathOf(name: string, params: URLSearchParams, options: MapOptions)
             ['context', contextParam(context)],
             ['q', question || null],
           ])
-        : withQuery('/(tabs)/agent', [['q', question || null]])
+        : withQuery('/ryn', [['q', question || null]])
     }
     case '/app/spot': {
       // Spot without a market is the phone's Trade, where a market is picked (Markets · «Для досвідчених» · Спот).
@@ -173,6 +189,16 @@ function agentPathOf(name: string, params: URLSearchParams, options: MapOptions)
       const plan = params.get('plan')
       const version = params.get('v')
       const binding = plan && PLAN.test(plan) && version && VERSION.test(version) ? { plan, version } : null
+      // A token's rule reminder (1.31.0): the ticket as the rule's purchase — read afresh in Trade, never a permission.
+      const rule = params.get('rule')
+      const due = params.get('due')
+      if (rule && RULE.test(rule))
+        return withQuery('/trade', [
+          ['mint', mint],
+          ['side', 'buy'],
+          ['rule', rule],
+          ['due', due && Number.isFinite(Date.parse(due)) && due.length <= 40 ? due : null],
+        ])
       // A market with no side and no plan is the asset itself; a side or a plan is a ticket.
       if (!side && !binding) return `/asset/${mint}`
       const ticketSide = binding ? 'buy' : (side ?? 'buy')
@@ -196,20 +222,33 @@ function agentPathOf(name: string, params: URLSearchParams, options: MapOptions)
     case '/app/activity':
       return '/history'
     case '/app/results':
-      // The phone's own Results screen (M13): the plans' and the rules' outcomes.
+      // The phone's own Results screen, a tap inside «Боти»: the plans' and the rules' outcomes.
       return '/results'
+    case '/app/bots':
+    case '/app/autoinvest':
+    case '/app/plans':
+    case '/app/journal':
+      // Everything that runs on the person's rule — «Боти → Мої боти».
+      return BOTS_PATH
+    case '/app/bots/catalog':
+      return BOTS_CATALOG_PATH
     case '/app/markets':
+      return screenerPath(params, 'all')
     case '/app/stocks':
-      // Both are Markets on the web since one version: the companies first.
-      return '/(tabs)/markets'
+    case '/app/stocks/screener':
+      // The stock screener is the screener's «Акції» (`?kind=preipo` — «Приватні»).
+      return screenerPath(params, 'stocks')
     case '/app/trends':
-      return listsPath('crypto')
+      // «Тренди» is the screener's own order now (`?mode=meme` — «Меми»).
+      return screenerPath(params, 'all')
+    case '/app/top-up':
+      return `${MONEY_PATH}?open=top-up`
     case '/app/swap':
       return '/trade?mode=swap'
     case '/app/rewards':
       return '/rewards'
     case '/app/receive':
-      // «Отримати»: the address, and a payment link a tap away (M31).
+      // «Отримати»: the address, and a payment link a tap away.
       return '/money/receive'
     case '/app/send':
       return '/money/send'
@@ -230,13 +269,16 @@ function agentPathOf(name: string, params: URLSearchParams, options: MapOptions)
     default:
       break
   }
-  // Ryntra Launch (M33): the form, «Мої лаунчі» and a token's page — the share link a creator posts opens here.
+  // Ryntra Launch: the form, «Мої лаунчі» and a token's page — the share link a creator posts opens here.
   if (name === '/app/launch' || name === '/app/launch/new') return '/launch'
   if (name === '/app/launch/mine') return '/launch/mine'
   const launched = /^\/app\/launch\/([^/]+)$/.exec(name)
   if (launched) return MINT.test(launched[1] ?? '') ? `/launch/${launched[1]}` : '/launch'
   const asset = /^\/app\/assets\/([^/]+)$/.exec(name)
   if (asset) return MINT.test(asset[1] ?? '') ? `/asset/${asset[1]}` : '/(tabs)/markets'
+  // A token by its contract address — what the web's search opens: the phone finds the token's own page.
+  const token = /^\/app\/token\/([^/]+)$/.exec(name)
+  if (token) return MINT.test(token[1] ?? '') ? `/token/${token[1]}` : '/(tabs)/markets'
   const stock = /^\/app\/stocks\/([^/]+)$/.exec(name)
   if (stock) {
     // An autoinvest reminder's own link (its Telegram button): the resolver reads the rule and opens the company's
@@ -272,8 +314,8 @@ function agentPathOf(name: string, params: URLSearchParams, options: MapOptions)
           ['open', convert],
         ])
     }
-    // A stock named by its symbol: the phone opens an asset by its address, so the Stocks list is where it is found.
-    return listsPath('stock')
+    // A stock named by its symbol: the phone opens an asset by its address, so the screener's «Акції» is where it is found.
+    return marketsPath('stocks')
   }
   return null
 }

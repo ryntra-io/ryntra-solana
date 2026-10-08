@@ -131,6 +131,7 @@ export const LAUNCH_WORDS = {
   copied: bi("Copied", "Скопійовано"),
   shareOnX: bi("Post on X", "Поділитися в X"),
   shareText: bi("${symbol} just launched on Ryntra", "${symbol} щойно запущено на Ryntra"),
+  copyLink: bi("Copy link", "Копіювати"),
 
   // The token page
   tokenBy: bi("by {creator}", "творець {creator}"),
@@ -224,11 +225,19 @@ export const LAUNCH_WORDS = {
   stepSendTrade: bi("Sending to the network", "Надсилаємо в мережу"),
   boughtTitle: bi("Bought {tokens} ${symbol}", "Куплено {tokens} ${symbol}"),
   soldTitle: bi("Sold {tokens} ${symbol}", "Продано {tokens} ${symbol}"),
-  tradeDoneLine: bi("Confirmed by the network.", "Мережа підтвердила."),
+  tradeDoneLine: bi("Confirmed by the network.", "Мережа підтвердила угоду."),
   tradePendingTitle: bi("Sent — not confirmed yet", "Надіслано — ще не підтверджено"),
   tradePendingLine: bi("It may still land. The transaction shows the outcome; nothing is sent again.", "Угода ще може лягти. Транзакція покаже результат; повторно нічого не надсилаємо."),
   viewTx: bi("Transaction", "Транзакція"),
   tradeAgain: bi("Another trade", "Ще одна угода"),
+  /* A trade made: its receipt where every trade's is, and the person's own link to share it. */
+  tradeReceipt: bi("Receipt", "Квитанція"),
+  tradeInHistory: bi("In History", "В Історії"),
+  shareTrade: bi("Share this trade", "Поділитися угодою"),
+  shareTradeBuy: bi("Bought {tokens} ${symbol} on Ryntra", "{tokens} ${symbol} — куплено на Ryntra"),
+  shareTradeSell: bi("Sold {tokens} ${symbol} on Ryntra", "{tokens} ${symbol} — продано на Ryntra"),
+  shareTradeBuyPlain: bi("Bought ${symbol} on Ryntra", "${symbol} — куплено на Ryntra"),
+  shareTradeSellPlain: bi("Sold ${symbol} on Ryntra", "${symbol} — продано на Ryntra"),
   jupiter: bi("Trade through Jupiter", "Обмін через Jupiter"),
   errTradeTitle: bi("The trade did not go through", "Угода не відбулася"),
   errBalance: bi("The wallet does not hold that much. Nothing was sent.", "У гаманці стільки немає. Нічого не надіслано."),

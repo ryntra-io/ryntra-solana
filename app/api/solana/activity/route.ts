@@ -31,6 +31,13 @@ import { rewardsView } from "@/lib/rewards/view";
 import { unconfiguredReserve } from "@/lib/rewards/balance";
 import { getWalletProofFrom } from "@/lib/session";
 import { resolveRelayApiKey } from "@/lib/relay/api-key.server";
+import { byDeadline } from "@/lib/launch/flow.server";
+import { settleLaunchTrade } from "@/lib/launch/record.server";
+import { launchMarketDeps } from "@/lib/launch/runtime.server";
+import { isLaunchOrigin } from "@/lib/solana/action-origin";
+
+/** How long one page load waits for a launch trade in flight to be read from the chain. */
+const LAUNCH_SETTLE_MS = 6_000;
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -158,6 +165,16 @@ async function currentOutcome(
         outcome: sendOutcome(attempt.record.state),
         updatedAt: attempt.record.updatedAt,
       });
+    }
+    if (action.lane === "SWAP" && action.signature !== null && isLaunchOrigin(action.origin)) {
+      /* A launch's trade has no swap lock: one still in flight is settled from the chain here, inside a short budget —
+         the same settlement its submit and the reconciliation run, so the row is written once whoever gets there. */
+      if (action.outcome !== "IN_FLIGHT") return action;
+      const deps = launchMarketDeps();
+      if (!deps || deps.network.cluster !== action.network) return action;
+      /* A settlement that wrote the row answers it — done or failed; one still without an answer leaves the row as it is. */
+      const settled = await byDeadline(() => settleLaunchTrade(deps, action.signature!), Date.now() + LAUNCH_SETTLE_MS, () => new Date(), null);
+      return settled?.row ?? action;
     }
     if (action.lane === "SWAP" && action.signature !== null) {
       /* The row carries both halves of this lane's key, so the lock is

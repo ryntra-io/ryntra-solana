@@ -3,12 +3,14 @@ import { Pressable, View } from 'react-native'
 import { Icon } from '@/components/icon'
 import { Txt } from '@/components/txt'
 import { AUTOINVEST_COPY } from '@/features/autoinvest/copy'
+import { floorHeld, floorLine } from '@/features/autoinvest/floor'
 import { deferralLine } from '@/features/autoinvest/price-condition'
 import { missedOf, purchaseSumUsd, ruleFace, zoneOfRule } from '@/features/autoinvest/rule-model'
 import {
   dayWords,
   dueWords,
   gatheredLine,
+  keptTail,
   priceWord,
   ruleWhenLine,
   unbroken,
@@ -21,14 +23,13 @@ import type { AutoinvestRule, RuleBudget } from '@/lib/api'
 import { useCopy, useLocale } from '@/lib/i18n'
 
 /**
- * A company's rule in «Автоінвест»'s place under «Купити» (canon v5.1 §4.1;
- * M16): how much and how often, and what comes next — the next purchase, the
+ * A company's rule in «Автоінвест»'s place under «Купити» ( * M16): how much and how often, and what comes next — the next purchase, the
  * pause, the month's budget holding it, or, while its reminder is open, «Час
  * твоєї покупки». A purchase the price condition holds back says «Купівлю
  * відкладено · правило перевірить знову» with why under it — the reason, the
- * figure and the data's time (M25). A «З оплат» rule reads «Автоінвест · З
+ * figure and the data's time. A «З оплат» rule reads «Автоінвест · З
  * оплат» with its terms and what it has gathered — «Накопичено $0,60 ·
- * нагадаю від $1» (M26) — and its open reminder the sum it gathered. A
+ * нагадаю від $1» — and its open reminder the sum it gathered. A
  * reminder that passed without a signature says «Пропущено» once and is never
  * caught up. One tap opens the rule, or buys the open reminder.
  */
@@ -76,8 +77,11 @@ export function RuleCard({
     ? `${copy.lastMissed} · ${unbroken(rule.dip ? dayWords(Date.parse(last.dueAt), zone, locale) : dueWords(Date.parse(last.dueAt), zone, locale))}`
     : null
   // Why it waits: the figure against the reference and the data's time, as the rule's own judgement stated it.
-  const deferral =
-    face.kind === 'deferred' && face.occurrence.condition
+  // A token's purchase held back by its floor (1.31.0) says so first: a thin pool is the reason whatever the price says.
+  const floor = face.kind === 'deferred' ? floorHeld(face.occurrence) : null
+  const deferral = floor
+    ? keptTail(floorLine(floor, rule.name, locale))
+    : face.kind === 'deferred' && face.occurrence.condition
       ? unbrokenTail(deferralLine(face.occurrence.condition, rule.name, now, zone, locale))
       : null
   const warn = face.kind === 'held' || face.kind === 'deferred'

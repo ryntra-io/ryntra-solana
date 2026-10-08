@@ -225,6 +225,16 @@
   background: var(--ry-verified-soft);
 }
 
+.glyph[data-page="LAUNCH"][data-side="BUY"] {
+  color: var(--ry-pnl-pos);
+  background: var(--ry-verified-soft);
+}
+
+.glyph[data-page="LAUNCH"][data-side="SELL"] {
+  color: var(--ry-pnl-neg);
+  background: var(--ry-risk-soft);
+}
+
 .glyph[data-page="SPOT"][data-side="SELL"] {
   color: var(--ry-pnl-neg);
   background: var(--ry-risk-soft);
@@ -331,6 +341,7 @@
 
 .facts > div {
   display: grid;
+  align-content: start;
   gap: 2px;
   min-width: 0;
 }

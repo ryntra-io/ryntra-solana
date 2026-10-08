@@ -1,6 +1,6 @@
 /**
- * «З кожної оплати» on the phone — the pure half (canon v5.5 В38, §4.1; M26;
- * the web's `RYN-PAY-TRIGGERS-001`, contract 1.19.0).
+ * «З кожної оплати» on the phone — the pure half (M26;
+ * the web's, contract 1.19.0).
  *
  * The third kind of «Автоінвест» rule sets money aside from the wallet's own
  * USDC on Solana: every payment rounded up to the next $1 or $5, a sum from

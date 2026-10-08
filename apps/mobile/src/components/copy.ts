@@ -47,7 +47,7 @@ export const COMPONENT_COPY: Copy<ComponentCopy> = {
     unverified: 'Unverified',
     rowA11y: (symbol, name, price, change, states) =>
       `${symbol}, ${name}, ${price}, ${change} in 24 hours${states.length ? `, ${states.join(', ')}` : ''}`,
-    searchPlaceholder: 'Company, ticker or token',
+    searchPlaceholder: 'Name, ticker or contract address',
     searchMarkets: 'Search markets',
     clearSearch: 'Clear search',
     quote: 'Quote',
@@ -73,7 +73,7 @@ export const COMPONENT_COPY: Copy<ComponentCopy> = {
     unverified: 'Не підтверджено',
     rowA11y: (symbol, name, price, change, states) =>
       `${symbol}, ${name}, ${price}, ${change} за 24 год${states.length ? `, ${states.join(', ')}` : ''}`,
-    searchPlaceholder: 'Компанія, тікер або токен',
+    searchPlaceholder: 'Назва, тікер або адреса контракту',
     searchMarkets: 'Пошук на ринках',
     clearSearch: 'Очистити пошук',
     quote: 'Котирування',

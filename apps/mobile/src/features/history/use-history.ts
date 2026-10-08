@@ -5,6 +5,7 @@ import { useHoldings } from '@/features/portfolio/use-portfolio'
 import { PRIVATE_QUERY_KEY } from '@/features/session/use-account'
 import { useWatchlistMarkets } from '@/hooks/use-markets'
 import { fetchActivity, type Session } from '@/lib/api'
+import { useLocale } from '@/lib/i18n'
 
 import {
   BUILT_IN_MINTS,
@@ -37,6 +38,7 @@ export function useActivity(address: string | null, session: Session | null) {
  * anything else, one batched market read — never a guessed scale.
  */
 export function useHistory(address: string | null, session: Session | null) {
+  const locale = useLocale()
   const activity = useActivity(address, session)
   const holdings = useHoldings(address)
   const actions = useMemo(() => activity.data?.data.actions ?? [], [activity.data])
@@ -60,7 +62,7 @@ export function useHistory(address: string | null, session: Session | null) {
     return merged
   }, [fromHoldings, markets.data])
 
-  const rows = useMemo((): HistoryRow[] => historyRows(actions, known), [actions, known])
+  const rows = useMemo((): HistoryRow[] => historyRows(actions, locale, known), [actions, locale, known])
   return {
     activity,
     rows,

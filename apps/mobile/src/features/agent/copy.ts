@@ -5,7 +5,7 @@ import type { Copy } from '../../lib/i18n.ts'
  * The words around the assistant, in both languages. The assistant is
  * Ryntra wherever a person reads — no persona of its own — and it is labelled
  * as an AI wherever it speaks, with the line that the decision and the
- * signature are the person's (canon §5). The answer's own sentences are the
+ * signature are the person's. The answer's own sentences are the
  * server's, in the language the conversation speaks; these are the chrome
  * around them — who is speaking, where the conversation was opened from, what
  * sits one tap deeper, the state of a figure, the budget, and the doors. No

@@ -29,7 +29,7 @@ import { readMarketEvidence } from "../../evidence/service.server.ts";
 import { evaluatePlanReview, type EvidenceReadByWindow } from "../../plans/review.ts";
 import { recordPlanReview } from "../../plans/service.ts";
 import { projectTradingPlan, readTradingPlan, type TradingPlanRecord } from "../../plans/store.ts";
-import type { SolanaActionOrigin, SolanaActionOriginRequest } from "../../solana/action-origin.ts";
+import type { SolanaActionOriginRequest, SpotActionOrigin } from "../../solana/action-origin.ts";
 import { readMintAccount, type MintReadSuccess } from "../../solana/mint.ts";
 import { buildPassport } from "../../solana/passport.ts";
 import { resolveJupiterSwapEndpoint, type JupiterSwapEndpoint } from "../../solana/quotes.ts";
@@ -255,7 +255,7 @@ const planReviewStep: PipelineStep<SwapPrepareContext, SwapRefusal> = {
     const store = need(context.store, "store");
     const order = need(context.order, "order");
     let planReview: PlanReview | null = null;
-    let bundleOrigin: SolanaActionOrigin | undefined;
+    let bundleOrigin: SpotActionOrigin | undefined;
     if (origin?.plan && planRecord) {
       const nowMs = Date.now();
       const projected = projectTradingPlan(planRecord, nowMs);

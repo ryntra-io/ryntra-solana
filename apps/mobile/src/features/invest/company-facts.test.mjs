@@ -8,7 +8,7 @@ import {
   buyShare,
   companyHead,
   countShort,
-  dayNumeric,
+  chartDay,
   dayShort,
   exchangeShort,
   issuerFeeText,
@@ -28,7 +28,7 @@ import {
 import { TRUTH_TOPICS, truthTopicText } from './truth-topics.ts'
 
 /*
- * A company's facts at rest (M23): the web's company page (`RYN-COMPANY-PAGE-001`)
+ * A company's facts at rest: the web's company page
  * in the phone's words and figures. The expected lines are the ones production
  * showed for NVIDIA, the S&P 500 and SpaceX on 2026-09-26 at 390 px.
  */
@@ -105,8 +105,8 @@ test('days as the web writes them: the source’s day, the chart’s day, the pa
   assert.equal(dayShort('not a day', 'uk'), null)
   assert.equal(dayShort(null, 'uk'), null)
   const noon = new Date(2026, 2, 30, 12).getTime()
-  assert.equal(dayNumeric(noon, 'uk'), '30.03.2026')
-  assert.equal(dayNumeric(noon, 'en'), '03/30/2026')
+  assert.equal(plain(chartDay(noon, 'uk')), '30 бер. 2026 р.')
+  assert.equal(chartDay(noon, 'en'), '30 Mar 2026')
   assert.equal(pathDay('2026-06-12', 'uk'), '12.06.2026')
   assert.equal(pathDay('2026-06-12', 'en'), 'Jun 12, 2026')
   assert.equal(pathDay('not a day', 'uk'), null)
@@ -271,7 +271,7 @@ test('the label is the issuer’s: one topic per issuer, none for an issuer no d
     truthTopicText('truthXStocks', 'uk').short,
     'Відстежує ціну акції. Акцію тримає кастодіан. Голосу немає.',
   )
-  // Two lines at most (M27): the issuer's fee and its power to freeze are said under the company's name and in the
+  // Two lines at most: the issuer's fee and its power to freeze are said under the company's name and in the
   // facts below, so the label's line says only what the token is not.
   assert.equal(
     truthTopicText('truthPreStocks', 'uk', '1,0%').short,

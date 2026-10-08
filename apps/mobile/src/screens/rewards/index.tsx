@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router'
 import { useState } from 'react'
-import { Pressable, RefreshControl, ScrollView, Share, View } from 'react-native'
+import { RefreshControl, ScrollView, Share, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { Button } from '@/components/button'
@@ -22,7 +22,7 @@ import { useNow } from '@/hooks/use-now'
 import { isNetworkError } from '@/lib/api'
 import { useCopy, useLocale, useSharedCopy } from '@/lib/i18n'
 import { useTheme } from '@/theme'
-import { formatCount, formatMoment } from '@/utils/format'
+import { formatAt, formatCount, formatMoment } from '@/utils/format'
 
 function LoadingBody({ label }: { label: string }) {
   return (
@@ -48,6 +48,7 @@ function SectionLabel({ children }: { children: string }) {
 
 function PointsCard({ view }: { view: RewardsView }) {
   const copy = useCopy(REWARDS_COPY)
+  const locale = useLocale()
   const points = view.points
   if (!points) {
     return (
@@ -87,8 +88,8 @@ function PointsCard({ view }: { view: RewardsView }) {
       </View>
       <View className="flex-row gap-2">
         <StatTile label={copy.volume} value={points.volume} className="flex-1" />
-        <StatTile label={copy.trades} value={formatCount(points.trades)} className="flex-1" />
-        <StatTile label={copy.activeDays} value={formatCount(points.activeDays)} className="flex-1" />
+        <StatTile label={copy.trades} value={formatCount(points.trades, locale)} className="flex-1" />
+        <StatTile label={copy.activeDays} value={formatCount(points.activeDays, locale)} className="flex-1" />
       </View>
     </Card>
   )
@@ -164,6 +165,10 @@ export function RewardsScreen() {
           <StatTile label={copy.pending} value={view.pending} className="flex-1" />
           <StatTile label={copy.lifetime} value={view.lifetime} className="flex-1" />
         </View>
+        {/* Every figure carries its time: the moment this read of the rewards arrived. */}
+        <Txt variant="labelSm" tone="faint">
+          {copy.readAt(formatAt(new Date(query.dataUpdatedAt).toISOString(), now, locale))}
+        </Txt>
         {!view.started ? (
           <Txt variant="ui" tone="faint">
             {copy.notStarted}
@@ -243,20 +248,7 @@ export function RewardsScreen() {
 
   return (
     <View className="flex-1 bg-ground" style={{ paddingTop: insets.top }}>
-      <View className="flex-row items-center gap-1 px-2 pt-1">
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={shared.back}
-          onPress={back}
-          hitSlop={8}
-          className="h-10 w-10 items-center justify-center rounded-btn active:bg-hover"
-        >
-          <Icon name="arrow-back" size={22} color="fg" />
-        </Pressable>
-        <View className="flex-1">
-          <ScreenHeader title={copy.title} />
-        </View>
-      </View>
+      <ScreenHeader title={copy.title} onBack={back} backLabel={shared.back} />
       <SessionGate what={copy.title}>{body}</SessionGate>
     </View>
   )

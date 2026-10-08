@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useEffect, useRef, useState } from 'react'
-import { Linking, Pressable, RefreshControl, ScrollView, View } from 'react-native'
+import { Pressable, RefreshControl, ScrollView, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { Card } from '@/components/card'
@@ -34,6 +34,7 @@ import { isNetworkError, type PlanMemoryFact, type PlanPositionRow, type PlanRes
 import { useCopy, useLocale, useSharedCopy } from '@/lib/i18n'
 import { useTheme } from '@/theme'
 import { formatClock, formatMoment, formatUsd } from '@/utils/format'
+import { openLink } from '@/lib/open-link'
 
 import { ResultSheet, type Opened } from './result-sheet'
 
@@ -177,7 +178,7 @@ export function ResultsScreen() {
   const rules = useRules(account.session)
   const [opened, setOpened] = useState<Opened | null>(null)
 
-  const back = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/portfolio'))
+  const back = () => (router.canGoBack() ? router.back() : router.replace('/bots'))
   // A door in the sheet closes the sheet first and goes once it is closed: a screen left under an open modal is not left.
   const pending = useRef<(() => void) | null>(null)
   useEffect(() => {
@@ -229,7 +230,7 @@ export function ResultsScreen() {
         icon="analytics-outline"
         title={copy.nothingTitle}
         detail={planId ? copy.nothingForPlan : copy.nothingDetail}
-        action={planId ? { title: copy.openPlan, onPress: () => openPlan(planId) } : { title: copy.myStrategies, onPress: () => router.push('/plans') }}
+        action={planId ? { title: copy.openPlan, onPress: () => openPlan(planId) } : { title: copy.myStrategies, onPress: () => router.push('/bots') }}
       />
     )
   } else {
@@ -366,7 +367,7 @@ export function ResultsScreen() {
         onClose={() => setOpened(null)}
         onOpenPlan={openPlan}
         onOpenAsset={(mint) => leave(() => router.push({ pathname: '/asset/[mint]', params: { mint } }))}
-        onOpenTransaction={(url) => void Linking.openURL(url)}
+        onOpenTransaction={(url) => openLink(url)}
         onOpenPath={(path) => leave(() => router.push(path as never))}
       />
     </View>

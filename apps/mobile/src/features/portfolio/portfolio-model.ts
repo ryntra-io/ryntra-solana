@@ -18,6 +18,7 @@
  */
 
 import { SOL_MINT, USDC_MINT, type Holding, type HoldingsCoverage, type HoldingsResponse } from '../../lib/api.ts'
+import type { Locale } from '../../lib/i18n.ts'
 import { DASH, shortAddress } from '../../utils/format.ts'
 import { formatUnits, rawToNumber } from '../trade/trade-model.ts'
 
@@ -122,8 +123,15 @@ export type PortfolioView = Readonly<{
   groups: readonly PortfolioGroupView[]
   /** Balances under a cent and unpriced ones, folded under one line. */
   dust: readonly PortfolioRow[]
-  /** True only when the read was complete and the wallet holds nothing but an empty native balance. */
+  /** True only when the read was complete and every balance in it is zero. */
   empty: boolean
+  /**
+   * False while the venue's prices were not read with the balances — the
+   * catalogue absent, or nothing priced though something is held (a cold
+   * start answers so for a few seconds). Said as prices being read, never
+   * as every asset «without a price»; the read is asked again at once.
+   */
+  pricesRead: boolean
 }>
 
 /** A decimal price as text into an integer at `PRICE_SCALE` decimals; null for anything that is not a positive number. */
@@ -185,12 +193,13 @@ function finite(value: unknown): value is number {
 }
 
 /** The amount in the asset's units, at most six places; a balance too small for six places says so instead of reading as zero. */
-export function amountTextOf(amountRaw: string, decimals: number): string {
-  const text = formatUnits(amountRaw, decimals, Math.min(6, decimals))
-  return text === '0' && /^\d+$/.test(amountRaw) && amountRaw !== '0' ? '<0.000001' : text
+export function amountTextOf(amountRaw: string, decimals: number, locale: Locale): string {
+  const text = formatUnits(amountRaw, decimals, Math.min(6, decimals), locale)
+  const tiny = locale === 'uk' ? '<0,000001' : '<0.000001'
+  return text === '0' && /^\d+$/.test(amountRaw) && amountRaw !== '0' ? tiny : text
 }
 
-export function portfolioRow(holding: Holding): PortfolioRow {
+export function portfolioRow(holding: Holding, locale: Locale): PortfolioRow {
   const native = holding.kind === 'NATIVE_SOL'
   const mint = native ? SOL_MINT : (holding.mint ?? holding.catalog?.mint ?? '')
   const catalogSymbol = holding.catalog?.symbol?.trim() || null
@@ -216,7 +225,7 @@ export function portfolioRow(holding: Holding): PortfolioRow {
     spendableRaw: holding.spendableRaw,
     multiplier,
     amount: rawToNumber(shown, holding.decimals),
-    amountText: amountTextOf(shown, holding.decimals),
+    amountText: amountTextOf(shown, holding.decimals, locale),
     price: finite(price) && price > 0 ? price : null,
     dayChangePct: finite(change) ? change : null,
     valueMicros,
@@ -267,9 +276,70 @@ export function dayChangeOf(rows: readonly PortfolioRow[]): DayChange | null {
   return { usd, pct: (usd / previous) * 100, covered, of }
 }
 
+/**
+ * Whether the read carries the venue's prices: a wallet that holds nothing
+ * always does; otherwise the catalogue present and at least one row priced —
+ * the native balance is always priced when the catalogue answered.
+ */
+export function pricesReadOf(
+  data: Readonly<{ catalog?: Readonly<{ status: string }> | null; holdings: readonly unknown[] }>,
+  priced: number,
+  empty: boolean,
+): boolean {
+  // A wallet that holds nothing is a known zero whatever the catalogue answered.
+  if (empty || data.holdings.length === 0) return true
+  if (data.catalog?.status === 'ABSENT') return false
+  return priced > 0
+}
+
+/** How long a read without prices is waited out before its gaps are said as they are: a dash and «N without a price». */
+export const PRICES_WAIT_MS = 30_000
+
+/** A run of reads without prices older than this is not the same run: a wallet left and come back to starts a new wait. */
+const PRICES_RUN_STALE_MS = 2 * PRICES_WAIT_MS + 60_000
+
+/** Whether a read holds nothing at all — every balance, the native one too, at zero. */
+export function holdsNothing(data: Readonly<{ holdings: readonly Readonly<{ amountRaw: string }>[] }>): boolean {
+  return data.holdings.every((holding) => holding.amountRaw === '0')
+}
+
+/** Whether a read carries the venue's prices, from the read alone — one rule for the screens and the widget. */
+export function readHasPrices(data: HoldingsResponse['data']): boolean {
+  const priced = data.holdings.some((row) => typeof row.catalog?.usdPrice === 'string' && Number(row.catalog.usdPrice) > 0)
+  return pricesReadOf(data, priced ? 1 : 0, holdsNothing(data))
+}
+
+/** A run of reads without prices on the phone's clock: when it began and when its latest read came. */
+export type UnpricedRun = Readonly<{ since: number; last: number }>
+
+/**
+ * The run of reads without prices after a read at `now`: a priced read ends
+ * it, the first read without prices starts one, and a read long after the
+ * run's latest one — a wallet left and come back to — starts again.
+ */
+export function nextUnpricedRun(run: UnpricedRun | undefined, now: number, priced: boolean): UnpricedRun | undefined {
+  if (priced) return undefined
+  if (run === undefined || now - run.last > PRICES_RUN_STALE_MS) return { since: now, last: now }
+  return { since: run.since, last: now }
+}
+
+/**
+ * Whether the screen still waits for prices: the read has none, nothing has
+ * failed since, and fewer than `PRICES_WAIT_MS` have passed on the phone's
+ * clock since the run began.
+ */
+export function waitingForPrices(
+  read: Readonly<{ priced: boolean; since: number | undefined }>,
+  now: number,
+  failed: boolean,
+): boolean {
+  if (read.priced || failed) return false
+  return read.since === undefined || now - read.since < PRICES_WAIT_MS
+}
+
 /** The whole read, as the screen draws it. */
-export function portfolioView(data: HoldingsResponse['data']): PortfolioView {
-  const rows = data.holdings.map(portfolioRow).sort(byValue)
+export function portfolioView(data: HoldingsResponse['data'], locale: Locale): PortfolioView {
+  const rows = data.holdings.map((holding) => portfolioRow(holding, locale)).sort(byValue)
   const coverage: HoldingsCoverage = data.tokenRead ?? 'COMPLETE'
   const priced = rows.filter((row) => row.valueMicros !== null)
   const unpriced = rows.length - priced.length
@@ -291,16 +361,17 @@ export function portfolioView(data: HoldingsResponse['data']): PortfolioView {
       unpriced: members.length - pricedMembers.length,
     }
   }).filter((group) => group.rows.length > 0)
-  const native = rows.find((row) => row.native)
-  const empty = coverage === 'COMPLETE' && rows.length <= 1 && (native === undefined || native.amountRaw === '0')
+  // A complete read in which every balance is zero — an empty native balance, emptied token accounts — is a known $0.
+  const empty = coverage === 'COMPLETE' && holdsNothing(data)
   return {
+    pricesRead: pricesReadOf(data, priced.length, empty),
     owner: data.owner,
     observedAt: data.observedAt,
     coverage,
     rows,
     priced: priced.length,
     unpriced,
-    total,
+    total: empty ? 0 : total,
     dayChange: dayChangeOf(rows),
     groups,
     dust,

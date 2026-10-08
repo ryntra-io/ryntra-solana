@@ -1,18 +1,17 @@
 import type { Copy } from '../../lib/i18n.ts'
 
 /**
- * Every word «Автоінвест» says on the phone (canon v5.1 §4.1, §11; M16), in
+ * Every word «Автоінвест» says on the phone, in
  * both languages — the web line's own for the same sheet, card and block
  * (`app/app/invest/invest-words.ts`), so the phone and ryntra.io say the same
- * thing. The canon's words: «Автоінвест» · «Щотижня» · «Якщо впаде на 5 %» ·
+ * thing. The web's words: «Автоінвест» · «Щотижня» · «Якщо впаде на 5 %» ·
  * «Бюджет місяця» · «Ryntra нагадає — ти підтвердиш одним дотиком» · «Гроші
  * лишаються у твоєму гаманці»; never DCA, trigger, «купує автоматично» or a
- * promise of a price or a profit. «Автоінвест» made clear (canon v5.3 В29;
- * M20): the rule's sum is «Кожна купівля», the budget's «Не більше на
+ * promise of a price or a profit. «Автоінвест» made clear ( * M20): the rule's sum is «Кожна купівля», the budget's «Не більше на
  * місяць», the budget its own line — «Бюджет не задано · Задати» — and while
  * a rule's reminder is open its purchase is «Купити $20 за правилом», an
- * ordinary one saying the reminder stays open. «З кожної оплати» (canon v5.5
- * В38; M26) in the web's words — «З оплат» · «Що відкладати» · «Накопичено» ·
+ * ordinary one saying the reminder stays open. «З кожної оплати»
+ * (M26) in the web's words — «З оплат» · «Що відкладати» · «Накопичено» ·
  * «Нагадаю від» · «Мій рахунок». Four phrases are the phone's own:
  * `reminderClosedDip` — a fall's rule has no day for the next reminder to
  * come on (asked of the web as request 34) — and `reminderClosedPayments`
@@ -114,7 +113,7 @@ export type AutoinvestCopy = Readonly<{
   allCompanies: string
   ruleOf: (company: string) => string
   signInForRules: string
-  /* «Автоінвест» made clear (canon v5.3 В29) */
+  /* «Автоінвест» made clear */
   eachPurchase: string
   atMostPerMonth: string
   budgetNotSet: string
@@ -126,14 +125,14 @@ export type AutoinvestCopy = Readonly<{
   plainHereLeavesOpen: string
   buyByRule: (usd: string) => string
   plainLeavesOpen: (usd: string) => string
-  /* «Умова ціни» (canon v5.5 В37, §4.1, §11; M25): the rule buys only while the price is within the person's limit of its reference and the data are fresh */
+  /* «Умова ціни»: the rule buys only while the price is within the person's limit of its reference and the data are fresh */
   priceCondition: string
   noCondition: string
   purchaseDeferred: string
   ruleChecksAgain: string
   checksAgainUntil: string
   deferredShort: string
-  /* «З кожної оплати» (canon v5.5 В38, §4.1; M26): the wallet's own USDC payments and incoming transfers, gathered to the minimum, then one reminder */
+  /* «З кожної оплати»: the wallet's own USDC payments and incoming transfers, gathered to the minimum, then one reminder */
   fromPayments: string
   whatToSetAside: string
   modeRoundup: string
@@ -145,7 +144,7 @@ export type AutoinvestCopy = Readonly<{
   gathered: string
   remindFrom: string
   countingSince: string
-  /** The quiet door under a «З оплат» rule's sums to what counts as a payment — its words one tap deeper (M27). */
+  /** The quiet door under a «З оплат» rule's sums to what counts as a payment — its words one tap deeper. */
   whatCounts: string
   paymentsCount: string
   incomingCount: string
@@ -168,12 +167,39 @@ export type AutoinvestCopy = Readonly<{
   fixedBounds: (min: string, max: string) => string
   /** The phone's own: a closed reminder of a rule with no day — the next comes once it gathers again (request 39). */
   reminderClosedPayments: string
+  /* «Регулярна купівля для всього» (M35, 1.31.0): any token with liquidity — the floor and the facts of risk before the button */
+  pickToken: string
+  allTokens: string
+  pickTokenFromMarkets: string
+  riskFacts: string
+  riskAge: string
+  riskLiquidity: string
+  riskTopHolders: string
+  riskMint: string
+  riskFreeze: string
+  riskOrganic: string
+  riskVerified: string
+  riskClosed: string
+  riskOpen: string
+  riskVerifiedYes: string
+  riskVerifiedNo: string
+  riskNotStated: string
+  riskSource: string
+  floorTitle: string
+  noRuleOnToken: string
+  tokenNotSupported: string
+  flaggedSuspicious: string
+  tokenUnreadable: string
+  priceWhenOn: string
+  floorRefusesTurnOn: string
+  scheduleShort: string
+  buyAtMarket: string
 }>
 
 export const AUTOINVEST_COPY: Copy<AutoinvestCopy> = {
   en: {
-    autoinvest: 'Autoinvest',
-    title: (company) => `Autoinvest · ${company}`,
+    autoinvest: 'Recurring buy',
+    title: (company) => `Recurring buy · ${company}`,
     howOften: 'How often',
     when: 'When',
     dayOfMonth: 'Day of the month',
@@ -188,8 +214,8 @@ export const AUTOINVEST_COPY: Copy<AutoinvestCopy> = {
     connectTelegram: 'Connect Telegram so you don’t miss it',
     turnOn: 'Turn on',
     turningOn: 'Turning on…',
-    on: 'Autoinvest is on',
-    failed: 'Autoinvest could not be turned on. Nothing was bought.',
+    on: 'Recurring buy is on',
+    failed: 'The recurring buy could not be turned on. Nothing was bought.',
     limit: 'A wallet holds up to 20 rules — remove one first.',
     signInFirst: 'Sign in with your wallet again, then try once more.',
     offline: 'Ryntra could not be reached. Nothing changed.',
@@ -252,14 +278,15 @@ export const AUTOINVEST_COPY: Copy<AutoinvestCopy> = {
     budgetCounts: 'Only finished purchases count; one still on its way counts until it is known.',
     budgetFailed: 'The budget could not be saved right now. Try again.',
     addRule: 'Add a rule',
-    noRulesYet: 'Buy in pieces — from $1 a day, every week, or when the price falls.',
+    noRulesYet:
+      'No rules yet. A rule buys a token every day, every week, when the price falls or from every payment — you sign each buy.',
     rulesDown: 'Your rules could not be read right now.',
     tryAgain: 'Try again',
     pickCompany: 'For which company?',
     youOwn: 'You own',
     popular: 'Popular companies',
     allCompanies: 'All companies',
-    ruleOf: (company) => `Autoinvest in ${company}`,
+    ruleOf: (company) => `Recurring buy of ${company}`,
     signInForRules: 'Your rules and the month’s budget appear after sign-in.',
     eachPurchase: 'Each purchase',
     atMostPerMonth: 'At most per month',
@@ -320,10 +347,37 @@ export const AUTOINVEST_COPY: Copy<AutoinvestCopy> = {
     },
     fixedBounds: (min, max) => `From ${min} to ${max} from every payment`,
     reminderClosedPayments: 'This reminder has closed. The next one comes once the rule gathers its sum again.',
+    pickToken: 'For which token?',
+    allTokens: 'All tokens on Markets',
+    pickTokenFromMarkets: 'Pick a token on Markets: «Recurring» stands next to «Market» in its order.',
+    riskFacts: 'Facts of risk',
+    riskAge: 'On the market',
+    riskLiquidity: 'Liquidity',
+    riskTopHolders: 'Top 10 holders',
+    riskMint: 'Minting more',
+    riskFreeze: 'Freezing tokens',
+    riskOrganic: 'Organic score',
+    riskVerified: 'Jupiter’s list',
+    riskClosed: 'closed',
+    riskOpen: 'open',
+    riskVerifiedYes: 'verified',
+    riskVerifiedNo: 'not verified',
+    riskNotStated: 'not stated',
+    riskSource: 'From Jupiter’s list, read now — facts, not a verdict.',
+    floorTitle: 'Floor for a recurring buy',
+    noRuleOnToken: 'No recurring buy can be set on this token.',
+    tokenNotSupported:
+      'Jupiter’s audit flags this token, or Ryntra no longer supports it — the rule can’t be turned on.',
+    flaggedSuspicious: 'Jupiter’s own audit flags this token as suspicious.',
+    tokenUnreadable: 'The token’s liquidity or price cannot be read right now — try again in a moment.',
+    priceWhenOn: 'Price when turned on',
+    floorRefusesTurnOn: 'The rule can’t be turned on: the token is under the floor right now.',
+    scheduleShort: 'Schedule',
+    buyAtMarket: 'Buy at market instead',
   },
   uk: {
-    autoinvest: 'Автоінвест',
-    title: (company) => `Автоінвест · ${company}`,
+    autoinvest: 'Регулярна купівля',
+    title: (company) => `Регулярна купівля · ${company}`,
     howOften: 'Як часто',
     when: 'Коли',
     dayOfMonth: 'День місяця',
@@ -338,8 +392,8 @@ export const AUTOINVEST_COPY: Copy<AutoinvestCopy> = {
     connectTelegram: 'Підключи Telegram, щоб не пропустити',
     turnOn: 'Увімкнути',
     turningOn: 'Вмикаємо…',
-    on: 'Автоінвест увімкнено',
-    failed: 'Автоінвест не вдалося увімкнути. Нічого не куплено.',
+    on: 'Регулярну купівлю увімкнено',
+    failed: 'Регулярну купівлю не вдалося увімкнути. Нічого не куплено.',
     limit: 'У гаманці може бути до 20 правил — спершу видали одне.',
     signInFirst: 'Увійди гаманцем ще раз і спробуй знову.',
     offline: 'Немає зв’язку з Ryntra. Нічого не змінилося.',
@@ -402,14 +456,15 @@ export const AUTOINVEST_COPY: Copy<AutoinvestCopy> = {
     budgetCounts: 'Рахуються лише завершені купівлі; незавершена — доки не з’ясується.',
     budgetFailed: 'Бюджет зараз не вдалося зберегти. Спробуй ще раз.',
     addRule: 'Додати правило',
-    noRulesYet: 'Купуй частинками — від $1 щодня, щотижня або коли ціна впаде.',
+    noRulesYet:
+      'Правил ще немає. Правило купує токен щодня, щотижня, коли ціна впаде або з кожної оплати — кожну купівлю підписуєш ти.',
     rulesDown: 'Правила зараз не вдалося прочитати.',
     tryAgain: 'Спробувати ще',
     pickCompany: 'Для якої компанії?',
     youOwn: 'У тебе є',
     popular: 'Популярні компанії',
     allCompanies: 'Усі компанії',
-    ruleOf: (company) => `Автоінвест у ${company}`,
+    ruleOf: (company) => `Регулярна купівля ${company}`,
     signInForRules: 'Твої правила й бюджет місяця — після входу.',
     eachPurchase: 'Кожна купівля',
     atMostPerMonth: 'Не більше на місяць',
@@ -467,5 +522,31 @@ export const AUTOINVEST_COPY: Copy<AutoinvestCopy> = {
     },
     fixedBounds: (min, max) => `Від ${min} до ${max} з кожної оплати`,
     reminderClosedPayments: 'Це нагадування вже не діє. Наступне прийде, коли правило знову накопичить суму.',
+    pickToken: 'Для якого токена?',
+    allTokens: 'Усі токени — на Ринках',
+    pickTokenFromMarkets: 'Обери токен на Ринках: «Регулярно» стоїть поруч із «Ринок» в ордері.',
+    riskFacts: 'Факти ризику',
+    riskAge: 'На ринку',
+    riskLiquidity: 'Ліквідність',
+    riskTopHolders: 'Топ-10 тримачів',
+    riskMint: 'Випуск нових',
+    riskFreeze: 'Заморожування',
+    riskOrganic: 'Органічна оцінка',
+    riskVerified: 'Список Jupiter',
+    riskClosed: 'закрито',
+    riskOpen: 'відкрито',
+    riskVerifiedYes: 'перевірено',
+    riskVerifiedNo: 'не перевірено',
+    riskNotStated: 'не вказано',
+    riskSource: 'Зі списку Jupiter, прочитано зараз, — факти, не вирок.',
+    floorTitle: 'Поріг регулярної купівлі',
+    noRuleOnToken: 'На цей токен регулярну купівлю не налаштувати.',
+    tokenNotSupported: 'Аудит Jupiter позначає цей токен або Ryntra його більше не підтримує — правило не ввімкнути.',
+    flaggedSuspicious: 'Власний аудит Jupiter позначає цей токен як підозрілий.',
+    tokenUnreadable: 'Ліквідність чи ціну токена зараз не прочитати — спробуй за мить.',
+    priceWhenOn: 'Ціна при ввімкненні',
+    floorRefusesTurnOn: 'Правило не ввімкнути: токен зараз нижче порогу.',
+    scheduleShort: 'Розклад',
+    buyAtMarket: 'Купити за ринком',
   },
 }

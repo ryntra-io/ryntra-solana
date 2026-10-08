@@ -33,8 +33,8 @@ const SUPPORTED_ISSUERS: ReadonlySet<string> = new Set(Object.keys(ISSUER_SHORT)
 
 /**
  * The issuers whose tokens the app offers — the ones whose own documents its
- * words stand on (canon v5.2 §7). Private companies come through PreStocks
- * alone (В25–В27): a token of any other issuer is not listed, searched or
+ * words stand on. Private companies come through PreStocks
+ * alone: a token of any other issuer is not listed, searched or
  * bought here, and one a wallet still holds reads as no longer supported.
  */
 export function isSupportedIssuer(id: string | null | undefined): boolean {

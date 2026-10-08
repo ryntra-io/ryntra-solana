@@ -6,7 +6,7 @@ import { useAmountsHidden } from '@/features/home/last-look'
 import { portfolioView } from '@/features/portfolio/portfolio-model'
 import { useAccount } from '@/features/session/use-account'
 import type { HoldingsResponse } from '@/lib/api'
-import { useLocale } from '@/lib/i18n'
+import { getLocale, useLocale } from '@/lib/i18n'
 import { useTheme } from '@/theme'
 
 import { figuresOf } from './widget-model'
@@ -37,8 +37,9 @@ export function WidgetBinder() {
     let changed = setWidgetWallet(address)
     // The wallet's read may already be in the cache — Portfolio's, or the one kept on the device: the widget takes it now.
     const read = address ? queryClient.getQueryData<HoldingsResponse>(['trade', 'holdings', address]) : undefined
-    if (read && read.data.tokenRead !== 'UNAVAILABLE')
-      changed = setWidgetFigures(figuresOf(portfolioView(read.data))) ?? changed
+    const view = read && read.data.tokenRead !== 'UNAVAILABLE' ? portfolioView(read.data, getLocale()) : null
+    // Never a read still waiting for its prices: the widget keeps its last priced figures.
+    if (view?.pricesRead) changed = setWidgetFigures(figuresOf(view)) ?? changed
     if (changed) redrawPortfolioWidgets(changed)
   }, [address, queryClient])
 

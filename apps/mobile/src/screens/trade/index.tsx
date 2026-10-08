@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Pressable, TextInput, View } from 'react-native'
 
 import { BOTTOM_ACTION_INSET, BottomAction } from '@/components/bottom-action'
@@ -14,6 +14,23 @@ import { ReviewBlock } from '@/components/review-block'
 import { Screen } from '@/components/screen'
 import { Sheet } from '@/components/sheet'
 import { Txt } from '@/components/txt'
+import { AskRyn } from '@/features/agent/ask-ryn'
+import { isInstant, isRuleId, purchaseSumUsd } from '@/features/autoinvest/rule-model'
+import { useRule, useRules, useRuleWrites } from '@/features/autoinvest/use-rules'
+import { ruleWhenLine } from '@/features/autoinvest/words'
+import { dollarsText } from '@/features/invest/buy-model'
+import { useAccount } from '@/features/session/use-account'
+import {
+  lowerFirst,
+  ORDER_TYPES,
+  orderTypeOf,
+  RULE_TICKET_COPY,
+  ruleSumText,
+  ticketRuleLine,
+  ticketRuleRefusal,
+  ticketRuleState,
+  type OrderType,
+} from '@/features/trade/rule-ticket'
 import { TRADE_COPY } from '@/features/trade/copy'
 import {
   formatUnits,
@@ -29,15 +46,26 @@ import {
   type TradeMode,
 } from '@/features/trade/trade-model'
 import { defaultQuoteAsset, useTrade } from '@/features/trade/use-trade'
-import { fetchHoldings, fetchMarketsByMints, isMint, SOL_MINT, USDC_MINT, type ExecutionPlanBinding } from '@/lib/api'
+import {
+  fetchMarketsByMints,
+  isMint,
+  SOL_MINT,
+  USDC_MINT,
+  type ExecutionPlanBinding,
+  type RuleBinding,
+} from '@/lib/api'
 import { PLANS_COPY } from '@/features/plans/copy'
 import { useCopy, useLocale, useSharedCopy, type Locale } from '@/lib/i18n'
 import { RuleReminderNotice } from '@/screens/autoinvest/rule-reminder-notice'
+import { useNow } from '@/hooks/use-now'
 import { StrategyBlock } from '@/screens/plans/strategy-block'
 import { type, useTheme } from '@/theme'
 import { formatAge, formatClock, formatUsdCompact, shortAddress } from '@/utils/format'
+import { useHoldings } from '@/features/portfolio/use-portfolio'
 
 import { AssetPickerSheet, AssetPill, assetFromRow } from './asset-picker'
+import { RecurringPanel } from './recurring-panel'
+import { RuleChip, RuleReviewRow } from './rule-parts'
 
 const MODE_KEYS: readonly TradeMode[] = ['buy', 'sell', 'swap']
 
@@ -56,14 +84,8 @@ function useAssetRow(mint: string | null) {
 
 /** What the wallet holds of the paid asset, by address — for the Available line and MAX. */
 function useAvailable(address: string | null, asset: TradeAsset | null) {
-  const holdings = useQuery({
-    queryKey: ['trade', 'holdings', address ?? ''],
-    queryFn: ({ signal }) => fetchHoldings(address!, signal),
-    enabled: address !== null,
-    staleTime: 20_000,
-    refetchInterval: 60_000,
-    retry: 1,
-  })
+  // The one holdings query every screen shares — the same function, so its reads carry the same facts.
+  const holdings = useHoldings(address)
   if (!asset || !holdings.data) return null
   const row = holdings.data.data.holdings.find((holding) =>
     asset.mint === SOL_MINT ? holding.kind === 'NATIVE_SOL' : holding.mint === asset.mint,
@@ -85,7 +107,7 @@ function useAvailable(address: string | null, asset: TradeAsset | null) {
  * signs those bytes and the server submits once; the receipt says what
  * actually happened; a signature the app closed on is found and checked,
  * never repeated. Nothing on this screen moves value by itself. Every word
- * and figure is in the person's language (M22) — the web's Spot words.
+ * and figure is in the person's language — the web's Spot words.
  */
 export function TradeScreen() {
   const { colors } = useTheme()
@@ -103,12 +125,17 @@ export function TradeScreen() {
     v?: string
     amount?: string
     mode?: string
+    /** 1.31.0: a token's rule reminder — the ticket is the rule's purchase (the web's `/app/spot?mint=&rule=&due=`). */
+    rule?: string
+    due?: string
+    /** `recurring` opens «Регулярно» — the token's rule — beside «Ринок». */
+    order?: string
   }>()
   const arrivedMint = typeof params.mint === 'string' && isMint(params.mint) ? params.mint : null
   const arrivedSymbol = typeof params.symbol === 'string' && params.symbol.length > 0 ? params.symbol : null
   // A position arrives with the side it asks for — a Sell of what is held — everything else starts as a Buy.
   const arrivedSide: TradeMode = params.side === 'sell' ? 'sell' : 'buy'
-  // «Обмін» in «Ще» (canon v5.3 §3) opens the same surface on a Swap; an asset that arrives decides the side instead.
+  // «Обмін» in «Ще» opens the same surface on a Swap; an asset that arrives decides the side instead.
   const arrivedSwap = !arrivedMint && params.mode === 'swap'
   /* A plan arrives as the binding the person read — the id and the version — and the amount its size plans;
      the plan is context the Review judges on a fresh quote, never a permission (contract §3b). */
@@ -122,23 +149,38 @@ export function TradeScreen() {
     arrivedSide === 'buy' &&
     arrivedMint !== USDC_MINT &&
     typeof params.amount === 'string' &&
-    /^\d+(\.\d+)?$/.test(params.amount)
+    /^\d+([.,]\d+)?$/.test(params.amount)
       ? params.amount
       : ''
+  // The link carries the sum machine-readable; the field shows it in the person's own shape («5,50» in Ukrainian).
+  // Every digit the link carried stays; only the decimal mark is the language's.
+  const arrivedField = locale === 'uk' ? arrivedAmount.replace('.', ',') : arrivedAmount.replace(',', '.')
+  /* A token's reminder arrives as the rule and its occurrence — read afresh before anything is offered: a link is never
+     permission to buy (contract §3j, 1.31.0 §3z). */
+  const arrivedRule: Readonly<{ ruleId: string; dueAt: string | null }> | null =
+    arrivedMint && isRuleId(params.rule) ? { ruleId: params.rule, dueAt: isInstant(params.due) ? params.due : null } : null
+  const arrivedOrder: OrderType = arrivedRule ? 'market' : orderTypeOf(params.order)
   const arrival = arrivedMint
-    ? `${arrivedMint}:${arrivedSide}:${arrivedPlan?.planId ?? ''}:${arrivedPlan?.version ?? ''}:${arrivedAmount}`
+    ? `${arrivedMint}:${arrivedSide}:${arrivedPlan?.planId ?? ''}:${arrivedPlan?.version ?? ''}:${arrivedAmount}:${arrivedRule?.ruleId ?? ''}:${arrivedRule?.dueAt ?? ''}:${arrivedOrder}`
     : arrivedSwap
       ? 'swap'
       : null
   const planCopy = useCopy(PLANS_COPY)
 
-  const [mode, setMode] = useState<TradeMode>(arrivedMint ? arrivedSide : arrivedSwap ? 'swap' : 'buy')
+  const ruleWords = useCopy(RULE_TICKET_COPY)
+  const [pickedMode, setMode] = useState<TradeMode>(arrivedMint ? arrivedSide : arrivedSwap ? 'swap' : 'buy')
+  // The rule's reminder the ticket buys under — from a link, or from the token's own rule here; left with «×».
+  const [ruleAsk, setRuleAsk] = useState(arrivedRule)
+  // «Ринок · Регулярно» (1.31.0): the order now, or the rule that reminds of it.
+  const [orderType, setOrderType] = useState<OrderType>(arrivedOrder)
+  // A purchase under a rule is a Buy, whatever was picked before it.
+  const mode: TradeMode = ruleAsk ? 'buy' : pickedMode
   const [pickedAsset, setPickedAsset] = useState<TradeAsset | null>(null)
   const [pickedQuote, setPickedQuote] = useState<TradeAsset | null>(null)
   // A Swap starts where most do — SOL for USDC — until the person picks otherwise.
   const [swapPay, setSwapPay] = useState<TradeAsset | null>(SOL_ASSET)
   const [swapReceive, setSwapReceive] = useState<TradeAsset | null>(USDC_ASSET)
-  const [amountText, setAmountText] = useState(arrivedAmount)
+  const [amountText, setAmountText] = useState(arrivedField)
   // The plan a Buy trades under; dropped when the person leaves the asset the plan names.
   const [plan, setPlan] = useState<ExecutionPlanBinding | null>(arrivedPlan)
   const [picking, setPicking] = useState<Picking>(null)
@@ -165,15 +207,50 @@ export function TradeScreen() {
     setPickedAsset(null)
     setPickedQuote(null)
     setPlan(arrivedPlan)
+    setRuleAsk(arrivedRule)
+    setOrderType(arrivedOrder)
     if (arrivedMint) setMode(arrivedSide)
     else if (arrivedSwap) setMode('swap')
-    if (arrivedAmount) setAmountText(arrivedAmount)
+    if (arrivedField) setAmountText(arrivedField)
   }
   const asset = pickedAsset ?? arrivedAsset
-  // The binding holds only while the ticket is the plan's own Buy of the plan's own asset.
-  const planBinding = plan && mode === 'buy' && asset?.mint === arrivedMint ? plan : null
-  const quoteAsset =
-    pickedQuote && pickedQuote.mint !== asset?.mint ? pickedQuote : defaultQuoteAsset(QUOTE_ASSETS, asset)
+  // The binding holds only while the ticket is the plan's own Buy of the plan's own asset — never beside a rule's.
+  const planBinding = plan && !ruleAsk && mode === 'buy' && asset?.mint === arrivedMint ? plan : null
+
+  /* ---- the rule's purchase (1.31.0): the wallet's rule read afresh; open, its sum in USDC and nothing else ---- */
+  const account0 = useAccount()
+  const session = account0.session
+  const now = useNow(15_000)
+  const rules = useRules(session)
+  const ruleRead = useRule(session, ruleAsk?.ruleId ?? null)
+  const ruleWrites = useRuleWrites(session)
+  const ruleState =
+    ruleAsk && session
+      ? ticketRuleState({
+          read: ruleRead.read,
+          rule: ruleRead.rule,
+          dueAt: ruleAsk.dueAt,
+          budget: rules.data?.budget ?? null,
+          nowMs: now,
+          mint: asset?.mint ?? null,
+        })
+      : null
+  const openRule = ruleState?.kind === 'open' ? ruleState : null
+  const ruleBinding: RuleBinding | null = openRule
+    ? { ruleId: openRule.rule.id, dueAt: openRule.occurrence.dueAt }
+    : null
+  const ruleSum = openRule ? purchaseSumUsd(openRule.rule, openRule.occurrence) : null
+  const ruleName = ruleRead.rule?.name ?? null
+  const leaveRule = () => {
+    setRuleAsk(null)
+    setAmountText('')
+  }
+
+  const quoteAsset = ruleAsk
+    ? USDC_ASSET
+    : pickedQuote && pickedQuote.mint !== asset?.mint
+      ? pickedQuote
+      : defaultQuoteAsset(QUOTE_ASSETS, asset)
 
   const chosen = useMemo(
     () => ticketLegs(mode, { asset, quote: quoteAsset, pay: swapPay, receive: swapReceive }),
@@ -191,11 +268,43 @@ export function TradeScreen() {
     }
     return { pay: fill(chosen.pay), receive: fill(chosen.receive) }
   }, [chosen, learned.data])
-  const trade = useTrade({ mode, legs, amountText, plan: planBinding })
+  // Under the rule the sum is the rule's own, typed as a person would — the server refuses any other (`RULE_MISMATCH`).
+  const ticketAmount = ruleSum !== null ? ruleSumText(ruleSum, locale) : ruleAsk ? '' : amountText
+  const trade = useTrade({ mode, legs, amountText: ticketAmount, plan: planBinding, rule: ruleBinding })
   const { account } = trade
   const available = useAvailable(account.address, legs.pay)
 
+  // After a purchase under the rule, or the server's refusal of one, the rule and the inbox are read again.
+  const ruleRefusalCode = ruleAsk && trade.failure?.code ? trade.failure.code : null
+  const settledUnderRule = ruleAsk !== null && trade.phase === 'settled'
+  const reread = ruleWrites.reread
+  useEffect(() => {
+    if (settledUnderRule || (ruleRefusalCode && ticketRuleRefusal(ruleRefusalCode))) void reread()
+  }, [settledUnderRule, ruleRefusalCode, reread])
+  const ruleRefusal = ruleAsk ? ticketRuleRefusal(trade.failure?.code) : null
+
   const modes: readonly Choice<TradeMode>[] = MODE_KEYS.map((value) => ({ value, label: words.modes[value] }))
+  const orderTypes: readonly Choice<OrderType>[] = ORDER_TYPES.map((value) => ({
+    value,
+    label: value === 'market' ? ruleWords.market : ruleWords.recurring,
+    disabled: value === 'recurring' && (!asset || trade.busy || Boolean(trade.lockedReview)),
+  }))
+  // «Регулярно» stands beside a Buy of one token, never under a plan's or a rule's purchase.
+  const showOrderTypes = mode === 'buy' && !ruleAsk && !planBinding && asset !== null
+  const recurring = showOrderTypes && orderType === 'recurring'
+  const ruleChipLine = !ruleAsk
+    ? null
+    : !session
+      ? ruleWords.signInForRule
+      : openRule && ruleSum !== null
+        ? `${dollarsText(ruleSum, locale)} · ${ruleWhenLine(openRule.rule, locale)}`
+        : ruleState
+          ? ticketRuleLine(ruleState, ruleWords)
+          : ruleWords.readingRule
+  const reviewRuleLine =
+    openRule && ruleSum !== null
+      ? `${dollarsText(ruleSum, locale)} · ${openRule.rule.name} · ${lowerFirst(ruleWhenLine(openRule.rule, locale))}`
+      : null
 
   const pick = (leg: 'pay' | 'receive', chosen: TradeAsset) => {
     setPicking(null)
@@ -268,6 +377,12 @@ export function TradeScreen() {
             ? words.reviewedFirst
             : words.pickAssets
 
+  // Another trade after a purchase under the rule starts a plain ticket: the rule's reminder is bought.
+  const again = () => {
+    trade.reset()
+    if (ruleAsk) leaveRule()
+  }
+
   /* ---- the resting surface's one action ---- */
   let action: {
     title: string
@@ -292,7 +407,7 @@ export function TradeScreen() {
       hint: words.signInHint,
     }
   } else if (trade.phase === 'settled') {
-    action = { title: words.tradeAgain, onPress: trade.reset, hint: words.tradeAgainHint }
+    action = { title: words.tradeAgain, onPress: again, hint: words.tradeAgainHint }
   } else if (trade.phase === 'recovery' || trade.phase === 'recovering') {
     action = {
       title: words.checkTx,
@@ -307,6 +422,14 @@ export function TradeScreen() {
       loading: trade.busy,
       hint: words.releaseHint,
       variant: 'secondary',
+    }
+  } else if (ruleAsk && !openRule) {
+    // No plain order stands in for the rule's purchase: the chip above says why, «×» leaves the rule.
+    action = {
+      title: ruleState === null || ruleState.kind === 'reading' ? ruleWords.readingRule : ruleWords.notUnderRule,
+      onPress: () => undefined,
+      disabled: true,
+      hint: ruleWords.tradeWithoutRule,
     }
   } else {
     const ready =
@@ -326,7 +449,17 @@ export function TradeScreen() {
     }
   }
 
-  const settledCard = trade.settled ? settledView(trade.settled.settlement, trade.settled.context, locale) : null
+  const settledPlain = trade.settled ? settledView(trade.settled.settlement, trade.settled.context, locale) : null
+  // A fill under the rule is the rule's purchase: «Куплено за правилом · SOL», as the web's receipt says it.
+  const settledContext = trade.settled?.context ?? null
+  const settledCard =
+    settledPlain &&
+    ruleAsk &&
+    settledContext?.mode === 'buy' &&
+    settledPlain.status !== 'failed' &&
+    settledPlain.status !== 'pending'
+      ? { ...settledPlain, title: `${ruleWords.boughtByRule} · ${settledContext.receive.symbol}` }
+      : settledPlain
   const attemptCard = trade.attempt?.context ?? null
 
   return (
@@ -337,7 +470,13 @@ export function TradeScreen() {
           subtitle={subtitle}
           onBack={back}
           backLabel={shared.back}
-          bottomInset={BOTTOM_ACTION_INSET}
+          right={
+            <AskRyn
+              context={{ kind: 'page', page: mode === 'swap' ? 'swap' : 'spot' }}
+              className="h-9 w-9 border border-line bg-surface"
+            />
+          }
+          bottomInset={recurring ? undefined : BOTTOM_ACTION_INSET}
           contentClassName="gap-3"
         >
           {trade.phase === 'settled' && settledCard ? (
@@ -355,7 +494,7 @@ export function TradeScreen() {
                   {settledCard.note}
                 </Txt>
               ) : null}
-              <Button title={words.tradeAgain} variant="secondary" onPress={trade.reset} />
+              <Button title={words.tradeAgain} variant="secondary" onPress={again} />
             </View>
           ) : null}
 
@@ -387,7 +526,27 @@ export function TradeScreen() {
 
           {trade.phase !== 'settled' ? (
             <>
-              <ChoiceChips choices={modes} value={mode} onChange={setMode} role="radiogroup" />
+              <ChoiceChips
+                choices={modes}
+                value={mode}
+                onChange={setMode}
+                role="radiogroup"
+                disabled={ruleAsk !== null}
+              />
+              {/* The rule's purchase: what it buys and when, or why the ticket is not it now — and «×» to leave the rule. */}
+              {ruleAsk ? (
+                <RuleChip
+                  title={ruleName ? `${ruleWords.byYourRule} · ${ruleName}` : ruleWords.byYourRule}
+                  line={ruleChipLine}
+                  open={openRule !== null}
+                  leaveLabel={ruleWords.tradeWithoutRule}
+                  onLeave={leaveRule}
+                  disabled={trade.busy}
+                />
+              ) : null}
+              {showOrderTypes ? (
+                <ChoiceChips choices={orderTypes} value={orderType} onChange={setOrderType} role="tablist" quiet />
+              ) : null}
               {planBinding ? (
                 <View className="flex-row flex-wrap items-center gap-2">
                   <Chip
@@ -401,6 +560,17 @@ export function TradeScreen() {
                 </View>
               ) : null}
 
+              {recurring && asset ? (
+                <RecurringPanel
+                  asset={asset}
+                  onBuyUnderRule={(binding) => {
+                    setOrderType('market')
+                    setRuleAsk(binding)
+                  }}
+                  onMarket={() => setOrderType('market')}
+                />
+              ) : (
+              <>
               <Card className="gap-2">
                 <View className="flex-row items-center justify-between gap-3">
                   <Txt variant="labelSm" tone="faint" caps numberOfLines={1} className="shrink-0">
@@ -411,6 +581,8 @@ export function TradeScreen() {
                       accessibilityRole="button"
                       accessibilityLabel={words.useAll}
                       onPress={() => setAmountText(unitsForField(available.raw, available.decimals, locale))}
+                      // Under a rule the sum is the rule's own: nothing here changes it.
+                      disabled={ruleAsk !== null}
                       hitSlop={6}
                     >
                       <Txt variant="labelSm" tone={insufficient ? 'danger' : 'muted'}>
@@ -421,7 +593,8 @@ export function TradeScreen() {
                 </View>
                 <View className="flex-row items-center gap-3">
                   <TextInput
-                    value={amountText}
+                    // Under a rule the field shows the sum the ticket quotes and signs — the rule's, never what was typed before.
+                    value={ruleAsk ? ticketAmount : amountText}
                     onChangeText={(text) => setAmountText(text.replace(/[^\d.,]/g, ''))}
                     keyboardType="decimal-pad"
                     placeholder="0"
@@ -429,7 +602,7 @@ export function TradeScreen() {
                     selectionColor={colors.brand}
                     cursorColor={colors.brand}
                     accessibilityLabel={payLabel}
-                    editable={trade.phase === 'idle' && !trade.lockedReview}
+                    editable={trade.phase === 'idle' && !trade.lockedReview && !ruleAsk}
                     className="flex-1 text-fg"
                     style={[type.dataLg, { paddingVertical: 0 }]}
                   />
@@ -437,7 +610,7 @@ export function TradeScreen() {
                     asset={legs.pay}
                     placeholder={words.asset}
                     onPress={() => setPicking('pay')}
-                    disabled={trade.phase !== 'idle'}
+                    disabled={trade.phase !== 'idle' || ruleAsk !== null}
                   />
                 </View>
                 {inUsd !== null && Number.isFinite(inUsd) ? (
@@ -452,7 +625,7 @@ export function TradeScreen() {
                   accessibilityRole="button"
                   accessibilityLabel={words.flip}
                   onPress={flip}
-                  disabled={trade.phase !== 'idle'}
+                  disabled={trade.phase !== 'idle' || ruleAsk !== null}
                   hitSlop={8}
                   className="h-10 w-10 items-center justify-center rounded-pill border border-line bg-elevated active:bg-hover"
                 >
@@ -472,7 +645,7 @@ export function TradeScreen() {
                     asset={legs.receive}
                     placeholder={words.asset}
                     onPress={() => setPicking('receive')}
-                    disabled={trade.phase !== 'idle'}
+                    disabled={trade.phase !== 'idle' || ruleAsk !== null}
                   />
                 </View>
                 {outUsd !== null && Number.isFinite(outUsd) ? (
@@ -482,9 +655,13 @@ export function TradeScreen() {
                 ) : null}
               </Card>
 
-              {/* A Buy of a company whose rule's reminder is open: a purchase here leaves it open (canon v5.3 В29). */}
-              {mode === 'buy' && account.session ? (
-                <RuleReminderNotice session={account.session} mint={legs.receive?.mint ?? null} />
+              {/* A Buy of a company whose rule's reminder is open: a purchase here leaves it open. */}
+              {mode === 'buy' && account.session && !ruleAsk ? (
+                <RuleReminderNotice
+                  session={account.session}
+                  mint={legs.receive?.mint ?? null}
+                  onBuy={(binding) => setRuleAsk(binding)}
+                />
               ) : null}
 
               {estimate ? (
@@ -499,6 +676,12 @@ export function TradeScreen() {
                 />
               ) : null}
 
+              {ruleRefusal ? (
+                <Txt variant="ui" tone="danger">
+                  {ruleWords[ruleRefusal]}
+                </Txt>
+              ) : null}
+
               {trade.quoteFailure ? (
                 <View className="flex-row flex-wrap items-center gap-2">
                   <Txt variant="ui" tone="danger" className="flex-1">
@@ -511,6 +694,7 @@ export function TradeScreen() {
               ) : null}
 
               {trade.failure &&
+              !ruleRefusal &&
               trade.phase !== 'review' &&
               trade.phase !== 'signing' &&
               trade.failure.key !== trade.quoteFailure?.key ? (
@@ -523,18 +707,23 @@ export function TradeScreen() {
                   ) : null}
                 </View>
               ) : null}
+              </>
+              )}
             </>
           ) : null}
         </Screen>
       </View>
-      <BottomAction
-        title={action.title}
-        onPress={action.onPress}
-        disabled={action.disabled}
-        loading={action.loading}
-        hint={action.hint}
-        variant={action.variant}
-      />
+      {/* In «Регулярно» the rule's own button is the screen's one action. */}
+      {recurring ? null : (
+        <BottomAction
+          title={action.title}
+          onPress={action.onPress}
+          disabled={action.disabled}
+          loading={action.loading}
+          hint={action.hint}
+          variant={action.variant}
+        />
+      )}
 
       <AssetPickerSheet
         visible={picking !== null}
@@ -559,7 +748,16 @@ export function TradeScreen() {
         scroll
       >
         {trade.prepared && legs.pay && legs.receive ? (
-          <ReviewSheetBody trade={trade} mode={mode} pay={legs.pay} receive={legs.receive} locale={locale} />
+          <ReviewSheetBody
+            trade={trade}
+            mode={mode}
+            pay={legs.pay}
+            receive={legs.receive}
+            locale={locale}
+            ruleLine={reviewRuleLine}
+            ruleLabel={ruleWords.yourRule}
+            ruleRefusal={ruleRefusal ? ruleWords[ruleRefusal] : null}
+          />
         ) : null}
       </Sheet>
     </View>
@@ -572,12 +770,20 @@ function ReviewSheetBody({
   pay,
   receive,
   locale,
+  ruleLine,
+  ruleLabel,
+  ruleRefusal,
 }: {
   trade: ReturnType<typeof useTrade>
   mode: TradeMode
   pay: TradeAsset
   receive: TradeAsset
   locale: Locale
+  /** «$5 · SOL · щотижня · ср о 19:00» — the rule this purchase is made under (1.31.0); null for a plain order. */
+  ruleLine: string | null
+  ruleLabel: string
+  /** A refusal under the rule, in the rule's words. */
+  ruleRefusal: string | null
 }) {
   const words = TRADE_COPY[locale]
   const prepared = trade.prepared!
@@ -613,6 +819,7 @@ function ReviewSheetBody({
         </View>
       </View>
       {planReview ? <StrategyBlock review={planReview} symbol={mode === 'buy' ? receive.symbol : pay.symbol} /> : null}
+      {ruleLine ? <RuleReviewRow label={ruleLabel} line={ruleLine} /> : null}
       {view ? (
         <ReviewBlock
           rows={view.rows.slice(1)}
@@ -626,7 +833,7 @@ function ReviewSheetBody({
       ) : null}
       {trade.failure ? (
         <Txt variant="ui" tone="danger">
-          {words.failures[trade.failure.key]}
+          {ruleRefusal ?? words.failures[trade.failure.key]}
         </Txt>
       ) : null}
       {closed || trade.invalidated ? (

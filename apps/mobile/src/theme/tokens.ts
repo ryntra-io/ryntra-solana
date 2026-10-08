@@ -1,8 +1,8 @@
 /**
- * Ryntra Brand Canon v1.0 — the token layer of the native client.
+ * Ryntra Brand — the token layer of the native client.
  *
  * Every value here is copied from the web repository's `DESIGN.md` frontmatter
- * (the machine projection of the shipped token layer, Owner-fixed 2026-09-11).
+ * (the machine projection of the shipped token layer, fixed 2026-09-11).
  * Nothing is invented here: a new value is first declared there, then copied.
  * `scripts/theme-css.mjs` projects this file into `src/theme/tokens.css` for
  * Uniwind; `tokens.test.mjs` fails when the two drift apart.

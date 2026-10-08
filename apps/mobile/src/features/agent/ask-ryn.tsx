@@ -28,7 +28,7 @@ export type AskRynProps = {
 /**
  * The door into the conversation with Ryntra from an asset, a plan, Portfolio
  * or a note — it opens a conversation, never an action. A quiet door, never
- * the hero: orange belongs to the screen's one action (canon §2).
+ * the hero: orange belongs to the screen's one action.
  */
 export function AskRyn({ context, variant = 'icon', label, className }: AskRynProps) {
   const copy = useCopy(AGENT_COPY)

@@ -1,5 +1,5 @@
 /**
- * When an autoinvest rule falls due — «Регулярно» (canon v5.1 §4.1; M16).
+ * When an autoinvest rule falls due — «Регулярно».
  *
  * A person says «щотижня в четвер о 19:00» on their own clock, so a rule
  * keeps the day and the time as a wall clock in an IANA time zone, and a due

@@ -2,7 +2,7 @@ import type { Copy, Locale } from '../../lib/i18n.ts'
 
 /**
  * What a person actually buys, one label per issuer from the issuer's own
- * documents (canon §7) — the web's `?` beside «Що ти купуєш» (`help-topics.ts`,
+ * documents — the web's `?` beside «Що ти купуєш» (`help-topics.ts`,
  * the truth topics), word for word: the label, its one line, what it is, a
  * simple example and the one limitation a person must know. No asset here is
  * «a real share». The issuer's fee on a private company's token is the one the
@@ -48,7 +48,7 @@ const EN: TruthTopics = {
   },
   truthPreStocks: {
     title: 'Economic exposure · private',
-    // The issuer's fee and its power to freeze stand under the company's name and in the facts below (M27).
+    // The issuer's fee and its power to freeze stand under the company's name and in the facts below.
     short: 'No ownership, no vote, no dividends. Selling may not be possible.',
     what: 'By the issuer’s documents the token gives only economic exposure to a private company through a holding entity — no ownership, voting, dividend or information rights. The mint itself withholds a fee on every transfer, and its settings let the issuer freeze the token, pause transfers, and move or burn it from any wallet.',
     example: ['The company is not listed: the token’s price is what the pool pays, not a stock-exchange price.'],

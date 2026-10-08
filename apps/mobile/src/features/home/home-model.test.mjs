@@ -386,10 +386,11 @@ test('the plans block: three active newest first, with the counts of what it lea
 })
 
 test('money hides on request and dashes the unknown', () => {
-  assert.equal(money(1234.5, false), '$1,234.50')
-  assert.equal(money(1234.5, true), HIDDEN_AMOUNT)
-  assert.equal(money(null, false), '—')
-  assert.equal(money(null, true), HIDDEN_AMOUNT)
+  assert.equal(money(1234.5, false, 'en'), '$1,234.50')
+  assert.match(money(1234.5, false, 'uk'), /^\$1\s234,50$/)
+  assert.equal(money(1234.5, true, 'en'), HIDDEN_AMOUNT)
+  assert.equal(money(null, false, 'en'), '—')
+  assert.equal(money(null, true, 'en'), HIDDEN_AMOUNT)
 })
 
 test('the freshest time wins; junk is ignored', () => {

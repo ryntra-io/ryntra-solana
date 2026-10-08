@@ -131,7 +131,7 @@ export function MonitoringScreen() {
         icon="notifications-outline"
         title={copy.noPlansTitle}
         detail={copy.noPlansDetail}
-        action={{ title: copy.openPlans, onPress: () => router.push('/plans') }}
+        action={{ title: copy.openPlans, onPress: () => router.push('/bots') }}
       />
     )
   } else if (surface) {

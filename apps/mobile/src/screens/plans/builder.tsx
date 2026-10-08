@@ -39,6 +39,7 @@ import {
   unitBasisOf,
   VALIDITY_PRESETS,
   withAgentDraft,
+  draftInLocale,
   type DraftField,
   type DraftIssue,
   type HorizonUnit,
@@ -115,7 +116,7 @@ function RuleRow({
     <View className={`flex-row items-start gap-3 py-3 ${last ? '' : 'border-b border-line'}`}>
       <View className="flex-1 gap-1.5">
         <Txt variant="ui">
-          {`${metricLabel(metric, condition.metric, locale)} ${copy.operator[condition.operator]} ${thresholdText(metric, condition.threshold, flags)} · ${condition.window}`}
+          {`${metricLabel(metric, condition.metric, locale)} ${copy.operator[condition.operator]} ${thresholdText(metric, condition.threshold, flags, locale)} · ${condition.window}`}
         </Txt>
         <View className="flex-row flex-wrap items-center gap-1.5">
           <Pressable
@@ -276,7 +277,7 @@ export function PlanBuilderScreen() {
       const keys = new Set<string>()
       if (fits && card.kind === 'monitoringDraft') keys.add(conditionKey(card.condition))
       if (carried) keys.add(conditionKey(carried))
-      setDraft(next)
+      setDraft(draftInLocale(next, locale))
       setCarriedKeys(keys)
       setFromRyn(agentDraftId ? (fits ? 'applied' : 'gone') : null)
     }
@@ -303,7 +304,7 @@ export function PlanBuilderScreen() {
   const back = () => {
     if (step > 0) setStep(step - 1)
     else if (router.canGoBack()) router.back()
-    else router.replace('/plans')
+    else router.replace('/bots')
   }
 
   const made = draft ? rulesOf(draft) : null
@@ -697,32 +698,35 @@ export function PlanBuilderScreen() {
                 <Txt variant="ui" tone="success">
                   {copy.checkPasses}
                 </Txt>
-                <FactRow label={copy.entryRule} value={`${formatPrice(made.rules.entry.pricePerShare)} ${perUnit}`} />
+                <FactRow
+                  label={copy.entryRule}
+                  value={`${formatPrice(made.rules.entry.pricePerShare, locale)} ${perUnit}`}
+                />
                 <FactRow
                   label={copy.maxPriceRule}
                   value={
                     made.rules.entry.maxPricePerShare === null
                       ? copy.noBound
-                      : `${formatPrice(made.rules.entry.maxPricePerShare)} ${perUnit}`
+                      : `${formatPrice(made.rules.entry.maxPricePerShare, locale)} ${perUnit}`
                   }
                 />
                 <FactRow
                   label={copy.invalidationRule}
-                  value={`${formatPrice(made.rules.risk.invalidationPerShare)} ${perUnit}`}
+                  value={`${formatPrice(made.rules.risk.invalidationPerShare, locale)} ${perUnit}`}
                   detail={copy.ruleNote}
                 />
                 <FactRow
                   label={copy.budgetRule}
-                  value={formatUsd(made.rules.capital.budgetUsd)}
+                  value={formatUsd(made.rules.capital.budgetUsd, locale)}
                   detail={
                     made.rules.capital.reserveForCostsUsd > 0
-                      ? `${formatUsd(made.rules.capital.reserveForCostsUsd)} ${copy.reserveRule.toLowerCase()}`
+                      ? `${formatUsd(made.rules.capital.reserveForCostsUsd, locale)} ${copy.reserveRule.toLowerCase()}`
                       : null
                   }
                 />
                 <FactRow
                   label={copy.plannedRisk}
-                  value={formatUsd(made.rules.risk.plannedRiskUsd)}
+                  value={formatUsd(made.rules.risk.plannedRiskUsd, locale)}
                   last={made.rules.evidenceConditions.length === 0}
                 />
                 {made.rules.evidenceConditions.length > 0 ? (
@@ -755,18 +759,18 @@ export function PlanBuilderScreen() {
                   <Chip label={copy.limitedBy[preview.limitedBy]} caps={false} />
                 </View>
                 <Txt variant="dataLg">
-                  {formatAmount(preview.units, 4)} {copy.units[unit]}
+                  {formatAmount(preview.units, 4, locale)} {copy.units[unit]}
                 </Txt>
-                <FactRow label={copy.plannedSpend} value={formatUsd(preview.notionalUsd)} />
-                <FactRow label={copy.lossPerUnit} value={formatPrice(preview.lossPerShareUsd)} />
+                <FactRow label={copy.plannedSpend} value={formatUsd(preview.notionalUsd, locale)} />
+                <FactRow label={copy.lossPerUnit} value={formatPrice(preview.lossPerShareUsd, locale)} />
                 <FactRow
                   label={copy.limitedBy.risk}
-                  value={`${formatAmount(preview.riskLimitedUnits, 4)} ${copy.units[unit]}`}
+                  value={`${formatAmount(preview.riskLimitedUnits, 4, locale)} ${copy.units[unit]}`}
                   mono
                 />
                 <FactRow
                   label={copy.limitedBy.capital}
-                  value={`${formatAmount(preview.capitalLimitedUnits, 4)} ${copy.units[unit]}`}
+                  value={`${formatAmount(preview.capitalLimitedUnits, 4, locale)} ${copy.units[unit]}`}
                   last
                 />
                 <Txt variant="labelSm" tone="faint" className="pt-2">

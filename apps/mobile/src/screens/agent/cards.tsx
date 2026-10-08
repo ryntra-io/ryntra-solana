@@ -37,7 +37,7 @@ const STATE_TONE: Readonly<Record<AgentState, 'neutral' | 'warning'>> = {
 
 /**
  * Figures two to a row: the label, the value as the tool read it, and its state when it is not current. When every
- * figure carries the same state — a whole read gone stale — it is said once, above them, not under each (M27).
+ * figure carries the same state — a whole read gone stale — it is said once, above them, not under each.
  */
 function Figures({ figures, copy }: { figures: readonly AgentFigure[]; copy: AgentCopy }) {
   if (figures.length === 0) return null
@@ -222,7 +222,7 @@ export function AgentCardView({ card, context, lead = false }: { card: AgentCard
                 {row.amount}
               </Txt>
               <Txt variant="data" tone="muted" numberOfLines={1}>
-                {row.priceUsd === null ? DASH : formatPrice(row.priceUsd)}
+                {row.priceUsd === null ? DASH : formatPrice(row.priceUsd, locale)}
               </Txt>
               {row.plans.length > 0 ? <Chip label={copy.hasPlan} tone="brand" /> : null}
             </View>
@@ -323,14 +323,14 @@ export function AgentCardView({ card, context, lead = false }: { card: AgentCard
         <Card level="elevated" className="gap-3 border-brand-line">
           <Head kind={copy.card.planDraft} title={`${card.asset.symbol}${card.asset.underlying.name ? ` · ${card.asset.underlying.name}` : ''}`} />
           <View className="flex-row flex-wrap" style={{ rowGap: 10 }}>
-            <Fact label={copy.entry} value={entry === null ? DASH : formatPrice(entry)} />
-            <Fact label={copy.maxPrice} value={maxPrice === null ? DASH : formatPrice(maxPrice)} />
-            <Fact label={copy.invalidation} value={invalidation === null ? DASH : formatPrice(invalidation)} />
-            <Fact label={copy.plannedRisk} value={risk === null ? DASH : formatUsd(risk)} />
-            <Fact label={copy.budget} value={budget === null ? DASH : formatUsd(budget)} />
+            <Fact label={copy.entry} value={entry === null ? DASH : formatPrice(entry, locale)} />
+            <Fact label={copy.maxPrice} value={maxPrice === null ? DASH : formatPrice(maxPrice, locale)} />
+            <Fact label={copy.invalidation} value={invalidation === null ? DASH : formatPrice(invalidation, locale)} />
+            <Fact label={copy.plannedRisk} value={risk === null ? DASH : formatUsd(risk, locale)} />
+            <Fact label={copy.budget} value={budget === null ? DASH : formatUsd(budget, locale)} />
             <Fact
               label={copy.size}
-              value={card.sizing ? copy.sizeValue(formatAmount(card.sizing.units), card.asset.symbol) : DASH}
+              value={card.sizing ? copy.sizeValue(formatAmount(card.sizing.units, 6, locale), card.asset.symbol) : DASH}
             />
           </View>
           <View>
@@ -355,7 +355,7 @@ export function AgentCardView({ card, context, lead = false }: { card: AgentCard
     case 'monitoringDraft': {
       const metric = metricOf(metrics, card.condition.metric)
       const flags = { present: plans.flagPresent, renounced: plans.flagRenounced }
-      const rule = `${metricLabel(metric, card.condition.metric, locale)} ${copy.operator[card.condition.operator]} ${thresholdText(metric, card.condition.threshold, flags)} · ${card.condition.window}`
+      const rule = `${metricLabel(metric, card.condition.metric, locale)} ${copy.operator[card.condition.operator]} ${thresholdText(metric, card.condition.threshold, flags, locale)} · ${card.condition.window}`
       return (
         <Card level="elevated" className="gap-3 border-brand-line">
           <Head kind={copy.card.monitoringDraft} title={card.subject.symbol} />
@@ -386,16 +386,16 @@ export function AgentCardView({ card, context, lead = false }: { card: AgentCard
     }
     case 'tradeDraft': {
       const buy = card.side === 'BUY'
-      // A Buy opens the company's page first; the ticket with Ryntra's sum is a quiet door under it (one version, canon v5.3 В28).
+      // A Buy opens the company's page first; the ticket with Ryntra's sum is a quiet door under it (one version.
       const ticket = buy ? ticketOfCard(card) : null
       return (
         <Card level="elevated" className="gap-3 border-brand-line">
           <Head
             kind={copy.card.tradeDraft}
-            title={`${copy.side[card.side]} ${card.symbol}${card.amountUsd !== null ? ` · ${formatUsd(card.amountUsd)}` : ''}`}
+            title={`${copy.side[card.side]} ${card.symbol}${card.amountUsd !== null ? ` · ${formatUsd(card.amountUsd, locale)}` : ''}`}
             meta={card.plan ? copy.underPlan(card.plan.version) : null}
           />
-          {/* The server's longer boundary is the ticket's own to say; here the one line every draft carries (M27). */}
+          {/* The server's longer boundary is the ticket's own to say; here the one line every draft carries. */}
           <Txt variant="labelSm" tone="faint">
             {copy.boundary}
           </Txt>

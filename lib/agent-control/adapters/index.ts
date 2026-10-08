@@ -12,12 +12,14 @@
 import { A2A_DEFINITIONS } from "./a2a.ts";
 import { BASE_EVM_DEFINITIONS } from "./base-evm.ts";
 import { JUPITER_SWAP_DEFINITIONS } from "./jupiter-swap.ts";
+import { METEORA_LAUNCH_DEFINITIONS } from "./meteora-launch.ts";
 import { SOLANA_TOKEN_2022_DEFINITIONS } from "./solana-token-2022.ts";
 import { X402_PAYMENT_DEFINITIONS } from "./x402-payments.ts";
 
 export const REGISTERED_ADAPTER_DEFINITIONS: readonly unknown[] = [
   ...SOLANA_TOKEN_2022_DEFINITIONS,
   ...JUPITER_SWAP_DEFINITIONS,
+  ...METEORA_LAUNCH_DEFINITIONS,
   ...BASE_EVM_DEFINITIONS,
   ...X402_PAYMENT_DEFINITIONS,
   ...A2A_DEFINITIONS,

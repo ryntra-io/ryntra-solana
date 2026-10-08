@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowSquareOut, CaretDown, CheckCircle, CircleNotch, Clock, Warning } from "@phosphor-icons/react";
+import { ArrowCounterClockwise, ArrowRight, ArrowSquareOut, CaretDown, CheckCircle, CircleNotch, Clock, Warning } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 
@@ -8,12 +8,14 @@ import { useWalletReach } from "@/app/app/invest/use-wallet-reach";
 import type { WorkspaceLocale } from "@/app/shell/locale";
 import { useSolanaConnection } from "@/app/solana/workspace/connection";
 import type { LaunchMarketResponse, LaunchTradeBuildResponse, LaunchTradeQuoteResponse, LaunchTradeSubmitResponse, LaunchWalletResponse } from "@/lib/api/v1/contract";
+import { storeBoundSolanaReceipt } from "@/lib/solana/send-receipt-vault.client";
 import { signTransactions } from "@/lib/solana/wallet.client";
 
 import { explorerUrl, formatBps, formatMoneyShort, formatMove, formatNumber, formatPercent, formatRaw, fromRaw, rovingNext, toRaw } from "../launch-format";
 import { launchWords } from "../launch-words";
 import styles from "../launch.module.css";
 import { PausedNote } from "../paused-note";
+import { ShareLink } from "../share-link";
 
 /**
  * Buy and sell a launch: on its curve by Meteora DBC's own swap, after
@@ -24,7 +26,9 @@ import { PausedNote } from "../paused-note";
  * The panel never decides: it counts the trade as the amount is typed, says
  * the fee and who receives it (the falling fee for snipers in amber while it
  * lasts), and asks the wallet to sign the bytes the server built. A refusal
- * says what happened and that nothing moved.
+ * says what happened and that nothing moved. A trade made is in History like
+ * every trade, with its receipt, and can be shared at once with the person's
+ * own link.
  */
 
 type Side = "buy" | "sell";
@@ -73,6 +77,8 @@ export function TradePanel({
   const [phase, setPhase] = useState<Phase>("idle");
   const [failure, setFailure] = useState<{ code: string; message: string } | null>(null);
   const [result, setResult] = useState<{ side: Side; quote: LaunchTradeQuoteResponse; submit: LaunchTradeSubmitResponse } | null>(null);
+  /* The trade's receipt kept on this device, as a swap's is: the receipt link then opens the receipt itself. */
+  const [receiptKept, setReceiptKept] = useState<string | null>(null);
 
   const pair = market.pair;
   const decimals = side === "buy" ? pair.decimals : market.tokenDecimals;
@@ -112,6 +118,26 @@ export function TradePanel({
     return () => window.clearTimeout(timer);
   }, [key, amountRaw, side, slippageBps, base]);
 
+  /* A receipted trade: its receipt read from the launch's own route and kept on this device for the receipt page. */
+  const receiptHash = result?.submit.receiptHash ?? null;
+  const receiptSignature = result?.submit.signature ?? null;
+  useEffect(() => {
+    if (!receiptHash || !receiptSignature || !wallet) return;
+    let live = true;
+    void (async () => {
+      const read = await api<{ receipt: unknown }>(`${base}/trade/receipt`, { method: "POST", body: JSON.stringify({ wallet, signature: receiptSignature }) });
+      if (!live || !read.ok || !read.data.receipt) return;
+      try {
+        if (storeBoundSolanaReceipt(window.localStorage, wallet, wallet, read.data.receipt).ok) setReceiptKept(receiptSignature);
+      } catch {
+        /* A device that keeps nothing still has the receipt in History. */
+      }
+    })();
+    return () => {
+      live = false;
+    };
+  }, [receiptHash, receiptSignature, wallet, base]);
+
   const shown = quote.key === key ? quote.data : null;
   const presets = useMemo(() => (side === "buy" ? (pair.dollar ? ["10", "50", "100"] : ["1000", "5000", "20000"]) : ["25", "50", "100"]), [side, pair.dollar]);
 
@@ -143,6 +169,7 @@ export function TradePanel({
     const sent = await api<LaunchTradeSubmitResponse>(`${base}/trade/submit`, { method: "POST", body: JSON.stringify({ buildId: built.data.buildId, wallet: connection.address, signedWireBase64: signed.signedWireBase64[0] }) });
     if (!sent.ok) return failed(sent);
     setResult({ side, quote: built.data.quote, submit: sent.data });
+    setReceiptKept(null);
     setPhase("done");
     setText("");
     onTraded(connection.address);
@@ -197,22 +224,21 @@ export function TradePanel({
   if (phase === "done" && result) {
     const bought = result.side === "buy";
     const confirmed = result.submit.state === "CONFIRMED";
+    /* The tokens the chain says moved; the quote's figure, marked «≈», only while the transaction could not be read. */
+    const tokensText = result.submit.filled ? tokens(result.submit.filled.tokensRaw) : `≈ ${tokens(bought ? result.quote.amountOutRaw : result.quote.amountInRaw)}`;
+    const shareLink = confirmed ? (result.submit.shareLink ?? null) : null;
     return (
-      <section className={`${styles.card} ${styles.tradeCard}`} aria-live="polite">
+      <section className={`${styles.card} ${styles.tradeCard}`} aria-live="polite" data-trade-done>
         <div className={styles.tradeDone}>
           {confirmed ? <CheckCircle size={28} weight="fill" className={styles.tradeDoneIcon} aria-hidden /> : <Clock size={28} className={styles.tradePendingIcon} aria-hidden />}
           <h2 className={styles.tradeDoneTitle}>
             {confirmed
-              ? word(bought ? "boughtTitle" : "soldTitle", {
-                  /* What the program's event says the trade moved; the quote's «≈» only while it could not be read. */
-                  tokens: result.submit.filled ? tokens(result.submit.filled.tokensRaw) : `≈ ${tokens(bought ? result.quote.amountOutRaw : result.quote.amountInRaw)}`,
-                  symbol,
-                })
+              ? word(bought ? "boughtTitle" : "soldTitle", { tokens: tokensText, symbol })
               : word("tradePendingTitle")}
           </h2>
           {confirmed ? (
             /* The chain's figure when its transaction was read; the quote's, marked «≈», until then. */
-            <p className={`${styles.hint} ${styles.mono}`}>
+            <p className={styles.tradeDoneAmount}>
               {result.submit.filled
                 ? bought
                   ? `−${money(result.submit.filled.pairRaw)}`
@@ -223,11 +249,37 @@ export function TradePanel({
             </p>
           ) : null}
           <p className={styles.hint}>{confirmed ? word("tradeDoneLine") : word("tradePendingLine")}</p>
-          <a className={styles.markLink} href={explorerUrl(market.network, "tx", result.submit.signature)} target="_blank" rel="noreferrer noopener">
-            {word("viewTx")} <ArrowSquareOut size={14} aria-hidden />
-          </a>
+          <div className={styles.tradeLinks}>
+            <a className={styles.markLink} href={explorerUrl(market.network, "tx", result.submit.signature)} target="_blank" rel="noreferrer noopener">
+              {word("viewTx")} <ArrowSquareOut size={14} aria-hidden />
+            </a>
+            {/* A receipted trade's «Receipt»: the receipt itself once it is kept on this device, its row in History (where
+                the receipt opens too) for the moment before; a trade not read yet is «In History», where it settles. */}
+            <Link
+              className={styles.markLink}
+              href={
+                receiptKept === result.submit.signature
+                  ? `/app/receipts?action=${encodeURIComponent(result.submit.signature)}`
+                  : `/app/activity?action=${encodeURIComponent(result.submit.signature)}`
+              }
+            >
+              {result.submit.receiptHash ? word("tradeReceipt") : word("tradeInHistory")} <ArrowRight size={14} aria-hidden />
+            </Link>
+          </div>
         </div>
-        <button type="button" className="rw-btn" onClick={() => setPhase("idle")}>
+        {shareLink ? (
+          <ShareLink
+            link={shareLink}
+            symbol={symbol}
+            locale={locale}
+            label={word("shareTrade")}
+            /* The chain's figure, or none: a quote's «≈» is never posted as what happened. */
+            text={result.submit.filled ? word(bought ? "shareTradeBuy" : "shareTradeSell", { tokens: tokensText, symbol }) : word(bought ? "shareTradeBuyPlain" : "shareTradeSellPlain", { symbol })}
+            compact
+          />
+        ) : null}
+        <button type="button" className={styles.tradeAgain} onClick={() => setPhase("idle")}>
+          <ArrowCounterClockwise size={16} aria-hidden />
           {word("tradeAgain")}
         </button>
       </section>

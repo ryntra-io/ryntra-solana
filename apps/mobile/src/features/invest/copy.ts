@@ -2,8 +2,8 @@ import type { Copy } from '../../lib/i18n.ts'
 
 /**
  * Every word the beginner's path says on Home, Markets, a company's page,
- * «Поповнити» and «Отримати», in both languages (canon v5.1 §2–§4; one version
- * since v5.3 В28). The words a beginner reads — a company
+ * «Поповнити» and «Отримати», in both languages.
+ * The words a beginner reads — a company
  * by its name, a price in dollars, one action — are the web line's own, so the
  * phone and ryntra.io say the same thing; the Ukrainian speaks «ти».
  */
@@ -20,6 +20,7 @@ export type InvestCopy = Readonly<{
   walletUnread: string
   tryAgain: string
   partlyRead: string
+  readingPrices: string
   heldBack: (time: string) => string
   unpriced: (count: number) => string
   unfinished: string
@@ -37,7 +38,7 @@ export type InvestCopy = Readonly<{
   forExperienced: string
   privateLine: string
   notAShare: string
-  /** A private company's price against PreStocks' own valuation of it (canon v5.2 В27). */
+  /** A private company's price against PreStocks' own valuation of it. */
   markAbove: (pct: string) => string
   markBelow: (pct: string) => string
   markAt: string
@@ -83,18 +84,19 @@ export type InvestCopy = Readonly<{
 export const INVEST_COPY: Copy<InvestCopy> = {
   en: {
     homeTitle: 'Home',
-    // A no-break space keeps the sum with its word: the line never ends on «from» / «від».
-    guestHeadline: 'Buy a piece of a company from\u00a0$1',
-    guestLine: 'No broker — it stays in your own wallet.',
+    // The release's own line, then what it means in one sentence.
+    guestHeadline: 'Launch. Trade. Automate.',
+    guestLine: 'Launch a token, trade every market from one list and put your buying on a schedule — with your own wallet.',
     connectWallet: 'Connect wallet',
     yourInvestments: 'Your investments',
     buy: 'Buy',
     topUp: 'Top up',
     today: 'today',
-    emptyWallet: 'Nothing here yet — top up and buy your first piece.',
+    emptyWallet: 'Nothing here yet — top up to buy, trade or launch.',
     walletUnread: 'Your wallet could not be read right now.',
     tryAgain: 'Try again',
     partlyRead: 'Part of the wallet was not read',
+    readingPrices: 'Reading prices…',
     heldBack: (at) => `Balances as read ${at}`,
     unpriced: (count) => `${count} without a price`,
     unfinished: 'A signature is waiting to be checked',
@@ -154,17 +156,18 @@ export const INVEST_COPY: Copy<InvestCopy> = {
   },
   uk: {
     homeTitle: 'Головна',
-    guestHeadline: 'Купи частинку компанії від\u00a0$1',
-    guestLine: 'Без брокера — усе лишається у твоєму гаманці.',
+    guestHeadline: 'Запускай. Торгуй. Автоматизуй.',
+    guestLine: 'Запусти токен, торгуй усім з одного списку й купуй за розкладом — зі своїм гаманцем.',
     connectWallet: 'Під’єднати гаманець',
     yourInvestments: 'Твої інвестиції',
     buy: 'Купити',
     topUp: 'Поповнити',
     today: 'за день',
-    emptyWallet: 'Поки порожньо — поповни й купи першу частинку.',
+    emptyWallet: 'Поки порожньо — поповни, щоб купувати, торгувати чи запускати.',
     walletUnread: 'Гаманець зараз не вдалося прочитати.',
     tryAgain: 'Спробувати ще',
     partlyRead: 'Частину гаманця не прочитано',
+    readingPrices: 'Читаю ціни…',
     heldBack: (at) => `Баланс як прочитано ${at}`,
     unpriced: (count) => `${count} без ціни`,
     unfinished: 'Підпис чекає перевірки',

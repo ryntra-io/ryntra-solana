@@ -60,14 +60,23 @@ const OPTIONS: ImagePicker.ImagePickerOptions = {
 
 /** A photo taken now — the camera asked for once; refused, it says so and the gallery stays. */
 export async function takePicture(): Promise<PictureResult> {
-  const permission = await ImagePicker.requestCameraPermissionsAsync()
-  if (!permission.granted) return { kind: 'camera-off' }
-  return finish(await ImagePicker.launchCameraAsync(OPTIONS))
+  try {
+    const permission = await ImagePicker.requestCameraPermissionsAsync()
+    if (!permission.granted) return { kind: 'camera-off' }
+    return await finish(await ImagePicker.launchCameraAsync(OPTIONS))
+  } catch {
+    // Android 7–9 asks storage of the camera, and the app declares none: said as the camera being off, the gallery stays.
+    return { kind: 'camera-off' }
+  }
 }
 
 /** A picture from the gallery — Android's own picker, no storage permission. */
 export async function choosePicture(): Promise<PictureResult> {
-  return finish(await ImagePicker.launchImageLibraryAsync(OPTIONS))
+  try {
+    return await finish(await ImagePicker.launchImageLibraryAsync(OPTIONS))
+  } catch {
+    return { kind: 'bad' }
+  }
 }
 
 async function finish(result: ImagePicker.ImagePickerResult): Promise<PictureResult> {

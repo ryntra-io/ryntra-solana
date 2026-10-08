@@ -1,7 +1,7 @@
 import { Image } from 'expo-image'
 import { useRouter } from 'expo-router'
 import { useState } from 'react'
-import { Linking, Pressable, View } from 'react-native'
+import { Pressable, View } from 'react-native'
 
 import { Button } from '@/components/button'
 import { ChoiceChips } from '@/components/choice-chips'
@@ -12,6 +12,7 @@ import type { FlowStep } from '@/features/launch/launch-flow'
 import { shortKey } from '@/features/launch/launch-format'
 import { canCopy, copyText } from '@/lib/clipboard'
 import { cn } from '@/utils/cn'
+import { openLink } from '@/lib/open-link'
 
 /** Launch's two pages, one tap apart, at the top of each: «Запустити токен» · «Мої лаунчі». */
 export function LaunchTabs({ word, current }: { word: LaunchWord; current: 'new' | 'mine' }) {
@@ -153,7 +154,7 @@ export function ShareLink({ word, link, symbol }: { word: LaunchWord; link: stri
           title={word('shareOnX')}
           variant="secondary"
           className="flex-1"
-          onPress={() => void Linking.openURL(post)}
+          onPress={() => openLink(post)}
         />
       </View>
     </View>
@@ -165,7 +166,7 @@ export function ExplorerLink({ label, url }: { label: string; url: string }) {
   return (
     <Pressable
       accessibilityRole="link"
-      onPress={() => void Linking.openURL(url)}
+      onPress={() => openLink(url)}
       hitSlop={8}
       className="min-h-11 flex-row items-center gap-1 self-start"
     >

@@ -29,7 +29,7 @@ export function quickActions(locale: Locale): readonly QuickAction[] {
   return [
     { id: 'search', title: words.search, icon: 'shortcut_search', params: { href: '/search' } },
     { id: 'markets', title: tabs.markets, icon: 'shortcut_markets', params: { href: '/(tabs)/markets' } },
-    { id: 'agent', title: words.agent, icon: 'shortcut_agent', params: { href: '/(tabs)/agent' } },
+    { id: 'agent', title: words.agent, icon: 'shortcut_agent', params: { href: '/ryn' } },
     { id: 'portfolio', title: tabs.portfolio, icon: 'shortcut_portfolio', params: { href: '/(tabs)/portfolio' } },
   ]
 }

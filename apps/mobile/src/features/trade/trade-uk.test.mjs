@@ -69,10 +69,10 @@ const order = (over = {}) => ({
 })
 
 test('a raw amount in each language’s shape, and in a field’s without its grouping', () => {
-  assert.equal(formatUnits('123456789', 2), '1,234,567.89')
+  assert.equal(formatUnits('123456789', 2, 6, 'en'), '1,234,567.89')
   assert.equal(formatUnits('123456789', 2, 6, 'uk'), `1${NBSP}234${NBSP}567,89`)
   assert.equal(formatUnits('5000', 9, 6, 'uk'), '0,000005')
-  assert.equal(unitsForField('123456789', 2), '1234567.89')
+  assert.equal(unitsForField('123456789', 2, 'en'), '1234567.89')
   assert.equal(unitsForField('123456789', 2, 'uk'), '1234567,89')
   assert.equal(unitsForField('100000000', 6, 'uk'), '100')
 })

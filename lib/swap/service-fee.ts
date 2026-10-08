@@ -40,6 +40,14 @@
  *   sits **on top of** Mayan's protocol fee rather than inside it, is collected
  *   on chain, and lands on the source chain for Swift and the destination chain
  *   for Fast MCTP — for this product's routes, Solana in both cases.
+ * - **Meteora, on a Ryntra launch** (`METEORA_LAUNCH`) — no terminal fee is added
+ *   on a launch's curve: the curve's own trading fee is the fee, and Ryntra, the
+ *   partner of every Ryntra launch config, takes the partner's part of it, plus
+ *   Meteora's referral — a fifth of Meteora's protocol fee, paid by Meteora into
+ *   Ryntra's referral account in the swap itself. In the graduated pool the
+ *   referral alone. Both are read from the program's swap event and the chain's
+ *   balances of the trade's own transaction; the person pays nothing for them
+ *   beyond the fee the curve or the pool already charges.
  *
  * ## And one route with no mechanism at all
  *
@@ -67,7 +75,7 @@
 import { z } from "zod";
 
 /** The provider mechanism a route's fee actually travels through. */
-export type ServiceFeeMechanism = "JUPITER_REFERRAL" | "JUPITER_PLATFORM_FEE" | "RELAY_APP_FEE" | "MAYAN_REFERRER" | "NONE";
+export type ServiceFeeMechanism = "JUPITER_REFERRAL" | "JUPITER_PLATFORM_FEE" | "RELAY_APP_FEE" | "MAYAN_REFERRER" | "METEORA_LAUNCH" | "NONE";
 
 /**
  * Ryntra's rate **per mechanism**, in basis points, since 2026-09-11.
@@ -98,15 +106,15 @@ export type ServiceFeeMechanism = "JUPITER_REFERRAL" | "JUPITER_PLATFORM_FEE" | 
  * («as now»), and `/build`'s platform fee has no rate of its own here — each
  * flow names it.
  */
-export const RYNTRA_SERVICE_FEE_POLICY: Readonly<Record<Exclude<ServiceFeeMechanism, "NONE" | "JUPITER_PLATFORM_FEE">, number>> = {
+export const RYNTRA_SERVICE_FEE_POLICY: Readonly<Record<Exclude<ServiceFeeMechanism, "NONE" | "JUPITER_PLATFORM_FEE" | "METEORA_LAUNCH">, number>> = {
   JUPITER_REFERRAL: 50,
   RELAY_APP_FEE: 25,
   MAYAN_REFERRER: 25,
 };
 
-/** The rate Ryntra asks a mechanism for by default; zero for no mechanism, and for `/build`'s fee, whose rate is always the flow's. */
+/** The rate Ryntra asks a mechanism for by default; zero for no mechanism, for `/build`'s fee, whose rate is always the flow's, and for a launch, whose fee is the curve's or the pool's own. */
 export function serviceFeeRateFor(mechanism: ServiceFeeMechanism): number {
-  return mechanism === "NONE" || mechanism === "JUPITER_PLATFORM_FEE" ? 0 : RYNTRA_SERVICE_FEE_POLICY[mechanism];
+  return mechanism === "NONE" || mechanism === "JUPITER_PLATFORM_FEE" || mechanism === "METEORA_LAUNCH" ? 0 : RYNTRA_SERVICE_FEE_POLICY[mechanism];
 }
 
 
@@ -120,6 +128,8 @@ export type ServiceFeeAccrual =
   | "RELAY_APP_BALANCE_USDC"
   /** Transferred on chain to the Solana referrer address by the route itself. */
   | "MAYAN_ONCHAIN_REFERRER"
+  /** Ryntra's partner vault on Meteora: the partner's part of a launch curve's fee, claimable by it, and the referral paid into its account in the swap. */
+  | "METEORA_PARTNER_VAULT"
   | "NONE";
 
 /**
@@ -333,13 +343,14 @@ export function serviceFeeIsCharged(fee: RyntraServiceFee): boolean {
   return fee.basisPoints > 0 && fee.state !== "NOT_APPLIED" && fee.state !== "UNCONFIGURED";
 }
 
-export const SERVICE_FEE_MECHANISMS = ["JUPITER_REFERRAL", "JUPITER_PLATFORM_FEE", "RELAY_APP_FEE", "MAYAN_REFERRER", "NONE"] as const;
+export const SERVICE_FEE_MECHANISMS = ["JUPITER_REFERRAL", "JUPITER_PLATFORM_FEE", "RELAY_APP_FEE", "MAYAN_REFERRER", "METEORA_LAUNCH", "NONE"] as const;
 export const SERVICE_FEE_STATES = ["NONE", "UNCONFIGURED", "NOT_APPLIED", "QUOTED", "COLLECTED", "NOT_COLLECTED"] as const;
 export const SERVICE_FEE_ACCRUALS = [
   "JUPITER_REFERRAL_TOKEN_ACCOUNT",
   "FEE_WALLET_TOKEN_ACCOUNT",
   "RELAY_APP_BALANCE_USDC",
   "MAYAN_ONCHAIN_REFERRER",
+  "METEORA_PARTNER_VAULT",
   "NONE",
 ] as const;
 
@@ -539,6 +550,8 @@ export function accrualFor(mechanism: ServiceFeeMechanism): ServiceFeeAccrual {
       return "RELAY_APP_BALANCE_USDC";
     case "MAYAN_REFERRER":
       return "MAYAN_ONCHAIN_REFERRER";
+    case "METEORA_LAUNCH":
+      return "METEORA_PARTNER_VAULT";
     default:
       return "NONE";
   }

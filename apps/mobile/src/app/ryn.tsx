@@ -15,6 +15,6 @@ export default function RynRoute() {
   const params = useLocalSearchParams<{ context?: string | string[]; q?: string | string[] }>()
   const context = parseContextParam(first(params.context))
   const q = first(params.q)
-  const back = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/agent'))
+  const back = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)'))
   return <RynScreen context={context} onBack={back} question={q ? q.slice(0, 2000) : null} />
 }

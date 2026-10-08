@@ -37,7 +37,7 @@
 import type { RewardEntry } from "../rewards/model.ts";
 import { usdMicrosOf } from "../rewards/model.ts";
 import type { SolanaWalletAction } from "../solana/action-ledger.ts";
-import { isSpotOrigin } from "../solana/action-origin.ts";
+import { isLaunchOrigin, isSpotOrigin } from "../solana/action-origin.ts";
 import {
   ACTION_PAR_MINTS as BUSINESS_PAR_MINTS,
   ACTION_PAR_SYMBOLS as BUSINESS_PAR_SYMBOLS,
@@ -80,7 +80,7 @@ export function rangeStart(range: BusinessRange, now: string): string | null {
 
 /* ------------------------------------------------------------------ inputs */
 
-export type BusinessProvider = "JUPITER" | "RELAY" | "MAYAN" | "CCTP";
+export type BusinessProvider = "JUPITER" | "METEORA" | "RELAY" | "MAYAN" | "CCTP";
 
 /** Which provider carried a cross-chain order, keyed by its intent digest. */
 export type BusinessOrderRef = Readonly<{ intentDigest: string; provider: "MAYAN" | "RELAY" }>;
@@ -336,6 +336,9 @@ export function ledgerGrossUsdMicros(entries: readonly RewardEntry[]): bigint | 
  */
 export const BUSINESS_PROVIDER_RETAINED_PERCENT: Readonly<Record<BusinessProvider, number>> = {
   JUPITER: 20,
+  /* A launch's trade records its split itself — the creator's, Meteora's and the pool's part beside Ryntra's — so this
+     documented cut is never read for it. */
+  METEORA: 0,
   RELAY: 0,
   MAYAN: 0,
   CCTP: 0,
@@ -465,7 +468,7 @@ function inWindow(at: string, start: string | null, end: string): boolean {
 function providerOf(action: SolanaWalletAction, orders: ReadonlyMap<string, "MAYAN" | "RELAY">): BusinessProvider | null {
   switch (action.lane) {
     case "SWAP":
-      return "JUPITER";
+      return isLaunchOrigin(action.origin) ? "METEORA" : "JUPITER";
     case "CROSS_SWAP":
       return orders.get(action.actionId) ?? "RELAY";
     case "BRIDGE":
@@ -477,6 +480,7 @@ function providerOf(action: SolanaWalletAction, orders: ReadonlyMap<string, "MAY
 
 const PROVIDER_LABEL: Record<BusinessProvider, string> = {
   JUPITER: "Jupiter",
+  METEORA: "Meteora",
   RELAY: "Relay",
   MAYAN: "Mayan",
   CCTP: "CCTP",
@@ -484,6 +488,7 @@ const PROVIDER_LABEL: Record<BusinessProvider, string> = {
 
 const PROVIDER_FEE_NOTE: Record<BusinessProvider, string | null> = {
   JUPITER: null,
+  METEORA: "a launch trade — the fee is the curve's or the pool's whole fee the person paid; Ryntra's net is its part: the partner's share and Meteora's referral",
   RELAY: null,
   MAYAN: "fee 0 — out of default routing, no fee mechanism used",
   CCTP: "fee 0 — Circle CCTP has no integrator fee",

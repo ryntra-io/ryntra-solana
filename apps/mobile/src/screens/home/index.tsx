@@ -13,6 +13,7 @@ import { money, TRENDING_CLASSES, type AttentionItem, type BriefLine } from '@/f
 import { writeLastLook } from '@/features/home/last-look'
 import { useHome } from '@/features/home/use-home'
 import { recordJourney } from '@/features/journeys/journey-store'
+import { marketsPath } from '@/features/markets/screener'
 import { noteRefOfHref } from '@/features/monitoring/monitoring-model'
 import { useOpenNote } from '@/features/monitoring/use-monitoring'
 import { PLANS_COPY } from '@/features/plans/copy'
@@ -30,11 +31,11 @@ type Door =
   'asset' | 'plan' | 'plans' | 'new-plan' | 'portfolio' | 'inbox' | 'trade' | 'markets' | 'watchlist' | 'choose'
 
 /**
- * «Що змінилося» — Home one tap deeper (canon v5.3 §3; M10's command centre,
+ * «Що змінилося» — Home one tap deeper (M10's command centre,
  * a screen of its own since one version). It answers one question: what
  * changed, and what needs a look. The unfinished operation first (M3's recovery), then the
  * plans that need attention (M7's cards, honest about a card two plans
- * share), the portfolio in one line (M4's read), the active plans (M5),
+ * share), the portfolio in one line (M4's read), the active plans,
  * the watchlist's moves since the person last looked, and a short list of
  * what changed with its doors. A guest sees the markets and one next
  * action; a wallet without a session sees its public figures and the one
@@ -86,13 +87,13 @@ export function HomeScreen({ onBack, backLabel }: { onBack?: () => void; backLab
   const openAsset = (row: MarketRow) =>
     go('asset', () => router.push({ pathname: '/asset/[mint]', params: { mint: row.mint, symbol: row.symbol } }))
   const openPlan = (id: string) => go('plan', () => router.push({ pathname: '/plans/[id]', params: { id } }))
-  const openPlans = () => go('plans', () => router.push('/plans'))
+  const openPlans = () => go('plans', () => router.push('/bots'))
   const openNewPlan = () => go('new-plan', () => router.push('/plans/pick'))
   const openPortfolio = () => go('portfolio', () => router.navigate('/(tabs)/portfolio'))
   const openInbox = () => go('inbox', () => router.push('/monitoring'))
   const openTrade = () => go('trade', () => router.push('/trade'))
   const openMarkets = () => go('markets', () => router.navigate('/(tabs)/markets'))
-  const openWatchlist = () => go('watchlist', () => router.push({ pathname: '/lists', params: { tab: 'watchlist' } }))
+  const openWatchlist = () => go('watchlist', () => router.navigate(marketsPath('watchlist') as never))
   const openAttention = (item: AttentionItem) => {
     if (item.kind === 'recovery') return openTrade()
     if (item.kind === 'entry-expired') return openPlan(item.plan.id)
@@ -206,7 +207,7 @@ export function HomeScreen({ onBack, backLabel }: { onBack?: () => void; backLab
       retrying: home.holdings.isFetching,
       retryLabel: shared.tryAgain,
     })
-    // A day's move belongs to its day (M9).
+    // A day's move belongs to its day.
     const change = view && isToday(view.observedAt, now) ? view.dayChange : null
     const notices = view
       ? [
@@ -230,20 +231,20 @@ export function HomeScreen({ onBack, backLabel }: { onBack?: () => void; backLab
           ) : view ? (
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={`${copy.portfolio}, ${money(view.total, hidden)}`}
+              accessibilityLabel={`${copy.portfolio}, ${money(view.total, hidden, locale)}`}
               onPress={openPortfolio}
               className="gap-2 rounded-sm border border-line bg-surface px-4 py-3 active:bg-hover"
             >
               <View className="flex-row items-center justify-between gap-3">
                 <Txt variant="dataLg" tone={view.total === null && !hidden ? 'muted' : 'fg'}>
-                  {money(view.total, hidden)}
+                  {money(view.total, hidden, locale)}
                 </Txt>
                 <Icon name="chevron-forward" size={18} color="fgMuted" />
               </View>
               <View className="flex-row flex-wrap items-center gap-x-2 gap-y-1">
                 {change ? (
                   <Chip
-                    label={`${hidden ? '' : `${formatUsdSigned(change.usd)} · `}${formatPercent(change.pct)} ${portfolioCopy.today}`}
+                    label={`${hidden ? '' : `${formatUsdSigned(change.usd, locale)} · `}${formatPercent(change.pct, locale)} ${portfolioCopy.today}`}
                     tone={change.usd > 0 ? 'success' : change.usd < 0 ? 'danger' : 'neutral'}
                     mono
                   />
@@ -420,13 +421,13 @@ export function HomeScreen({ onBack, backLabel }: { onBack?: () => void; backLab
         )
       case 'portfolio':
         return copy.portfolioLine(
-          hidden ? formatPercent(line.change.pct) : formatUsdSigned(line.change.usd),
-          formatPercent(line.change.pct),
+          hidden ? formatPercent(line.change.pct, locale) : formatUsdSigned(line.change.usd, locale),
+          formatPercent(line.change.pct, locale),
         )
       case 'watch':
         return copy.watchLine(
           line.move.row.symbol,
-          formatPercent(line.move.pct),
+          formatPercent(line.move.pct, locale),
           line.period.kind === 'since' ? copy.since(formatClock(line.period.at)) : copy.over24h,
         )
       default:

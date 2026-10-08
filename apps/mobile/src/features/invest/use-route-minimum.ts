@@ -6,7 +6,7 @@ import { ApiError, fetchSwapQuote } from '@/lib/api'
 import { dollarsRaw, isNoRoute, ladderMinimum, type QuoteAnswer, type RouteMinimum } from './buy-model'
 
 /**
- * A company's own minimum, read from the live quote (canon v5.5 В35: «де живе
+ * A company's own minimum, read from the live quote («де живе
  * котирування на $1 маршруту не дає — мінімум цього активу з котирування,
  * чесно»). A purchase is from a dollar; when the venue finds no route for the
  * sum asked, the same read-only quote the purchase uses

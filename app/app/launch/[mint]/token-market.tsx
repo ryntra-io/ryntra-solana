@@ -62,6 +62,8 @@ export function TokenMarket({
   const tradeRef = useRef<HTMLDivElement | null>(null);
   /* On a phone the trade is above: once it is scrolled past, one button brings it back. */
   const [tradePassed, setTradePassed] = useState(false);
+  /* A trade made here: the share card is drawn again, so its list of the person's trades has the new one. */
+  const [shareRound, setShareRound] = useState(0);
 
   const openRisk = useCallback(() => {
     setTab("risk");
@@ -281,11 +283,22 @@ export function TokenMarket({
 
       <div className={styles.asideCol}>
         <div className={styles.slotTrade} ref={tradeRef} id="launch-trade">
-          <TradePanel market={market} symbol={symbol} locale={locale} paused={paused} onTraded={() => void read()} />
+          <TradePanel
+            market={market}
+            symbol={symbol}
+            locale={locale}
+            paused={paused}
+            onTraded={() => {
+              setShareRound((round) => round + 1);
+              void read();
+            }}
+          />
         </div>
         {/* After the DEX, a holder's position in the pool — drawn only for a wallet the entry is open to, or one holding a position here. */}
         {market.progress.migrated ? <PoolPanel market={market} symbol={symbol} locale={locale} paused={paused} /> : null}
-        <div className={styles.slotShare}>{slots.share}</div>
+        <div className={styles.slotShare} key={shareRound}>
+          {slots.share}
+        </div>
       </div>
 
       {/* What is worth a look stands open beside the «Чесний лаунч» marks, never only behind a tab. */}

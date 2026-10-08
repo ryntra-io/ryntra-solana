@@ -94,7 +94,7 @@ test('the exchange is open in the issuer’s market period and closed outside it
 })
 
 test('a sum of dollars as it is typed: a Ukrainian comma, an English thousands comma, cents and nothing past them', () => {
-  // From a dollar, opening on $10, the quick choices shares of the wallet (canon v5.5 В35; M21).
+  // From a dollar, opening on $10, the quick choices shares of the wallet.
   assert.deepEqual([...BUY_SHARE_PRESETS_PCT], [25, 50, 75, 100])
   assert.equal(DEFAULT_BUY_USD, 10)
   assert.equal(MIN_BUY_USD, 1)
@@ -243,7 +243,7 @@ test('«Перевірка» is exactly four rows — Спишеться · От
   })
   assert.equal(rows[2].value, '≈ $0,05', 'the server’s figure, as the web prints it')
   assert.equal(rows[2].fee, null, 'a token its issuer charges nothing to move has no fee line')
-  // The reserve is a line of its own under «Усі витрати», never joined to the costs (canon v5.5 В35).
+  // The reserve is a line of its own under «Усі витрати», never joined to the costs.
   assert.equal(rows[2].sub, '≈ $0,44 у SOL разово лишаються в гаманці на рахунку токена')
   assert.deepEqual(rows[3], {
     key: 'what',
@@ -565,7 +565,7 @@ test('the sheet’s one action follows what stands between the person and a Revi
   assert.deepEqual(composeAction({ ...ready, amountUsd: 0.5 }), { kind: 'minimum' })
   assert.deepEqual(composeAction({ ...ready, amountUsd: 1 }), { kind: 'buy', usd: 1 }, 'a dollar is a purchase')
   assert.deepEqual(composeAction({ ...ready, amountUsd: null }), { kind: 'enter' })
-  // No route for the sum: the company's own minimum put in with one tap, never a dead button (canon v5.5 В35).
+  // No route for the sum: the company's own minimum put in with one tap, never a dead button.
   const found = { state: 'found', minimumUsd: 5 }
   assert.deepEqual(composeAction({ ...ready, amountUsd: 1, route: found }), { kind: 'use-minimum', usd: 5 })
   assert.deepEqual(

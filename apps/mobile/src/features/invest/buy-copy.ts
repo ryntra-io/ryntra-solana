@@ -4,10 +4,10 @@ import type { BuyFailureKey } from './buy-model.ts'
 
 /**
  * Every word a company's page and its purchase in dollars say on the
- * beginner's path (canon v5.1 §2, §4, §7, §8; M15), in both languages. The words are the web
+ * beginner's path, in both languages. The words are the web
  * line's own for the same page and the same sheet, so the phone and ryntra.io
  * say the same thing; the Ukrainian speaks «ти» and has no English word on the
- * way to a purchase (canon §1). The wallet signs with its own biometrics — the
+ * way to a purchase. The wallet signs with its own biometrics — the
  * app says «Підтверди в гаманці», never the vault's name. Nothing here offers
  * what does not work yet: no «Автоінвест», no «Купувати щотижня» before their
  * row, no loss limit on the phone.
@@ -18,7 +18,7 @@ export type BuyCopy = Readonly<{
   exchangeClosed: string
   notOffered: string
   halted: string
-  /** A token of an issuer Ryntra no longer supports (canon v5.2 В26): no purchase, the way out said. */
+  /** A token of an issuer Ryntra no longer supports: no purchase, the way out said. */
   retired: string
   chartRange: string
   rangeLabel: Readonly<Record<'1d' | '1w' | '1m' | '1y', string>>
@@ -29,7 +29,7 @@ export type BuyCopy = Readonly<{
   /* the amount */
   buyTitle: (company: string) => string
   amount: string
-  /** The quick choices' group: shares of the paying dollars the wallet holds (canon v5.5 В35). */
+  /** The quick choices' group: shares of the paying dollars the wallet holds. */
   quickShares: (symbol: string) => string
   minimum: string
   /** No route for the sum typed: the company's own minimum is being read from the same quote. */
@@ -64,11 +64,11 @@ export type BuyCopy = Readonly<{
   rowCosts: string
   rowWhat: string
   atLeast: string
-  /** The token account's one-time reserve, a line of its own under «Усі витрати» — never among the costs (canon v5.5 В35). */
+  /** The token account's one-time reserve, a line of its own under «Усі витрати» — never among the costs. */
   reserve: (usd: string) => string
   /** Said before the four rows when that reserve is more than the purchase itself. */
   reserveFirst: (reserve: string, spend: string) => string
-  /** The issuer's own fee inside «Усі витрати» — «з них комісія емітента 1% ≈ $0,10» (canon §12). */
+  /** The issuer's own fee inside «Усі витрати» — «з них комісія емітента 1% ≈ $0,10». */
   issuerFee: (pct: string, usd: string | null) => string
   /** Ryntra's own fee inside «Усі витрати», beside the issuer's — «з них комісія Ryntra 0,50% · ≈ 0,05 USDC», the web's words. */
   ryntraFee: (figures: string) => string

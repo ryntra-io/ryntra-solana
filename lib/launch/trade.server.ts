@@ -10,10 +10,16 @@
  * 4. **Submit**: the signed bytes must be the built ones — a wallet may add
  *    only its own fee and guard instructions — with a valid signature; then
  *    they are sent once and confirmed. Nothing here signs.
+ * 5. **Record**: where trades are recorded, the trade is written like every
+ *    trade — its History row before the send, then from the chain its receipt,
+ *    Ryntra's part of the fee for the rewards core, the points and `/stats`
+ *    (`record.server.ts`) — and the answer carries the receipt's hash and the
+ *    person's own link to share the trade with.
  */
 
 import { randomBytes } from "node:crypto";
 
+import { getBase58Decoder } from "@solana/kit";
 import { PublicKey, Transaction } from "@solana/web3.js";
 
 import type {
@@ -29,11 +35,13 @@ import type {
 import { priceMoveBps, uiAmount, type LaunchTrade } from "../core/venues/meteora-dbc/market.ts";
 import type { MarketState } from "../core/venues/meteora-dbc/market.server.ts";
 import { LaunchTradeRefusal, createLaunchTradeVenue, heldRaw, type LaunchTradeQuote } from "../core/venues/meteora-dbc/trade.server.ts";
+import { ensureRewardAccount } from "../rewards/ledger.ts";
 import { compareWalletTransaction } from "../solana/wallet-modification.ts";
 import type { LaunchDeps, LaunchReadDeps, LaunchRecord } from "./flow.server.ts";
-import { launchPair, launchPoolFee } from "./config.server.ts";
-import { byDeadline, readLaunchRecord, sendOnce } from "./flow.server.ts";
+import { launchPair, launchPoolFee, launchWritesHere } from "./config.server.ts";
+import { byDeadline, launchShareLink, readLaunchRecord, sendOnce } from "./flow.server.ts";
 import { forgetLaunchMarket } from "./market.server.ts";
+import { beginLaunchTrade, failLaunchTrade, reviewDigestOf, settleLaunchTrade, type LaunchTradeQuoteFacts, type LaunchTradeRecord } from "./record.server.ts";
 import { launchMarketReader } from "./trade-index.server.ts";
 
 export type TradeDeps = Pick<LaunchDeps, "network" | "connection" | "store" | "now"> & Pick<LaunchReadDeps, "second" | "adopt">;
@@ -58,6 +66,19 @@ type TradeBuildRecord = Readonly<{
   validUntil: string;
   createdAt: string;
   expiresAt: string;
+  /**
+   * What the trade's record needs once it is sent: where it trades, the token and the pair as the launch names them,
+   * and the quote the wallet was shown. Absent on a build made before trades were recorded.
+   */
+  trade?: Readonly<{
+    venue: "curve" | "pool";
+    tokenInfo: LaunchTradeRecord["token"];
+    pair: LaunchTradeRecord["pair"];
+    curve: string;
+    config: string;
+    pool: string | null;
+    quote: LaunchTradeQuoteFacts;
+  }>;
 }>;
 
 const buildKey = (cluster: string, id: string) => `${cluster}:${id}`;
@@ -155,6 +176,7 @@ export async function buildLaunchTrade(deps: TradeDeps, token: string, input: La
     const built = await venue.build({ state: read.state, token, side: input.side, amountRaw: input.amountRaw, slippageBps: input.slippageBps, wallet: input.wallet });
     await sweep(deps).catch(() => undefined);
     const now = deps.now();
+    const pair = launchPair(deps.network, read.record.preset);
     const record: TradeBuildRecord = {
       id: randomBytes(16).toString("hex"),
       cluster: deps.network.cluster,
@@ -166,6 +188,22 @@ export async function buildLaunchTrade(deps: TradeDeps, token: string, input: La
       validUntil: built.validUntil,
       createdAt: now.toISOString(),
       expiresAt: new Date(now.getTime() + TRADE_BUILD_TTL_MS).toISOString(),
+      trade: {
+        venue: built.quote.venue,
+        tokenInfo: { mint: token, symbol: read.record.symbol.slice(0, 24), decimals: read.state.tokenDecimals },
+        pair: { mint: read.record.pairMint, symbol: pair.symbol, decimals: read.state.pairDecimals, dollar: pair.dollar },
+        curve: read.record.pool,
+        config: read.record.config,
+        pool: read.state.graduated?.pool ?? null,
+        quote: {
+          amountInRaw: built.quote.amountInRaw,
+          amountOutRaw: built.quote.amountOutRaw,
+          minimumOutRaw: built.quote.minimumOutRaw,
+          slippageBps: built.quote.slippageBps,
+          feeRaw: built.quote.fee.totalRaw,
+          ryntraRaw: built.quote.fee.ryntraRaw,
+        },
+      },
     };
     await deps.store.collection<TradeBuildRecord>("launchTradeBuilds").insertIfAbsent(buildKey(record.cluster, record.id), record);
     return {
@@ -199,15 +237,79 @@ export async function submitLaunchTrade(deps: TradeDeps, token: string, input: L
   if (!(await deps.store.collection<TradeSend>("launchTradeSends").insertIfAbsent(buildKey(build.cluster, build.id), { cluster: build.cluster, id: build.id, at: deps.now().toISOString() }))) {
     return fail("LAUNCH_BUILD_USED", "This trade was already sent.");
   }
+  /* Written before the send, like every trade's row: a trade the network has not answered for is still in History. */
+  const signature = getBase58Decoder().decode(new Uint8Array(tx.signature ?? new Uint8Array()));
+  /* Recorded where launches are written — production on mainnet, the stand on devnet; a preview's trade is the chain's alone. */
+  const recorded = deps.network.tradesRecorded && launchWritesHere(deps.network) && build.trade ? build.trade : null;
+  if (recorded) {
+    await beginLaunchTrade(deps, {
+      cluster: deps.network.cluster,
+      signature,
+      wallet: build.wallet,
+      side: build.side,
+      venue: recorded.venue,
+      token: recorded.tokenInfo,
+      pair: recorded.pair,
+      curve: recorded.curve,
+      config: recorded.config,
+      pool: recorded.pool,
+      buildId: build.id,
+      reviewDigest: reviewDigestOf(build.wireBase64),
+      validUntil: build.validUntil,
+      quote: recorded.quote,
+    }).catch(() => undefined);
+  }
   const sent = await sendOnce(deps.connection, tx, Number(build.validUntil), deps.now, { ...SEND_BUDGET, deadline }, { second: deps.second });
   forgetLaunchMarket(deps.network.cluster, token);
   if (sent.outcome === "REJECTED" || sent.outcome === "FAILED") {
+    if (recorded) await failLaunchTrade(deps, deps.network.cluster, sent.signature, sent.reason ?? "The network refused the trade.").catch(() => undefined);
     /* The program names its own refusal in its logs: the price moved past the slippage before the trade landed. */
     if (/ExceededSlippage/.test(sent.detail ?? sent.reason ?? "")) return fail("LAUNCH_SLIPPAGE", "The price moved past the slippage before the trade landed; nothing moved.");
     return fail("LAUNCH_SUBMIT_FAILED", sent.reason ?? "The network refused the trade.");
   }
   const confirmed = sent.outcome === "CONFIRMED";
-  return { ok: true, submit: { signature: sent.signature, state: confirmed ? "CONFIRMED" : "PENDING", filled: confirmed ? await byDeadline(() => filledBy(deps, build, sent.signature), deadline, deps.now, null) : null } };
+  const shareLink = await tradeShareLink(deps, build.wallet, token);
+  if (!confirmed) return { ok: true, submit: { signature: sent.signature, state: "PENDING", filled: null, receiptHash: null, shareLink } };
+  if (!recorded) {
+    const filled = await byDeadline(() => filledBy(deps, build, sent.signature), deadline, deps.now, null);
+    return { ok: true, submit: { signature: sent.signature, state: "CONFIRMED", filled, receiptHash: null, shareLink } };
+  }
+  /* Settled from the chain inside the route's time: the fill, the receipt, Ryntra's part for the rewards core. */
+  const settled = await byDeadline(() => settledBy(deps, sent.signature), deadline, deps.now, null);
+  return { ok: true, submit: { signature: sent.signature, state: "CONFIRMED", filled: settled?.filled ?? null, receiptHash: settled?.receiptHash ?? null, shareLink } };
+}
+
+/** The person's own link to share a trade: the launch's page through their referral code, once their rewards account exists. */
+async function tradeShareLink(deps: TradeDeps, wallet: string, token: string): Promise<string | null> {
+  try {
+    const account = await ensureRewardAccount(deps.store, wallet, deps.now().toISOString());
+    return launchShareLink(deps.network.origin, { token, referralCode: account.code });
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * A sent trade settled from the chain — its fill as the chain shows it and its receipt's hash — asked a few times while a
+ * node has no record of it yet. Null while unread: the reconciliation and History settle it later.
+ */
+async function settledBy(deps: TradeDeps, signature: string): Promise<Readonly<{ filled: { tokensRaw: string; pairRaw: string }; receiptHash: string }> | null> {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      const settled = await settleLaunchTrade(deps, signature);
+      if (settled?.record.state === "FAILED") return null;
+      const receipt = settled?.record.state === "DONE" ? settled.record.receipt : null;
+      const row = settled?.row ?? null;
+      if (receipt && row?.in && row.out) {
+        const buy = settled!.record.side === "buy";
+        return { filled: { tokensRaw: buy ? row.in.amountRaw : row.out.amountRaw, pairRaw: buy ? row.out.amountRaw : row.in.amountRaw }, receiptHash: receipt.contentHash };
+      }
+    } catch {
+      /* Unread is unread: the reconciliation settles it. */
+    }
+    await new Promise((resolve) => setTimeout(resolve, 1_500));
+  }
+  return null;
 }
 
 /**

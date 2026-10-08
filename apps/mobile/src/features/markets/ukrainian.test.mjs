@@ -80,13 +80,19 @@ test('both languages carry the same words, none of them left empty', () => {
   }
 })
 
-test('the lists speak the web’s words: Список спостереження · Акції · Крипта · Меми, the web’s sessions', () => {
-  assert.deepEqual(Object.values(MARKETS_COPY.uk.lists), ['Список спостереження', 'Акції', 'Крипта', 'Меми'])
+test('the screener speaks the web’s words: Усі · Меми · Крипта · Акції · Приватні · Обране, «У тренді», the web’s sessions', () => {
+  assert.deepEqual(Object.values(MARKETS_COPY.uk.tabs), ['Усі', 'Меми', 'Крипта', 'Акції', 'Приватні', 'Обране'])
+  assert.deepEqual(Object.values(MARKETS_COPY.en.tabs), ['All', 'Memes', 'Crypto', 'Stocks', 'Private', 'Watchlist'])
+  assert.equal(MARKETS_COPY.uk.notAShare, 'Це не акція')
+  assert.equal(MARKETS_COPY.uk.search, 'Назва, тікер або адреса контракту')
   assert.equal(SESSION_WORDS.uk.market, 'Сесія відкрита')
   assert.equal(SESSION_WORDS.uk.closed, 'Закрито')
   assert.equal(REFERENCE_WORDS.uk['last-available'], 'Останній доступний')
-  assert.equal(MARKETS_COPY.uk.sorts.volume.label, 'Найбільше торгуються')
-  assert.equal(COMPONENT_COPY.uk.searchPlaceholder, 'Компанія, тікер або токен')
+  assert.deepEqual(
+    Object.values(MARKETS_COPY.uk.sorts).map((sort) => sort.label),
+    ['У тренді', 'Зростають', 'Падають', 'Ліквідність', 'До біржі'],
+  )
+  assert.equal(COMPONENT_COPY.uk.searchPlaceholder, 'Назва, тікер або адреса контракту')
 })
 
 test('a count says its noun in the Ukrainian plural: 1 результат, 3 результати, 5 і 11 результатів, 21 результат', () => {

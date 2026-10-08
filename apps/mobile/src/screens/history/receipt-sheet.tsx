@@ -1,4 +1,4 @@
-import { Linking, Pressable, View } from 'react-native'
+import { Pressable, View } from 'react-native'
 
 import { Chip, type ChipTone } from '@/components/chip'
 import { FactRow } from '@/components/fact-row'
@@ -8,7 +8,8 @@ import { Txt } from '@/components/txt'
 import type { HistoryCopy } from '@/features/history/copy'
 import { explorerUrl, historyTitle, type HistoryRow, type HistoryStatus } from '@/features/history/history-model'
 import type { Locale } from '@/lib/i18n'
-import { DASH, formatMoment, formatUsd, shortAddress } from '@/utils/format'
+import { DASH, formatAmount, formatMoment, formatUsd, shortAddress } from '@/utils/format'
+import { openLink } from '@/lib/open-link'
 
 export const STATUS_TONE: Readonly<Record<HistoryStatus, ChipTone>> = {
   done: 'success',
@@ -50,7 +51,7 @@ export function ReceiptSheet({ row, now, locale, copy, onClose }: ReceiptSheetPr
       detail:
         [
           row.fee.basisPoints !== null && !row.fee.text.endsWith('%')
-            ? `${(row.fee.basisPoints / 100).toFixed(2)}%`
+            ? `${formatAmount(row.fee.basisPoints / 100, 2, locale)}%`
             : null,
           row.fee.collected ? null : copy.feeNotCollected,
         ]
@@ -59,7 +60,7 @@ export function ReceiptSheet({ row, now, locale, copy, onClose }: ReceiptSheetPr
     })
   }
   if (row.statedUsd !== null)
-    facts.push({ label: copy.value, value: formatUsd(row.statedUsd), detail: copy.valueDetail })
+    facts.push({ label: copy.value, value: formatUsd(row.statedUsd, locale), detail: copy.valueDetail })
   facts.push({ label: copy.time, value: formatMoment(row.at, now, locale) })
   const updated = formatMoment(row.updatedAt, now, locale)
   if (updated !== formatMoment(row.at, now, locale)) facts.push({ label: copy.updated, value: updated })
@@ -97,7 +98,7 @@ export function ReceiptSheet({ row, now, locale, copy, onClose }: ReceiptSheetPr
         <Pressable
           accessibilityRole="link"
           accessibilityLabel={copy.explorer}
-          onPress={() => void Linking.openURL(explorerUrl(proof))}
+          onPress={() => openLink(explorerUrl(proof))}
           className="flex-row items-center gap-3 py-3 active:bg-hover"
         >
           <Icon name="open-outline" size={18} />

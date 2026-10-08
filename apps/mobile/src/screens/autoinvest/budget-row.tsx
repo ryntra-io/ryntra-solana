@@ -10,7 +10,7 @@ import type { Locale } from '@/lib/i18n'
 import { fonts, useTheme } from '@/theme'
 
 /**
- * The month's budget as its own line (canon v5.3 В29; M20) — in the
+ * The month's budget as its own line — in the
  * «Автоінвест» block on Home and in Portfolio, and in a new rule's sheet:
  * «Бюджет не задано · Задати», or «Бюджет місяця $10 з $50 · Змінити» over
  * the month's bar in the text's own colour — amber once it is spent, and then

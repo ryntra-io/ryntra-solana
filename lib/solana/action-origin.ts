@@ -26,6 +26,11 @@
  * is not open, and the binding travels into the bundle and onto the row
  * unchanged. The row is how the rule learns it was bought — the rule is never
  * written from the purchase path.
+ *
+ * **A launch.** A buy or a sale of a Ryntra launch — on its bonding curve, or in
+ * the pool it graduated into — is a `SWAP` row whose origin says `LAUNCH`, with
+ * the side, the token and where it traded. The launch's own trade route writes
+ * it; an order request never names it.
  */
 
 import { z } from "zod";
@@ -36,7 +41,10 @@ import { ExecutionPlanBindingSchema, RuleBindingSchema } from "../api/v1/contrac
 export const SolanaActionPlanBindingSchema = ExecutionPlanBindingSchema.extend({ reviewId: z.string().min(8).max(64) }).strict();
 export type SolanaActionPlanBinding = z.output<typeof SolanaActionPlanBindingSchema>;
 
-export const SolanaActionOriginSchema = z
+const BASE58 = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+
+/** What a swap's signed bundle carries: Spot with a side, the plan and the rule. A launch's trade never comes through a swap. */
+export const SpotActionOriginSchema = z
   .object({
     surface: z.enum(["SPOT"]),
     side: z.enum(["BUY", "SELL"]),
@@ -44,6 +52,26 @@ export const SolanaActionOriginSchema = z
     rule: RuleBindingSchema.optional(),
   })
   .strict();
+
+export type SpotActionOrigin = z.output<typeof SpotActionOriginSchema>;
+
+/** What a History row carries: a Spot origin, or a launch's trade with its token and venue. */
+export const SolanaActionOriginSchema = z
+  .object({
+    surface: z.enum(["SPOT", "LAUNCH"]),
+    side: z.enum(["BUY", "SELL"]),
+    plan: SolanaActionPlanBindingSchema.optional(),
+    rule: RuleBindingSchema.optional(),
+    /** A launch only: the launched token, and where the trade ran — its curve, or the pool it graduated into. */
+    token: z.string().regex(BASE58).optional(),
+    venue: z.enum(["curve", "pool"]).optional(),
+  })
+  .strict()
+  .superRefine((origin, context) => {
+    const launch = origin.surface === "LAUNCH";
+    const whole = launch ? origin.token !== undefined && origin.venue !== undefined && origin.plan === undefined && origin.rule === undefined : origin.token === undefined && origin.venue === undefined;
+    if (!whole) context.addIssue({ code: "custom", message: launch ? "A launch's trade names its token and venue, and no plan or rule." : "Only a launch's trade names a token and a venue." });
+  });
 
 export type SolanaActionOrigin = z.output<typeof SolanaActionOriginSchema>;
 
@@ -61,6 +89,13 @@ export type SolanaActionOriginRequest = z.output<typeof SolanaActionOriginReques
 
 export function isSpotOrigin(origin: SolanaActionOrigin | null | undefined): origin is SolanaActionOrigin {
   return origin !== null && origin !== undefined && origin.surface === "SPOT";
+}
+
+/** A launch's trade: its origin with the token and the venue it names. */
+export type LaunchActionOrigin = SolanaActionOrigin & Readonly<{ surface: "LAUNCH"; token: string; venue: "curve" | "pool" }>;
+
+export function isLaunchOrigin(origin: Readonly<{ surface: string; token?: string; venue?: string }> | null | undefined): origin is LaunchActionOrigin {
+  return origin !== null && origin !== undefined && origin.surface === "LAUNCH" && typeof origin.token === "string" && (origin.venue === "curve" || origin.venue === "pool");
 }
 
 /** The plan an action was made under, or null: a row from before plans, or a plain Spot or Swap action. */

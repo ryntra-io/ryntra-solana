@@ -217,7 +217,7 @@ test('a rule’s sum is from $1 to $100 000 in dollars and cents; the request is
   assert.equal(ruleAmountOf('25', 'uk'), 25)
   assert.equal(ruleAmountOf('25,50', 'uk'), 25.5)
   assert.equal(ruleAmountOf('$1,000.50', 'en'), 1000.5)
-  // A dollar a day is a rule (canon v5.5 В35: «Кожний день по долару»); under a dollar is none.
+  // A dollar a day is a rule («Кожний день по долару»); under a dollar is none.
   assert.equal(ruleAmountOf('1', 'uk'), 1)
   assert.equal(ruleAmountOf('9.99', 'en'), 9.99)
   assert.equal(ruleAmountOf('0.99', 'en'), null)
@@ -396,7 +396,7 @@ test('a card’s date wraps whole, and a line of parts wraps only between its pa
 })
 
 test('a ceiling is typed from $1 to $1 000 000; the quick ones are $31 · $50 · $100 · $200, and the one set now', () => {
-  // The web's own ceilings (canon v5.5 В35): the first is a dollar a day for the longest month.
+  // The web's own ceilings: the first is a dollar a day for the longest month.
   assert.deepEqual([...BUDGET_PRESETS_USD], [31, 50, 100, 200])
   assert.equal(BUDGET_PRESETS_USD[0], 31 * 1)
   assert.equal(BUDGET_MIN_USD, 1)
@@ -591,7 +591,7 @@ test('a rule the server answers 404 for is gone, even with an earlier read still
   assert.equal(isRuleGoneError(null), false)
 })
 
-/* ---- «Автоінвест» made clear (canon v5.3 В29; M20) ---- */
+/* ---- «Автоінвест» made clear ---- */
 
 test('the month’s budget is its own line: «Бюджет не задано», or «Бюджет місяця $10 з $50» over its bar', () => {
   const words = AUTOINVEST_COPY
@@ -657,7 +657,7 @@ test('a rule’s purchase is never mistaken for an ordinary one, in both languag
   assert.equal(uk.reminderOpenHere, 'Нагадування правила відкрите')
   assert.equal(uk.plainHereLeavesOpen, 'Купівля тут його не закриває — правило рахує лише купівлю за правилом.')
   assert.equal(uk.budgetNotSet, 'Бюджет не задано')
-  // Every word in both languages, and none the canon forbids — a help topic's every line too (M26).
+  // Every word in both languages, and none the product forbids — a help topic's every line too.
   assert.deepEqual(Object.keys(uk).sort(), Object.keys(en).sort())
   const texts = (value) =>
     typeof value === 'function'

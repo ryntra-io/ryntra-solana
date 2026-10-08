@@ -56,7 +56,7 @@ export function PickStockScreen() {
       .slice(0, 60)
   }, [universe.data, needle])
 
-  const back = () => (router.canGoBack() ? router.back() : router.replace('/plans'))
+  const back = () => (router.canGoBack() ? router.back() : router.replace('/bots'))
   const pick = (row: StockUniverseRow) => {
     Keyboard.dismiss()
     router.replace({ pathname: '/plans/new', params: { mint: row.mint, symbol: row.symbol } })

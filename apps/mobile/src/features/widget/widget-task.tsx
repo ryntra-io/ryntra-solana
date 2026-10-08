@@ -2,6 +2,7 @@ import type { WidgetTaskHandler } from 'react-native-android-widget'
 
 import { portfolioView } from '@/features/portfolio/portfolio-model'
 import { fetchHoldings } from '@/lib/api'
+import { getLocale } from '@/lib/i18n'
 
 import { figuresOf, wantsRead } from './widget-model'
 import { portfolioWidgetFor } from './widget-render'
@@ -25,10 +26,11 @@ export const portfolioWidgetTask: WidgetTaskHandler = async ({ widgetInfo, widge
     const read = await fetchHoldings(wallet)
     // As Portfolio holds back a read that could not see the token accounts, so does the widget: the earlier figures stay, labelled.
     const held = read.data.tokenRead === 'UNAVAILABLE' && state.figures?.owner === wallet
+    const view = portfolioView(read.data, getLocale())
+    // A read that came before its prices changes nothing: the last priced figures stay, unlabelled — it is not a failure.
+    if (!held && !view.pricesRead) return
     state =
-      (held
-        ? setWidgetFailed(new Date().toISOString(), wallet)
-        : setWidgetFigures(figuresOf(portfolioView(read.data)))) ?? readWidgetState()
+      (held ? setWidgetFailed(new Date().toISOString(), wallet) : setWidgetFigures(figuresOf(view))) ?? readWidgetState()
   } catch {
     state = setWidgetFailed(new Date().toISOString(), wallet) ?? readWidgetState()
   }

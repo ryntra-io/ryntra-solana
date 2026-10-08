@@ -1,10 +1,10 @@
 import type { Copy } from '../../lib/i18n.ts'
 
 /**
- * Every word under a company's or a coin's «Деталі» (M22): the technical head,
+ * Every word under a company's or a coin's «Деталі»: the technical head,
  * the issuer's figures, the venue's figures, the pool's chart, the quote for
  * an amount and «Факти за цифрами» — what «Профі» drew on the page, a tap
- * deeper for everyone since one version (canon v5.3 В28). The words are the
+ * deeper for everyone since one version. The words are the
  * web's own for the same figures (its stock surface `stock-model.ts`, its Spot
  * market header and stock context); the Ukrainian speaks «ти» and names a
  * figure in Ukrainian — the venue, the issuer and the chain keep their names.

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Linking, View } from 'react-native'
+import { View } from 'react-native'
 
 import { Button } from '@/components/button'
 import { Card } from '@/components/card'
@@ -15,6 +15,7 @@ import { useNow } from '@/hooks/use-now'
 import type { PayLink } from '@/lib/api'
 import { useCopy, useLocale } from '@/lib/i18n'
 import { formatAt } from '@/utils/format'
+import { openLink } from '@/lib/open-link'
 
 /**
  * A Ryntra payment link pasted or scanned into «Кому»: what it asks for, to
@@ -89,7 +90,7 @@ export function PayLinkPanel({ link: initial }: { link: PayLink }) {
             title={words.explorer}
             variant="secondary"
             size="lg"
-            onPress={() => void Linking.openURL(explorerUrl(link.paid!.signature))}
+            onPress={() => openLink(explorerUrl(link.paid!.signature))}
           />
         ) : null
       ) : holding ? (

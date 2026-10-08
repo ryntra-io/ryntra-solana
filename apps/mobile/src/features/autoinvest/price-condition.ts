@@ -1,6 +1,6 @@
 /**
- * «Умова ціни» on the phone — the pure half (canon v5.5 В37, §4.1, §11; M25;
- * the web's `RYN-PRICE-GUARD-001`, contract 1.18.0).
+ * «Умова ціни» on the phone — the pure half (M25;
+ * the web's, contract 1.18.0).
  *
  * A rule buys only when the price is not above its reference by more than the
  * person's limit and the data are fresh — «Не купувати, якщо дорожче за
@@ -126,12 +126,15 @@ export function checkPriceCondition(
     checkedAt,
   }
   const deviationPct = deviationOf(base.priceUsd, base.referenceUsd)
-  const times = [facts?.priceAtMs, facts?.referenceAtMs].filter(instant)
+  // A token's price when its rule was turned on (1.31.0) is a fixed point: its age is the rule's, never staleness —
+  // only the price now must be fresh.
+  const fixed = facts?.reference === 'enabled'
+  const times = (fixed ? [facts?.priceAtMs] : [facts?.priceAtMs, facts?.referenceAtMs]).filter(instant)
   const dataAt = times.length > 0 ? new Date(Math.min(...times)).toISOString() : null
   const verdict = (value: RuleConditionVerdict): PriceCheck => ({ ...base, deviationPct, dataAt, verdict: value })
   if (!facts || base.reference === null || deviationPct === null) return verdict('unavailable')
   const old = (at: number | null): boolean => !instant(at) || nowMs - at > maxAgeMinutes * 60_000
-  if (facts.referenceStale || old(facts.priceAtMs) || old(facts.referenceAtMs)) return verdict('stale')
+  if (facts.referenceStale || old(facts.priceAtMs) || (!fixed && old(facts.referenceAtMs))) return verdict('stale')
   return verdict(deviationPct > limitPct ? 'above' : 'met')
 }
 
@@ -222,6 +225,15 @@ const REFERENCE_PHRASES: Readonly<
   market: {
     en: { name: 'Market reference', against: 'the market reference', of: 'the market reference' },
     uk: { name: 'Біржовий орієнтир', against: 'біржовий орієнтир', of: 'біржового орієнтира' },
+  },
+  // 1.31.0: a token's market price when its rule was turned on — kept on the rule, taken again after a pause.
+  enabled: {
+    en: {
+      name: 'Price when turned on',
+      against: 'the price when the rule was turned on',
+      of: 'the price when the rule was turned on',
+    },
+    uk: { name: 'Ціна при ввімкненні', against: 'ціну при ввімкненні правила', of: 'ціни при ввімкненні правила' },
   },
 }
 
@@ -315,7 +327,7 @@ export function conditionNowLine(check: PriceCheck, locale: Locale): string {
 /**
  * The condition's line over a rule's purchase and in «Перевірка»: «+2,1 % до
  * оцінки PreStocks $1 000,00 · ліміт 5 % · дані 10:32» — the deviation, the
- * reference and its figure, the limit, the data's time (canon §4.1).
+ * reference and its figure, the limit, the data's time.
  */
 export function conditionReviewLine(check: PriceCheck, nowMs: number, timeZone: string, locale: Locale): string {
   const time = dataTimeOf(check, nowMs, timeZone, locale)
@@ -359,4 +371,25 @@ export function deferralLine(check: PriceCheck, name: string, nowMs: number, tim
     return time ? `${head} · ${locale === 'uk' ? `останні — ${time}` : `latest at ${time}`}` : head
   }
   return locale === 'uk' ? `${name} — зараз немає орієнтира` : `${name} — no reference right now`
+}
+
+/**
+ * A token's condition while its rule is written (1.31.0): the reference is
+ * the price now, kept when the rule is turned on, so the line says the
+ * ceiling it makes — «Орієнтир — ціна зараз $150,00: правило не купить
+ * дорожче за $157,50.» The web's own (`anchorNowLine`).
+ */
+export function anchorNowLine(priceUsd: number, limitPct: number, locale: Locale): string {
+  const ceiling = priceWord(priceUsd * (1 + limitPct / 100), locale)
+  return locale === 'uk'
+    ? `Орієнтир — ціна зараз ${priceWord(priceUsd, 'uk')}: правило не купить дорожче за ${ceiling}.`
+    : `The reference is the price now, ${priceWord(priceUsd, 'en')}: the rule won’t buy above ${ceiling}.`
+}
+
+/** A token rule's anchor as it stands: «$150,00 · купує до $157,50» · «$150.00 · buys up to $157.50». */
+export function anchorStandingLine(referenceUsd: number, limitPct: number, locale: Locale): string {
+  const ceiling = priceWord(referenceUsd * (1 + limitPct / 100), locale)
+  return locale === 'uk'
+    ? `${priceWord(referenceUsd, 'uk')} · купує до ${ceiling}`
+    : `${priceWord(referenceUsd, 'en')} · buys up to ${ceiling}`
 }

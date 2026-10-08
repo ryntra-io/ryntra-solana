@@ -18,6 +18,7 @@ import { POPULAR_COUNT } from '@/features/invest/shelf'
 import { usePopularCompanies } from '@/features/invest/use-popular'
 import { useCompanyShelf, useShelfNames } from '@/features/invest/use-shelf'
 import { recordJourney } from '@/features/journeys/journey-store'
+import { marketsPath, type ScreenerTab } from '@/features/markets/screener'
 import { unreadCount } from '@/features/monitoring/monitoring-model'
 import { useSurface } from '@/features/plans/use-plans'
 import { usePortfolio } from '@/features/portfolio/use-portfolio'
@@ -54,8 +55,8 @@ function QuietLink({ icon, label, onPress }: { icon: IconName; label: string; on
 }
 
 /**
- * Home — the investor's Home, for everyone (canon v5.1 §2, §3; M14; one
- * version since v5.3 В28). A person knows in five seconds what to do: a
+ * Home — the investor's Home, for everyone (M14).
+ * A person knows in five seconds what to do: a
  * guest reads one promise and one action, «Під'єднати гаманець»; a wallet
  * reads what it holds — «Твої інвестиції»
  * with its time — and does one thing, «Купити», the screen's one orange
@@ -64,7 +65,7 @@ function QuietLink({ icon, label, onPress }: { icon: IconName; label: string; on
  * published order. A signature whose outcome is not known yet is the one
  * line said before anything else. A connected wallet reads its «Автоінвест»
  * between them — the month's budget as its own line and the rules with their
- * switches (M16; canon v5.3 В29, M20), the same block Portfolio draws; a
+ * switches (M16, M20), the same block Portfolio draws; a
  * wallet not signed in reads there one line and a quiet «Увійти гаманцем».
  * What changed and what needs a look — the plans, the watchlist's moves, the
  * markets' movers, the brief — is one quiet tap deeper, «Що змінилося»
@@ -77,7 +78,7 @@ export function InvestorHome() {
   const agentCopy = useCopy(AGENT_COPY)
   const places = useCopy(PLACES_COPY)
   const locale = useLocale()
-  // A read kept from another day names its day; the minute's tick carries that across midnight (M9).
+  // A read kept from another day names its day; the minute's tick carries that across midnight.
   const now = useNow(60_000)
   const account = useAccount()
   const state = accountState(account.address, account.session)
@@ -108,8 +109,9 @@ export function InvestorHome() {
     recordJourney('home_go', { state, to: door })
     open()
   }
-  const openMarkets = (door: Door) => go(door, () => router.navigate('/(tabs)/markets'))
-  // What changed and what needs a look — M10's Home, one tap deeper (canon v5.3 §3).
+  const openMarkets = (door: Door, tab: ScreenerTab = 'all') =>
+    go(door, () => router.navigate(marketsPath(tab) as never))
+  // What changed and what needs a look — M10's Home, one tap deeper.
   const changes = (
     <QuietLink
       icon="pulse-outline"
@@ -130,7 +132,7 @@ export function InvestorHome() {
   }
 
   /* ---- a signature without an answer: said first, one line, one door ---- */
-  // A company's purchase in dollars is checked where it was made — its page, the purchase open (M15); anything else in Trade.
+  // A company's purchase in dollars is checked where it was made — its page, the purchase open; anything else in Trade.
   const openUnfinished = () => {
     const door = recoveryDoor(attempt?.context, (mint) => nameOf(mint) !== null)
     if (door.kind === 'company') {
@@ -188,7 +190,7 @@ export function InvestorHome() {
     )
   } else {
     const view = holdings.view
-    // A day's move belongs to its day: a read kept from an earlier day shows its value and its time, not «today» (M9).
+    // A day's move belongs to its day: a read kept from an earlier day shows its value and its time, not «today».
     const change = view && isToday(view.observedAt, now) ? view.dayChange : null
     const move = signOf(change?.usd)
     // A read that saw less than the whole wallet is a warning; balances the venue cannot price (dust, airdrops) are only said.
@@ -202,7 +204,17 @@ export function InvestorHome() {
             : null
       : null
     let balance: ReactNode
-    if (view) {
+    if (view && !view.pricesRead) {
+      // The balances came back before the venue's prices: the total is being read, never every asset «without a price».
+      balance = (
+        <View className="gap-1">
+          <Skeleton className="h-9 w-44" accessibilityRole="progressbar" />
+          <Txt variant="ui" tone="faint">
+            {copy.readingPrices}
+          </Txt>
+        </View>
+      )
+    } else if (view) {
       // A wallet read whole that holds nothing but an empty native balance is worth a known zero, not an unknown.
       const total = view.empty ? 0 : view.total
       balance = (
@@ -282,7 +294,7 @@ export function InvestorHome() {
           <QuietLink
             icon="sparkles-outline"
             label={agentCopy.askRyn}
-            onPress={() => go('ask', () => router.navigate('/(tabs)/agent'))}
+            onPress={() => go('ask', () => router.push('/ryn'))}
           />
           {changes}
         </View>
@@ -343,7 +355,7 @@ export function InvestorHome() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={copy.allCompanies}
-            onPress={() => openMarkets('markets')}
+            onPress={() => openMarkets('markets', 'stocks')}
             hitSlop={8}
             className="shrink-0 flex-row items-center gap-1 py-1 active:opacity-80"
           >

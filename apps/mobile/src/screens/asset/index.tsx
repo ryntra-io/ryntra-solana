@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router'
-import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Pressable, RefreshControl, ScrollView, ToastAndroid, View } from 'react-native'
 import Animated, { LinearTransition } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -18,11 +18,13 @@ import { AUTOINVEST_COPY } from '@/features/autoinvest/copy'
 import {
   purchaseSumUsd,
   reminderOffer,
+  ruleBuyRouteOf,
   ruleBuyState,
   ruleFace,
   ruleForMint,
   type RuleBuyState,
 } from '@/features/autoinvest/rule-model'
+import { isListedToken } from '@/features/autoinvest/floor'
 import { useRule, useRules, useRuleWrites } from '@/features/autoinvest/use-rules'
 import { ruleWhenLine, unbrokenParts } from '@/features/autoinvest/words'
 import { BUY_COPY } from '@/features/invest/buy-copy'
@@ -106,9 +108,9 @@ function displayName(detail: MarketDetail, stock: StockAsset | null, shelfName: 
   return coinName(detail)
 }
 
-/** How long a company's page waits for the issuer's read before it stands on the market's read alone (M27). */
+/** How long a company's page waits for the issuer's read before it stands on the market's read alone. */
 const HEAD_GRACE_MS = 700
-/** The page's blocks glide to their new place when the issuer's parts land above them, never jump (M27). */
+/** The page's blocks glide to their new place when the issuer's parts land above them, never jump. */
 const SETTLE = LinearTransition.duration(220)
 
 export type AssetScreenProps = {
@@ -116,26 +118,26 @@ export type AssetScreenProps = {
   /** What the list knew, so the head has a name before the read answers. */
   symbol?: string
   category?: string
-  /** Open the company's purchase at once — a signature to check, from Home's one line (M15). */
+  /** Open the company's purchase at once — a signature to check, from Home's one line. */
   openBuy?: boolean
-  /** An autoinvest reminder to buy under — from a note of the inbox, Home's rule or a link (M16). */
+  /** An autoinvest reminder to buy under — from a note of the inbox, Home's rule or a link. */
   reminder?: Readonly<{ ruleId: string; dueAt: string | null }> | null
-  /** Open the company's «Автоінвест» at once — Home's «Додати правило» (M16). */
+  /** Open the company's «Автоінвест» at once — Home's «Додати правило». */
   openAutoinvest?: boolean
-  /** Open the swap before the issuer's deadline, or the sale — a note of the inbox, a Portfolio row, a link (M19). */
+  /** Open the swap before the issuer's deadline, or the sale — a note of the inbox, a Portfolio row, a link. */
   openConvert?: ConvertMode | null
 }
 
 /**
- * The asset — one page for everyone (canon v5.1 §2; M14, M15; one version
- * since v5.3 В28): the company's name, one price in dollars with the day's
+ * The asset — one page for everyone (M14, M15):
+ * the company's name, one price in dollars with the day's
  * change and the local time, the line over a day, a week, a month or a year,
  * the label of what the token is (its line in «Що ти купуєш») and whether the
  * exchange is open, «Купити» as the one orange action — the purchase in dollars, as a
  * sheet over the page — and «Спитати Ryntra» quiet under it. A coin's «Купити»
  * opens Trade. A private company's page adds its price against PreStocks'
- * valuation (canon v5.2 В27; M18); a token of an issuer Ryntra no longer
- * supports says so in one line where a purchase would be (В26).
+ * valuation; a token of an issuer Ryntra no longer
+ * supports says so in one line where a purchase would be.
  *
  * Everything «Профі» drew here is one tap deep, under «Деталі»: the ticker,
  * the name and the issuer, the price's time and state, the issuer's
@@ -146,10 +148,10 @@ export type AssetScreenProps = {
  * for an amount — each the venue's, the issuer's or the chain's figure with
  * its time.
  *
- * «Автоінвест» (M16, canon v5.1 §4.1) stands under «Купити»: a quiet door to a
+ * «Автоінвест» (M16 stands under «Купити»: a quiet door to a
  * new rule — «Регулярно», or «Якщо впаде» from the price this page read — or,
  * once the company has one, the rule itself, with what comes next. **While
- * its reminder is open** (canon v5.3 В29; M20) the rule's purchase is the
+ * its reminder is open** the rule's purchase is the
  * first action — «Час твоєї покупки · Щотижня · чт о 19:00» over «Купити $20
  * за правилом», the purchase sheet bound to the rule — and an ordinary
  * purchase is the second, quiet one, saying the reminder stays open: the rule
@@ -157,7 +159,7 @@ export type AssetScreenProps = {
  * Home lands here and is read afresh first; one the month's budget does not
  * cover offers «Змінити бюджет», the budget's sheet over it.
  *
- * **Нагляд за IPO й обміном** (M19, canon v5.2 В27, §7): a private token whose
+ * **Нагляд за IPO й обміном** (M19: a private token whose
  * issuer opened a window to swap it says so between its name and its price —
  * «SpaceX вийшла на біржу. SPACEX треба обміняти до 12 березня 2027 — після
  * строку токен згорить.»; a wallet that holds it reads «Обміняй SPACEX до …»
@@ -167,7 +169,7 @@ export type AssetScreenProps = {
  * wallet's signature decide. A purchase of the token says first that it must
  * be swapped by the deadline.
  *
- * **Сторінка компанії, повна** (M23, the web's `RYN-COMPANY-PAGE-001`): under
+ * **Сторінка компанії, повна** (M23, the web's: under
  * the name, who the company is — «NVDA · Nasdaq», «Приватна компанія»; over
  * «Купити», the label of what the token is, its line waiting in «Що ти купуєш»;
  * under the purchase, the facts at rest — «Ключові показники», «Про компанію»,
@@ -176,7 +178,7 @@ export type AssetScreenProps = {
  * industry and what it does are the web's own files, asked of line A
  * (request 37); nothing stands in for them.
  *
- * **Шлях компанії** (M24, the web's `RYN-COMPANY-PATH-001`): under the purchase
+ * **Шлях компанії** (M24, the web's: under the purchase
  * (M27 — the price and «Купити» hold the first screen; above them only on the
  * private token's own page, whose path carries the swap deadline),
  * where the contract gives a path, the strip Приватна · PreStocks → IPO → Біржа
@@ -226,7 +228,7 @@ export function AssetScreen({
   const rules = useRules(session)
   const budget = rules.data?.budget ?? null
   const companyRule = rules.data ? ruleForMint(rules.data.rules, mint) : null
-  // Its reminder the page offers first — open, and covered by the month's budget (canon v5.3 В29) — and how it is said.
+  // Its reminder the page offers first — open, and covered by the month's budget — and how it is said.
   const offer = reminderOffer(companyRule, budget, now)
   // The reminder's own sum (1.19.0): what a «З оплат» rule gathered; the rule's sum for the other kinds.
   const offerUsd = companyRule && offer ? purchaseSumUsd(companyRule, offer) : null
@@ -251,6 +253,11 @@ export function AssetScreen({
   const openBudget = useCallback(() => setBudgetOpen(true), [])
   const buyUnder = (rule: AutoinvestRule, occurrence: RuleOccurrence) => {
     setAutoinvest(null)
+    // A token's purchase under its rule (1.31.0) is Trade's ticket as the rule's purchase; a company's, this page's sheet.
+    if (isListedToken(rule.asset)) {
+      router.push(ruleBuyRouteOf(rule, occurrence.dueAt) as never)
+      return
+    }
     setPending({ ruleId: rule.id, dueAt: occurrence.dueAt })
     setBuying(true)
   }
@@ -261,12 +268,12 @@ export function AssetScreen({
   const market = useMarket(mint)
   const detail: MarketDetail | null = market.data?.market ?? null
   // A company the list named, or the shelf this session read, is one from the first frame: its issuer's read runs beside
-  // the market's rather than after it (M24).
+  // the market's rather than after it.
   const isStock = (detail?.category ?? category ?? (nameOf(mint) !== null ? 'stock' : undefined)) === 'stock'
   const stock = useStockAsset(isStock ? mint : null)
   // The issuer's first read is on its way. The page waits for it only a moment (HEAD_GRACE_MS) — a warm read lands
   // inside it and the page appears whole; a cold one (6–12 s for a private company) never holds the price and
-  // «Купити» back: the head stands on the market's read and the issuer's parts fill in as they arrive (M27).
+  // «Купити» back: the head stands on the market's read and the issuer's parts fill in as they arrive.
   const issuerFirstRead = isStock && stock.isPending && stock.failureCount === 0
   // Until the issuer answers — its first try or its retry — its parts on the page are shapes that hold their place.
   const issuerReading = isStock && stock.isPending
@@ -279,7 +286,7 @@ export function AssetScreen({
   const agentCopy = useCopy(AGENT_COPY)
   const openRyn = useOpenRyn()
   const stockRep = stock.data?.row.representation ?? null
-  /* A token of an issuer Ryntra no longer supports (canon v5.2 В26): not bought, planned or described by its
+  /* A token of an issuer Ryntra no longer supports: not bought, planned or described by its
      issuer here — one line says so and where to sell it; a person who holds it reaches Trade under «Деталі». */
   const retired =
     (stockRep !== null && !isSupportedIssuer(stockRep.issuer.id)) ||
@@ -295,12 +302,12 @@ export function AssetScreen({
         !detail.audit.suspicious &&
         detail.decimals !== null))
 
-  /* ---- the IPO and conversion watch (M19): the issuer's window on this token, the wallet's own read, the target ---- */
+  /* ---- the IPO and conversion watch: the issuer's window on this token, the wallet's own read, the target ---- */
   const holdings = useHoldings(account.address)
   const heldRow = holdings.data?.data.holdings.find((holding) => holding.mint === mint) ?? null
   const holds = heldRow !== null && /^\d+$/.test(heldRow.amountRaw) && BigInt(heldRow.amountRaw) > 0n
   const pageName = detail ? displayName(detail, stock.data ?? null, nameOf(mint)) : null
-  // A private token is PreStocks' alone (canon v5.2 В25): the market's own read says so before the issuer's answers.
+  // A private token is PreStocks' alone: the market's own read says so before the issuer's answers.
   const marketPrivate = detail?.issuer?.tag === 'prestocks'
   const pendingPrivate = issuerReading && marketPrivate
   // Until the issuer's read answers, the shelf's copy of its event: the swap deadline stands before the price at once.
@@ -365,7 +372,7 @@ export function AssetScreen({
       : converting
   const buyerLine = event && eventOpen ? eventLine(event, 'buyer', locale, now) : null
 
-  /* ---- «Шлях компанії» (M24): the company's way, this token's step, the other token one tap away ---- */
+  /* ---- «Шлях компанії»: the company's way, this token's step, the other token one tap away ---- */
   const companyPath = stock.data && !retired ? (stock.data.row.companyPath ?? null) : null
   // On the listed token's page the private token's own row says what it is: its issuer's fee, as the chain states it.
   const pathOther = companyPath?.at === 'solana' ? otherPathToken(companyPath) : null
@@ -388,6 +395,20 @@ export function AssetScreen({
     if (result.refused) ToastAndroid.show(places.watchFull(watchlist.limit), ToastAndroid.SHORT)
   }
   const goTrade = () => router.push({ pathname: '/trade', params: { mint, symbol: detail?.symbol ?? symbol ?? '' } })
+  /* An old link's reminder on a coin or a meme (1.31.0): its purchase is Trade's ticket as the rule's purchase — the page
+     hands it on once it knows the token is no company. */
+  const handOn = reminder !== null && detail !== null && !isStock
+  const handRule = reminder?.ruleId ?? null
+  const handDue = reminder?.dueAt ?? null
+  const handedOn = useRef(false)
+  useEffect(() => {
+    if (!handOn || !handRule || handedOn.current) return
+    handedOn.current = true
+    router.replace({
+      pathname: '/trade',
+      params: { mint, side: 'buy', rule: handRule, ...(handDue ? { due: handDue } : {}) },
+    })
+  }, [handOn, handRule, handDue, mint, router])
   // A door only where a plan can stand: a stock, or a verified crypto or meme token (see `plannable`).
   const goPlan = () => router.push({ pathname: '/plans/new', params: { mint, symbol: detail?.symbol ?? symbol ?? '' } })
   const askRyn = () =>
@@ -436,7 +457,7 @@ export function AssetScreen({
           <View className="flex-1 gap-0.5">
             <Txt variant="headline">{detail.symbol}</Txt>
             <Txt variant="ui" tone="muted" numberOfLines={2}>
-              {issuer ? `${detail.name} · ${issuer}` : detail.name}
+              {issuer && !detail.name.includes(issuer) ? `${detail.name} · ${issuer}` : detail.name}
             </Txt>
           </View>
         </View>
@@ -546,7 +567,7 @@ export function AssetScreen({
     // The issuer's fee as the chain states it names itself in a private company's line (the web's own, M23).
     const feeBps = stock.data?.row.transferFee?.basisPoints ?? null
     const truth = rep ? truthLine(rep.issuer.id, name, locale, feeBps) : null
-    /* Who the company is, under its name, and the label of what its token is — the web's head and purchase card (M23). */
+    /* Who the company is, under its name, and the label of what its token is — the web's head and purchase card. */
     const head: CompanyHead | null =
       stock.data && rep && !retired
         ? companyHead(
@@ -585,12 +606,14 @@ export function AssetScreen({
     const freshPrice = market.data?.stale || market.isError ? null : detail.price
     ruleCompany = {
       mint,
-      name,
+      // A token's rule is named by its symbol (1.31.0), as the server names it.
+      name: isStock ? name : detail.symbol,
       icon: detail.icon,
       preIpo: privateCompany,
       truth,
       eventLine: buyerLine,
       priceUsd: freshPrice,
+      token: !isStock,
     }
 
     /* The issuer's event, before any figure: a holder's line with the swap and the sale under it, everyone's line alone
@@ -606,7 +629,7 @@ export function AssetScreen({
           }
         : null
     // «Шлях компанії» stands above the price only for a holder of the private token, whose swap is the path's own line
-    // and the page's one orange action (M24); for everyone else it stands under the purchase, so the price and «Купити»
+    // and the page's one orange action; for everyone else it stands under the purchase, so the price and «Купити»
     // hold the first screen, and the issuer's event is said before any figure in its own two lines (M19, M27).
     const pathAbove = pathCarriesEvent && holder
     const eventBanner =
@@ -624,7 +647,7 @@ export function AssetScreen({
     ) : null
 
     const exchange = stock.data && !privateCompany ? exchangeState(stock.data.row.session) : null
-    /* A private company's one number beside its price: against PreStocks' own valuation (canon v5.2 В27). */
+    /* A private company's one number beside its price: against PreStocks' own valuation. */
     const markLine = privateCompany && !retired ? premiumPhrase(stock.data?.row.markPremiumPct, locale, words) : null
     const warnings = [
       stockNotConfirmed ? { key: 'unconfirmed', text: words.notConfirmed, tone: 'warning' } : null,
@@ -634,11 +657,35 @@ export function AssetScreen({
 
     /* «Купити»: a company opens the purchase in dollars; a coin, or a token no issuer confirms, opens Trade. */
     let buyAction: ReactNode
-    if (!isStock || stockNotConfirmed) {
+    if ((!isStock || stockNotConfirmed) && companyRule && offer && offerWords) {
+      /* A coin's or a meme's rule with its reminder open (1.31.0): the rule's purchase first — Trade's ticket on its sum —
+         an ordinary purchase second and quiet, saying the reminder stays open. */
+      buyAction = (
+        <View className="gap-2">
+          <View className="flex-row items-center justify-center gap-1.5 px-2">
+            <Icon name="time-outline" size={14} color="brand" />
+            <Txt variant="ui" tone="muted" tabular className="shrink text-center">
+              {offerWords.when}
+            </Txt>
+          </View>
+          <Button title={offerWords.buy} size="lg" onPress={() => buyUnder(companyRule, offer)} />
+          <Button
+            title={ruleWords.plainPurchase}
+            variant="secondary"
+            size="lg"
+            accessibilityHint={ruleWords.reminderStaysOpen}
+            onPress={goTrade}
+          />
+          <Txt variant="ui" tone="faint" className="text-center">
+            {ruleWords.reminderStaysOpen}
+          </Txt>
+        </View>
+      )
+    } else if (!isStock || stockNotConfirmed) {
       buyAction = <Button title={words.buy} size="lg" onPress={goTrade} />
     } else if (company && companyRule && offer && offerWords) {
       /* The rule's reminder is open: its purchase first, on its sum; an ordinary purchase second and quiet, saying the
-         reminder stays open — the rule counts only a purchase by the rule (canon v5.3 В29). */
+         reminder stays open — the rule counts only a purchase by the rule. */
       buyAction = (
         <View className="gap-2">
           <View className="flex-row items-center justify-center gap-1.5 px-2">
@@ -666,7 +713,7 @@ export function AssetScreen({
         </View>
       )
     } else if (company) {
-      // A holder's one orange action is the swap above: «Купити» steps back to quiet (canon §2, rule 1).
+      // A holder's one orange action is the swap above: «Купити» steps back to quiet.
       buyAction = (
         <Button
           title={words.buy}
@@ -696,7 +743,7 @@ export function AssetScreen({
       buyAction = <Button title={words.buy} size="lg" loading={stock.isFetching} onPress={() => void stock.refetch()} />
     } else {
       // The issuer's read is on its way: «Купити» stands at once; pressed, the purchase opens the moment the company
-      // is read (M27).
+      // is read.
       buyAction = <Button title={words.buy} size="lg" loading={buying} onPress={() => setBuying(true)} />
     }
 
@@ -751,12 +798,12 @@ export function AssetScreen({
           change={detail.change24hPct}
           observedAt={observedAt}
           stale={Boolean(market.data?.stale || market.isError)}
-          // A private token's line of truth from the first frame: the issuer's own once it is read (canon §7, M27).
+          // A private token's line of truth from the first frame: the issuer's own once it is read.
           privateLine={
             privateCompany
               ? (truth ?? words.privateLine)
               : marketPrivate && !stock.data
-                ? // Being read, or its read failed: never a private token's price without its risk (canon §7).
+                ? // Being read, or its read failed: never a private token's price without its risk.
                   (truthLine('prestocks', name, locale) ?? words.privateLine)
                 : null
           }
@@ -787,7 +834,7 @@ export function AssetScreen({
         {positionCard}
         <Animated.View layout={SETTLE} style={{ gap: 8 }}>
           {buyAction}
-          {company && offer ? null : companyRule ? (
+          {(company || !isStock) && offer ? null : companyRule ? (
             // While its reminder is open the rule speaks through its purchase above; otherwise its card opens it.
             <RuleCard
               rule={companyRule}
@@ -799,8 +846,10 @@ export function AssetScreen({
                 else setAutoinvest({ kind: 'manage', rule: companyRule })
               }}
             />
-          ) : company && (!session || rules.data || rules.isError) ? (
-            // A new rule only on a company one can buy; a signed-in wallet's rules are read first, so a rule is never offered twice.
+          ) : (company || (!isStock && !retired)) && (!session || rules.data || rules.isError) ? (
+            /* A new rule on a company one can buy, or (1.31.0) on any coin or meme — beside «Купити»; the sheet reads the
+               floor and the facts of risk before its button. A signed-in wallet's rules are read first, so a rule is never
+               offered twice. */
             <QuietDoor
               icon="repeat-outline"
               label={ruleWords.autoinvest}
@@ -809,10 +858,10 @@ export function AssetScreen({
           ) : null}
           <QuietDoor icon="sparkles-outline" label={agentCopy.askRyn} onPress={askRyn} />
         </Animated.View>
-        {/* «Шлях компанії» under the purchase, so the price and «Купити» hold the first screen (M27); above them only
+        {/* «Шлях компанії» under the purchase, so the price and «Купити» hold the first screen; above them only
             where the path carries the private token's own swap deadline — its warning before any figure. */}
         {pathAbove ? null : pathStrip}
-        {/* The company's facts at rest, under its purchase — the web's company page (M23). */}
+        {/* The company's facts at rest, under its purchase — the web's company page. */}
         {stock.data && head ? (
           <CompanyFacts
             mint={mint}
@@ -836,7 +885,7 @@ export function AssetScreen({
           <View className="gap-4">
             {technicalHead}
             {stockPart}
-            {/* What «Профі» drew on this page, a tap deeper for everyone (canon v5.3 В28). */}
+            {/* What «Профі» drew on this page, a tap deeper for everyone. */}
             <View className="gap-2">
               <QuietDoor
                 icon="swap-horizontal-outline"
@@ -884,7 +933,9 @@ export function AssetScreen({
   /* Home's «Додати правило»: the sheet opens once the company and the wallet's rules are read — on the rule the
      company has, or a new one on a company one can buy (state adjusted during render, as React prescribes). */
   const sheetReady =
-    ruleCompany !== null && (!session || !rules.isPending) && (company !== null || companyRule !== null)
+    ruleCompany !== null &&
+    (!session || !rules.isPending) &&
+    (company !== null || companyRule !== null || !isStock)
   if (askedAutoinvest && sheetReady) {
     setAskedAutoinvest(false)
     setAutoinvest(companyRule ? { kind: 'manage', rule: companyRule } : { kind: 'compose', amountUsd: null })
@@ -956,6 +1007,14 @@ export function AssetScreen({
           onClose={() => setAutoinvest(null)}
           onBuyNow={buyUnder}
           onChangeBudget={openBudget}
+          onMarketBuy={
+            ruleCompany.token
+              ? () => {
+                  setAutoinvest(null)
+                  goTrade()
+                }
+              : undefined
+          }
         />
       ) : null}
       <BudgetSheet visible={budgetOpen} onClose={() => setBudgetOpen(false)} />

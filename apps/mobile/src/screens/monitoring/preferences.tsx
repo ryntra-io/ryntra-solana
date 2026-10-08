@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router'
 import { useEffect, useState } from 'react'
-import { Linking, Pressable, ScrollView, View } from 'react-native'
+import { Pressable, ScrollView, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { Button } from '@/components/button'
@@ -40,6 +40,7 @@ import { useNow } from '@/hooks/use-now'
 import { isNetworkError, type QuietHours } from '@/lib/api'
 import { useCopy, useLocale, useSharedCopy } from '@/lib/i18n'
 import { formatMoment } from '@/utils/format'
+import { openLink } from '@/lib/open-link'
 
 const TELEGRAM_SETTINGS_URL = 'https://ryntra.io/app/settings#account'
 
@@ -276,7 +277,7 @@ export function NotificationPreferencesScreen() {
             />
             <Pressable
               accessibilityRole="link"
-              onPress={() => void Linking.openURL(TELEGRAM_SETTINGS_URL)}
+              onPress={() => openLink(TELEGRAM_SETTINGS_URL)}
               className="flex-row items-center gap-3 border-b border-line py-3 active:bg-hover"
             >
               <Icon name="paper-plane-outline" size={18} />

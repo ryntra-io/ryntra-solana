@@ -51,7 +51,7 @@ test('issuers have short and full names; an unknown id keeps its id', () => {
   assert.equal(issuerLabel('someone'), 'someone')
 })
 
-test('the app offers four issuers’ tokens — private companies through PreStocks alone (canon v5.2 В25–В27)', () => {
+test('the app offers four issuers’ tokens — private companies through PreStocks alone', () => {
   const four = ['backpack', 'ondo', 'prestocks', 'xstocks']
   assert.deepEqual(Object.keys(ISSUER_SHORT).sort(), four)
   assert.deepEqual(Object.keys(ISSUER_FULL).sort(), four)
@@ -97,7 +97,7 @@ function sourceFiles(dir) {
   return files
 }
 
-test('the issuer disconnected by canon v5.2 (В26) is named in no file of the app — its source, its tests, its config', () => {
+test('the issuer disconnected is named in no file of the app — its source, its tests, its config', () => {
   // Spelled by its letters so this guard is not itself a mention of it.
   const retired = new RegExp(String.fromCharCode(116, 101, 115, 115, 101, 114, 97), 'i')
   const found = []

@@ -38,8 +38,8 @@ import {
 } from './rule-model.ts'
 
 /*
- * «Умова ціни» on the phone (M25; canon v5.5 В37, §4.1, §11) — the web's
- * `RYN-PRICE-GUARD-001` (contract 1.18.0): a rule buys only when the price is
+ * «Умова ціни» on the phone (M25 — the web's
+ * (contract 1.18.0): a rule buys only when the price is
  * not above its reference by more than the person's limit and the data are
  * fresh; otherwise «Купівлю відкладено» with the reason, the figure and the
  * data's time. The judgement and the words are the web's own — these checks
@@ -146,7 +146,7 @@ test('the limit: up to N % above the reference passes, above it waits; a discoun
   })
   assert.equal(deviationOf(200.8, 200), 0.4)
   assert.equal(deviationOf(null, 200), null)
-  assert.equal(PRICE_CONDITION_DEFAULT_PCT, 5, 'the canon’s «типово 5 %»')
+  assert.equal(PRICE_CONDITION_DEFAULT_PCT, 5, '«типово 5 %»')
 })
 
 test('fresh or nothing: a figure older than half an hour, a copy its source calls stale, a figure or a time missing — the rule waits, never buys', () => {

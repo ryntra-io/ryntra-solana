@@ -29,6 +29,8 @@ import type {
   LaunchTradeQuoteRequestSchema,
   LaunchTradeQuoteResponseSchema,
   LaunchTradeRowSchema,
+  LaunchTradeReceiptRequestSchema,
+  LaunchTradeReceiptResponseSchema,
   LaunchTradeSubmitRequestSchema,
   LaunchTradeSubmitResponseSchema,
   LaunchWalletResponseSchema,
@@ -493,10 +495,12 @@ export type LaunchMarketClientChecks = [
   Same<z.output<typeof LaunchTradeBuildResponseSchema>, Client.LaunchTradeBuildResponse>,
   Same<z.input<typeof LaunchTradeSubmitRequestSchema>, Client.LaunchTradeSubmitRequest>,
   Same<z.output<typeof LaunchTradeSubmitResponseSchema>, Client.LaunchTradeSubmitResponse>,
+  Same<z.input<typeof LaunchTradeReceiptRequestSchema>, Client.LaunchTradeReceiptRequest>,
+  Same<z.output<typeof LaunchTradeReceiptResponseSchema>, Client.LaunchTradeReceiptResponse>,
   Same<z.output<typeof LaunchCreatorResponseSchema>, Client.LaunchCreatorResponse>,
 ];
 
-export const launchMarketClientChecks: LaunchMarketClientChecks = [true, true, true, true, true, true, true, true, true, true, true, true];
+export const launchMarketClientChecks: LaunchMarketClientChecks = [true, true, true, true, true, true, true, true, true, true, true, true, true, true];
 
 /* 1.29.0 — the creator's cabinet and «Забрати»: the client's mirror of every new shape, both directions. */
 export type LaunchCabinetClientChecks = [

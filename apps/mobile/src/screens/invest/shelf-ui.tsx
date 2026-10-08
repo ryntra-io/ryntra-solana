@@ -8,11 +8,11 @@ import type { Locale } from '@/lib/i18n'
 import { formatPercent, formatPrice, signOf } from '@/utils/format'
 
 /**
- * The shelf's two shapes (canon v5.1 §2: a company by its logo and its name, a
+ * The shelf's two shapes (a company by its logo and its name, a
  * price in dollars, the day's change — nothing else at rest; no ticker, no
  * issuer badge, no session, no clock on the card). A private company adds its
  * mark, «Це не акція», and one number: its price against PreStocks' own
- * valuation (canon v5.2 В27).
+ * valuation.
  *
  * A **tile** is Home's «Популярні компанії»: two to a row, a thumb's target.
  * A **row** is Markets': one company to a row. Both open the company's page.
@@ -27,7 +27,7 @@ export type ShelfItem = Readonly<{
   change24h: number | null
   /** A short mark under the name — «Це не акція» on a private company. */
   note?: string
-  /** One quiet line under the row — a private company's price against PreStocks' valuation (canon v5.2 В27). */
+  /** One quiet line under the row — a private company's price against PreStocks' valuation. */
   detail?: string
 }>
 
@@ -200,7 +200,7 @@ export function ShelfRow({
   )
 }
 
-/** The shape of what is coming — never a spinner (canon §2, rule 14). */
+/** The shape of what is coming — never a spinner. */
 export function TileSkeleton({ count }: { count: number }) {
   return (
     <TileGrid>

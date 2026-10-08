@@ -53,14 +53,15 @@
 
 import type { ActionFeeState, SolanaActionOutcome, SolanaWalletAction } from "../solana/action-ledger.ts";
 import type { SolanaActionLane } from "../solana/action-lanes.ts";
+import { isLaunchOrigin } from "../solana/action-origin.ts";
 import { ACTION_PAR_MINTS, ACTION_PAR_SYMBOLS, executedUsd, type ExecutedUsdBasis } from "../solana/action-value.ts";
 import { EVM_EXPLORER_TX, type SwapNetwork } from "../swap/catalog.ts";
 
 export type { SwapNetwork };
 
-export type OperationProduct = "SWAP" | "SPOT" | "STOCK" | "BRIDGE";
-export const OPERATION_PRODUCTS: readonly OperationProduct[] = ["SWAP", "SPOT", "STOCK", "BRIDGE"];
-export type OperationProvider = "JUPITER" | "RELAY" | "MAYAN" | "CIRCLE";
+export type OperationProduct = "SWAP" | "SPOT" | "STOCK" | "LAUNCH" | "BRIDGE";
+export const OPERATION_PRODUCTS: readonly OperationProduct[] = ["SWAP", "SPOT", "STOCK", "LAUNCH", "BRIDGE"];
+export type OperationProvider = "JUPITER" | "METEORA" | "RELAY" | "MAYAN" | "CIRCLE";
 export type OperationStatus = "CONFIRMED" | "IN_FLIGHT" | "NEEDS_YOU" | "FAILED";
 export type OperationVerification = "VERIFIED" | "PENDING" | "NOT_ATTRIBUTABLE" | "NOT_APPLICABLE";
 
@@ -308,7 +309,7 @@ function shareOf(value: number | null, ryntraRaw: string | null, grossRaw: strin
 }
 
 function feeOf(action: SolanaWalletAction, names: MintNames, out: OperationLeg | null, inn: OperationLeg | null, rewards: OperationRewards | null): OperationFee | null {
-  const fee = action.fee;
+  const fee = launchFee(action) ?? action.fee;
   if (!fee) return null;
   const named = nameOf(fee.asset, fee.symbol, fee.decimals, names);
   const scale = named.decimals;
@@ -337,6 +338,20 @@ function feeOf(action: SolanaWalletAction, names: MintNames, out: OperationLeg |
   };
 }
 
+/**
+ * A launch trade's fee as the statistics count Ryntra's fees: Ryntra's part of it. The row carries the whole fee the
+ * person paid — the curve's or the pool's own, of which the creator, Meteora and the pool's liquidity take the rest —
+ * and that whole is no Ryntra fee. Null for any other row.
+ */
+function launchFee(action: SolanaWalletAction): SolanaWalletAction["fee"] | null {
+  const fee = action.fee;
+  if (!fee || !isLaunchOrigin(action.origin)) return null;
+  const ryntra = fee.ryntraRaw !== null && /^[0-9]+$/.test(fee.ryntraRaw) ? BigInt(fee.ryntraRaw) : 0n;
+  const whole = fee.amountRaw !== null && /^[0-9]+$/.test(fee.amountRaw) ? BigInt(fee.amountRaw) : 0n;
+  const rate = fee.basisPoints !== null && whole > 0n ? Number((BigInt(fee.basisPoints) * ryntra) / whole) : null;
+  return { ...fee, collected: fee.collected && ryntra > 0n, amountRaw: ryntra.toString(), providerRaw: "0", ryntraRaw: ryntra.toString(), basisPoints: rate };
+}
+
 const CHAIN_NAMES: Readonly<Record<SwapNetwork, string>> = {
   solana: "Solana",
   base: "Base",
@@ -363,6 +378,15 @@ function verificationOf(
 ): Readonly<{ verification: OperationVerification; note: string | null }> {
   if (status !== "CONFIRMED") return { verification: "NOT_APPLICABLE", note: null };
   if (product === "BRIDGE") return { verification: "NOT_APPLICABLE", note: "Attributed from the provider's own record; no on-chain marker on Solana." };
+  /* A launch's trade is attributed by its own transaction: its receipt was read from the swap event, and Ryntra's part —
+     the partner's share on a Ryntra config's curve, the referral to Ryntra's account, Ryntra's fee — was in it. */
+  if (product === "LAUNCH") {
+    if (!action.receiptHash) return { verification: "PENDING", note: "The trade's receipt is not minted yet; read from the chain on its settlement." };
+    const ryntra = action.fee?.ryntraRaw;
+    return ryntra && /^[0-9]+$/.test(ryntra) && BigInt(ryntra) > 0n
+      ? { verification: "VERIFIED", note: null }
+      : { verification: "NOT_ATTRIBUTABLE", note: "No part of this trade's fee went to Ryntra: its transaction carries no Ryntra mark." };
+  }
   if (!action.signature) return { verification: "PENDING", note: "The row carries no signature yet." };
   if (chain && chain.signatures.has(action.signature)) return { verification: "VERIFIED", note: null };
   if (!chain) return { verification: "PENDING", note: "The chain could not be read just now." };
@@ -390,7 +414,17 @@ function projectOne(action: SolanaWalletAction, source: OperationSource): Operat
   /* The references the reward ledger may know this operation by. */
   const refs: (string | null)[] = [action.signature, action.providerRef ?? null];
 
-  if (action.lane === "SWAP") {
+  if (action.lane === "SWAP" && isLaunchOrigin(action.origin)) {
+    /* A launch's trade: on its curve or in its graduated pool, through Meteora's own programs. */
+    product = "LAUNCH";
+    provider = "METEORA";
+    network = "solana";
+    side = action.origin.side;
+    asset = legLabel(side === "BUY" ? inn : out);
+    actionText = `${side === "BUY" ? "Buy" : "Sell"} ${asset}`;
+    const link = txLink("Solscan", "solana", action.signature);
+    if (link) links.push(link);
+  } else if (action.lane === "SWAP") {
     provider = "JUPITER";
     network = "solana";
     const spot = action.origin !== null && action.origin.surface === "SPOT";
@@ -650,6 +684,7 @@ export function summarizeOperations(
     SWAP: { operations: 0, volumeUsd: 0, unvalued: 0 },
     SPOT: { operations: 0, volumeUsd: 0, unvalued: 0 },
     STOCK: { operations: 0, volumeUsd: 0, unvalued: 0 },
+    LAUNCH: { operations: 0, volumeUsd: 0, unvalued: 0 },
     BRIDGE: { operations: 0, volumeUsd: 0, unvalued: 0 },
   };
   const verification: Record<OperationVerification, number> = { VERIFIED: 0, PENDING: 0, NOT_ATTRIBUTABLE: 0, NOT_APPLICABLE: 0 };
@@ -790,6 +825,7 @@ export function summarizeOperations(
       SWAP: { ...byProduct.SWAP, volumeUsd: round6(byProduct.SWAP.volumeUsd) },
       SPOT: { ...byProduct.SPOT, volumeUsd: round6(byProduct.SPOT.volumeUsd) },
       STOCK: { ...byProduct.STOCK, volumeUsd: round6(byProduct.STOCK.volumeUsd) },
+      LAUNCH: { ...byProduct.LAUNCH, volumeUsd: round6(byProduct.LAUNCH.volumeUsd) },
       BRIDGE: { ...byProduct.BRIDGE, volumeUsd: round6(byProduct.BRIDGE.volumeUsd) },
     },
     verification,

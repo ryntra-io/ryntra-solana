@@ -9,7 +9,7 @@ import type { ArtifactVerificationView } from "@/app/agents/types";
 import type { SolanaWalletAction } from "@/lib/solana/action-ledger";
 import { enrichActivityMetadata } from "@/lib/solana/activity-projection";
 import { displayAmount } from "@/lib/solana/amounts";
-import { crossSwapReceiptSummary, receiptExplorerLinks, receiptMatchesAction, receiptMatchesFilter } from "@/lib/solana/receipt-view";
+import { crossSwapReceiptSummary, launchTradeReceiptSummary, receiptExplorerLinks, receiptMatchesAction, receiptMatchesFilter } from "@/lib/solana/receipt-view";
 import {
   downloadReceipt,
   readSolanaReceipts,
@@ -212,6 +212,8 @@ function receiptLabel(receipt: Record<string, unknown>, text: (value: string) =>
   const registry = record(receipt.registry);
   const refs = Array.isArray(registry?.refs) ? registry.refs.map(record) : [];
   const joined = refs.map((entry) => String(entry?.ref ?? "")).join(" ").toLowerCase();
+  /* A launch's trade pins Meteora's launch adapter, not a swap's: asked first, or it would read as a send. */
+  if (joined.includes("meteora-launch")) return text("Launch trade receipt");
   return text(joined.includes("swap") ? "Swap receipt" : "Send receipt");
 }
 
@@ -354,9 +356,25 @@ function crossSwapLine(receipt: Record<string, unknown>): string | null {
   return sent ? `${sent} · ${lane}` : lane;
 }
 
+/** When a receipt says its operation settled; the moment this device kept it only when the receipt names none. */
+function receiptTime(receipt: Record<string, unknown>, storedAt: string): string {
+  const created = typeof receipt.createdAt === "string" ? receipt.createdAt : null;
+  return created && !Number.isNaN(Date.parse(created)) ? created : storedAt;
+}
+
+/** A launch's trade from its receipt's own facts: what was spent, what arrived. */
+function launchTradeLine(receipt: Record<string, unknown>): string | null {
+  const summary = launchTradeReceiptSummary(receipt);
+  if (!summary) return null;
+  const leg = (side: { amountRaw: string; symbol: string; decimals: number }) => `${displayAmount(side.amountRaw, side.decimals)} ${side.symbol}`;
+  return `${leg(summary.spent)} → ${leg(summary.received)}`;
+}
+
 function operationLine(action: SolanaWalletAction | null, receipt: Record<string, unknown>, text: (value: string) => string) {
   const cross = crossSwapLine(receipt);
   if (cross) return cross;
+  const launch = launchTradeLine(receipt);
+  if (launch) return launch;
   const bridge = bridgeLine(receipt);
   if (bridge) return bridge;
   if (!action) return text("Details not available");
@@ -452,8 +470,9 @@ export function LocalReceiptList({ filter = "", archiveOn = false }: { filter?: 
                   <span className={styles.receiptSummary} translate="no">{operationLine(action, receipt, text)}</span>
                 </div>
                 <span className={styles.result} data-status={String(outcome?.status ?? "UNKNOWN")}>{status}</span>
-                <time dateTime={row.storedAt}>
-                  {new Intl.DateTimeFormat(locale === "uk" ? "uk-UA" : "en-US", { dateStyle: "medium", timeStyle: "short" }).format(new Date(row.storedAt))}
+                {/* The receipt's own time — when the operation settled — never when this device kept it. */}
+                <time dateTime={receiptTime(receipt, row.storedAt)}>
+                  {new Intl.DateTimeFormat(locale === "uk" ? "uk-UA" : "en-US", { dateStyle: "medium", timeStyle: "short" }).format(new Date(receiptTime(receipt, row.storedAt)))}
                 </time>
               </header>
 

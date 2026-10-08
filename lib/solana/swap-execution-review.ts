@@ -21,7 +21,7 @@ import { z } from "zod";
 
 import { issuerKeyId, type IssuerKey } from "../agent-control/issuer.ts";
 import { canonicalJson } from "../guard/canonical-json.ts";
-import { SolanaActionOriginSchema, type SolanaActionOrigin } from "./action-origin.ts";
+import { SpotActionOriginSchema, type SpotActionOrigin } from "./action-origin.ts";
 import { PlanReviewSchema, type PlanReview } from "../api/v1/contract.ts";
 import {
   SwapPolicyIntentSchema,
@@ -124,7 +124,7 @@ export type SwapExecutionBundle = Readonly<{
    * Swap. Inside the bundle rather than beside it so the issuer's proof
    * covers it: what a person is told they did is bound to what they signed.
    */
-  origin?: SolanaActionOrigin;
+  origin?: SpotActionOrigin;
   /**
    * The Strategy block judged for the plan `origin.plan` names — inside the
    * bundle for the same reason: the proof covers the checks that stood before
@@ -143,7 +143,7 @@ export const SwapExecutionBundleSchema = z
     simulation: SwapExecutionSimulationSchema,
     policyIntent: SwapPolicyIntentSchema,
     policyVerdict: SwapPolicyVerdictSchema,
-    origin: SolanaActionOriginSchema.optional(),
+    origin: SpotActionOriginSchema.optional(),
     planReview: PlanReviewSchema.optional(),
   })
   .passthrough();

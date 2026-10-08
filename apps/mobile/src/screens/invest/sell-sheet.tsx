@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router'
 import { useState, type ReactNode } from 'react'
-import { Keyboard, Linking, Pressable, TextInput, View } from 'react-native'
+import { Keyboard, Pressable, TextInput, View } from 'react-native'
 
 import { AssetIcon } from '@/components/asset-icon'
 import { Button } from '@/components/button'
@@ -28,6 +28,7 @@ import { useCopy } from '@/lib/i18n'
 import { TopUpSheet } from '@/screens/home/top-up-sheet'
 import { type, useTheme } from '@/theme'
 import { DASH } from '@/utils/format'
+import { openLink } from '@/lib/open-link'
 
 import { BuyReceiptFace, QuietLinks, ReviewTable, type ReceiptFace } from './buy-sheet'
 
@@ -568,7 +569,7 @@ function Receipt({
   const links = [
     { label: buyWords.history, onPress: onHistory },
     ...(signature && outcome.kind !== 'nothing'
-      ? [{ label: `${buyWords.transaction} ↗`, onPress: () => void Linking.openURL(explorerUrl(signature)) }]
+      ? [{ label: `${buyWords.transaction} ↗`, onPress: () => openLink(explorerUrl(signature)) }]
       : []),
   ]
 

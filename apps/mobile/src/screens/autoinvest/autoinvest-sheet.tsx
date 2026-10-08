@@ -8,6 +8,7 @@ import { type Choice } from '@/components/choice-chips'
 import { Field } from '@/components/field'
 import { Icon } from '@/components/icon'
 import { Sheet } from '@/components/sheet'
+import { Skeleton } from '@/components/skeleton'
 import { Txt } from '@/components/txt'
 import { AUTOINVEST_COPY, type AutoinvestCopy } from '@/features/autoinvest/copy'
 import {
@@ -21,6 +22,19 @@ import {
   termsOf,
 } from '@/features/autoinvest/payments'
 import {
+  floorHeld,
+  floorLine,
+  floorStanding,
+  floorTermsMet,
+  isListedToken,
+  riskRows,
+  tokenBlockOf,
+  tokenWriteFailure,
+  type TokenBlock,
+} from '@/features/autoinvest/floor'
+import {
+  anchorNowLine,
+  anchorStandingLine,
   checkPriceCondition,
   conditionChoices,
   conditionLine,
@@ -54,6 +68,7 @@ import {
 } from '@/features/autoinvest/rule-model'
 import { RULE_CADENCES, type RuleCadence, type RuleSchedule } from '@/features/autoinvest/schedule'
 import { useConditionBounds, useConditionFacts } from '@/features/autoinvest/use-condition'
+import { useRuleAsset } from '@/features/autoinvest/use-rule-asset'
 import { usePaymentBounds, useRuleWrites, useTelegramChannel, type RuleWrite } from '@/features/autoinvest/use-rules'
 import {
   cadenceWord,
@@ -85,8 +100,10 @@ import {
   type RuleCreateRequest,
   type RuleKind,
   type RuleOccurrence,
+  type RuleAssetRead,
   type RulePaymentMode,
   type RulePayments,
+  type RulePriceConditionState,
   type RulePriceReference,
 } from '@/lib/api'
 import { useCopy, useLocale, type Locale } from '@/lib/i18n'
@@ -108,10 +125,15 @@ export type AutoinvestCompany = Readonly<{
   icon: string | null
   preIpo: boolean
   truth: string | null
-  /** The issuer's event before a rule's first purchase (M19): the token bought must be swapped by the deadline; null for none. */
+  /** The issuer's event before a rule's first purchase: the token bought must be swapped by the deadline; null for none. */
   eventLine?: string | null
   /** The price the page shows now, per unit as the wallet shows it — where a new «Якщо впаде» rule would count from; null unknown. */
   priceUsd: number | null
+  /**
+   * 1.31.0: a token of the venue's list — a coin, a meme, a new token — rather than a company: the sheet reads what a
+   * rule on it would stand on (the floor, and for a meme the facts of its risk) and its own price from the server.
+   */
+  token?: boolean
 }>
 
 export type AutoinvestSheetProps = Readonly<{
@@ -125,14 +147,19 @@ export type AutoinvestSheetProps = Readonly<{
   onBuyNow: (rule: AutoinvestRule, occurrence: RuleOccurrence) => void
   /** The budget's sheet over this one — from a new rule's budget line, or a rule the month's budget holds. */
   onChangeBudget: () => void
+  /** 1.31.0: a token no rule can name — the next step beside its reason, the market purchase; absent, none is offered. */
+  onMarketBuy?: () => void
 }>
 
+/** Where the flow stands: a sheet over a page, or (1.31.0) a panel inside Trade beside «Ринок» — no head, no close. */
+type Variant = 'sheet' | 'panel'
+
 /**
- * «Автоінвест» on a company (canon v5.1 §4, §4.1; M16), a sheet like the
+ * «Автоінвест» on a company, a sheet like the
  * purchase's.
  *
  * **Намір.** Two rules. «Регулярно»: a sum in dollars from $1 — one sum the
- * person types, no quick sums (canon v5.5 В35; M21) — every day, week or
+ * person types, no quick sums — every day, week or
  * month, the day and the time on the phone's own clock, and at once when the
  * first reminder comes («Перша купівля: чт, 25 вер. о 19:00») from the same
  * schedule functions the server reminds with. The sheet opens on «Щотижня ·
@@ -142,19 +169,19 @@ export type AutoinvestSheetProps = Readonly<{
  * action puts it in. «Якщо впаде»: the sum and how far the price must fall
  * below the price now — «Ryntra нагадає при $241,59 або нижче · ціна зараз
  * $254,30»; one reminder each time it falls below that line. The sum reads
- * «Кожна купівля» — it is each purchase, never the month's budget (canon v5.3
- * В29; M20). **Межі.** The month's budget for
+ * «Кожна купівля» — it is each purchase, never the month's budget
+ * (M20). **Межі.** The month's budget for
  * every rule, the person's own, as its own line — «Бюджет не задано · Задати»
  * or «Бюджет місяця $10 з $50 · Змінити» — that opens the budget's own sheet
  * over this one («Не більше на місяць»); a sum the month's rest does not
  * cover is said before the rule is written. Under it, always: «Ryntra
  * нагадає — ти підтвердиш одним дотиком. Гроші лишаються у твоєму гаманці.»
- * **Дозвіл** is not asked here: a rule only schedules a reminder (B.3).
+ * **Дозвіл** is not asked here: a rule only schedules a reminder.
  * «Увімкнути» writes it behind the wallet's session — a signed-in wallet,
  * never a transaction — and every purchase later is its own signature on a
  * fresh «Перевірка».
  *
- * **Умова ціни** (canon v5.5 В37; M25, the web's `RYN-PRICE-GUARD-001`): a
+ * **Умова ціни** (M25, the web's: a
  * company with a reference — PreStocks' valuation for a private one, the
  * reference per share for a listed one — offers «Не купувати, якщо дорожче за
  * орієнтир більш ніж на N %», 5 % (the server's default) unless the person
@@ -164,7 +191,7 @@ export type AutoinvestSheetProps = Readonly<{
  * deferred says why — the reason, the figure and the data's time — and until
  * when the rule checks again.
  *
- * **З оплат** (canon v5.5 В38; M26, the web's `RYN-PAY-TRIGGERS-001`): the
+ * **З оплат** (M26, the web's: the
  * third kind sets money aside from the wallet's own USDC — «Що відкладати»:
  * «Округлення» of every payment to $1 or $5, «$ з оплати» typed from $0,10 to
  * $100, or «% з надходжень» 5 · 10 · 20 % — with the web's example on its own
@@ -184,12 +211,38 @@ export type AutoinvestSheetProps = Readonly<{
  */
 export function AutoinvestSheet(props: AutoinvestSheetProps) {
   if (!props.visible) return null
-  return <AutoinvestFlow key={props.mode.kind === 'manage' ? props.mode.rule.id : 'compose'} {...props} />
+  return <AutoinvestFlow key={props.mode.kind === 'manage' ? props.mode.rule.id : 'compose'} {...props} variant="sheet" />
+}
+
+/**
+ * The same rule inside Trade (1.31.0; the web's `AutoinvestPanel`):
+ * «Регулярно» beside «Ринок» on every token — the flow without its sheet, its
+ * head or its close; the order's own tab leaves it. In the panel the schedule's
+ * kind is «Розклад», as the tab already says «Регулярно».
+ */
+export function AutoinvestPanel(props: Omit<AutoinvestSheetProps, 'visible'>) {
+  return (
+    <AutoinvestFlow
+      key={props.mode.kind === 'manage' ? props.mode.rule.id : 'compose'}
+      {...props}
+      visible
+      variant="panel"
+    />
+  )
 }
 
 type Busy = null | 'saving' | 'pausing' | 'resuming' | 'deleting' | 'marking'
 
-function AutoinvestFlow({ mode, company, budget, onClose, onBuyNow, onChangeBudget }: AutoinvestSheetProps) {
+function AutoinvestFlow({
+  mode,
+  company,
+  budget,
+  onClose,
+  onBuyNow,
+  onChangeBudget,
+  onMarketBuy,
+  variant,
+}: AutoinvestSheetProps & { variant: Variant }) {
   const router = useRouter()
   const copy = useCopy(AUTOINVEST_COPY)
   const locale = useLocale()
@@ -199,6 +252,8 @@ function AutoinvestFlow({ mode, company, budget, onClose, onBuyNow, onChangeBudg
   const telegram = useTelegramChannel(session, true)
   const [made, setMade] = useState<AutoinvestRule | null>(null)
   const [busy, setBusy] = useState<Busy>(null)
+  // A token of the venue's list (1.31.0): known by the rule's own asset once there is one, else by the page that opened it.
+  const token = mode.kind === 'manage' ? isListedToken(mode.rule.asset) : company.token === true
 
   const close = () => {
     if (!busy) onClose()
@@ -235,6 +290,7 @@ function AutoinvestFlow({ mode, company, budget, onClose, onBuyNow, onChangeBudg
       <Done
         rule={made}
         company={company}
+        token={token}
         budget={budget}
         copy={copy}
         locale={locale}
@@ -246,6 +302,8 @@ function AutoinvestFlow({ mode, company, budget, onClose, onBuyNow, onChangeBudg
     body = (
       <Manage
         initial={mode.rule}
+        token={token}
+        variant={variant}
         budget={budget}
         copy={copy}
         locale={locale}
@@ -262,6 +320,9 @@ function AutoinvestFlow({ mode, company, budget, onClose, onBuyNow, onChangeBudg
     body = (
       <Compose
         company={company}
+        token={token}
+        variant={variant}
+        onMarketBuy={onMarketBuy}
         initialAmount={mode.amountUsd}
         budget={budget}
         copy={copy}
@@ -276,6 +337,7 @@ function AutoinvestFlow({ mode, company, budget, onClose, onBuyNow, onChangeBudg
     )
   }
 
+  if (variant === 'panel') return <View>{body}</View>
   return (
     <Sheet
       visible
@@ -295,6 +357,9 @@ const KINDS: readonly RuleKind[] = ['schedule', 'dip', 'payments']
 
 function Compose({
   company,
+  token,
+  variant,
+  onMarketBuy,
   initialAmount,
   budget,
   copy,
@@ -307,6 +372,9 @@ function Compose({
   onChangeBudget,
 }: {
   company: AutoinvestCompany
+  token: boolean
+  variant: Variant
+  onMarketBuy?: () => void
   initialAmount: number | null
   budget: RuleBudget | null
   copy: AutoinvestCopy
@@ -316,7 +384,7 @@ function Compose({
   setBusy: (busy: Busy) => void
   writes: ReturnType<typeof useRuleWrites>
   onMade: (rule: AutoinvestRule) => void
-  /** The budget's own line: its sheet over this one — the ceiling is never chosen beside the rule's sum (canon v5.3 В29). */
+  /** The budget's own line: its sheet over this one — the ceiling is never chosen beside the rule's sum. */
   onChangeBudget: () => void
 }) {
   const { colors } = useTheme()
@@ -327,7 +395,7 @@ function Compose({
   const [timeZone] = useState(() => deviceTimeZone())
   const [kind, setKind] = useState<RuleKind>('schedule')
   const [dropPct, setDropPct] = useState<number>(RULE_DIP_PRESETS_PCT[0])
-  /* «З оплат» (canon v5.5 В38): the mode and its one figure — the round-up to $1 unless the person picks another, a
+  /* «З оплат»: the mode and its one figure — the round-up to $1 unless the person picks another, a
      default and never advice; the modes, the steps and the bounds as the server's capabilities state them. */
   const payBounds = usePaymentBounds()
   const [pickedMode, setPickedMode] = useState<RulePaymentMode>('roundup')
@@ -346,7 +414,7 @@ function Compose({
   const terms = termsOf(payMode, { roundToUsd: roundTo, fixedUsd: fixed, percent })
   // What the rule would set aside from an example — the same arithmetic the server's tick counts with.
   const example = exampleOf(terms)
-  // «Щотижня · $10» unless a receipt's «Купувати щотижня» brought its own sum — a default, never advice (the Owner's word, 2026-09-25).
+  // «Щотижня · $10» unless a receipt's «Купувати щотижня» brought its own sum — a default, never advice (chosen 2026-09-25).
   const [amountText, setAmountText] = useState(() =>
     String(initialAmount !== null ? Math.max(RULE_MIN_USD, Math.round(initialAmount * 100) / 100) : RULE_DEFAULT_USD),
   )
@@ -355,17 +423,27 @@ function Compose({
   // The month's ceiling as the rules' read says it — set, changed or removed only in the budget's own sheet.
   const cap = budget?.capUsd ?? null
   const [failure, setFailure] = useState<string | null>(null)
-  /* «Умова ціни» (canon v5.5 В37): the server's default unless the person picks another limit or «Без умови» (null) —
+  /* «Умова ціни»: the server's default unless the person picks another limit or «Без умови» (null) —
      offered only where the company has a reference, read with the company's row; nothing is turned on before it is known. */
   const bounds = useConditionBounds()
-  const condition = useConditionFacts(company.mint, true)
-  const reference = condition.reference
-  const referencePending = condition.status === 'reading'
+  const condition = useConditionFacts(company.mint, !token)
+  /* A token (1.31.0): what a rule on it would stand on, read from the server — the floor, the facts of a meme's risk and
+     its price now, the point a fall counts from and a condition stands against («ціна при ввімкненні»). */
+  const tokenRead = useRuleAsset(company.mint, token)
+  const tokenFacts = tokenRead.read
+  const tokenPrice = tokenFacts?.priceUsd ?? null
+  const tokenBlock = token ? tokenBlockOf(tokenRead.status, tokenFacts) : null
+  const reference: RulePriceReference | null = token ? (tokenPrice !== null ? 'enabled' : null) : condition.reference
+  const referencePending = token
+    ? tokenRead.status === 'idle' || tokenRead.status === 'reading'
+    : condition.status === 'reading'
   const [pickedLimit, setPickedLimit] = useState<number | null | undefined>(undefined)
-  const limitPct = reference === null ? null : pickedLimit === undefined ? bounds.defaultPct : pickedLimit
+  // A token opens on «Без умови»: its reference is a fixed point, so a limit is a ceiling the person sets on purpose.
+  const limitPct =
+    reference === null ? null : pickedLimit === undefined ? (token ? null : bounds.defaultPct) : pickedLimit
   // How the price stands against the reference now, at the limit chosen — the judgement the rule's tick makes.
   const conditionNow =
-    reference !== null && limitPct !== null
+    !token && reference !== null && limitPct !== null
       ? checkPriceCondition(limitPct, condition.facts, now, bounds.maxAgeMinutes)
       : null
   const limits: readonly Choice<string>[] = conditionChoices(bounds).map((pct) => ({
@@ -375,8 +453,7 @@ function Compose({
 
   const typed = parseDollars(amountText, locale)
   const amount = ruleAmountOf(amountText, locale)
-  /* Whether the rule's sum routes into the company now, and if not, the company's own minimum from the same quote
-     (canon v5.5 В35) — asked before the rule is turned on, never after. A rule's purchase is paid in USDC. A «З оплат»
+  /* Whether the rule's sum routes into the company now, and if not, the company's own minimum from the same quote — asked before the rule is turned on, never after. A rule's purchase is paid in USDC. A «З оплат»
      rule's purchases are its reminders' sums, from its minimum up: a dollar must route, or the company's own minimum is
      the least its reminder opens at. */
   const routedSum = paying ? RULE_MIN_USD : amount
@@ -408,7 +485,8 @@ function Compose({
       : setAsideExample(example.direction, example.amountUsd, example.addUsd, company.name, locale)
   const typedTime = timeOfInput(timeText)
   const first = kind === 'schedule' ? firstDue(schedule, now) : null
-  const preview = kind === 'dip' ? dipPreview(company.priceUsd, dropPct) : null
+  // A fall counts from the price now: the token's own from the server's read, the company's from its page.
+  const preview = kind === 'dip' ? dipPreview(token ? tokenPrice : company.priceUsd, dropPct) : null
   // Under the ceiling shown: a purchase the month's rest does not cover is never promised a first day — for «З оплат», its least.
   const fits = paying
     ? thresholdUsd === null || fitsCeiling(thresholdUsd, cap, budget)
@@ -416,7 +494,15 @@ function Compose({
   const saving = busy === 'saving'
   const kinds: readonly Choice<RuleKind>[] = KINDS.map((value) => ({
     value,
-    label: value === 'dip' ? copy.ifFalls : value === 'payments' ? copy.fromPayments : copy.regularly,
+    // Inside Trade the tab already says «Регулярно»: the schedule's segment names what it is (the web's own).
+    label:
+      value === 'dip'
+        ? copy.ifFalls
+        : value === 'payments'
+          ? copy.fromPayments
+          : variant === 'panel'
+            ? copy.scheduleShort
+            : copy.regularly,
   }))
   const modes: readonly Choice<RulePaymentMode>[] = payBounds.modes.map((value) => ({
     value,
@@ -480,13 +566,23 @@ function Compose({
       onMade(result.rule)
       return
     }
-    setFailure(result.ok ? copy.failed : writeFailureWords(result.code, copy, { write: 'create', dip: kind === 'dip' }))
+    // A token's refusal in its own words — under the floor, or its figures unread (1.31.0); the rule's words otherwise.
+    const tokenFailure = token && !result.ok ? tokenWriteFailure(result.code, 'create') : null
+    setFailure(
+      result.ok
+        ? copy.failed
+        : tokenFailure
+          ? copy[tokenFailure]
+          : writeFailureWords(result.code, copy, { write: 'create', dip: kind === 'dip' }),
+    )
   }
 
   /* The one button, by what stands in the way: the wallet, the sum, the time or the price, the session. */
   let button: { title: string; onPress?: () => void; disabled?: boolean; loading?: boolean }
   if (!account.address)
     button = { title: buyWords.connect, onPress: () => void account.connect(), loading: account.busy === 'connect' }
+  // A token's standing is read first: nothing is turned on before the floor and its facts are known.
+  else if (token && referencePending) button = { title: copy.reading, disabled: true }
   // «З оплат»: a sum per payment within its bounds, and the least its reminders open at routing into the company.
   else if (paying && payMode === 'fixed' && fixed === null) button = { title: copy.turnOn, disabled: true }
   else if (paying && thresholdUsd === null)
@@ -523,8 +619,40 @@ function Compose({
         : buyWords.signInFailed
     : null
 
+  /* A token no rule can name now — under the floor, flagged, or unread: what it stands on and why, and nothing to fill
+     in for a rule that cannot be turned on; beside the reason, the next step where there is one — the market purchase. */
+  if (tokenBlock) {
+    return (
+      <View className="gap-4 pb-2">
+        <TokenStanding read={tokenFacts} copy={copy} locale={locale} compact={variant === 'panel'} />
+        <BlockNote block={tokenBlock} copy={copy} />
+        {tokenBlock === 'unreadable' ? (
+          <Button
+            title={copy.tryAgain}
+            variant="secondary"
+            size="sm"
+            loading={tokenRead.refetching}
+            onPress={tokenRead.refetch}
+            className="self-start"
+          />
+        ) : null}
+        {onMarketBuy ? <Button title={copy.buyAtMarket} variant="secondary" size="lg" onPress={onMarketBuy} /> : null}
+      </View>
+    )
+  }
+
   return (
     <View className="gap-4 pb-2">
+      {/* A token's standing before anything else: for a meme or a new token the facts of its risk, then the floor. */}
+      {token && referencePending ? (
+        // Its place held while the server reads it: the facts land where they stand, the form never jumps under them.
+        <View className="gap-2" accessibilityRole="progressbar" accessibilityLabel={copy.reading}>
+          <Skeleton className="h-3 w-28" />
+          <Skeleton className="h-20 rounded-sm" />
+        </View>
+      ) : token ? (
+        <TokenStanding read={tokenFacts} copy={copy} locale={locale} compact={variant === 'panel'} />
+      ) : null}
       {company.preIpo && company.truth ? (
         <View className="flex-row items-start gap-2">
           <Icon name="warning-outline" size={16} color="warningInk" style={{ marginTop: 1 }} />
@@ -538,7 +666,7 @@ function Compose({
       <Segments label={copy.ruleKind} choices={kinds} value={kind} onChange={setKind} disabled={saving} />
 
       {paying ? (
-        /* «З оплат» (canon v5.5 В38): what to set aside from the wallet's own USDC, an example on the arithmetic the tick
+        /* «З оплат»: what to set aside from the wallet's own USDC, an example on the arithmetic the tick
            counts with, the least a reminder opens at, and what counts — the rest behind «?». */
         <>
           <View className="gap-2">
@@ -622,7 +750,7 @@ function Compose({
         </>
       ) : (
         <>
-          {/* The rule's sum is each purchase — never the month's budget, which is its own line below (canon v5.3 В29). */}
+          {/* The rule's sum is each purchase — never the month's budget, which is its own line below. */}
           <View className="gap-0.5">
             <Txt variant="labelSm" tone="faint" caps className="text-center" importantForAccessibility="no">
               {copy.eachPurchase}
@@ -642,7 +770,7 @@ function Compose({
               style={[type.display, { fontSize: 44, lineHeight: 52, paddingVertical: 4 }]}
             />
           </View>
-          {/* No quick sums: a rule's sum is the person's own, typed (the Owner's word, 2026-09-25: «на авто — певну суму, довільну»). */}
+          {/* No quick sums: a rule's sum is the person's own, typed (chosen 2026-09-25: «на авто — певну суму, довільну»). */}
           {minimumLine ? (
             <Txt variant="ui" tone="muted" className="text-center" accessibilityLiveRegion="polite" tabular>
               {minimumLine}
@@ -740,7 +868,7 @@ function Compose({
         </>
       ) : null}
 
-      {/* «Умова ціни» (canon v5.5 В37): the most the price may stand above the company's reference, and how it stands now. */}
+      {/* «Умова ціни»: the most the price may stand above the company's reference, and how it stands now. */}
       {reference !== null ? (
         <View className="gap-2">
           <Txt variant="labelSm" tone="faint" caps>
@@ -758,9 +886,14 @@ function Compose({
               {keptTail(conditionLine(limitPct, reference, locale))}
             </Txt>
           ) : null}
-          {conditionNow && conditionNow.verdict !== 'met' ? (
+          {token && limitPct !== null && tokenPrice !== null ? (
+            // A token's reference is the price now, kept when the rule is turned on: the line says the ceiling it makes.
+            <Txt variant="ui" tone="faint" className="text-center" accessibilityLiveRegion="polite" tabular>
+              {keptTail(anchorNowLine(tokenPrice, limitPct, locale))}
+            </Txt>
+          ) : conditionNow && conditionNow.verdict !== 'met' ? (
             // Said only when the price stands outside the condition or its data is old — within it, the line above is
-            // enough (M27). Its last word never alone on a line on the Seeker's width («… чекатиме на них.»).
+            // enough. Its last word never alone on a line on the Seeker's width («… чекатиме на них.»).
             <Txt variant="ui" tone="faint" className="text-center" accessibilityLiveRegion="polite" tabular>
               {keptTail(conditionNowLine(conditionNow, locale))}
             </Txt>
@@ -768,7 +901,7 @@ function Compose({
         </View>
       ) : null}
 
-      {/* The month's budget for every rule — its own line, its own sheet over this one (canon v5.3 В29). */}
+      {/* The month's budget for every rule — its own line, its own sheet over this one. */}
       {budget ? (
         <View className="gap-2">
           <BudgetRow budget={budget} copy={copy} locale={locale} onEdit={onChangeBudget} />
@@ -808,6 +941,90 @@ function Compose({
           {buyWords.signInLine}
         </Txt>
       ) : null}
+    </View>
+  )
+}
+
+/**
+ * A token's standing, before the rule (1.31.0, the web's `RiskFacts` and
+ * floor line): for a meme or a new token the facts of its risk as the venue
+ * states them — a caution where its own figure is one to weigh, never a
+ * verdict — then «Поріг регулярної купівлі» with what the token stands on, or
+ * why it does not. Inside Trade (`compact`) what the token's page already says
+ * — its age, liquidity and holders — is left out. Nothing while it is read.
+ */
+export function TokenStanding({
+  read,
+  copy,
+  locale,
+  compact,
+}: {
+  read: RuleAssetRead | null
+  copy: AutoinvestCopy
+  locale: Locale
+  compact: boolean
+}) {
+  if (!read) return null
+  const rows = riskRows(read, copy, locale, compact)
+  const floor = read.floor
+  if (!rows && !floor) return null
+  // Under the full facts the token's liquidity and age are said once: a met floor then names its terms, not the figures.
+  const floorText =
+    floor && floor.verdict === 'met' && rows && !compact ? floorTermsMet(locale) : floor ? floorStanding(floor, locale) : ''
+  return (
+    <View className="gap-3">
+      {rows ? (
+        <View className="gap-2" accessibilityLabel={copy.riskFacts}>
+          <Txt variant="labelSm" tone="faint" caps>
+            {copy.riskFacts}
+          </Txt>
+          {/* Two facts a row, each its label over its figure — the web's grid, never a long column of lines. */}
+          <View className="flex-row flex-wrap rounded-sm border border-line bg-surface px-4 py-1.5">
+            {rows.map((row) => (
+              <View
+                key={row.key}
+                accessible
+                accessibilityLabel={`${row.label}: ${row.value}`}
+                className="gap-0.5 py-1.5 pr-2"
+                style={{ width: '50%' }}
+              >
+                <Txt variant="labelSm" tone="faint" numberOfLines={1}>
+                  {row.label}
+                </Txt>
+                <Txt variant="ui" tone={row.caution ? 'warning' : 'fg'} tabular numberOfLines={1}>
+                  {row.value}
+                </Txt>
+              </View>
+            ))}
+          </View>
+          <Txt variant="ui" tone="faint">
+            {copy.riskSource}
+          </Txt>
+        </View>
+      ) : null}
+      {floor ? (
+        <View className="gap-0.5" accessibilityLabel={`${copy.floorTitle}: ${floorText}`}>
+          <Txt variant="labelSm" tone="faint" caps>
+            {copy.floorTitle}
+          </Txt>
+          <Txt variant="ui" tone={floor.verdict === 'met' ? 'muted' : 'warning'} tabular>
+            {floorText}
+          </Txt>
+        </View>
+      ) : null}
+    </View>
+  )
+}
+
+/** Why no rule can be turned on for a token now, in one line and one tone with the floor's line above it. */
+export function BlockNote({ block, copy }: { block: TokenBlock; copy: AutoinvestCopy }) {
+  const text = block === 'noRule' ? copy.noRuleOnToken : block === 'flagged' ? copy.flaggedSuspicious : copy.tokenUnreadable
+  return (
+    <View className="flex-row items-start gap-2" accessibilityRole="text" accessibilityLiveRegion="polite">
+      <Icon name="information-circle-outline" size={18} color="warningInk" style={{ marginTop: 1 }} />
+      <Txt variant="ui" tone="warning" className="flex-1">
+        {text}
+      </Txt>
     </View>
   )
 }
@@ -874,7 +1091,7 @@ function CountsLine({ text, help }: { text: string; help: AutoinvestCopy['paymen
   const copy = useCopy(AUTOINVEST_COPY)
   const [open, setOpen] = useState(false)
   return (
-    // At rest a quiet door — «Що рахується ⓘ»; what counts and what never does is one tap deeper (M27).
+    // At rest a quiet door — «Що рахується ⓘ»; what counts and what never does is one tap deeper.
     <View className="items-center">
       <Pressable
         accessibilityRole="button"
@@ -968,6 +1185,7 @@ function DayStepper({
 function Done({
   rule,
   company,
+  token,
   budget,
   copy,
   locale,
@@ -976,6 +1194,7 @@ function Done({
 }: {
   rule: AutoinvestRule
   company: AutoinvestCompany
+  token: boolean
   budget: RuleBudget | null
   copy: AutoinvestCopy
   locale: Locale
@@ -985,7 +1204,7 @@ function Done({
   // The month's budget as read after the rule was written: a rule it does not cover stands until the 1st — never a first day.
   const held = heldByBudget(rule, budget)
   const next = rule.nextDueAt ? dueWords(Date.parse(rule.nextDueAt), zoneOfRule(rule), locale) : null
-  const condition = useConditionFacts(company.mint, rule.priceCondition !== null)
+  const condition = useConditionFacts(company.mint, rule.priceCondition !== null && !token)
   return (
     <View className="gap-4 pb-2">
       <View className="items-center gap-2 py-2" accessibilityRole="summary">
@@ -1020,8 +1239,8 @@ function Done({
           </Txt>
         ) : null}
         {rule.priceCondition ? (
-          <Txt variant="ui" tone="faint" className="text-center">
-            {`${copy.priceCondition}: ${conditionFact(rule.priceCondition.limitPct, condition.reference, locale)}`}
+          <Txt variant="ui" tone="faint" className="text-center" tabular>
+            {`${copy.priceCondition}: ${conditionFact(rule.priceCondition, condition.reference, locale)}`}
           </Txt>
         ) : null}
       </View>
@@ -1034,15 +1253,23 @@ function Done({
   )
 }
 
-/** A rule's condition as a short fact — «не дорожче за оцінку PreStocks більш ніж на 5 %» once whose figure is known, the limit alone until then. */
-function conditionFact(limitPct: number, reference: RulePriceReference | null, locale: Locale): string {
-  return reference ? conditionShort(limitPct, reference, locale) : limitWords(limitPct, locale)
+/**
+ * A rule's condition as a short fact — «не дорожче за оцінку PreStocks більш ніж на 5 %» once whose figure is known, the
+ * limit alone until then; on a token (1.31.0) the price it was turned on at and the ceiling it makes — «$150,00 · купує
+ * до $157,50».
+ */
+function conditionFact(condition: RulePriceConditionState, reference: RulePriceReference | null, locale: Locale): string {
+  if (typeof condition.referenceUsd === 'number')
+    return anchorStandingLine(condition.referenceUsd, condition.limitPct, locale)
+  return reference ? conditionShort(condition.limitPct, reference, locale) : limitWords(condition.limitPct, locale)
 }
 
 /* ---- a rule the wallet has ---- */
 
 function Manage({
   initial,
+  token,
+  variant,
   budget,
   copy,
   locale,
@@ -1055,6 +1282,8 @@ function Manage({
   onChangeBudget,
 }: {
   initial: AutoinvestRule
+  token: boolean
+  variant: Variant
   budget: RuleBudget | null
   copy: AutoinvestCopy
   locale: Locale
@@ -1083,10 +1312,16 @@ function Manage({
   // A purchase the price condition holds back (1.18.0): why, and until when the rule judges it again — nothing offered.
   const deferred = face.kind === 'deferred' ? face.occurrence : null
   const last = lastSettled(rule)
-  // Whose figure the rule's condition is set against: the company's row, else the rule's own last judgement.
-  const condition = useConditionFacts(rule.asset.mint, rule.priceCondition !== null)
-  const reference =
-    condition.reference ?? rule.occurrences.find((occurrence) => occurrence.condition)?.condition?.reference ?? null
+  // Whose figure the rule's condition is set against: the company's row, else the rule's own last judgement; a token's
+  // is the price it was turned on at (1.31.0), which the rule itself carries.
+  const condition = useConditionFacts(rule.asset.mint, rule.priceCondition !== null && !token)
+  const reference = token
+    ? 'enabled'
+    : (condition.reference ??
+      rule.occurrences.find((occurrence) => occurrence.condition)?.condition?.reference ??
+      null)
+  // A token's purchase held back by its floor says so first: a thin pool is the reason whatever the price says.
+  const floor = floorHeld(deferred)
   const when = (iso: string) =>
     rule.dip ? dayWords(Date.parse(iso), zone, locale) : dueWords(Date.parse(iso), zone, locale)
 
@@ -1096,8 +1331,14 @@ function Manage({
     const result = await run()
     setBusy(null)
     if (!result.ok) {
+      // A token turned on again stands on the floor again, and its figures must be read (1.31.0): said in its words.
+      const tokenFailure = token ? tokenWriteFailure(result.code, 'change') : null
       // Turning a fall's rule on again counts from the price then: a price the server could not read is said as such.
-      setFailure(writeFailureWords(result.code, copy, { write: 'change', dip: rule.dip !== null }))
+      setFailure(
+        tokenFailure
+          ? copy[tokenFailure]
+          : writeFailureWords(result.code, copy, { write: 'change', dip: rule.dip !== null }),
+      )
       return
     }
     if (kind === 'deleting') {
@@ -1141,11 +1382,20 @@ function Manage({
   if (rule.priceCondition)
     rows.push({
       key: 'condition',
-      label: copy.priceCondition,
-      value: conditionFact(rule.priceCondition.limitPct, reference, locale),
+      // A token's condition stands against the price it was turned on at — named so, with the ceiling it makes.
+      label: typeof rule.priceCondition.referenceUsd === 'number' ? copy.priceWhenOn : copy.priceCondition,
+      value: conditionFact(rule.priceCondition, reference, locale),
     })
   // The reminder's own sum (1.19.0): what a «З оплат» rule gathered; the rule's sum for the other kinds.
   if (due) rows.push({ key: 'due', label: copy.timeToBuy, value: dollarsText(purchaseSumUsd(rule, due), locale) })
+  else if (deferred && floor)
+    rows.push({
+      key: 'deferred',
+      label: copy.purchaseDeferred,
+      value: keptTail(floorLine(floor, '', locale)),
+      sub: `${copy.checksAgainUntil} ${unbroken(dueWords(Date.parse(deferred.openUntil), zone, locale))}`,
+      warning: true,
+    })
   else if (deferred)
     rows.push({
       key: 'deferred',
@@ -1267,7 +1517,7 @@ function Manage({
               onPress={() => onBuyNow(rule, due)}
             />
           ) : held ? (
-            // The month's budget holds it (canon §11): the one action is the person's own ceiling, never a purchase.
+            // The month's budget holds it: the one action is the person's own ceiling, never a purchase.
             <Button title={copy.changeBudget} size="lg" disabled={busy !== null} onPress={onChangeBudget} />
           ) : paused ? (
             <Button
@@ -1277,7 +1527,8 @@ function Manage({
               disabled={busy !== null}
               onPress={() => void change('resuming', () => writes.setStatus(rule.id, 'active'))}
             />
-          ) : (
+          ) : variant === 'panel' ? null : (
+            // Inside Trade the rule simply stands: nothing to close, and the screen's one action stays the order's.
             <Button title={copy.done} size="lg" disabled={busy !== null} onPress={onClose} />
           )}
           {paused ? null : (
@@ -1303,7 +1554,7 @@ function Manage({
 }
 
 /**
- * The newest counted events of a «З оплат» rule (canon v5.5 В38): the sum and
+ * The newest counted events of a «З оплат» rule: the sum and
  * the rule's share on one line, the time — and «у нагадуванні» once a reminder
  * took it — under it, and where the transfer carried one, its Solana Pay label;
  * never the other side's name, which never reaches the phone. An event still

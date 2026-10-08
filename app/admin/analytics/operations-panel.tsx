@@ -21,10 +21,10 @@ import { formatAgo, formatDateTime, formatUsd } from "../format";
 
 type Payload = Readonly<{ generatedAt: string; chainReadAt: string | null; chainComplete: boolean | null; operations: readonly OperationRecord[] }>;
 
-const PRODUCT_LABEL: Record<OperationProduct | "ALL", string> = { ALL: "Усі", SWAP: "Swap", SPOT: "Spot", STOCK: "Акції", BRIDGE: "Bridge" };
+const PRODUCT_LABEL: Record<OperationProduct | "ALL", string> = { ALL: "Усі", SWAP: "Swap", SPOT: "Spot", STOCK: "Акції", LAUNCH: "Лаунч", BRIDGE: "Bridge" };
 const STATUS_LABEL: Record<OperationStatus | "ALL", string> = { ALL: "Усі стани", CONFIRMED: "Підтверджено", IN_FLIGHT: "У дорозі", NEEDS_YOU: "Потрібна дія", FAILED: "Не відбулось" };
 const VERIFICATION_LABEL: Record<OperationVerification, string> = { VERIFIED: "у ланцюгу", PENDING: "очікує", NOT_ATTRIBUTABLE: "без маркера", NOT_APPLICABLE: "запис провайдера" };
-const PROVIDER_LABEL = { JUPITER: "Jupiter", RELAY: "Relay", MAYAN: "Mayan", CIRCLE: "Circle CCTP" } as const;
+const PROVIDER_LABEL = { JUPITER: "Jupiter", METEORA: "Meteora", RELAY: "Relay", MAYAN: "Mayan", CIRCLE: "Circle CCTP" } as const;
 
 function statusChip(status: OperationStatus): string {
   if (status === "CONFIRMED") return `${ext.chip} ${ext.chipOk}`;

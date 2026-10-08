@@ -1,6 +1,6 @@
 /**
- * «Шлях компанії» on the phone — the pure half (M24; the web's
- * `RYN-COMPANY-PATH-001`, its `company-path-words.ts` and `company-path.tsx`).
+ * «Шлях компанії» on the phone — the pure half (M24; the web's,
+ * its `company-path-words.ts` and `company-path.tsx`).
  *
  * Where a company stands on its way from a private token to its stock on
  * Solana — **Приватна · PreStocks → IPO → Біржа → Solana**, each step passed,
@@ -72,7 +72,7 @@ export function pathDeadline(iso: string, locale: Locale): string | null {
 }
 
 /**
- * What a token is, in the fewest words (canon §7): a private company's token is
+ * What a token is, in the fewest words: a private company's token is
  * not a share and pays the issuer's fee on every transfer — «не акція · комісія
  * 1%» where the chain states it; a listed share's token on Solana is backed one
  * to one and carries no vote.

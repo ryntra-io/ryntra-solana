@@ -555,3 +555,13 @@ test('a known refusal at the send is «nothing landed»; a build the network ref
   )
   assert.equal(createFailureKey({ step: 'before', code: 'UNAVAILABLE', detail: null }), 'errGeneric')
 })
+
+test('English counts agree with their nouns: «1 holder», «2 holders», «1 launch», «3 launches»', () => {
+  const word = launchWords('en')
+  assert.equal(word('risk_FEW_HOLDERS', { n: 1 }), '1 holder')
+  assert.equal(word('risk_FEW_HOLDERS', { n: 2 }), '2 holders')
+  assert.equal(word('risk_HOLDERS_UNCOUNTED', { n: '1' }), 'At least 1 holder')
+  assert.equal(word('tradesLatest', { n: '1,200' }), '1,200 trades read — not all')
+  assert.ok(Object.values(LAUNCH_WORDS).every((pair) => !/\{(s|es):/.test(pair.uk)))
+  assert.equal(launchWords('uk')('risk_FEW_HOLDERS', { n: 1 }), 'Холдерів: 1')
+})

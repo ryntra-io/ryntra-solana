@@ -10,7 +10,8 @@
  */
 
 import type { RewardRow, RewardsResponse } from '../../lib/api.ts'
-import { DASH } from '../../utils/format.ts'
+import type { Locale } from '../../lib/locale.ts'
+import { DASH, formatUsd, localizeFigures } from '../../utils/format.ts'
 
 export type RewardSourceId = 'cashback' | 'referralL1' | 'referralL2'
 export type RewardEntryKind = 'cashback' | 'referralL1' | 'referralL2' | 'claim' | 'other'
@@ -65,12 +66,16 @@ export type RewardsView = Readonly<{
   started: boolean
 }>
 
-/** The server's decimal text with its currency in front: "12.34" → "$12.34", "<0.01" → "<$0.01". */
-export function dollars(text: string | null | undefined): string {
+/** The server's decimal text with its currency in front, in the language's shape: "12.34" → "$12.34" · «$12,34», "<0.01" → "<$0.01". */
+export function dollars(text: string | null | undefined, locale: Locale = 'en'): string {
   if (typeof text !== 'string' || text.length === 0) return DASH
-  if (text.startsWith('<')) return `<$${text.slice(1)}`
-  if (text.startsWith('-')) return `−$${text.slice(1)}`
-  return /^\d/.test(text) ? `$${text}` : text
+  // A plain decimal is money the app shapes itself — grouped, with the language's marks: «$1,234.50» · «$1 234,50».
+  const plain = /^([<-]?)(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)$/.exec(text)
+  if (plain) {
+    const shaped = formatUsd(Number(plain[2].replace(/,/g, '')), locale)
+    return plain[1] === '-' ? `−${shaped}` : `${plain[1]}${shaped}`
+  }
+  return localizeFigures(text, locale)
 }
 
 /** A grouped figure as the server prints it ("1 234", "1,234") back into a number; null when it is not one. */
@@ -122,28 +127,29 @@ export function pointsProgress(points: RewardsResponse['points']): PointsProgres
 }
 
 /** The whole answer, as the screens read it. */
-export function rewardsView(response: RewardsResponse): RewardsView {
+export function rewardsView(response: RewardsResponse, locale: Locale): RewardsView {
   const sources: RewardSource[] = [
-    { id: 'cashback', text: dollars(response.cashback) },
-    { id: 'referralL1', text: dollars(response.referralL1) },
-    { id: 'referralL2', text: dollars(response.referralL2) },
+    { id: 'cashback', text: dollars(response.cashback, locale) },
+    { id: 'referralL1', text: dollars(response.referralL1, locale) },
+    { id: 'referralL2', text: dollars(response.referralL2, locale) },
   ]
+  const points = pointsProgress(response.points)
   return {
     address: response.address,
-    available: dollars(response.available),
-    pending: dollars(response.pending),
-    lifetime: dollars(response.lifetime),
+    available: dollars(response.available, locale),
+    pending: dollars(response.pending, locale),
+    lifetime: dollars(response.lifetime, locale),
     sources,
-    claimNote: response.claimable ? null : (response.claimBlockedReason ?? null),
+    claimNote: response.claimable ? null : response.claimBlockedReason ? localizeFigures(response.claimBlockedReason, locale) : null,
     claimable: response.claimable === true,
     claim: response.claim ?? null,
-    points: pointsProgress(response.points),
+    points: points ? { ...points, volume: localizeFigures(points.volume, locale) } : null,
     referral: response.referral && response.referral.code && response.referral.link ? response.referral : null,
     invited: { level1: response.referrals?.level1 ?? 0, level2: response.referrals?.level2 ?? 0 },
     invitedBy: response.invitedBy ?? null,
     entries: (response.rows ?? []).map((row) => ({
       kind: entryKind(row.kind),
-      display: row.valued ? row.display : DASH,
+      display: row.valued ? localizeFigures(row.display, locale) : DASH,
       valued: row.valued,
       detail: row.detail ?? null,
       at: row.at,

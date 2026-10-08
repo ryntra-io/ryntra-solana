@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router'
 import { useState, type ReactNode } from 'react'
-import { Linking, Pressable, View } from 'react-native'
+import { Pressable, View } from 'react-native'
 
 import { AssetIcon } from '@/components/asset-icon'
 import { Button } from '@/components/button'
@@ -33,6 +33,7 @@ import { useConvert, type ConvertController, type ConvertInto, type ConvertToken
 import type { TradeContext } from '@/features/trade/trade-model'
 import { useCopy, type Locale } from '@/lib/i18n'
 import { TopUpSheet } from '@/screens/home/top-up-sheet'
+import { openLink } from '@/lib/open-link'
 
 import { BuyReceiptFace, QuietLinks, ReviewTable, type ReceiptFace } from './buy-sheet'
 
@@ -40,7 +41,7 @@ const QUOTE_UNREAD = new Set(['offline', 'tooLong', 'providerDown', 'rateLimited
 
 /**
  * The swap before the issuer's deadline, and the quiet sale — the IPO and
- * conversion watch's one action (canon v5.2 В27, §7; M19), drawn as the
+ * conversion watch's one action, drawn as the
  * purchase's sheet is and running on the same path: Trade's quote, the
  * server's exact «Перевірка», the wallet's signature through Mobile Wallet
  * Adapter, the server's one submission, the receipt, the recovery of a
@@ -416,7 +417,7 @@ function Review({
           {
             label: words.issuerNotice,
             value: `${event.noticeUrl.replace(/^https:\/\/(www\.)?/, '')} ↗`,
-            onPress: () => void Linking.openURL(event.noticeUrl!),
+            onPress: () => openLink(event.noticeUrl!),
           },
         ]
       : []),
@@ -588,7 +589,7 @@ function Receipt({
   const links = [
     { label: buyWords.history, onPress: onHistory },
     ...(signature && outcome.kind !== 'nothing'
-      ? [{ label: `${buyWords.transaction} ↗`, onPress: () => void Linking.openURL(explorerUrl(signature)) }]
+      ? [{ label: `${buyWords.transaction} ↗`, onPress: () => openLink(explorerUrl(signature)) }]
       : []),
   ]
 

@@ -56,11 +56,11 @@ function poolLine(
  * timeframe chosen. A refresh that fails keeps the last read and says so;
  * a market with no chart says why, in the source's words.
  *
- * `simple` is «Простий»'s line (canon §2, rule 10): the price alone, in the
+ * `simple` is «Простий»'s line: the price alone, in the
  * person's language, over a day, a week, a month or a year (the web's own four
  * ranges; M15), a day drawn through the middle of each quarter hour folded
  * from its five-minute bars, its figures said as «≈», so a pool trading on
- * both sides of a wide spread does not zigzag the line (M27) — the change over
+ * both sides of a wide spread does not zigzag the line — the change over
  * a longer range said under the line from closes, a history
  * younger than the range said as «з …» rather than called a year; whose pool
  * and which source drew it is said only when `source` is on — under the page's
@@ -93,7 +93,7 @@ export function ChartCard({
     writePreference(TIMEFRAME_KEY, next)
   }
   const data = candles.data
-  // The range's own bars, closes as traded: what its change is said from (M27).
+  // The range's own bars, closes as traded: what its change is said from.
   const bars = data
     ? simple
       ? coarserBars(rangeCandles(data.candles, range, now), RANGE_STEP_SECONDS[range])

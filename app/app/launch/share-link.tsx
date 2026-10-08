@@ -8,8 +8,28 @@ import type { WorkspaceLocale } from "@/app/shell/locale";
 import { launchWords } from "./launch-words";
 import styles from "./launch.module.css";
 
-/** The link a creator shares, one tap to copy, one to post. */
-export function ShareLink({ link, symbol, locale }: { link: string; symbol: string; locale: WorkspaceLocale }) {
+/**
+ * A link to share, one tap to copy, one to post: the creator's link to their
+ * token, or a person's link to the trade they just made. `compact` leaves the
+ * address itself off — beside a trade the two actions say enough.
+ */
+export function ShareLink({
+  link,
+  symbol,
+  locale,
+  label,
+  text,
+  compact = false,
+}: {
+  link: string;
+  symbol: string;
+  locale: WorkspaceLocale;
+  /** The block's own words; the creator's «Share link» by default. */
+  label?: string;
+  /** The post's words; the launch's by default. */
+  text?: string;
+  compact?: boolean;
+}) {
   const word = launchWords(locale);
   const [copied, setCopied] = useState(false);
   const copy = async () => {
@@ -21,18 +41,20 @@ export function ShareLink({ link, symbol, locale }: { link: string; symbol: stri
       setCopied(false);
     }
   };
-  const post = `https://x.com/intent/post?text=${encodeURIComponent(word("shareText", { symbol }))}&url=${encodeURIComponent(link)}`;
+  const post = `https://x.com/intent/post?text=${encodeURIComponent(text ?? word("shareText", { symbol }))}&url=${encodeURIComponent(link)}`;
   return (
-    <div className={styles.share}>
-      <span className={styles.shareLabel}>{word("share")}</span>
+    <div className={compact ? `${styles.share} ${styles.shareCompact}` : styles.share}>
+      <span className={styles.shareLabel}>{label ?? word("share")}</span>
       <div className={styles.shareRow}>
-        <code className={styles.shareLink} title={link}>
-          {/* Shown short — the address and the code; the copy carries the whole link with the token's page. */}
-          {link.replace(/^https?:\/\//, "").replace(/\?.*$/, "")}
-        </code>
+        {compact ? null : (
+          <code className={styles.shareLink} title={link}>
+            {/* Shown short — the address and the code; the copy carries the whole link with the token's page. */}
+            {link.replace(/^https?:\/\//, "").replace(/\?.*$/, "")}
+          </code>
+        )}
         <button type="button" className="rw-btn" onClick={copy} aria-live="polite">
           {copied ? <Check size={16} weight="bold" aria-hidden /> : <Copy size={16} aria-hidden />}
-          {copied ? word("copied") : word("copy")}
+          {copied ? word("copied") : compact ? word("copyLink") : word("copy")}
         </button>
         <a className="rw-btn" href={post} target="_blank" rel="noreferrer noopener">
           <XLogo size={16} aria-hidden />

@@ -23,8 +23,8 @@ export type ConditionRead = Readonly<{
 }>
 
 /**
- * The facts a rule's price condition is judged on while a sheet shows it
- * (canon v5.5 В37; M25): the company's row as `GET /api/stocks/asset` serves
+ * The facts a rule's price condition is judged on while a sheet shows it:
+ * the company's row as `GET /api/stocks/asset` serves
  * it — the same read the order route judges on, shared with the company's
  * page — read again every half minute while `enabled`. A read that fails
  * keeps the last facts, which age into «stale» on their own: the sheet never

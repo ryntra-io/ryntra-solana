@@ -157,7 +157,7 @@ export function rynTurnView(turn: AgentTurn): RynTurnView {
 export type TurnLead = Readonly<{ kind: 'card'; index: number }> | Readonly<{ kind: 'handoff'; href: string }>
 
 /**
- * One orange action on the screen (canon §2, rule 1). In a turn it is the
+ * One orange action on the screen. In a turn it is the
  * first draft card — it opens the place where the person acts — else the
  * primary handoff the phone offers, else none. The screen gives it to the
  * latest answer only, and only while the composer holds nothing to send;
@@ -204,7 +204,7 @@ function query(entries: readonly (readonly [string, string | null | undefined])[
  * The ticket a trade draft names, on Trade: the side, and for a Buy the sum
  * the person told Ryntra and the plan it is bound to. A Sell's ticket is where
  * its draft opens; a Buy's is the card's quiet second door — the tool «Профі»
- * opened first, a tap deeper since one version (canon v5.3 В28).
+ * opened first, a tap deeper since one version.
  */
 export function ticketOfCard(card: AgentCard): string | null {
   if (card.kind !== 'tradeDraft') return null
@@ -224,8 +224,7 @@ export function ticketOfCard(card: AgentCard): string | null {
 
 /**
  * A path the router knows. A draft opens the place where the person acts —
- * never the act. Ryntra hands no ticket first for a purchase (canon v5.1 В17,
- * §2: no assistant on the way to a purchase; one version since v5.3): a Buy it
+ * never the act. Ryntra hands no ticket first for a purchase (no assistant on the way to a purchase): a Buy it
  * prepared opens the asset's own page, where the person presses «Купити» and
  * chooses the sum; the ticket with Ryntra's sum is the card's quiet second
  * door (`ticketOfCard`). A Sell opens its ticket.
@@ -311,13 +310,12 @@ export function handoffView(handoff: AgentHandoff, cards: readonly AgentCard[]):
 
 function wordsFor(path: string, cards: readonly AgentCard[]): HandoffWords {
   const bare = path.split('?')[0] ?? path
-  if (bare === '/plans') return { kind: 'plans' }
+  if (bare === '/bots') return { kind: 'plans' }
   if (bare === '/results') return { kind: 'results' }
   if (bare === '/(tabs)/portfolio') return { kind: 'portfolio' }
   if (bare === '/history') return { kind: 'history' }
   if (bare === '/monitoring') return { kind: 'inbox' }
-  if (bare === '/(tabs)/markets') return { kind: 'markets' }
-  if (bare === '/lists') return { kind: path.includes('tab=stock') ? 'stocks' : 'markets' }
+  if (bare === '/(tabs)/markets') return { kind: /[?&]tab=(?:stocks|private)(?:&|$)/.test(path) ? 'stocks' : 'markets' }
   const asset = /^\/asset\/([^/?]+)/.exec(bare)
   if (asset) {
     const card = cards.find(

@@ -1,9 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'expo-router'
 import { useCallback } from 'react'
-import { Linking } from 'react-native'
 
-import { rulePurchaseParams } from '@/features/autoinvest/rule-model'
+import { ruleBuyRouteOf } from '@/features/autoinvest/rule-model'
 import { RULES_KEY } from '@/features/autoinvest/use-rules'
 import { recordJourney } from '@/features/journeys/journey-store'
 import { useMonitoring, usePlans } from '@/features/plans/use-plans'
@@ -17,6 +16,7 @@ import {
   type Session,
 } from '@/lib/api'
 import type { Locale } from '@/lib/i18n'
+import { openLink } from '@/lib/open-link'
 
 import { webHrefOf } from './deep-link'
 import { parseNoteRef, resolveNote, type NoteRef, type NoteTarget, type Resolved } from './monitoring-model'
@@ -116,15 +116,8 @@ export function useOpenNote(session: Session | null, from: 'home' | 'plans' | 'i
           .flatMap(([, list]) => list?.rules ?? [])
           .find((rule) => rule.id === target.ruleId)
         if (cached) {
-          router.push({
-            pathname: '/asset/[mint]',
-            params: rulePurchaseParams({
-              mint: cached.asset.mint,
-              symbol: cached.asset.symbol,
-              ruleId: cached.id,
-              dueAt: target.dueAt,
-            }),
-          })
+          // A company's purchase on its page; a token's (1.31.0) in Trade, the ticket as the rule's purchase.
+          router.push(ruleBuyRouteOf(cached, target.dueAt) as never)
           return
         }
         if (ref) router.push({ pathname: '/monitoring/open', params: { n: ref.id } })
@@ -139,7 +132,7 @@ export function useOpenNote(session: Session | null, from: 'home' | 'plans' | 'i
       }
       if (target.kind === 'web') {
         const href = webHrefOf(target.href)
-        if (href) void Linking.openURL(href)
+        if (href) openLink(href)
         return
       }
       if (target.kind === 'budget') {

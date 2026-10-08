@@ -54,7 +54,7 @@ function useSubject(context: AgentContext | null, address: string | null): strin
 }
 
 function contextLabel(context: AgentContext | null, subject: string | null, copy: AgentCopy): string | undefined {
-  // Opened from the tab itself: the title and the line under it say everything (M27).
+  // Opened from the tab itself: the title and the line under it say everything.
   if (!context) return undefined
   switch (context.kind) {
     case 'asset':
@@ -84,7 +84,7 @@ function OpeningBody() {
 /**
  * Ryntra, the product's one AI assistant, text-first: Ask → Understand →
  * Prepare → Review. Labelled as an AI in the header and in the first line
- * of the conversation (canon §5). The conversation is the wallet's and the
+ * of the conversation. The conversation is the wallet's and the
  * server's; the phone asks, draws the answer with its sources and their
  * times, and opens the place each card or handoff names — the builder with a
  * draft, Trade's own fresh quote and Review, a plan, the inbox. There is no
@@ -354,7 +354,7 @@ export function RynScreen({ context, onBack, question }: RynScreenProps) {
               </Txt>
               {text.length > QUESTION_MAX - 200 ? (
                 <Txt variant="labelSm" tone="faint">
-                  {`${formatCount(text.length)} / ${formatCount(QUESTION_MAX)}`}
+                  {`${formatCount(text.length, locale)} / ${formatCount(QUESTION_MAX, locale)}`}
                 </Txt>
               ) : null}
             </View>

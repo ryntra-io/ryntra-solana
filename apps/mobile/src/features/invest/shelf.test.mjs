@@ -98,7 +98,7 @@ test('a representation that cannot be bought now is no card; the next one of the
   assert.equal(isShelfCandidate(stock({ symbol: 'A', underlying: 'A', tradable: false })), false)
   assert.equal(isShelfCandidate(stock({ symbol: 'B', underlying: 'B', price: null })), false)
   assert.equal(isShelfCandidate(stock({ symbol: 'C', underlying: 'C', price: 0 })), false)
-  // Ondo alone is not a beginner's shelf (canon §3): the company has no card.
+  // Ondo alone is not a beginner's shelf: the company has no card.
   assert.deepEqual(shelfCompanies([stock({ symbol: 'TSLAon', issuer: 'ondo', underlying: 'TSLA' })]), [])
 })
 
@@ -142,7 +142,7 @@ test('private companies come through PreStocks alone: every instrument its own c
       premium: 30.9412,
     }),
     stock({ symbol: 'SPACEX', issuer: 'prestocks', underlying: 'SPACEX', name: 'SpaceX', klass: 'pre-ipo', volume: 5 }),
-    // Another issuer's token on the same company: canon v5.2 В25 — not a private company Ryntra offers.
+    // Another issuer's token on the same company is not a private company Ryntra offers.
     stock({
       symbol: 'xOPENAI',
       issuer: 'another-issuer',

@@ -1,4 +1,4 @@
-import { Linking, Pressable, View } from 'react-native'
+import { Pressable, View } from 'react-native'
 
 import { FactRow } from '@/components/fact-row'
 import { Icon, type IconName } from '@/components/icon'
@@ -8,6 +8,7 @@ import { DETAILS_COPY, isAssetCategory, type DetailsCopy } from '@/features/inve
 import type { MarketDetail, StockAsset } from '@/lib/api'
 import { useCopy, useLocale, type Locale } from '@/lib/i18n'
 import { issuerLabel, referenceWord, sessionWord, unitsLine } from '@/lib/stocks'
+import { openLink } from '@/lib/open-link'
 import {
   formatAmount,
   formatClock,
@@ -46,7 +47,7 @@ function LinkRow({ icon, label, url, a11y }: { icon: IconName; label: string; ur
     <Pressable
       accessibilityRole="link"
       accessibilityLabel={a11y}
-      onPress={() => void Linking.openURL(url)}
+      onPress={() => openLink(url)}
       className="flex-row items-center gap-3 border-b border-line py-2.5 active:bg-hover"
     >
       <Icon name={icon} size={18} />

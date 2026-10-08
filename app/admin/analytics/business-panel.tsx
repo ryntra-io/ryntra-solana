@@ -65,6 +65,7 @@ const STATUS_TONE: Record<BusinessFeedItem["status"], string> = {
 
 const PROVIDER_LABEL: Record<NonNullable<BusinessFeedItem["provider"]>, string> = {
   JUPITER: "Jupiter",
+  METEORA: "Meteora",
   RELAY: "Relay",
   MAYAN: "Mayan",
   CCTP: "CCTP",

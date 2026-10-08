@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import type { WorkspaceLocale } from "@/app/shell/locale";
 import { solanaServerLocale } from "@/app/solana/workspace/i18n/server";
+import { ShareTrade } from "@/app/solana/workspace/rewards/share-trade";
 import type { LaunchTokenResponse } from "@/lib/api/v1/contract";
 import { BASE58 } from "@/lib/api/v1/contract";
 import { getGuardRuntime } from "@/lib/guard/runtime";
@@ -63,8 +64,11 @@ export default async function LaunchTokenPage({ params }: { params: Promise<{ mi
           marks: <Marks token={token} locale={locale} />,
           about: <About token={token} locale={locale} />,
           share: (
-            <section className={styles.card} id="launch-share">
+            <section className={`${styles.card} ${styles.shareCard}`} id="launch-share">
               <ShareLink link={token.shareLink} symbol={token.symbol} locale={locale} />
+              {/* «Поділитися угодою»: a card of this wallet's own trade of this token, with its link — drawn only for a wallet
+                  that proved itself and traded here. */}
+              <ShareTrade mint={token.token} />
             </section>
           ),
           receipt: <Receipt token={token} locale={locale} pairSymbol={pairSymbol} />,

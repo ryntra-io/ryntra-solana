@@ -5,7 +5,7 @@ import { companyPathView, otherPathToken, pathDeadline, stepLines, tokenNature }
 import { COMPANY_PATH_COPY } from './company-path-copy.ts'
 
 /*
- * «Шлях компанії» (M24): the web's strip (`RYN-COMPANY-PATH-001`) in the web's
+ * «Шлях компанії»: the web's strip in the web's
  * words and days. The paths are production's answer of 2026-09-26 (contract
  * 1.19.0, registry 2026-09-25.2); the expected lines are the ones ryntra.io drew
  * the same day for SpaceX's two tokens and OpenAI, in Ukrainian and in English.

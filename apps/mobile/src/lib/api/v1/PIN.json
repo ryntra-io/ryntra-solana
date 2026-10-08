@@ -1,12 +1,12 @@
 {
   "package": "packages/ryntra-api-client",
-  "commit": "b3748aa8",
-  "contractVersion": "1.30.0",
+  "commit": "b2904dc3",
+  "contractVersion": "1.31.0",
   "contractMajor": 1,
-  "pinnedAt": "2026-10-06",
+  "pinnedAt": "2026-10-07",
   "files": {
-    "types.ts": "6392770f3a9641b3ccff2a2673e9082f6c949e42",
-    "client.ts": "2ff6d04adcdc601c9975a182956669957d1aef84"
+    "types.ts": "52fc8c5019fb8a69a224e80d24ca66757e59345d",
+    "client.ts": "4f690b744786ebeb3225546b62cd608dc39a89cd"
   },
   "note": "Copies taken by content with `git show <commit>:packages/ryntra-api-client/src/<file>`; never edited here — take a new commit instead. The hashes are git blob ids of the LF content; pin.test.mjs checks them."
 }

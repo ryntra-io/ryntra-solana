@@ -50,7 +50,14 @@
  *   own liquidity in its DLMM steps: a counter ignores it. None of them is used for
  *   anything else: the configs, the pool payer and the executor were created
  *   for Launch, and the partner's vault — a vault that existed before — is
- *   Launch's from the first config that names it.
+ *   Launch's from the first config that names it. And Meteora's referral
+ *   account in a launch's trades — the vault's token account in the pair
+ *   currency, which every trade made through Ryntra names as its referral, on
+ *   the curve and in the pool after graduation: a counter adds the referral fee
+ *   the program's swap event names for it, at the trade — never every credit to
+ *   the account, where the partner's claims of the configs' fees may land too.
+ *   After graduation the pool no longer names the config, and this account is
+ *   how a trade of a graduated launch is Ryntra's.
  *
  * A wallet that pays friends' rewards — the friends' payout wallet, and the
  * rewards wallet while it pays them too — is registered here and never
@@ -80,7 +87,7 @@ export const ATTRIBUTION_REGISTRY_VERSION = "1.0.0";
 export const REGISTRY_NETWORKS = [...NETWORK_IDS, "relay"] as const;
 export type RegistryNetwork = NetworkId | "relay";
 
-export const REGISTRY_ROLES = ["FEE", "PAYOUT_CASHBACK", "PAYOUT_FRIENDS", "PAYOUT_INTEGRATORS", "PAYOUT_REWARDS", "TREASURY", "LAUNCH_CONFIG", "LAUNCH_FEE_CLAIMER", "LAUNCH_POOL_PAYER", "LAUNCH_EXECUTOR"] as const;
+export const REGISTRY_ROLES = ["FEE", "PAYOUT_CASHBACK", "PAYOUT_FRIENDS", "PAYOUT_INTEGRATORS", "PAYOUT_REWARDS", "TREASURY", "LAUNCH_CONFIG", "LAUNCH_FEE_CLAIMER", "LAUNCH_POOL_PAYER", "LAUNCH_EXECUTOR", "LAUNCH_REFERRAL"] as const;
 export type RegistryRole = (typeof REGISTRY_ROLES)[number];
 
 /** How the identity exists on its network. */
@@ -105,6 +112,8 @@ export const REGISTRY_KINDS = [
   "LAUNCH_POOL_PAYER",
   /** The wallet that sends a launch's graduation and holds Ryntra's own liquidity on graduated launches. */
   "LAUNCH_EXECUTOR",
+  /** Meteora's referral account in a launch's trades: the partner's vault's token account in the pair currency. */
+  "METEORA_REFERRAL_TOKEN_ACCOUNT",
 ] as const;
 export type RegistryKind = (typeof REGISTRY_KINDS)[number];
 
@@ -232,6 +241,15 @@ export const ATTRIBUTION_REGISTRY: readonly RegistryEntry[] = Object.freeze([
   /* The executor: a wallet of its own with a small budget, its key held outside this repository; the address is written
      here when the wallet exists. */
   place("solana-launch-executor", "LAUNCH_EXECUTOR", "LAUNCH_EXECUTOR", ["launch"], "NONE"),
+  /* Meteora's referral in a launch's trades: the partner's vault's USDC account, which every trade through Ryntra — and the
+     creator's first purchase — names as its referral since 2026-10-08. Counted by the swap event's referral fee, never by
+     its credits. */
+  {
+    ...place("solana-launch-referral-usdc", "LAUNCH_REFERRAL", "METEORA_REFERRAL_TOKEN_ACCOUNT", ["launch"], "FEES"),
+    parent: "solana-launch-fee-claimer",
+    mint: USDC,
+    address: "4kVogGhWqheXKjteM2urywUS5L8q7AnSNJCYDna4VrDy",
+  },
 ]);
 
 /* ------------------------------------------------------------ validation */
@@ -289,10 +307,12 @@ export function validateRegistry(rows: readonly RegistryEntry[] = ATTRIBUTION_RE
                 ? row.kind === "LAUNCH_POOL_PAYER" && row.countedAs === "NONE"
                 : row.role === "LAUNCH_EXECUTOR"
                   ? row.kind === "LAUNCH_EXECUTOR" && row.countedAs === "NONE"
-                  : row.kind === "PAYOUT_WALLET" && row.countedAs === "SUPPLY_SIDE";
+                  : row.role === "LAUNCH_REFERRAL"
+                    ? row.kind === "METEORA_REFERRAL_TOKEN_ACCOUNT" && row.countedAs === "FEES"
+                    : row.kind === "PAYOUT_WALLET" && row.countedAs === "SUPPLY_SIDE";
     if (!roleFits) problems.push(`${row.id}: the role, the kind and how it is counted disagree`);
     if (row.role !== "TREASURY" && row.products.length === 0) problems.push(`${row.id}: names no product`);
-    if (row.kind === "JUPITER_REFERRAL_TOKEN_ACCOUNT" && (row.parent === null || row.mint === null)) problems.push(`${row.id}: a referral token account names its account and its mint`);
+    if ((row.kind === "JUPITER_REFERRAL_TOKEN_ACCOUNT" || row.kind === "METEORA_REFERRAL_TOKEN_ACCOUNT") && (row.parent === null || row.mint === null)) problems.push(`${row.id}: a referral token account names its account and its mint`);
   }
   for (const row of rows) if (row.parent !== null && !rows.some((other) => other.id === row.parent)) problems.push(`${row.id}: its parent ${row.parent} is not registered`);
   /* One open fee wallet for each product (one wallet may serve several), one payout wallet per kind, one treasury. */

@@ -4,7 +4,7 @@ import { Button } from '@/components/button'
 import { Icon } from '@/components/icon'
 import { Txt } from '@/components/txt'
 
-/** The issuer's event in one line, an hourglass before it — said in amber wherever it stands (canon v5.2 В27). */
+/** The issuer's event in one line, an hourglass before it — said in amber wherever it stands. */
 export function EventLine({ line, size = 16 }: { line: string; size?: number }) {
   return (
     <View className="flex-row items-start gap-2">
@@ -53,7 +53,7 @@ export function EventBanner({
 
 /**
  * A holder's two actions on the issuer's event: the swap, the one orange action, and the sale beside it, quiet —
- * under the event's box, or under the line of «Шлях компанії» on the private token's own page (M24).
+ * under the event's box, or under the line of «Шлях компанії» on the private token's own page.
  */
 export function EventButtons({ actions, compact = false }: { actions: EventActions; compact?: boolean }) {
   return (

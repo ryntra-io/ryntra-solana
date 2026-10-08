@@ -25,8 +25,8 @@ export type TopUpSheetProps = {
 /**
  * «Поповнити» — the one way in that works on the phone today: USDC sent to
  * the person's own address on the Solana network, from an exchange or another
- * wallet (canon v5.1 §3, §4; «only what works»). «Отримати» in «Ще» is the
- * same address for anything sent on Solana (canon v5.3 §3). The address is the
+ * wallet («only what works»). «Отримати» in «Ще» is the
+ * same address for anything sent on Solana. The address is the
  * wallet's own and whole; it is copied or handed to the system's share sheet,
  * never sent anywhere by the app. The network is named before anything else
  * can be done with it, because a transfer from another network is lost. A

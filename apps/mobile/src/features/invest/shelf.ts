@@ -1,6 +1,6 @@
 /**
- * The investor's shelves — Home and Markets on the beginner's path (canon
- * v5.1 §2, §3, §4; one version since v5.3 В28): the companies, the private companies, the dollars and the crypto.
+ * The investor's shelves — Home and Markets on the beginner's path:
+ * the companies, the private companies, the dollars and the crypto.
  * Pure: the rows the public routes answer go in, cards come out; nothing here
  * reads the network or ranks anything by an opinion.
  *
@@ -14,15 +14,15 @@
  * the phone and ryntra.io show the same cards in the same order.
  *
  * **Who is on the shelf:** xStocks and Backpack. Ondo is not a beginner's
- * first purchase (canon §3, the depth of its pools); a representation that is
+ * first purchase (the depth of its pools); a representation that is
  * halted, not offered by its issuer or has no price is no card either.
  *
  * **The order is neutral and published:** the company's trading volume over
  * the last twenty-four hours across its representations, the same for every
- * person (canon §4: no «топ-3», no one's opinion).
+ * person (no «топ-3», no one's opinion).
  *
  * **Private companies** (pre-IPO) are a shelf of their own, and they come
- * through PreStocks alone (canon v5.2 В25–В27): its eight companies, each its
+ * through PreStocks alone: its eight companies, each its
  * own card, every one saying «Це не акція» and one honest number — its price
  * against PreStocks' own valuation of the company's token.
  */
@@ -32,10 +32,10 @@ import type { Locale } from '../../lib/i18n.ts'
 import { eventOfRow, isIssuerEvent, type IssuerEvent } from './conversion-watch.ts'
 import type { InvestCopy } from './copy.ts'
 
-/** The issuers whose instruments a beginner is shown (canon §3, §7). */
+/** The issuers whose instruments a beginner is shown. */
 export const SHELF_ISSUERS: ReadonlySet<string> = new Set(['xstocks', 'backpack'])
 
-/** The one issuer of private companies (canon v5.2 В25: private companies through PreStocks only). */
+/** The one issuer of private companies (private companies through PreStocks only). */
 export const PRIVATE_ISSUER = 'prestocks'
 
 /** Cards on Home's «Популярні компанії». */
@@ -189,7 +189,7 @@ export function shelfCompanies(rows: readonly StockRow[]): ShelfCard[] {
   return cards.sort((a, b) => b.volume24h - a.volume24h || a.name.localeCompare(b.name))
 }
 
-/** The private companies — PreStocks' alone: every instrument its own card, never folded (canon §7), by the day's volume. */
+/** The private companies — PreStocks' alone: every instrument its own card, never folded, by the day's volume. */
 export function shelfPrivateCompanies(rows: readonly StockRow[]): ShelfCard[] {
   return rows
     .filter(
@@ -251,7 +251,7 @@ export function matchShelf(cards: readonly ShelfCard[], query: string): ShelfCar
     .map((entry) => entry.card)
 }
 
-/* ---- a private company's one number (canon v5.2 В27) ---- */
+/* ---- a private company's one number ---- */
 
 export type MarkPremium = Readonly<{ side: 'above' | 'below' | 'at'; pct: number }>
 
@@ -284,7 +284,7 @@ export function premiumPhrase(
 
 /* ---- dollars and crypto ---- */
 
-/** The dollar tokens, in the canon's order (§3): USDC, USDT. */
+/** The dollar tokens, in the product's order: USDC, USDT. */
 export const DOLLAR_MINTS: readonly string[] = [USDC_MINT, USDT_MINT]
 
 /**

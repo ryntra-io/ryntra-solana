@@ -38,7 +38,7 @@ import { Connection, PublicKey } from "@solana/web3.js";
 import { getBase58Encoder } from "@solana/kit";
 import BN from "bn.js";
 
-import { SNIPER_SECONDS, accountPageReached, listsWhole, priceFromSqrtX64, tradeOf, type LaunchTrade, type SwapSeen } from "./market.ts";
+import { SNIPER_SECONDS, accountPageReached, listsWhole, partnerPartRaw, priceFromSqrtX64, tradeOf, type LaunchTrade, type SwapSeen } from "./market.ts";
 
 const DBC_PROGRAM = "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN";
 const DAMM_V2_PROGRAM = "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG";
@@ -192,7 +192,8 @@ export type LaunchMarketReader = Readonly<{
    */
   accountTrades(args: Readonly<{ token: string; state: MarketState; accounts: readonly string[]; since: number | null; creationSignature?: string | null; budgetMs?: number }>): Promise<Readonly<{ trades: readonly LaunchTrade[]; complete: boolean }>>;
   /** The trades one transaction made on this token, from its swap events; null when the node has no record of it yet. */
-  transaction(args: Readonly<{ token: string; state: MarketState; signature: string }>): Promise<readonly LaunchTrade[] | null>;
+  /** `fresh`: a decode this process kept from before Ryntra's part of a trade was counted is read from the node again. */
+  transaction(args: Readonly<{ token: string; state: MarketState; signature: string; fresh?: boolean }>): Promise<readonly LaunchTrade[] | null>;
   /** The DBC curves a wallet created, anywhere — null when the node does not answer the scan. */
   curvesBy(creator: string): Promise<number | null>;
   /** The curve's fee for a trade now, basis points — the falling fee for snipers included. */
@@ -248,16 +249,18 @@ function sideConnection(url: string): Connection {
  * (a public node may refuse them). `index`: decoded transactions shared beyond this process. `history`: the endpoint whose
  * signature lists reach back to a token's creation — a public node keeps a day or two of them, and a list cut short by the
  * node reads as whole to anyone who trusts its length. `archive`: the endpoint asked for a transaction the main one no
- * longer keeps.
+ * longer keeps. `referralOwner`: the address Ryntra's referral token accounts belong to — what a transaction moved into its
+ * account in the pair currency is Meteora's referral paid to Ryntra, and is Ryntra's part of the trade's fee.
  */
 export function createLaunchMarketReader(
   connection: Connection,
-  options: Readonly<{ feeWallet?: string | null; indexed?: string | null; index?: DecodedIndex | null; history?: string | null; archive?: string | null }> = {},
+  options: Readonly<{ feeWallet?: string | null; referralOwner?: string | null; indexed?: string | null; index?: DecodedIndex | null; history?: string | null; archive?: string | null }> = {},
 ): LaunchMarketReader {
   const lenient = sideConnection(options.indexed ?? connection.rpcEndpoint);
   const listing = options.history && options.history !== connection.rpcEndpoint ? sideConnection(options.history) : connection;
   const archive = options.archive && options.archive !== connection.rpcEndpoint ? sideConnection(options.archive) : null;
   const feeWallet = options.feeWallet ?? null;
+  const referralOwner = options.referralOwner ?? null;
   const index = options.index ?? null;
   const client = new DynamicBondingCurveClient(connection, "confirmed");
   const lenientClient = new DynamicBondingCurveClient(lenient, "confirmed");
@@ -353,11 +356,11 @@ export function createLaunchMarketReader(
   }
 
   /** One transaction's trades on this token, decoded from the programs' swap events. */
-  async function decode(token: string, signature: string, market: MarketState): Promise<Decoded | null> {
+  async function decode(token: string, signature: string, market: MarketState, fresh = false): Promise<Decoded | null> {
     /* What a trade cost depends on the fee wallet read with it. */
     const key = `${token}:${signature}:${feeWallet ?? ""}`;
     const cached = DECODED.get(key);
-    if (cached) return cached;
+    if (cached && (!fresh || cached.trades.every((trade) => trade.ryntraRaw !== undefined))) return cached;
     let tx = await connection.getTransaction(signature, { commitment: "confirmed", maxSupportedTransactionVersion: 0 });
     /* A public node keeps a day or two of transactions: an older one is asked of the archive. */
     if (!tx && archive) tx = await archive.getTransaction(signature, { commitment: "confirmed", maxSupportedTransactionVersion: 0 }).catch(() => null);
@@ -373,10 +376,9 @@ export function createLaunchMarketReader(
     const balances = [...pre, ...post];
     const ownerAt = (index: number | undefined) => (index === undefined ? null : (balances.find((entry) => entry.accountIndex === index)?.owner ?? null));
     const side = (index: number | undefined) => ({ account: index === undefined ? null : keyAt(index) || null, owner: ownerAt(index) });
-    /* What the transaction moved into Ryntra's fee wallet in the pair currency: Ryntra's own fee on the trade in it. */
-    const feeHeld = (list: typeof pre) =>
-      list.filter((entry) => feeWallet !== null && entry.owner === feeWallet && entry.mint === market.curve.pairMint).reduce((total, entry) => total + BigInt(entry.uiTokenAmount.amount), 0n);
-    const ryntraFee = feeHeld(post) - feeHeld(pre);
+    /* The swaps' own input and output accounts: what a trader's account gains or loses is the trade, never Ryntra's fee —
+       even when the trader is one of Ryntra's own wallets. */
+    const swapAccounts = new Set<number>();
     for (const group of tx.meta.innerInstructions ?? []) {
       const outer = message.compiledInstructions[group.index];
       const outerProgram = outer ? keyAt(outer.programIdIndex) : "";
@@ -397,10 +399,14 @@ export function createLaunchMarketReader(
         }
         if (accounts === null && outer && outerProgram === program) accounts = outer.accountKeyIndexes;
         const at = (name: "input" | "output" | "payer") => accounts?.[SWAP_ACCOUNTS[program as keyof typeof SWAP_ACCOUNTS][name]];
+        for (const name of ["input", "output"] as const) {
+          const index = at(name);
+          if (index !== undefined) swapAccounts.add(index);
+        }
         const payerIndex = at("payer");
         const payer = payerIndex !== undefined ? keyAt(payerIndex) : keyAt(0);
         const result = fields.swapResult;
-        const common = { signature, slot: tx.slot, at: toNumber(fields.currentTimestamp), inRaw: big(result.includedFeeInputAmount), outRaw: big(result.outputAmount), input: side(at("input")), output: side(at("output")), payer, ryntraFeeRaw: 0n };
+        const common = { signature, slot: tx.slot, at: toNumber(fields.currentTimestamp), inRaw: big(result.includedFeeInputAmount), outRaw: big(result.outputAmount), input: side(at("input")), output: side(at("output")), payer, ryntraFeeRaw: 0n, referralToRyntraRaw: 0n };
         if (program === DBC_PROGRAM) {
           if (fields.pool.toBase58() !== market.curve.pool) continue;
           seen.push({
@@ -408,6 +414,8 @@ export function createLaunchMarketReader(
             venue: "curve",
             side: fields.tradeDirection === 1 ? "buy" : "sell",
             feesRaw: big(result.tradingFee) + big(result.protocolFee) + big(result.referralFee),
+            /* Ryntra is the partner of every Ryntra launch config: its part of the trading fee is the creator's remainder. */
+            partnerFeeRaw: partnerPartRaw(big(result.tradingFee), market.curve.creatorTradingFeePct),
             priceAfter: priceFromSqrtX64(result.nextSqrtPrice.toString(), market.tokenDecimals, market.pairDecimals),
           });
         } else {
@@ -422,13 +430,25 @@ export function createLaunchMarketReader(
             venue: "pool",
             side: sell ? "sell" : "buy",
             feesRaw: big(result.claimingFee) + big(result.compoundingFee) + big(result.protocolFee) + big(result.referralFee),
+            partnerFeeRaw: 0n,
             priceAfter: dammPrice(result.nextSqrtPrice.toString(), graduated.tokenIsA, market.tokenDecimals, market.pairDecimals),
           });
         }
       }
     }
-    /* Ryntra's fee belongs to the one trade of its transaction; a transaction of several swaps keeps it out rather than guess whose. */
-    const trades = seen.map((entry) => tradeOf(seen.length === 1 && ryntraFee > 0n ? { ...entry, ryntraFeeRaw: ryntraFee } : entry));
+    const heldBy = (owner: string | null, list: typeof pre) =>
+      list
+        .filter((entry) => owner !== null && entry.owner === owner && entry.mint === market.curve.pairMint && !swapAccounts.has(entry.accountIndex))
+        .reduce((total, entry) => total + BigInt(entry.uiTokenAmount.amount), 0n);
+    /* What the transaction moved into Ryntra's fee wallet in the pair currency: Ryntra's own fee on the trade in it. */
+    const ryntraFee = heldBy(feeWallet, post) - heldBy(feeWallet, pre);
+    /* What the transaction moved into Ryntra's referral account in the pair currency: Meteora's referral, paid to Ryntra. */
+    const referralToRyntra = heldBy(referralOwner, post) - heldBy(referralOwner, pre);
+    /* Ryntra's fee and its referral belong to the one trade of their transaction; a transaction of several swaps keeps
+       them out rather than guess whose. */
+    const trades = seen.map((entry) =>
+      tradeOf(seen.length === 1 ? { ...entry, ryntraFeeRaw: ryntraFee > 0n ? ryntraFee : 0n, referralToRyntraRaw: referralToRyntra > 0n ? referralToRyntra : 0n } : entry),
+    );
     const decoded: Decoded = { slot: tx.slot, blockTime: tx.blockTime ?? null, failed: tx.meta.err !== null, trades: tx.meta.err === null ? trades : [] };
     /* Kept only when it is whole: a decode that may have missed the token's own pool swap is answered once and read again. */
     if (unsure) return decoded;
@@ -673,8 +693,8 @@ export function createLaunchMarketReader(
     }
   }
 
-  async function transaction({ token, state: market, signature }: Parameters<LaunchMarketReader["transaction"]>[0]): Promise<readonly LaunchTrade[] | null> {
-    return (await decode(token, signature, market))?.trades ?? null;
+  async function transaction({ token, state: market, signature, fresh }: Parameters<LaunchMarketReader["transaction"]>[0]): Promise<readonly LaunchTrade[] | null> {
+    return (await decode(token, signature, market, fresh === true))?.trades ?? null;
   }
 
   return { state, trades, opening, accountTrades, transaction, holders, curvesBy, feeNowBps };

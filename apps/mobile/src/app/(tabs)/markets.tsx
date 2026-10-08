@@ -1,6 +1,6 @@
-import { CompaniesMarkets } from '@/screens/markets/companies'
+import { MarketsScreen } from '@/screens/markets'
 
-/** Markets for everyone: the companies first, then «Для досвідчених» — Спот, Акції, Тренди — a tap deeper (canon v5.3 В28). */
+/** «Ринки» — one screener for every asset: Усі · Меми · Крипта · Акції · Приватні · Обране; `?tab=` opens one. */
 export default function MarketsRoute() {
-  return <CompaniesMarkets />
+  return <MarketsScreen />
 }

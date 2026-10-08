@@ -24,7 +24,7 @@ test('tokens.css is the projection of tokens.ts', () => {
   assert.equal(css, renderThemeCss())
 })
 
-test('the canon values are the Owner-fixed Brand Canon v1.0', () => {
+test('the brand values are the fixed ones', () => {
   assert.equal(brand.brand, '#FF681C')
   assert.equal(brand.brandHover, '#FF7A2F')
   assert.equal(brand.brandDeep, '#F24C0C')

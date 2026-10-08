@@ -35,7 +35,7 @@ import type { PlanReview } from "../../api/v1/contract.ts";
 import { getGuardRuntime } from "../../guard/runtime.ts";
 import type { GuardStore } from "../../guard/store.ts";
 import { projectedStatus, readTradingPlan } from "../../plans/store.ts";
-import type { SolanaActionOrigin } from "../../solana/action-origin.ts";
+import type { SpotActionOrigin } from "../../solana/action-origin.ts";
 import { SolanaOwnerPolicySchema } from "../../solana/contracts.ts";
 import type { MintReadSuccess } from "../../solana/mint.ts";
 import { evaluateOwnerPolicy } from "../../solana/policy.ts";
@@ -99,7 +99,7 @@ export type SwapReviewGuardContext = {
   intent: ReturnType<typeof buildSwapPolicyIntent> | null;
   verdict: ReturnType<typeof evaluateSwapPolicy> | null;
   planReview: PlanReview | null;
-  bundleOrigin: SolanaActionOrigin | undefined;
+  bundleOrigin: SpotActionOrigin | undefined;
   review: ReturnType<typeof buildSwapQuoteReview> | null;
   bundle: SwapExecutionBundle | null;
   proof: ReturnType<typeof createSwapExecutionProof> | null;

@@ -8,7 +8,6 @@ import { useDebounced } from '@/hooks/use-debounced'
 import {
   adoptTransfer,
   checkRecipient,
-  fetchHoldings,
   planTransfer,
   readAddressEvidence,
   readReturned,
@@ -19,6 +18,7 @@ import {
 } from '@/lib/api'
 import { feel } from '@/lib/haptics'
 import { useLocale } from '@/lib/i18n'
+import { useHoldings } from '@/features/portfolio/use-portfolio'
 
 import {
   blocksNewSend,
@@ -70,13 +70,7 @@ export function useSend() {
   const queryClient = useQueryClient()
   const address = account.address
 
-  const holdings = useQuery({
-    queryKey: ['trade', 'holdings', address ?? ''],
-    queryFn: ({ signal }) => fetchHoldings(address!, signal),
-    enabled: address !== null,
-    staleTime: 20_000,
-    retry: 1,
-  })
+  const holdings = useHoldings(address)
   const assets = useMemo(() => sendAssets(holdings.data?.data.holdings ?? []), [holdings.data])
 
   const [recipientText, setRecipientTextState] = useState('')

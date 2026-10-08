@@ -36,12 +36,13 @@ export function launchDecodedIndex(store: GuardStore, cluster: string, feeWallet
 }
 
 /**
- * The market reader of a Launch read: this network's fee wallet, its endpoints for indexed reads, for whole signature
- * lists and for older transactions, and the shared index.
+ * The market reader of a Launch read: this network's fee wallet and referral owner, its endpoints for indexed reads, for
+ * whole signature lists and for older transactions, and the shared index.
  */
 export function launchMarketReader(deps: Readonly<{ network: LaunchNetwork; connection: Connection; store: GuardStore }>): LaunchMarketReader {
   return createLaunchMarketReader(deps.connection, {
     feeWallet: deps.network.feeWallet,
+    referralOwner: deps.network.referralOwner,
     indexed: launchIndexedEndpoint(deps.network),
     index: launchDecodedIndex(deps.store, deps.network.cluster, deps.network.feeWallet),
     history: launchHistoryEndpoint(deps.network),

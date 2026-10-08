@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { Keyboard, Linking, Pressable, TextInput, View } from 'react-native'
+import { Keyboard, Pressable, TextInput, View } from 'react-native'
 
 import { AssetIcon } from '@/components/asset-icon'
 import { Button } from '@/components/button'
@@ -63,6 +63,7 @@ import { TopUpSheet } from '@/screens/home/top-up-sheet'
 import { EventLine } from '@/screens/invest/event-ui'
 import { type, useTheme } from '@/theme'
 import { DASH } from '@/utils/format'
+import { openLink } from '@/lib/open-link'
 
 const QUOTE_UNREAD: ReadonlySet<BuyFailureKey> = new Set([
   'offline',
@@ -78,10 +79,10 @@ const PAY_CHOICES: readonly Choice<PayDollar>[] = [
 ]
 
 /**
- * The purchase in dollars — the one action on a company's page (canon v5.1
- * §2, §4; M15), drawn as a sheet over the company's page.
+ * The purchase in dollars — the one action on a company's page
+ * (M15), drawn as a sheet over the company's page.
  *
- * **The sum.** A sum in dollars from $1 (canon v5.5 В35; M21) — typed freely,
+ * **The sum.** A sum in dollars from $1 — typed freely,
  * the sheet opening on $10, a default and never advice — or a share of the
  * wallet's dollars in one tap: 25 % · 50 % · 75 % · 100 % (a share under $1
  * drawn but not offered, none without a wallet); and at once what it buys and
@@ -103,7 +104,7 @@ const PAY_CHOICES: readonly Choice<PayDollar>[] = [
  * «✓ У тебе є частинка Apple · $10» with what arrived. A signature whose
  * outcome is not known yet is checked here, never repeated.
  *
- * **За правилом (M16, canon §4.1).** A reminder of an autoinvest rule opens
+ * **За правилом (M16.** A reminder of an autoinvest rule opens
  * this sheet on the rule's sum: the rule is read afresh, and while its
  * reminder is open the fresh «Перевірка» is prepared at once — the same four
  * rows, the same signature, the order bound to the rule (`origin.rule`). A
@@ -113,9 +114,9 @@ const PAY_CHOICES: readonly Choice<PayDollar>[] = [
  * The reminder's own button reads «Купити $20 за правилом», never mistaken
  * for an ordinary purchase; and an ordinary purchase made while the
  * company's reminder is open says so before any sum — «Це звичайна купівля:
- * нагадування правила на $20 лишиться відкритим» (canon v5.3 В29).
+ * нагадування правила на $20 лишиться відкритим».
  *
- * **Умова ціни (M25, canon v5.5 В37).** A rule with a price condition is
+ * **Умова ціни (M25.** A rule with a price condition is
  * judged again here on the company's figures, read afresh while the sheet is
  * open: met, its purchase carries the condition's line — the deviation, the
  * reference, the limit, the data's time — over the purchase and in
@@ -189,7 +190,7 @@ function BuyFlow({
   const [topUp, setTopUp] = useState(false)
   const address = trade.account.address
 
-  /* «Умова ціни» (1.18.0, canon v5.5 В37): a rule with a condition is judged again here on the company's figures, read
+  /* «Умова ціни» (1.18.0: a rule with a condition is judged again here on the company's figures, read
      afresh while the sheet is open — the order route judges the same facts the same way. Not met now, or the data old,
      and the purchase is said, never offered; met, it carries the condition's line. */
   const now = useNow(15_000)
@@ -366,7 +367,7 @@ function estimateOf(buy: BuyController, company: BuyCompany, words: BuyCopy): st
   const { trade, locale } = buy
   if (buy.amountUsd === null || buy.amountUsd < MIN_BUY_USD) return ' '
   if (trade.quoteBlocked) return words.unavailable
-  // No route for the sum: the company's own minimum from the same quote, or that it is being read (canon v5.5 В35).
+  // No route for the sum: the company's own minimum from the same quote, or that it is being read.
   const route = buy.routeMinimum
   if (buy.noRoute && route.state === 'found')
     return words.routeMinimum(dollarsText(buy.amountUsd, locale), company.name, dollarsText(route.minimumUsd, locale))
@@ -493,7 +494,7 @@ function WalletLine({ buy, words, onTopUp }: { buy: BuyController; words: BuyCop
   )
 }
 
-/** A private company's truth before any sum (canon §7) — and, where the issuer opened a swap window, that the token bought must be swapped by its deadline (M19). */
+/** A private company's truth before any sum — and, where the issuer opened a swap window, that the token bought must be swapped by its deadline. */
 function TruthWarning({ company }: { company: BuyCompany }) {
   if (!company.preIpo || !company.truth) return null
   return (
@@ -527,7 +528,7 @@ function Compose({
   const invest = useCopy(INVEST_COPY)
   const { trade, locale } = buy
   const busy = trade.busy
-  // Shares of the wallet's dollars, never fixed sums (the Owner's word, 2026-09-25); a share under $1 is not offered.
+  // Shares of the wallet's dollars, never fixed sums (chosen 2026-09-25); a share under $1 is not offered.
   const shares: readonly Choice<string>[] = buy.shares.map((share) => ({
     value: String(share.pct),
     label: `${share.pct}%`,
@@ -545,7 +546,7 @@ function Compose({
     <View className="gap-4 pb-2">
       <TruthWarning company={company} />
       {openLine ? (
-        // Said before any sum: this purchase leaves the rule's reminder open (canon v5.3 В29).
+        // Said before any sum: this purchase leaves the rule's reminder open.
         <View className="flex-row items-start gap-2 rounded-sm border border-line bg-surface px-4 py-3">
           <Icon name="repeat-outline" size={16} color="muted" style={{ marginTop: 1 }} />
           <Txt variant="ui" tone="muted" className="flex-1">
@@ -624,8 +625,8 @@ function Compose({
  * in the way — the wallet, its session, its dollars, the network fee — is the
  * button, as in a plain purchase. A reminder that is no longer open says
  * what became of it, and «Готово» is all it offers: nothing is caught up. One
- * the month's budget does not cover says so and offers «Змінити бюджет»
- * (canon §11): a larger ceiling opens the Review at once, a smaller month
+ * the month's budget does not cover says so and offers «Змінити бюджет»:
+ * a larger ceiling opens the Review at once, a smaller month
  * keeps the rules standing until the 1st.
  */
 /** The rule's price condition as the sheet judged it now (1.18.0): the judgement, whether it holds the purchase back, whether its figures are still being read. */
@@ -674,7 +675,7 @@ function RuleCompose({
             : null
 
   /* The price condition holds the purchase back (1.18.0): the tick deferred it, or the figures read now do not meet
-     it — the reason, the figure and the data's time (canon §4.1, §11), and until when the rule judges it again. */
+     it — the reason, the figure and the data's time, and until when the rule judges it again. */
   const open = state.kind === 'open'
   const waiting = state.kind === 'deferred' || (open && condition.holds)
   const waitingOn =
@@ -725,7 +726,7 @@ function RuleCompose({
   else if (state.kind === 'reading' || condition.pending) button = { title: ruleWords.reading, disabled: true }
   else {
     const plain = buttonOf(buy, words, ruleWords.reading, onBuy)
-    // The reminder's purchase is said as the rule's, never as an ordinary one (canon v5.3 В29).
+    // The reminder's purchase is said as the rule's, never as an ordinary one.
     button =
       action.kind === 'buy' || action.kind === 'settling'
         ? { ...plain, title: ruleWords.buyByRule(dollarsText(action.usd, locale)) }
@@ -832,7 +833,7 @@ function Review({
   return (
     <View className="gap-4 pb-2">
       {reserveFirst ? (
-        // More than the purchase itself: said before the rows — it stays in the wallet, it is not a cost (canon v5.5 В35).
+        // More than the purchase itself: said before the rows — it stays in the wallet, it is not a cost.
         <ReserveFirstLine
           line={words.reserveFirst(
             approxUsd(reserveFirst.reserveUsd, buy.locale),
@@ -862,7 +863,7 @@ function Review({
   )
 }
 
-/** «Разовий резерв ≈ $1,20 у SOL більший за саму покупку ($1). …» — said in amber before the rows. */
+/** «Разовий резерв ≈ $1,20 у SOL більший за саму покупку. …» — said in amber before the rows. */
 export function ReserveFirstLine({ line }: { line: string }) {
   return (
     <View className="flex-row items-start gap-2">
@@ -1073,7 +1074,7 @@ function Receipt({
   const links = [
     { label: words.history, onPress: onHistory },
     ...(signature && outcome.kind !== 'nothing'
-      ? [{ label: `${words.transaction} ↗`, onPress: () => void Linking.openURL(explorerUrl(signature)) }]
+      ? [{ label: `${words.transaction} ↗`, onPress: () => openLink(explorerUrl(signature)) }]
       : []),
   ]
 
@@ -1100,7 +1101,7 @@ function Receipt({
     <View className="gap-4 pb-2">
       <BuyReceiptFace face={receiptFace(outcome, context, company, words, locale)} />
       {ruleMark ? (
-        // The receipt's mark of the rule, and when it reminds next (canon §4.1: «квитанція з позначкою правила»).
+        // The receipt's mark of the rule, and when it reminds next («квитанція з позначкою правила»).
         <RuleMarkLine
           line={`${ruleMark.words.byRule} · ${ruleWhenLine(ruleMark.rule, locale)}`}
           next={nextOfRule ? `${ruleMark.words.nextPurchase}: ${nextOfRule}` : null}

@@ -148,8 +148,17 @@ check(
 )
 
 /* ---- the code as shipped ---- */
-const more = read('src/screens/more/index.tsx')
-check('the design gallery door is development-only', /__DEV__\s*\?/.test(more) && more.includes("'/gallery'"))
+// Wherever the door lives (More until M34, Settings since), it opens under __DEV__ only, and the route itself turns a release away.
+const galleryDoors = tracked.filter(
+  (file) => file.startsWith('src/screens/') && /\.tsx$/.test(file) && read(file).includes("'/gallery'"),
+)
+check(
+  'the design gallery door is development-only',
+  galleryDoors.length > 0 &&
+    galleryDoors.every((file) => /__DEV__\s*\?/.test(read(file))) &&
+    /if \(!__DEV__\) return <Redirect/.test(read('src/app/gallery.tsx')),
+  galleryDoors.join(', '),
+)
 const api = read('src/lib/api.ts')
 check('the API base is production', api.includes(`API_BASE_URL = '${API}'`))
 const srcFiles = tracked.filter((file) => file.startsWith('src/') && /\.(ts|tsx)$/.test(file) && !/\.test\./.test(file))

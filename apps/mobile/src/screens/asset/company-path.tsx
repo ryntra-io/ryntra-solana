@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Linking, Pressable, View } from 'react-native'
+import { Pressable, View } from 'react-native'
 
 import { Card } from '@/components/card'
 import { Icon } from '@/components/icon'
@@ -9,13 +9,14 @@ import type { CompanyPathCopy, PathStepState } from '@/features/invest/company-p
 import type { PathToken } from '@/lib/api'
 import { EventButtons, type EventActions } from '@/screens/invest/event-ui'
 import { fonts, useTheme } from '@/theme'
+import { openLink } from '@/lib/open-link'
 
 /** The dot's size and the rail's place — the web's own 22 px column. */
 const DOT = 22
 const SEMIBOLD = { fontFamily: fonts.sansSemibold } as const
 
 /**
- * «Шлях компанії» (M24; the web's `RYN-COMPANY-PATH-001`, as ryntra.io draws
+ * «Шлях компанії» (M24; the web's, as ryntra.io draws
  * it below 720 px) — one card under the company's name: Приватна · PreStocks →
  * IPO → Біржа → Solana, each step passed (a check), current (the orange dot)
  * or not announced (a dashed ring), with its day on the right. The page's own
@@ -269,7 +270,7 @@ function PathSources({ sources, words }: { sources: readonly PathSourceView[]; w
               key={source.key}
               accessibilityRole="link"
               accessibilityHint={words.openSource}
-              onPress={() => void Linking.openURL(source.url)}
+              onPress={() => openLink(source.url)}
               className="rounded-xs py-1.5 active:bg-hover"
             >
               <Txt variant="labelSm" tone="muted">

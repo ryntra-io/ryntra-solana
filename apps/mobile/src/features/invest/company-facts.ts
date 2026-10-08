@@ -1,6 +1,6 @@
 /**
- * A company's facts at rest — the pure half (M23; the web's
- * `RYN-COMPANY-PAGE-001`, its `company-facts-model.ts` and
+ * A company's facts at rest — the pure half (M23; the web's,
+ * its `company-facts-model.ts` and
  * `company-facts-blocks.tsx`).
  *
  * What a company's page says under its name and in its blocks is shaped here
@@ -85,11 +85,13 @@ export function dayShort(iso: string | null | undefined, locale: Locale): string
   }).format(new Date(at))
 }
 
-/** «30.03.2026» · «03/30/2026» — short enough to sit under a figure on a phone, the reader's own calendar. */
-export function dayNumeric(atMs: number, locale: Locale): string {
-  return new Intl.DateTimeFormat(numberTag(locale), { day: '2-digit', month: '2-digit', year: 'numeric' }).format(
-    new Date(atMs),
-  )
+/** «30 бер. 2026 р.» · «30 Mar 2026» — a chart's day, day first as the rest of the app writes it, with its year. */
+export function chartDay(atMs: number, locale: Locale): string {
+  return new Intl.DateTimeFormat(locale === 'uk' ? 'uk-UA' : 'en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  }).format(new Date(atMs))
 }
 
 const EN_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const
@@ -234,7 +236,7 @@ export function aboutFacts(head: CompanyHead, words: CompanyCopy): CompanyFact[]
   return facts
 }
 
-/** The label from the issuer's documents (canon §7): the topic that carries it and its line; null for an issuer no document was read for. */
+/** The label from the issuer's documents: the topic that carries it and its line; null for an issuer no document was read for. */
 export function truthTopicOf(issuer: StockIssuerId): TruthTopicId | null {
   switch (issuer) {
     case 'xstocks':

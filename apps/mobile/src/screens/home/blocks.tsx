@@ -12,9 +12,9 @@ import type { AttentionItem, MovePeriod, WatchMove } from '@/features/home/home-
 import type { BlockState } from '@/features/home/use-home'
 import { formatUnits } from '@/features/trade/trade-model'
 import type { MarketRow } from '@/lib/api'
-import type { Locale } from '@/lib/i18n'
+import { useLocale, type Locale } from '@/lib/i18n'
 import { cn } from '@/utils/cn'
-import { formatAge, formatClock, formatMoment, formatPercent, formatPrice, signOf } from '@/utils/format'
+import { formatAge, formatClock, formatMoment, formatPercent, formatPrice, localizeFigures, signOf } from '@/utils/format'
 
 /* ---- the block: a label, one fact beside it, then its rows ---- */
 
@@ -38,7 +38,7 @@ export function Block({ title, fact, action, children }: BlockProps) {
         </Txt>
         {action ? (
           <Pressable accessibilityRole="button" onPress={action.onPress} hitSlop={8} className="active:opacity-70">
-            {/* Quiet: a block's door is never the screen's one orange action (canon §2, rule 1). */}
+            {/* Quiet: a block's door is never the screen's one orange action. */}
             <Txt variant="labelSm" tone="muted">
               {action.label}
             </Txt>
@@ -210,7 +210,7 @@ export function AttentionRow({ item, copy, locale, now, onPress }: AttentionRowP
   if (item.kind === 'recovery') {
     const context = item.attempt.context
     const operation = context
-      ? `${copy.modes[context.mode]} · ${formatUnits(context.inAmountRaw, context.payDecimals)} ${context.pay.symbol} → ${context.receive.symbol}`
+      ? `${copy.modes[context.mode]} · ${formatUnits(context.inAmountRaw, context.payDecimals, 6, locale)} ${context.pay.symbol} → ${context.receive.symbol}`
       : null
     return (
       <WarningRow
@@ -248,8 +248,9 @@ export function AttentionRow({ item, copy, locale, now, onPress }: AttentionRowP
   return (
     <WarningRow
       icon="alert-circle-outline"
-      title={`${card.label} · ${card.title}`}
-      detail={card.reason || null}
+      // A title that already names the asset is not prefixed with it again («NVDAx · NVDAx is above…»).
+      title={card.title.startsWith(card.label) ? localizeFigures(card.title, locale) : `${card.label} · ${localizeFigures(card.title, locale)}`}
+      detail={card.reason ? localizeFigures(card.reason, locale) : null}
       footer={footer}
       chip={chip}
       onPress={onPress}
@@ -270,13 +271,14 @@ export type MoveRowProps = {
 
 /** One watched asset: identity, the price, its move over the period — and the 24h figure beside it when the period is the last look. */
 export function MoveRow({ move, period, copy, onPress, last }: MoveRowProps) {
+  const locale = useLocale()
   const { row } = move
   const direction = signOf(move.pct)
   const periodWord = period.kind === 'since' ? copy.since(formatClock(period.at)) : copy.over24h
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${row.symbol}, ${formatPrice(row.price)}, ${move.pct === null ? copy.notPricedThen : `${formatPercent(move.pct)} ${periodWord}`}`}
+      accessibilityLabel={`${row.symbol}, ${formatPrice(row.price, locale)}, ${move.pct === null ? copy.notPricedThen : `${formatPercent(move.pct, locale)} ${periodWord}`}`}
       onPress={onPress}
       className={cn('flex-row items-center gap-3 py-2.5 active:bg-hover', last ? '' : 'border-b border-line')}
     >
@@ -288,15 +290,15 @@ export function MoveRow({ move, period, copy, onPress, last }: MoveRowProps) {
         </Txt>
       </View>
       <View className="items-end gap-1">
-        <Txt variant="data">{formatPrice(row.price)}</Txt>
+        <Txt variant="data">{formatPrice(row.price, locale)}</Txt>
         <View className="flex-row items-center gap-1.5">
           {period.kind === 'since' ? (
             <Txt variant="labelSm" tone="faint">
-              {copy.over24h} {formatPercent(move.dayPct)}
+              {copy.over24h} {formatPercent(move.dayPct, locale)}
             </Txt>
           ) : null}
           <Chip
-            label={formatPercent(move.pct)}
+            label={formatPercent(move.pct, locale)}
             tone={direction === 'up' ? 'success' : direction === 'down' ? 'danger' : 'neutral'}
             mono
           />
@@ -310,18 +312,19 @@ export function MoveRow({ move, period, copy, onPress, last }: MoveRowProps) {
 
 /** One mover as a compact pill: the symbol and its 24h move; the door is the asset. */
 export function MoverPill({ row, onPress }: { row: MarketRow; onPress: () => void }) {
+  const locale = useLocale()
   const direction = signOf(row.change24hPct)
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${row.symbol}, ${formatPercent(row.change24hPct)} in 24 hours`}
+      accessibilityLabel={`${row.symbol}, ${formatPercent(row.change24hPct, locale)} in 24 hours`}
       onPress={onPress}
       className="flex-row items-center gap-2 rounded-pill border border-line bg-surface py-1.5 pl-1.5 pr-3 active:bg-hover"
     >
       <AssetIcon symbol={row.symbol} icon={row.icon} size={24} />
       <Txt variant="ui">{row.symbol}</Txt>
       <Txt variant="data" tone={direction === 'up' ? 'success' : direction === 'down' ? 'danger' : 'muted'}>
-        {formatPercent(row.change24hPct)}
+        {formatPercent(row.change24hPct, locale)}
       </Txt>
     </Pressable>
   )

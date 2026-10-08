@@ -57,6 +57,13 @@ export type LaunchTrade = Readonly<{
   pairRaw: string;
   /** Every fee of the trade in the pair currency: the curve's or the pool's, Meteora's, the referral, Ryntra's own in the same transaction. */
   feeRaw: string;
+  /**
+   * Ryntra's part of that fee, in the pair currency: on the curve the partner's part of the trading fee (Ryntra is every
+   * Ryntra launch config's partner), Meteora's referral where it went to Ryntra's referral account, and Ryntra's own fee
+   * of the same transaction; in the pool the referral and Ryntra's own fee. Absent on a trade decoded before it was
+   * counted — never read as zero.
+   */
+  ryntraRaw?: string;
   /** The price the trade left, pair currency per token. */
   priceAfter: number;
 }>;
@@ -79,6 +86,10 @@ export type SwapSeen = Readonly<{
   payer: string;
   /** Ryntra's own fee moved into its fee wallet in the same transaction, raw in the pair currency; 0 when none. */
   ryntraFeeRaw: bigint;
+  /** The partner's part of the swap's own trading fee — Ryntra's on the curve; 0 in the pool, whose fee goes to its liquidity. */
+  partnerFeeRaw: bigint;
+  /** Meteora's referral that went into Ryntra's referral account in the same transaction, raw in the pair currency; 0 when none. */
+  referralToRyntraRaw: bigint;
   priceAfter: number;
 }>;
 
@@ -104,8 +115,14 @@ export function tradeOf(seen: SwapSeen): LaunchTrade {
     tokensRaw: (buy ? seen.outRaw : seen.inRaw).toString(),
     pairRaw: (pair > 0n ? pair : 0n).toString(),
     feeRaw: (seen.feesRaw + seen.ryntraFeeRaw).toString(),
+    ryntraRaw: (seen.partnerFeeRaw + seen.referralToRyntraRaw + seen.ryntraFeeRaw).toString(),
     priceAfter: seen.priceAfter,
   };
+}
+
+/** The partner's part of a curve trade's trading fee: what the creator's percentage leaves, the creator's part rounded down as the quote rounds it. */
+export function partnerPartRaw(tradingFeeRaw: bigint, creatorPct: number): bigint {
+  return tradingFeeRaw - (tradingFeeRaw * BigInt(creatorPct)) / 100n;
 }
 
 /**
@@ -447,11 +464,11 @@ export function chartMarkers(trades: readonly LaunchTrade[], creator: string, gr
 export type LaunchFeeSplit = Readonly<{ totalRaw: string; creatorRaw: string | null; ryntraRaw: string; meteoraRaw: string; liquidityRaw: string | null }>;
 
 export function curveFeeSplit(args: Readonly<{ tradingFeeRaw: bigint; protocolFeeRaw: bigint; referralFeeRaw: bigint; creatorPct: number }>): LaunchFeeSplit {
-  const creator = (args.tradingFeeRaw * BigInt(args.creatorPct)) / 100n;
+  const partner = partnerPartRaw(args.tradingFeeRaw, args.creatorPct);
   return {
     totalRaw: (args.tradingFeeRaw + args.protocolFeeRaw + args.referralFeeRaw).toString(),
-    creatorRaw: creator.toString(),
-    ryntraRaw: (args.tradingFeeRaw - creator + args.referralFeeRaw).toString(),
+    creatorRaw: (args.tradingFeeRaw - partner).toString(),
+    ryntraRaw: (partner + args.referralFeeRaw).toString(),
     meteoraRaw: args.protocolFeeRaw.toString(),
     liquidityRaw: null,
   };

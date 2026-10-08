@@ -21,12 +21,13 @@
 
 /**
  * The filters are the product's own pages, not the ledger's lanes: a person
- * picks what happened in Swap, in Bridge or in Spot. `SPOT` is a Swap-lane row
- * whose origin says Spot; `SWAP` is a Swap-lane row that does not; `BRIDGE` is
- * everything that crossed a chain — the USDC bridge and the cross-chain swap
- * the Bridge page runs.
+ * picks what happened in Swap, in Bridge, in Spot or in Launch. `SPOT` is a
+ * Swap-lane row whose origin says Spot; `LAUNCH` one whose origin says a
+ * launch's trade — on its curve or in its graduated pool; `SWAP` is a Swap-lane
+ * row that says neither; `BRIDGE` is everything that crossed a chain — the USDC
+ * bridge and the cross-chain swap the Bridge page runs.
  */
-export const HISTORY_FILTERS = ["ALL", "SPOT", "SWAP", "BRIDGE", "SEND", "RECEIVE", "NEEDS_YOU"] as const;
+export const HISTORY_FILTERS = ["ALL", "SPOT", "LAUNCH", "SWAP", "BRIDGE", "SEND", "RECEIVE", "NEEDS_YOU"] as const;
 export type HistoryFilter = (typeof HISTORY_FILTERS)[number];
 
 export type HistoryLane = "SEND" | "SWAP" | "BRIDGE" | "RECEIVE" | "CROSS_SWAP";
@@ -56,8 +57,11 @@ export type HistoryAction = Readonly<{
    */
   sourceTx?: string | null;
   destinationTx?: string | null;
-  /** What Ryntra charged, where the provider confirmed taking it. */
-  fee?: Readonly<{ collected: boolean; amountRaw: string | null; decimals: number | null; symbol: string | null }> | null;
+  /**
+   * What Ryntra charged, where the provider confirmed taking it. On a launch's trade `amountRaw` is the whole fee the
+   * person paid — the curve's or the pool's — and `ryntraRaw` Ryntra's part of it.
+   */
+  fee?: Readonly<{ collected: boolean; amountRaw: string | null; decimals: number | null; symbol: string | null; ryntraRaw?: string | null }> | null;
   /** Which page made the row, where the signed bundle carried it. */
   origin?: Readonly<{ surface: string; side?: string }> | null;
   updatedAt: string;
@@ -65,7 +69,7 @@ export type HistoryAction = Readonly<{
 
 /** The page a row belongs to, as the filters name them. */
 export function historyPage(action: Pick<HistoryAction, "lane" | "origin">): Exclude<HistoryFilter, "ALL" | "NEEDS_YOU"> {
-  if (action.lane === "SWAP") return action.origin?.surface === "SPOT" ? "SPOT" : "SWAP";
+  if (action.lane === "SWAP") return action.origin?.surface === "SPOT" ? "SPOT" : action.origin?.surface === "LAUNCH" ? "LAUNCH" : "SWAP";
   if (action.lane === "CROSS_SWAP" || action.lane === "BRIDGE") return "BRIDGE";
   if (action.lane === "RECEIVE") return "RECEIVE";
   return "SEND";
@@ -158,6 +162,9 @@ export const HISTORY_EXPORT_COLUMNS = [
 export function historyToCsv(actions: readonly HistoryAction[]): string {
   const rows = [HISTORY_EXPORT_COLUMNS.map(field).join(",")];
   for (const action of actions) {
+    /* The column is Ryntra's fee: on a launch's trade that is Ryntra's part, never the curve's or the pool's whole fee. */
+    const ryntraFee = historyPage(action) === "LAUNCH" ? (action.fee?.ryntraRaw ?? null) : (action.fee?.amountRaw ?? null);
+    const charged = Boolean(action.fee?.collected && ryntraFee && ryntraFee !== "0");
     rows.push(
       [
         action.updatedAt,
@@ -173,10 +180,8 @@ export function historyToCsv(actions: readonly HistoryAction[]): string {
         /* A quoted fee is not a paid one, and a column in a file somebody
            reconciles is the last place to blur that. Only a confirmed
            collection is written; everything else is blank. */
-        action.fee?.collected && action.fee.amountRaw
-          ? decimal({ amountRaw: action.fee.amountRaw, decimals: action.fee.decimals ?? 0, symbol: action.fee.symbol ?? null })
-          : "",
-        action.fee?.collected && action.fee.amountRaw ? (action.fee.symbol ?? "") : "",
+        charged && ryntraFee ? decimal({ amountRaw: ryntraFee, decimals: action.fee?.decimals ?? 0, symbol: action.fee?.symbol ?? null }) : "",
+        charged ? (action.fee?.symbol ?? "") : "",
       ]
         .map(field)
         .join(","),

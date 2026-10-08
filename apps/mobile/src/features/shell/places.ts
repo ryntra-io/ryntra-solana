@@ -1,27 +1,20 @@
 /**
- * One version — what each of the five places holds a tap deeper, pure (canon
- * v5.3 В28, §0.0 rule 9, §3, §10; M20).
- *
- * There is no «Простий»/«Профі» switch on the phone: one app for every person
- * and every guest, five places — Головна · Ринки · Ryntra · Портфель · Ще
- * (`shell.ts`). What «Профі» held is not deleted; it lives a tap deeper in the
- * same places, named here once and read by the screens that draw them:
+ * What each place holds a tap deeper, pure — the menu v6.2 on a phone,
+ * the web's own (`app/shell/domains.ts`).
  *
  * - **Головна** — «Що змінилося»: the command-centre Home of M10 (what needs
  *   a look, the plans, the watchlist's moves, the markets' movers, the brief).
- * - **Ринки** — «Для досвідчених», after the companies: Спот (Trade — buy,
- *   sell and swap on any market), Акції and Тренди (M2's lists: the stocks
- *   with their sorts; crypto and memes, the watchlist beside them).
- * - **Портфель** — beside the positions: Стратегії (the plans), Результати,
- *   Історія.
- * - **Ще** — «Гроші» first (Поповнити · Надіслати · Отримати · Посилання на
- *   оплату, M31), then Обмін, Міст, Винагороди, Демо-прогнози, in the web's
- *   order.
+ * - **Ринки** — one screener for every asset (`features/markets/screener.ts`).
+ * - **Портфель** — beside the positions: Боти (what runs on the person's
+ *   rule) and Історія, as the web's Позиції · Історія.
+ * - **Ще** — Торгувати · Боти · Гроші · Винагороди · Ryntra · Налаштування,
+ *   each with the web's caption; «Гроші» holds Поповнити · Надіслати ·
+ *   Отримати · Між мережами, the web's tabs, and the payment link beside
+ *   Отримати.
  *
  * A door opens the phone's own screen where the phone has one. A page only the
- * web has built opens ryntra.io and says so — never a dead row. The Academy
- * has no page a customer can open, on the web or the phone, so it is not a row
- * (canon §0.0 rule 10).
+ * web has built opens ryntra.io and says so — never a dead row. Pools and
+ * Perps are not rows until their tasks are on production.
  */
 
 import type { Copy } from '../../lib/i18n.ts'
@@ -35,96 +28,62 @@ export type PlaceDestination =
 /** Home's one door a tap deeper: M10's Home — what changed and what needs a look. */
 export const CHANGES_PATH = '/changes'
 
-/** Markets' «Для досвідчених», in the web's order: Спот · Акції · Тренди. */
-export const MARKETS_TOOLS = ['spot', 'stocks', 'trends'] as const
-export type MarketsTool = (typeof MARKETS_TOOLS)[number]
+/** «Боти»: everything that runs on the person's rule. */
+export const BOTS_PATH = '/bots'
+/** «Боти → Каталог». */
+export const BOTS_CATALOG_PATH = '/bots?tab=catalog'
+/** «Гроші»: one screen of four doors and the payment link. */
+export const MONEY_PATH = '/money'
+/** «Налаштування»: the wallet, its monitoring, the look and the language. */
+export const SETTINGS_PATH = '/settings'
 
-/** M2's four lists, the screen «Акції» and «Тренди» open — each by the list it lands on. */
-export const LISTS = ['watchlist', 'stock', 'crypto', 'meme'] as const
-export type MarketsList = (typeof LISTS)[number]
+/** «Ще»'s rows, in the web's order: the sections the bar does not hold, then Ryntra and the settings. */
+export const MORE_ROWS = ['trade', 'bots', 'money', 'rewards', 'ryntra', 'settings'] as const
+export type MoreRow = (typeof MORE_ROWS)[number]
 
-export function isMarketsList(value: unknown): value is MarketsList {
-  return typeof value === 'string' && (LISTS as readonly string[]).includes(value)
-}
-
-/** The lists screen on the list asked for. */
-export function listsPath(list: MarketsList): string {
-  return `/lists?tab=${list}`
-}
-
-/** Spot is the phone's Trade — its one execution surface (M3); Stocks and Trends are M2's lists. */
-export const MARKETS_TOOL_PATHS: Readonly<Record<MarketsTool, string>> = {
-  spot: '/trade',
-  stocks: listsPath('stock'),
-  trends: listsPath('crypto'),
-}
-
-/** Portfolio's doors beside the positions, as on the web: Стратегії · Результати · Історія. */
-export const PORTFOLIO_DOORS = ['strategies', 'results', 'history'] as const
-export type PortfolioDoor = (typeof PORTFOLIO_DOORS)[number]
-
-/**
- * «Гроші» — «Ще»'s first section (M31):
- * Поповнити (the top-up the web leads to — the phone's own sheet) · Надіслати ·
- * Отримати · Посилання на оплату (Receive on its request).
- */
-export const MONEY_PAGES = ['topUp', 'send', 'receive', 'link'] as const
+/** «Гроші»: the web's tabs Поповнити · Надіслати · Отримати · Між мережами, the payment link beside Отримати. */
+export const MONEY_PAGES = ['topUp', 'send', 'receive', 'link', 'bridge'] as const
 export type MoneyPage = (typeof MONEY_PAGES)[number]
 
-/**
- * «Ще»'s other pages in the order the Owner named them (2026-09-24), the web's
- * own: Обмін · Міст · Винагороди · Демо-прогнози.
- */
-export const MORE_PAGES = ['swap', 'bridge', 'rewards', 'predictions'] as const
-export type MorePage = (typeof MORE_PAGES)[number]
+/** Portfolio's doors beside the positions: Боти · Історія (plans and their results live in «Боти»). */
+export const PORTFOLIO_DOORS = ['bots', 'history'] as const
+export type PortfolioDoor = (typeof PORTFOLIO_DOORS)[number]
 
-/**
- * Where each door of Portfolio and «Ще» leads. Results are the phone's own
- * screen (M13); Bridge and the prediction demo are the web's pages; «Гроші» is
- * the phone's own — the top-up a sheet over «Ще».
- */
-export const DOOR_DESTINATIONS: Readonly<Record<PortfolioDoor | MorePage | MoneyPage, PlaceDestination>> = {
-  strategies: { kind: 'screen', path: '/plans' },
-  results: { kind: 'screen', path: '/results' },
-  history: { kind: 'screen', path: '/history' },
-  swap: { kind: 'screen', path: '/trade?mode=swap' },
-  bridge: { kind: 'web', path: '/app/bridge' },
+/** Where each door of «Ще», «Гроші» and Portfolio leads. Between networks is the web's page; the rest are the phone's. */
+export const DOOR_DESTINATIONS: Readonly<Record<MoreRow | MoneyPage | PortfolioDoor, PlaceDestination>> = {
+  trade: { kind: 'screen', path: '/trade' },
+  bots: { kind: 'screen', path: BOTS_PATH },
+  money: { kind: 'screen', path: MONEY_PATH },
+  rewards: { kind: 'screen', path: '/rewards' },
+  ryntra: { kind: 'screen', path: '/ryn' },
+  settings: { kind: 'screen', path: SETTINGS_PATH },
   topUp: { kind: 'sheet', sheet: 'top-up' },
   send: { kind: 'screen', path: '/money/send' },
   receive: { kind: 'screen', path: '/money/receive' },
   link: { kind: 'screen', path: '/money/receive?tab=link' },
-  rewards: { kind: 'screen', path: '/rewards' },
-  predictions: { kind: 'web', path: '/app/predictions' },
+  bridge: { kind: 'web', path: '/app/bridge' },
+  history: { kind: 'screen', path: '/history' },
 }
 
-/**
- * The screens «Профі» drew as places of their own, and the door one tap into a
- * place that opens each — with the tab's own tap, at most two from anywhere.
- */
-export const FORMER_PRO_SCREENS = ['/changes', '/lists', '/trade', '/plans', '/history', '/rewards'] as const
-
-/** Every door the five places draw, with where it leads — what a test reads to prove the reach. */
+/** Every door the places draw a tap deeper, with where it leads — what a test reads to prove the reach. */
 export function placeDoors(): readonly Readonly<{ place: string; door: string; destination: PlaceDestination }>[] {
   return [
     { place: 'home', door: 'changes', destination: { kind: 'screen', path: CHANGES_PATH } },
-    ...MARKETS_TOOLS.map((tool) => ({
-      place: 'markets',
-      door: tool,
-      destination: { kind: 'screen', path: MARKETS_TOOL_PATHS[tool] } as const,
-    })),
     ...PORTFOLIO_DOORS.map((door) => ({ place: 'portfolio', door, destination: DOOR_DESTINATIONS[door] })),
-    ...MONEY_PAGES.map((door) => ({ place: 'more', door, destination: DOOR_DESTINATIONS[door] })),
-    ...MORE_PAGES.map((door) => ({ place: 'more', door, destination: DOOR_DESTINATIONS[door] })),
+    ...MORE_ROWS.map((door) => ({ place: 'more', door, destination: DOOR_DESTINATIONS[door] })),
+    ...MONEY_PAGES.map((door) => ({ place: 'money', door, destination: DOOR_DESTINATIONS[door] })),
   ]
 }
 
 export type PlacesCopy = Readonly<{
   whatChanged: string
-  experienced: string
-  tools: Readonly<Record<MarketsTool, string>>
-  toolLines: Readonly<Record<MarketsTool, string>>
+  /** A row of «Ще»: its name and the line under it — the web's caption; the settings carry none. */
+  rows: Readonly<Record<MoreRow, Readonly<{ label: string; caption: string | null }>>>
   doors: Readonly<Record<PortfolioDoor, string>>
-  pages: Readonly<Record<MorePage, string>>
+  /** «Між мережами» — the web's tab; the other money words are `MONEY_COPY`'s. */
+  bridge: string
+  /** A count beside «Боти»: «2 активні». */
+  active: (count: number) => string
   /** What a screen reader hears on a door that leaves the app for ryntra.io. */
   onWeb: string
   openInSpot: string
@@ -138,20 +97,17 @@ export type PlacesCopy = Readonly<{
 export const PLACES_COPY: Copy<PlacesCopy> = {
   en: {
     whatChanged: 'What changed',
-    experienced: 'For experienced investors',
-    tools: { spot: 'Spot', stocks: 'Stocks', trends: 'Trends' },
-    toolLines: {
-      spot: 'Every market: buy, sell and swap',
-      stocks: 'Every tokenized stock, with sorting',
-      trends: 'Crypto and memes moving today',
+    rows: {
+      trade: { label: 'Trade', caption: 'Spot and swap' },
+      bots: { label: 'Bots', caption: 'Recurring buys, plans' },
+      money: { label: 'Money', caption: 'Top up and transfers' },
+      rewards: { label: 'Rewards', caption: 'Points, leaderboards, season' },
+      ryntra: { label: 'Ryntra', caption: 'AI assistant' },
+      settings: { label: 'Settings', caption: null },
     },
-    doors: { strategies: 'Strategies', results: 'Results', history: 'History' },
-    pages: {
-      swap: 'Swap',
-      bridge: 'Bridge',
-      rewards: 'Rewards',
-      predictions: 'Demo predictions',
-    },
+    doors: { bots: 'Bots', history: 'History' },
+    bridge: 'Cross-chain',
+    active: (count) => `${count} active`,
     onWeb: 'opens ryntra.io',
     openInSpot: 'Open in Spot',
     createPlan: 'Create plan',
@@ -161,25 +117,31 @@ export const PLACES_COPY: Copy<PlacesCopy> = {
   },
   uk: {
     whatChanged: 'Що змінилося',
-    experienced: 'Для досвідчених',
-    tools: { spot: 'Спот', stocks: 'Акції', trends: 'Тренди' },
-    toolLines: {
-      spot: 'Усі ринки: купівля, продаж і обмін',
-      stocks: 'Усі токенізовані акції з сортуванням',
-      trends: 'Крипта й меми, що рухаються сьогодні',
+    rows: {
+      trade: { label: 'Торгувати', caption: 'Спот і обмін' },
+      bots: { label: 'Боти', caption: 'Регулярна купівля, плани' },
+      money: { label: 'Гроші', caption: 'Поповнення й перекази' },
+      rewards: { label: 'Винагороди', caption: 'Бали, таблиці, сезон' },
+      ryntra: { label: 'Ryntra', caption: 'ШІ-помічник' },
+      settings: { label: 'Налаштування', caption: null },
     },
-    doors: { strategies: 'Стратегії', results: 'Результати', history: 'Історія' },
-    pages: {
-      swap: 'Обмін',
-      bridge: 'Міст',
-      rewards: 'Винагороди',
-      predictions: 'Демо-прогнози',
-    },
+    doors: { bots: 'Боти', history: 'Історія' },
+    bridge: 'Між мережами',
+    active: (count) => `${count} ${activeWord(count)}`,
     onWeb: 'відкриває ryntra.io',
     openInSpot: 'Відкрити в Споті',
     createPlan: 'Створити план',
-    watchAdd: 'Додати до списку спостереження',
-    watchRemove: 'Прибрати зі списку спостереження',
-    watchFull: (limit) => `У списку спостереження — до ${limit} активів.`,
+    watchAdd: 'Додати в обране',
+    watchRemove: 'Прибрати з обраного',
+    watchFull: (limit) => `В обраному — до ${limit} активів.`,
   },
+}
+
+/** «1 активний», «2 активні», «5 активних». */
+function activeWord(count: number): string {
+  const ten = count % 10
+  const hundred = count % 100
+  if (ten === 1 && hundred !== 11) return 'активний'
+  if (ten >= 2 && ten <= 4 && (hundred < 12 || hundred > 14)) return 'активні'
+  return 'активних'
 }

@@ -9,7 +9,7 @@ export const THEME_MODES: readonly { mode: ThemeMode; label: string }[] = [
   { mode: 'system', label: 'System' },
 ]
 
-/** Dark is the presentation theme (Brand Canon v1.0); the choice persists on the device. */
+/** Dark is the presentation theme (Brand; the choice persists on the device. */
 const DEFAULT_MODE: ThemeMode = 'dark'
 const STORAGE_KEY = 'theme.mode'
 

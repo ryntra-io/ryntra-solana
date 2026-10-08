@@ -58,7 +58,7 @@ export type IntentPipelineId = (typeof INTENT_PIPELINES)[number];
 
 export type CapabilityFee =
   /** Charged through the venue's own mechanism, at the policy's rate. */
-  | Readonly<{ kind: "MECHANISM"; mechanism: Exclude<ServiceFeeMechanism, "NONE" | "JUPITER_PLATFORM_FEE"> }>
+  | Readonly<{ kind: "MECHANISM"; mechanism: Exclude<ServiceFeeMechanism, "NONE" | "JUPITER_PLATFORM_FEE" | "METEORA_LAUNCH"> }>
   /** Fee policy v2: the rate is the trade's flow's, carried by whichever of the venue's mechanisms its lane takes. */
   | Readonly<{ kind: "POLICY"; policy: "fee-policy-v2"; mechanisms: readonly Exclude<ServiceFeeMechanism, "NONE">[] }>
   /** The route has no mechanism for an integrator fee; a true zero. */

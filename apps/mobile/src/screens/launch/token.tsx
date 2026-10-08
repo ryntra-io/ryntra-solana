@@ -11,8 +11,11 @@ import { Screen } from '@/components/screen'
 import { Sheet } from '@/components/sheet'
 import { StateView } from '@/components/state-view'
 import { Txt } from '@/components/txt'
+import { AskRyn } from '@/features/agent/ask-ryn'
 import { capGeometry } from '@/features/launch/chart-geometry'
 import { launchWords, type LaunchWord } from '@/features/launch/copy'
+import { useHiddenLaunch } from '@/features/launch/hidden'
+import { reportTokenMailto, SUPPORT_PAGE_URL } from '@/features/launch/report'
 import {
   explorerUrl,
   formatBps,
@@ -38,6 +41,7 @@ import { isNotFound } from '@/lib/api'
 import type { LaunchHolderRow, LaunchMarketResponse, LaunchRiskFact, LaunchTokenResponse } from '@/lib/api/v1/types'
 import { useLocale, useSharedCopy, type Locale } from '@/lib/i18n'
 import { useTheme } from '@/theme'
+import { openLink } from '@/lib/open-link'
 
 import { ExplorerLink, Row, ShareLink, TokenPicture } from './parts'
 import { TradePanel } from './trade-panel'
@@ -58,6 +62,8 @@ export function LaunchTokenScreen({ mint }: { mint: string }) {
   const open = launchOpen.open
   const token = useLaunchToken(open === false ? null : mint || null)
   const market = useLaunchMarket(token.data ? mint : null)
+  const account = useAccount()
+  const hiding = useHiddenLaunch(mint)
   const back = () => (router.canGoBack() ? router.back() : router.replace('/launch/mine' as never))
 
   const title = token.data ? `$${token.data.symbol}` : word('place')
@@ -102,6 +108,12 @@ export function LaunchTokenScreen({ mint }: { mint: string }) {
       title={title}
       onBack={back}
       backLabel={shared.back}
+      right={
+        <AskRyn
+          context={{ kind: 'asset', mint: data.token, symbol: data.symbol }}
+          className="h-9 w-9 border border-line bg-surface"
+        />
+      }
       refreshControl={
         <RefreshControl
           refreshing={market.isRefetching}
@@ -112,7 +124,7 @@ export function LaunchTokenScreen({ mint }: { mint: string }) {
         />
       }
     >
-      <TokenHead token={data} word={word} locale={locale} />
+      <TokenHead token={data} word={word} locale={locale} hidePicture={hiding.hidden} />
       {market.data ? (
         <MarketBody token={data} market={market.data} word={word} locale={locale} stale={market.isError} />
       ) : (
@@ -141,21 +153,76 @@ export function LaunchTokenScreen({ mint }: { mint: string }) {
         </Card>
       )}
       <Marks token={data} word={word} />
-      <About token={data} word={word} />
+      {hiding.hidden ? (
+        <Card className="gap-1 pb-2">
+          <Txt variant="ui" tone="muted">
+            {word('hiddenNote')}
+          </Txt>
+          <Pressable
+            accessibilityRole="button"
+            onPress={hiding.toggle}
+            hitSlop={8}
+            className="min-h-11 justify-center self-start"
+          >
+            <Txt variant="ui" tone="brand">
+              {word('showAgain')}
+            </Txt>
+          </Pressable>
+        </Card>
+      ) : (
+        <About token={data} word={word} />
+      )}
       <Card>
         <ShareLink word={word} link={data.shareLink} symbol={data.symbol} />
       </Card>
       <ReceiptDoor token={data} word={word} locale={locale} />
+      <Card padded={false}>
+        <DoorRow
+          icon="flag-outline"
+          label={word('report')}
+          line={word('reportLine')}
+          external={word('reportBy')}
+          onPress={() =>
+            void Linking.openURL(
+              reportTokenMailto(
+                {
+                  mint: data.token,
+                  symbol: data.symbol,
+                  name: data.name,
+                  page: `https://ryntra.io/app/launch/${data.token}`,
+                  reporter: account.address,
+                },
+                locale,
+              ),
+            ).catch(() => void Linking.openURL(SUPPORT_PAGE_URL).catch(() => undefined))
+          }
+          last={hiding.hidden}
+        />
+        {hiding.hidden ? null : (
+          <DoorRow icon="eye-off-outline" label={word('hide')} line={word('hideLine')} onPress={hiding.toggle} last />
+        )}
+      </Card>
     </Screen>
   )
 }
 
-export function TokenHead({ token, word, locale }: { token: LaunchTokenResponse; word: LaunchWord; locale: Locale }) {
+export function TokenHead({
+  token,
+  word,
+  locale,
+  hidePicture = false,
+}: {
+  token: LaunchTokenResponse
+  word: LaunchWord
+  locale: Locale
+  /** Hidden on this phone by the person: the creator's picture is not drawn. */
+  hidePicture?: boolean
+}) {
   const presets = useLaunchPresets()
   const presetLabel = presetName(token.preset, presets.data?.presets, locale, word)
   return (
     <View className="flex-row items-center gap-3">
-      <TokenPicture uri={token.image} size={56} />
+      <TokenPicture uri={hidePicture ? null : token.image} size={56} />
       <View className="flex-1 gap-1">
         <Txt variant="headline" numberOfLines={2}>
           {token.name}
@@ -256,7 +323,7 @@ export function MarketBody({
           <Pressable
             accessibilityRole="link"
             onPress={() => {
-              if (sold.source) void Linking.openURL(explorerUrl(market.network, sold.source.kind, sold.source.id))
+              if (sold.source) openLink(explorerUrl(market.network, sold.source.kind, sold.source.id))
             }}
             className="flex-row items-start gap-2 rounded-sm bg-danger-soft px-3 py-2.5"
           >
@@ -571,7 +638,7 @@ function Trades({
         <Pressable
           key={`${row.signature}:${row.side}:${row.tokensRaw}`}
           accessibilityRole="link"
-          onPress={() => void Linking.openURL(explorerUrl(market.network, 'tx', row.signature))}
+          onPress={() => openLink(explorerUrl(market.network, 'tx', row.signature))}
           className="flex-row items-center gap-3 border-b border-line py-2.5"
         >
           <View className="w-16">
@@ -890,7 +957,7 @@ function MarkRow({
     <Pressable
       accessibilityRole="link"
       accessibilityHint={word('view')}
-      onPress={() => void Linking.openURL(url)}
+      onPress={() => openLink(url)}
       className="flex-row items-center gap-2.5"
     >
       <Icon name={icon} size={18} color={icon === 'lock-closed' ? 'brand' : 'successInk'} />
@@ -929,7 +996,7 @@ export function About({ token, word }: { token: LaunchTokenResponse; word: Launc
               <Pressable
                 key={link.label}
                 accessibilityRole="link"
-                onPress={() => void Linking.openURL(link.href)}
+                onPress={() => openLink(link.href)}
                 className="h-11 flex-row items-center gap-1.5 rounded-pill border border-line px-4 active:bg-hover"
               >
                 <Icon name={link.icon} size={15} color="fg" />

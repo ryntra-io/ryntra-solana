@@ -252,7 +252,7 @@ export const TRADE_COPY: Copy<TradeCopy> = {
     },
   },
   uk: {
-    title: 'Торгівля',
+    title: 'Торгувати',
     modes: { buy: 'Купити', sell: 'Продати', swap: 'Обмін' },
     modeNouns: { buy: 'Купівля', sell: 'Продаж', swap: 'Обмін' },
     settledLine: 'Виконано',

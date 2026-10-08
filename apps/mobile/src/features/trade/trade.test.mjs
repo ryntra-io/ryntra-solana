@@ -260,33 +260,36 @@ test('amounts: a typed figure becomes raw units, raw units read back in the pers
   assert.equal(parseAmount('abc', 6), null)
   assert.equal(parseAmount('1', null), null)
   assert.equal(parseAmount('-1', 6), null)
-  assert.equal(formatUnits('46800000', 8), '0.468')
-  assert.equal(formatUnits('100000000', 6), '100')
-  assert.equal(formatUnits('123456789012', 6), '123,456.789012')
-  assert.equal(formatUnits('5', 9), '0', 'six places at most; a figure below them reads as zero')
-  assert.equal(formatUnits('5', 9, 9), '0.000000005')
-  assert.equal(lamportsToSol('5000', '15000'), '0.00002')
-  assert.equal(lamportsToSol('2039280'), '0.002039')
+  assert.equal(formatUnits('46800000', 8, 6, 'en'), '0.468')
+  assert.equal(formatUnits('100000000', 6, 6, 'en'), '100')
+  assert.equal(formatUnits('123456789012', 6, 6, 'en'), '123,456.789012')
+  assert.equal(formatUnits('5', 9, 6, 'en'), '0', 'six places at most; a figure below them reads as zero')
+  assert.equal(formatUnits('5', 9, 9, 'en'), '0.000000005')
+  assert.equal(lamportsToSol(['5000', '15000'], 'en'), '0.00002')
+  assert.equal(lamportsToSol(['2039280'], 'en'), '0.002039')
   assert.equal(priceImpactPercent('0.0123'), 0.01)
   assert.equal(priceImpactPercent('-0.0001'), 0, 'a favourable impact is not a warning')
   assert.equal(priceImpactPercent('x'), null)
   assert.equal(secondsLeft(new Date(NOW + 30_500).toISOString(), NOW), 31)
   assert.equal(secondsLeft(new Date(NOW - 1).toISOString(), NOW), 0)
-  assert.equal(serviceFeeText(orderCore().ryntraFee), '0.10% · 0.1 USDC')
-  assert.equal(serviceFeeText({ ...orderCore().ryntraFee, amountRaw: null, usd: 0.004 }), '0.10% · < $0.01')
-  assert.equal(serviceFeeText({ ...orderCore().ryntraFee, basisPoints: 0 }), 'None')
+  assert.equal(serviceFeeText(orderCore().ryntraFee, 'en'), '0.10% · 0.1 USDC')
+  assert.equal(serviceFeeText({ ...orderCore().ryntraFee, amountRaw: null, usd: 0.004 }, 'en'), '0.10% · < $0.01')
+  assert.equal(serviceFeeText({ ...orderCore().ryntraFee, basisPoints: 0 }, 'en'), 'None')
 })
 
 test('the Review’s rows: expected and minimum received, the price of what is held, impact, slippage, every known cost, the notes', () => {
-  const view = reviewView({
-    order: orderCore(),
-    mode: 'buy',
-    pay: USDC_ASSET,
-    receive: NVDA,
-    decimals: { [USDC_ASSET.mint]: 6, [NVDA.mint]: 8 },
-    exact: true,
-    findings: [{ rule: 'SLIPPAGE_BOUNDED', outcome: 'REVIEW', detail: 'Slippage is wider than usual.' }],
-  })
+  const view = reviewView(
+    {
+      order: orderCore(),
+      mode: 'buy',
+      pay: USDC_ASSET,
+      receive: NVDA,
+      decimals: { [USDC_ASSET.mint]: 6, [NVDA.mint]: 8 },
+      exact: true,
+      findings: [{ rule: 'SLIPPAGE_BOUNDED', outcome: 'REVIEW', detail: 'Slippage is wider than usual.' }],
+    },
+    'en',
+  )
   assert.ok(view)
   assert.equal(view.pay, '100 USDC')
   assert.equal(view.receive, '0.468 NVDAx')
@@ -311,14 +314,17 @@ test('the Review’s rows: expected and minimum received, the price of what is h
   // The finding's own sentence is never shown: the web's words by the rule — here a minimum that disagrees with the bound.
   assert.deepEqual(view.warnings, ['The quote and minimum received use different slippage.'])
   // An estimate before the order: no slippage, no network fees, the label says estimate.
-  const estimate = reviewView({
-    order: orderCore(),
-    mode: 'sell',
-    pay: NVDA,
-    receive: USDC_ASSET,
-    decimals: {},
-    exact: false,
-  })
+  const estimate = reviewView(
+    {
+      order: orderCore(),
+      mode: 'sell',
+      pay: NVDA,
+      receive: USDC_ASSET,
+      decimals: {},
+      exact: false,
+    },
+    'en',
+  )
   assert.equal(estimate.rows[0].label, 'You receive · estimate')
   assert.equal(
     estimate.rows.some((row) => row.label === 'Minimum received'),
@@ -331,34 +337,43 @@ test('the Review’s rows: expected and minimum received, the price of what is h
   )
   assert.match(estimate.rows.find((row) => row.label === 'Price').value, /^1 NVDAx ≈ /)
   // A Swap paid in USDC prices what is received, like a Buy; paid in anything else it prices what is paid.
-  const usdcSwap = reviewView({
-    order: orderCore(),
-    mode: 'swap',
-    pay: USDC_ASSET,
-    receive: NVDA,
-    decimals: {},
-    exact: false,
-  })
+  const usdcSwap = reviewView(
+    {
+      order: orderCore(),
+      mode: 'swap',
+      pay: USDC_ASSET,
+      receive: NVDA,
+      decimals: {},
+      exact: false,
+    },
+    'en',
+  )
   assert.match(usdcSwap.rows.find((row) => row.label === 'Price').value, /^1 NVDAx ≈ /)
-  const solSwap = reviewView({
-    order: orderCore({ inputMint: SOL_ASSET.mint, outputMint: USDC_ASSET.mint }),
-    mode: 'swap',
-    pay: SOL_ASSET,
-    receive: USDC_ASSET,
-    decimals: {},
-    exact: false,
-  })
+  const solSwap = reviewView(
+    {
+      order: orderCore({ inputMint: SOL_ASSET.mint, outputMint: USDC_ASSET.mint }),
+      mode: 'swap',
+      pay: SOL_ASSET,
+      receive: USDC_ASSET,
+      decimals: {},
+      exact: false,
+    },
+    'en',
+  )
   assert.match(solSwap.rows.find((row) => row.label === 'Price').value, /^1 SOL ≈ /)
   // Unknown decimals: no rows are invented.
   assert.equal(
-    reviewView({
-      order: orderCore(),
-      mode: 'buy',
-      pay: USDC_ASSET,
-      receive: { ...NVDA, decimals: null },
-      decimals: {},
-      exact: false,
-    }),
+    reviewView(
+      {
+        order: orderCore(),
+        mode: 'buy',
+        pay: USDC_ASSET,
+        receive: { ...NVDA, decimals: null },
+        decimals: {},
+        exact: false,
+      },
+      'en',
+    ),
     null,
   )
 })

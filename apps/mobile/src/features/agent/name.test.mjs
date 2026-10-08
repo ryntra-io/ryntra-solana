@@ -43,7 +43,7 @@ test('where Ryntra speaks it is labelled an AI, and the decision and the signatu
   assert.equal(AGENT_COPY.uk.title, 'Ryntra · ШІ-помічник')
   assert.equal(AGENT_COPY.en.who, 'Ryntra')
   assert.equal(AGENT_COPY.uk.who, 'Ryntra')
-  // The canon's own line under the title (§5): «Ryntra — ШІ; рішення й підпис — твої».
+  // The product's own line under the title: «Ryntra — ШІ; рішення й підпис — твої».
   assert.equal(AGENT_COPY.en.lead, 'Ryntra is an AI; the decision and the signature are yours.')
   assert.equal(AGENT_COPY.uk.lead, 'Ryntra — ШІ; рішення й підпис — твої.')
   assert.equal(AGENT_COPY.en.askRyn, 'Ask Ryntra')

@@ -26,7 +26,7 @@
  */
 
 export const API_MAJOR = 1 as const;
-export const API_CONTRACT_VERSION = "1.30.0" as const;
+export const API_CONTRACT_VERSION = "1.31.0" as const;
 export const API_HEADER = "X-Ryntra-API" as const;
 export const API_VERSION_HEADER = "X-Ryntra-API-Version" as const;
 export const NETWORK = "solana:mainnet" as const;
@@ -69,6 +69,8 @@ export type ApiErrorCode =
   /* 1.12.0 — autoinvest rules */
   | "RULE_NOT_FOUND"
   | "RULE_LIMIT_REACHED"
+  /* 1.31.0 — a rule's token of the venue's list stands below the floor (liquidity or age) */
+  | "RULE_LIQUIDITY_LOW"
   /* 1.21.0 — «Ryntra попередить» */
   | "CHANNEL_REQUIRED"
   | "PRICE_UNAVAILABLE"
@@ -153,6 +155,8 @@ export type Capabilities = Readonly<{
     priceCondition?: Readonly<{ defaultPct: number; minPct: number; maxPct: number; maxAgeMinutes: number }>;
     /** 1.19.0: «З кожної оплати» — the modes, the round-up steps, the bounds, how many events a rule shows, and the route that names an account as the person's own. */
     payments?: Readonly<{ modes: readonly RulePaymentMode[]; roundToUsd: readonly number[]; fixedMinUsd: number; fixedMaxUsd: number; percentMin: number; percentMax: number; eventsKept: number; ownAccount: "/api/v1/rules/payments/own" }>;
+    /** 1.31.0: what a rule may name, the floor a token of the venue's list stands on, and the route that reads a token's standing. */
+    assets?: Readonly<{ classes: readonly RuleAssetClass[]; floor: Readonly<{ liquidityUsd: number; ageHours: number }>; read: "/api/v1/rules/asset" }>;
   }>;
   attribution: Readonly<{ referralAccount: string | null; stats: "/api/stats" }>;
   /** 1.5.0: the evidence route, the provider behind it, the windows and the metric registry a condition may name; 1.6.0: every provider, and the address route. */
@@ -1725,7 +1729,7 @@ export type SwapSendAttemptState = (typeof SWAP_SEND_ATTEMPT_STATES)[number];
 export const SWAP_QUOTE_ERROR_CODES = ["RATE_LIMITED", "JSON_REQUIRED", "INVALID_CONTENT_LENGTH", "BODY_TOO_LARGE", "BODY_REQUIRED", "INVALID_BODY_STREAM", "INVALID_JSON", "VALIDATION_ERROR", "ASSET_NOT_OFFERED", "PROVIDER_KEY_MISSING", "MINT_UNREADABLE", "PASSPORT_REFUSED", "QUOTE_PRODUCTION_KEY_REQUIRED", "QUOTE_NO_ROUTE", "QUOTE_REFUSED", "QUOTE_RATE_LIMITED", "QUOTE_HTTP_ERROR", "QUOTE_UNREACHABLE", "QUOTE_MALFORMED", "QUOTE_IMPLAUSIBLE_QUOTE", "PREFLIGHT_REFUSED"] as const;
 export type SwapQuoteErrorCode = (typeof SWAP_QUOTE_ERROR_CODES)[number];
 
-export const SWAP_ORDER_ERROR_CODES = ["RATE_LIMITED", "FORBIDDEN_ORIGIN", "UNAUTHORIZED", "SESSION_EXPIRED", "SESSION_REVOKED", "UNAVAILABLE", "SWAP_PAUSED", "JSON_REQUIRED", "INVALID_CONTENT_LENGTH", "BODY_TOO_LARGE", "BODY_REQUIRED", "INVALID_BODY_STREAM", "INVALID_JSON", "VALIDATION_ERROR", "WALLET_MISMATCH", "ASSET_NOT_OFFERED", "PLAN_NOT_FOUND", "RULE_NOT_FOUND", "RULE_NOT_DUE", "RULE_MISMATCH", "RULE_BUDGET_EXHAUSTED", "RULE_PRICE_CONDITION", "STORE_NOT_DURABLE", "OWNER_SWAP_LOCKED", "OWNER_SWAP_LOCK_ABSENT", "OWNER_SWAP_LOCK_MISMATCH", "OWNER_SWAP_LOCK_UNAVAILABLE", "PROVIDER_KEY_MISSING", "PROOF_NOT_SIGNED", "MINT_UNREADABLE", "PASSPORT_REFUSED", "ORDER_PRODUCTION_KEY_REQUIRED", "ORDER_NO_ROUTE", "ORDER_REFUSED", "ORDER_RATE_LIMITED", "ORDER_HTTP_ERROR", "ORDER_UNREACHABLE", "ORDER_MALFORMED", "ORDER_IMPLAUSIBLE_QUOTE", "ORDER_BUILD_FAILED", "TRANSACTION_UNREADABLE", "TRANSACTION_TOO_LARGE", "TRANSACTION_VERSION_UNSUPPORTED", "TRANSACTION_FEE_PAYER_MISMATCH", "TRANSACTION_TAKER_NOT_SIGNER", "TRANSACTION_NO_INSTRUCTIONS", "TRANSACTION_DANGEROUS_TOKEN_INSTRUCTION", "TRANSACTION_DANGEROUS_ACCOUNT_INSTRUCTION", "TRANSACTION_PROGRAM_INDEX_OUT_OF_RANGE", "SIMULATION_EFFECT_CONTRACT_UNREADABLE", "SIMULATION_EFFECT_PAIR_UNSUPPORTED", "SIMULATION_EFFECT_GASLESS_UNSUPPORTED", "SIMULATION_EFFECT_FEE_PAYER_MISMATCH", "SIMULATION_EFFECT_FEE_MISMATCH", "SIMULATION_EFFECT_RENT_UNSUPPORTED", "SIMULATION_EFFECT_SIMULATION_METADATA_UNAVAILABLE", "SIMULATION_EFFECT_ACCOUNT_VECTOR_MISMATCH", "SIMULATION_EFFECT_TOKEN_METADATA_UNAVAILABLE", "SIMULATION_EFFECT_TOKEN_METADATA_INVALID", "SIMULATION_EFFECT_TOKEN_OWNER_UNRESOLVED", "SIMULATION_EFFECT_UNSAFE_TOKEN_MUTATION", "SIMULATION_EFFECT_UNSAFE_ACCOUNT_MUTATION", "SIMULATION_EFFECT_UNRESOLVED_INNER_PROGRAM", "SIMULATION_EFFECT_UNRELATED_TOKEN_DELTA", "SIMULATION_EFFECT_INPUT_DELTA_MISMATCH", "SIMULATION_EFFECT_OUTPUT_DELTA_MISMATCH", "SIMULATION_EFFECT_NATIVE_DELTA_MISMATCH", "SIMULATION_UNAVAILABLE", "SIMULATION_FAILED", "INTENT_REFUSED", "PLAN_REVIEW_BLOCKED", "PLAN_VERSION_CONFLICT", "PLAN_STATE_REFUSED", "SWAP_PRE_SIGN_REFUSED"] as const;
+export const SWAP_ORDER_ERROR_CODES = ["RATE_LIMITED", "FORBIDDEN_ORIGIN", "UNAUTHORIZED", "SESSION_EXPIRED", "SESSION_REVOKED", "UNAVAILABLE", "SWAP_PAUSED", "JSON_REQUIRED", "INVALID_CONTENT_LENGTH", "BODY_TOO_LARGE", "BODY_REQUIRED", "INVALID_BODY_STREAM", "INVALID_JSON", "VALIDATION_ERROR", "WALLET_MISMATCH", "ASSET_NOT_OFFERED", "PLAN_NOT_FOUND", "RULE_NOT_FOUND", "RULE_NOT_DUE", "RULE_MISMATCH", "RULE_BUDGET_EXHAUSTED", "RULE_PRICE_CONDITION", "RULE_LIQUIDITY_LOW", "STORE_NOT_DURABLE", "OWNER_SWAP_LOCKED", "OWNER_SWAP_LOCK_ABSENT", "OWNER_SWAP_LOCK_MISMATCH", "OWNER_SWAP_LOCK_UNAVAILABLE", "PROVIDER_KEY_MISSING", "PROOF_NOT_SIGNED", "MINT_UNREADABLE", "PASSPORT_REFUSED", "ORDER_PRODUCTION_KEY_REQUIRED", "ORDER_NO_ROUTE", "ORDER_REFUSED", "ORDER_RATE_LIMITED", "ORDER_HTTP_ERROR", "ORDER_UNREACHABLE", "ORDER_MALFORMED", "ORDER_IMPLAUSIBLE_QUOTE", "ORDER_BUILD_FAILED", "TRANSACTION_UNREADABLE", "TRANSACTION_TOO_LARGE", "TRANSACTION_VERSION_UNSUPPORTED", "TRANSACTION_FEE_PAYER_MISMATCH", "TRANSACTION_TAKER_NOT_SIGNER", "TRANSACTION_NO_INSTRUCTIONS", "TRANSACTION_DANGEROUS_TOKEN_INSTRUCTION", "TRANSACTION_DANGEROUS_ACCOUNT_INSTRUCTION", "TRANSACTION_PROGRAM_INDEX_OUT_OF_RANGE", "SIMULATION_EFFECT_CONTRACT_UNREADABLE", "SIMULATION_EFFECT_PAIR_UNSUPPORTED", "SIMULATION_EFFECT_GASLESS_UNSUPPORTED", "SIMULATION_EFFECT_FEE_PAYER_MISMATCH", "SIMULATION_EFFECT_FEE_MISMATCH", "SIMULATION_EFFECT_RENT_UNSUPPORTED", "SIMULATION_EFFECT_SIMULATION_METADATA_UNAVAILABLE", "SIMULATION_EFFECT_ACCOUNT_VECTOR_MISMATCH", "SIMULATION_EFFECT_TOKEN_METADATA_UNAVAILABLE", "SIMULATION_EFFECT_TOKEN_METADATA_INVALID", "SIMULATION_EFFECT_TOKEN_OWNER_UNRESOLVED", "SIMULATION_EFFECT_UNSAFE_TOKEN_MUTATION", "SIMULATION_EFFECT_UNSAFE_ACCOUNT_MUTATION", "SIMULATION_EFFECT_UNRESOLVED_INNER_PROGRAM", "SIMULATION_EFFECT_UNRELATED_TOKEN_DELTA", "SIMULATION_EFFECT_INPUT_DELTA_MISMATCH", "SIMULATION_EFFECT_OUTPUT_DELTA_MISMATCH", "SIMULATION_EFFECT_NATIVE_DELTA_MISMATCH", "SIMULATION_UNAVAILABLE", "SIMULATION_FAILED", "INTENT_REFUSED", "PLAN_REVIEW_BLOCKED", "PLAN_VERSION_CONFLICT", "PLAN_STATE_REFUSED", "SWAP_PRE_SIGN_REFUSED"] as const;
 export type SwapOrderErrorCode = (typeof SWAP_ORDER_ERROR_CODES)[number];
 
 export const SWAP_EXECUTE_ERROR_CODES = ["RATE_LIMITED", "FORBIDDEN_ORIGIN", "UNAUTHORIZED", "SESSION_EXPIRED", "SESSION_REVOKED", "UNAVAILABLE", "SWAP_PAUSED", "JSON_REQUIRED", "INVALID_CONTENT_LENGTH", "BODY_TOO_LARGE", "BODY_REQUIRED", "INVALID_BODY_STREAM", "INVALID_JSON", "VALIDATION_ERROR", "WALLET_MISMATCH", "ISSUER_KEY_MISSING", "REVIEW_PROOF_REFUSED", "REVIEW_NOT_FRESH", "ORDER_EXPIRED", "SIMULATION_FAILED", "SIGNED_UNREADABLE", "SIGNED_TOO_LARGE", "SIGNED_VERSION_UNSUPPORTED", "SIGNED_FEE_PAYER_MISMATCH", "SIGNED_TAKER_NOT_SIGNER", "SIGNED_NO_INSTRUCTIONS", "SIGNED_DANGEROUS_TOKEN_INSTRUCTION", "SIGNED_DANGEROUS_ACCOUNT_INSTRUCTION", "SIGNED_PROGRAM_INDEX_OUT_OF_RANGE", "WALLET_MODIFIED_BYTES", "REVIEWED_BYTES_MISMATCH", "WALLET_PRIORITY_FEE_TOO_HIGH", "WALLET_BUDGET_UNREADABLE", "SIGNATURE_REFUSED", "SIGNATURE_UNREADABLE", "PROVIDER_KEY_MISSING", "STORE_NOT_DURABLE", "SWAP_POLICY_BLOCKED", "PLAN_REVIEW_BLOCKED", "PLAN_NOT_FOUND", "PLAN_VERSION_CONFLICT", "PLAN_STATE_REFUSED", "NO_INDEPENDENT_RPC", "ADOPTED_SIMULATION_FAILED", "ADOPTED_EFFECT_CONTRACT_UNREADABLE", "ADOPTED_EFFECT_PAIR_UNSUPPORTED", "ADOPTED_EFFECT_GASLESS_UNSUPPORTED", "ADOPTED_EFFECT_FEE_PAYER_MISMATCH", "ADOPTED_EFFECT_FEE_MISMATCH", "ADOPTED_EFFECT_RENT_UNSUPPORTED", "ADOPTED_EFFECT_SIMULATION_METADATA_UNAVAILABLE", "ADOPTED_EFFECT_ACCOUNT_VECTOR_MISMATCH", "ADOPTED_EFFECT_TOKEN_METADATA_UNAVAILABLE", "ADOPTED_EFFECT_TOKEN_METADATA_INVALID", "ADOPTED_EFFECT_TOKEN_OWNER_UNRESOLVED", "ADOPTED_EFFECT_UNSAFE_TOKEN_MUTATION", "ADOPTED_EFFECT_UNSAFE_ACCOUNT_MUTATION", "ADOPTED_EFFECT_UNRESOLVED_INNER_PROGRAM", "ADOPTED_EFFECT_UNRELATED_TOKEN_DELTA", "ADOPTED_EFFECT_INPUT_DELTA_MISMATCH", "ADOPTED_EFFECT_OUTPUT_DELTA_MISMATCH", "ADOPTED_EFFECT_NATIVE_DELTA_MISMATCH", "ADOPTED_SIMULATION_UNAVAILABLE", "OWNER_SWAP_LOCKED", "OWNER_SWAP_LOCK_ABSENT", "OWNER_SWAP_LOCK_MISMATCH", "OWNER_SWAP_LOCK_UNAVAILABLE", "SEND_ATTEMPT_CONFLICT", "SEND_ATTEMPT_UNAVAILABLE", "ALREADY_SUBMITTED", "SEND_SETTLEMENT_FAILED", "SUBMISSION_UNKNOWN", "EXECUTE_FAILED", "LANDED_FAILED"] as const;
@@ -3345,10 +3349,26 @@ export type RuleOccurrenceState = "due" | "pending" | "bought" | "missed" | "hel
 
 /** 1.18.0: «Умова ціни» — the most, in whole per cent (1–50), the price may stand above its reference for the rule to offer its purchase. */
 export type RulePriceCondition = Readonly<{ limitPct: number }>;
+/** 1.31.0: a rule's price condition as it stands — on a token of the venue's list, with the market price when the rule was turned on (`referenceUsd`, `referenceAt`); absent on a company's rule. */
+export type RulePriceConditionState = Readonly<{ limitPct: number; referenceUsd?: number; referenceAt?: string }>;
+/** 1.31.0: what a rule may name — a tokenized stock, a coin the venue verified, a meme or a token the venue has not verified. */
+export type RuleAssetClass = "stock" | "crypto" | "meme";
+/** 1.31.0: `met` the token stands on the floor · `below` its liquidity or its age is under it · `unavailable` a figure is missing or old. */
+export type RuleFloorVerdict = "met" | "below" | "unavailable";
+/** 1.31.0: one judgement of the floor a rule's token of the venue's list stands on. */
+export type RuleFloorCheck = Readonly<{
+  verdict: RuleFloorVerdict;
+  liquidityUsd: number | null;
+  floorUsd: number;
+  ageHours: number | null;
+  minAgeHours: number;
+  dataAt: string | null;
+  checkedAt: string;
+}>;
 /** 1.18.0: `met` · `above` the price is over the limit · `stale` the data are older than the freshness bound · `unavailable` a figure is missing. */
 export type RuleConditionVerdict = "met" | "above" | "stale" | "unavailable";
-/** 1.18.0: PreStocks' valuation of one token · the issuer's reference per share · the market feed's. */
-export type RulePriceReference = "prestocks" | "issuer" | "market";
+/** 1.18.0: PreStocks' valuation of one token · the issuer's reference per share · the market feed's; 1.31.0: a token's market price when its rule was turned on. */
+export type RulePriceReference = "prestocks" | "issuer" | "market" | "enabled";
 /** 1.18.0: one judgement of a rule's price condition — the figures on one basis, the deviation to a tenth of a per cent, the data's time (the older of the two). */
 export type RuleConditionCheck = Readonly<{
   verdict: RuleConditionVerdict;
@@ -3386,6 +3406,8 @@ export type RuleOccurrence = Readonly<{
   amountUsd: number | null;
   /** 1.19.0: how many payments or incoming transfers gathered it; null on the other kinds. */
   events: number | null;
+  /** 1.31.0: on a rule's token of the venue's list, the floor's judgement that opened or deferred it; absent on a company's rule. */
+  floor?: RuleFloorCheck;
 }>;
 
 /** 1.19.0: how a «З кожної оплати» rule is asked for — the mode and its one figure (the others null), and the person's time zone. */
@@ -3432,7 +3454,7 @@ export type AutoinvestRule = Readonly<{
   network: typeof NETWORK;
   kind: RuleKind;
   asset: PlanAsset;
-  /** The company as a person names it («Apple»). */
+  /** The company as a person names it («Apple»); 1.31.0: a token's symbol («SOL»). */
   name: string;
   /** The sum every purchase is; 1.19.0: on a «З кожної оплати» rule, the least sum a reminder opens at. */
   amountUsd: number;
@@ -3442,8 +3464,8 @@ export type AutoinvestRule = Readonly<{
   dip: RuleDip | null;
   /** 1.19.0: a «З кожної оплати» rule's terms and what waits; null on the other kinds. */
   payments: RulePayments | null;
-  /** 1.18.0: «Умова ціни»; null — no condition. */
-  priceCondition: RulePriceCondition | null;
+  /** 1.18.0: «Умова ціни»; null — no condition. 1.31.0: on a token of the venue's list, with the price it stands against. */
+  priceCondition: RulePriceConditionState | null;
   status: RuleStatus;
   /** Null on a paused rule and on a «Якщо впаде» rule. */
   nextDueAt: string | null;
@@ -3487,6 +3509,34 @@ export type RuleBudgetResponse = Readonly<{ budget: RuleBudget }>;
 /** 1.13.0: with the month's budget. */
 export type RuleListResponse = Readonly<{ address: string; rules: readonly AutoinvestRule[]; total: number; budget: RuleBudget }>;
 export type RuleDeleteResponse = Readonly<{ deleted: true; id: string }>;
+
+/**
+ * 1.31.0: `GET /api/v1/rules/asset?mint=` — what a rule on a token would
+ * stand on: the asset, its class, the price now, the reference a condition
+ * would stand against, and on a token of the venue's list the floor and the
+ * facts of its risk; `refusal` why no rule can name it, null when one can.
+ */
+export type RuleAssetRead = Readonly<{
+  asset: PlanAsset;
+  name: string;
+  class: RuleAssetClass;
+  priceUsd: number | null;
+  priceAt: string | null;
+  reference: RulePriceReference | null;
+  floor: RuleFloorCheck | null;
+  risk: Readonly<{
+    verified: boolean;
+    ageHours: number | null;
+    liquidityUsd: number | null;
+    topHoldersPct: number | null;
+    mintAuthorityDisabled: boolean | null;
+    freezeAuthorityDisabled: boolean | null;
+    organicScore: number | null;
+  }> | null;
+  refusal: Readonly<{ code: "ASSET_UNCONFIRMED" | "RULE_LIQUIDITY_LOW"; message: string }> | null;
+  observedAt: string;
+}>;
+export type RuleAssetResponse = Readonly<{ read: RuleAssetRead }>;
 
 /* ------------------------------------------------------------ «Гроші» for the phone (1.22.0) */
 

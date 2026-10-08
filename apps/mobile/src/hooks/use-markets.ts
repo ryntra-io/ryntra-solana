@@ -12,7 +12,7 @@ import {
 } from '@/lib/api'
 import { isOfferedMarket, isSupportedIssuer, withoutRetiredIssuer } from '@/lib/stocks'
 
-/* What the lists offer: a stock token only from an issuer the app supports (canon v5.2 §7, В26). */
+/* What the lists offer: a stock token only from an issuer the app supports. */
 const offeredMarkets = (data: MarketsResponse): MarketsResponse => ({
   ...data,
   rows: data.rows.filter(isOfferedMarket),

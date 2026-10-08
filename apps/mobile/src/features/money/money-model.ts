@@ -124,7 +124,7 @@ export function overBalance(amountRaw: string | null, asset: Pick<SendAsset, 'sp
 const EXACT = /^(\d+)(?:\.(\d+))?$/
 
 /** An exact decimal the server sent («1250.5», never grouped) as the person reads it: «1,250.5» · «1 250,5». A malformed one is a dash. */
-export function decimalText(exact: string | null | undefined, locale: Locale = 'en'): string {
+export function decimalText(exact: string | null | undefined, locale: Locale): string {
   const match = exact ? EXACT.exec(exact) : null
   if (!match) return '—'
   const fraction = (match[2] ?? '').replace(/0+$/, '')
@@ -151,7 +151,7 @@ export type CheckRow = Readonly<{ label: string; value: string; emphasis?: boole
  * Відкриття рахунку or the least a new address takes. Every figure is the
  * server's; a rent it could not read is a dash, never a zero.
  */
-export function checkRows(check: TransferCheck, symbol: string, locale: Locale = 'en'): readonly CheckRow[] {
+export function checkRows(check: TransferCheck, symbol: string, locale: Locale): readonly CheckRow[] {
   const words = MONEY_COPY[locale]
   const rows: CheckRow[] = [
     { label: words.youSend, value: `${decimalText(check.send.amount, locale)} ${symbol}`, emphasis: true },
@@ -400,13 +400,13 @@ export function linkIsLive(status: PayLinkStatus): boolean {
 }
 
 /** The link's amount in the person's language with its token, or null when the payer chooses. */
-export function linkAmount(link: PayLink, locale: Locale = 'en'): string | null {
+export function linkAmount(link: PayLink, locale: Locale): string | null {
   if (!link.amount || !/^\d+$/.test(link.amount.raw)) return null
   return `${formatUnits(link.amount.raw, link.token.decimals, link.token.decimals, locale)} ${link.token.symbol}`
 }
 
 /** What arrived on a paid link, in the person's language. */
-export function linkCredited(link: PayLink, locale: Locale = 'en'): string | null {
+export function linkCredited(link: PayLink, locale: Locale): string | null {
   if (!link.paid || !/^\d+$/.test(link.paid.creditedRaw)) return null
   return `${formatUnits(link.paid.creditedRaw, link.token.decimals, link.token.decimals, locale)} ${link.token.symbol}`
 }

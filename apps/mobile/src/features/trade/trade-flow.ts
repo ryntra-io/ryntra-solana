@@ -1,7 +1,7 @@
 /**
  * One trade, from the quote to the receipt — the flow, with its dependencies
  * handed in so it runs the same under the app and under a test with doubles.
- * The one submitter (canon Part A §10.3): the server builds the exact bytes
+ * The one submitter: the server builds the exact bytes
  * and the Review, the wallet signs those bytes and nothing else, the server
  * submits once and observes. A signature that exists is a recovery state
  * for that signature — never permission to ask for new bytes — and an

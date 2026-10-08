@@ -336,7 +336,7 @@ test("the page draws the registry's published rows and links the JSON; the break
     for (const key of ["product", "network", "operations", "volume", "fees", "revenue", "cashback", "users"]) assert.ok(words.breakdown.columns[key], `${locale}: breakdown ${key}`);
     for (const role of ["FEE", "PAYOUT_CASHBACK", "PAYOUT_FRIENDS", "PAYOUT_INTEGRATORS", "PAYOUT_REWARDS", "TREASURY"]) assert.ok(words.registry.roles[role], `${locale}: role ${role}`);
   }
-  assert.deepEqual(Object.values(STATS_COPY.uk.products), ["Усі", "Обмін", "Спот", "Акції", "Міст"], "the Ukrainian page names the products in Ukrainian");
+  assert.deepEqual(Object.values(STATS_COPY.uk.products), ["Усі", "Обмін", "Спот", "Акції", "Лаунч", "Міст"], "the Ukrainian page names the products in Ukrainian");
 });
 
 test("a dollar at par is decided by the mint: a token that calls itself USDC values nothing", async () => {

@@ -53,7 +53,7 @@ export type BuyCompany = Readonly<{
   /** The one line of truth; null when no issuer document was read. */
   truth: string | null
   /**
-   * The issuer's event before a purchase (the IPO and conversion watch, canon v5.2 В27; M19): the token bought must
+   * The issuer's event before a purchase (the IPO and conversion watch; M19): the token bought must
    * be swapped by the issuer's deadline — said under the truth, before any sum, and again in «Перевірка»; null for none.
    */
   eventLine?: string | null
@@ -64,7 +64,7 @@ export type BuyCompany = Readonly<{
 const rawOf = (value: string | undefined): bigint | null => (value && /^\d+$/.test(value) ? BigInt(value) : null)
 
 /**
- * A purchase under an autoinvest reminder (M16): the rule's own sum — null
+ * A purchase under an autoinvest reminder: the rule's own sum — null
  * until the rule is read — paid in USDC, and the occurrence it is bought
  * under while the reminder is open (`origin.rule`; the server refuses anything
  * but exactly the rule's sum of USDC for its company).
@@ -81,7 +81,7 @@ export type RuleBuy = Readonly<{ amountUsd: number | null; binding: RuleBinding 
  * company's own minimum where the sum has no route, the four rows of
  * «Перевірка» with the account's reserve apart — the server's `check`, never
  * a count of the phone's own (contract 1.20.0) — and the one action the sheet
- * offers (canon v5.5 В35; M21). A Review the app closed on comes back only
+ * offers. A Review the app closed on comes back only
  * when it is this company's purchase. Under a reminder the sum is the rule's
  * and the dollars are USDC.
  */
@@ -111,7 +111,7 @@ export function useBuy(company: BuyCompany, rule: RuleBuy | null = null) {
   const payBalance = payRaw === null ? null : unitsFromRaw(payRaw.toString(), payAsset.decimals, null)
   const needsSol = read !== null && /^0+$/.test(read.lamports)
 
-  // The sheet opens on $10 — a default, never advice: any sum from a dollar is the person's own (the Owner's word, 2026-09-25).
+  // The sheet opens on $10 — a default, never advice: any sum from a dollar is the person's own (chosen 2026-09-25).
   const [amountText, setAmountText] = useState(() => String(DEFAULT_BUY_USD))
   const amountUsd = rule ? rule.amountUsd : parseDollars(amountText, locale)
   const valid = isBuyableSum(amountUsd)
@@ -149,7 +149,7 @@ export function useBuy(company: BuyCompany, rule: RuleBuy | null = null) {
   /* ---- what the sum buys and costs, from the live quote — the server's count (contract 1.20.0) ---- */
   const estimate = buyEstimate(trade.quote, company)
 
-  /* ---- no route for the sum: the company's own minimum, from the same quote at the ladder's larger sums (canon v5.5 В35) ---- */
+  /* ---- no route for the sum: the company's own minimum, from the same quote at the ladder's larger sums ---- */
   // A reminder's sum is the rule's own, so only a sum the person types looks for one.
   const noRoute = rule === null && valid && isNoRoute(trade.quoteFailure?.code)
   const routeMinimum = useRouteMinimum(payAsset.mint, company.mint, valid ? amountUsd : null, noRoute)

@@ -39,7 +39,7 @@ export const LAUNCH_WORDS = {
 
   sectionPreset: bi('Preset', 'Пресет'),
   presetSniper: bi('Snipers pay {start} → {end} in {time}', 'Снайпери платять {start} → {end} за {time}'),
-  presetCreator: bi('You earn {pct} of trading fees', 'Тобі {pct} торгових комісій'),
+  presetCreator: bi('{pct} of trading fees goes to you', 'Тобі {pct} торгових комісій'),
   presetCap: bi('Your buy: up to {pct} of supply', 'Твоя покупка: до {pct} пропозиції'),
   presetPair: bi('Paired with {symbol}', 'У парі з {symbol}'),
   presetDetails: bi('All numbers of the preset', 'Усі числа пресету'),
@@ -86,6 +86,8 @@ export const LAUNCH_WORDS = {
     'Name, ticker and picture cannot be changed after launch.',
     'Назву, тікер і картинку після запуску змінити не можна.',
   ),
+  termsLead: bi('By launching, you agree to the', 'Запускаючи, ти погоджуєшся з'),
+  terms: bi('Terms of Use', 'Умовами використання'),
   launch: bi('Launch token', 'Запустити токен'),
   connect: bi('Connect wallet to launch', 'Підключи гаманець, щоб запустити'),
 
@@ -220,6 +222,16 @@ export const LAUNCH_WORDS = {
   lockedVesting: bi('Unlocking daily until {date}', 'Розблоковується щодня до {date}'),
   about: bi('About', 'Про токен'),
   linksByCreator: bi('Set by the creator, not checked by Ryntra', 'Задає творець, Ryntra не перевіряє'),
+  report: bi('Report this token', 'Поскаржитися на токен'),
+  reportLine: bi('A letter to hello@ryntra.io', 'Лист на hello@ryntra.io'),
+  reportBy: bi('opens your mail app', 'відкриває пошту'),
+  hide: bi('Hide on this phone', 'Сховати на цьому телефоні'),
+  hideLine: bi('Its picture, description and links', 'Картинку, опис і посилання'),
+  hiddenNote: bi(
+    "This token's picture, description and links are hidden on this phone.",
+    'Картинку, опис і посилання цього токена сховано на цьому телефоні.',
+  ),
+  showAgain: bi('Show again', 'Показати знову'),
   receipt: bi('Launch receipt', 'Квитанція лаунчу'),
   receiptCreated: bi('Created', 'Створено'),
   receiptConfig: bi('Preset config', 'Конфіг пресету'),
@@ -357,7 +369,7 @@ export const LAUNCH_WORDS = {
   ),
   risk_HISTORY_UNREAD: bi('The trades were not read', 'Угоди не прочитано'),
   creatorSalesUnread: bi("The creator's sales: not every trade could be read", 'Продажі творця: прочитано не все'),
-  tradesLatest: bi('{n} trades read — not all', 'Прочитано угод: {n} — не всі'),
+  tradesLatest: bi('{n} trade{s:n} read — not all', 'Прочитано угод: {n} — не всі'),
   colTime: bi('Time', 'Час'),
   colTrader: bi('Who', 'Хто'),
   colTokens: bi('Tokens', 'Токени'),
@@ -405,7 +417,7 @@ export const LAUNCH_WORDS = {
   ),
   risk_TOP10_HOLD: bi('The 10 largest holders have {pct}', '10 найбільших холдерів мають {pct}'),
   riskWhy_TOP10_HOLD: bi('From 30%, a few wallets can move the price.', 'Від 30 % кілька гаманців можуть рухати ціну.'),
-  risk_FEW_HOLDERS: bi('{n} holders', 'Холдерів: {n}'),
+  risk_FEW_HOLDERS: bi('{n} holder{s:n}', 'Холдерів: {n}'),
   riskWhy_FEW_HOLDERS: bi(
     'Fewer than 20: a thin market, one trade moves the price.',
     'Менше 20 — тонкий ринок: одна угода рухає ціну.',
@@ -413,7 +425,7 @@ export const LAUNCH_WORDS = {
   risk_YOUNG: bi('Launched {age} ago', 'Запущено {age} тому'),
   riskWhy_YOUNG: bi('Under a day old: no history to judge by yet.', 'Молодший за добу: історії, щоб судити, ще немає.'),
   risk_CREATOR_OTHER_CURVES: bi(
-    'The creator launched {n} other tokens on Meteora',
+    'The creator launched {n} other token{s:n} on Meteora',
     'Інших токенів цього творця на Meteora: {n}',
   ),
   riskWhy_CREATOR_OTHER_CURVES: bi(
@@ -421,7 +433,7 @@ export const LAUNCH_WORDS = {
     'Що з ними сталося, показує, як творець поводиться зі своїми токенами; лаунчі в Ryntra — нижче.',
   ),
   risk_HISTORY_PARTIAL: bi(
-    'Counted from {n} trades read — not all',
+    'Counted from {n} trade{s:n} read — not all',
     'Пораховано за {n} прочитаними угодами — не всіма',
   ),
   riskWhy_HISTORY_PARTIAL: bi(
@@ -471,7 +483,7 @@ export const LAUNCH_WORDS = {
     'Their other launches could not be read right now.',
     'Інші їхні лаунчі зараз не вдалося прочитати.',
   ),
-  risk_HOLDERS_UNCOUNTED: bi('At least {n} holders', 'Холдерів щонайменше {n}'),
+  risk_HOLDERS_UNCOUNTED: bi('At least {n} holder{s:n}', 'Холдерів щонайменше {n}'),
   riskWhy_HOLDERS_UNCOUNTED: bi(
     'Not every holder could be counted; there may be more.',
     'Порахувати всіх холдерів не вдалося; їх може бути більше.',
@@ -482,7 +494,7 @@ export const LAUNCH_WORDS = {
   capShort: bi('MC', 'Кап.'),
   tradeJump: bi('Trade ${symbol}', 'Торгувати ${symbol}'),
   chartSummary: bi(
-    'Market cap from {from} at launch to {to} now; high {high}, low {low}; {n} trades read.',
+    'Market cap from {from} at launch to {to} now; high {high}, low {low}; {n} trade{s:n} read.',
     'Капіталізація від {from} на запуску до {to} зараз; максимум {high}, мінімум {low}; прочитано угод: {n}.',
   ),
 
@@ -528,8 +540,8 @@ export const LAUNCH_WORDS = {
   // «Мої лаунчі» — the creator's cabinet
   mineTitle: bi('My launches', 'Мої лаунчі'),
   mineLede: bi(
-    'Your tokens, their way to the DEX and the fees they earned you.',
-    'Твої токени, їхній шлях до DEX і комісії, які вони тобі заробили.',
+    'Your tokens, their way to the DEX and your share of their fees.',
+    'Твої токени, їхній шлях до DEX і твоя частка їхніх комісій.',
   ),
   mineConnectTitle: bi('Connect the wallet you launch from', "Під'єднай гаманець, з якого запускаєш"),
   mineConnectLine: bi(
@@ -542,14 +554,14 @@ export const LAUNCH_WORDS = {
   mineEmptyTitle: bi('No launches yet', 'Лаунчів ще немає'),
   mineEmptyLine: bi('Launch a token, and its fees show up here.', "Запусти токен — і його комісії з'являться тут."),
   mineLaunch: bi('Launch a token', 'Запустити токен'),
-  mineEarned: bi('Earned', 'Зароблено'),
+  mineEarned: bi('Fees to you', 'Комісії тобі'),
   mineToClaim: bi('To claim', 'Можна забрати'),
   mineClaimed: bi('Claimed', 'Забрано'),
   mineLaunches: bi('Launches', 'Лаунчі'),
   mineOnDex: bi('On the DEX', 'На DEX'),
   mineSince: bi('since {date}', 'від {date}'),
   mineSummaryUnread: bi(
-    'Not counted: {n} launches could not be read',
+    'Not counted: {n} launch{es:n} could not be read',
     'Не пораховано: не вдалося прочитати лаунчів — {n}',
   ),
   mineRoleShare: bi('Your share {pct}', 'Твоя частка {pct}'),
@@ -678,10 +690,17 @@ export const LAUNCH_WORDS = {
 export type LaunchWordKey = keyof typeof LAUNCH_WORDS
 export type LaunchWord = (key: LaunchWordKey, values?: Readonly<Record<string, string | number>>) => string
 
-/** The words in a language, with `{name}` filled from `values`; a name not given stays as written. */
+/** Whether a count reads as one — «1», or «1» formatted. */
+const isOne = (value: string | number | undefined) => value !== undefined && Number(String(value).replace(/[^\d.]/g, '')) === 1
+
+/**
+ * The words in a language, with `{name}` filled from `values`; a name not
+ * given stays as written. English plurals by the count: `{s:n}` is «s» and
+ * `{es:n}` «es» unless `n` is one.
+ */
 export function launchWords(locale: Locale): LaunchWord {
   return (key, values = {}) =>
-    LAUNCH_WORDS[key][locale].replace(/\{(\w+)\}/g, (match, name: string) =>
-      name in values ? String(values[name]) : match,
-    )
+    LAUNCH_WORDS[key][locale]
+      .replace(/\{(s|es):(\w+)\}/g, (_match, ending: string, name: string) => (isOne(values[name]) ? '' : ending))
+      .replace(/\{(\w+)\}/g, (match, name: string) => (name in values ? String(values[name]) : match))
 }

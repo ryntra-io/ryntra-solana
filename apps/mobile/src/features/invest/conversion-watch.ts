@@ -1,6 +1,6 @@
 /**
  * The IPO and conversion watch on the phone — Ryntra does not let a token burn
- * (canon v5.2 В27, §7, §11; M19, as the web's `RYN-PRESTOCKS-001` session 2
+ * (M19, as the web's session 2
  * does it).
  *
  * When a private company goes public, its PreStocks token must be swapped
@@ -214,7 +214,7 @@ export function causeLine(event: IssuerEvent, locale: Locale): string | null {
 export type EventAudience = 'holder' | 'everyone' | 'buyer'
 
 /**
- * The event's one line (canon v5.2 §7): a holder is told to swap — «SpaceX
+ * The event's one line: a holder is told to swap — «SpaceX
  * вийшла на біржу. Обміняй SPACEX до 12 березня 2027 — після строку токен
  * згорить.» — everyone else reads that the token must be swapped, and a
  * buyer, before a purchase, that the token bought must be. A closed window
@@ -384,7 +384,7 @@ export type ConvertRowKey = 'give' | 'get' | 'costs' | 'rate'
 export type ConvertRow = Readonly<{
   key: ConvertRowKey
   value: string
-  /** The issuer's own fee inside «Усі витрати», a line of its own (canon §12); null on every other row. */
+  /** The issuer's own fee inside «Усі витрати», a line of its own; null on every other row. */
   fee: string | null
   /** A quieter line: what leaves in dollars, the least that arrives, the account's reserve, the gap to the company's price. */
   sub: string | null
@@ -405,8 +405,7 @@ export type ConvertTarget = Readonly<{ mint: string; symbol: string; company: st
  * the unit the wallet shows (through the token's multiplier) with its dollar
  * value, what arrives and the least that may, everything it costs with the
  * issuer's fee on its own line and the account's one-time reserve apart, and
- * the rate the live quote gives against the company's price (canon §7:
- * «ціну обміну показує чесно»). Always four, in that order; unknown is a dash.
+ * the rate the live quote gives against the company's price ( * «ціну обміну показує чесно»). Always four, in that order; unknown is a dash.
  */
 export function convertReviewRows(
   input: Readonly<{
@@ -480,7 +479,7 @@ export function convertReviewRows(
             feeUsd === null ? null : approxUsd(feeUsd, locale),
           )
         : null,
-      // The account the swap opens for the new token: its own line, never a cost — it stays in the wallet (canon v5.5 В35).
+      // The account the swap opens for the new token: its own line, never a cost — it stays in the wallet.
       sub: costs?.accountUsd ? words.reserve(approxUsd(costs.accountUsd, locale)) : null,
     },
     {

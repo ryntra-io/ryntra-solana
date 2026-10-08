@@ -5,10 +5,11 @@ import { Chip } from '@/components/chip'
 import { Txt } from '@/components/txt'
 import type { PortfolioCopy } from '@/features/portfolio/copy'
 import type { PortfolioRow } from '@/features/portfolio/portfolio-model'
+import { useLocale } from '@/lib/i18n'
 import { EventBanner, type EventActions } from '@/screens/invest/event-ui'
 import { DASH, formatPercent, formatUsd, signOf } from '@/utils/format'
 
-/** An issuer's event under a held position (M19): the holder's line, and the swap and the sale while the window is open. */
+/** An issuer's event under a held position: the holder's line, and the swap and the sale while the window is open. */
 export type RowEvent = Readonly<{ line: string; actions: EventActions | null }>
 
 export type HoldingRowProps = {
@@ -25,15 +26,16 @@ export type HoldingRowProps = {
  * the right. An unpriced row shows a dash where its value would be, never a
  * zero; a row the venue flags says so beside its name. A token whose issuer
  * opened a window to swap it carries the deadline under the row, as wide as
- * the row, with the swap and the quiet sale (canon v5.2 В27; M19).
+ * the row, with the swap and the quiet sale.
  */
 export function HoldingRow({ row, copy, onPress, last, event = null }: HoldingRowProps) {
+  const locale = useLocale()
   const move = signOf(row.dayChangePct)
-  const value = row.value === null ? DASH : formatUsd(row.value)
+  const value = row.value === null ? DASH : formatUsd(row.value, locale)
   const line = (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${row.symbol}, ${row.amountText} ${row.symbol}, ${value}${row.dayChangePct === null ? '' : `, ${formatPercent(row.dayChangePct)}`}`}
+      accessibilityLabel={`${row.symbol}, ${row.amountText} ${row.symbol}, ${value}${row.dayChangePct === null ? '' : `, ${formatPercent(row.dayChangePct, locale)}`}`}
       onPress={onPress}
       className={`flex-row items-center gap-3 py-3 active:bg-hover ${last || event ? '' : 'border-b border-line'}`}
     >
@@ -62,7 +64,7 @@ export function HoldingRow({ row, copy, onPress, last, event = null }: HoldingRo
           ) : null
         ) : (
           <Chip
-            label={formatPercent(row.dayChangePct)}
+            label={formatPercent(row.dayChangePct, locale)}
             tone={move === 'up' ? 'success' : move === 'down' ? 'danger' : 'neutral'}
             mono
           />

@@ -39,7 +39,7 @@ import {
   swapOutcome,
   type SolanaWalletAction,
 } from "./action-ledger.ts";
-import { SolanaActionOriginSchema, type SolanaActionOrigin } from "./action-origin.ts";
+import { isLaunchOrigin, SolanaActionOriginSchema, type SolanaActionOrigin } from "./action-origin.ts";
 import { statedUsdOf } from "./action-value.ts";
 import { readSendAttempt } from "./send-attempt.ts";
 import { readSwapOwnerRecovery } from "./swap-owner-lock.ts";
@@ -189,6 +189,8 @@ export async function reconcileSolanaWalletActions(
     const parsed = SolanaWalletActionSchema.safeParse(candidate);
     if (!parsed.success) continue;
     const row = parsed.data;
+    /* A launch's trade has no provider id and no swap lock: its own reconciliation settles it (`lib/launch/record.server.ts`). */
+    if (isLaunchOrigin(row.origin)) continue;
     if (row.lane === "SWAP" && row.outcome === "DONE" && row.providerRef === null && row.signature) unnamed.push(row);
     if (row.outcome !== "IN_FLIGHT") continue;
     if (now.getTime() - Date.parse(row.updatedAt) < minAge) continue;

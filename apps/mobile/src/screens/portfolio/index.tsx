@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'expo-router'
 import { useState } from 'react'
-import { Linking, Pressable, RefreshControl, ScrollView, View } from 'react-native'
+import { Pressable, RefreshControl, ScrollView, View } from 'react-native'
 
 import { Card } from '@/components/card'
 import { Chip } from '@/components/chip'
@@ -11,13 +11,15 @@ import { Skeleton } from '@/components/skeleton'
 import { StateView } from '@/components/state-view'
 import { Txt } from '@/components/txt'
 import { AskRyn } from '@/features/agent/ask-ryn'
-import { RULES_KEY } from '@/features/autoinvest/use-rules'
+import { RULES_KEY, useRules } from '@/features/autoinvest/use-rules'
+import { activeCount } from '@/features/bots/bots'
 import { eventFor, eventLine, SELL_FOR_USDC, swapActionWord, windowOpen } from '@/features/invest/conversion-watch'
 import { shelfCardFor } from '@/features/invest/shelf'
 import { useCompanyShelf } from '@/features/invest/use-shelf'
 import { webHrefOf } from '@/features/monitoring/deep-link'
 import { PORTFOLIO_COPY } from '@/features/portfolio/copy'
 import type { PortfolioGroupView, PortfolioRow } from '@/features/portfolio/portfolio-model'
+import { usePlans } from '@/features/plans/use-plans'
 import { usePortfolio } from '@/features/portfolio/use-portfolio'
 import { useAccount } from '@/features/session/use-account'
 import { DOOR_DESTINATIONS, PLACES_COPY, PORTFOLIO_DOORS } from '@/features/shell/places'
@@ -25,7 +27,6 @@ import { WalletGate } from '@/features/wallet/wallet-gate'
 import { useNow } from '@/hooks/use-now'
 import { isNetworkError } from '@/lib/api'
 import { useCopy, useLocale, useSharedCopy } from '@/lib/i18n'
-import { RulesBlock } from '@/screens/autoinvest/rules-block'
 import { useTheme } from '@/theme'
 import { cn } from '@/utils/cn'
 import { DASH, formatMoment, isToday, formatPercent, formatUsd, formatUsdSigned, shortAddress } from '@/utils/format'
@@ -33,6 +34,7 @@ import { DASH, formatMoment, isToday, formatPercent, formatUsd, formatUsdSigned,
 import { HoldingRow, type RowEvent } from './holding-row'
 import { HoldingSheet } from './holding-sheet'
 import { SellSheet } from '@/screens/invest/sell-sheet'
+import { openLink } from '@/lib/open-link'
 
 function LoadingBody({ label }: { label: string }) {
   return (
@@ -43,7 +45,6 @@ function LoadingBody({ label }: { label: string }) {
         <Skeleton className="h-3.5 w-48" />
       </Card>
       <View className="flex-row gap-2">
-        <Skeleton className="h-11 flex-1 rounded-btn" />
         <Skeleton className="h-11 flex-1 rounded-btn" />
         <Skeleton className="h-11 flex-1 rounded-btn" />
       </View>
@@ -65,26 +66,33 @@ function LoadingBody({ label }: { label: string }) {
 }
 
 /**
- * Beside the positions, what the web's Portfolio holds in its tabs (canon v5.3
- * §3): Стратегії (the plans), Результати, Історія — each one tap from here. A
- * page only ryntra.io has built is marked ↗ and opens there.
+ * Beside the positions, the web's Портфель — Позиції · Історія — and «Боти»:
+ * the plans and the recurring buys live there now, and the door
+ * says how many run — «Боти · 2 активні» — only when that is read.
  */
 function PlaceDoors({ className }: { className?: string }) {
   const router = useRouter()
   const places = useCopy(PLACES_COPY)
+  const account = useAccount()
+  const rules = useRules(account.session)
+  const plans = usePlans(account.session)
+  const running = account.session ? activeCount(rules.data?.rules ?? null, plans.data?.plans ?? null) : null
   return (
     <View className={cn('flex-row gap-2', className)}>
       {PORTFOLIO_DOORS.map((door) => {
         const destination = DOOR_DESTINATIONS[door]
         const web = destination.kind === 'web' ? webHrefOf(destination.path) : null
-        const label = places.doors[door]
+        const label =
+          door === 'bots' && running !== null && running > 0
+            ? `${places.doors[door]} · ${places.active(running)}`
+            : places.doors[door]
         return (
           <Pressable
             key={door}
             accessibilityRole="button"
             accessibilityLabel={web ? `${label}, ${places.onWeb}` : label}
             onPress={() => {
-              if (web) void Linking.openURL(web)
+              if (web) openLink(web)
               else if (destination.kind === 'screen') router.push(destination.path as never)
             }}
             className="h-11 flex-1 flex-row items-center justify-center gap-1.5 rounded-btn border border-line bg-surface px-2 active:border-line-strong active:bg-hover"
@@ -112,6 +120,7 @@ function GroupSection({
   eventOf: (row: PortfolioRow) => RowEvent | null
 }) {
   const copy = useCopy(PORTFOLIO_COPY)
+  const locale = useLocale()
   return (
     <View>
       <View className="flex-row items-end justify-between px-1 pb-1 pt-4">
@@ -119,7 +128,7 @@ function GroupSection({
           {label} · {group.rows.length}
         </Txt>
         <Txt variant="data" tone="muted">
-          {group.subtotal === null ? DASH : formatUsd(group.subtotal)}
+          {group.subtotal === null ? DASH : formatUsd(group.subtotal, locale)}
         </Txt>
       </View>
       {group.rows.map((row, index) => (
@@ -138,18 +147,15 @@ function GroupSection({
 
 /**
  * What the wallet holds — the value of what could be priced, how many rows
- * could not be, the day's move over the rows that carry one, the doors to the
- * strategies, the results and the history, then the positions grouped by
+ * could not be, the day's move over the rows that carry one, the doors to
+ * «Боти» and the history, then the positions grouped by
  * what they are, and the dust folded under one line.
  * Public by address: the connected wallet is enough; nothing here needs a
  * signature. A position opens a sheet with its figures and its doors.
- * After the positions, «Автоінвест» — the wallet's rules and the month's
- * budget, the block Home draws (canon v5.3 §3, В29; M20): read behind the
- * wallet's session, one line and a quiet way in without it.
  * A held token whose issuer opened a window to swap it carries the deadline
  * under its row — «Обміняй SPACEX до 12 березня 2027 — після строку токен
  * згорить.» — with «Обміняти на SpaceX (SPCXx)» and the quiet «Продати за
- * USDC», each opening the swap's sheet on the token's page (M19); the window
+ * USDC», each opening the swap's sheet on the token's page; the window
  * comes from the universe the shelf reads, the same answer the page reads.
  */
 export function PortfolioScreen() {
@@ -199,7 +205,6 @@ export function PortfolioScreen() {
     void query.refetch()
     if (account.session) void queryClient.invalidateQueries({ queryKey: RULES_KEY })
   }
-  const rules = <RulesBlock session={account.session} place="portfolio" />
 
   const observedAt = view?.observedAt ?? null
   const subtitle = account.address
@@ -226,7 +231,6 @@ export function PortfolioScreen() {
       />
     )
   } else if (view && view.empty) {
-    // A wallet with nothing in it may still hold rules: the empty state, then the same block.
     body = (
       <ScrollView className="flex-1" contentContainerClassName="pb-8">
         <PlaceDoors className="px-4 pt-1" />
@@ -236,11 +240,10 @@ export function PortfolioScreen() {
           detail={copy.emptyDetail}
           action={{ title: copy.markets, onPress: () => router.navigate('/(tabs)/markets') }}
         />
-        <View className="px-4">{rules}</View>
       </ScrollView>
     )
   } else if (view) {
-    // A day's move belongs to its day: a read kept from an earlier day shows its value and time, not «today» (M9).
+    // A day's move belongs to its day: a read kept from an earlier day shows its value and time, not «today».
     const change = isToday(view.observedAt, now) ? view.dayChange : null
     const notices = [
       heldBack ? copy.heldBack(formatMoment(view.observedAt, now, locale)) : null,
@@ -266,20 +269,26 @@ export function PortfolioScreen() {
           <Txt variant="labelSm" tone="faint" caps>
             {copy.totalValue}
           </Txt>
-          <Txt variant="dataLg" tone={view.total === null ? 'muted' : 'fg'}>
-            {view.total === null ? DASH : formatUsd(view.total)}
-          </Txt>
+          {view.pricesRead ? (
+            <Txt variant="dataLg" tone={view.total === null ? 'muted' : 'fg'}>
+              {view.total === null ? DASH : formatUsd(view.total, locale)}
+            </Txt>
+          ) : (
+            // The balances came back before the venue's prices: the total is being read, not a dash.
+            <Skeleton className="h-7 w-36" accessibilityRole="progressbar" />
+          )}
           <View className="flex-row flex-wrap items-center gap-x-2 gap-y-1">
             {change ? (
               <Chip
-                label={`${formatUsdSigned(change.usd)} · ${formatPercent(change.pct)} ${copy.today}`}
+                label={`${formatUsdSigned(change.usd, locale)} · ${formatPercent(change.pct, locale)} ${copy.today}`}
                 tone={change.usd > 0 ? 'success' : change.usd < 0 ? 'danger' : 'neutral'}
                 mono
               />
             ) : null}
             <Txt variant="labelSm" tone="faint">
-              {copy.priced(view.priced, view.rows.length)}
-              {view.unpriced > 0 ? ` · ${copy.withoutPrice(view.unpriced)} · ${copy.notInTotal}` : ''}
+              {view.pricesRead
+                ? `${copy.priced(view.priced, view.rows.length)}${view.unpriced > 0 ? ` · ${copy.withoutPrice(view.unpriced)} · ${copy.notInTotal}` : ''}`
+                : copy.readingPrices}
             </Txt>
           </View>
           {notices.length > 0 ? (
@@ -330,8 +339,6 @@ export function PortfolioScreen() {
               : null}
           </View>
         ) : null}
-
-        <View className="pt-6">{rules}</View>
       </ScrollView>
     )
   }
@@ -347,14 +354,6 @@ export function PortfolioScreen() {
             {account.session ? (
               <AskRyn context={{ kind: 'portfolio' }} className="h-9 w-9 border border-line bg-surface" />
             ) : null}
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={copy.history}
-              onPress={() => router.push('/history')}
-              className="h-9 w-9 items-center justify-center rounded-btn border border-line bg-surface active:bg-hover"
-            >
-              <Icon name="time-outline" size={18} color="muted" />
-            </Pressable>
           </View>
         ) : undefined
       }

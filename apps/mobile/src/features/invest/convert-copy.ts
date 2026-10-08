@@ -4,8 +4,8 @@ import type { BuyFailureKey } from './buy-model.ts'
 import type { ConvertMode, ConvertShare } from './conversion-watch.ts'
 
 /**
- * The words of the swap before the issuer's deadline and of the quiet sale
- * (canon v5.2 В27, §7; M19), in both languages — the web's own for the same
+ * The words of the swap before the issuer's deadline and of the quiet sale,
+ * in both languages — the web's own for the same
  * sheet (`invest-words.ts`), so the phone and ryntra.io say the same thing.
  * What the swap shares with a purchase — the wallet, the session, «Перевірка»'s
  * clock and signature, the receipt's links — is said in the purchase's words

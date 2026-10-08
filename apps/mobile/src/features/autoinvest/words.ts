@@ -2,8 +2,8 @@
  * How a rule is said — «Щотижня · чт о 19:00», «Щотижня $25 в NVIDIA», «чт,
  * 24 вер. о 19:00», «Якщо NVIDIA впаде на 5 % — докупити $20», «Округлення
  * кожної оплати до $1», «Накопичено $0,60 · нагадаю від $1», «Цього місяця
- * $45 з $100» — in both languages (canon v5.1 §4.1: «Автоінвест» ·
- * «Щотижня» · «Якщо впаде на 5 %» · «Бюджет місяця»; v5.5 В38: «З кожної
+ * $45 з $100» — in both languages («Автоінвест» ·
+ * «Щотижня» · «Якщо впаде на 5 %» · «Бюджет місяця»; v5.5 : «З кожної
  * оплати»; never DCA, trigger or «купує автоматично»). The web line's own
  * phrases (`lib/autoinvest/words.ts`, `app/app/invest/invest-words.ts`), so
  * the reminder a person gets and the rule they set on the phone say the same
@@ -73,7 +73,7 @@ export function dipLine(dropPct: number, locale: Locale): string {
 /**
  * «Округлення кожної оплати до $1» · «$2 з кожної оплати» · «10 % з кожного
  * надходження»; «Round every payment up to $1» · «$2 from every payment» ·
- * «10% of every incoming transfer» (1.19.0; canon v5.5 В38, §4.1).
+ * «10% of every incoming transfer» (1.19.0.
  */
 export function paymentsLine(payments: PaymentTerms, locale: Locale): string {
   if (payments.mode === 'percent')
@@ -126,8 +126,10 @@ export function setAsideExample(
   return `A ${dollarsText(amountUsd, 'en')} ${direction === 'out' ? 'payment' : 'incoming transfer'} → ${dollarsText(addUsd, 'en')} into ${name}`
 }
 
-/** A price per unit: «$335,95» · «$335.95»; under a dollar, four places. */
+/** A price per unit: «$335,95» · «$335.95»; under a dollar, four places; under a cent (a meme, 1.31.0), four significant digits — «$0.00001834». The web's own. */
 export function priceWord(usd: number, locale: Locale): string {
+  if (usd > 0 && usd < 0.01)
+    return `$${new Intl.NumberFormat(numberTag(locale), { maximumSignificantDigits: 4, minimumSignificantDigits: 2 }).format(usd)}`
   const places = usd >= 1 ? 2 : 4
   return `$${new Intl.NumberFormat(numberTag(locale), { minimumFractionDigits: places, maximumFractionDigits: places }).format(usd)}`
 }
@@ -185,7 +187,7 @@ export function dayWords(atMs: number, timeZone: string, locale: Locale): string
 }
 
 /**
- * The month as its bar says it (canon §4.1: «$45 з $100»): «Цього місяця $45 з
+ * The month as its bar says it («$45 з $100»): «Цього місяця $45 з
  * $100» · «This month $45 of $100»; without a ceiling «Цього місяця $0 · без
  * стелі». What the month has taken counts the purchases still on their way,
  * as the server does.
@@ -202,7 +204,7 @@ export function monthWords(
 }
 
 /**
- * The budget's own line, read whole (canon v5.3 В29): «Бюджет не задано» ·
+ * The budget's own line, read whole: «Бюджет не задано» ·
  * «No budget set»; «Бюджет місяця $10 з $50» · «Monthly budget $10 of $50» —
  * what the month has taken counting the purchases still on their way.
  */

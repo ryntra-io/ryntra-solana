@@ -20,7 +20,7 @@ export type HoldingSheetProps = {
   now: number
   locale: Locale
   copy: PortfolioCopy
-  /** The issuer's window on this token (M19): its line, and the swap and the sale that replace a plain Sell. */
+  /** The issuer's window on this token: its line, and the swap and the sale that replace a plain Sell. */
   event?: RowEvent | null
   onClose: () => void
   /** A company's position sold on its own sheet, as on its page; crypto is sold in Trade. */
@@ -31,7 +31,7 @@ export type HoldingSheetProps = {
  * One position, one tap deep: its figures with their time, its state, and
  * the doors that are really open for it — the asset, a Buy, a Sell, its
  * history, a plan on a listed stock. A door the venue does not offer is not
- * drawn (one version since canon v5.3 В28: the plan is a quiet door here for
+ * drawn (one version since: the plan is a quiet door here for
  * everyone).
  */
 export function HoldingSheet({ row, observedAt, now, locale, copy, event = null, onClose, onSell }: HoldingSheetProps) {
@@ -54,7 +54,7 @@ export function HoldingSheet({ row, observedAt, now, locale, copy, event = null,
       <View className="flex-row items-center gap-3 pb-2">
         <AssetIcon symbol={row.symbol} icon={row.icon} size={48} />
         <View className="flex-1 gap-1">
-          <Txt variant="dataLg">{row.value === null ? DASH : formatUsd(row.value)}</Txt>
+          <Txt variant="dataLg">{row.value === null ? DASH : formatUsd(row.value, locale)}</Txt>
           <View className="flex-row flex-wrap gap-1.5">
             <Chip label={copy.groups[row.group]} />
             {row.verified === true ? <Chip label={copy.verified} tone="success" /> : null}
@@ -72,19 +72,19 @@ export function HoldingSheet({ row, observedAt, now, locale, copy, event = null,
       {spendableDiffers ? (
         <FactRow
           label={copy.spendable}
-          value={`${amountTextOf(shownRaw(row.spendableRaw, row.multiplier), row.decimals)} ${row.symbol}`}
+          value={`${amountTextOf(shownRaw(row.spendableRaw, row.multiplier), row.decimals, locale)} ${row.symbol}`}
         />
       ) : null}
       <FactRow
         label={copy.value}
-        value={row.value === null ? DASH : formatUsd(row.value)}
+        value={row.value === null ? DASH : formatUsd(row.value, locale)}
         detail={row.value === null ? copy.unpriced : at}
         tone={row.value === null ? 'muted' : 'fg'}
       />
-      <FactRow label={copy.price} value={formatPrice(row.price)} detail={row.price === null ? null : at} />
+      <FactRow label={copy.price} value={formatPrice(row.price, locale)} detail={row.price === null ? null : at} />
       <FactRow
         label={copy.change24h}
-        value={formatPercent(row.dayChangePct)}
+        value={formatPercent(row.dayChangePct, locale)}
         tone={
           row.dayChangePct === null
             ? 'muted'
