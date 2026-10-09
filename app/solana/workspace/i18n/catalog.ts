@@ -2064,7 +2064,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "The outcome is not resolved yet. The signature is never submitted again; it is read until the chain answers.":
     "Результат ще не з'ясовано. Підпис ніколи не надсилається вдруге; його читають, доки ланцюг не відповість.",
   "Receipt facts were withheld": "Факти квитанції не видано",
-  "Slippage": "Slippage",
+  "Slippage": "Сліпедж",
   "Evidence & sharing": "Evidence і поширення",
   "fresh for Review until": "свіже для Review до",
   "All rules, with evidence": "Усі правила, з evidence",
@@ -2504,7 +2504,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Use 0.5 USDC": "Використати 0.5 USDC",
   "SOLANA MAINNET · real funds": "SOLANA MAINNET · реальні кошти",
   "Exact wallet": "Точний wallet",
-  "Provider": "Provider",
+  "Provider": "Провайдер",
   "Owner-canary checks allow this exact Review.": "Перевірки owner canary дозволяють саме цей Review.",
   "Sending is paused by the owner-canary policy. No transaction can be signed.":
     "Переказ призупинено політикою owner canary. Жодну транзакцію не можна підписати.",

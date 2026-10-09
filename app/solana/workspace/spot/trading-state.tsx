@@ -82,7 +82,7 @@ export function TradingState({
   return (
     <section className={`${styles.panel} ${styles.state}`} aria-label={text("Trading state")}>
       {pro ? (
-        <div className={styles.stateTabs} role="tablist">
+        <div className={styles.stateTabs} data-dense role="tablist">
           <button type="button" role="tab" className={styles.stateTab} aria-selected={tab === "holding"} onClick={() => setTab("holding")}>{text("Holding")}</button>
           <button type="button" role="tab" className={styles.stateTab} aria-selected={tab === "fills"} onClick={() => setTab("fills")}>
             {text("Recent fills")}{rows.length > 0 ? ` · ${rows.length}` : ""}

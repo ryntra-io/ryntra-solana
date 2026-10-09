@@ -86,8 +86,8 @@ export function SpotChart({
       PRICE_MISMATCH: text("The pool's price does not agree with the market price of this asset."),
     };
     return (
-      <section className={`${styles.panel} ${styles.chart}`} aria-label={text("Chart")}>
-        <div className={styles.chartState}>
+      <section className={`${styles.panel} ${styles.chart}`} aria-label={text("Chart")} data-terminal-chart data-dense>
+        <div className={styles.chartState} data-chart-state>
           <div>
             <b>{candles.status === "none" ? text("Chart unavailable") : text("The chart is unavailable right now")}</b>
             {candles.status === "none"
@@ -100,7 +100,7 @@ export function SpotChart({
   }
 
   return (
-    <section className={`${styles.panel} ${styles.chart}`} aria-label={text("Chart")}>
+    <section className={`${styles.panel} ${styles.chart}`} aria-label={text("Chart")} data-terminal-chart data-dense>
       <ProChart
         candles={rows}
         symbolLabel={symbol}

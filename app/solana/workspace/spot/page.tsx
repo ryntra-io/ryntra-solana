@@ -1,7 +1,6 @@
 import { PLAN_ID, RULE_ID, type ExecutionPlanBinding, type RuleBinding } from "@/lib/api/v1/contract";
 import { isSpotView, type SpotView } from "@/lib/spot/markets";
 
-import { PageHead } from "../hub/parts.tsx";
 import { solanaServerText } from "../i18n/server.ts";
 import { SpotWorkspace } from "./spot-workspace.tsx";
 
@@ -43,9 +42,12 @@ export default async function SpotPage({ searchParams }: { searchParams: Promise
   /* A rule's reminder: a well-formed rule id and an instant, or nothing. */
   const dueMs = params.due ? Date.parse(params.due) : Number.NaN;
   const rule: RuleBinding | null = mint && params.rule && RULE_ID.test(params.rule) && Number.isFinite(dueMs) ? { ruleId: params.rule, dueAt: new Date(dueMs).toISOString() } : null;
+  const { text } = await solanaServerText();
+  /* The section's tab «Спот» above already names the page; the title stays for a screen reader and gives its
+     line on a laptop to the chart. */
   return (
     <>
-      <PageHead title="Spot" />
+      <h1 className="sr-only">{text("Spot")}</h1>
       <SpotWorkspace initialMint={mint} initialView={view} initialPlan={plan} initialSide={side} initialAmount={amount} initialRule={rule} />
     </>
   );

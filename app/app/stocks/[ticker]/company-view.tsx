@@ -195,7 +195,7 @@ export function CompanyView({ locale, asset, target = null, counterpart = null, 
         </div>
 
         <aside className={company.aside} aria-label={word("buy")}>
-          <div className={company.asideStick}>
+          <div className={company.asideStick} data-terminal-aside>
             <div className={company.buyCard}>
               <p className={company.buyTitle}>{`${word("buyCompany")} ${name}`}</p>
               {preIpo ? null : (

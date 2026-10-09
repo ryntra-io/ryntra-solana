@@ -291,6 +291,18 @@ export function OrderTicket({
   }, [amount, side, scaledBase, baseDecimals]);
   const ticket = useSpotTicket({ connection, side, baseMint, baseDecimals, baseSymbol, quote, amount: hookAmount, planBinding: underPlan ? planBinding : null, ruleBinding: underRule ? ruleBinding : null, text, onSettled: () => { onSettled(); void rulesRead.reload(); }, onRefresh });
   const { inputMint, inputDecimals, outputDecimals, quoted, quoting, phase, prepared, settled, attempt } = ticket;
+  /* A Review longer than a laptop's ticket opens at its own head — the countdown, then the four answers, just above
+     «Підписати» — never half a row of the lines before it; a phone's ticket does not scroll on its own and is left
+     where the person is. */
+  const ticketRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const node = ticketRef.current;
+    if (phase !== "REVIEW" || !prepared || !node || node.scrollHeight <= node.clientHeight + 1) return;
+    const head = node.querySelector<HTMLElement>("[data-review-head]");
+    const top = head ? head.getBoundingClientRect().top - node.getBoundingClientRect().top + node.scrollTop - parseFloat(getComputedStyle(node).paddingTop) : node.scrollHeight;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    node.scrollTo({ top, behavior: reduce ? "auto" : "smooth" });
+  }, [phase, prepared]);
 
   const inputHolding = inputMint ? holdingOf(holdings, inputMint) : null;
   const inputSymbol = side === "BUY" ? quote.symbol : baseSymbol;
@@ -466,7 +478,7 @@ export function OrderTicket({
   /* A token Ryntra no longer supports: no side of it trades here — the ticket says where it can be sold, and nothing else. A settled or recovering trade still shows its answer. */
   if (!availability.allowed && phase !== "SETTLED" && action !== "RECOVER") {
     return (
-      <section className={`${styles.panel} ${styles.ticket}`} aria-label={text("Order ticket")} data-retired>
+      <section className={`${styles.panel} ${styles.ticket}`} aria-label={text("Order ticket")} data-retired data-terminal-ticket>
         <p className={styles.retiredNotice} role="status">
           <b>{text("No longer supported in Ryntra")}</b>
           <span>{text("You can sell it in your own wallet")}</span>
@@ -476,9 +488,9 @@ export function OrderTicket({
   }
 
   return (
-    <section className={`${styles.panel} ${styles.ticket}`} aria-label={text("Order ticket")}>
+    <section ref={ticketRef} className={`${styles.panel} ${styles.ticket}`} aria-label={text("Order ticket")} data-terminal-ticket>
       {phase === "SETTLED" && settled && outcome ? (
-        <div className={styles.settled} data-kind={outcome.kind} data-tone={settledTone} role="status">
+        <div className={styles.settled} data-settled data-kind={outcome.kind} data-tone={settledTone} role="status">
           <div className={styles.settledMark} data-tone={settledTone} aria-hidden="true">
             {settledTone === "matched" ? <CheckCircle size={26} weight="fill" /> : settledTone === "risk" ? <XCircle size={26} weight="fill" /> : <Warning size={26} weight="fill" />}
           </div>
@@ -567,6 +579,7 @@ export function OrderTicket({
           <div className={styles.ticketRow}>
             <div
               className={styles.orderTypes}
+              data-dense
               role="tablist"
               aria-label={text("Order type")}
               onKeyDown={(event) => {
@@ -653,7 +666,7 @@ export function OrderTicket({
           <BudgetSheet open={budgetOpen} budget={rulesRead.state.budget} locale={locale} onClose={() => setBudgetOpen(false)} onSave={rulesRead.setBudget} onClear={rulesRead.clearBudget} />
           {orderType === "market" ? (
           <>
-          <div className={styles.sides} role="group" aria-label={text("Side")}>
+          <div className={styles.sides} data-dense role="group" aria-label={text("Side")}>
             {(["BUY", "SELL"] as const).map((entry) => (
               <button
                 key={entry}
@@ -717,10 +730,11 @@ export function OrderTicket({
             </div>
             {/* The dollar value of what is typed, wherever it is not a dollar already. */}
             {inputUsd !== null && (side === "SELL" || quote.symbol !== "USDC") ? <span className={styles.usdLine}>≈ {formatUsdPrice(inputUsd, locale)}</span> : null}
-            {connection && !underRule ? (
-              <div className={styles.quickFills}>
+            {/* A Review fixes the amount: the shares leave it, and its answers stand closer to «Підписати». */}
+            {connection && !underRule && phase !== "REVIEW" ? (
+              <div className={styles.quickFills} data-quick-fills data-dense>
                 {([["25%", 1n, 4n], ["50%", 1n, 2n], ["75%", 3n, 4n], ["MAX", 1n, 1n]] as const).map(([label, numerator, denominator]) => (
-                  <button key={label} type="button" disabled={!inputHolding || holdings.status !== "ready" || busy || phase === "REVIEW"} onClick={() => fillShare(numerator, denominator)}>
+                  <button key={label} type="button" disabled={!inputHolding || holdings.status !== "ready" || busy} onClick={() => fillShare(numerator, denominator)}>
                     {label}
                   </button>
                 ))}
@@ -838,7 +852,7 @@ export function OrderTicket({
           ) : null}
 
           {phase === "REVIEW" && prepared ? (
-            <div className={styles.reviewHead}>
+            <div className={styles.reviewHead} data-review-head>
               <b>{ticket.preparedReadiness?.ready ? text("Exact Review") : text("Review needs refreshing")}</b>
               <span>{ticket.reviewSecondsLeft === null ? "…" : ticket.reviewSecondsLeft > 0 ? `${ticket.reviewSecondsLeft}s` : text("expired")}</span>
             </div>
@@ -893,18 +907,21 @@ export function OrderTicket({
           {/* A rule's reminder open for this token: a purchase here leaves it open — said before the action, with the way to the rule's own purchase. */}
           {connection && side === "BUY" && !ruleBinding ? <RuleReminderNotice mint={baseMint} proven={proven} locale={locale} className={styles.ruleReminder} onBuy={!isStockMarket ? onRuleBuy : undefined} /> : null}
 
-          {!connection && !attempt ? (
-            <WalletConnectRow />
-          ) : (
-            <button type="button" className={styles.cta} disabled={cta.disabled} onClick={cta.onClick}>
-              {cta.label}
-            </button>
-          )}
-          {connection && phase === "REVIEW" && prepared && !ticket.bytesChanged ? (
-            <button type="button" className={styles.secondary} onClick={() => void ticket.cancelReview()} disabled={busy}>
-              {text("Cancel")}
-            </button>
-          ) : null}
+          {/* The order's actions: on a desk they stay at the foot of the ticket while a long Review scrolls under them. */}
+          <div className={styles.ticketActions}>
+            {!connection && !attempt ? (
+              <WalletConnectRow />
+            ) : (
+              <button type="button" className={styles.cta} data-terminal-cta data-dense disabled={cta.disabled} onClick={cta.onClick}>
+                {cta.label}
+              </button>
+            )}
+            {connection && phase === "REVIEW" && prepared && !ticket.bytesChanged ? (
+              <button type="button" className={styles.secondary} data-dense onClick={() => void ticket.cancelReview()} disabled={busy}>
+                {text("Cancel")}
+              </button>
+            ) : null}
+          </div>
           {availability.allowed && availability.notice === "ISSUER_TERMS" ? (
             <p className={styles.issuerLine}>
               {issuerLine ? <>{text("Tokenized by")} {issuerLine} · </> : null}{text("the issuer's terms apply")}

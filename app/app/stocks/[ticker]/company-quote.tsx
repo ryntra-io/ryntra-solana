@@ -1,8 +1,9 @@
 "use client";
 
-import { useId, useMemo, useState, type PointerEvent, type ReactNode } from "react";
+import { useId, useMemo, useRef, useState, type PointerEvent, type ReactNode } from "react";
 
 import { moneyChange } from "@/app/app/invest/company-facts-model";
+import { useFitHeight } from "@/app/components/chart/use-fit-height";
 import { anchorPoints, changePct, CHART_RANGES, dayAgoPrice, despike, historyStartsLate, lineGeometry, MIN_SPAN_RATIO, nearestIndex, RANGE_SOURCE, rangePoints, type ChartRange } from "@/app/app/invest/company-model";
 import { investWords, numberLocale, type InvestWord } from "@/app/app/invest/invest-words";
 import { LocalClock } from "@/app/app/invest/local-clock";
@@ -55,6 +56,9 @@ export function CompanyQuote({ mint, name, price, dayChangePct, locale, premium 
   const numbers = numberLocale(locale);
   const [range, setRange] = useState<ChartRange>(defaultRange);
   const [pointer, setPointer] = useState<number | null>(null);
+  /* On a desk the line takes what the first screen leaves under the price, its ranges still in view. */
+  const quoteRef = useRef<HTMLDivElement>(null);
+  useFitHeight(quoteRef, { target: "[data-terminal-chart]", tail: "[data-chart-foot]", variable: "--company-fit", min: 280, max: 560 });
   const candles = useSpotCandles(mint, RANGE_SOURCE[range].timeframe);
   const gradient = `cq${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
 
@@ -94,7 +98,7 @@ export function CompanyQuote({ mint, name, price, dayChangePct, locale, premium 
   const noPool = candles.status === "none" && candles.code !== "STALE" && candles.code !== "PRICE_MISMATCH";
 
   return (
-    <div className={company.quote}>
+    <div ref={quoteRef} className={company.quote}>
       <p className={company.price} translate="no" aria-live={hovered ? "off" : "polite"}>
         {formatUsdPrice(shownPrice, numbers)}
       </p>
@@ -115,6 +119,7 @@ export function CompanyQuote({ mint, name, price, dayChangePct, locale, premium 
 
       <div
         className={company.chart}
+        data-terminal-chart
         data-tone={lineTone}
         data-state={loading ? "loading" : empty ? "empty" : "ready"}
         onPointerMove={read}
@@ -152,9 +157,9 @@ export function CompanyQuote({ mint, name, price, dayChangePct, locale, premium 
         )}
       </div>
 
-      <div className={company.chartFoot}>
+      <div className={company.chartFoot} data-chart-foot data-dense>
         {noPool ? null : (
-          <div className={company.ranges} role="group" aria-label={word("chartRange")}>
+          <div className={company.ranges} data-ranges role="group" aria-label={word("chartRange")}>
             {CHART_RANGES.map((entry) => (
               <button
                 key={entry}

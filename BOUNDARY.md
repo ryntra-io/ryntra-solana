@@ -9,10 +9,10 @@ moved counts as new. Generated at every update from the development history.
 
 | Since the tag | Files |
 |---|---|
-| New | 1,313 |
-| Changed | 820 |
-| Unchanged | 915 |
-| Lines added / removed | +337,106 / −20,249 |
+| New | 1,314 |
+| Changed | 821 |
+| Unchanged | 914 |
+| Lines added / removed | +337,413 / −20,300 |
 
 ## New since the tag
 
@@ -364,6 +364,7 @@ moved counts as new. Generated at every update from the development history.
 - `app/brand/page-card.ts`
 - `app/brand/page-og.tsx`
 - `app/company/company-copy.ts`
+- `app/components/chart/use-fit-height.ts`
 - `app/contact/contact-copy.ts`
 - `app/developers/developers-copy.ts`
 - `app/docs/[...slug]/page.tsx`
@@ -1690,6 +1691,7 @@ moved counts as new. Generated at every update from the development history.
 - `app/solana/workspace/spot/market-list.tsx`
 - `app/solana/workspace/spot/order-ticket.tsx`
 - `app/solana/workspace/spot/page.tsx`
+- `app/solana/workspace/spot/spot-chart.tsx`
 - `app/solana/workspace/spot/spot-format.ts`
 - `app/solana/workspace/spot/spot-workspace.tsx`
 - `app/solana/workspace/spot/spot.module.css`

@@ -13,7 +13,10 @@
 .ry-product .rs-brand .ryntra-brand { font-size: var(--ry-fs-h2); }
 .ry-product .rs-page, .ry-product .so-head { margin-bottom: 24px; }
 .ry-product .rs-page h1, .ry-product .so-title { font-family: var(--ry-font-sans); font-size: clamp(1.5rem, 2.5vw, 2rem); line-height: 1.2; letter-spacing: -0.02em; }
-.ry-product .rw-btn, .ry-product button:not(.rs-panel-grip):not(.rs-menu-backdrop) { min-height: 44px; }
+/* 44 px for a finger everywhere — except a desk tool's dense controls (`data-dense`: the terminal's timeframes,
+   25/50/75/MAX, its tabs), which keep their own size and take 44 px from their own sheet under a finger. The exclusion
+   weighs nothing (`:where`), so every other rule keeps the weight it had against this one. */
+.ry-product .rw-btn, .ry-product button:not(.rs-panel-grip):not(.rs-menu-backdrop):not(:where([data-dense], [data-dense] button)) { min-height: 44px; }
 .ry-product .rs-canvas { padding-bottom: 32px; }
 .ry-product .rs-canvas > * { min-width: 0; }
 /* Secondary is the default control: surface, a subtle border, primary ink;
@@ -84,7 +87,7 @@
 .ry-product .ry-settings-option:hover { background: var(--ry-hover); }
 .ry-product .ry-settings-option[aria-pressed="true"] { background: var(--ry-brand-soft); border-color: var(--ry-iris); color: var(--ry-accent-fg); font-weight: 600; }
 .ry-product .ry-action-link { display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; color: var(--ry-text); text-underline-offset: 4px; }
-.ry-product main button, .ry-product main a { min-width: 44px; }
+.ry-product main button:not(:where([data-dense], [data-dense] button)), .ry-product main a:not(:where([data-dense] a)) { min-width: 44px; }
 .ry-product .rs-nav a { min-height: 44px; }
 .ry-product .ry-plan-list { list-style: none; margin: 0 0 20px; padding: 0; }
 .ry-product .ry-plan-list li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; padding: 16px 0; border-bottom: 1px solid var(--ry-border); }

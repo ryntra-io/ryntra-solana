@@ -99,7 +99,7 @@ test("Spot says it too: a purchase there leaves the reminder open, with the way 
   assert.match(TICKET, /import \{ RuleReminderNotice \} from "@\/app\/app\/invest\/rule-reminder-notice"/);
   /* 1.31.0: not while the ticket is the rule's own purchase; on a token, the purchase opens in place. */
   assert.match(TICKET, /connection && side === "BUY" && !ruleBinding \? <RuleReminderNotice mint=\{baseMint\} proven=\{proven\} locale=\{locale\} className=\{styles\.ruleReminder\} onBuy=\{!isStockMarket \? onRuleBuy : undefined\} \/> : null/);
-  assert.ok(TICKET.indexOf("<RuleReminderNotice") < TICKET.indexOf("className={styles.cta} disabled={cta.disabled}"), "said before the action");
+  assert.ok(TICKET.indexOf("<RuleReminderNotice") < TICKET.indexOf("className={styles.cta} data-terminal-cta data-dense disabled={cta.disabled}"), "said before the action");
   assert.match(NOTICE, /useAutoinvestRules\(proven\)/);
   assert.match(NOTICE, /reminderOpenNow\(rule, nowMs\)/);
   assert.match(NOTICE, /word\("reminderOpenHere"\)[\s\S]*word\("plainHereLeavesOpen"\)[\s\S]*rulePurchaseHref\(rule, due\.dueAt\)[\s\S]*buyByRuleWord\(locale, purchaseSumUsd\(rule, due\)\)/);

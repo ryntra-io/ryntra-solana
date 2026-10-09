@@ -9,6 +9,7 @@ import type { SpotMarketListRow, SpotView } from "@/lib/spot/markets";
 import { isSpotView } from "@/lib/spot/markets";
 
 import { LensPanel } from "@/app/app/lens/lens-panel";
+import { useFitHeight } from "@/app/components/chart/use-fit-height";
 
 import { useSolanaConnection } from "../connection.tsx";
 import { EvidenceCard } from "../evidence/evidence-card.tsx";
@@ -114,6 +115,13 @@ export function SpotWorkspace({
   const [timeframe, setTimeframe] = useSpotTimeframe();
   const sheetRef = useRef<HTMLDivElement>(null);
   const workspaceRef = useRef<HTMLDivElement>(null);
+  /* The chart takes what the first screen has left under the header — a desk's stylesheet reads it, a phone keeps its own height. */
+  /* The margin under the canvas is the chart panel's own foot — its padding and border — and a breath of the canvas's gap;
+     a short window (720 px) with a tall header — a company's token, a meme — gets a shorter chart rather than one under its edge. */
+  useFitHeight(workspaceRef, { target: `.${typeof CSS === "undefined" ? styles.chartCanvas : CSS.escape(styles.chartCanvas)}, [data-chart-state]`, variable: "--spot-fit", min: 240, margin: 21 });
+  /* And the ticket ends on the first screen too, where it stands before the page scrolls: measured from the header,
+     which starts on the same row and never sticks, so a scrolled page does not shrink it. */
+  useFitHeight(workspaceRef, { target: "[data-terminal-header]", variable: "--spot-ticket-fit", min: 320, max: 4000, margin: 12 });
 
   useEffect(() => {
     if (initialView) return;
@@ -224,61 +232,66 @@ export function SpotWorkspace({
     />
   );
 
+  /* The frame is the layout's measure: Spot lays out by the width it is given beside the menu, not by the window's. */
   return (
-    <div ref={workspaceRef} className={styles.workspace} data-depth={depth}>
-      {pro ? (
-        <aside className={`${styles.panel} ${styles.markets}`} aria-label={text("Markets")}>
-          <div className={styles.marketsInner}>{listPanel}</div>
-        </aside>
-      ) : null}
+    <>
+      <div className={styles.frame}>
+        <div ref={workspaceRef} className={styles.workspace} data-depth={depth}>
+          {pro ? (
+            <aside className={`${styles.panel} ${styles.markets}`} aria-label={text("Markets")} data-dense>
+              <div className={styles.marketsInner}>{listPanel}</div>
+            </aside>
+          ) : null}
 
-      <MarketHeader
-        state={market}
-        fallback={fallback}
-        starred={watchlist.has(selectedMint)}
-        onStar={() => watchlist.toggle(selectedMint)}
-        onOpenMarkets={() => setSheetOpen(true)}
-        showPicker
-        pro={pro}
-        pool={pool}
-      />
+          <MarketHeader
+            state={market}
+            fallback={fallback}
+            starred={watchlist.has(selectedMint)}
+            onStar={() => watchlist.toggle(selectedMint)}
+            onOpenMarkets={() => setSheetOpen(true)}
+            showPicker
+            pro={pro}
+            pool={pool}
+          />
 
-      <SpotChart symbol={symbol} candles={candles} timeframe={timeframe} onTimeframe={setTimeframe} pro={pro} />
+          <SpotChart symbol={symbol} candles={candles} timeframe={timeframe} onTimeframe={setTimeframe} pro={pro} />
 
-      {/* The two sensors of the selected token, on request — what the market did and how the token is built; a rule of the plan only where a plan can be made — a stock representation. */}
-      <div className={styles.evidence}>
-        <EvidenceCard key={selectedMint} mint={selectedMint} locale={locale} planHref={marketValue?.category === "stock" ? `/app/strategies/new?mint=${encodeURIComponent(selectedMint)}` : null} />
-        <RiskCard
-          key={`risk-${selectedMint}`}
-          mint={selectedMint}
-          locale={locale}
-          planHref={marketValue?.category === "stock" ? `/app/strategies/new?mint=${encodeURIComponent(selectedMint)}` : null}
-          assetKind={marketValue?.category === "stock" ? "issuer-backed" : marketValue?.category === "meme" ? "meme" : marketValue?.category === "crypto" ? "crypto" : "unknown"}
-        />
-        {/* The Brief on the selected token, and the Critic on request — the person's own plan, record and the token's structure, before the ticket. Closed until *Ask Ryntra* under Asset details is pressed, and then a full-width row of this same area: a second box on the `evidence` grid area drew over the Risk card. */}
-        <LensPanel key={`lens-${selectedMint}`} subject={symbol ? { kind: "asset", mint: selectedMint, symbol } : { kind: "asset", mint: selectedMint }} locale={locale} trigger="page" frameClassName={styles.lensRow} />
+          {/* The two sensors of the selected token, on request — what the market did and how the token is built; a rule of the plan only where a plan can be made — a stock representation. */}
+          <div className={styles.evidence}>
+            <EvidenceCard key={selectedMint} mint={selectedMint} locale={locale} planHref={marketValue?.category === "stock" ? `/app/strategies/new?mint=${encodeURIComponent(selectedMint)}` : null} />
+            <RiskCard
+              key={`risk-${selectedMint}`}
+              mint={selectedMint}
+              locale={locale}
+              planHref={marketValue?.category === "stock" ? `/app/strategies/new?mint=${encodeURIComponent(selectedMint)}` : null}
+              assetKind={marketValue?.category === "stock" ? "issuer-backed" : marketValue?.category === "meme" ? "meme" : marketValue?.category === "crypto" ? "crypto" : "unknown"}
+            />
+            {/* The Brief on the selected token, and the Critic on request — the person's own plan, record and the token's structure, before the ticket. Closed until *Ask Ryntra* under Asset details is pressed, and then a full-width row of this same area: a second box on the `evidence` grid area drew over the Risk card. */}
+            <LensPanel key={`lens-${selectedMint}`} subject={symbol ? { kind: "asset", mint: selectedMint, symbol } : { kind: "asset", mint: selectedMint }} locale={locale} trigger="page" frameClassName={styles.lensRow} />
+          </div>
+
+          <OrderTicket
+            market={marketValue}
+            fallback={fallback ? { mint: fallback.mint, symbol: fallback.symbol, decimals: fallback.decimals, icon: fallback.icon, category: fallback.category } : null}
+            holdings={holdings}
+            onSettled={settled}
+            onRefresh={refresh}
+            pro={pro}
+            planBinding={planBinding}
+            initialSide={initialSide}
+            initialAmount={initialAmount}
+            proven={proven}
+            proving={proof.state.status === "signing"}
+            onProve={() => void proof.prove()}
+            onLeavePlan={leavePlan}
+            ruleBinding={ruleBinding}
+            onRuleBuy={buyByRule}
+            onLeaveRule={leaveRule}
+          />
+
+          <TradingState market={marketValue} holdings={holdings} fills={fills} pro={pro} onRefresh={refresh} />
+        </div>
       </div>
-
-      <OrderTicket
-        market={marketValue}
-        fallback={fallback ? { mint: fallback.mint, symbol: fallback.symbol, decimals: fallback.decimals, icon: fallback.icon, category: fallback.category } : null}
-        holdings={holdings}
-        onSettled={settled}
-        onRefresh={refresh}
-        pro={pro}
-        planBinding={planBinding}
-        initialSide={initialSide}
-        initialAmount={initialAmount}
-        proven={proven}
-        proving={proof.state.status === "signing"}
-        onProve={() => void proof.prove()}
-        onLeavePlan={leavePlan}
-        ruleBinding={ruleBinding}
-        onRuleBuy={buyByRule}
-        onLeaveRule={leaveRule}
-      />
-
-      <TradingState market={marketValue} holdings={holdings} fills={fills} pro={pro} onRefresh={refresh} />
 
       {sheetOpen ? (
         <div className={styles.sheetBackdrop} onClick={(event) => { if (event.target === event.currentTarget) setSheetOpen(false); }}>
@@ -293,6 +306,6 @@ export function SpotWorkspace({
           </div>
         </div>
       ) : null}
-    </div>
+    </>
   );
 }

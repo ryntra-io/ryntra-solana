@@ -1,17 +1,30 @@
 /* Spot — one trading canvas.
-   Tokens only (DESIGN.md → app/design/tokens.css). Three columns on a wide
-   screen — Markets · Market · Order ticket — with the trading state under the
-   market; Simple drops the market column for a picker; a phone stacks the
-   same panels in the order a person acts. */
+   Tokens only (DESIGN.md → app/design/tokens.css). Laid out by the width the
+   canvas gives it beside the menu, never by the window's: three columns —
+   Markets · Market · Order ticket — where the canvas is wide, the chart and
+   the ticket with the markets one press away on a laptop, a phone stacking
+   the same panels in the order a person acts. The trading state stands under
+   the market. */
+
+/* The measure: the canvas's width beside the menu. A laptop of 1280–1536 px
+   gives Spot 970–1220 px, which the window's width never said. */
+.frame {
+  container: spot / inline-size;
+  min-width: 0;
+}
 
 .workspace {
   /* Measured on a 2 300 px screen (2026-09-11): 296 and 344 px
      beside a 1 600 px chart read as two gutters, the category switch
-     clipped and every second line truncated. The side columns now follow
-     the screen and the chart grows with the window, within bounds. */
-  --spot-list: clamp(288px, 17.5vw, 400px);
-  --spot-ticket: clamp(336px, 19vw, 440px);
-  --spot-chart-h: clamp(420px, 44vh, 600px);
+     clipped and every second line truncated. The side columns follow the
+     canvas and the chart takes the rest. On a desk the chart is as tall as
+     the first screen leaves it (`--spot-fit`, measured by the page); a phone
+     keeps its own height. Measured on laptops (2026-10-09): 248–496 px wide
+     and under the first screen before; the chart is now the widest panel and
+     ends on the first screen. */
+  --spot-list: clamp(280px, 20cqi, 400px);
+  --spot-ticket: clamp(340px, 24cqi, 440px);
+  --spot-chart-h: var(--spot-fit, clamp(360px, 52vh, 640px));
   display: grid;
   grid-template-columns: var(--spot-list) minmax(0, 1fr) var(--spot-ticket);
   grid-template-rows: auto minmax(0, 1fr) auto auto;
@@ -422,9 +435,46 @@
 .header {
   grid-area: header;
   display: grid;
-  gap: var(--ry-s3);
-  padding: var(--ry-s4);
+  gap: var(--ry-s2);
+  padding: var(--ry-s3) var(--ry-s4);
   min-width: 0;
+}
+
+/* Where the header has the room — a 1440–1536 px laptop beside the ticket, a wide desk beside the markets too —
+   it reads the market on one line: who it is, its price, the watch and the picker, the figures under it, so the
+   chart starts high on the first screen. A narrower header keeps two lines: a long name (a company's token, a
+   meme with two chips) keeps its place rather than being squeezed under the price. */
+@container spot ((min-width: 1072px) and (max-width: 1259px)) or (min-width: 1500px) {
+  .header {
+    grid-template-columns: minmax(min(280px, 100%), max-content) minmax(max-content, 1fr) auto;
+    align-items: center;
+    column-gap: var(--ry-s5);
+  }
+
+  .header > * {
+    grid-column: 1 / -1;
+  }
+
+  .header > .headerTop {
+    display: contents;
+  }
+
+  .header .identity {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .header > .priceRow {
+    grid-column: 2;
+    grid-row: 1;
+    flex-wrap: nowrap;
+    min-width: 0;
+  }
+
+  .header .headerActions {
+    grid-column: 3;
+    grid-row: 1;
+  }
 }
 
 .header > * {
@@ -557,7 +607,7 @@
 
 .price {
   font-family: var(--ry-font-mono);
-  font-size: var(--ry-fs-data-xl);
+  font-size: var(--ry-fs-key);
   font-weight: 500;
   line-height: var(--ry-lh-tight);
   letter-spacing: -0.02em;
@@ -567,8 +617,9 @@
 
 .change {
   font-family: var(--ry-font-mono);
-  font-size: var(--ry-fs-data-m);
+  font-size: var(--ry-fs-copy);
   font-weight: 500;
+  white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
 
@@ -581,9 +632,9 @@
 .stats {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--ry-s2) var(--ry-s5);
+  gap: var(--ry-s2) var(--ry-s3);
   margin: 0;
-  padding: var(--ry-s3) 0 0;
+  padding: var(--ry-s2) 0 0;
   border-top: 1px solid var(--ry-border);
 }
 
@@ -651,14 +702,14 @@
 
 .details {
   border-top: 1px solid var(--ry-border);
-  padding-top: var(--ry-s2);
+  padding-top: var(--ry-s1);
 }
 
 .details > summary {
   display: inline-flex;
   align-items: center;
   gap: var(--ry-s2);
-  min-height: 32px;
+  min-height: 28px;
   color: var(--ry-muted);
   font-size: var(--ry-fs-label);
   font-weight: 600;
@@ -758,7 +809,7 @@
   grid-area: chart;
   min-height: 0;
   min-width: 0;
-  padding: var(--ry-s3) var(--ry-s3) var(--ry-s2);
+  padding: var(--ry-s2) var(--ry-s3);
   display: grid;
   gap: var(--ry-s2);
   overflow: hidden;
@@ -770,7 +821,7 @@
 }
 
 .chart :global(.dm-tfs button) {
-  min-height: 30px;
+  min-height: 28px;
   padding: 0 var(--ry-s2);
   border: 1px solid transparent;
   border-radius: var(--ry-r-chip);
@@ -779,6 +830,19 @@
   font-family: var(--ry-font-mono);
   font-size: var(--ry-fs-label);
   cursor: pointer;
+}
+
+/* The drawing tools stand tighter than the shared chart's, and the chart library's mark moves to the pane's
+   right foot: a laptop's shorter canvas keeps the mark in view, never under the tools. */
+.chart :global(.dt-toolbar) {
+  top: var(--ry-s1);
+  gap: 0;
+  padding: 2px;
+}
+
+.chart :global(#tv-attr-logo) {
+  left: auto;
+  right: var(--ry-s2);
 }
 
 .chart :global(.dm-tfs button:hover) {
@@ -818,13 +882,19 @@
 
 /* ── Order ticket ─────────────────────────────────────────────────────── */
 
+/* Held in view under the top bar while the market scrolls, as Launch's column
+   is; a ticket taller than what the window leaves scrolls inside itself, so
+   its action is never under the window's edge. */
 .ticket {
   grid-area: ticket;
   display: grid;
-  gap: var(--ry-s4);
-  padding: var(--ry-s5);
+  gap: var(--ry-s3);
+  padding: var(--ry-s4);
   position: sticky;
-  top: var(--ry-s3);
+  top: calc(var(--rs-top, 64px) + var(--ry-s3));
+  max-height: var(--spot-ticket-fit, calc(100dvh - var(--rs-top, 64px) - 2 * var(--ry-s3)));
+  overflow-y: auto;
+  scrollbar-width: thin;
   min-width: 0;
 }
 
@@ -842,7 +912,7 @@
 }
 
 .side {
-  min-height: 44px;
+  min-height: 40px;
   border: 1px solid transparent;
   border-radius: var(--ry-r-btn-sm);
   background: transparent;
@@ -911,7 +981,7 @@
 }
 
 .orderTypeTab {
-  min-height: 40px;
+  min-height: 32px;
   padding: 0 var(--ry-s4);
   border: 0;
   border-radius: var(--ry-r-focus-md);
@@ -924,12 +994,6 @@
   transition: background 120ms ease-out, color 120ms ease-out;
 }
 
-/* A finger's size on a phone. */
-@media (max-width: 720px) {
-  .orderTypeTab {
-    min-height: 44px;
-  }
-}
 
 /* Held by the rule's purchase: the sum and the sale read as not for changing. */
 .amountInput:disabled,
@@ -971,8 +1035,8 @@
 
 .amountBox {
   display: grid;
-  gap: var(--ry-s3);
-  padding: var(--ry-s4);
+  gap: var(--ry-s2);
+  padding: var(--ry-s3);
   border: 1px solid var(--ry-border);
   border-radius: var(--ry-r-btn);
   background: var(--ry-bg);
@@ -1008,7 +1072,7 @@
   background: transparent;
   color: var(--ry-text);
   font-family: var(--ry-font-mono);
-  font-size: var(--ry-fs-h2);
+  font-size: var(--ry-fs-key);
   font-weight: 500;
   letter-spacing: -0.01em;
   line-height: 1.2;
@@ -1105,7 +1169,7 @@
 }
 
 .quickFills button {
-  min-height: 32px;
+  min-height: 28px;
   border: 1px solid var(--ry-border);
   border-radius: var(--ry-r-chip);
   background: transparent;
@@ -1171,7 +1235,7 @@
 .receiveLine {
   display: grid;
   gap: 2px;
-  padding: var(--ry-s4);
+  padding: var(--ry-s3) var(--ry-s4);
   border-radius: var(--ry-r-btn);
   background: var(--ry-elevated);
 }
@@ -1207,7 +1271,7 @@
 
 .cta {
   width: 100%;
-  min-height: 56px;
+  min-height: 48px;
   border: 0;
   border-radius: var(--ry-r-btn);
   background: var(--ry-iris-deep);
@@ -1218,6 +1282,26 @@
   letter-spacing: 0.01em;
   cursor: pointer;
   transition: background 140ms ease-out;
+}
+
+/* The order's actions. On a desk they stay at the foot of the ticket: a Review longer than a laptop's window
+   scrolls its lines under them, never «Підписати» itself. The strip takes the gaps around it in the card's own
+   colour — the layout does not move — and reaches the ticket's lower edge, so nothing shows under it. */
+.ticketActions {
+  display: grid;
+  gap: var(--ry-s3);
+  min-width: 0;
+}
+
+@container spot (min-width: 760px) {
+  .ticketActions {
+    position: sticky;
+    bottom: calc(-1 * var(--ry-s4));
+    z-index: 1;
+    margin-block: calc(-1 * var(--ry-s3));
+    padding-block: var(--ry-s3);
+    background: var(--ry-card);
+  }
 }
 
 .cta:hover:not(:disabled) {
@@ -1621,7 +1705,7 @@
 }
 
 .stateTab {
-  min-height: 36px;
+  min-height: 32px;
   padding: 0 var(--ry-s2);
   border: 0;
   border-bottom: 2px solid transparent;
@@ -1791,18 +1875,13 @@
   display: none;
 }
 
-/* ── Responsive ──────────────────────────────────────────────────────── */
+/* ── Responsive — by the canvas's width ──────────────────────────────── */
 
-@media (max-width: 1240px) {
-  .workspace {
-    --spot-list: 272px;
-    --spot-ticket: 320px;
-  }
-}
-
-@media (max-width: 1100px) {
+/* A laptop: the chart and the ticket; the markets one press away. */
+@container spot (max-width: 1259px) {
   .workspace,
   .workspace[data-depth="guided"] {
+    --spot-ticket: clamp(320px, 30cqi, 360px);
     grid-template-columns: minmax(0, 1fr) var(--spot-ticket);
     grid-template-areas:
       "header ticket"
@@ -1820,7 +1899,8 @@
   }
 }
 
-@media (max-width: 900px) {
+/* A phone, and a canvas as narrow: one column in the order a person acts. */
+@container spot (max-width: 759px) {
   .workspace,
   .workspace[data-depth="guided"] {
     --spot-chart-h: 300px;
@@ -1836,6 +1916,8 @@
 
   .ticket {
     position: static;
+    max-height: none;
+    overflow: visible;
   }
 
   .header,
@@ -1872,8 +1954,14 @@
   .details > summary,
   .view,
   .star,
+  .watchToggle,
+  .side,
   .stateTab,
+  .orderTypeTab,
   .quickFills button,
+  .quoteOption,
+  .chart :global(.dm-tfs button),
+  .chart :global(.pc-btn),
   .assetPill,
   .ghost,
   .copyButton {
@@ -1891,6 +1979,36 @@
     display: inline-flex;
     align-items: center;
     min-height: 44px;
+  }
+}
+
+/* A finger on a wide screen — a touch laptop, a tablet — gets the same 44 px;
+   a mouse keeps the desk's dense controls their own size. */
+@media (pointer: coarse) {
+  .details > summary,
+  .view,
+  .star,
+  .watchToggle,
+  .side,
+  .stateTab,
+  .orderTypeTab,
+  .quickFills button,
+  .quoteOption,
+  .chart :global(.dm-tfs button),
+  .chart :global(.pc-btn),
+  .assetPill,
+  .ghost,
+  .copyButton {
+    min-height: 44px;
+  }
+
+  .chart :global(.dt-toolbar button) {
+    width: 44px;
+    height: 44px;
+  }
+
+  .cta {
+    min-height: 56px;
   }
 }
 

@@ -65,7 +65,7 @@ export function MarketHeader({
   const age = market ? marketAgeDays(market, Date.now()) : null;
 
   return (
-    <section className={`${styles.panel} ${styles.header}`} aria-label={text("Market")}>
+    <section className={`${styles.panel} ${styles.header}`} aria-label={text("Market")} data-terminal-header>
       <div className={styles.headerTop}>
         <div className={styles.identity}>
           {mint ? <MarketIcon mint={mint} icon={icon} symbol={symbol || "?"} size={36} /> : null}

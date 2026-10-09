@@ -7,18 +7,21 @@
  * numerals, no mono, no capitals, no word under 13px.
  */
 
+/* The measure: the canvas's width beside the menu, not the window's. */
 .page {
   display: grid;
   gap: var(--ry-s5);
   width: 100%;
   min-width: 0;
+  container: company / inline-size;
 }
 
 /*
- * The company page, complete: laid out like Home from 1280 px — the company
- * in the main column (its head and line, then its facts), the purchase in a
- * card beside it that stays in view. Under 1280 one column:
- * the head and the line, the purchase, the facts — the order a phone reads.
+ * The company page, complete: laid out like Home where the canvas is 860 px
+ * and wider (a laptop of 1280 px gives 970) — the company in the main column
+ * (its head and line, then its facts), the purchase in a card beside it that
+ * stays in view under the top bar. Narrower, one column: the head and the
+ * line, the purchase, the facts — the order a phone reads.
  */
 .layout {
   display: flex;
@@ -51,10 +54,10 @@
   order: 4;
 }
 
-@media (min-width: 1280px) {
+@container company (min-width: 860px) {
   .layout {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) clamp(340px, 26vw, 420px);
+    grid-template-columns: minmax(0, 1fr) clamp(320px, 32cqi, 420px);
     grid-template-areas:
       "main aside"
       "facts aside";
@@ -74,12 +77,18 @@
     align-self: stretch;
   }
 
-  /* The purchase and the other companies stay in view while the facts scroll. */
+  /* The purchase and the other companies stay in view under the top bar while the facts scroll, as Launch's
+     column does; what the window cannot hold scrolls inside the column, so «Купити» and the position never
+     stand under its edge. */
   .asideStick {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--ry-s5);
     position: sticky;
-    top: var(--ry-s5);
+    top: calc(var(--rs-top, 64px) + var(--ry-s5));
+    max-height: calc(100dvh - var(--rs-top, 64px) - 2 * var(--ry-s5));
+    overflow-y: auto;
+    scrollbar-width: thin;
   }
 
   .layout > .facts2 {
@@ -588,11 +597,28 @@ a.pathChip:focus-visible {
   }
 }
 
-@media (min-width: 1280px) {
+/* A compact head on a desk, and the line as tall as the first screen leaves it (`--company-fit`, measured by the
+   page) with its ranges still in view: the chart is the page's main place on a laptop. */
+@container company (min-width: 860px) {
+  .layout > .main {
+    gap: var(--ry-s3);
+  }
+
+  .head .logo {
+    width: 44px;
+    height: 44px;
+  }
+
+  .price {
+    font-size: var(--ry-fs-h2);
+  }
+
   .chart {
-    height: clamp(320px, 34vh, 400px);
+    height: var(--company-fit, clamp(320px, 34vh, 400px));
+    margin-top: var(--ry-s3);
   }
 }
+
 
 /* Under the line: its ranges, and at the end the way to the candles. */
 .chartFoot {
@@ -692,7 +718,7 @@ a.pathChip:focus-visible {
 
 .range {
   flex: 1 1 0;
-  min-height: 40px;
+  min-height: 32px;
   padding: 0 var(--ry-s3);
   border: 0;
   border-radius: var(--ry-r-pill);
@@ -726,7 +752,7 @@ a.pathChip:focus-visible {
   align-items: center;
   gap: var(--ry-s2);
   width: fit-content;
-  min-height: 44px;
+  min-height: 32px;
   font-size: var(--ry-fs-dense);
   font-weight: 500;
   color: var(--ry-muted);
@@ -735,6 +761,21 @@ a.pathChip:focus-visible {
 
 .toSpot:hover {
   color: var(--ry-text);
+}
+
+/* The ranges and the way to the candles are a mouse's size on a desk and a finger's on a phone or a touch screen. */
+@container company (max-width: 719px) {
+  .range,
+  .toSpot {
+    min-height: 44px;
+  }
+}
+
+@media (pointer: coarse) {
+  .range,
+  .toSpot {
+    min-height: 44px;
+  }
 }
 
 /* ── The purchase: a card beside the company that stays in view ─────────── */
@@ -763,8 +804,10 @@ a.pathChip:focus-visible {
 
 /* ── Популярні компанії: the way on to the next company ─────────────────── */
 
+/* The column is the card's measure: a laptop's 320 px wraps the head and ellipsises a long name, never runs past the edge. */
 .popular {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--ry-s3);
   min-width: 0;
   padding: var(--ry-s4);
@@ -781,9 +824,10 @@ a.pathChip:focus-visible {
 
 .popularHead {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
-  gap: var(--ry-s3);
+  gap: var(--ry-s1) var(--ry-s3);
 }
 
 .popularAll {
@@ -803,6 +847,7 @@ a.pathChip:focus-visible {
 
 .popularList {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   margin: 0;
   padding: 0;
   list-style: none;
