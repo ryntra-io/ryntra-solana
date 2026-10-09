@@ -5,15 +5,17 @@
  * Three things run by Ryntra's executor wallet, and nothing else:
  * - **the graduation** — the moment the curve holds its threshold, the
  *   executor sends Meteora's migration to the DAMM v2 pool; anyone may send it
- *   (Meteora's own keepers too), so the log names whoever did;
- * - **Ryntra's liquidity** — part of what Ryntra earned as the partner on this
+ *   (Meteora's own keepers too), so the log names whoever did; one that failed
+ *   is sent again by the executor itself;
+ * - **the Fee-Funded Liquidity Ladder** — part of what Ryntra earned as the partner on this
  *   token (`FLOOR_RULE.budgetShareBps` of it, never more than the executor
  *   holds) placed as buy liquidity in a DLMM pool, in steps below the price,
  *   and moved up after the price, never down. It holds no price and promises
  *   none: it is liquidity, and what it buys it holds;
  * - **the log** — every one of these with its time, its amount and its
  *   transaction, beside the token's own events: the launch, the creator's
- *   lock, the creator's sales.
+ *   lock, the creator's sales — and the market's states and the executor's
+ *   own watch, stops and resumes (`JournalMark`).
  *
  * The executor never takes the partner's fees — they go to the partner's
  * multisig, on the curve and from the locked LP — and pays no holder anything.
@@ -23,9 +25,10 @@
  */
 
 import type { CreatorFeesRead } from "./creator-earnings.ts";
+import type { MarketCycleState } from "./market-health.ts";
 
 /**
- * Ryntra's liquidity on a graduated token — one rule for every launch:
+ * The Fee-Funded Liquidity Ladder on a graduated token — one rule for every launch:
  * - a DLMM pool of the token and the pair currency, steps of 1 % (`binStep`
  *   100), its fee 1 %, collected in the pair currency;
  * - the steps start `topGapBins` below the price and go `depthBins` deep —
@@ -269,3 +272,68 @@ export function journal(events: readonly JournalEvent[]): JournalEvent[] {
 }
 
 export { event as journalEvent };
+
+/* ------------------------------------------------------------ the executor's own marks */
+
+/**
+ * What the flight log notes beside the chain's own events — none of it a transaction of its own:
+ * - `WATCH_STARTED` — the executor's first pass over this market: from now on it acts here by its rules;
+ * - `STATE` — the market moved into another state of its cycle, as the executor read it (the trigger is the
+ *   transaction it rests on, when there is one);
+ * - `STOPPED` / `RESUMED` — the operator's switch, for this market or for every market: while stopped, the executor
+ *   signs nothing here;
+ * - `GRADUATION_FAILED` — the executor's graduation of a full curve was refused, failed or expired unseen; it is sent
+ *   again by the executor itself.
+ * A pass that changes nothing writes nothing.
+ */
+export const JOURNAL_MARK_KINDS = ["WATCH_STARTED", "STATE", "STOPPED", "RESUMED", "GRADUATION_FAILED"] as const;
+export type JournalMarkKind = (typeof JOURNAL_MARK_KINDS)[number];
+
+/** Who wrote it: Ryntra's executor, or Ryntra's operator at the switch. */
+export const JOURNAL_MARK_ACTORS = ["ryntra", "operator"] as const;
+export type JournalMarkActor = (typeof JOURNAL_MARK_ACTORS)[number];
+
+export type JournalMark = Readonly<{
+  kind: JournalMarkKind;
+  /** ISO time the executor or the operator wrote it. */
+  at: string;
+  actor: JournalMarkActor;
+  /** The state the market moved into; null when the mark names none (a resume, a watch over a market still on its curve). */
+  state: MarketCycleState | null;
+  /** The state it left; null for the first one the log knows. */
+  from: MarketCycleState | null;
+  /** The transaction it rests on — the graduation, the ladder placed or moved, a failed attempt; null when there is none. */
+  signature: string | null;
+  /** A switch's reach: this market alone, or every market. */
+  scope: "market" | "all" | null;
+  /** The budget the market got, raw in the pair currency; null for every other mark. */
+  pairRaw: string | null;
+}>;
+
+/**
+ * The states the executor writes down as it reads them: from the move to the DEX on. The states on the curve are the
+ * curve's own, seen in its trades; a pause is the switch's own mark.
+ */
+export const EXECUTOR_JOURNALED_STATES: ReadonlySet<MarketCycleState> = new Set<MarketCycleState>([
+  "MIGRATING",
+  "MIGRATION_FAILED",
+  "CORE_MARKET_LIVE",
+  "ENDOWMENT_FUNDED",
+  "LADDER_ACTIVE",
+  "MAINTAINING",
+  "MATURE",
+  "ENDOWMENT_EXHAUSTED",
+]);
+
+/** The longest a failed graduation waits before the executor sends it again. */
+export const GRADUATION_RETRY_MAX_SECONDS = 30 * 60;
+
+/**
+ * How long after its last failure a graduation is sent again: at once after the first, then twice as long after each
+ * further failure in a row — two, four, eight minutes — up to half an hour, so a curve that cannot move does not spend
+ * the executor's SOL every minute. A graduation sent by anyone else ends the wait.
+ */
+export function graduationRetryDelaySeconds(failures: number): number {
+  if (!Number.isFinite(failures) || failures <= 1) return 0;
+  return Math.min(60 * 2 ** (Math.floor(failures) - 1), GRADUATION_RETRY_MAX_SECONDS);
+}

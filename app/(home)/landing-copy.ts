@@ -71,6 +71,8 @@ export type LandingCopy = Readonly<{
     next: Readonly<{ title: string; items: readonly Item<NextKey>[] }>;
   }>;
   faq: Readonly<{ eyebrow: string; title: string; items: readonly Question[] }>;
+  /** The market tape's name for a screen reader; the tape itself is TradingView's (`market-tape.tsx`). */
+  tape: Readonly<{ label: string }>;
 }>;
 
 /** The day the product's screens on the page were taken from ryntra.io (`scripts/site/capture-landing-shots.mjs`). */
@@ -184,6 +186,7 @@ export const LANDING_COPY: Readonly<Record<LandingLocale, LandingCopy>> = {
         ],
       },
     },
+    tape: { label: "Market prices from TradingView" },
     faq: {
       eyebrow: "Questions",
       title: "What people ask first",
@@ -306,6 +309,7 @@ export const LANDING_COPY: Readonly<Record<LandingLocale, LandingCopy>> = {
         ],
       },
     },
+    tape: { label: "Ціни ринків від TradingView" },
     faq: {
       eyebrow: "Запитання",
       title: "Що питають першим",

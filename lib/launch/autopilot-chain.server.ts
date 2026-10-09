@@ -21,22 +21,27 @@ import { heldRaw } from "../core/venues/meteora-dbc/trade.server.ts";
 import { createHolderVenue } from "../core/venues/meteora-damm-v2/holder.server.ts";
 import { createFloorVenue } from "../core/venues/meteora-dlmm/floor.server.ts";
 import { getGuardRuntime } from "../guard/runtime.ts";
+import { storeSupportsConcurrentInstances } from "../guard/store.ts";
 import type { AutopilotChain, AutopilotDeps, TxFacts } from "./autopilot.server.ts";
-import { launchArchiveConnection, launchConnection, launchExecutor, launchFloorOpen, launchHistoryConnection, launchNetwork, launchOpen, type LaunchNetwork } from "./config.server.ts";
+import { launchArchiveConnection, launchConnection, launchExecutor, launchFloorOpen, launchHistoryConnection, launchNetwork, launchOpen, launchWritesHere, type LaunchNetwork } from "./config.server.ts";
+import { executorPaused, type AutopilotPaused } from "./executor.server.ts";
 import { sendOnce, signatureOutcome } from "./flow.server.ts";
+import { ryntraOwnWallets } from "./runtime.server.ts";
 
 const SEND = { confirmMs: 25_000, settleMs: 8_000 } as const;
 /** A priority fee on the executor's transactions, so they land on a busy network; a few thousand lamports at most. */
 const PRIORITY_MICRO_LAMPORTS = 50_000;
 
-/** What the executor needs here, or why it does not run. */
-export function autopilotDeps(): AutopilotDeps | Readonly<{ paused: "NO_NETWORK" | "LANE_CLOSED" | "NO_EXECUTOR" }> {
+/** What the executor needs here, or why it does not run (`executorPaused`). */
+export function autopilotDeps(): AutopilotDeps | Readonly<{ paused: AutopilotPaused }> {
   const network = launchNetwork();
-  if (!network) return { paused: "NO_NETWORK" };
-  if (!launchOpen()) return { paused: "LANE_CLOSED" };
-  const executor = launchExecutor(process.env, network);
-  if (!executor) return { paused: "NO_EXECUTOR" };
-  return { network, store: getGuardRuntime().store, chain: autopilotChain(network, executor), floorOpen: launchFloorOpen(), now: () => new Date() };
+  const store = getGuardRuntime().store;
+  const executor = network ? launchExecutor(process.env, network) : null;
+  const paused = executorPaused({ network, laneOpen: launchOpen(), writesHere: network ? launchWritesHere(network) : false, sharedStore: storeSupportsConcurrentInstances(store), key: executor !== null });
+  if (paused || !network || !executor) return { paused: paused ?? "NO_EXECUTOR" };
+  /* A launch is Ryntra's own by its creator — one of Ryntra's internal wallets; a list read in part leaves a creator out, never in. */
+  const ryntraLaunched = async (creator: string) => (await ryntraOwnWallets(network, store)).wallets.has(creator);
+  return { network, store, chain: autopilotChain(network, executor), floorOpen: launchFloorOpen(), ryntraLaunched, now: () => new Date() };
 }
 
 export function autopilotChain(network: LaunchNetwork, executor: Keypair): AutopilotChain {
@@ -96,14 +101,13 @@ export function autopilotChain(network: LaunchNetwork, executor: Keypair): Autop
       };
     },
 
-    async migrate(record) {
+    async buildMigration(record) {
       const virtual = await client.state.getPool(new PublicKey(record.pool));
       const config = virtual ? await client.state.getPoolConfig(virtual.poolState.config) : null;
       const dammConfig = config ? DAMM_V2_MIGRATION_FEE_ADDRESS[config.migrationFeeOption] : undefined;
       if (!dammConfig) throw new Error("No DAMM v2 config for this curve.");
       const built = await client.migration.migrateToDammV2({ payer: owner, pool: new PublicKey(record.pool), dammConfig });
-      const prepared = await prepare(built.transaction, [built.firstPositionNftKeypair, built.secondPositionNftKeypair]);
-      return send(built.transaction, prepared.validUntil);
+      return { transaction: built.transaction, signers: [built.firstPositionNftKeypair, built.secondPositionNftKeypair] };
     },
 
     async oldestSignature(address) {

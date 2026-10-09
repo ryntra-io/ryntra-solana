@@ -44,6 +44,7 @@ import { launchPreset } from "../core/venues/meteora-dbc/presets.ts";
 import { autopilotReceipts, floorRecord, type AutopilotReceipt } from "./autopilot.server.ts";
 import { marketBudget, type LadderRead } from "./budget.server.ts";
 import { launchExecutorAddress, launchPair } from "./config.server.ts";
+import type { ExecutorMarket } from "./executor.server.ts";
 import { readLaunchRecord, type LaunchRecord } from "./flow.server.ts";
 import { readLaunchMarketFacts, type LaunchMarketFacts, type MarketDeps } from "./market.server.ts";
 import { metadataOfUri } from "./metadata.server.ts";
@@ -61,7 +62,18 @@ export type HealthDeps = MarketDeps &
     /** Ryntra's own wallets: the internal ones and its published identities. A launch whose creator is one of them is technical validation. */
     ryntraWallets: () => Promise<OwnWallets>;
     executorRuns: () => Promise<ExecutorRuns>;
+    /** What the executor keeps on a market and the operator's stop on it; absent where no executor's records are read. */
+    executorOf?: (token: string) => Promise<ExecutorFacts>;
   }>;
+
+/** The operator's stop that holds on a market, and what the executor keeps there — its graduation in flight, its failures, its budget. */
+export type ExecutorFacts = Readonly<{
+  stop: Readonly<{ scope: "all" | "market"; at: string }> | null;
+  market: ExecutorMarket | null;
+  /** The switch or the executor's record could not be read now: nothing of the executor's is claimed for the market. */
+  unread?: boolean;
+}>;
+const NO_EXECUTOR_FACTS: ExecutorFacts = { stop: null, market: null };
 
 /** How long a read of a market is served again — briefly when Ryntra's own wallets were not read whole, or there is no market —, and how long the last good one stands in. */
 const FRESH_MS = 20_000;
@@ -103,6 +115,8 @@ export type MarketRead = Readonly<{
   /** Ryntra's executor named on this network — its actions are the ones the log calls Ryntra's; null while there is none. */
   executor: string | null;
   runs: ExecutorRuns;
+  /** The operator's stop on this market and what the executor keeps on it. */
+  executorFacts: ExecutorFacts;
   ladder: LadderRead;
   /** Ryntra's last act on this market, from its receipts. */
   lastAction: Readonly<{ kind: JournalKind; at: string | null; signature: string }> | null;
@@ -112,8 +126,12 @@ export type MarketRead = Readonly<{
   observedAt: string;
 }>;
 
-/** A stop of Ryntra's acts on a market: `STOPPED` — its executor does not act here now (its operator stop, no key, or no recent pass); `RISK_LIMIT` — a limit the executor records. */
-export type MarketPause = Readonly<{ code: "STOPPED" | "RISK_LIMIT"; at: number | null }>;
+/**
+ * A stop of Ryntra's acts on a market: `OPERATOR` — Ryntra's operator stopped its executor on this market or on every
+ * market; `STOPPED` — its steps stand and its executor does not act here now (Launch's stop, no key, or no recent pass);
+ * `RISK_LIMIT` — a limit the executor records.
+ */
+export type MarketPause = Readonly<{ code: "OPERATOR" | "STOPPED" | "RISK_LIMIT"; at: number | null }>;
 
 export type MarketFigures = Readonly<{
   cycle: CycleRead;
@@ -244,6 +262,8 @@ async function assemble(deps: HealthDeps, token: string): Promise<MarketRead | n
     readLaunchMarketFacts(deps, token).catch(() => null),
     deps.executorRuns().catch((): ExecutorRuns => ({ acts: false, ladder: false })),
   ]);
+  /* A switch that could not be read is said as not read — no stop invented, and nothing of the executor's claimed. */
+  const executorFacts = deps.executorOf ? await deps.executorOf(token).catch((): ExecutorFacts => ({ stop: null, market: null, unread: true })) : NO_EXECUTOR_FACTS;
   const ladder = await readLadder(deps, token, facts?.state.tokenDecimals ?? 6, pair.decimals);
   return marketReadOf({
     record,
@@ -255,6 +275,7 @@ async function assemble(deps: HealthDeps, token: string): Promise<MarketRead | n
     ladder,
     executor: launchExecutorAddress(deps.network),
     runs,
+    executorFacts,
     usdPerPair: pair.dollar ? 1 : pair.usdPrice > 0 ? pair.usdPrice : null,
     now: deps.now(),
   });
@@ -271,6 +292,7 @@ export function marketReadOf(args: Readonly<{
   ladder: LadderRead;
   executor: string | null;
   runs: ExecutorRuns;
+  executorFacts?: ExecutorFacts;
   usdPerPair: number | null;
   now: Date;
 }>): MarketRead {
@@ -286,6 +308,7 @@ export function marketReadOf(args: Readonly<{
     walletsComplete: args.wallets.complete,
     executor,
     runs: args.runs,
+    executorFacts: args.executorFacts ?? NO_EXECUTOR_FACTS,
     ladder,
     lastAction: last ? { kind: last.kind, at: last.at, signature: last.signature } : null,
     lock: args.lock,
@@ -301,10 +324,20 @@ export function marketReadOf(args: Readonly<{
         }
       : null,
     figures: facts
-      ? marketFigures({ facts, record, ladder, receipts: args.receipts, wallets: args.wallets.wallets, lock: args.lock, runs: args.runs, now: Math.floor(args.now.getTime() / 1000), usdPerPair: args.usdPerPair })
+      ? marketFigures({ facts, record, ladder, receipts: args.receipts, wallets: args.wallets.wallets, lock: args.lock, runs: args.runs, executorFacts: args.executorFacts, now: Math.floor(args.now.getTime() / 1000), usdPerPair: args.usdPerPair })
       : null,
     observedAt: args.now.toISOString(),
   };
+}
+
+/**
+ * A stop of Ryntra's acts on a market: the operator's first, at any stage of the market; then steps standing where the
+ * executor does not act now, may not move them, or moves none — the ladder moves only on a market Ryntra launched itself
+ * (`ours`). Null when Ryntra's acts there go on.
+ */
+export function marketPause(args: Readonly<{ stop: ExecutorFacts["stop"]; migrated: boolean; ladder: LadderRead["state"]; runs: ExecutorRuns; ours: boolean }>): MarketPause | null {
+  if (args.stop) return { code: "OPERATOR", at: seconds(args.stop.at) };
+  return args.migrated && args.ladder !== "NONE" && !(args.runs.acts && args.runs.ladder && args.ours) ? { code: "STOPPED", at: null } : null;
 }
 
 /** The states of a full curve not yet on the DEX: it takes no trade until it moves. */
@@ -319,10 +352,12 @@ export function marketFigures(args: Readonly<{
   wallets: ReadonlySet<string>;
   lock: LockRead | null;
   runs: ExecutorRuns;
+  executorFacts?: ExecutorFacts;
   now: number;
   usdPerPair: number | null;
 }>): MarketFigures {
   const { facts, record, ladder, receipts, runs, now } = args;
+  const { stop, market } = args.executorFacts ?? NO_EXECUTOR_FACTS;
   const state = facts.state;
   const curve = state.curve;
   const creator = record.creator;
@@ -337,8 +372,7 @@ export function marketFigures(args: Readonly<{
   const placed = [...receipts].reverse().find((receipt) => receipt.kind === "FLOOR_PLACED") ?? null;
   const placedAt = seconds(placed?.at);
   const maintained = placedAt === null ? null : ([...receipts].reverse().find((receipt) => (receipt.kind === "FLOOR_RAISED" || receipt.kind === "FLOOR_ADDED") && (seconds(receipt.at) ?? 0) >= placedAt) ?? null);
-  /* Steps standing on a market where the executor does not act now, or may not move them: Ryntra's acts there are stopped. */
-  const pause: MarketPause | null = curve.migrated && ladder.state !== "NONE" && !(runs.acts && runs.ladder) ? { code: "STOPPED", at: null } : null;
+  const pause = marketPause({ stop, migrated: curve.migrated, ladder: ladder.state, runs, ours: args.wallets.has(creator) });
 
   const cycle = marketCycleState({
     migrated: curve.migrated,
@@ -350,8 +384,10 @@ export function marketFigures(args: Readonly<{
     foreignTrade: { seen: foreign.length > 0 ? true : facts.historyComplete ? false : null, at: foreignAt },
     graduatedAt,
     ladder: { placedAt: ladder.state === "NONE" ? null : placedAt, maintainedAt: ladder.state === "NONE" ? null : seconds(maintained?.at) },
-    budget: null,
+    budget: market?.budgetAt ? { state: "FUNDED", at: seconds(market.budgetAt) } : null,
     pause,
+    migrationSent: market?.graduation != null,
+    migrationFailedAt: market && market.failures > 0 ? market.failedAt : null,
     now,
   });
 
@@ -520,7 +556,11 @@ export function marketHealth(read: MarketRead, network: HealthDeps["network"], v
   /* The steps that hold the pair currency now: where they stand against the price. */
   const holding = ladder.state === "PLACED" ? ladder.bins.filter((bin) => BigInt(bin.pairRaw) > 0n) : [];
   /* The ladder's policy runs while its steps stand and the executor may move them — whether or not their position was read now. */
-  const ladderMoves = ladder.state !== "NONE" && read.runs.acts && read.runs.ladder;
+  const stopped = read.executorFacts.stop !== null;
+  /* The executor acts here only while its switch was read and holds no stop for this market. */
+  const acts = read.runs.acts && !read.executorFacts.unread;
+  /* The ladder's policy runs only where the executor moves it: a market Ryntra launched itself, not stopped. */
+  const ladderMoves = ladder.state !== "NONE" && acts && read.runs.ladder && !stopped && read.technicalValidation;
   const receipt = view?.receipt ?? null;
   return {
     network: network.chain,
@@ -566,7 +606,7 @@ export function marketHealth(read: MarketRead, network: HealthDeps["network"], v
     },
     engine: {
       executor: read.executor,
-      acts: read.runs.acts,
+      acts,
       lastAction: read.lastAction,
       pause: figures.pause ? { code: figures.pause.code, at: iso(figures.pause.at) } : null,
     },
@@ -581,7 +621,7 @@ export function marketHealth(read: MarketRead, network: HealthDeps["network"], v
       creatorLock: read.lock,
       feeVault: feeVault(read, view),
       firstBuyCapBps: preset?.creatorFirstBuyCapBps ?? null,
-      executor: read.runs.acts ? read.executor : null,
+      executor: acts && !stopped ? read.executor : null,
       ladderPool: ladderMoves ? ladder.pool : null,
       concentrationRead: figures.holders.top10Bps !== null,
       creatorSalesRead: figures.creatorSold !== null,

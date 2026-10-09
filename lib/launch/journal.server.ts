@@ -1,7 +1,7 @@
 /**
  * A launch's flight log as its page and the phone read it — what happened to
  * the token, the newest first, each with its time, its amount and its
- * transaction — and Ryntra's liquidity on it as it stands.
+ * transaction — and the Fee-Funded Liquidity Ladder on it as it stands.
  *
  * Its entries come from the chain, never from a guess:
  * - Ryntra's record of the launch: the creation and the creator's first
@@ -9,15 +9,19 @@
  *   the time of its own transaction's block;
  * - the token's market as read from the chain: every sale of the creator's
  *   («Творець продав»), with the share of what they bought sold by then;
- * - the executor's receipts: the graduation and who sent it, Ryntra's
- *   liquidity opened, placed, emptied to move up, moved up, added to — each
- *   from its confirmed transaction. A graduation without a receipt yet is read
+ * - the executor's receipts: the graduation and who sent it, the Fee-Funded
+ *   Liquidity Ladder opened, placed, emptied to move up, moved up, added to —
+ *   each from its confirmed transaction;
+ * - the executor's and its operator's marks, beside them: its first pass over
+ *   the market, each new state of the market's cycle with the transaction it
+ *   rests on, a stop or a resume of the executor, a failed graduation it sends
+ *   again. A graduation without a receipt yet is read
  *   from the graduated pool's first transaction when the market's read found
  *   it and it is the curve's migration.
  *
  * Whatever could not be read is said: `complete` is false when the creator's
  * trades were read in part or a graduation is not known yet, and
- * `floorUnread` when Ryntra's liquidity is there but its position was not read
+ * `floorUnread` when the ladder is there but its position was not read
  * — never a missing entry passed off as nothing.
  */
 
@@ -27,6 +31,7 @@ import type { LaunchFloorView, LaunchJournalEventView, LaunchJournalResponse } f
 import { FLOOR_RULE, JOURNAL_ENFORCEMENT, creatorSoldEvents, graduationActor, journal, journalEvent, priceOfBin, type JournalEvent } from "../core/launch/autopilot.ts";
 import { autopilotReceipts, floorRecord, isMigration } from "./autopilot.server.ts";
 import { launchExecutorAddress, launchPair } from "./config.server.ts";
+import { journalMarks } from "./executor.server.ts";
 import { readLaunchRecord } from "./flow.server.ts";
 import { readLaunchMarketFacts, type MarketDeps } from "./market.server.ts";
 
@@ -112,7 +117,7 @@ async function assemble(deps: MarketDeps, token: string): Promise<LaunchJournalR
     } else complete = false;
   }
 
-  /* Ryntra's liquidity as it stands, read from its position now; there but unread is said, never hidden. */
+  /* The ladder as it stands, read from its position now; there but unread is said, never hidden. */
   let floor: LaunchFloorView | null = null;
   let floorUnread = false;
   const stored = await floorRecord(deps.store, deps.network.cluster, token);
@@ -137,8 +142,12 @@ async function assemble(deps: MarketDeps, token: string): Promise<LaunchJournalR
     }
   }
 
-  /* The newest first; an answer gives the newest 200 and says how many the log holds. */
+  /* The newest first; an answer gives the newest 200 and says how many the log holds. The marks: the oldest first, the newest 200. */
   const entries = journal(events);
+  /* Marks not read now: the log says it is incomplete rather than show none. */
+  const read = await journalMarks(deps.store, deps.network.cluster, token).catch(() => null);
+  if (read === null) complete = false;
+  const marks = (read ?? []).slice(-200);
   return {
     network: deps.network.chain,
     token,
@@ -150,6 +159,7 @@ async function assemble(deps: MarketDeps, token: string): Promise<LaunchJournalR
     complete,
     floor,
     floorUnread,
+    marks: [...marks],
     observedAt: deps.now().toISOString(),
   };
 }

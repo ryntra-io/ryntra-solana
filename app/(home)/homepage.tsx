@@ -5,6 +5,7 @@ import type { PublicLocale } from "@/lib/site/locale";
 import { Hero } from "./hero";
 import { LANDING_PATH } from "./landing-copy";
 import { AutoinvestSection, OnYourPhone, Questions, Security, Today, WhatYouBuy } from "./landing-blocks";
+import { MarketTape } from "./market-tape";
 import { Universe } from "./universe";
 import { Rewards } from "./rewards";
 import { Workflow } from "./workflow";
@@ -22,6 +23,9 @@ import styles from "./landing.module.css";
  * застосунок», the workflow as the purchase's own road — and adds, in the same
  * design, «Автоінвест», what you buy with the company's path, the phone,
  * security, where Ryntra is today and the questions people ask first.
+ * Between the hero and the universe runs TradingView's market tape
+ * (`market-tape.tsx`), a condition of the free Advanced Charts licence of
+ * 2026-10-09: TradingView's widget with its logo and link, loaded lazily.
  *
  * English at `/`, Ukrainian at `/uk`: the address decides the language
  * (`page.tsx`, `uk/page.tsx`), and the header's language menu moves between
@@ -45,6 +49,7 @@ export function Homepage({ locale = "en" }: { locale?: PublicLocale }) {
       <PublicHeader locale={locale} mainId="main-content" landing ctaTone="quiet" languageHrefs={LANDING_PATH} homeHref={LANDING_PATH[locale]} />
       <main id="main-content" className={styles.page} tabIndex={-1}>
         <Hero locale={locale} />
+        <MarketTape locale={locale} />
         <Universe locale={locale} />
         <Workflow locale={locale} />
         <AutoinvestSection locale={locale} />

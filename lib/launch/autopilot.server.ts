@@ -2,17 +2,26 @@
  * Ryntra Launch's executor — the wallet that acts on launched tokens after
  * their curve, by Meteora's own programs, and keeps a receipt of each act.
  *
- * One pass over Ryntra's launches on this network (`runAutopilot`), in two
- * loops so a graduation never waits on liquidity:
- * - **curves first** — a curve that holds its threshold and has not graduated
- *   is graduated: the executor sends Meteora's migration to DAMM v2 and pays
- *   its rent. A graduation sent by anyone else is recorded with whoever sent
- *   it, from the graduated pool's first transaction once that transaction is
- *   shown to be the curve's migration;
- * - **then Ryntra's liquidity** (`FLOOR_RULE`), when its own operator stop is
- *   open, the executor holds the pair currency for it and SOL for its rent:
- *   the DLMM pool (with the cent's proof the pool asks for), the steps below
- *   the price, moved up after the price, topped up when more is free for them.
+ * One pass over Ryntra's launches on this network (`runAutopilot`), in loops
+ * so a graduation never waits on liquidity:
+ * - **the operator's switch first** — a market stopped on its own, or every
+ *   market stopped, gets nothing signed; a switch that cannot be read stops
+ *   the whole pass;
+ * - **curves** — a curve that holds its threshold and has not graduated is
+ *   graduated: the executor sends Meteora's migration to DAMM v2 and pays its
+ *   rent, written down before the send. One refused, failed or expired is
+ *   sent again by the executor itself — at once, then after a growing wait. A
+ *   graduation sent by anyone else is recorded with whoever sent it, from the
+ *   graduated pool's first transaction once that transaction is shown to be
+ *   the curve's migration;
+ * - **then the Fee-Funded Liquidity Ladder** (`FLOOR_RULE`), when its own
+ *   operator stop is open, only on markets Ryntra launched itself (by the
+ *   creator), the executor holding the pair currency for it and SOL for its
+ *   rent: the DLMM pool (with the cent's proof the pool asks for), the steps
+ *   below the price, moved up after the price, topped up when more is free;
+ * - **then what changed** — the executor's first pass over a market and each
+ *   new state of its cycle, as marks in its flight log; a pass that changes
+ *   nothing writes nothing.
  *
  * Every act is sent once and written down before the send; its receipt comes
  * from the confirmed transaction — its time, its amounts, the executor's SOL
@@ -22,7 +31,8 @@
  * with the money in the wallet.
  *
  * What the executor never does: claim the partner's fees (they go to the
- * partner's multisig, on the curve and from the locked LP), pay any holder,
+ * partner's multisig, on the curve and from the locked LP), sign anything on a
+ * market the operator stopped, pay any holder,
  * move the pair currency anywhere but into its own steps and back, or act on a
  * token another instance is acting on (a lease per token, compare-and-set).
  *
@@ -35,13 +45,32 @@ import type { Keypair, Transaction } from "@solana/web3.js";
 import { randomUUID } from "node:crypto";
 
 import { collectorShouldClaim, holderGrantState } from "../core/launch/holder.ts";
-import { FLOOR_RULE, addSample, binOfPrice, floorBudgetRaw, floorLadder, floorRaise, graduationActor, priceOfBin, readyToPlace, referenceBin, type FloorLadder, type FloorSample, type JournalActor } from "../core/launch/autopilot.ts";
+import {
+  EXECUTOR_JOURNALED_STATES,
+  FLOOR_RULE,
+  addSample,
+  binOfPrice,
+  floorBudgetRaw,
+  floorLadder,
+  floorRaise,
+  graduationActor,
+  graduationRetryDelaySeconds,
+  priceOfBin,
+  readyToPlace,
+  referenceBin,
+  type FloorLadder,
+  type FloorSample,
+  type JournalActor,
+  type JournalMark,
+} from "../core/launch/autopilot.ts";
+import { marketCycleState, type MarketCycleState } from "../core/launch/market-health.ts";
 import type { HolderPool, HolderVenue } from "../core/venues/meteora-damm-v2/holder.server.ts";
 import type { FloorPool, FloorVenue } from "../core/venues/meteora-dlmm/floor.server.ts";
 import { withBoundedCasRetry, type GuardStore } from "../guard/store.ts";
 import type { LaunchNetwork } from "./config.server.ts";
 import type { LaunchRecord, Sent } from "./flow.server.ts";
 import { noteGraduation } from "./graduation.server.ts";
+import { emptyExecutorMarket, readExecutorMarket, readExecutorMarkets, readExecutorStops, stopOn, updateExecutorMarket, writeJournalMark, type ExecutorMarket, type ExecutorStops } from "./executor.server.ts";
 import { allHolderPositions, dropHolderClaim, holderClaims, setHolderClaim, writeHolderClaim, type HolderClaimReceipt, type HolderPositionRecord } from "./holder.server.ts";
 
 export type AutopilotKind = "GRADUATED" | "FLOOR_POOL" | "FLOOR_PLACED" | "FLOOR_WITHDRAWN" | "FLOOR_RAISED" | "FLOOR_ADDED";
@@ -90,7 +119,7 @@ type Redeposit = Readonly<{
   upperBinId: number;
 }>;
 
-/** Ryntra's liquidity on one token, and what the executor has read and sent for it. */
+/** The Fee-Funded Liquidity Ladder on one token, and what the executor has read and sent for it. */
 export type FloorRecord = Readonly<{
   version: number;
   cluster: LaunchNetwork["cluster"];
@@ -149,8 +178,8 @@ export type CurveRead = Readonly<{
 export type AutopilotChain = Readonly<{
   executor: string;
   curve(record: LaunchRecord): Promise<CurveRead | null>;
-  /** The migration built, signed by the executor and its positions' new keys, and sent once. */
-  migrate(record: LaunchRecord): Promise<Sent>;
+  /** The migration built — signed later, by the executor and its positions' new keys (`signers`), and sent once. */
+  buildMigration(record: LaunchRecord): Promise<Readonly<{ transaction: Transaction; signers: readonly Keypair[] }>>;
   /** An account's first transaction that did not fail, or null when its history could not be read to the start. */
   oldestSignature(address: string): Promise<string | null>;
   transaction(signature: string): Promise<TxFacts | null>;
@@ -174,16 +203,27 @@ export type AutopilotDeps = Readonly<{
   store: GuardStore;
   chain: AutopilotChain;
   floorOpen: boolean;
+  /** Whether a launch is Ryntra's own, by its creator: one of Ryntra's internal wallets. In phase 0 the ladder stands only there. */
+  ryntraLaunched: (creator: string) => Promise<boolean>;
   now: () => Date;
+  /** After this moment (ms) nothing new is signed: the pass sets it so a send it starts can still be seen through. */
+  deadline?: number;
 }>;
 
 export type AutopilotStep = Readonly<{ token: string; step: string; signature?: string }>;
 export type AutopilotReport = Readonly<{ state: "RAN"; executor: string; steps: readonly AutopilotStep[] }>;
 
+/** The states of a market on the DEX: a pass reaches these after every market still on its curve. */
+const ON_DEX: ReadonlySet<MarketCycleState> = new Set<MarketCycleState>(["CORE_MARKET_LIVE", "ENDOWMENT_FUNDED", "LADDER_ACTIVE", "MAINTAINING", "PAUSED_RISK", "MATURE", "ENDOWMENT_EXHAUSTED"]);
+/** The presets the ladder of this subtask stands on — money the operator puts in, opened by the ladder's own stop. */
+const LADDER_PRESETS: ReadonlySet<string> = new Set(["classic", "protected"]);
+/** Failed graduations that landed, written into the log in one run; the rest of the run is counted. */
+export const GRADUATION_FAILURES_LOGGED = 3;
+
 /** The fewest lamports the executor keeps; below it it sends nothing — a graduation costs about 0.024 SOL of rent. */
 export const EXECUTOR_FLOOR_LAMPORTS = 30_000_000n;
 /**
- * The lamports Ryntra's liquidity on one token needs before the executor starts it: the pool (≈ 0.025 SOL), the
+ * The lamports the ladder on one token needs before the executor starts it: the pool (≈ 0.025 SOL), the
  * position and its bin arrays (≈ 0.146 SOL), the token account of the pool's proof — measured on devnet 2026-10-07 —
  * and the reserve below which nothing is sent, so a graduation is never starved by liquidity.
  */
@@ -215,52 +255,195 @@ export async function lastAutopilotPass(store: GuardStore, cluster: string): Pro
 }
 
 /** One pass over the network's launches, or over one token; stops starting new acts at `budgetMs`. */
-export async function runAutopilot(deps: AutopilotDeps, options: Readonly<{ only?: string; budgetMs?: number }> = {}): Promise<AutopilotReport> {
-  const end = deps.now().getTime() + (options.budgetMs ?? 45_000);
+export async function runAutopilot(given: AutopilotDeps, options: Readonly<{ only?: string; budgetMs?: number }> = {}): Promise<AutopilotReport> {
+  const end = given.now().getTime() + (options.budgetMs ?? 45_000);
+  /* Nothing is signed later than a few seconds past the budget: each act checks it before it signs. */
+  const deps: AutopilotDeps = { ...given, deadline: given.deadline ?? end + 5_000 };
   const records = options.only
     ? [await deps.store.collection<LaunchRecord>("launches").get(`solana:${deps.network.cluster}:${options.only}`)].filter((row): row is LaunchRecord => row != null)
     : await deps.store.collection<LaunchRecord>("launches").valuesWithPrefix(`solana:${deps.network.cluster}:`);
   /* A record written before launches had a state is a launch the chain confirmed. */
   const launched = records.filter((record) => record.state !== "PENDING").sort((a, b) => Date.parse(a.launchedAt) - Date.parse(b.launchedAt));
+  /* The operator's switch first: while it cannot be read, nothing is signed and the pass is not counted. */
+  const stops = await readExecutorStops(deps.store, deps.network.cluster).catch(() => null);
+  if (!stops) return { state: "RAN", executor: deps.chain.executor, steps: [{ token: "*", step: "STOPS_UNREAD" }] };
   const steps: AutopilotStep[] = [];
+  const curves = new Map<string, CurveRead>();
   const graduated: Array<Readonly<{ record: LaunchRecord; curve: CurveRead }>> = [];
 
-  /* Curves first: a full curve is graduated before any liquidity is touched. */
-  for (const record of launched) {
+  /*
+   * Curves first: a full curve is graduated before any liquidity is touched. Markets not yet on the DEX come first, the
+   * newest first — a curve that just filled never waits behind markets that graduated long ago; those follow, oldest
+   * first.
+   */
+  const known = await readExecutorMarkets(deps.store, deps.network.cluster).catch(() => new Map<string, ExecutorMarket>());
+  const onDex = (record: LaunchRecord) => ON_DEX.has(known.get(record.token)?.state ?? "CREATED");
+  const order = [...launched.filter((record) => !onDex(record)).reverse(), ...launched.filter(onDex)];
+  for (const record of order) {
     if (deps.now().getTime() > end) break;
+    const stopped = stopOn(stops, record.token) !== null;
     steps.push(
       ...(await leased(deps, record.token, async () => {
+        const out: AutopilotStep[] = [];
+        /* The executor's first pass over a market goes into its log once, before anything it does there. */
+        if (!stopped) out.push(...(await watchOnce(deps, record.token)));
         const curve = await deps.chain.curve(record);
-        if (!curve) return [{ token: record.token, step: "NO_CURVE" }];
+        if (!curve) return [...out, { token: record.token, step: "NO_CURVE" }];
+        curves.set(record.token, curve);
         if (!curve.migrated) {
-          if (curve.reserveRaw < curve.thresholdRaw) return [{ token: record.token, step: "ON_CURVE" }];
-          return [await graduate(deps, record, curve)];
+          if (curve.reserveRaw < curve.thresholdRaw) return [...out, { token: record.token, step: "ON_CURVE" }];
+          if (stopped) return [...out, { token: record.token, step: "STOPPED" }];
+          const sent = await graduate(deps, record, curve);
+          /* Graduated in this pass: what changed is noted from the moved curve. */
+          if (sent.some((step) => step.step === "GRADUATED" || step.step === "GRADUATION_LANDED")) curves.set(record.token, { ...curve, migrated: true });
+          return [...out, ...sent];
         }
         graduated.push({ record, curve });
         await noteGraduation(deps.store, record, curve.finishedAt, deps.now()).catch(() => undefined);
-        return [await recordGraduation(deps, record, curve).catch((error: unknown) => ({ token: record.token, step: `GRADUATION_ERROR: ${message(error)}` }))];
+        /* The curve has moved: a graduation of ours in flight or failed is over, whoever sent the one that went through. */
+        await settleMoved(deps, record, curve).catch(() => undefined);
+        return [...out, await recordGraduation(deps, record, curve).catch((error: unknown) => ({ token: record.token, step: `GRADUATION_ERROR: ${message(error)}` }))];
       })),
     );
   }
 
-  /* Then Ryntra's liquidity, oldest launch first. */
+  /* Then the Fee-Funded Liquidity Ladder, oldest launch first — in phase 0 only on markets Ryntra launched itself. */
   if (deps.floorOpen) {
     for (const { record, curve } of graduated) {
       if (deps.now().getTime() > end) break;
       if (!curve.dammPool) continue;
+      if (stopOn(stops, record.token)) {
+        steps.push({ token: record.token, step: "STOPPED" });
+        continue;
+      }
+      /* The ladder of this subtask stands on the Classic and Protected presets; Micro's and the demo market's comes with their budget. */
+      if (!LADDER_PRESETS.has(record.preset)) {
+        steps.push({ token: record.token, step: "FLOOR_NOT_THIS_PRESET" });
+        continue;
+      }
+      if (!(await deps.ryntraLaunched(record.creator).catch(() => false))) {
+        steps.push({ token: record.token, step: "FLOOR_NOT_OURS" });
+        continue;
+      }
       const dammPool = curve.dammPool;
       steps.push(...(await leased(deps, record.token, () => floor(deps, record, dammPool, end))));
     }
   } else if (graduated.length) steps.push({ token: "*", step: "FLOOR_CLOSED" });
 
   /* Then the holders' positions: the fees their owners let Ryntra's collector bring to their wallets. */
-  steps.push(...(await collectForHolders(deps, end).catch((error: unknown) => [{ token: "*", step: `HOLDERS_ERROR: ${message(error)}` }])));
+  if (!stops.all?.stopped) steps.push(...(await collectForHolders(deps, end, stops).catch((error: unknown) => [{ token: "*", step: `HOLDERS_ERROR: ${message(error)}` }])));
+  /* Then what changed on each market, written down — store writes only, a little past the acts' budget at most. */
+  for (const record of launched) {
+    if (deps.now().getTime() > end + 10_000) break;
+    const curve = curves.get(record.token);
+    if (!curve || stopOn(stops, record.token)) continue;
+    const noted = await leased(deps, record.token, () => noteState(deps, record, curve));
+    steps.push(...noted.filter((step) => step.step !== "LEASED"));
+  }
   /* The pass is written down: a market's health says the executor acts only while its passes keep coming. */
   await deps.store
     .collection<AutopilotPass>(PASSES)
     .set(`solana:${deps.network.cluster}`, { cluster: deps.network.cluster, executor: deps.chain.executor, at: deps.now().toISOString() })
     .catch(() => undefined);
   return { state: "RAN", executor: deps.chain.executor, steps };
+}
+
+/* ------------------------------------------------------------------ the executor's marks */
+
+const iso = (deps: AutopilotDeps) => deps.now().toISOString();
+const unix = (deps: AutopilotDeps) => Math.floor(deps.now().getTime() / 1000);
+const seconds = (at: string | null | undefined): number | null => {
+  const parsed = at ? Date.parse(at) : Number.NaN;
+  return Number.isFinite(parsed) ? Math.floor(parsed / 1000) : null;
+};
+
+/** The executor's first pass over a market, noted once in its log — the mark first, under a key of its own, so a pass that dies between the two writes it once. */
+async function watchOnce(deps: AutopilotDeps, token: string): Promise<AutopilotStep[]> {
+  const known = await readExecutorMarket(deps.store, deps.network.cluster, token);
+  if (known?.watchedAt) return [];
+  const at = iso(deps);
+  await writeJournalMark(deps.store, deps.network.cluster, token, { kind: "WATCH_STARTED", at, actor: "ryntra", state: null, from: null, signature: null, scope: null, pairRaw: null }, "WATCH_STARTED");
+  await updateExecutorMarket(deps.store, deps.network.cluster, token, deps.now(), (market) => ({ ...market, watchedAt: market.watchedAt ?? at }));
+  return [{ token, step: "WATCH_STARTED" }];
+}
+
+/**
+ * A curve that has moved: a run of failed graduations is over, and a graduation of ours that was in flight gets its
+ * receipt from its own transaction — kept in flight until that transaction is read or the graduation has a receipt.
+ */
+async function settleMoved(deps: AutopilotDeps, record: LaunchRecord, curve: CurveRead): Promise<void> {
+  const token = record.token;
+  const known = await readExecutorMarket(deps.store, deps.network.cluster, token);
+  if (!known || (known.graduation === null && known.failures === 0)) return;
+  let landed = known.graduation === null;
+  if (known.graduation) {
+    const receipted = (await autopilotReceipts(deps.store, deps.network.cluster, token)).some((row) => row.kind === "GRADUATED");
+    const facts = receipted ? null : await deps.chain.transaction(known.graduation.signature).catch(() => null);
+    if (facts && !facts.failed) await writeReceipt(deps, receiptOf(deps, { kind: "GRADUATED", token, signature: known.graduation.signature, facts, actor: "ryntra", pairRaw: curve.thresholdRaw.toString() }));
+    landed = receipted || facts !== null;
+  }
+  await updateExecutorMarket(deps.store, deps.network.cluster, token, deps.now(), (market) => ({ ...market, graduation: landed ? null : market.graduation, failures: 0, failedAt: null }));
+}
+
+/**
+ * The market's state as the executor reads it — by the same definitions as a market's health — when it is one the
+ * executor writes down: from the move to the DEX on. Null on the curve.
+ */
+export function executorStateOf(
+  args: Readonly<{ record: LaunchRecord; curve: CurveRead; market: ExecutorMarket; floor: FloorRecord | null; receipts: readonly AutopilotReceipt[]; now: number }>,
+): MarketCycleState | null {
+  const { curve, market, receipts, now } = args;
+  const graduation = receipts.find((receipt) => receipt.kind === "GRADUATED") ?? null;
+  const placed = [...receipts].reverse().find((receipt) => receipt.kind === "FLOOR_PLACED") ?? null;
+  const placedAt = args.floor?.state === "PLACED" ? (seconds(placed?.at) ?? now) : null;
+  const maintained =
+    placedAt === null ? null : ([...receipts].reverse().find((receipt) => (receipt.kind === "FLOOR_RAISED" || receipt.kind === "FLOOR_ADDED") && (seconds(receipt.at) ?? 0) >= placedAt) ?? null);
+  const cycle = marketCycleState({
+    migrated: curve.migrated,
+    migrationProgress: null,
+    reserveRaw: curve.reserveRaw,
+    thresholdRaw: curve.thresholdRaw,
+    finishedAt: curve.finishedAt,
+    launchedAt: seconds(args.record.launchedAt) ?? now,
+    foreignTrade: { seen: null, at: null },
+    graduatedAt: curve.migrated ? (seconds(graduation?.at) ?? curve.finishedAt) : null,
+    ladder: { placedAt, maintainedAt: maintained ? (seconds(maintained.at) ?? now) : null },
+    budget: market.budgetAt ? { state: "FUNDED", at: seconds(market.budgetAt) } : null,
+    pause: null,
+    migrationSent: market.graduation !== null,
+    migrationFailedAt: market.failures > 0 ? market.failedAt : null,
+    now,
+  });
+  return EXECUTOR_JOURNALED_STATES.has(cycle.state) ? cycle.state : null;
+}
+
+/** A market's new state, noted in its log with the transaction it rests on; the same state twice is noted once. */
+async function noteState(deps: AutopilotDeps, record: LaunchRecord, curve: CurveRead): Promise<AutopilotStep[]> {
+  const cluster = deps.network.cluster;
+  const token = record.token;
+  const market = (await readExecutorMarket(deps.store, cluster, token)) ?? emptyExecutorMarket(cluster, token, deps.now());
+  const receipts = await autopilotReceipts(deps.store, cluster, token);
+  const stored = await floorRecord(deps.store, cluster, token);
+  const state = executorStateOf({ record, curve, market, floor: stored, receipts, now: unix(deps) });
+  if (state === null || state === market.state) return [];
+  /* A retry in flight after a failed graduation is not a new state of the market: the log has the failure, then the DEX. */
+  if (state === "MIGRATING" && market.state === "MIGRATION_FAILED") return [];
+  const latest = (kinds: readonly AutopilotKind[]) => [...receipts].reverse().find((receipt) => kinds.includes(receipt.kind))?.signature ?? null;
+  const signature =
+    state === "CORE_MARKET_LIVE"
+      ? latest(["GRADUATED"])
+      : state === "MIGRATING"
+        ? (market.graduation?.signature ?? null)
+        : state === "LADDER_ACTIVE"
+          ? latest(["FLOOR_PLACED"])
+          : state === "MAINTAINING"
+            ? latest(["FLOOR_RAISED", "FLOOR_ADDED"])
+            : null;
+  const mark: JournalMark = { kind: "STATE", at: iso(deps), actor: "ryntra", state, from: market.state, signature, scope: null, pairRaw: state === "ENDOWMENT_FUNDED" ? market.budgetRaw : null };
+  /* The mark first, keyed by the record's next version: a pass that dies before the record is written writes the same mark again, not a second one. */
+  await writeJournalMark(deps.store, cluster, token, mark, `STATE:${state}:v${market.version + 1}`);
+  await updateExecutorMarket(deps.store, cluster, token, deps.now(), (current) => ({ ...current, state }));
+  return [{ token, step: `STATE_${state}`, ...(signature ? { signature } : {}) }];
 }
 
 /**
@@ -270,8 +453,9 @@ export async function runAutopilot(deps: AutopilotDeps, options: Readonly<{ only
  * from its confirmed transaction: what the owner's accounts received. A claim whose answer was lost is read again by the
  * next pass; it never sends a second while the first may still land.
  */
-async function collectForHolders(deps: AutopilotDeps, end: number): Promise<AutopilotStep[]> {
-  const rows = (await allHolderPositions(deps.store, deps.network.cluster)).filter((row) => row.state === "OPEN");
+async function collectForHolders(deps: AutopilotDeps, end: number, stops: ExecutorStops): Promise<AutopilotStep[]> {
+  /* A position on a market the operator stopped waits: the collector signs nothing there either. */
+  const rows = (await allHolderPositions(deps.store, deps.network.cluster)).filter((row) => row.state === "OPEN" && stopOn(stops, row.token) === null);
   if (!rows.length) return [];
   const steps: AutopilotStep[] = [];
   const pools = new Map<string, HolderPool>();
@@ -282,6 +466,8 @@ async function collectForHolders(deps: AutopilotDeps, end: number): Promise<Auto
       try {
         return await collectOne(deps, row, pools);
       } catch (error) {
+        if (error instanceof StoppedNow) return [{ token: row.token, step: "HOLDER_STOPPED" }];
+        if (error instanceof OutOfTime) return [{ token: row.token, step: "HOLDER_OUT_OF_TIME" }];
         return [{ token: row.token, step: `HOLDER_ERROR: ${message(error)}` }];
       }
     });
@@ -322,7 +508,7 @@ async function collectOne(deps: AutopilotDeps, row: HolderPositionRecord, pools:
   if (!tx) {
     return [{ token: row.token, step: "HOLDER_NO_ACCOUNT" }];
   }
-  const prepared = await deps.chain.prepare(tx, []);
+  const prepared = await prepareChecked(deps, row.token, tx, []);
   const claim: HolderClaimReceipt = {
     cluster: deps.network.cluster,
     position: row.position,
@@ -367,7 +553,25 @@ async function settleHolderClaim(deps: AutopilotDeps, token: string, claim: Hold
   return { token, step: "HOLDER_CLAIM_PENDING", signature: claim.signature };
 }
 
-const message = (error: unknown) => (error instanceof Error ? error.message.slice(0, 160) : "unknown");
+/* An error's words, a node's address cut to its host: a key in a query string never reaches an answer. */
+const message = (error: unknown) => (error instanceof Error ? error.message.replace(/(https?:\/\/[^/\s?#]+)[^\s"']*/g, "$1").slice(0, 160) : "unknown");
+
+/** The operator stopped this market — or every market — after the pass began: nothing more is signed on it. */
+class StoppedNow extends Error {}
+/** The pass has no time left to see a send through: nothing new is signed until the next minute. */
+class OutOfTime extends Error {}
+
+/**
+ * Every transaction of the executor's is signed here, and only after two checks made at that moment, before anything is
+ * written down for it: the operator's switch read again from the store — a stop flipped while the pass runs holds at
+ * once —, and the pass still inside its time, so a send is never started that the minute cannot see through.
+ */
+async function prepareChecked(deps: AutopilotDeps, token: string, tx: Transaction, extra: readonly Keypair[]): Promise<Readonly<{ signature: string; validUntil: number }>> {
+  if (deps.deadline !== undefined && deps.now().getTime() > deps.deadline) throw new OutOfTime("out of time");
+  const stops = await readExecutorStops(deps.store, deps.network.cluster).catch(() => null);
+  if (!stops || stopOn(stops, token)) throw new StoppedNow("stopped");
+  return deps.chain.prepare(tx, extra);
+}
 
 async function leased(deps: AutopilotDeps, token: string, act: () => Promise<AutopilotStep[]>): Promise<AutopilotStep[]> {
   const holder = randomUUID();
@@ -375,6 +579,8 @@ async function leased(deps: AutopilotDeps, token: string, act: () => Promise<Aut
   try {
     return await act();
   } catch (error) {
+    if (error instanceof StoppedNow) return [{ token, step: "STOPPED" }];
+    if (error instanceof OutOfTime) return [{ token, step: "OUT_OF_TIME" }];
     return [{ token, step: `ERROR: ${message(error)}` }];
   } finally {
     await dropLease(deps, token, holder).catch(() => undefined);
@@ -404,14 +610,96 @@ async function dropLease(deps: AutopilotDeps, token: string, holder: string): Pr
 
 /* ------------------------------------------------------------------ graduation */
 
-async function graduate(deps: AutopilotDeps, record: LaunchRecord, curve: CurveRead): Promise<AutopilotStep> {
-  if ((await deps.chain.lamports()) < EXECUTOR_FLOOR_LAMPORTS) return { token: record.token, step: "LOW_SOL" };
-  const sent = await deps.chain.migrate(record);
-  if (sent.outcome !== "CONFIRMED") return { token: record.token, step: `GRADUATION_${sent.outcome}`, signature: sent.signature };
-  /* Read back; a transaction not read yet is recorded by the next pass from the pool's first transaction — never guessed. */
+/**
+ * A full curve graduated by the executor. A graduation of its own still in flight is read first — nothing new is sent
+ * while it may land. One that failed — refused, failed on chain, expired unseen — is sent again: at once after the first
+ * failure, then after a growing wait (`graduationRetryDelaySeconds`). Each is written down before its send, and its
+ * receipt comes only from the transaction read back.
+ */
+async function graduate(deps: AutopilotDeps, record: LaunchRecord, curve: CurveRead): Promise<AutopilotStep[]> {
+  const token = record.token;
+  const cluster = deps.network.cluster;
+  let market = (await readExecutorMarket(deps.store, cluster, token)) ?? emptyExecutorMarket(cluster, token, deps.now());
+  const steps: AutopilotStep[] = [];
+  if (market.graduation) {
+    const { signature, validUntil } = market.graduation;
+    const outcome = await deps.chain.outcome(signature, validUntil);
+    if (outcome === "UNKNOWN") return [{ token, step: "GRADUATION_PENDING", signature }];
+    if (outcome === "CONFIRMED") {
+      const facts = await deps.chain.transaction(signature);
+      if (!facts) return [{ token, step: "GRADUATION_PENDING", signature }];
+      if (!facts.failed) {
+        await graduated(deps, record, curve, signature, facts);
+        return [{ token, step: "GRADUATION_LANDED", signature }];
+      }
+      market = await graduationFailed(deps, token, market, signature, true);
+    } else market = await graduationFailed(deps, token, market, signature, outcome === "FAILED");
+    steps.push({ token, step: "GRADUATION_FAILED_EARLIER", signature });
+  }
+  if (market.failures > 0 && market.failedAt !== null && unix(deps) < market.failedAt + graduationRetryDelaySeconds(market.failures)) {
+    return [...steps, { token, step: "GRADUATION_WAIT" }];
+  }
+  if ((await deps.chain.lamports()) < EXECUTOR_FLOOR_LAMPORTS) return [...steps, { token, step: "LOW_SOL" }];
+  const built = await deps.chain.buildMigration(record);
+  const prepared = await prepareChecked(deps, token, built.transaction, built.signers);
+  /* Written before the send: an answer lost still leaves the graduation to read, and no second is sent over it. */
+  market = await updateExecutorMarket(deps.store, cluster, token, deps.now(), (current) => ({ ...current, graduation: { signature: prepared.signature, validUntil: prepared.validUntil, sentAt: iso(deps) } }));
+  const sent = await deps.chain.send(built.transaction, prepared.validUntil);
+  if (sent.outcome === "UNKNOWN") return [...steps, { token, step: "GRADUATION_SENT", signature: sent.signature }];
+  if (sent.outcome !== "CONFIRMED") {
+    await graduationFailed(deps, token, market, sent.signature, sent.outcome === "FAILED");
+    return [...steps, { token, step: `GRADUATION_${sent.outcome}`, signature: sent.signature }];
+  }
+  /* Read back; a transaction not read yet stays in flight and is recorded by the next pass — never guessed. */
   const facts = await deps.chain.transaction(sent.signature);
-  if (facts && !facts.failed) await writeReceipt(deps, receiptOf(deps, { kind: "GRADUATED", token: record.token, signature: sent.signature, facts, actor: "ryntra", pairRaw: curve.thresholdRaw.toString() }));
-  return { token: record.token, step: "GRADUATED", signature: sent.signature };
+  if (facts?.failed) {
+    await graduationFailed(deps, token, market, sent.signature, true);
+    return [...steps, { token, step: "GRADUATION_FAILED", signature: sent.signature }];
+  }
+  if (facts) await graduated(deps, record, curve, sent.signature, facts);
+  return [...steps, { token, step: "GRADUATED", signature: sent.signature }];
+}
+
+/** A graduation of the executor's read back from its transaction: its receipt, and the run of failures over. */
+async function graduated(deps: AutopilotDeps, record: LaunchRecord, curve: CurveRead, signature: string, facts: TxFacts): Promise<void> {
+  await writeReceipt(deps, receiptOf(deps, { kind: "GRADUATED", token: record.token, signature, facts, actor: "ryntra", pairRaw: curve.thresholdRaw.toString() }));
+  await updateExecutorMarket(deps.store, deps.network.cluster, record.token, deps.now(), (current) => ({ ...current, graduation: null, failures: 0, failedAt: null }));
+}
+
+/**
+ * A graduation that did not go through: counted, its time kept for the wait before the next, the market's state now a
+ * failed graduation. The log has the first failure of a run, and each failed attempt that landed — a transaction of
+ * Ryntra's — up to `GRADUATION_FAILURES_LOGGED` in a run; after that the run is counted, not repeated, in the log (the
+ * operator sees the count).
+ */
+async function graduationFailed(deps: AutopilotDeps, token: string, market: ExecutorMarket, signature: string, landed: boolean): Promise<ExecutorMarket> {
+  const failures = market.failures + 1;
+  if (market.failures === 0 || (landed && failures <= GRADUATION_FAILURES_LOGGED)) {
+    /* The mark first, keyed by the run's count: a pass that dies before the record is written writes it once. */
+    await writeJournalMark(
+      deps.store,
+      deps.network.cluster,
+      token,
+      {
+        kind: "GRADUATION_FAILED",
+        at: iso(deps),
+        actor: "ryntra",
+        state: "MIGRATION_FAILED",
+        from: market.state === "MIGRATION_FAILED" ? null : market.state,
+        signature: landed ? signature : null,
+        scope: null,
+        pairRaw: null,
+      },
+      `GRADUATION_FAILED:${signature}`,
+    );
+  }
+  return updateExecutorMarket(deps.store, deps.network.cluster, token, deps.now(), (current) => ({
+    ...current,
+    graduation: null,
+    failures: current.failures + 1,
+    failedAt: unix(deps),
+    state: "MIGRATION_FAILED",
+  }));
 }
 
 /**
@@ -438,7 +726,7 @@ export function isMigration(logs: readonly string[]): boolean {
   return at >= 0 && logs.slice(at + 1, at + 4).some((line) => line === "Program log: Instruction: MigrationDammV2");
 }
 
-/* ------------------------------------------------------------------ Ryntra's liquidity */
+/* ------------------------------------------------------------------ the Fee-Funded Liquidity Ladder */
 
 type Save = (next: Omit<FloorRecord, "version" | "updatedAt">) => Promise<FloorRecord>;
 
@@ -519,7 +807,7 @@ async function floor(deps: AutopilotDeps, record: LaunchRecord, dammPool: string
     if (!pool) {
       const proof = (await deps.chain.held(token)) > 0n ? null : { dammPool, amountRaw: PROOF_RAW };
       const tx = await deps.chain.floor.createPool({ token, pair: price.pairMint, activeBinId: reference, payer: owner, proof });
-      const prepared = await deps.chain.prepare(tx, []);
+      const prepared = await prepareChecked(deps, token, tx, []);
       const sentDown = await save({ ...current, samples, poolSent: { signature: prepared.signature, validUntil: prepared.validUntil } });
       const sent = await deps.chain.send(tx, prepared.validUntil);
       /* A pool whose answer was lost is found by its address next pass, and its receipt written then; nothing else is sent now. */
@@ -544,7 +832,7 @@ async function floor(deps: AutopilotDeps, record: LaunchRecord, dammPool: string
     if (pool.activeBinId !== reference) {
       const tx = await deps.chain.floor.syncSteps({ pool: pool.pool, owner, position: null, activeBinId: reference });
       if (tx) {
-        const prepared = await deps.chain.prepare(tx, []);
+        const prepared = await prepareChecked(deps, token, tx, []);
         const sent = await deps.chain.send(tx, prepared.validUntil);
         if (sent.outcome !== "CONFIRMED") return [...steps, { token, step: `FLOOR_SYNC_${sent.outcome}`, signature: sent.signature }];
       }
@@ -553,7 +841,7 @@ async function floor(deps: AutopilotDeps, record: LaunchRecord, dammPool: string
     const ladder = floorLadder(pool.activeBinId);
     const opened = await deps.chain.floor.openSteps({ pool: pool.pool, owner, ladder, amountRaw: budget });
     const tx = opened.transactions[0]!;
-    const prepared = await deps.chain.prepare(tx, [opened.position]);
+    const prepared = await prepareChecked(deps, token, tx, [opened.position]);
     const position = opened.position.publicKey.toBase58();
     /* The position's address is kept before the send: an answer lost still leaves the steps findable. */
     const pending: Pending = { kind: "FLOOR_PLACED", signature: prepared.signature, validUntil: prepared.validUntil, position, lowerBinId: ladder.lowerBinId, upperBinId: ladder.upperBinId, pairRaw: budget.toString(), sentAt: deps.now().toISOString() };
@@ -601,7 +889,7 @@ async function startMove(deps: AutopilotDeps, current: FloorRecord, ladder: Floo
   const activeBinId = ladder.upperBinId + FLOOR_RULE.topGapBins;
   const tx = await deps.chain.floor.syncSteps({ pool: current.pool!, owner: deps.chain.executor, position: current.position!, activeBinId });
   if (!tx) return place(deps, current, ladder, budget, "FLOOR_RAISED", samples, save);
-  const prepared = await deps.chain.prepare(tx, []);
+  const prepared = await prepareChecked(deps, token, tx, []);
   const redeposit: Redeposit = { syncSignature: prepared.signature, validUntil: prepared.validUntil, raw: null, lowerBinId: ladder.lowerBinId, upperBinId: ladder.upperBinId };
   const saved = await save({ ...current, samples, raiseSeen: null, redeposit });
   const sent = await deps.chain.send(tx, prepared.validUntil);
@@ -648,7 +936,7 @@ async function finishMove(deps: AutopilotDeps, current: FloorRecord, samples: re
   if (pool && pool.activeBinId !== target) {
     const tx = await deps.chain.floor.syncSteps({ pool: record.pool!, owner: deps.chain.executor, position: record.position, activeBinId: target });
     if (tx) {
-      const prepared = await deps.chain.prepare(tx, []);
+      const prepared = await prepareChecked(deps, token, tx, []);
       const sent = await deps.chain.send(tx, prepared.validUntil);
       if (sent.outcome !== "CONFIRMED") return [{ token, step: `FLOOR_SYNC_${sent.outcome}`, signature: sent.signature }];
     }
@@ -668,7 +956,7 @@ async function place(
   returningRaw = 0n,
 ): Promise<AutopilotStep[]> {
   const tx = await deps.chain.floor.placeSteps({ pool: current.pool!, owner: deps.chain.executor, position: current.position!, ladder, amountRaw: returningRaw + topUpRaw });
-  const prepared = await deps.chain.prepare(tx, []);
+  const prepared = await prepareChecked(deps, current.token, tx, []);
   const pending: Pending = { kind, signature: prepared.signature, validUntil: prepared.validUntil, position: current.position, lowerBinId: ladder.lowerBinId, upperBinId: ladder.upperBinId, pairRaw: topUpRaw.toString(), sentAt: deps.now().toISOString() };
   const saved = await save({ ...current, samples, raiseSeen: null, pending });
   const sent = await deps.chain.send(tx, prepared.validUntil);
@@ -780,7 +1068,7 @@ export async function autopilotReceipts(store: GuardStore, cluster: string, toke
   return [...rows].filter((row) => row.token === token).sort((a, b) => (Date.parse(a.at ?? "") || 0) - (Date.parse(b.at ?? "") || 0));
 }
 
-/** Ryntra's liquidity record on a token, as the executor last wrote it. */
+/** The ladder's record on a token, as the executor last wrote it. */
 export async function floorRecord(store: GuardStore, cluster: string, token: string): Promise<FloorRecord | null> {
   return (await store.versioned<FloorRecord>(FLOORS).get(floorKey(cluster, token))) ?? null;
 }

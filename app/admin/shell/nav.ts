@@ -6,6 +6,7 @@ export type AdminNavId =
   | "analytics"
   | "seo"
   | "operations"
+  | "launch"
   | "audit"
   | "settings"
   | "academy";
@@ -26,6 +27,7 @@ export const ADMIN_NAV: readonly AdminNavItem[] = [
   { id: "analytics", label: "Аналітика", href: "/admin/analytics", group: "insights" },
   { id: "seo", label: "SEO і ріст", href: "/admin/seo", group: "insights" },
   { id: "operations", label: "Операції", href: "/admin/operations", group: "system" },
+  { id: "launch", label: "Виконавець лаунчу", href: "/admin/launch", group: "system" },
   { id: "audit", label: "Журнал аудиту", href: "/admin/audit", group: "system" },
   { id: "settings", label: "Налаштування", href: "/admin/settings", group: "system" },
   { id: "academy", label: "Академія", href: "/admin/academy", group: "internal" },

@@ -122,6 +122,18 @@ const AGG_LAB_CSP = [
    `lib/security-headers.test.mjs` pins it. */
 const PREDICTIONS_CSP = CSP.replace("img-src 'self' data:", "img-src 'self' data: https://assets.agg.market").replace("connect-src 'self'", "connect-src 'self' wss://ws.agg.market");
 
+/* The landing (`/` and `/uk`) carries TradingView's Ticker Tape — a condition
+   of the free Advanced Charts licence (2026-10-09, `app/(home)/market-tape.tsx`).
+   Measured in a browser: the widget's module and its chunks come from one
+   host, which also serves the hidden frame that carries its prices; the
+   symbols' logos come from TradingView's logo CDN. Those two origins are
+   added here and nowhere else — the rest of the site keeps `CSP`. */
+const TRADINGVIEW_WIDGETS = "https://widgets.tradingview-widget.com";
+const TRADINGVIEW_LOGOS = "https://s3-symbol-logo.tradingview.com";
+const LANDING_CSP = CSP.replace("script-src 'self'", `script-src 'self' ${TRADINGVIEW_WIDGETS}`)
+  .replace("frame-src", `frame-src ${TRADINGVIEW_WIDGETS}`)
+  .replace("img-src 'self' data:", `img-src 'self' data: ${TRADINGVIEW_LOGOS}`);
+
 const SECURITY_HEADERS = [
   { key: "Content-Security-Policy", value: CSP },
   { key: "X-Frame-Options", value: "DENY" },
@@ -194,6 +206,9 @@ const nextConfig: NextConfig = {
          and the event covers, for this route and its markets only. */
       { source: "/app/predictions", headers: [{ key: "Content-Security-Policy", value: PREDICTIONS_CSP }] },
       { source: "/app/predictions/:path*", headers: [{ key: "Content-Security-Policy", value: PREDICTIONS_CSP }] },
+      /* The landing, in both its languages: the site policy plus TradingView's widget host. */
+      { source: LANDING_ADDRESSES.en, headers: [{ key: "Content-Security-Policy", value: LANDING_CSP }] },
+      { source: LANDING_ADDRESSES.uk, headers: [{ key: "Content-Security-Policy", value: LANDING_CSP }] },
       /* The deployment hosts answer the same pages as ryntra.io; a crawler
          that finds one of them must not index a second copy of the site.
          The canonical tag already points home — this is the same answer in

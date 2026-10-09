@@ -66,6 +66,12 @@ export const CYCLE_RANK: Readonly<Record<MarketCycleState, number>> = Object.fre
 /** A full curve not migrated after this long is a graduation that did not go through: anyone may send it again. */
 export const MIGRATION_LATE_SECONDS = 10 * 60;
 
+/**
+ * A market this long on the DEX is mature (the decision of 2026-10-09: until a market's own constitution sets
+ * thresholds of depth and holders, maturity is the time on the DEX alone).
+ */
+export const MATURE_AFTER_SECONDS = 30 * 86_400;
+
 /** `migration_progress` of a Meteora DBC curve. */
 export const DBC_MIGRATION_PROGRESS = Object.freeze({ PRE_BONDING_CURVE: 0, POST_BONDING_CURVE: 1, LOCKED_VESTING: 2, CREATED_POOL: 3 });
 
@@ -94,6 +100,11 @@ export type CycleInput = Readonly<{
    * chain itself never shows one half done: without the executor's record of a send in flight this is false.
    */
   migrationSent?: boolean;
+  /**
+   * When the executor's last graduation of a full curve failed — refused, failed on chain or expired unseen — and it has
+   * not gone through since; the executor sends it again. Absent or null when none failed.
+   */
+  migrationFailedAt?: number | null;
   now: number;
 }>;
 
@@ -104,8 +115,9 @@ export type CycleRead = Readonly<{ state: MarketCycleState; since: number | null
  * the first trade of a wallet other than the creator's — a history too long to read whole counts as traded —, then ready
  * for the DEX once the curve is full (its `migration_progress` past the curve, or its reserve at the threshold),
  * migrating only while the executor's own migration is in flight, and a failed migration when a full curve has waited
- * longer than `MIGRATION_LATE_SECONDS`. After the DEX: the core market, the budget funded, the ladder placed, then
- * maintained; a pause or an exhausted budget overrides. A state the executor has not recorded is never inferred.
+ * longer than `MIGRATION_LATE_SECONDS` or the executor's own graduation of it failed. After the DEX: the core market, the
+ * budget funded, the ladder placed, then maintained, and mature after `MATURE_AFTER_SECONDS` on the DEX; a pause or an
+ * exhausted budget overrides. A state the executor has not recorded is never inferred.
  */
 export function marketCycleState(input: CycleInput): CycleRead {
   if (input.pause) return { state: "PAUSED_RISK", since: input.pause.at };
@@ -116,6 +128,7 @@ export function marketCycleState(input: CycleInput): CycleRead {
       (input.migrationProgress !== null && input.migrationProgress >= DBC_MIGRATION_PROGRESS.POST_BONDING_CURVE) ||
       (input.thresholdRaw > 0n && input.reserveRaw >= input.thresholdRaw);
     if (full && input.migrationSent) return { state: "MIGRATING", since: input.finishedAt };
+    if (full && input.migrationFailedAt != null) return { state: "MIGRATION_FAILED", since: input.migrationFailedAt };
     if (full) {
       if (input.finishedAt !== null && input.now - input.finishedAt > MIGRATION_LATE_SECONDS) return { state: "MIGRATION_FAILED", since: input.finishedAt + MIGRATION_LATE_SECONDS };
       return { state: "GRADUATION_READY", since: input.finishedAt };
@@ -124,6 +137,7 @@ export function marketCycleState(input: CycleInput): CycleRead {
     return { state: "PRICE_DISCOVERY", since: input.foreignTrade.at };
   }
   if (input.budget?.state === "EXHAUSTED") return { state: "ENDOWMENT_EXHAUSTED", since: input.budget.at };
+  if (input.graduatedAt !== null && input.now - input.graduatedAt >= MATURE_AFTER_SECONDS) return { state: "MATURE", since: input.graduatedAt + MATURE_AFTER_SECONDS };
   if (input.ladder.maintainedAt !== null) return { state: "MAINTAINING", since: input.ladder.maintainedAt };
   if (input.ladder.placedAt !== null) return { state: "LADDER_ACTIVE", since: input.ladder.placedAt };
   if (input.budget?.state === "FUNDED") return { state: "ENDOWMENT_FUNDED", since: input.budget.at };

@@ -3004,7 +3004,7 @@
   cursor: not-allowed;
 }
 
-/* ── The flight log: each entry with its time, amount and transaction; Ryntra's liquidity above it ── */
+/* ── The flight log: each entry with its time, amount and transaction; the Fee-Funded Liquidity Ladder above it ── */
 
 .logList {
   display: grid;
@@ -3036,6 +3036,30 @@
 /* A sale of the creator's in the amber the page gives it everywhere: worth a look, never a verdict. */
 .logItem[data-kind="CREATOR_SOLD"] .logIcon {
   color: var(--ry-caution);
+}
+
+/* The executor paused now, or a move to the DEX that did not go through: the same amber — worth a look, never alarm. A pause already over stays muted. */
+.logItem[data-kind="MARK_STOPPED"] .logIcon,
+.logItem[data-kind="MARK_GRADUATION_FAILED"] .logIcon,
+.logItem[data-state="ENDOWMENT_EXHAUSTED"] .logIcon {
+  color: var(--ry-caution);
+}
+
+/* The state an entry moved the market into, said beside its time: a dot and the state's name, no frame — not a tag. */
+.logState {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+}
+
+.logState::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: var(--ry-r-pill);
+  background: currentColor;
 }
 
 .logText {
@@ -4067,8 +4091,9 @@
 .healthMark {
   justify-self: start;
   margin: 0;
-  padding: 2px 8px;
-  border-radius: var(--ry-r-pill);
+  padding: 4px 10px;
+  border-radius: var(--ry-r-chip);
+  line-height: 1.45;
   background: var(--ry-caution-soft);
   color: var(--ry-text);
   font-size: var(--ry-fs-label);

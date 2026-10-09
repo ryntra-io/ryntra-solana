@@ -20,7 +20,8 @@ import { resolveInternalWallets } from "../admin/internal-wallets.ts";
 import { ATTRIBUTION_REGISTRY } from "../attribution/registry.ts";
 import { adoptLaunch } from "./adopt.server.ts";
 import { lastAutopilotPass } from "./autopilot.server.ts";
-import type { HealthDeps, OwnWallets } from "./health.server.ts";
+import { readExecutorMarket, readExecutorStops, stopOn, type ExecutorStops } from "./executor.server.ts";
+import type { ExecutorFacts, HealthDeps, OwnWallets } from "./health.server.ts";
 import {
   LAUNCHES_PER_CREATOR_PER_DAY,
   launchArchiveConnection,
@@ -113,10 +114,32 @@ const EXECUTOR_HERE = new Map<string, boolean>();
 /** How recent the executor's last pass must be for it to count as acting — it passes every minute when it runs. */
 export const EXECUTOR_PASS_FRESH_MS = 15 * 60 * 1000;
 
+/* The operator's stops on a network: read again after a few seconds — a page of markets asks once per market. */
+let STOPS: Readonly<{ at: number; cluster: string; value: Promise<ExecutorStops> }> | null = null;
+const STOPS_MS = 5_000;
+
+/** The operator's stops on a network, as last read within a few seconds. */
+export function executorStops(network: LaunchNetwork, store: GuardStore, now: number = Date.now()): Promise<ExecutorStops> {
+  if (STOPS && STOPS.cluster === network.cluster && now - STOPS.at < STOPS_MS) return STOPS.value;
+  const value = readExecutorStops(store, network.cluster);
+  STOPS = { at: now, cluster: network.cluster, value };
+  value.catch(() => {
+    STOPS = null;
+  });
+  return value;
+}
+
+/** The operator's stop on a market and what the executor keeps on it — for a market's health. */
+export async function executorFactsOf(network: LaunchNetwork, store: GuardStore, token: string): Promise<ExecutorFacts> {
+  const [stops, market] = await Promise.all([executorStops(network, store), readExecutorMarket(store, network.cluster, token)]);
+  return { stop: stopOn(stops, token), market };
+}
+
 /**
  * Whether Ryntra's executor acts on this network now: its key here — on mainnet only the registry's executor's —,
- * Launch's operator stop open, and a pass of its own finished in the last quarter of an hour; and whether it may move
- * its steps — the steps' own stop open too. A key with nothing running it is not an executor at work.
+ * Launch's operator stop open, the executor's own switch not stopping every market, and a pass of its own finished in
+ * the last quarter of an hour; and whether it may move its steps — the steps' own stop open too. A key with nothing
+ * running it is not an executor at work.
  */
 export async function launchExecutorRuns(network: LaunchNetwork, store: GuardStore, now: number = Date.now()): Promise<Readonly<{ acts: boolean; ladder: boolean }>> {
   let here = EXECUTOR_HERE.get(network.cluster);
@@ -125,9 +148,10 @@ export async function launchExecutorRuns(network: LaunchNetwork, store: GuardSto
     EXECUTOR_HERE.set(network.cluster, here);
   }
   if (!here || !launchOpen()) return { acts: false, ladder: false };
-  const pass = await lastAutopilotPass(store, network.cluster);
+  const [pass, stops] = await Promise.all([lastAutopilotPass(store, network.cluster), executorStops(network, store, now).catch(() => null)]);
   const at = pass ? Date.parse(pass.at) : Number.NaN;
-  const acts = Number.isFinite(at) && now - at < EXECUTOR_PASS_FRESH_MS;
+  /* A switch that cannot be read is a stop: the executor signs nothing then either. */
+  const acts = Number.isFinite(at) && now - at < EXECUTOR_PASS_FRESH_MS && stops !== null && !stops.all?.stopped;
   return { acts, ladder: acts && launchFloorOpen() };
 }
 
@@ -135,7 +159,13 @@ export async function launchExecutorRuns(network: LaunchNetwork, store: GuardSto
 export function launchHealthDeps(): HealthDeps | null {
   const deps = launchMarketDeps();
   if (!deps) return null;
-  return { ...deps, origin: deps.network.origin, ryntraWallets: () => ryntraOwnWallets(deps.network, deps.store), executorRuns: () => launchExecutorRuns(deps.network, deps.store) };
+  return {
+    ...deps,
+    origin: deps.network.origin,
+    ryntraWallets: () => ryntraOwnWallets(deps.network, deps.store),
+    executorRuns: () => launchExecutorRuns(deps.network, deps.store),
+    executorOf: (token) => executorFactsOf(deps.network, deps.store, token),
+  };
 }
 
 /** What reading a launch's page needs: the pool payer's address its receipt asks for, never its key. */

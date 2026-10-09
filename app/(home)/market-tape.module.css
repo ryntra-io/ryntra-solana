@@ -1,0 +1,37 @@
+/* The market tape (market-tape.tsx) — TradingView's Ticker Tape between the
+   hero and the orbit.
+
+   It sits on the landing's one ground, as wide as the hero's strip of four.
+   The widget draws itself in a closed shadow root and takes its colours and
+   its face from the public `--tv-widget-*` tokens, so its frame is the same
+   hairline the strip divides its items with, its words and figures are the
+   landing's ink in the landing's font, and up and down are the product's
+   own two colours. The attribution — TradingView's logo on the tape and its
+   «by TradingView» link under it — keeps TradingView's own colours: no token
+   of it is set here, and nothing clips, masks or covers it (no overflow, no
+   mask, no gradient over the tape's ends). The slot keeps the tape's height
+   before the script arrives, so the orbit below never moves. */
+
+.tape {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 1880px;
+  margin: 0 auto;
+  padding: var(--ry-s4) clamp(24px, 3.2vw, 64px);
+  box-sizing: border-box;
+  color: var(--landing-ink);
+}
+.slot {
+  --tv-widget-border-color: color-mix(in srgb, var(--landing-ink) 10%, transparent);
+  --tv-widget-font-family: var(--ry-font-sans);
+  --tv-widget-text-color: var(--landing-ink);
+  --tv-widget-price-text-color: var(--landing-ink);
+  --tv-widget-text-secondary-color: var(--ry-muted);
+  --tv-widget-text-tertiary-color: var(--ry-muted);
+  --tv-widget-positive-color: var(--ry-pnl-pos);
+  --tv-widget-negative-color: var(--ry-pnl-neg);
+  --tv-widget-hover-background-color: color-mix(in srgb, var(--landing-ink) 4%, transparent);
+  display: block;
+  min-height: 78px;
+}

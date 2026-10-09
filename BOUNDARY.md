@@ -9,10 +9,10 @@ moved counts as new. Generated at every update from the development history.
 
 | Since the tag | Files |
 |---|---|
-| New | 1,327 |
-| Changed | 821 |
-| Unchanged | 914 |
-| Lines added / removed | +341,921 / −20,396 |
+| New | 1,337 |
+| Changed | 823 |
+| Unchanged | 912 |
+| Lines added / removed | +344,152 / −20,397 |
 
 ## New since the tag
 
@@ -33,6 +33,9 @@ moved counts as new. Generated at every update from the development history.
 - `app/(home)/landing-meta.ts`
 - `app/(home)/landing-shots.ts`
 - `app/(home)/landing.test.mjs`
+- `app/(home)/market-tape.module.css`
+- `app/(home)/market-tape.test.mjs`
+- `app/(home)/market-tape.tsx`
 - `app/(home)/reveal.tsx`
 - `app/(home)/rewards-facts.ts`
 - `app/(home)/rewards.module.css`
@@ -54,12 +57,16 @@ moved counts as new. Generated at every update from the development history.
 - `app/admin/analytics/evidence-panel.tsx`
 - `app/admin/analytics/operations-panel.tsx`
 - `app/admin/analytics/owner-wallets-panel.tsx`
+- `app/admin/launch/launch-executor-panel.tsx`
+- `app/admin/launch/page.tsx`
 - `app/api/account/notifications/route.ts`
 - `app/api/admin/agent/route.ts`
 - `app/api/admin/analytics/operations/route.ts`
 - `app/api/admin/analytics/wallets/route.ts`
 - `app/api/admin/evidence/route.ts`
+- `app/api/admin/launch-executor/route.ts`
 - `app/api/cron/benefits/route.ts`
+- `app/api/cron/launch-autopilot/route.ts`
 - `app/api/cron/monitoring/route.ts`
 - `app/api/cron/reconcile/route.ts`
 - `app/api/growth/cards/[id]/image/card-art.tsx`
@@ -1029,6 +1036,9 @@ moved counts as new. Generated at every update from the development history.
 - `lib/launch/budget.server.ts`
 - `lib/launch/config.server.ts`
 - `lib/launch/creator.server.ts`
+- `lib/launch/executor-admin.server.ts`
+- `lib/launch/executor-cron.server.ts`
+- `lib/launch/executor.server.ts`
 - `lib/launch/flow.server.ts`
 - `lib/launch/form.ts`
 - `lib/launch/graduation.server.ts`
@@ -1365,6 +1375,7 @@ moved counts as new. Generated at every update from the development history.
 - `app/admin/operations/operations-panel.tsx`
 - `app/admin/overview-panel.tsx`
 - `app/admin/panels.module.css`
+- `app/admin/shell/nav.ts`
 - `app/agents/adapter-projection-surface.test.mjs`
 - `app/agents/agent-control-surface.test.mjs`
 - `app/agents/agents.test.mjs`
@@ -1754,6 +1765,7 @@ moved counts as new. Generated at every update from the development history.
 - `lib/admin/points.test.mjs`
 - `lib/admin/points.ts`
 - `lib/admin/privacy.ts`
+- `lib/admin/store.ts`
 - `lib/admin/wallet-presence.ts`
 - `lib/agent-control/a2a/inbound.test.mjs`
 - `lib/agent-control/a2a/inbound.ts`

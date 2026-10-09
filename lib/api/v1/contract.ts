@@ -731,16 +731,16 @@
  * closed, and the token's read no longer answers `LAUNCH_PAUSED`. The link a
  * token's read names is its page until the referral route lands there.
  *
- * **1.32.0 — the flight log and Ryntra's liquidity.** Additive. `GET
+ * **1.32.0 — the flight log and the Fee-Funded Liquidity Ladder.** Additive. `GET
  * /api/v1/launch/{mint}/journal` — what happened to a launch, the newest
  * first, each with its time, its amount and its transaction: the launch and
  * the creator's first purchase, the creator's lock, the sharing of the
  * creator's fees, every sale of the creator's (`CREATOR_SOLD`, with the share
  * of what they bought sold by then — the event a holder's protection and a
  * notification take), the graduation and who sent it (Ryntra's executor,
- * Meteora's keeper or another wallet), and Ryntra's liquidity: its DLMM pool
+ * Meteora's keeper or another wallet), and the Fee-Funded Liquidity Ladder: its DLMM pool
  * opened, placed, emptied to move up, moved up, added to (`FLOOR_POOL`,
- * `FLOOR_PLACED`, `FLOOR_WITHDRAWN`, `FLOOR_RAISED`, `FLOOR_ADDED`). `floor` — Ryntra's liquidity as it
+ * `FLOOR_PLACED`, `FLOOR_WITHDRAWN`, `FLOOR_RAISED`, `FLOOR_ADDED`). `floor` — the ladder as it
  * stands: the pair currency in its steps, the token they bought and hold, the
  * steps' prices; it holds no price and promises none — `floorUnread` when it is
  * there but its position was not read. `complete` — whether everything the log
@@ -832,6 +832,21 @@
  * `capabilities.launch.markets`, `marketCard` and `health` name the routes. A client that does not call them, and one
  * that skips unknown keys of the flight log, needs no release; one that parses the flight log strictly takes
  * `enforcement` and `total` (the phone reads no flight log).
+ *
+ * **1.37.0 — the executor's own marks and its switch.** Additive. The flight log's answer gains `marks` — what the log
+ * notes beside the chain's own events, none of it a transaction of its own, the oldest first: `WATCH_STARTED` (Ryntra's
+ * executor passed over this market for the first time and acts here by its rules from now on), `STATE` (the market moved
+ * into another state of its cycle as the executor read it — from the move to the DEX on: `MIGRATING`,
+ * `MIGRATION_FAILED`, `CORE_MARKET_LIVE`, `ENDOWMENT_FUNDED`, `LADDER_ACTIVE`, `MAINTAINING`, `MATURE`,
+ * `ENDOWMENT_EXHAUSTED` — with `signature`, the transaction it rests on, when there is one), `STOPPED` and `RESUMED`
+ * (Ryntra's operator stopped or resumed the executor on this market or on every market — `scope`; while stopped the
+ * executor signs nothing on the market) and `GRADUATION_FAILED` (the executor's graduation of a full curve was refused,
+ * failed on chain — `signature` — or expired unseen; the executor sends it again itself). A market's health `engine.pause`
+ * gains the code `OPERATOR` — the operator's stop — and its state assigns `MATURE` (thirty days on the DEX),
+ * `MIGRATING` (the executor's graduation in flight) and `MIGRATION_FAILED` at once when the executor's own graduation
+ * failed. Ryntra's liquidity is named the Fee-Funded Liquidity Ladder in the words of this contract; its fields keep their
+ * names (`floor`, `FLOOR_*`). A client that skips unknown keys needs no release; one that parses the flight log or the
+ * pause strictly takes `marks` and `OPERATOR` (the phone reads neither).
  */
 
 import {
@@ -874,7 +889,7 @@ import { CREATOR_LOCK_IDS } from "../../core/launch/creator-lock.ts";
 import { FEE_SOURCES } from "../../core/launch/creator-earnings.ts";
 import { EARNINGS_CARD_SOURCE } from "../../core/launch/earnings-card.ts";
 import { FEE_SHARE_MAX_RECIPIENTS, FEE_SHARE_MIN_BPS, FEE_SHARE_MIN_RECIPIENTS, FEE_SHARE_TOTAL_BPS } from "../../core/launch/fee-shares.ts";
-import { JOURNAL_ACTORS, JOURNAL_KINDS } from "../../core/launch/autopilot.ts";
+import { JOURNAL_ACTORS, JOURNAL_KINDS, JOURNAL_MARK_ACTORS, JOURNAL_MARK_KINDS } from "../../core/launch/autopilot.ts";
 import { CONCENTRATION_MARK_BPS, DEPTH_DROPS_BPS, HOLDER_MIN_USD, MARKET_CYCLE_STATES, MARKET_ENFORCEMENT, MARKET_KEEPERS, MARKET_RULE_CODES } from "../../core/launch/market-health.ts";
 import { HOLDER_CARD_SOURCE, HOLDER_GRANT_STATES, POSITION_PERMISSIONS } from "../../core/launch/holder.ts";
 import { LAUNCH_CHART_MARKERS, LAUNCH_HOLDER_LABELS, LAUNCH_RISK_CODES, LAUNCH_TRADE_SIDES, LAUNCH_TRADE_VENUES } from "../../core/venues/meteora-dbc/market.ts";
@@ -882,7 +897,7 @@ import { LAUNCH_PRESET_IDS } from "../../core/venues/meteora-dbc/presets.ts";
 import { LaunchReceiptFactsSchema } from "../../core/venues/meteora-dbc/receipt.ts";
 
 export const API_MAJOR = 1;
-export const API_CONTRACT_VERSION = "1.36.0";
+export const API_CONTRACT_VERSION = "1.37.0";
 export const API_HEADER = "X-Ryntra-API";
 export const API_VERSION_HEADER = "X-Ryntra-API-Version";
 export const NETWORK = "solana:mainnet";
@@ -1344,7 +1359,7 @@ export const CapabilitiesSchema = z
         creators: z.literal("/api/v1/launch/creators/{address}").optional(),
         claimBuild: z.literal("/api/v1/launch/{mint}/claim/build").optional(),
         claimSubmit: z.literal("/api/v1/launch/{mint}/claim/submit").optional(),
-        /* 1.32.0 — the flight log and Ryntra's liquidity; absent on a deployment before it. */
+        /* 1.32.0 — the flight log and the Fee-Funded Liquidity Ladder; absent on a deployment before it. */
         journal: z.literal("/api/v1/launch/{mint}/journal").optional(),
         /* 1.33.0 — a holder's position in the pool; absent on a deployment before it. */
         holder: z.literal("/api/v1/launch/{mint}/holder/{address}").optional(),
@@ -9997,7 +10012,7 @@ export const LaunchJournalEventSchema = z
     pairRaw: LaunchRaw.nullable(),
     /** The token the event moved, raw; null when it moved none. */
     tokensRaw: LaunchRaw.nullable(),
-    /** Ryntra's liquidity: the lowest and the highest step's price, in the pair currency per token. */
+    /** The Fee-Funded Liquidity Ladder: the lowest and the highest step's price, in the pair currency per token. */
     priceLow: z.number().positive().nullable(),
     priceHigh: z.number().positive().nullable(),
     /** A sale of the creator's: the share sold by then, basis points — of what they bought here, or of the supply when they sold more. */
@@ -10009,7 +10024,7 @@ export const LaunchJournalEventSchema = z
   .strict();
 export type LaunchJournalEventView = z.infer<typeof LaunchJournalEventSchema>;
 
-/** Ryntra's liquidity on a graduated launch as it stands: in steps below the price, from Ryntra's fees on this token. */
+/** The Fee-Funded Liquidity Ladder on a graduated launch as it stands: in steps below the price, from Ryntra's fees on this token. */
 export const LaunchFloorViewSchema = z
   .object({
     pool: Address,
@@ -10027,7 +10042,32 @@ export const LaunchFloorViewSchema = z
   .strict();
 export type LaunchFloorView = z.infer<typeof LaunchFloorViewSchema>;
 
-/** `GET /api/v1/launch/{mint}/journal` — the flight log, the newest first, and Ryntra's liquidity; public chain facts. */
+/**
+ * 1.37.0: a mark of the executor's or its operator's in the flight log — none of it a transaction of its own: the
+ * executor's first pass, a state of the market's cycle as the executor read it, the operator's stop and resume, a failed
+ * graduation the executor sends again.
+ */
+export const LaunchJournalMarkSchema = z
+  .object({
+    kind: z.enum(JOURNAL_MARK_KINDS),
+    /** When the executor or the operator wrote it — the server's clock, not a block's. */
+    at: Iso,
+    actor: z.enum(JOURNAL_MARK_ACTORS),
+    /** The state the market moved into; null when the mark names none (a resume, a watch over a market on its curve). */
+    state: z.enum(MARKET_CYCLE_STATES).nullable(),
+    /** The state it left; null for the first one the log knows. */
+    from: z.enum(MARKET_CYCLE_STATES).nullable(),
+    /** The transaction it rests on — the graduation, the ladder placed or moved, a failed attempt; null when there is none. */
+    signature: LaunchSignature.nullable(),
+    /** A stop's or a resume's reach: this market alone, or every market; null for every other mark. */
+    scope: z.enum(["market", "all"]).nullable(),
+    /** `ENDOWMENT_FUNDED`: the budget the market's ladder got, raw in the pair currency; null for every other mark. */
+    pairRaw: LaunchRaw.nullable(),
+  })
+  .strict();
+export type LaunchJournalMarkView = z.infer<typeof LaunchJournalMarkSchema>;
+
+/** `GET /api/v1/launch/{mint}/journal` — the flight log, the newest first, and the Fee-Funded Liquidity Ladder; public chain facts. */
 export const LaunchJournalResponseSchema = z
   .object({
     network: LaunchNetworkId,
@@ -10042,8 +10082,10 @@ export const LaunchJournalResponseSchema = z
     /** Whether everything the log rests on was read: the creator's trades whole, and the graduation once the token graduated. */
     complete: z.boolean(),
     floor: LaunchFloorViewSchema.nullable(),
-    /** Ryntra's liquidity is there but its position could not be read now: said, never hidden. */
+    /** The ladder is there but its position could not be read now: said, never hidden. */
     floorUnread: z.boolean(),
+    /** 1.37.0: the executor's and its operator's marks, the oldest first, the newest 200. Absent before 1.37.0. */
+    marks: z.array(LaunchJournalMarkSchema).max(200).optional(),
     observedAt: Iso,
   })
   .strict();
@@ -10464,15 +10506,16 @@ export const LaunchMarketHealthResponseSchema = z
       .object({
         /** Ryntra's executor named on this network — the wallet whose acts the log calls Ryntra's; null while there is none. */
         executor: Address.nullable(),
-        /** Whether it acts on this network now: its key on this server, Launch's operator stop open, and a pass of its own finished in the last 15 minutes. */
+        /** Whether it acts on this network now: its key on this server, Launch's operator stop open, a pass of its own finished in the last 15 minutes, every market not stopped by Ryntra's operator (1.37.0), and the switch read. */
         acts: z.boolean(),
         /** Its last act on this market, from the flight log. */
         lastAction: z.object({ kind: z.enum(JOURNAL_KINDS), at: Iso.nullable(), signature: LaunchSignature }).strict().nullable(),
         /**
-         * A stop of Ryntra's acts on this market — `STOPPED`: Ryntra's steps stand here and its executor does not act or
-         * may not move them now; `RISK_LIMIT`: a risk limit the executor records (none in this version). Null when none.
+         * A stop of Ryntra's acts on this market — `OPERATOR` (1.37.0): Ryntra's operator stopped the executor on this
+         * market or on every market, at `at`; `STOPPED`: Ryntra's steps stand here and its executor does not act or may
+         * not move them now; `RISK_LIMIT`: a risk limit the executor records (none in this version). Null when none.
          */
-        pause: z.object({ code: z.enum(["STOPPED", "RISK_LIMIT"]), at: Iso.nullable() }).strict().nullable(),
+        pause: z.object({ code: z.enum(["OPERATOR", "STOPPED", "RISK_LIMIT"]), at: Iso.nullable() }).strict().nullable(),
       })
       .strict(),
     rules: z.array(LaunchMarketRuleSchema).max(32),

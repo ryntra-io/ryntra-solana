@@ -388,6 +388,15 @@ export const GUARD_COLLECTIONS = [
   /* Ryntra Launch's executor: when it last finished a pass on a network, keyed `solana:<cluster>` — what a market's
      health reads to say whether the executor acts there now. Rewritten each pass. A value in the same column; no DDL. */
   "launchAutopilotPasses",
+  /* Ryntra Launch's executor, its switch and its own notes: the operator's stop for every market (`solana:<cluster>:*`)
+     and for one (`solana:<cluster>:<token>`), a version-checked record each; what the executor keeps per market — its
+     first pass, the state it last wrote down, a graduation in flight and its failures — keyed `solana:<cluster>:<token>`,
+     version-checked; and the flight log's marks that rest on no transaction of their own — a state, a watch, a stop, a
+     resume, a failed graduation — keyed `solana:<cluster>:<token>:<time>:<id>`, written once, never changed. A value in
+     the same column; no DDL. */
+  "launchExecutorStops",
+  "launchExecutorMarkets",
+  "launchJournalMarks",
   /* Ryntra Launch, a holder's position in a graduated pool: the entry and the permission as built, kept to compare the
      signed bytes with, keyed `<cluster>:<build id>`, and the mark that a build was sent once; the positions entered through
      Ryntra, keyed `<cluster>:<wallet>:<position>` (PENDING before the send, OPEN once the chain confirms); and each claim

@@ -26,7 +26,7 @@
  */
 
 export const API_MAJOR = 1 as const;
-export const API_CONTRACT_VERSION = "1.36.0" as const;
+export const API_CONTRACT_VERSION = "1.37.0" as const;
 export const API_HEADER = "X-Ryntra-API" as const;
 export const API_VERSION_HEADER = "X-Ryntra-API-Version" as const;
 export const NETWORK = "solana:mainnet" as const;
@@ -4598,7 +4598,7 @@ export type LaunchJournalEvent = Readonly<{
   actor: LaunchJournalActor;
   pairRaw: string | null;
   tokensRaw: string | null;
-  /** Ryntra's liquidity: the lowest and the highest step's price, pair currency per token. */
+  /** The Fee-Funded Liquidity Ladder: the lowest and the highest step's price, pair currency per token. */
   priceLow: number | null;
   priceHigh: number | null;
   /** A sale of the creator's: the share sold by then, basis points — of what they bought, or of the supply. */
@@ -4608,7 +4608,7 @@ export type LaunchJournalEvent = Readonly<{
   enforcement?: "rule" | "policy" | null;
 }>;
 
-/** Ryntra's liquidity on a graduated launch as it stands: in steps below the price, from Ryntra's fees on this token. It holds no price. */
+/** The Fee-Funded Liquidity Ladder on a graduated launch as it stands: in steps below the price, from Ryntra's fees on this token. It holds no price. */
 export type LaunchFloorView = Readonly<{
   pool: string;
   position: string;
@@ -4620,7 +4620,28 @@ export type LaunchFloorView = Readonly<{
   observedAt: string;
 }>;
 
-/** `GET /api/v1/launch/{mint}/journal` — the newest first. `complete` false: something was not read (the creator's trades in part, or a graduation not known yet) — an entry not read is not «none». `floorUnread`: Ryntra's liquidity is there, its position not read now. */
+/** 1.37.0: what the executor's flight log notes beside the chain's events — none of it a transaction of its own. */
+export type LaunchJournalMarkKind = "WATCH_STARTED" | "STATE" | "STOPPED" | "RESUMED" | "GRADUATION_FAILED";
+
+/**
+ * 1.37.0: a mark of the executor's or its operator's — its first pass over the market, a state of the market's cycle as it
+ * read it, the operator's stop and resume (`scope`: this market or every market), a failed graduation it sends again.
+ */
+export type LaunchJournalMark = Readonly<{
+  kind: LaunchJournalMarkKind;
+  /** When it was written — the server's clock, not a block's. */
+  at: string;
+  actor: "ryntra" | "operator";
+  state: LaunchMarketCycleState | null;
+  from: LaunchMarketCycleState | null;
+  /** The transaction it rests on; null when there is none. */
+  signature: string | null;
+  scope: "market" | "all" | null;
+  /** `ENDOWMENT_FUNDED`: the ladder's budget, raw in the pair currency. */
+  pairRaw: string | null;
+}>;
+
+/** `GET /api/v1/launch/{mint}/journal` — the newest first. `complete` false: something was not read (the creator's trades in part, or a graduation not known yet) — an entry not read is not «none». `floorUnread`: the ladder is there, its position not read now. */
 export type LaunchJournalResponse = Readonly<{
   network: LaunchNetworkId;
   token: string;
@@ -4633,6 +4654,8 @@ export type LaunchJournalResponse = Readonly<{
   complete: boolean;
   floor: LaunchFloorView | null;
   floorUnread: boolean;
+  /** 1.37.0: the executor's and its operator's marks, the oldest first, the newest 200. Absent before 1.37.0. */
+  marks?: readonly LaunchJournalMark[];
   observedAt: string;
 }>;
 
@@ -4884,10 +4907,11 @@ export type LaunchMarketHealthResponse = Readonly<{
   concentration: Readonly<{ top10Bps: number | null; atLeast: boolean; marked: boolean | null; markBps: 6000 }>;
   engine: Readonly<{
     executor: string | null;
-    /** Whether the executor acts on this network now: its key on the server, Launch open, a pass of its own in the last 15 minutes. */
+    /** Whether the executor acts on this network now: its key on the server, Launch open, a pass of its own in the last 15 minutes, every market not stopped by Ryntra's operator (1.37.0), the switch read. */
     acts: boolean;
     lastAction: Readonly<{ kind: LaunchJournalKind; at: string | null; signature: string }> | null;
-    pause: Readonly<{ code: "STOPPED" | "RISK_LIMIT"; at: string | null }> | null;
+    /** 1.37.0: `OPERATOR` — Ryntra's operator stopped the executor on this market or on every market. */
+    pause: Readonly<{ code: "OPERATOR" | "STOPPED" | "RISK_LIMIT"; at: string | null }> | null;
   }>;
   rules: readonly LaunchMarketRule[];
   /** False when the token's receipt was not read: its own rules and the pool's locked positions are missing from `rules`. */

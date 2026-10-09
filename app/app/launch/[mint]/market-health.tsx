@@ -164,6 +164,10 @@ export function MarketHealth({ token, locale, refresh, marksShown }: { token: st
                   </div>
                 ))}
               </dl>
+              {/* A curve that holds little gives all of it to the first drop: the same figure three times, said in words. */}
+              {health.venue === "curve" && health.depth.every((level) => level.pairRaw !== null && level.pairRaw !== "0" && level.pairRaw === health.depth[0]!.pairRaw) ? (
+                <p className={styles.cellSub}>{word("hDepthAll", { amount: money(health.depth[0]!.pairRaw as string) })}</p>
+              ) : null}
               <LadderLine health={health} locale={locale} word={word} />
             </>
           )}
@@ -228,7 +232,7 @@ export function MarketHealth({ token, locale, refresh, marksShown }: { token: st
             {health.holders.count === null ? (health.holders.atLeast ? <span className={styles.cellUnread}>{word("holdersUncounted")}</span> : notRead) : health.holders.atLeast ? word("hAtLeast", { n: formatCountShort(health.holders.count, locale) }) : formatCountShort(health.holders.count, locale)}
           </p>
           <p className={styles.cellSub}>{word("hHoldersSub")}</p>
-          {health.holders.atLeast ? <p className={styles.cellSub}>{word("hAtLeastHint")}</p> : null}
+          {health.holders.atLeast ? <p className={styles.cellSub}>{word(health.holders.count === null ? "hHoldersNoneFound" : "hAtLeastHint")}</p> : null}
         </div>
 
         <div className={styles.healthTile}>
@@ -353,7 +357,7 @@ function LadderLine({ health, locale, word }: { health: Health; locale: Workspac
   return <p className={styles.cellSub}>{word(ladder.pairTo < health.price.pair * 0.9 ? "hLadderDeeper" : "hLadderRange", values)}</p>;
 }
 
-/** Ryntra's executor here: a stop first; then whether it acts on this network now, and its last action on this market. */
+/** Ryntra's executor here: a stop first — the operator's, or steps that stand still —; then whether it acts here now, and its last action on this market. */
 function EngineLines({ health, locale, word, now }: { health: Health; locale: WorkspaceLocale; word: Word; now: number }) {
   const engine = health.engine;
   if (engine.executor === null) return <p className={styles.cellSub}>{word("hNoExecutor")}</p>;
@@ -362,6 +366,8 @@ function EngineLines({ health, locale, word, now }: { health: Health; locale: Wo
       {engine.pause ? <p className={styles.healthMark}>{word(`hPause_${engine.pause.code}`)}</p> : null}
       {/* Not acting: said once — by the pause where its steps stand, else in a line that names what is left to anyone. */}
       {!engine.acts && !engine.pause ? <p className={styles.cellSub}>{word(health.venue === "curve" ? "hExecutorIdle" : "hExecutorIdleDex")}</p> : null}
+      {/* Acting here: what it does on this market, said before what it last did. */}
+      {engine.acts && !engine.pause ? <p className={styles.healthEngine}>{word(health.venue === "curve" ? "hExecutorActs_curve" : "hExecutorActs_pool")}</p> : null}
       {engine.lastAction ? (
         <>
           <p className={styles.healthEngine}>{word("hLastAction", { action: word(ACTION_WORD[engine.lastAction.kind]) })}</p>
@@ -373,8 +379,8 @@ function EngineLines({ health, locale, word, now }: { health: Health; locale: Wo
             </a>
           </p>
         </>
-      ) : engine.acts ? (
-        <p className={styles.healthEngine}>{word("hNoAction")}</p>
+      ) : engine.acts && !engine.pause ? (
+        <p className={styles.cellSub}>{word("hNoAction")}</p>
       ) : null}
     </div>
   );

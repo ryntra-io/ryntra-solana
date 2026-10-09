@@ -45,9 +45,9 @@
  *   that collects them later — not counted again, the same money arriving;
  *   and the wallet that pays for creating the pools, which only identifies
  *   them; and the executor, which sends a curve's graduation and holds
- *   Ryntra's own liquidity on graduated launches — it takes no fee from
- *   people and is paid none of the partner's; what it earns is the fee of its
- *   own liquidity in its DLMM steps: a counter ignores it. None of them is used for
+ *   the Fee-Funded Liquidity Ladder on graduated launches — it takes no fee
+ *   from people and is paid none of the partner's; what it earns is the fee of
+ *   its own ladder in its DLMM steps: a counter ignores it. None of them is used for
  *   anything else: the configs, the pool payer and the executor were created
  *   for Launch, and the partner's vault — a vault that existed before — is
  *   Launch's from the first config that names it. And Meteora's referral
@@ -110,7 +110,7 @@ export const REGISTRY_KINDS = [
   "DBC_FEE_CLAIMER",
   /** The wallet that pays the rent of the pools Ryntra Launch creates. */
   "LAUNCH_POOL_PAYER",
-  /** The wallet that sends a launch's graduation and holds Ryntra's own liquidity on graduated launches. */
+  /** The wallet that sends a launch's graduation and holds the Fee-Funded Liquidity Ladder on graduated launches. */
   "LAUNCH_EXECUTOR",
   /** Meteora's referral account in a launch's trades: the partner's vault's token account in the pair currency. */
   "METEORA_REFERRAL_TOKEN_ACCOUNT",
@@ -238,9 +238,9 @@ export const ATTRIBUTION_REGISTRY: readonly RegistryEntry[] = Object.freeze([
   { ...place("solana-launch-fee-claimer", "LAUNCH_FEE_CLAIMER", "DBC_FEE_CLAIMER", ["launch"], "NONE"), address: "22BZNVD9FuZPQvGwALBwhopSyxUCTuNNeTW1Lr1KsSvA" },
   /* Created 2026-10-06 for this job alone; its key is held outside this repository, and a launch pays it back in its own transaction. */
   { ...place("solana-launch-pool-payer", "LAUNCH_POOL_PAYER", "LAUNCH_POOL_PAYER", ["launch"], "NONE"), address: "H2Bzv5pcrEGug1STGbZhvX98DGb3SCFa4pnAtUwktyyV" },
-  /* The executor: a wallet of its own with a small budget, its key held outside this repository; the address is written
-     here when the wallet exists. */
-  place("solana-launch-executor", "LAUNCH_EXECUTOR", "LAUNCH_EXECUTOR", ["launch"], "NONE"),
+  /* The executor: a wallet of its own with a small budget, its key held outside this repository (since 2026-10-09). It
+     sends graduations and holds the Fee-Funded Liquidity Ladder; on mainnet only a key for this address is used. */
+  { ...place("solana-launch-executor", "LAUNCH_EXECUTOR", "LAUNCH_EXECUTOR", ["launch"], "NONE"), address: "J7zLmXSewhb1kcqwpL4SKpKfivivwn6wmSHwSg6H4JeU" },
   /* Meteora's referral in a launch's trades: the partner's vault's USDC account, which every trade through Ryntra — and the
      creator's first purchase — names as its referral since 2026-10-08. Counted by the swap event's referral fee, never by
      its credits. */
