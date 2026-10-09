@@ -392,7 +392,7 @@ export const MENU_SECTIONS: Readonly<Record<MenuSectionId, MenuSectionDef>> = {
       { id: "swap", label: { en: "Swap", uk: "Обмін" }, href: "/app/swap", match: ["/app/swap", "/app/trade"], page: "swap" },
     ],
   },
-  /* Ryntra Launch: the form opens it, «Мої лаунчі» is a tab beside it, every launch's page stands under it. */
+  /* Ryntra Launch: the form opens it; «Лаунчі на Ryntra» — every market launched on Ryntra, no wallet — and «Мої лаунчі» are tabs beside it; every launch's page stands under it. */
   launch: {
     label: { en: "Launch", uk: "Лаунч" },
     caption: { en: "Your token", uk: "Свій токен" },
@@ -402,6 +402,7 @@ export const MENU_SECTIONS: Readonly<Record<MenuSectionId, MenuSectionDef>> = {
     pages: [],
     tabs: [
       { id: "launch-new", label: { en: "Launch a token", uk: "Запустити токен" }, href: "/app/launch/new", match: ["/app/launch/new"] },
+      { id: "launch-markets", label: { en: "Launches on Ryntra", uk: "Лаунчі на Ryntra" }, href: "/app/launch/markets", match: ["/app/launch/markets"] },
       { id: "launch-mine", label: { en: "My launches", uk: "Мої лаунчі" }, href: "/app/launch/mine", match: ["/app/launch/mine"] },
     ],
   },

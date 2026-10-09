@@ -1,7 +1,5 @@
 /**
- * Trade as a rule's purchase, and «Ринок · Регулярно» (M35;
- * the web's Spot order ticket, subtask 2, contract
- * 1.31.0).
+ * Trade as a rule's purchase, and «Ринок · Регулярно».
  *
  * **«Ринок · Регулярно».** Beside the market order stands the recurring buy on
  * every token — a company, a coin, a meme or a new token — the rule's own

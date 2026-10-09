@@ -1,8 +1,6 @@
 /**
  * The words of the eight-stage strategy demonstration.
  *
- * Two rules, both from the owner review of 2026-09-09.
- *
  * **Concrete, not descriptive.** "Entry — within the reviewed limit" describes
  * a field; "Max entry 200 USDC per SOL, current estimate 203" shows the product
  * behaving. Every figure is illustrative and the section says so once.

@@ -247,6 +247,9 @@ function launchCapability(env: NodeJS.ProcessEnv): Pick<Capabilities, "launch"> 
       holderPermissionSubmit: "/api/v1/launch/{mint}/holder/permission/submit",
       holders: "/api/v1/launch/holders/{address}",
       tradeReceipt: "/api/v1/launch/{mint}/trade/receipt",
+      markets: "/api/v1/launch/markets",
+      marketCard: "/api/v1/launch/markets/{mint}",
+      health: "/api/v1/launch/{mint}/health",
     },
   };
 }

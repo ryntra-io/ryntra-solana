@@ -9,8 +9,7 @@ import { DOCS_GROUPS } from "./nav";
  * The documentation rail, with a filter.
  *
  * The rail itself is not new — every article already rendered the full contents
- * beside it, which is the sticky sidebar the public-site brief asks for. What
- * was missing is the brief's other half: a reader who knows the word they want
+ * beside it, which is the sticky sidebar the public-site brief asks for. A reader who knows the word they want
  * had to read eleven labels to find which page holds it.
  *
  * The filter matches against each entry's label **and its note**, because the

@@ -9,8 +9,7 @@ export const metadata: Metadata = {
 
 /*
  * The review candidates, out of the index and apart from the published
- * documents, in the reader's language (the new site of canon v5.5; the plan
- * of `RYN-SITE-V5-001`, decision 7).
+ * documents, in the reader's language.
  */
 export default async function LegalReviewLayout({ children }: { children: React.ReactNode }) {
   const locale = await publicServerLocale();

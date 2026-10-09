@@ -24,7 +24,7 @@
 import type { Connection } from "@solana/web3.js";
 
 import type { LaunchFloorView, LaunchJournalEventView, LaunchJournalResponse } from "../api/v1/contract.ts";
-import { FLOOR_RULE, creatorSoldEvents, graduationActor, journal, journalEvent, priceOfBin, type JournalEvent } from "../core/launch/autopilot.ts";
+import { FLOOR_RULE, JOURNAL_ENFORCEMENT, creatorSoldEvents, graduationActor, journal, journalEvent, priceOfBin, type JournalEvent } from "../core/launch/autopilot.ts";
 import { autopilotReceipts, floorRecord, isMigration } from "./autopilot.server.ts";
 import { launchExecutorAddress, launchPair } from "./config.server.ts";
 import { readLaunchRecord } from "./flow.server.ts";
@@ -137,13 +137,16 @@ async function assemble(deps: MarketDeps, token: string): Promise<LaunchJournalR
     }
   }
 
+  /* The newest first; an answer gives the newest 200 and says how many the log holds. */
+  const entries = journal(events);
   return {
     network: deps.network.chain,
     token,
     pair: { mint: record.pairMint, symbol: pair.symbol, decimals: pair.decimals, dollar: pair.dollar },
     tokenDecimals,
     executor: launchExecutorAddress(deps.network),
-    events: journal(events).slice(0, 200).map((entry): LaunchJournalEventView => ({ ...entry })),
+    events: entries.slice(0, 200).map((entry): LaunchJournalEventView => ({ ...entry, enforcement: JOURNAL_ENFORCEMENT[entry.kind] })),
+    total: entries.length,
     complete,
     floor,
     floorUnread,

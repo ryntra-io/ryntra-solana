@@ -79,6 +79,15 @@ export type CurveState = Readonly<{
   /** When the curve was filled for the DEX (`finish_curve_timestamp`, unix seconds); null while it is not. */
   finishedAt: number | null;
   creatorTradingFeePct: number;
+  /**
+   * The curve's `migration_progress`: 0 on the curve; 1 filled, waiting for its locker; 2 filled and ready to migrate —
+   * the swap that fills a curve with no locked vesting (every Ryntra preset) marks it 2 at once —; 3 its pool made.
+   */
+  migrationProgress: number;
+  /** The config's square-root prices, Q64.64: where the curve opens and where it graduates, and its segments — the liquidity each holds up to its price. */
+  sqrtStartPrice: string;
+  migrationSqrtPrice: string;
+  points: readonly Readonly<{ sqrtPrice: string; liquidity: string }>[];
 }>;
 
 export type GraduatedState = Readonly<{
@@ -89,6 +98,11 @@ export type GraduatedState = Readonly<{
   sqrtPrice: string;
   tokenReserveRaw: string;
   pairReserveRaw: string;
+  /** `collect_fee_mode` 2: the pool compounds and prices by its two reserves; otherwise by its liquidity inside its range. */
+  compounding: boolean;
+  liquidity: string;
+  sqrtMinPrice: string;
+  sqrtMaxPrice: string;
 }>;
 
 export type MarketState = Readonly<{
@@ -127,6 +141,10 @@ export type HolderRead = Readonly<{
   balances: readonly HolderBalance[];
   /** Holders with a balance counted across the whole mint — null when the node could not count them. */
   totalHolders: number | null;
+  /** Every account of the mint with a balance, its owner and amount — from the same scan as the count; null with it. */
+  accounts: readonly HolderBalance[] | null;
+  /** The node answered the mint's largest accounts, and `balances` hold them: the ten largest are among them. */
+  largestRead: boolean;
 }>;
 
 export type Decoded = Readonly<{ slot: number; blockTime: number | null; failed: boolean; trades: readonly LaunchTrade[] }>;
@@ -305,6 +323,11 @@ export function createLaunchMarketReader(
       activatedAt: config.activationType === 1 ? toNumber(curveState.activationPoint) : null,
       finishedAt: toNumber(curveState.finishCurveTimestamp) > 0 ? toNumber(curveState.finishCurveTimestamp) : null,
       creatorTradingFeePct: config.creatorTradingFeePercentage,
+      migrationProgress: toNumber(curveState.migrationProgress),
+      sqrtStartPrice: config.sqrtStartPrice.toString(),
+      migrationSqrtPrice: config.migrationSqrtPrice.toString(),
+      /* The config writes all twenty segments; the unused ones are zero. */
+      points: config.curve.filter((point) => big(point.sqrtPrice) > 0n).map((point) => ({ sqrtPrice: point.sqrtPrice.toString(), liquidity: point.liquidity.toString() })),
     };
     let graduated: GraduatedState | null = null;
     if (migrated) {
@@ -321,6 +344,10 @@ export function createLaunchMarketReader(
           sqrtPrice: poolState.sqrtPrice.toString(),
           tokenReserveRaw: (tokenIsA ? poolState.tokenAAmount : poolState.tokenBAmount).toString(),
           pairReserveRaw: (tokenIsA ? poolState.tokenBAmount : poolState.tokenAAmount).toString(),
+          compounding: toNumber(poolState.collectFeeMode) === 2,
+          liquidity: poolState.liquidity.toString(),
+          sqrtMinPrice: poolState.sqrtMinPrice.toString(),
+          sqrtMaxPrice: poolState.sqrtMaxPrice.toString(),
         };
       }
     }
@@ -624,7 +651,8 @@ export function createLaunchMarketReader(
     if (market.graduated) accounts.push({ owner: market.graduated.tokenVault, account: market.graduated.tokenVault });
     if (escrow) accounts.push({ owner: escrow, account: getAssociatedTokenAddressSync(mint, new PublicKey(escrow), true, TOKEN_2022_PROGRAM_ID).toBase58() });
     /* The largest accounts catch a holder who never traded; a node that will not answer them leaves the traders' own. */
-    const largest = (await optional(lenient.rpcEndpoint, "largest", () => lenient.getTokenLargestAccounts(mint, "confirmed").then((answer) => answer.value.map((entry) => entry.address.toBase58())))) ?? [];
+    const answered = await optional(lenient.rpcEndpoint, "largest", () => lenient.getTokenLargestAccounts(mint, "confirmed").then((answer) => answer.value.map((entry) => entry.address.toBase58())));
+    const largest = answered ?? [];
     const known = new Set(accounts.map((entry) => entry.account));
     const extra = largest.filter((address) => !known.has(address));
     const balances: HolderBalance[] = [];
@@ -648,19 +676,30 @@ export function createLaunchMarketReader(
       const held = byOwner.get(balance.owner);
       byOwner.set(balance.owner, held ? { ...held, amountRaw: (BigInt(held.amountRaw) + BigInt(balance.amountRaw)).toString() } : balance);
     }
-    const totalHolders = await countHolders(mint);
-    return { balances: [...byOwner.values()], totalHolders };
+    const all = await mintAccounts(mint);
+    return { balances: [...byOwner.values()], totalHolders: all === null ? null : all.length, accounts: all, largestRead: answered !== null };
   }
 
-  /** Every account of the mint with a balance, counted on the node; null where the node does not index the token program. */
-  async function countHolders(mint: PublicKey): Promise<number | null> {
+  /**
+   * Every account of the mint with a balance — its address, owner and amount — scanned on the node: the count of holders
+   * and the market's health read the same scan. Null where the node does not index the token program.
+   */
+  async function mintAccounts(mint: PublicKey): Promise<HolderBalance[] | null> {
     return optional(lenient.rpcEndpoint, "holders", async () => {
       const accounts = await lenient.getProgramAccounts(TOKEN_2022_PROGRAM_ID, {
         commitment: "confirmed",
         filters: [{ memcmp: { offset: 0, bytes: mint.toBase58() } }],
-        dataSlice: { offset: 64, length: 8 },
+        /* The owner (bytes 32–63) and the amount (64–71) of each account. */
+        dataSlice: { offset: 32, length: 40 },
       });
-      return accounts.filter((entry) => Buffer.from(entry.account.data).readBigUInt64LE(0) > 0n).length;
+      const rows: HolderBalance[] = [];
+      for (const entry of accounts) {
+        const data = Buffer.from(entry.account.data);
+        if (data.length < 40) continue;
+        const amount = data.readBigUInt64LE(32);
+        if (amount > 0n) rows.push({ owner: new PublicKey(data.subarray(0, 32)).toBase58(), account: entry.pubkey.toBase58(), amountRaw: amount.toString() });
+      }
+      return rows;
     });
   }
 

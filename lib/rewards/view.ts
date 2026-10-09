@@ -9,7 +9,7 @@ import { effectiveRewardEntries } from "./ledger.ts";
  *
  * ## Nothing internal crosses this boundary
  *
- * Canon §0.5 and the owner's instruction agree: a customer surface carries no
+ * A customer surface carries no
  * internal identifiers, no provider vocabulary and no evidence bureaucracy. So
  * the projection drops the operation reference, the mechanism name, the raw fee
  * amount, the valuation source and the treasury address, and keeps the four

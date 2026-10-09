@@ -13,6 +13,7 @@ import { launchWords, type LaunchWordKey } from "../launch-words";
 import styles from "../launch.module.css";
 import { FlightLog } from "./flight-log";
 import { LaunchChart, type OwnTrade } from "./launch-chart";
+import { MarketHealth } from "./market-health";
 import { PoolPanel } from "./pool-panel";
 import { TradePanel } from "./trade-panel";
 
@@ -39,11 +40,14 @@ export function TokenMarket({
   locale,
   slots,
   paused = false,
+  marksShown = [],
 }: {
   initial: LaunchMarketResponse | null;
   token: string;
   symbol: string;
   locale: WorkspaceLocale;
+  /** The codes of the marks «Чесний лаунч» shows on this page — «Здоров'я ринку» does not say them twice. */
+  marksShown?: readonly string[];
   /** Launch's operator stop is closed: the trade panel says so in place of its action. */
   paused?: boolean;
   slots: Readonly<{ head: ReactNode; marks: ReactNode; about: ReactNode; share: ReactNode; receipt: ReactNode }>;
@@ -338,9 +342,11 @@ export function TokenMarket({
           )}
         </section>
 
+        {/* The market's health and its flight log read again when the trades or the way to the DEX change, never on their own clock. */}
+        <MarketHealth token={token} locale={locale} marksShown={marksShown} refresh={`${market.trades.read}:${market.trades.rows[0]?.signature ?? ""}:${market.progress.migrated}`} />
+
         <div className={styles.slotMarks}>{slots.marks}</div>
 
-        {/* The flight log reads again when the trades or the way to the DEX change, never on its own clock. */}
         <FlightLog token={token} locale={locale} symbol={symbol} refresh={`${market.trades.read}:${market.trades.rows[0]?.signature ?? ""}:${market.progress.migrated}`} />
 
         <section className={`${styles.card} ${styles.slotTabs}`} ref={tabsRef}>

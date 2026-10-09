@@ -21,8 +21,7 @@ import { isMintRef, ruleBuyRoute, ruleBuyRouteOf, ruleRefusalOf, symbolOfIdentit
 import { priceWord } from './words.ts'
 
 /*
- * «Регулярна купівля для всього» on the phone — the web's
- * subtask 2, contract 1.31.0: a rule names any token with
+ * «Регулярна купівля для всього» on the phone: a rule names any token with
  * liquidity, a token stands on the floor, a meme's facts of risk come before
  * the button, a token's condition stands against the price when the rule was
  * turned on, and its reminder is bought in Trade, the ticket as the rule's

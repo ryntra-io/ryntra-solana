@@ -6,8 +6,7 @@ import { formatUsdMicros } from "./model.ts";
  *
  * `formatUsdMicros` truncates to cents, so the first real cashback of this
  * product — ≈ $0.0063 on a $5 bridge — read `$0.00`: a measured something
- * shown as a measured nothing (observed on production in
- * `RYN-MONEY-RECEIPT-PARITY-001`, fixed in `RYN-PRE-HACKATHON-FOUNDATION-001`).
+ * shown as a measured nothing.
  * The ledger keeps every micro-dollar; only the sentence changes, to the
  * shape Holdings already uses: `<0.01`. Client-safe on purpose — the Rewards
  * card and the Holdings row import it, and neither should pull the store.

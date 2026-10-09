@@ -1,4 +1,4 @@
--- RYN-WALLET-ENTRY-HOME-001 part A. PREPARED ONLY; not applied to production.
+-- PREPARED ONLY; not applied to production.
 -- Existing account IDs, auth identities, wallets and private plans stay intact.
 -- Server-verified SIWS is a prerequisite at the application boundary. These
 -- RPCs retain the existing app-secret authorization, empty search_path and

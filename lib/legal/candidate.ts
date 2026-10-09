@@ -4,16 +4,12 @@ import { CONTACTS } from "../site/contacts.ts";
 const EMAIL = CONTACTS.email;
 
 /**
- * The legal review candidate of the new site (canon v5.5; the plan of
- * `RYN-SITE-V5-001`, decision 7: subtask 3 prepares the candidates, English
- * and Ukrainian, with the privacy of the Android app; the published
- * `/legal/terms` and `/legal/privacy` change only on a lawyer's word).
+ * The legal review candidate of the new site.
  *
  * Three documents — Terms, Privacy, Product and risk disclosures — as data,
  * so both languages keep one structure and a test can read every sentence.
  * Every statement about the product was checked against the code on
- * `LEGAL_RELEASE_FACTS.verifiedThrough` (the data inventory is in
- * `docs/legal/CANDIDATE-2026-09-26-DATA-MAP.md`): what is stored, where, who
+ * `LEGAL_RELEASE_FACTS.verifiedThrough`: what is stored, where, who
  * else receives it, what the phone keeps. What only the operator and counsel
  * can supply — the operator's identity, the governing law, the transfer
  * mechanism, the retention schedule — is named as missing, never invented.

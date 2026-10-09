@@ -1,7 +1,4 @@
 /*
- * The landing's content, transcribed from the design handoff
- * (`Ryntra Landing.dc.html`, 2026-08-20) rather than re-authored.
- *
  * THE RULE THIS FILE EXISTS TO OBEY: exactly the same design as the handoff,
  * only the charts may be adjusted a little, and the colours are the brand's
  * own. Same blocks, same order, same rows, same figures — Brandbook v1.2
@@ -33,7 +30,7 @@ export type Cap = Readonly<{ name: string; status: Status }>;
 export type Group = Readonly<{ title: string; items: readonly Cap[] }>;
 export type Panel = Readonly<{ title: string; meta: string; rows: readonly Meter[] }>;
 
-/** `caps('A|LIVE, B|BUILDING')` — a name and its status, in the brief's words. */
+/** `caps('A|LIVE, B|BUILDING')` — a name and its status. */
 function caps(spec: string): readonly Cap[] {
   return spec.split(",").map((entry) => {
     const [name, status] = entry.split("|").map((part) => part.trim());

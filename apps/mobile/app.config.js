@@ -3,7 +3,7 @@ const { isAbsolute, join } = require('node:path')
 
 /**
  * The development build's own identity (`RYNTRA_VARIANT=dev`): a package of its
- * own, `io.ryntra.app.dev`, so it installs beside the Owner's signed release
+ * own, `io.ryntra.app.dev`, so it installs beside the operator's signed release
  * instead of over it (the debug key cannot replace the release, and replacing
  * it would lose the sign-in); its own name on the launcher, «Ryntra Dev»; its
  * own scheme, `ryntra-dev`, so a `ryntra://` link never asks which app to open;
@@ -16,7 +16,7 @@ const DEV_SCHEME = 'ryntra-dev'
 const DEV_NAME = 'Ryntra Dev'
 
 /**
- * The static config (`app.json`) plus what only the Owner's machine holds:
+ * The static config (`app.json`) plus what only the operator's machine holds:
  * the Firebase client configuration for push tokens. The file is never in
  * the repository (`google-services.json` is ignored); when it stands beside
  * this file, or where `RYNTRA_GOOGLE_SERVICES_FILE` points, the Android

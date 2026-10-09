@@ -11,7 +11,7 @@
  * 2. `npx expo prebuild -p android [--clean]` — the native project regenerated
  *    with the version of app.json and the release signing plugin applied
  * 3. `node scripts/release-check.mjs --require-key` — the release checks on
- *    the project just generated, and the Owner's keystore present in the
+ *    the project just generated, and the operator's keystore present in the
  *    environment (not with --unsigned)
  * 4. `gradlew :app:assembleRelease` (or `:app:bundleRelease` with --aab) —
  *    signed with the key the environment names; the Gradle guard stops a
@@ -26,7 +26,7 @@
  *
  * `--unsigned` builds the same release with no key at all
  * (RYNTRA_RELEASE_UNSIGNED=1) as `dist/ryntra-<…>-unsigned.apk` and prints
- * the one apksigner command the Owner runs to sign it: apksigner's own
+ * the one apksigner command the operator runs to sign it: apksigner's own
  * prompt takes the passwords, so they never pass through this script, Gradle
  * or the environment. `--verify=<apk>` then reads the signed APK — its
  * package and version against app.json, the permissions it declares (none
@@ -265,7 +265,7 @@ if (unsigned) {
 
 step('signing certificate')
 if (!aab && apksigner) {
-  // The certificate the APK is signed with — its SHA-256 goes into assetlinks.json; the key itself never leaves the Owner.
+  // The certificate the APK is signed with — its SHA-256 goes into assetlinks.json; the key itself never leaves the operator.
   run(apksigner, ['verify', '--print-certs', target])
 } else {
   run(keytool, ['-printcert', '-jarfile', target])

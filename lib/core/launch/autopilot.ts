@@ -233,6 +233,24 @@ export function graduationActor(feePayer: string, executor: string | null): Jour
   return "other";
 }
 
+/**
+ * What governs each kind of entry: a rule a program enforces — the curve's config fixed for ever, a lock, the fee-sharing
+ * vault, Meteora's migration that anyone may send — or a policy Ryntra's server runs — its liquidity; null for what the
+ * log observes of the market: a sale of the creator's is a fact, not an act under a rule.
+ */
+export const JOURNAL_ENFORCEMENT: Readonly<Record<JournalKind, "rule" | "policy" | null>> = Object.freeze({
+  LAUNCHED: "rule",
+  CREATOR_LOCKED: "rule",
+  FEES_SHARED: "rule",
+  CREATOR_SOLD: null,
+  GRADUATED: "rule",
+  FLOOR_POOL: "policy",
+  FLOOR_PLACED: "policy",
+  FLOOR_WITHDRAWN: "policy",
+  FLOOR_RAISED: "policy",
+  FLOOR_ADDED: "policy",
+});
+
 /** The log in time order, the newest first; one entry per transaction and kind. */
 export function journal(events: readonly JournalEvent[]): JournalEvent[] {
   const seen = new Set<string>();

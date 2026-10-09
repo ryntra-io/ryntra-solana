@@ -51,8 +51,7 @@ export type ProductNavGroup = Readonly<{
 /**
  * The header's one action: go where the doors are.
  *
- * It replaced `Request beta access` as the primary CTA on 2026-08-17, on the
- * founder's direct instruction, because the loudest button on the site gated
+ * It replaced `Request beta access` as the primary CTA on 2026-08-17, because the loudest button on the site gated
  * the smallest part of it: four workspaces open with no account at all, and
  * the one thing beta actually gates is the cabinet. A first-time visitor read
  * "beta" and concluded the product was closed — including, on a bad night,

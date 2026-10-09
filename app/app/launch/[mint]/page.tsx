@@ -1,4 +1,5 @@
-import { ArrowSquareOut, CaretDown, CheckCircle, Globe, ImageSquare, Lock, TelegramLogo, XLogo } from "@phosphor-icons/react/dist/ssr";
+import { ArrowLeft, ArrowSquareOut, CaretDown, CheckCircle, Globe, ImageSquare, Lock, TelegramLogo, XLogo } from "@phosphor-icons/react/dist/ssr";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import type { WorkspaceLocale } from "@/app/shell/locale";
@@ -53,9 +54,14 @@ export default async function LaunchTokenPage({ params }: { params: Promise<{ mi
   const pairSymbol = network?.pairs[token.preset]?.symbol ?? "";
   return (
     <div className={styles.page}>
+      {/* Every market launched on Ryntra, one press back — the list a judge or a buyer came from. */}
+      <Link className={styles.backLink} href="/app/launch/markets" prefetch={false}>
+        <ArrowLeft size={14} aria-hidden /> {launchWords(locale)("marketsAll")}
+      </Link>
       <TokenMarket
         initial={null}
         paused={!launchTrading()}
+        marksShown={(token.receipt?.marks ?? []).map((mark) => mark.code)}
         token={token.token}
         symbol={token.symbol}
         locale={locale}
@@ -109,9 +115,17 @@ function Marks({ token, locale }: { token: LaunchTokenResponse; locale: Workspac
   const lockMark = marks.find((mark) => mark.code === "CREATOR_BUY_LOCKED") ?? null;
   return (
     <section className={styles.card} aria-labelledby="launch-marks">
-      <h2 id="launch-marks" className={styles.cardTitle}>
-        {word("marks")}
-      </h2>
+      <div className={styles.cardHeadRow}>
+        <h2 id="launch-marks" className={styles.cardTitle}>
+          {word("marks")}
+        </h2>
+        {/* Every mark here is a program's rule — said once, in words, as «Здоров'я ринку» marks its rules and policies. */}
+        {receipt ? (
+          <span className={styles.enforceChip} data-enforcement="rule" title={word("marksRulesHint")}>
+            {word("marksRules")}
+          </span>
+        ) : null}
+      </div>
       {receipt ? (
         <ul className={styles.marks}>
           {lockMark ? (

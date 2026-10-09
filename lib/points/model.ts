@@ -7,7 +7,7 @@ import { POINTS_REASONS, type PointsReason } from "./policy.ts";
  *
  * ## A ledger, never one mutable number
  *
- * The Owner's rule. A stored total is a second source of truth that drifts
+ * A stored total is a second source of truth that drifts
  * silently from the first; a sum over append-only rows cannot. What a person
  * has is therefore always a function of what happened — and *why*, because
  * every row names its reason, the operation it came from, the policy version

@@ -23,7 +23,7 @@ commit, named for what it released; the latest is from 2026-10-09.
 | `supabase/migrations/`, `supabase/prepared/` | The database schema migration by migration, and the prepared SQL that is applied by hand (corrections and rollbacks) |
 | `public/` | Static assets |
 
-3,049 files come from the development repository as released, and each test
+3,062 files come from the development repository as released, and each test
 sits beside the code it tests (`*.test.mjs`); `README.md`, `BOUNDARY.md`,
 `LICENSE`, `.gitignore` and the scripts of `package.json` are written for this
 snapshot.
@@ -85,15 +85,15 @@ build-tools).
 
 The code as it stood before the hackathon is tagged
 `pre-hackathon-baseline-2026-09-11` in the development repository — commit `7fc5776f`,
-2026-09-11. Measured against that tag, path by path, for the 3,049 files
+2026-09-11. Measured against that tag, path by path, for the 3,062 files
 that come from the development repository:
 
 | Since the tag | Files |
 |---|---|
-| New | 1,314 |
+| New | 1,327 |
 | Changed | 821 |
 | Unchanged | 914 |
-| Lines added / removed | +337,505 / −20,396 |
+| Lines added / removed | +341,921 / −20,396 |
 
 [BOUNDARY.md](BOUNDARY.md) lists every new and every changed file. Shipped since
 then, as the public build log records it:
@@ -145,6 +145,7 @@ then, as the public build log records it:
 | 2026-10-09 | One wallet signature per visit: sign in once and every page is yours |
 | 2026-10-09 | The trading terminal fits a laptop: the chart first, the order always in reach |
 | 2026-10-09 | A shared trade shows up on X and Telegram as a large card, and Rewards sits in the header |
+| 2026-10-09 | Every market launched on Ryntra on one public page, and each token's market health |
 
 ## What is not here
 

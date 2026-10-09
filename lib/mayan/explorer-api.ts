@@ -150,8 +150,7 @@ export function normalizeMayanSwapStatus(data: z.output<typeof ResponseSchema>, 
     destinationTxHash: data.fulfillTxHash ?? data.redeemTxHash ?? null,
     refundTxHash: data.refundTxHash ?? null,
     toAmount: data.toAmount == null ? null : String(data.toAmount),
-    /* Corrected 2026-09-10, on the owner's instruction not to read our adapter's
-       silence as the provider's. Mayan **does** state the applied referrer rate
+    /* Mayan **does** state the applied referrer rate
        on a finished swap: `/v3/swaps` carries `referrerBps` and `mayanBps` beside
        `service`, `fromAmount` and `toAmount`. The first pass here read no such
        field and concluded there was none to read, which was a fact about this

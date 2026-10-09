@@ -2,6 +2,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { needsDevelopmentRepository } from "../../../lib/development-repository.mjs";
 import { API_CONTRACT_VERSION, API_HEADER, RyntraApiError, createRyntraApiClient } from "./index.ts";
 
 function fakeFetch(handlers) {
@@ -302,4 +303,31 @@ test("1.22.0: payment links behind the bearer, one link for anyone; the recipien
   token = "sess.token";
   await assert.rejects(api.pay.transaction("7mKq3x9ZpQv2Lr5t", { payer: ADDRESS }), (error) => error.code === "WALLET_MISMATCH" && error.status === 403);
   assert.equal(calls.at(-1).init.headers.authorization, "Bearer sess.token", "the bearer stands in for the page's origin");
+});
+
+
+test("1.36.0: the markets launched on Ryntra, one market's card, its health and its flight log — public reads, no bearer", { skip: needsDevelopmentRepository("the API's examples under docs/api/examples") }, async () => {
+  const { readFileSync } = await import("node:fs");
+  const example = (name) => JSON.parse(readFileSync(new URL(`../../../docs/api/examples/v1/${name}`, import.meta.url), "utf8"));
+  const markets = example("launch-markets.response.json");
+  const card = example("launch-market.response.json");
+  const health = example("launch-health.response.json");
+  const mint = health.token;
+  const { fetch, calls } = fakeFetch({
+    "GET /api/v1/launch/markets": () => ({ body: markets }),
+    [`GET /api/v1/launch/markets/${mint}`]: () => ({ body: card }),
+    [`GET /api/v1/launch/${mint}/health`]: () => ({ body: health }),
+    [`GET /api/v1/launch/${mint}/journal`]: () => ({ status: 404, body: { error: { code: "LAUNCH_NOT_FOUND", message: "No Ryntra launch of this token here." } } }),
+  });
+  const api = createRyntraApiClient({ baseUrl: "https://ryntra.io", fetch, token: () => "sess.token" });
+  assert.equal((await api.launch.markets()).markets.length, markets.markets.length);
+  assert.equal((await api.launch.market(mint)).market.token, mint);
+  const read = await api.launch.health(mint);
+  assert.equal(read.state.code, health.state.code, "the state is the server's; the client derives none");
+  await assert.rejects(api.launch.journal(mint), (error) => error instanceof RyntraApiError && error.code === "LAUNCH_NOT_FOUND" && error.status === 404);
+  assert.deepEqual(
+    calls.map((call) => new URL(call.url).pathname),
+    ["/api/v1/launch/markets", `/api/v1/launch/markets/${mint}`, `/api/v1/launch/${mint}/health`, `/api/v1/launch/${mint}/journal`],
+  );
+  assert.ok(calls.every((call) => call.init.headers.authorization === undefined), "a public read carries no bearer");
 });

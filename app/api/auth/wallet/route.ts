@@ -25,9 +25,7 @@ export const dynamic = "force-dynamic";
  *        the proven address to the account already in the session, `signin`
  *        opens a WALLET-PROOF session for the address.
  *
- * WHAT CHANGED WITH RYN-ACCESS-002, AND WHY
- *   A wallet is not a Ryntra account. Under `RYN-ACCESS-001` a signature could
- *   open the account that had linked the address; under the access model the
+ *   A wallet is not a Ryntra account. Under the access model the
  *   founder approved on 2026-09-06 exactly three methods open an account —
  *   email + password, Google, Telegram — and a signature proves ownership of
  *   an address, which unlocks that address's own private server history and

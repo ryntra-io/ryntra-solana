@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowBendDownLeft, ArrowFatLineUp, ArrowSquareOut, ArrowsClockwise, CircleNotch, Coins, FlagCheckered, HandCoins, Lock, RocketLaunch, ShareNetwork, TrendDown } from "@phosphor-icons/react";
+import { ArrowBendDownLeft, ArrowFatLineUp, ArrowSquareOut, ArrowsClockwise, CircleNotch, Coins, DownloadSimple, FlagCheckered, HandCoins, Lock, RocketLaunch, ShareNetwork, TrendDown } from "@phosphor-icons/react";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 
 import type { WorkspaceLocale } from "@/app/shell/locale";
@@ -132,9 +132,15 @@ export function FlightLog({ token, locale, refresh, symbol }: { token: string; l
 
   return (
     <section className={`${styles.card} ${styles.slotLog}`} aria-labelledby="launch-log">
-      <h2 id="launch-log" className={styles.cardTitle}>
-        {word("logTitle")}
-      </h2>
+      <div className={styles.cardHeadRow}>
+        <h2 id="launch-log" className={styles.cardTitle}>
+          {word("logTitle")}
+        </h2>
+        {/* The log as the API answers it, saved as a file — readable without a wallet, every entry with its transaction. */}
+        <button type="button" className={styles.textButton} onClick={() => saveLog(log, symbol)} aria-label={word("logSaveLabel")}>
+          <DownloadSimple size={14} aria-hidden /> {word("logSave")}
+        </button>
+      </div>
       {log.floor ? (
         <div className={styles.floorBlock}>
           <div className={styles.floorHead}>
@@ -169,6 +175,11 @@ export function FlightLog({ token, locale, refresh, symbol }: { token: string; l
               <span className={styles.logText}>
                 <span className={styles.logHead}>
                   <span className={styles.logName}>{name}</span>
+                  {entry.enforcement ? (
+                    <span className={styles.logEnforce} data-enforcement={entry.enforcement} title={word(`enforceHint_${entry.enforcement}`)}>
+                      {word(`logEnforce_${entry.enforcement}`)}
+                    </span>
+                  ) : null}
                   {entry.at && time ? (
                     <time className={styles.logWhen} dateTime={entry.at} title={new Date(entry.at).toLocaleString(locale === "uk" ? "uk-UA" : "en-US")}>
                       {time}
@@ -202,10 +213,25 @@ export function FlightLog({ token, locale, refresh, symbol }: { token: string; l
           {all ? word("logLess") : word("logMore", { n: entries.length })}
         </button>
       ) : null}
+      {/* The answer gives the newest 200: a log that holds more says so, and the file it saves says the same. */}
+      {log.total !== undefined && log.total > log.events.length ? <p className={styles.hint}>{word("logTotal", { shown: log.events.length, total: log.total })}</p> : null}
       {!log.complete ? <p className={styles.hint}>{word("logIncomplete")}</p> : null}
       <p className={styles.marksChecked}>{word("marksChecked", { ago: when(log.observedAt, locale, word) })}</p>
     </section>
   );
+}
+
+/** The log saved as the API answered it: one JSON file named by the token, made in the page — nothing is sent anywhere. */
+function saveLog(log: LaunchJournalResponse, symbol: string) {
+  const blob = new Blob([`${JSON.stringify(log, null, 2)}\n`], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `ryntra-flight-log-${symbol.replace(/[^A-Za-z0-9]+/g, "").slice(0, 16) || "token"}-${log.token.slice(0, 6)}.json`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
 }
 
 /** The time of an entry: how long ago within a day, the date after. */

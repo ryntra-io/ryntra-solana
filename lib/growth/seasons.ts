@@ -19,9 +19,7 @@ import { weekStartOf, within, type SeasonRange } from "./weeks.ts";
  * Status and badges only. All three tasks earn the season's badge; a place in
  * the top three of any weekly board earns its podium badge. No points toward
  * a rank, no money, no prize: a season's count starts again from nothing, and
- * ranks and rewards carry on untouched. Prizes would need a lawyer and the
- * owner's word first, and only for deeds that do not depend on profit or
- * volume.
+ * ranks and rewards carry on untouched.
  */
 
 export const SEASON_TASK_IDS = ["FIRST_TRADE", "THREE_WEEKS", "FRIEND_TRADES"] as const;

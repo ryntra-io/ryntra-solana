@@ -59,8 +59,7 @@ export type AccrualInput = Readonly<{
    *
    * Null is an ordinary answer, not a failure: the entries are still created
    * with their exact share of the fee asset and no dollar figure, and a reward
-   * without a dollar figure is `Pending`. Inventing a price to avoid a Pending
-   * row would be the one thing the owner's instruction forbids by name.
+   * without a dollar figure is `Pending`.
    */
   price: Readonly<{ price: string; sourceRef: string; observedAt: string }> | null;
   /**

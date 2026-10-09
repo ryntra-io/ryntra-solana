@@ -81,6 +81,8 @@ export type StepsRead = Readonly<{
   tokenRaw: string;
   /** Fees earned and not yet claimed, in the pair currency (the pool collects them there). */
   feePairRaw: string;
+  /** Each step: its bin and what it holds of the pair currency and the token. Absent where a reader did not split them. */
+  bins?: readonly Readonly<{ binId: number; pairRaw: string; tokenRaw: string }>[];
 }>;
 
 export type FloorVenue = Readonly<{
@@ -250,6 +252,7 @@ export function createFloorVenue(args: Readonly<{ connection: Connection; cluste
         pairRaw: data.totalYAmount,
         tokenRaw: data.totalXAmount,
         feePairRaw: data.feeY.toString(),
+        bins: data.positionBinData.map((bin) => ({ binId: bin.binId, pairRaw: String(bin.positionYAmount), tokenRaw: String(bin.positionXAmount) })),
       };
     },
   };

@@ -1,11 +1,9 @@
 /**
  * When Rewards started, and why that is one server-side value.
  *
- * The owner's decision of 2026-09-10 is that fees collected before Rewards ship
+ * Fees collected before Rewards ship
  * create no obligation to anybody, and that the moment accrual begins is set
- * explicitly at launch rather than backdated. `docs/DECISIONS.md` carries it
- * twice — once as the standing rule when Swap Monetization closed, and once
- * with this mechanism.
+ * explicitly at launch rather than backdated.
  *
  * **It is read on the server and never sent to a browser as a rule to enforce.**
  * A date compiled into client code is a date somebody can move by changing

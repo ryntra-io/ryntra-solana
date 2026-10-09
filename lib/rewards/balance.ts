@@ -10,7 +10,7 @@ import { totalRewards, type RewardTotals } from "./ledger.ts";
  *
  * ## Available is bounded by money that is free, not merely money that exists
  *
- * The owner's instruction is that `Available` cannot exceed the payout reserve
+ * `Available` cannot exceed the payout reserve
  * that is actually funded. The first version of this module read that as *the
  * treasury balance* and was wrong across users: with $50 in the pot and two
  * people owed $40 each, both were shown $40 and the product had promised $80.
@@ -68,8 +68,7 @@ const FLOOR_TEXT: Readonly<Record<RewardBalanceLocale, string>> = {
   uk: `Отримати можна від $${formatUsdMicros(REWARD_MINIMUM_CLAIM_USD_MICROS)}`,
 };
 
-/* The state and the condition that changes it — never a promise of when
-   (canon v5.0 §0.0 rule 10: no «незабаром» on a customer screen). */
+/* The state and the condition that changes it — never a promise of when. */
 const RESERVE_TEXT: Readonly<Record<RewardBalanceLocale, string>> = {
   en: "Your rewards are recorded. Claiming is paused until the reward reserve covers them.",
   uk: "Ваші винагороди зафіксовані. Отримання призупинено, доки резерв винагород їх не покриє.",

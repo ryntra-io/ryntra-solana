@@ -16,7 +16,6 @@ import { FEATURED_ASSETS, assetHref } from "./workspace/assets/featured.ts";
  * shipped twice — `/stellar/asset/{CODE:ISSUER}`, which four documents said was
  * the Passport URL, and a `/presentation` hero that never existed.
  *
- * The founder's brief named `/developers#stellar` and `/stellar/receipts/{id}`.
  * Neither is mounted — `/developers` carries no Stellar section and receipts are
  * verified by pasting a document rather than by id — so the page points at the
  * surfaces that exist and those two are recorded as follow-up work.

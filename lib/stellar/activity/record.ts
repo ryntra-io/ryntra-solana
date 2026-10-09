@@ -20,8 +20,6 @@
  * anyone can re-read the ledger from it, which is exactly what the Receipts
  * surface does.
  *
- * ## The states are the ones the founder's contract names
- *
  * Nine, and they map one-to-one onto the lifecycle the Send surface runs. The
  * two that matter most are the ones a demo skips: `FAILED` and
  * `RECONCILIATION_REQUIRED`. A product that only records success has recorded

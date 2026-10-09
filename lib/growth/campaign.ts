@@ -117,8 +117,7 @@ export type CampaignTriple = {
  * intent; an allowlist makes intent irrelevant, because anything unissued is simply not
  * attribution.
  *
- * Empty on purpose. RYN-X-001 published without a bot CTA, so no campaign link has been
- * issued. Add an entry when a link is approved for publication, and never before.
+ * Empty on purpose. Add an entry when a link is approved for publication, and never before.
  */
 export const REGISTERED_CAMPAIGNS: readonly CampaignTriple[] = Object.freeze([]);
 

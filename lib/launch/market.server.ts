@@ -33,7 +33,7 @@ import {
   type LaunchHolderLabel,
   type LaunchTrade,
 } from "../core/venues/meteora-dbc/market.ts";
-import type { LaunchMarketReader, MarketState } from "../core/venues/meteora-dbc/market.server.ts";
+import type { HolderBalance, LaunchMarketReader, MarketState } from "../core/venues/meteora-dbc/market.server.ts";
 import { launchPreset } from "../core/venues/meteora-dbc/presets.ts";
 import { createLaunchTradeVenue } from "../core/venues/meteora-dbc/trade.server.ts";
 import { launchPair, launchPoolFee } from "./config.server.ts";
@@ -71,6 +71,19 @@ export type LaunchMarketFacts = Readonly<{
   creatorTradesComplete: boolean;
   supplyRaw: string;
   graduated: Readonly<{ at: number; signature: string }> | null;
+  /** The chain's state the read was made from: the curve with its config's prices and segments, the graduated pool. */
+  state: MarketState;
+  /** Every account of the mint with a balance, from the node's scan; null when the node would not answer it. */
+  mintAccounts: readonly HolderBalance[] | null;
+  /** The holders the read found, merged by owner — the traders, the creator, the vaults, the escrow and the mint's largest accounts. */
+  foundHolders: readonly HolderBalance[];
+  /** Whether the node answered the mint's largest accounts, so `foundHolders` hold the ten largest. */
+  largestRead: boolean;
+  /** Every trade the read found — the history, the opening minutes, the creator's own — the oldest first. */
+  trades: readonly LaunchTrade[];
+  /** Whether every trade of the token was read, and whether the last day's were. */
+  historyComplete: boolean;
+  dayReadWhole: boolean;
 }>;
 
 const CACHE = new Map<string, Readonly<{ at: number; value: Promise<LaunchMarketFacts | null> }>>();
@@ -266,6 +279,13 @@ async function assemble(deps: MarketDeps, token: string): Promise<LaunchMarketFa
     creatorTradesComplete: history.complete || creatorRead.complete,
     supplyRaw: state.supplyRaw,
     graduated: history.graduated,
+    state,
+    mintAccounts: read.accounts,
+    foundHolders: read.balances,
+    largestRead: read.largestRead,
+    trades: known,
+    historyComplete: history.complete,
+    dayReadWhole: windowReadWhole(history, dayAgo),
   };
 }
 

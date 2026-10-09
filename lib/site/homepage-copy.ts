@@ -59,8 +59,7 @@ export const HOMEPAGE_COPY = {
     /* The one line that says what Ryntra is — the manifest's description and the structured data's slogan. */
     tagline: "Invest in tokenized stocks from $1, in your own wallet, on Solana.",
 
-    /* Hero v2 — the design handoff of 2026-09-13 and the ten corrections
-       given with it. One product-first composition: the Spot workspace with
+    /* One product-first composition: the Spot workspace with
        NVDAx open is the focal point, the copy stands beside it, and nothing is
        added — the existing pieces are made stronger. The headline stays
        `titleLines`; the body was shortened; the right rail is three proof

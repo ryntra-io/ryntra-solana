@@ -1,8 +1,6 @@
 /**
  * Ryntra Points — the formula, versioned.
  *
- * `RYN-PRE-HACKATHON-FOUNDATION-001`, on the Owner's decision of 2026-09-11.
- *
  * ## Why the formula is a value and not code scattered across the product
  *
  * Every points entry carries the version of the policy that produced it. A
@@ -12,7 +10,7 @@
  * for that" about lives here, in one object with one version string, and the
  * arithmetic below reads that object rather than its own constants.
  *
- * ## What points are, in the Owner's words
+ * ## What points are
  *
  * Points reflect genuine activity and may be used for future benefits, access,
  * campaigns and rewards. They have no cash value, cannot be transferred and

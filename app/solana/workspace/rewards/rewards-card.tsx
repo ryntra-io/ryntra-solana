@@ -23,8 +23,7 @@ import styles from "./rewards.module.css";
  *
  * ## Drawn the way the Portfolio is drawn
  *
- * The Owner's instruction of 2026-09-12, with the Portfolio held up as the
- * standard: not one wide column of stacked blocks, but a composition. The
+ * Not one wide column of stacked blocks, but a composition. The
  * earnings on the left — the figure that is theirs to claim, the claim, and
  * where every dollar came from as one bar — and on the right the two
  * programmes side by side, the rank and the invitation, over the statement of
@@ -396,7 +395,7 @@ export function RewardsCard() {
                   /* Grow factors in whole thousandths: a lone `<$0.01` source with
                      `flex-grow: 0.01` fills a hundredth of the track, not all of it —
                      factors that sum below one leave the rest empty. Seen on
-                     production with the Owner's own first cashback. */
+                     production with the operator's own first cashback. */
                   <span key={part.kind} className={styles.slice} data-kind={part.kind} style={{ flexGrow: Math.max(1, Math.round((part.value / sources.total) * 1000)) }} title={`${sourceLabel(part.kind)} ${share_(part.value)}`} />
                 ))
               : null}
@@ -424,8 +423,7 @@ export function RewardsCard() {
       <div className={styles.main}>
         <div className={styles.programmes}>
           {/* The rank beside the money: it sets what a friend's trade pays, so
-              it sits next to the invitation — the Owner's placement for
-              Points, kept for what replaced them. */}
+              it sits next to the invitation. */}
           <RankCard rank={summary.rank ?? null} />
 
           <section className={`${styles.panel} ${styles.invite}`} id="rewards-invite" aria-label={words.inviteTitle}>

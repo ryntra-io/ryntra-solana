@@ -13,15 +13,6 @@ import { sitemapEntries } from "./sitemap.ts";
 import { helpTopic } from "./shell/help-topics.ts";
 import { LANDING_META } from "./(home)/landing-meta.ts";
 
-/*
- * The site — the Owner's word of 2026-09-26: first `RYN-SITE-NOW-001` («Сайт:
- * тимчасовий редірект і правдиві тексти») led `/` into the app and made
- * everything the outside world reads say what Ryntra is; then the new site of
- * `RYN-SITE-V5-001` (subtask 2) took `/` back with the landing in English and
- * `/uk` in Ukrainian, and removed the temporary redirect. The Owner's line,
- * word for word, in both languages — the tab of Home and the share card of the
- * landing.
- */
 const TITLE = {
   en: "Ryntra — invest in tokenized stocks from $1, in your own wallet, on Solana",
   uk: "Ryntra — інвестуй у токенізовані акції від $1, у своєму гаманці, на Solana",
@@ -58,7 +49,7 @@ test("the landing answers at `/` and `/uk`; the temporary redirect into the app 
     assert.equal(row?.destination, "/", `${source} leads to the landing`);
     assert.equal(row?.permanent, false, `${source} must stay a 307 — a paused language comes back`);
   }
-  /* The company page is a page again since the public pages of the new site (subtask 3, 2026-09-26). */
+  /* The company page is a page again since the public pages of the new site. */
   assert.equal(first.get("/company"), undefined);
   /* The landing's old review doors and the parked workspaces: to the landing itself, one hop. */
   for (const [source, destination] of [
@@ -88,8 +79,7 @@ test("the language map lives in the config, never as a redirect() in a page", ()
   assert.doesNotMatch(read("../next.config.ts"), /SITE_NOW_REDIRECTS|FRONT_DOOR/, "the temporary front door is gone");
 });
 
-/* Home's words of its own as the app's page — the plan of `RYN-SITE-V5-001` §3,
-   built by its technical subtask (2026-09-27). */
+/* Home's words of its own as the app's page. */
 const HOME_WORDS = {
   en: {
     title: "Ryntra app — stocks, crypto, memes and your own token",
@@ -127,8 +117,6 @@ test("Home has words of its own as the app's page, at both of its addresses, wit
     assert.equal(metadata.twitter?.title, HOME_WORDS[locale].title);
     assert.equal(metadata.twitter?.description, description);
     assert.deepEqual(metadata.twitter?.images, [landingOgImage(locale)]);
-    /* The landing's share card says the Owner's line; its tab and its result
-       carry the plan's shorter title, within 60 characters (plan decision 5). */
     const landing = buildMetadata(locale);
     assert.equal(landing.openGraph?.title, TITLE[locale]);
     assert.equal(landing.twitter?.title, TITLE[locale]);
@@ -222,7 +210,7 @@ test("the sitemap and robots name only what is live", async () => {
     const path = entry.url.replace(SITE, "") || "/";
     assert.ok(!redirected.has(path), `${path} redirects and must not be advertised`);
   }
-  /* `/company` is a page again and advertised since the public pages of the new site (2026-09-26), in both languages since subtask 4. */
+  /* `/company` is a page again and advertised since the public pages of the new site (2026-09-26), in both languages. */
   assert.ok(entries.find((entry) => entry.url === SITE + "/company"), "/company is advertised again");
   assert.ok(entries.find((entry) => entry.url === SITE + "/uk/company"), "and at its Ukrainian address");
   for (const gone of ["/en", "/ua", "/docs/developers", "/docs/developers/guard", "/docs/developers/agent-control", "/app/portfolio", "/uk/legal/terms"]) {

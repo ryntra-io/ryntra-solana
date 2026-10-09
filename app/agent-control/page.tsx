@@ -16,7 +16,7 @@ import styles from "@/app/(home)/landing.module.css";
  * the console gets room, where every capability shows all five of its axes, and
  * where the boundary is stated at length rather than as one ruled line.
  *
- * The order is the brief's, and it is deliberate: promise, then boundary, then
+ * Promise, then boundary, then
  * a real action, then the primitives that made the action possible, then the
  * console, then coverage, then what is *not* built. A reader who stops halfway
  * has still met the boundary.

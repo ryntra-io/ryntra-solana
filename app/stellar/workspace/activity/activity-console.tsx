@@ -24,10 +24,6 @@ import { useStellarActivity } from "../hub/use-activity.ts";
  * workspace — and the detail here is the important half, so it gets its own
  * standing room instead of a sliding one.
  *
- * **The filters are the founder's contract, in its order**, and they are derived
- * from the state vocabulary rather than typed beside it, so a new state cannot
- * exist without a filter that finds it.
- *
  * Nothing here is fetched. Every row is read from this browser's local storage,
  * which is the storage decision made visible: a surface with no server call is a
  * surface with no server record.

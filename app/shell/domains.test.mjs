@@ -131,8 +131,9 @@ test("a section's pages are tabs at the top of its page — one component, drawn
   };
   assert.deepEqual(tabs("/app/spot"), ["trade", ["Спот", "Обмін"], "/app/spot"]);
   assert.deepEqual(tabs("/app/swap"), ["trade", ["Спот", "Обмін"], "/app/swap"]);
-  assert.deepEqual(tabs("/app/launch/new"), ["launch", ["Запустити токен", "Мої лаунчі"], "/app/launch/new"]);
-  assert.deepEqual(tabs("/app/launch/mine"), ["launch", ["Запустити токен", "Мої лаунчі"], "/app/launch/mine"]);
+  assert.deepEqual(tabs("/app/launch/new"), ["launch", ["Запустити токен", "Лаунчі на Ryntra", "Мої лаунчі"], "/app/launch/new"]);
+  assert.deepEqual(tabs("/app/launch/markets"), ["launch", ["Запустити токен", "Лаунчі на Ryntra", "Мої лаунчі"], "/app/launch/markets"]);
+  assert.deepEqual(tabs("/app/launch/mine"), ["launch", ["Запустити токен", "Лаунчі на Ryntra", "Мої лаунчі"], "/app/launch/mine"]);
   assert.deepEqual(tabs("/app/bots"), ["bots", ["Мої боти", "Каталог"], "/app/bots"]);
   assert.deepEqual(tabs("/app/bots/catalog"), ["bots", ["Мої боти", "Каталог"], "/app/bots/catalog"]);
   assert.deepEqual(tabs("/app/strategies/new"), ["bots", ["Мої боти", "Каталог"], "/app/bots"], "the plan builder stands under «Мої боти»");

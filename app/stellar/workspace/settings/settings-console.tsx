@@ -20,7 +20,7 @@ import { useStellarWallet } from "../../components/stellar-wallet-provider.tsx";
  * were scattered across a top-bar menu, a mode switch and a theme toggle, which
  * is three places to look for one idea.
  *
- * The tabs are the founder's contract, in its order. What is genuinely absent —
+ * What is genuinely absent —
  * notification delivery — says so and names its gate, rather than rendering a
  * row of switches that store a preference nothing reads. **A control that does
  * nothing is worse than an honest gap**, because a person sets it and believes

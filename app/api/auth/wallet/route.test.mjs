@@ -61,7 +61,7 @@ test("the proof-minting path is same-origin, rate limited and size capped", () =
 });
 
 test("a signature proves an address and opens a wallet-proof session — never an account", () => {
-  /* RYN-ACCESS-002: a wallet is not a Ryntra account. The signature mints the
+  /* A wallet is not a Ryntra account. The signature mints the
      `rw` proof cookie; the `rt` account cookie is minted only by the three
      account doors, and no account row is created from a signature. */
   const verifyAt = BODY.indexOf("await verifySiwe(");

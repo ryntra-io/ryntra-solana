@@ -13,7 +13,7 @@ import styles from "./landing.module.css";
 /**
  * The public homepage — the landing, in the words of the new site.
  *
- * The design is the brief's and the handoff's of 2026-09-13/14: the hero
+ * The hero
  * drawn in code, the market universe with Solana at its centre («Wall Street
  * closes. Solana doesn't.»), the workflow on its pinned stage, and Rewards
  * with the close, the site's footer folded into the same ground. The new

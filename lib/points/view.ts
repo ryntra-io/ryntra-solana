@@ -8,8 +8,7 @@ import { POINTS_POLICY_V1, type PointsPolicy } from "./policy.ts";
  *
  * Six figures and nothing internal: no event ids, no policy arithmetic, no
  * valuation bases, no other wallet's address. The rank says *7 of 42* and
- * never who the other forty-one are — there is no public leaderboard, by the
- * Owner's decision, and this projection is where that stays true.
+ * never who the other forty-one are — there is no public leaderboard, and this projection is where that stays true.
  */
 
 export type PointsView = Readonly<{

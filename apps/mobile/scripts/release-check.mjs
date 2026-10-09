@@ -4,7 +4,7 @@
  * handed to anyone. Static, fast, no network: the identity and the version,
  * the signing plugin and its guard, nothing secret tracked, the development
  * doors gated, the API pointed at production, the pinned contract present.
- * `--require-key` also demands the Owner's keystore in the environment (the
+ * `--require-key` also demands the operator's keystore in the environment (the
  * release build script passes it); without the flag the key is reported,
  * not required, so the checks run on any machine.
  *

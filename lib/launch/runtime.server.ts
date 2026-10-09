@@ -16,11 +16,18 @@ import { LAUNCH_PRESET_IDS, LAUNCH_PRESETS } from "../core/venues/meteora-dbc/pr
 import { getGuardRuntime } from "../guard/runtime.ts";
 import { storeSupportsConcurrentInstances, withBoundedCasRetry, type GuardStore } from "../guard/store.ts";
 import { FixedWindowLimiter, clientIp, type RateLimitDecision } from "../http-control.ts";
+import { resolveInternalWallets } from "../admin/internal-wallets.ts";
+import { ATTRIBUTION_REGISTRY } from "../attribution/registry.ts";
 import { adoptLaunch } from "./adopt.server.ts";
+import { lastAutopilotPass } from "./autopilot.server.ts";
+import type { HealthDeps, OwnWallets } from "./health.server.ts";
 import {
   LAUNCHES_PER_CREATOR_PER_DAY,
   launchArchiveConnection,
   launchConnection,
+  launchExecutor,
+  launchExecutorAddress,
+  launchFloorOpen,
   launchHistoryConnection,
   launchNetwork,
   launchOpen,
@@ -69,6 +76,66 @@ export function launchMarketDeps(): (Pick<LaunchDeps, "network" | "connection" |
   const connection = launchConnection(network);
   const store = getGuardRuntime().store;
   return { network, connection, store, now: () => new Date(), ...launchReadHooks(network, connection, store) };
+}
+
+/* Ryntra's own wallets: read once a minute — again within seconds when the admin's list could not be read. */
+let OWN_WALLETS: Readonly<{ at: number; cluster: string; value: Promise<OwnWallets> }> | null = null;
+const OWN_WALLETS_MS = 60_000;
+const OWN_WALLETS_BRIEF_MS = 5_000;
+let OWN_WALLETS_COMPLETE = true;
+
+/**
+ * Ryntra's own wallets on a network: the internal ones — the deployment's list and the one kept in the admin — the
+ * attribution registry's identities on Solana, the executor and the pool payer. A launch whose creator is one of them is
+ * Ryntra's own; a holder count leaves them out. `complete`: the admin's list was read too.
+ */
+export function ryntraOwnWallets(network: LaunchNetwork, store: GuardStore, now: number = Date.now()): Promise<OwnWallets> {
+  if (OWN_WALLETS && OWN_WALLETS.cluster === network.cluster && now - OWN_WALLETS.at < (OWN_WALLETS_COMPLETE ? OWN_WALLETS_MS : OWN_WALLETS_BRIEF_MS)) return OWN_WALLETS.value;
+  const value = resolveInternalWallets(store, process.env).then(({ wallets, store: listed }): OwnWallets => {
+    const own = new Set(wallets);
+    for (const row of ATTRIBUTION_REGISTRY) if (row.network === "solana" && row.address) own.add(row.address);
+    const executor = launchExecutorAddress(network);
+    if (executor) own.add(executor);
+    const payer = launchPoolPayerAddress(network);
+    if (payer) own.add(payer);
+    OWN_WALLETS_COMPLETE = listed === "measured";
+    return { wallets: own, complete: OWN_WALLETS_COMPLETE };
+  });
+  OWN_WALLETS = { at: now, cluster: network.cluster, value };
+  value.catch(() => {
+    OWN_WALLETS = null;
+  });
+  return value;
+}
+
+/* Whether the executor's key is here, by network: it does not change while the process runs. */
+const EXECUTOR_HERE = new Map<string, boolean>();
+/** How recent the executor's last pass must be for it to count as acting — it passes every minute when it runs. */
+export const EXECUTOR_PASS_FRESH_MS = 15 * 60 * 1000;
+
+/**
+ * Whether Ryntra's executor acts on this network now: its key here — on mainnet only the registry's executor's —,
+ * Launch's operator stop open, and a pass of its own finished in the last quarter of an hour; and whether it may move
+ * its steps — the steps' own stop open too. A key with nothing running it is not an executor at work.
+ */
+export async function launchExecutorRuns(network: LaunchNetwork, store: GuardStore, now: number = Date.now()): Promise<Readonly<{ acts: boolean; ladder: boolean }>> {
+  let here = EXECUTOR_HERE.get(network.cluster);
+  if (here === undefined) {
+    here = launchExecutor(process.env, network) !== null;
+    EXECUTOR_HERE.set(network.cluster, here);
+  }
+  if (!here || !launchOpen()) return { acts: false, ladder: false };
+  const pass = await lastAutopilotPass(store, network.cluster);
+  const at = pass ? Date.parse(pass.at) : Number.NaN;
+  const acts = Number.isFinite(at) && now - at < EXECUTOR_PASS_FRESH_MS;
+  return { acts, ladder: acts && launchFloorOpen() };
+}
+
+/** What reading a market's health needs: the market's own reads, the public origin, Ryntra's own wallets and whether its executor acts. No key of Ryntra's leaves this server. */
+export function launchHealthDeps(): HealthDeps | null {
+  const deps = launchMarketDeps();
+  if (!deps) return null;
+  return { ...deps, origin: deps.network.origin, ryntraWallets: () => ryntraOwnWallets(deps.network, deps.store), executorRuns: () => launchExecutorRuns(deps.network, deps.store) };
 }
 
 /** What reading a launch's page needs: the pool payer's address its receipt asks for, never its key. */

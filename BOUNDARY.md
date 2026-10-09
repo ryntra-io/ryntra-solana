@@ -9,10 +9,10 @@ moved counts as new. Generated at every update from the development history.
 
 | Since the tag | Files |
 |---|---|
-| New | 1,314 |
+| New | 1,327 |
 | Changed | 821 |
 | Unchanged | 914 |
-| Lines added / removed | +337,505 / −20,396 |
+| Lines added / removed | +341,921 / −20,396 |
 
 ## New since the tag
 
@@ -123,6 +123,7 @@ moved counts as new. Generated at every update from the development history.
 - `app/api/v1/launch/[mint]/claim/build/route.ts`
 - `app/api/v1/launch/[mint]/claim/submit/route.ts`
 - `app/api/v1/launch/[mint]/creator/route.ts`
+- `app/api/v1/launch/[mint]/health/route.ts`
 - `app/api/v1/launch/[mint]/holder/[address]/route.ts`
 - `app/api/v1/launch/[mint]/holder/build/route.ts`
 - `app/api/v1/launch/[mint]/holder/permission/build/route.ts`
@@ -140,6 +141,8 @@ moved counts as new. Generated at every update from the development history.
 - `app/api/v1/launch/build/route.ts`
 - `app/api/v1/launch/creators/[address]/route.ts`
 - `app/api/v1/launch/holders/[address]/route.ts`
+- `app/api/v1/launch/markets/[mint]/route.ts`
+- `app/api/v1/launch/markets/route.ts`
 - `app/api/v1/launch/metadata/route.ts`
 - `app/api/v1/launch/presets/route.ts`
 - `app/api/v1/launch/quote/route.ts`
@@ -236,6 +239,7 @@ moved counts as new. Generated at every update from the development history.
 - `app/app/invest/watch.module.css`
 - `app/app/launch/[mint]/flight-log.tsx`
 - `app/app/launch/[mint]/launch-chart.tsx`
+- `app/app/launch/[mint]/market-health.tsx`
 - `app/app/launch/[mint]/page.tsx`
 - `app/app/launch/[mint]/pool-panel.tsx`
 - `app/app/launch/[mint]/token-market.tsx`
@@ -243,6 +247,9 @@ moved counts as new. Generated at every update from the development history.
 - `app/app/launch/launch-format.ts`
 - `app/app/launch/launch-words.ts`
 - `app/app/launch/launch.module.css`
+- `app/app/launch/market-view.ts`
+- `app/app/launch/markets/markets-board.tsx`
+- `app/app/launch/markets/page.tsx`
 - `app/app/launch/mine/creator-cabinet.tsx`
 - `app/app/launch/mine/page.tsx`
 - `app/app/launch/new/launch-flow.tsx`
@@ -932,6 +939,8 @@ moved counts as new. Generated at every update from the development history.
 - `lib/core/launch/fee-shares.ts`
 - `lib/core/launch/holder.test.mjs`
 - `lib/core/launch/holder.ts`
+- `lib/core/launch/market-health.test.mjs`
+- `lib/core/launch/market-health.ts`
 - `lib/core/launch/moderation.test.mjs`
 - `lib/core/launch/moderation.ts`
 - `lib/core/networks/solana.ts`
@@ -1017,16 +1026,20 @@ moved counts as new. Generated at every update from the development history.
 - `lib/launch/autopilot-chain.server.ts`
 - `lib/launch/autopilot.server.ts`
 - `lib/launch/autopilot.test.mjs`
+- `lib/launch/budget.server.ts`
 - `lib/launch/config.server.ts`
 - `lib/launch/creator.server.ts`
 - `lib/launch/flow.server.ts`
 - `lib/launch/form.ts`
 - `lib/launch/graduation.server.ts`
+- `lib/launch/health.server.ts`
 - `lib/launch/holder.server.ts`
 - `lib/launch/holder.test.mjs`
 - `lib/launch/journal.server.ts`
 - `lib/launch/launch.test.mjs`
 - `lib/launch/market.server.ts`
+- `lib/launch/markets.server.ts`
+- `lib/launch/markets.test.mjs`
 - `lib/launch/metadata.server.ts`
 - `lib/launch/record.server.ts`
 - `lib/launch/record.test.mjs`

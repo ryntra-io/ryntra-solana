@@ -385,6 +385,9 @@ export const GUARD_COLLECTIONS = [
      instance takes on a token while it acts on it, so two never act at once. A value in the same column; no DDL. */
   "launchFloors",
   "launchAutopilotLeases",
+  /* Ryntra Launch's executor: when it last finished a pass on a network, keyed `solana:<cluster>` — what a market's
+     health reads to say whether the executor acts there now. Rewritten each pass. A value in the same column; no DDL. */
+  "launchAutopilotPasses",
   /* Ryntra Launch, a holder's position in a graduated pool: the entry and the permission as built, kept to compare the
      signed bytes with, keyed `<cluster>:<build id>`, and the mark that a build was sent once; the positions entered through
      Ryntra, keyed `<cluster>:<wallet>:<position>` (PENDING before the send, OPEN once the chain confirms); and each claim

@@ -56,7 +56,7 @@ export async function GET(req: NextRequest) {
   const address = url.searchParams.get("address") ?? "";
   const locale = url.searchParams.get("locale") === "uk" ? "uk" : "en";
   /* The `rw` proof cookie in a browser, or the native bearer session for the
-     same wallet (`RYN-API-CONTRACT-001`, contract 1.1.0: rewards over the bearer). */
+     same wallet. */
   const proof = await getWalletProofFrom(req.headers);
   if (!proof || proof.chain !== "solana" || proof.address !== address) {
     return json({ error: "proof required", proof: false }, 401);

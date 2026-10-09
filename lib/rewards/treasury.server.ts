@@ -33,8 +33,7 @@ import { REWARD_PAYOUT_DECIMALS } from "./model.ts";
  *
  * ## Why a separate wallet, and why a small one
  *
- * The owner's instruction names the properties and they are all constraints on
- * blast radius: it holds only Ryntra's money set aside for rewards, it holds no
+ * It holds only Ryntra's money set aside for rewards, it holds no
  * customer funds, it is not custody of anybody's assets, it is not the owner's
  * trading wallet, and its authority is its own. A key that can sign lives in
  * the environment of a web deployment, and the honest way to hold one is to

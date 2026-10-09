@@ -8,7 +8,6 @@
  * `200` in the same session — so the block is the venue deciding about this
  * one host, not a network fault and not the chain being unreachable.
  *
- * The founder's recorded decision of 2026-08-19 says what to do with that:
  * Ryntra implements no geographic restriction of its own, a venue answers for
  * itself, and Ryntra shows that answer **as it comes back** rather than
  * predicting, simulating or routing around it. So a `403` becomes a

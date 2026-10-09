@@ -200,10 +200,19 @@ const DBC_PROGRAM = "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN";
 const RECEIPTS = "launchAutopilot";
 const FLOORS = "launchFloors";
 const LEASES = "launchAutopilotLeases";
+const PASSES = "launchAutopilotPasses";
 const receiptKey = (cluster: string, token: string, signature = "") => `solana:${cluster}:${token}:${signature}`;
 const floorKey = (cluster: string, token: string) => `solana:${cluster}:${token}`;
 
 type Lease = Readonly<{ version: number; holder: string; until: number }>;
+
+/** When the executor last finished a pass on a network — what a market's health reads to say whether it acts now. */
+export type AutopilotPass = Readonly<{ cluster: LaunchNetwork["cluster"]; executor: string; at: string }>;
+
+/** The executor's last finished pass on a network; null when it never passed, or the store did not answer. */
+export async function lastAutopilotPass(store: GuardStore, cluster: string): Promise<AutopilotPass | null> {
+  return (await store.collection<AutopilotPass>(PASSES).get(`solana:${cluster}`).catch(() => null)) ?? null;
+}
 
 /** One pass over the network's launches, or over one token; stops starting new acts at `budgetMs`. */
 export async function runAutopilot(deps: AutopilotDeps, options: Readonly<{ only?: string; budgetMs?: number }> = {}): Promise<AutopilotReport> {
@@ -246,6 +255,11 @@ export async function runAutopilot(deps: AutopilotDeps, options: Readonly<{ only
 
   /* Then the holders' positions: the fees their owners let Ryntra's collector bring to their wallets. */
   steps.push(...(await collectForHolders(deps, end).catch((error: unknown) => [{ token: "*", step: `HOLDERS_ERROR: ${message(error)}` }])));
+  /* The pass is written down: a market's health says the executor acts only while its passes keep coming. */
+  await deps.store
+    .collection<AutopilotPass>(PASSES)
+    .set(`solana:${deps.network.cluster}`, { cluster: deps.network.cluster, executor: deps.chain.executor, at: deps.now().toISOString() })
+    .catch(() => undefined);
   return { state: "RAN", executor: deps.chain.executor, steps };
 }
 

@@ -72,8 +72,7 @@ test("the homepage is the frozen landing, and two earlier landings are parked ra
   /* There are now two superseded landings, not one. `app/home-client.tsx` was
      the original; `app/site/home.tsx` was the Decision Circuit redesign that
      replaced it and was itself replaced when the frozen Quiet Intelligence
-     landing took `/` in `65c4f21`. Both stay in source — canon keeps superseded
-     work — and neither may be routed. */
+     landing took `/` in `65c4f21`. Both stay in source and neither may be routed. */
   assert.doesNotMatch(ROUTE, /^import .*home-client/m);
   assert.doesNotMatch(ROUTE, /from "@?\/?\.*site\/home"/m);
 
@@ -139,7 +138,7 @@ test("every navigation target resolves to a route that exists or an anchor the p
     const clean = path.replace(/\/$/, "");
     const routeFile = `app${clean}/page.tsx`;
     /* A redirect source is a destination too. `/app` is the product root and
-       has had no page of its own since canon 9.1 made Portfolio the overview;
+       has had no page of its own made Portfolio the overview;
        it opens there through `lib/product/customer-routing.ts`, which is a real
        answer to a click rather than a 404. */
     const redirected = read("lib/product/customer-routing.ts").includes(`["${clean}", "/app`);
@@ -401,7 +400,7 @@ test("the consolidated routes redirect rather than disappearing", () => {
      stale addresses before reaching a page. */
   const expected = [
     /* `/methodology` was here until 2026-09-26: it is a page again — where every
-       figure comes from (the new site of canon v5.5, `RYN-SITE-V5-001`). */
+       figure comes from. */
     ["/capabilities", "/docs"],
     ["/status", "/docs"],
     /* `/security` was here until 2026-08-19. It is a page again, and the rule
@@ -424,9 +423,7 @@ test("the consolidated routes redirect rather than disappearing", () => {
   }
 
   /* The redirects used to promise Handbook anchors, and this loop checked that
-     the Handbook mounted them. They promise pages now — `RYN-ANCHOR-001`
-     measured that a fragment on a 13,000-pixel document does not arrive, so a
-     redirect into one was landing reviewers at the top of the wrong thing. The
+     the Handbook mounted them. The
      obligation is stronger in its new form: the destination must be a route
      that serves, not an id that happens to exist. */
   for (const [, destination] of expected) {
@@ -441,8 +438,7 @@ test("the consolidated routes redirect rather than disappearing", () => {
   /*
    * And the same rule over *every* redirect, not only the consolidated ones.
    *
-   * `RYN-ANCHOR-001` was opened because four routes redirected into anchors on
-   * a thirteen-thousand-pixel document. Packet C retired those four by giving
+   * Packet C retired those four by giving
    * them pages, and the loop above pins exactly those four — which leaves the
    * twentieth redirect somebody adds next month completely unguarded.
    *
@@ -663,8 +659,7 @@ test("every call to action says where it actually goes", () => {
   assert.equal(BETA_HREF, "/beta");
   assert.match(nav, /export const BETA_HREF = "\/beta";/);
 
-  /* "Open free beta" over-promised, and so would the shorter "Open beta" the
-     navigation canon proposed: `/beta` opens a Telegram confirmation, not a
+  /* `/beta` opens a Telegram confirmation, not a
      product. Nothing opens, so the label describes the request instead. */
   assert.equal(BETA_CTA_LABEL, "Request beta access");
   assert.doesNotMatch(BETA_CTA_LABEL, /^Open /, "the beta CTA may not promise that something opens");
@@ -746,9 +741,7 @@ test("the walkthrough carries one capability per step and never autoplays", () =
   assert.match(walk, /Home|End/);
   assert.match(walk, /Sample walkthrough/);
 
-  /* Nothing on this surface is invented. A fabricated price or hash is
-     indistinguishable from a real one at a glance, which is the whole reason
-     canon forbids a decorative mock-up standing in for evidence. */
+  /* Nothing on this surface is invented. */
   const core = read("app/site/truth-core.ts");
   const walkBlock = core.slice(core.indexOf("const WALK_DEFINITIONS"), core.indexOf("const TODAY_DEFINITIONS"));
   assert.doesNotMatch(walkBlock, /0x[0-9a-f]{8,}/i, "no invented hash or address");
@@ -1020,7 +1013,6 @@ test("the site layer makes no claim the product has not earned", () => {
          and puts the newest public surface under the same claim rules as the
          rest. */
       "app/security/page.tsx",
-      /* Its words are data beside it since the new site of canon v5.5. */
       "app/security/security-copy.ts",
       "lib/site/security.ts",
       "app/site/home.tsx",
@@ -1272,8 +1264,7 @@ test("the hero composition says exactly what it is", () => {
 });
 
 test("Ryn never becomes a signing authority, wherever it is offered", () => {
-  /* RYN-UX-UNIFY-001 placed Ryn in the cabinet Home, and canon 3.1 removed
-     Home: Ryn is a header button and a panel now (canon 10.3), and the
+  /* Ryn is a header button and a panel now, and the
      eleven-page rail carries the destinations the Home panel used to list.
      What survives the move is the boundary this test exists for — the surfaces
      that ask for a signature must not wear a mascot beside the approval, and
@@ -1322,8 +1313,7 @@ test("every section is a bounded module, and the banners say something true", ()
   assert.match(banner, /data-proven=\{/);
   assert.match(banner, /stage\.stateLabel|environment\.stateLabel/);
   /*
-   * The bands drift again — by founder direction (2026-08-09), reversing the
-   * RYN-SITE-002 static bands. What is asserted now is that every guard that
+   * What is asserted now is that every guard that
    * made a marquee acceptable came back with it: the loop is slow, it pauses
    * under the pointer and under keyboard focus, the seam-hiding duplicate pass
    * is aria-hidden so the list is announced once, and reduced motion restores

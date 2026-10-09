@@ -24,7 +24,7 @@ import { DOC_PAGES, docsHref } from "./docs/content/index.ts";
 import { METHODOLOGY_SUMMARY } from "./methodology/content.ts";
 
 /*
- * The public SEO surface is English and Ukrainian (founder decision 2026-08-26).
+ * The public SEO surface is English and Ukrainian.
  *
  * Every other translation stays in the repository — METHODOLOGY_SUMMARY and the
  * legacy LANDING_COPY still carry all twelve — and their URLs temporarily
@@ -52,7 +52,7 @@ const NEXT_CONFIG_SOURCE = readFileSync(new URL("../next.config.ts", import.meta
 
 test("SEO locale registry is exact and every public surface has canonical hreflang", () => {
   assert.deepEqual([...ALL_LOCALES], EXPECTED_LOCALES);
-  assert.deepEqual([...LANDING_LOCALES], ["en", "uk"], "the landing answers in English at `/` and in Ukrainian at `/uk` (RYN-SITE-V5-001)");
+  assert.deepEqual([...LANDING_LOCALES], ["en", "uk"], "the landing answers in English at `/` and in Ukrainian at `/uk`");
   assert.equal(ROOT_LOCALE, "en");
   /* The share card's address carries the card's fingerprint, so a link cache
      that keyed on the old address cannot keep serving the old picture — and
@@ -153,19 +153,19 @@ const NEVER_ADVERTISED = [
      from the sitemap beside themselves. */
   /* Since 2026-09-26: the developer references and the open-source page are `noindex`, the landing's
      other language addresses lead to `/` and `/uk`, and the documentation's moved pages answer by
-     308 (`RYN-SITE-V5-001`); `/company` and `/methodology` are pages again and advertised above. */
+     308; `/company` and `/methodology` are pages again and advertised above. */
   "/en", "/ua", "/ru", "/app", "/docs/developers", "/docs/developers/guard", "/docs/developers/agent-control",
   "/docs/trade/tokenized-stocks", "/docs/reference/security",
   "/stellar", "/robinhood",
 ];
-/* 27 since canon v5.4 (В32, 2026-09-24): the prediction demo's page left with the demo; 33 since the new site (2026-09-26). */
+/* 27: the prediction demo's page left with the demo; 33 since the new site (2026-09-26). */
 assert.ok(DOC_PAGES.length >= 33, "the documentation set is not the full one");
 assert.ok(DOC_PAGES.every((page) => !page.slug || /^[a-z]+(?:[/][a-z-]+)*$/.test(page.slug)), "every documentation page has a documentation path");
 assert.equal(typeof DOCS_UPDATED, "string");
 
 test("sitemap advertises only pages that answer, at both of their addresses, dated by their own content", async () => {
   const entries = sitemapEntries(["NVDAx"]);
-  /* Every page offered to the index at both addresses (RYN-SITE-V5-001, subtask 4); the legal texts English only. */
+  /* Every page offered to the index at both addresses; the legal texts English only. */
   const twoLanguage = ADVERTISED_PATHS.filter((path) => hasUkAddress(path));
   const english = ADVERTISED_PATHS.filter((path) => !hasUkAddress(path));
   assert.deepEqual(english, ["/legal/terms", "/legal/privacy"], "only the legal texts have one address");
@@ -198,8 +198,7 @@ test("sitemap advertises only pages that answer, at both of their addresses, dat
     }
   }
 
-  /* The landing comes first, one entry per language, each naming the pair
-     (`RYN-SITE-V5-001`); then Home and Markets, each at both addresses. */
+  /* The landing comes first, one entry per language, each naming the pair; then Home and Markets, each at both addresses. */
   LANDING_LOCALES.forEach((locale, index) => {
     const entry = entries[index];
     assert.equal(entry.url, urlForSurface(locale, "landing"));
@@ -229,7 +228,7 @@ test("sitemap advertises only pages that answer, at both of their addresses, dat
 });
 
 test("every documentation page's search title fits 60 and its description 160, in both languages", () => {
-  /* The plan of RYN-SITE-V5-001 §3; the sweep of 2026-09-27 found two English descriptions at 161. */
+  /* The sweep of 2026-09-27 found two English descriptions at 161. */
   for (const page of DOC_PAGES) {
     for (const locale of ["en", "uk"]) {
       const title = page.seoTitle?.[locale] ?? `${page.title[locale]} — ${locale === "uk" ? "Документація Ryntra" : "Ryntra Docs"}`;
@@ -256,7 +255,7 @@ test("robots keeps the public documents crawlable while blocking private, API, a
   assert.ok(disallow.includes("/api/"));
   assert.ok(disallow.includes("/app/"));
   assert.ok(disallow.includes("/uk/app/"), "the cabinet's Ukrainian addresses are closed as its English ones are");
-  assert.ok(!disallow.includes("/app$"), "/app is the front door's first hop (RYN-SITE-NOW-001)");
+  assert.ok(!disallow.includes("/app$"), "/app is the front door's first hop");
   assert.ok(!disallow.includes("/legal/review/"), "review pages must remain crawlable so robots can observe noindex");
   assert.ok(!disallow.some((path) => String(path).startsWith("/strategy-lab-qa")), "robots names only what is live");
   /* The documentation, the open-source page and where the figures come from are public
@@ -366,7 +365,6 @@ test("the Handbook and structured data consume canon/registry without invented r
         readFileSync(new URL(`./${f}.ts${/chapters$/.test(f) ? "" : "x"}`, import.meta.url), "utf8"),
       )
       .join("\n");
-  /* The security page's words are data beside it since the new site of canon v5.5. */
   const handbookWithSecurityCopy = [handbook, readFileSync(new URL("./security/security-copy.ts", import.meta.url), "utf8")].join("\n");
   const layout = readFileSync(new URL("./layout.tsx", import.meta.url), "utf8");
   const landing = readFileSync(new URL("./(home)/page.tsx", import.meta.url), "utf8");
@@ -403,7 +401,7 @@ test("the Handbook and structured data consume canon/registry without invented r
   assert.match(layout, /HOMEPAGE_COPY/);
   assert.doesNotMatch(layout, /PRODUCT_CANON\.(shippedLoopBoundary|northStar|arcusBoundary)/);
   assert.doesNotMatch(layout, /offers:\s*\{/);
-  /* The landing's graph is the page's own words (`RYN-SITE-V5-001`): the
+  /* The landing's graph is the page's own words: the
      feature list is «Працює зараз», which `(home)/landing.test.mjs` ties item
      by item to the code that does it, so the graph can claim no more than the
      page — the property the registry helper of the landing before it held. */
@@ -419,9 +417,7 @@ test("the Handbook and structured data consume canon/registry without invented r
   assert.doesNotMatch(graphCode, /InternalCapabilityEvidence|evidence:\s*\{/);
   /* The share card used to stage a mock risk panel, which is why it carried
      "NOT A LIVE VERDICT" and "planned, not shipped" — disclaimers for a
-     fabricated example. The brand-system card (2026-08-09) renders no mock
-     panel at all: the canonical mark, the pinned promise and the canon trust
-     line, with no maturity vocabulary or verdict to disclaim. */
+     fabricated example. */
   assert.match(readFileSync(new URL("./brand/homepage-og.tsx", import.meta.url), "utf8"), /R_MARK_PATHS/);
   assert.match(og, /HOMEPAGE_COPY/);
   assert.doesNotMatch(og, /RISK STATE|EVIDENCE REQUIRED|LIVE VERDICT/);

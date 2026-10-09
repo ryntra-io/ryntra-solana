@@ -797,6 +797,41 @@
  * takes the action `change`; `REFERRAL_REFUSALS_V1` gains `ALREADY_CHANGED`.
  * A client that skips unknown keys is unaffected; one that parses the state
  * strictly must take the new keys and treat an unknown refusal as a refusal.
+ *
+ * **1.36.0 — the markets launched on Ryntra and each market's health.** Additive, and served only where
+ * `capabilities.launch` is present; public, no wallet. `GET /api/v1/launch/markets` — every market launched on Ryntra on
+ * this network, a row each: its state of the cycle (`state.code` — `CREATED`, `PRICE_DISCOVERY`, `GRADUATION_READY` — the
+ * curve full, waiting for its move —, `MIGRATING` — only while the executor's own migration is in flight —,
+ * `CORE_MARKET_LIVE`, `ENDOWMENT_FUNDED`, `LADDER_ACTIVE`, `MAINTAINING`, `PAUSED_RISK` — Ryntra's acts on the market
+ * stopped —, `MATURE`, and the failures `MIGRATION_FAILED` — a full curve not migrated after ten minutes — and
+ * `ENDOWMENT_EXHAUSTED`; a state the executor has not recorded is never inferred, and this version assigns no `MATURE`,
+ * `ENDOWMENT_*` or `RISK_LIMIT` pause), the curve's way to the DEX, the DAMM v2 pool's liquidity, the market's budget,
+ * executable depth at −5 %, whole days since the DEX, a trade in the last day, holders, and the creator (the lock's
+ * dates, whether they sold; a row not read keeps the lock its record holds); markets with a trade in the last day first, then by
+ * state and the newest launch; Ryntra's own launches — a creator among Ryntra's own wallets — carry
+ * `technicalValidation: true`; `read: false` is a row with the record's facts only, its chain not read in time. `GET
+ * /api/v1/launch/markets/{mint}` — one market's row and the addresses it lives at: the config, the curve, the DAMM v2
+ * pool and its positions locked for ever, the creator's lock, the fee-sharing vault, Ryntra's steps and executor. `GET
+ * /api/v1/launch/{mint}/health` — the market's health by fixed definitions: `depth` at −2, −5 and −10 % — the pair
+ * currency the market pays out while sales move the price that far down: on the curve what the DBC curve releases
+ * between the two prices (`"0"` on a full curve — it takes no sale until it moves), after the DEX what the DAMM v2 pool
+ * releases plus Ryntra's DLMM steps at or above the lower price; the pools' fee is not taken off and other venues are
+ * not counted; `price` — the price now; `budget` — what Ryntra earned on the market for its liquidity, what is in its
+ * steps, what is left (`NOT_COUNTED` — not accounted yet: earned and reserve null, never zero); `ladder` — Ryntra's steps
+ * as they stand, with the prices of those holding the pair currency; `survival` — days since the DEX, the price against
+ * the pool's opening price, a trade in the last 24 hours; `holders` — wallets worth more than $1 at the price now,
+ * without pools, locks and Ryntra's own wallets (`atLeast` — the node would not list every account: the ones found, a
+ * floor); `creator` — the lock's dates and whether the creator sold; `concentration` — the ten largest balances without
+ * pools and locks as a share of the tokens outside them (`atLeast` — from the mint's largest accounts, a floor), marked
+ * above 60 %; `engine` — Ryntra's executor on this network, whether it acts here now, its last act on the market and a
+ * pause; `rules` — what keeps the market now, each a `rule` (a program enforces it: Token-2022, Meteora DBC, DAMM v2, a
+ * lock, the fee-sharing vault) or a `policy` (Ryntra's server runs it — listed only while it runs), `rulesComplete` false
+ * when the token's receipt was not read and its rules are missing. A figure not read is null — never zero. The flight
+ * log's entries gain `enforcement` (`rule`, `policy`, or null for what the log observes, a sale of the creator's) and the
+ * answer `total` — every entry the log holds, more than `events` when only the newest 200 are given.
+ * `capabilities.launch.markets`, `marketCard` and `health` name the routes. A client that does not call them, and one
+ * that skips unknown keys of the flight log, needs no release; one that parses the flight log strictly takes
+ * `enforcement` and `total` (the phone reads no flight log).
  */
 
 import {
@@ -840,13 +875,14 @@ import { FEE_SOURCES } from "../../core/launch/creator-earnings.ts";
 import { EARNINGS_CARD_SOURCE } from "../../core/launch/earnings-card.ts";
 import { FEE_SHARE_MAX_RECIPIENTS, FEE_SHARE_MIN_BPS, FEE_SHARE_MIN_RECIPIENTS, FEE_SHARE_TOTAL_BPS } from "../../core/launch/fee-shares.ts";
 import { JOURNAL_ACTORS, JOURNAL_KINDS } from "../../core/launch/autopilot.ts";
+import { CONCENTRATION_MARK_BPS, DEPTH_DROPS_BPS, HOLDER_MIN_USD, MARKET_CYCLE_STATES, MARKET_ENFORCEMENT, MARKET_KEEPERS, MARKET_RULE_CODES } from "../../core/launch/market-health.ts";
 import { HOLDER_CARD_SOURCE, HOLDER_GRANT_STATES, POSITION_PERMISSIONS } from "../../core/launch/holder.ts";
 import { LAUNCH_CHART_MARKERS, LAUNCH_HOLDER_LABELS, LAUNCH_RISK_CODES, LAUNCH_TRADE_SIDES, LAUNCH_TRADE_VENUES } from "../../core/venues/meteora-dbc/market.ts";
 import { LAUNCH_PRESET_IDS } from "../../core/venues/meteora-dbc/presets.ts";
 import { LaunchReceiptFactsSchema } from "../../core/venues/meteora-dbc/receipt.ts";
 
 export const API_MAJOR = 1;
-export const API_CONTRACT_VERSION = "1.35.0";
+export const API_CONTRACT_VERSION = "1.36.0";
 export const API_HEADER = "X-Ryntra-API";
 export const API_VERSION_HEADER = "X-Ryntra-API-Version";
 export const NETWORK = "solana:mainnet";
@@ -1320,6 +1356,10 @@ export const CapabilitiesSchema = z
         holders: z.literal("/api/v1/launch/holders/{address}").optional(),
         /* 1.34.0 — a trade's receipt; absent on a deployment before it. */
         tradeReceipt: z.literal("/api/v1/launch/{mint}/trade/receipt").optional(),
+        /* 1.36.0 — the markets launched on Ryntra, one market's card and its health; absent on a deployment before it. */
+        markets: z.literal("/api/v1/launch/markets").optional(),
+        marketCard: z.literal("/api/v1/launch/markets/{mint}").optional(),
+        health: z.literal("/api/v1/launch/{mint}/health").optional(),
       })
       .strict()
       .optional(),
@@ -9963,6 +10003,8 @@ export const LaunchJournalEventSchema = z
     /** A sale of the creator's: the share sold by then, basis points — of what they bought here, or of the supply when they sold more. */
     soldBps: z.number().int().min(0).max(1_000_000).nullable(),
     soldOf: z.enum(["bought", "supply"]).nullable(),
+    /** 1.36.0: what governs the entry — `rule` (a program enforces it), `policy` (Ryntra's server runs it), null for what the log observes. Absent before 1.36.0. */
+    enforcement: z.enum(MARKET_ENFORCEMENT).nullable().optional(),
   })
   .strict();
 export type LaunchJournalEventView = z.infer<typeof LaunchJournalEventSchema>;
@@ -9995,6 +10037,8 @@ export const LaunchJournalResponseSchema = z
     /** Ryntra's executor on this network — the wallet whose actions the log names as Ryntra's; null while there is none. */
     executor: Address.nullable(),
     events: z.array(LaunchJournalEventSchema).max(200),
+    /** 1.36.0: every entry the log holds — more than `events` when only the newest 200 are given. Absent before 1.36.0. */
+    total: z.number().int().nonnegative().optional(),
     /** Whether everything the log rests on was read: the creator's trades whole, and the graduation once the token graduated. */
     complete: z.boolean(),
     floor: LaunchFloorViewSchema.nullable(),
@@ -10209,3 +10253,232 @@ export const LaunchHolderPositionsResponseSchema = z
   })
   .strict();
 export type LaunchHolderPositionsResponse = z.infer<typeof LaunchHolderPositionsResponseSchema>;
+
+/* ------------------------------------------------------------ the markets launched on Ryntra and their health (1.36.0) */
+
+const MarketStateView = z
+  .object({
+    code: z.enum(MARKET_CYCLE_STATES),
+    /** When the market entered it; null when the moment is not known. */
+    since: Iso.nullable(),
+  })
+  .strict();
+
+/**
+ * The market's budget — what Ryntra earned on it for its liquidity, what is in Ryntra's steps, what is left. `NOT_COUNTED`:
+ * Ryntra does not account this market's budget yet — `earnedRaw` and `reserveRaw` null, never zero; `IN_POOL`: the market
+ * has no steps and what it earned waits in Meteora's pool, unclaimed; `COUNTED`: all three read. `ladder` — Ryntra's
+ * steps: `NONE`, `PLACED` (with `deployed`), or `UNREAD` (there, and their position not read now).
+ */
+export const LaunchMarketBudgetSchema = z
+  .object({
+    state: z.enum(["NOT_COUNTED", "IN_POOL", "COUNTED"]),
+    earnedRaw: LaunchRaw.nullable(),
+    reserveRaw: LaunchRaw.nullable(),
+    ladder: z.enum(["NONE", "PLACED", "UNREAD"]),
+    /** In Ryntra's steps now: the pair currency, and the token they bought and hold. */
+    deployed: z.object({ pairRaw: LaunchRaw, tokensRaw: LaunchRaw }).strict().nullable(),
+  })
+  .strict();
+export type LaunchMarketBudgetView = z.infer<typeof LaunchMarketBudgetSchema>;
+
+/** Executable depth at one drop: the pair currency the market pays out while sales move the price that far down, raw. */
+export const LaunchMarketDepthSchema = z
+  .object({
+    dropBps: z.union([z.literal(DEPTH_DROPS_BPS[0]), z.literal(DEPTH_DROPS_BPS[1]), z.literal(DEPTH_DROPS_BPS[2])]),
+    /** The curve's — `"0"` while it is full and takes no sale —, or the DAMM v2 pool's with Ryntra's steps'; null when not read. */
+    pairRaw: LaunchRaw.nullable(),
+    /** Of it, Ryntra's steps; null when there are none or they were not read. */
+    ladderRaw: LaunchRaw.nullable(),
+  })
+  .strict();
+export type LaunchMarketDepthView = z.infer<typeof LaunchMarketDepthSchema>;
+
+/** A rule or a policy that keeps the market now — only what is live on it. */
+export const LaunchMarketRuleSchema = z
+  .object({
+    code: z.enum(MARKET_RULE_CODES),
+    /** `rule`: a program enforces it; `policy`: Ryntra's server runs it. */
+    enforcement: z.enum(MARKET_ENFORCEMENT),
+    by: z.enum(MARKET_KEEPERS),
+    /** Where anyone can see it on chain; null for a policy of Ryntra's server. */
+    source: z.object({ kind: z.enum(["tx", "account"]), id: z.string().min(32).max(90) }).strict().nullable(),
+    /** The figures its words name: shares in basis points, amounts raw, times in unix seconds. */
+    values: z.record(z.string().min(1).max(32), z.union([z.number(), z.string().max(40)])),
+  })
+  .strict();
+export type LaunchMarketRuleView = z.infer<typeof LaunchMarketRuleSchema>;
+
+/** The creator's lock as the chain shows it: its escrow and when it frees the tokens (the cliff, then the vesting's end). */
+const LaunchMarketLockView = z.object({ escrow: Address, cliffAt: Iso.nullable(), endsAt: Iso.nullable() }).strict();
+
+/** One market of the list. A figure not read is null — never zero; `read: false` — the chain was not read in time, the record's facts only. */
+export const LaunchMarketRowSchema = z
+  .object({
+    token: Address,
+    name: z.string().max(64),
+    symbol: z.string().max(16),
+    image: z.string().url().nullable(),
+    preset: z.enum(LAUNCH_PRESET_IDS),
+    launchedAt: Iso,
+    creator: Address,
+    /** The creator is one of Ryntra's own wallets: Ryntra's own launch — technical validation, never demand. */
+    technicalValidation: z.boolean(),
+    pair: LaunchPairView,
+    read: z.boolean(),
+    state: MarketStateView.nullable(),
+    venue: LaunchTradeVenueSchema.nullable(),
+    /** The curve's way to the DEX. */
+    progress: z.object({ bps: LaunchBps, migrated: z.boolean() }).strict().nullable(),
+    /** The DAMM v2 pool's two sides at the price now, after the DEX; null on the curve or when not read. */
+    poolLiquidity: LaunchMoney.nullable(),
+    budget: LaunchMarketBudgetSchema,
+    /** Executable depth at −5 %, the pair currency, raw. */
+    depth5Raw: LaunchRaw.nullable(),
+    daysSinceDex: z.number().int().nonnegative().nullable(),
+    traded24h: z.boolean().nullable(),
+    /** Wallets worth more than a dollar, without pools, locks and Ryntra's wallets. */
+    holders: z.number().int().nonnegative().nullable(),
+    /** The node would not scan every account of the mint: `holders` counts the ones found — a floor. */
+    holdersAtLeast: z.boolean(),
+    /** The creator's lock — on a row not read, as Ryntra's record holds it, with no dates; null when there is none, or none known. */
+    creatorLock: LaunchMarketLockView.nullable(),
+    /** Whether the creator sold any of the token; null when their trades were not read whole and no sale was seen. */
+    creatorSold: z.boolean().nullable(),
+    observedAt: Iso,
+  })
+  .strict();
+export type LaunchMarketRow = z.infer<typeof LaunchMarketRowSchema>;
+
+/** `GET /api/v1/launch/markets` — every market launched on Ryntra on this network: with a trade in the last day first, then by state and the newest. */
+export const LaunchMarketsResponseSchema = z
+  .object({
+    network: LaunchNetworkId,
+    markets: z.array(LaunchMarketRowSchema).max(500),
+    /** Every market's chain was read for this answer. */
+    complete: z.boolean(),
+    observedAt: Iso,
+  })
+  .strict();
+export type LaunchMarketsResponse = z.infer<typeof LaunchMarketsResponseSchema>;
+
+/** `GET /api/v1/launch/markets/{mint}` — one market's row and the addresses it lives at. */
+export const LaunchMarketCardResponseSchema = z
+  .object({
+    network: LaunchNetworkId,
+    market: LaunchMarketRowSchema,
+    addresses: z
+      .object({
+        config: Address,
+        curve: Address,
+        pairMint: Address,
+        /** The DAMM v2 pool it graduated into; null before the DEX or when not read. */
+        pool: Address.nullable(),
+        /** The pool's positions locked for ever, with their owners; empty before the DEX or when not read. */
+        lockedPositions: z.array(z.object({ position: Address, owner: Address }).strict()).max(8),
+        /** The creator's lock escrow; null when there is none. */
+        creatorLock: Address.nullable(),
+        /** The vault sharing the creator's fees; null when they are not shared. */
+        feeVault: Address.nullable(),
+        /** Ryntra's steps: the DLMM pool and its position; null when there are none. */
+        ladder: z.object({ pool: Address, position: Address.nullable() }).strict().nullable(),
+        /** Ryntra's executor on this network; null while there is none. */
+        executor: Address.nullable(),
+      })
+      .strict(),
+    observedAt: Iso,
+  })
+  .strict();
+export type LaunchMarketCardResponse = z.infer<typeof LaunchMarketCardResponseSchema>;
+
+/** `GET /api/v1/launch/{mint}/health` — the market's health by fixed definitions; a figure not read is null, never zero. */
+export const LaunchMarketHealthResponseSchema = z
+  .object({
+    network: LaunchNetworkId,
+    token: Address,
+    pair: LaunchPairView,
+    tokenDecimals: z.number().int().min(0).max(18),
+    state: MarketStateView,
+    technicalValidation: z.boolean(),
+    venue: LaunchTradeVenueSchema,
+    /** The price now: the pair currency per token, and in dollars when the pair is a dollar. */
+    price: LaunchMoney,
+    /** At −2, −5 and −10 %. */
+    depth: z.array(LaunchMarketDepthSchema).length(DEPTH_DROPS_BPS.length),
+    budget: LaunchMarketBudgetSchema,
+    /**
+     * Ryntra's steps as they stand: what they hold, and the lowest and highest price (the pair currency per token) of the
+     * steps holding the pair currency — null when none does: sales went through them, and they hold the token. Null
+     * when there are none or they were not read (`budget.ladder` says which).
+     */
+    ladder: z
+      .object({ pool: Address, pairRaw: LaunchRaw, tokensRaw: LaunchRaw, pairFrom: z.number().positive().nullable(), pairTo: z.number().positive().nullable() })
+      .strict()
+      .nullable(),
+    survival: z
+      .object({
+        /** When it reached the DEX; null before it or when not known. */
+        graduatedAt: Iso.nullable(),
+        daysSinceDex: z.number().int().nonnegative().nullable(),
+        /** The price now against the price the pool opened at, basis points, signed. */
+        priceVsDexBps: z.number().int().nullable(),
+        traded24h: z.boolean().nullable(),
+        lastTradeAt: Iso.nullable(),
+      })
+      .strict(),
+    holders: z
+      .object({
+        /** Wallets worth more than `minUsd` at the price now, without pools, locks and Ryntra's own wallets. */
+        count: z.number().int().nonnegative().nullable(),
+        /** The node would not scan every account of the mint: `count` is of the holders found — a floor, said «at least». */
+        atLeast: z.boolean(),
+        minUsd: z.literal(HOLDER_MIN_USD),
+      })
+      .strict(),
+    creator: z
+      .object({
+        address: Address,
+        lock: LaunchMarketLockView.nullable(),
+        /** Whether the creator sold any of the token; null when their trades were not read whole and no sale was seen. */
+        sold: z.boolean().nullable(),
+        /** How much they sold, of what they bought here or of the supply; null when nothing or not read. */
+        soldBps: z.number().int().min(0).max(1_000_000).nullable(),
+        soldOf: z.enum(["bought", "supply"]).nullable(),
+      })
+      .strict(),
+    concentration: z
+      .object({
+        /**
+         * The ten largest balances without pools and locks, basis points of the tokens outside them: from every account of
+         * the mint, or from its largest accounts over the supply less the pools and the locks; null when neither was read.
+         */
+        top10Bps: LaunchBps.nullable(),
+        /** From the largest accounts: a wallet holding more than one account may hold more — `top10Bps` is a floor. */
+        atLeast: z.boolean(),
+        /** Above `markBps`: marked on the page, never a pause while the market is young; null when not read, or a floor at or below it. */
+        marked: z.boolean().nullable(),
+        markBps: z.literal(CONCENTRATION_MARK_BPS),
+      })
+      .strict(),
+    engine: z
+      .object({
+        /** Ryntra's executor named on this network — the wallet whose acts the log calls Ryntra's; null while there is none. */
+        executor: Address.nullable(),
+        /** Whether it acts on this network now: its key on this server, Launch's operator stop open, and a pass of its own finished in the last 15 minutes. */
+        acts: z.boolean(),
+        /** Its last act on this market, from the flight log. */
+        lastAction: z.object({ kind: z.enum(JOURNAL_KINDS), at: Iso.nullable(), signature: LaunchSignature }).strict().nullable(),
+        /**
+         * A stop of Ryntra's acts on this market — `STOPPED`: Ryntra's steps stand here and its executor does not act or
+         * may not move them now; `RISK_LIMIT`: a risk limit the executor records (none in this version). Null when none.
+         */
+        pause: z.object({ code: z.enum(["STOPPED", "RISK_LIMIT"]), at: Iso.nullable() }).strict().nullable(),
+      })
+      .strict(),
+    rules: z.array(LaunchMarketRuleSchema).max(32),
+    /** Whether the token's receipt was read: false — its own rules and the pool's locked positions are missing from `rules`. */
+    rulesComplete: z.boolean(),
+    observedAt: Iso,
+  })
+  .strict();
+export type LaunchMarketHealthResponse = z.infer<typeof LaunchMarketHealthResponseSchema>;

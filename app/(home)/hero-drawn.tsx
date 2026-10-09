@@ -9,8 +9,7 @@ import styles from "./hero-drawn.module.css";
 /**
  * PARKED — not mounted on any route since the same evening it was built.
  *
- * This is the hero drawn in HTML from the design handoff of 2026-09-13 and
- * the ten corrections given beside it. An hour after it was merged it was
+ * An hour after it was merged it was
  * replaced with a finished render of the same composition (`hero-art.png`,
  * mounted by `hero.tsx`). Superseded work is kept in source rather than
  * deleted: everything here — the registry-read rail of the drawn terminal,

@@ -5,7 +5,7 @@
  * the server with the rest of the page, which is why they can sit inside a
  * server component beside the number they explain.
  *
- * **Why SVG and not a library.** The founder's condition was explicit: build on
+ * **Why SVG and not a library.** Build on
  * Recharts if the project already has it. It does not — `recharts` is in
  * neither `dependencies` nor `devDependencies`. Six shapes in SVG add nothing
  * to install, survive the Content Security Policy, theme with the shell because

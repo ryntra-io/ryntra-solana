@@ -18,8 +18,6 @@ import type { FeaturedAsset } from "../assets/featured.ts";
  * nobody notices, because the thing that went stale is the thing that was
  * supposed to tell you.
  *
- * The three severities are the founder's contract, in its order:
- *
  * ```text
  * action    something is blocked and you can unblock it
  * caution   something is degraded, or finished in a way worth reading

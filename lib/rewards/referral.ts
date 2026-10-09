@@ -22,8 +22,7 @@ import { z } from "zod";
  *
  * ## What binds, and when
  *
- * Opening a link binds nothing by itself. Canon §0.6 and the owner's
- * instruction agree: no registration wall, no automatic wallet prompt, no
+ * Opening a link binds nothing by itself. No registration wall, no automatic wallet prompt, no
  * account created by a click. The code is held in the
  * browser, and the attribution is written on its own the first time that
  * browser proves a wallet — no button to find (08.10: two

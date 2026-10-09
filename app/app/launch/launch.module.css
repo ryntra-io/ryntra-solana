@@ -3525,3 +3525,760 @@
   line-height: 1.5;
   color: var(--ry-text);
 }
+
+/* ── «Лаунчі на Ryntra» — every market launched on Ryntra ─────────────── */
+
+.marketsState {
+  justify-items: start;
+}
+
+.marketsBoard {
+  display: grid;
+  gap: var(--ry-s3);
+  min-width: 0;
+}
+
+.marketsBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px var(--ry-s4);
+}
+
+.marketsCount {
+  margin: 0;
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.marketsLegend {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+}
+
+/* A trade in the last day: the one green sign, always beside its word. */
+.liveDot {
+  display: inline-block;
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-verified);
+}
+
+.marketsWrap {
+  min-width: 0;
+  overflow-x: auto;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+}
+
+/* A dense data table: the 13 px step the type scale keeps for one, its small print 12 px. */
+.marketsTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--ry-fs-data);
+  color: var(--ry-text);
+}
+
+/* Dense enough for eight columns beside the menu on a 1280 px laptop: tight sides, the edges a little wider. */
+.marketsTable th,
+.marketsTable td {
+  padding: 10px 6px;
+  border-bottom: 1px solid var(--ry-border);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.marketsTable tr > :first-child {
+  padding-left: 12px;
+}
+
+.marketsTable tr > :last-child {
+  padding-right: 12px;
+}
+
+.marketsTable thead th {
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--ry-muted);
+  vertical-align: bottom;
+}
+
+.marketsTable [data-num] {
+  text-align: right;
+}
+
+.marketsTable tbody tr:last-child > * {
+  border-bottom: 0;
+}
+
+/* The whole row opens the token on a press; its name is the link a keyboard and a screen reader use. */
+.marketRow {
+  cursor: pointer;
+}
+
+.marketRow:hover {
+  background: var(--ry-hover);
+}
+
+/* A market being read: one line across its figures, never a «not read» in each of them. */
+.rowReading {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-data);
+}
+
+.rowReading > * + * {
+  margin-left: var(--ry-s4);
+}
+
+.marketToken {
+  min-width: 150px;
+  font-weight: 400;
+}
+
+.marketLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 32px;
+  color: var(--ry-text);
+  text-decoration: none;
+}
+
+.marketLink:hover .marketName {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.marketPicture {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  overflow: hidden;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-bg);
+  color: var(--ry-muted);
+}
+
+.marketPicture img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.marketNames {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.marketName {
+  max-width: 16ch;
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.marketSymbol {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+}
+
+/* Under the name and its picture, from the row's edge: the token's column stays as narrow as its name. */
+.marketChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px 0 0;
+}
+
+.marketChips:empty {
+  display: none;
+}
+
+.liveChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-verified-soft);
+  color: var(--ry-text);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Ryntra's own launch: said apart from the market's facts, never dressed as demand. */
+.techChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border: 1px dashed var(--ry-border-strong);
+  border-radius: var(--ry-r-pill);
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.stateCell {
+  display: grid;
+  gap: 4px;
+  justify-items: start;
+  min-width: 0;
+}
+
+.stateCell[data-align="end"] {
+  justify-items: end;
+}
+
+.stateChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-card);
+  color: var(--ry-text);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.stateDot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border: 1.5px solid var(--ry-muted);
+  border-radius: var(--ry-r-pill);
+}
+
+.stateChip[data-tone="live"] .stateDot {
+  border-color: var(--ry-verified);
+  background: var(--ry-verified);
+}
+
+/* Ryntra's ladder at work is a state, not a verdict: drawn in the ink, never the green that reads as «healthy». */
+.stateChip[data-tone="ladder"] {
+  border-color: var(--ry-border-strong);
+}
+
+.stateChip[data-tone="ladder"] .stateDot {
+  border-color: var(--ry-text);
+  background: var(--ry-text);
+}
+
+.stateChip[data-tone="caution"] {
+  border-color: var(--ry-caution);
+  background: var(--ry-caution-soft);
+}
+
+.stateChip[data-tone="caution"] .stateDot {
+  border-color: var(--ry-caution);
+  background: var(--ry-caution);
+}
+
+.cellSub {
+  font-size: var(--ry-fs-label);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+}
+
+.cellMuted {
+  color: var(--ry-muted);
+}
+
+/* A cell's main line keeps its words together; its small print below may wrap. */
+.cellLine {
+  white-space: nowrap;
+}
+
+/* Not read is not nothing: a word in the place of a figure, quieter than one. */
+.cellUnread {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+  white-space: nowrap;
+}
+
+.cellFigure {
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+  white-space: nowrap;
+}
+
+.cellFigure[data-dir="up"] {
+  color: var(--ry-pnl-pos);
+}
+
+.cellFigure[data-dir="down"] {
+  color: var(--ry-pnl-neg);
+}
+
+.wayCell {
+  display: grid;
+  gap: 6px;
+  min-width: 80px;
+}
+
+.wayValue {
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.wayBar {
+  display: block;
+  height: 6px;
+  overflow: hidden;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-bg);
+}
+
+.wayBar > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ry-aurora);
+}
+
+.wayDone {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.wayDone svg {
+  color: var(--ry-verified);
+}
+
+.creatorLock {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  color: var(--ry-text);
+}
+
+.creatorLock svg {
+  flex: none;
+  align-self: center;
+}
+
+.creatorLock svg {
+  color: var(--ry-muted);
+}
+
+
+.creatorSold {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ry-text);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.creatorSold svg {
+  color: var(--ry-caution);
+}
+
+.marketsFoot {
+  display: grid;
+  gap: var(--ry-s2);
+}
+
+/* No price is promised: one plain sentence under every figure of a market, in a quiet box as wide as the sentence. */
+.noGuarantee {
+  width: fit-content;
+  max-width: 100%;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-bg);
+  color: var(--ry-text);
+  font-size: var(--ry-fs-data);
+  font-weight: 600;
+  line-height: var(--ry-lh-body);
+}
+
+@media (pointer: coarse) {
+  .marketLink {
+    min-height: 44px;
+  }
+}
+
+/* A phone: each market a card of the same facts, its name on top, the figures two by two under their names. */
+@media (max-width: 759px) {
+  .marketsWrap {
+    overflow: visible;
+    border: 0;
+    background: none;
+  }
+
+  .marketsTable,
+  .marketsTable tbody,
+  .marketsTable tr,
+  .marketsTable th,
+  .marketsTable td {
+    display: block;
+  }
+
+  .marketsTable thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .marketsTable tbody {
+    display: grid;
+    gap: var(--ry-s3);
+  }
+
+  /* Scoped like the rule above it, so the card's grid wins over the table's block. */
+  .marketsTable .marketRow {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--ry-s3);
+    padding: var(--ry-s4);
+    border: 1px solid var(--ry-border);
+    border-radius: var(--ry-r-card);
+    background: var(--ry-card);
+  }
+
+  .marketsTable .marketRow:hover {
+    background: var(--ry-card);
+  }
+
+  .marketsTable .marketRow > th,
+  .marketsTable .marketRow > td {
+    padding: 0;
+    border: 0;
+  }
+
+  .marketsTable .marketRow > th {
+    grid-column: 1 / -1;
+  }
+
+  .marketsTable .marketRow > td {
+    display: grid;
+    align-content: start;
+    gap: 4px;
+    min-width: 0;
+    text-align: left;
+  }
+
+  .marketsTable .marketRow > td::before {
+    content: attr(data-label);
+    color: var(--ry-muted);
+    font-size: var(--ry-fs-label);
+  }
+
+  .marketsTable .marketRow > td.rowReading {
+    grid-column: 1 / -1;
+  }
+
+  .rowReading > * + * {
+    margin-left: 0;
+  }
+
+  .marketName {
+    max-width: none;
+    white-space: normal;
+  }
+
+  .creatorLock,
+  .creatorSold,
+  .wayDone {
+    white-space: normal;
+  }
+}
+
+/* ── «Здоров'я ринку» on a token's page ───────────────────────────────── */
+
+.slotHealth {
+  min-width: 0;
+}
+
+.healthStateLine {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+}
+
+.healthGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: var(--ry-s3);
+  min-width: 0;
+}
+
+.healthTile {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  min-width: 0;
+  padding: var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-bg);
+}
+
+.healthWide {
+  grid-column: 1 / -1;
+}
+
+.healthLabel {
+  margin: 0;
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  color: var(--ry-muted);
+}
+
+.healthFigure {
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+}
+
+.healthMark {
+  justify-self: start;
+  margin: 0;
+  padding: 2px 8px;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-caution-soft);
+  color: var(--ry-text);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+}
+
+/* A sentence the tile owes its reader — why a figure stands as it does. */
+.healthNote {
+  margin: 0;
+  font-size: var(--ry-fs-data);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+}
+
+.healthRows {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+}
+
+.healthRows > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--ry-s3);
+  font-size: var(--ry-fs-data);
+}
+
+.healthRows dt {
+  color: var(--ry-muted);
+}
+
+.healthRows dd {
+  margin: 0;
+  text-align: right;
+}
+
+.healthList {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--ry-fs-data);
+  color: var(--ry-text);
+}
+
+.healthList li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 6px;
+}
+
+.healthEngine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 6px;
+  margin: 0;
+  font-size: var(--ry-fs-data);
+  color: var(--ry-text);
+}
+
+.depthRows {
+  display: grid;
+  gap: 6px;
+  margin: 4px 0 0;
+}
+
+.depthRow {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--ry-s3);
+  font-size: var(--ry-fs-data);
+}
+
+.depthRow dt {
+  color: var(--ry-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.depthRow dd {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--ry-s3);
+  margin: 0;
+}
+
+.depthBar {
+  display: block;
+  height: 6px;
+  overflow: hidden;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-border);
+}
+
+/* Depth is a measure, not an action: drawn in the ink, never in the brand's orange. */
+.depthBar > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ry-muted);
+}
+
+.ruleList {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ruleRow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 4px 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--ry-border);
+  font-size: var(--ry-fs-data);
+  color: var(--ry-text);
+}
+
+.ruleRow:last-child {
+  border-bottom: 0;
+}
+
+.ruleText {
+  min-width: 0;
+  line-height: var(--ry-lh-body);
+}
+
+/* Who keeps it: a program's rule filled, Ryntra's policy outlined — the word always written, never the colour alone. */
+.enforceChip {
+  display: inline-flex;
+  justify-content: center;
+  min-width: 76px;
+  padding: 2px 8px;
+  border: 1px solid var(--ry-border-strong);
+  border-radius: var(--ry-r-pill);
+  color: var(--ry-text);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.enforceChip[data-enforcement="rule"] {
+  border-color: transparent;
+  background: var(--ry-verified-soft);
+}
+
+.logEnforce {
+  display: inline-flex;
+  padding: 0 6px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-pill);
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+}
+
+.logEnforce[data-enforcement="rule"] {
+  border-color: transparent;
+  background: var(--ry-verified-soft);
+  color: var(--ry-text);
+}
+
+.defList {
+  display: grid;
+  gap: 6px;
+  margin: 8px 0 0;
+  padding-left: 18px;
+  font-size: var(--ry-fs-data);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+}
+
+@media (max-width: 479px) {
+  .ruleRow {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .ruleRow > :last-child {
+    grid-column: 2;
+  }
+}
+
+/* Back to every market launched on Ryntra, above a token's page. */
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: 6px;
+  min-height: 32px;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+  text-decoration: none;
+}
+
+.backLink:hover {
+  color: var(--ry-text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+@media (pointer: coarse) {
+  .backLink {
+    min-height: 44px;
+  }
+}

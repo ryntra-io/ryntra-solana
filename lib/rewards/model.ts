@@ -38,7 +38,7 @@ import { REWARD_RANKS } from "./rules.ts";
  */
 
 /**
- * Basis points under rules `1.0.0`, by owner decision of 2026-09-10 — and the
+ * Basis points under rules `1.0.0` — and the
  * Bronze shares of `2.0.0`, where the level-1 share grows with rank.
  */
 export const REWARD_RATE_BPS = {
@@ -59,8 +59,7 @@ export type RewardType = (typeof REWARD_TYPES)[number];
 export const USD_MICROS_PER_USD = 1_000_000n;
 
 /**
- * The Claim floor: **$1.00**, the owner's decision of 2026-09-10 taken against
- * $10 explicitly. Below it the control is disabled and says why; it is never
+ * The Claim floor: **$1.00**. Below it the control is disabled and says why; it is never
  * hidden, because a person who has earned $0.40 is owed the sentence that
  * explains what happens next.
  */

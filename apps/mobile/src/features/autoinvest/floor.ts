@@ -1,7 +1,6 @@
 /**
  * «Регулярна купівля для всього» on the phone — the pure half of a token's
- * rule (M35; the web's subtask 2,
- * contract 1.31.0).
+ * rule.
  *
  * A rule names any token with liquidity: a company (as since 1.12.0), a coin
  * the venue verified (`crypto`), a meme or a token the venue has not verified

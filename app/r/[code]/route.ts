@@ -14,9 +14,7 @@ export const dynamic = "force-dynamic";
  *
  * It remembers the code in this browser and sends the person to the product.
  * That is all. No account is created, no wallet prompt appears, no address is
- * read, and nothing is written to any store — the owner's instruction is
- * explicit that a referral link must not put a registration wall or a signature
- * request in front of somebody who has just clicked a link from a friend.
+ * read, and nothing is written to any store.
  *
  * The attribution is written when the person proves a wallet through the
  * sign-in this product already has, and never before. Until then it is a

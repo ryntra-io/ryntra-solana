@@ -44,6 +44,10 @@ import type {
   LaunchClaimBuildResponseSchema,
   LaunchClaimSubmitRequestSchema,
   LaunchClaimSubmitResponseSchema,
+  LaunchJournalResponseSchema,
+  LaunchMarketsResponseSchema,
+  LaunchMarketCardResponseSchema,
+  LaunchMarketHealthResponseSchema,
 } from "./contract.ts";
 import type {
   PayLinkCreateRequestSchema as MoneyPayLinkCreateRequestSchema,
@@ -516,3 +520,13 @@ export type LaunchCabinetClientChecks = [
 ];
 
 export const launchCabinetClientChecks: LaunchCabinetClientChecks = [true, true, true, true, true, true, true, true, true];
+
+/* 1.36.0 — the markets launched on Ryntra, a market's card, its health, and the flight log whose entries gain what governs them: both directions. */
+export type LaunchMarketsClientChecks = [
+  Same<z.output<typeof LaunchJournalResponseSchema>, Client.LaunchJournalResponse>,
+  Same<z.output<typeof LaunchMarketsResponseSchema>, Client.LaunchMarketsResponse>,
+  Same<z.output<typeof LaunchMarketCardResponseSchema>, Client.LaunchMarketCardResponse>,
+  Same<z.output<typeof LaunchMarketHealthResponseSchema>, Client.LaunchMarketHealthResponse>,
+];
+
+export const launchMarketsClientChecks: LaunchMarketsClientChecks = [true, true, true, true];

@@ -2,10 +2,7 @@ import type { NextConfig } from "next";
 import { ENABLED_LOCALE_CODES } from "./app/i18n/locales.ts";
 import { CUSTOMER_REDIRECTS } from "./lib/product/customer-routing.ts";
 
-/* The landing is a page again — English at `/`, Ukrainian at `/uk` — since the
-   new site of `RYN-SITE-V5-001` (subtask 2, the Owner's word of 2026-09-26),
-   which removed the temporary front door of `RYN-SITE-NOW-001` (`/` and every
-   language address → 307 `/app`). What stays of it is the language map of the
+/* The landing is a page again — English at `/`, Ukrainian at `/uk`. What stays of it is the language map of the
    home page:
 
    - `/en` → `/` and `/ua` → `/uk`, permanently: each is the same page under
@@ -15,10 +12,7 @@ import { CUSTOMER_REDIRECTS } from "./lib/product/customer-routing.ts";
    - here, in the config, and never as a `redirect()` in a page: a page's
      redirect answers 200 with a meta refresh on production, which a crawler
      and a link preview do not read as a redirect; and one hop each.
-
-   `/company` led into the app from 2026-09-26 (it told a retired story) and
-   is a page again with the public pages of subtask 3 — «Про Ryntra» in the
-   words of canon v5.5 — so it has no row here any more. */
+ */
 export const LANDING_ADDRESSES = { en: "/", uk: "/uk" } as const;
 export const HOME_LANGUAGE_ADDRESSES = [
   /* The languages the home page answered in (`app/[lang]`)… */
@@ -34,8 +28,7 @@ export const LANDING_REDIRECTS = [
   { source: "/ua", destination: LANDING_ADDRESSES.uk, permanent: true },
   ...PARKED_LANGUAGE_ADDRESSES.map((source) => ({ source, destination: LANDING_ADDRESSES.en, permanent: false })),
   /* The app's door in Ukrainian, as `/app` is in English: one hop to Home at
-     its Ukrainian address (`middleware.ts` serves `/uk` + the pages offered to
-     the index; `RYN-SITE-V5-001` subtask 4). */
+     its Ukrainian address. */
   { source: "/uk/app", destination: "/uk/app/home", permanent: false },
 ];
 
@@ -95,7 +88,7 @@ const CSP = [
   "frame-ancestors 'none'",
 ].join("; ");
 
-/* The AGG product lab (`/preview/agg-lab`, `RYN-AGG-LAB-001`) is the one route
+/* The AGG product lab is the one route
    that talks to the prediction-market aggregator from the browser: its SDK
    reads `api.agg.market`, its live orderbooks come over `ws.agg.market`, its
    event images are served from `assets.agg.market`, and its stylesheet pulls
@@ -118,7 +111,7 @@ const AGG_LAB_CSP = [
   "frame-ancestors 'none'",
 ].join("; ");
 
-/* Predictions (`/app/predictions`, `RYN-PREDICTIONS-001`, canon v4.3 §6.5)
+/* Predictions
    reads the aggregator through Ryntra's own routes — the browser never calls
    `api.agg.market` and never holds a provider token — but two things are the
    browser's by nature: the live order-book and trade feed over
@@ -166,8 +159,7 @@ const nextConfig: NextConfig = {
    */
   ...(process.env.RYNTRA_DEV_KEEP_ROUTES === "1" ? { onDemandEntries: { maxInactiveAge: 60 * 60 * 1000, pagesBufferLength: 100 } } : {}),
   /*
-   * Every page's metadata in its `<head>`, for every reader
-   * (`RYN-SITE-V5-001`, subtask 4) — Next's own switch for turning its
+   * Every page's metadata in its `<head>`, for every reader — Next's own switch for turning its
    * streamed metadata off.
    *
    * Next streams the title, the description, the canonical and the
@@ -234,8 +226,7 @@ const nextConfig: NextConfig = {
          restating one set of boundaries, plus a `Resources` menu pointing at
          all three. They became sections of the Handbook. The routes are kept
          as permanent redirects rather than deleted, because every one of them
-         has been sent to a reviewer in a link that has to keep working — and
-         because canon requires redirect verification before removal.
+         has been sent to a reviewer in a link that has to keep working.
 
          An older developer shortcut is the same story.
 
@@ -252,9 +243,7 @@ const nextConfig: NextConfig = {
          unreachable and cannot drift back into the navigation by accident. */
       /* Repointed 2026-08-19, when `/docs` became a hub and its chapters became
          pages. These four used to land on an anchor inside a 13,000-pixel
-         document — and `RYN-ANCHOR-001` records that a fragment on a page that
-         size does not arrive, so every one of them was dropping a reviewer at
-         the top of the wrong thing. A page has no fragment to miss. */
+         document. A page has no fragment to miss. */
       /* Robinhood Chain became a workspace of its own on 2026-08-20.
          It lived at `/app/markets` — a folder inside Home — while every other
          ecosystem had `/<chain>/workspace`. These six keep every link that has
@@ -272,8 +261,7 @@ const nextConfig: NextConfig = {
          themselves (`CUSTOMER_REDIRECTS`), so each row goes to `/docs`
          directly — one hop, not a chain of two.
 
-         `/methodology` left this list on 2026-09-26 (`RYN-SITE-V5-001`,
-         subtask 3): it is a page again — where every figure Ryntra shows
+         `/methodology` left this list on 2026-09-26: it is a page again — where every figure Ryntra shows
          comes from, and when. A browser that followed the old 308 keeps
          landing on `/docs` until its own cache expires, which is somewhere
          true. */
@@ -321,10 +309,7 @@ const nextConfig: NextConfig = {
       { source: "/v2", destination: LANDING_ADDRESSES.en, permanent: false },
 
       /* The Asset Passport URL four documents claimed and no router ever served.
-         `RYN-STELLAR-004`'s plan named `app/stellar/asset/[asset]/`, the Passport
-         shipped inside the workspace at `assets/[asset]`, and the close record
-         quoted the plan rather than the delivery — so several documents
-         pointed at a 404. It is the exact
+         It is the exact
          URL somebody pastes as proof.
 
          The documents are corrected, and this redirect makes the stale copies
