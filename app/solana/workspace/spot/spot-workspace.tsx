@@ -1,7 +1,7 @@
 "use client";
 
 import { X } from "@phosphor-icons/react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 
 import type { ExecutionPlanBinding, RuleBinding } from "@/lib/api/v1/contract";
 import { WRAPPED_SOL_MINT } from "@/lib/solana/send-kinds";
@@ -31,12 +31,13 @@ const VIEW_KEY = "ryntra.spot.view.v1";
 /**
  * Spot — one trading workspace.
  *
- * Markets on the left, the market in the middle, the order ticket on the
- * right, the wallet's state below: one canvas, one selected asset, one action.
- * There is one face — the full one: the compact list, the fuller chart and
- * the fills; the components keep their `pro` switch, and this is its one
- * caller. The phone stacks the same panels in the order a person acts. The
- * selected mint lives in the address bar so a market can be shared and
+ * The market and its chart, the order ticket beside them, the wallet's state
+ * below: one canvas, one selected asset, one action. The markets open from
+ * the market's own name — a menu over the chart on a desk, a sheet from the
+ * bottom on a phone — so the chart keeps the room. There is
+ * one face — the full one; the components keep their `pro` switch, and this is
+ * its one caller. The phone stacks the same panels in the order a person acts.
+ * The selected mint lives in the address bar so a market can be shared and
  * reopened.
  */
 export function SpotWorkspace({
@@ -111,6 +112,17 @@ export function SpotWorkspace({
   }, [initialSide, initialAmount]);
   const [selectedRow, setSelectedRow] = useState<SpotMarketListRow | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  /* Where the menu drops from on a desk: under the market's name, in the frame's own coordinates, so it moves
+     with the page. */
+  const [anchor, setAnchor] = useState<{ top: number; left: number; room: number } | null>(null);
+  const frameRef = useRef<HTMLDivElement>(null);
+  const openMarkets = useCallback(() => {
+    const name = workspaceRef.current?.querySelector<HTMLElement>("[data-spot-picker]")?.getBoundingClientRect();
+    const frame = frameRef.current?.getBoundingClientRect();
+    /* The room under the name stays true while the menu is open: the page holds still. */
+    setAnchor(name && frame ? { top: Math.round(name.bottom - frame.top + 4), left: Math.round(name.left - frame.left), room: Math.round(window.innerHeight - name.bottom - 4 - 16) } : null);
+    setSheetOpen((open) => !open);
+  }, []);
   const [generation, setGeneration] = useState(0);
   const [timeframe, setTimeframe] = useSpotTimeframe();
   const sheetRef = useRef<HTMLDivElement>(null);
@@ -163,6 +175,8 @@ export function SpotWorkspace({
     setSelectedRow(row);
     setSelectedMint(row.mint);
     setSheetOpen(false);
+    /* The next opening starts from the whole list, not from the search that found this one. */
+    setQuery("");
   }, []);
 
   /* Keep the header alive with what the list knew while the detail loads. */
@@ -200,11 +214,23 @@ export function SpotWorkspace({
       else if (!sheet.contains(document.activeElement)) { event.preventDefault(); first.focus(); }
     };
     document.addEventListener("keydown", onKey);
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    /* The page holds still under the markets: the root is the scroller (the body clips sideways and passes nothing
+       on), and a window that changes size closes the menu rather than leave it under a name that moved. */
+    const root = document.documentElement;
+    const previous = root.style.overflow;
+    const gutter = root.style.scrollbarGutter;
+    /* The scrollbar's place is kept, so nothing beside the menu shifts sideways when it opens and closes. */
+    root.style.scrollbarGutter = "stable";
+    root.style.overflow = "hidden";
+    /* Only a change of width moves the name; a phone's keyboard changes the height and must not close the sheet. */
+    const width = window.innerWidth;
+    const close = () => { if (window.innerWidth !== width) setSheetOpen(false); };
+    window.addEventListener("resize", close);
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = previous;
+      window.removeEventListener("resize", close);
+      root.style.overflow = previous;
+      root.style.scrollbarGutter = gutter;
       window.requestAnimationFrame(() => workspace?.querySelector<HTMLButtonElement>("[data-spot-picker]")?.focus());
     };
   }, [sheetOpen]);
@@ -235,21 +261,15 @@ export function SpotWorkspace({
   /* The frame is the layout's measure: Spot lays out by the width it is given beside the menu, not by the window's. */
   return (
     <>
-      <div className={styles.frame}>
+      <div ref={frameRef} className={styles.frame}>
         <div ref={workspaceRef} className={styles.workspace} data-depth={depth}>
-          {pro ? (
-            <aside className={`${styles.panel} ${styles.markets}`} aria-label={text("Markets")} data-dense>
-              <div className={styles.marketsInner}>{listPanel}</div>
-            </aside>
-          ) : null}
-
           <MarketHeader
             state={market}
             fallback={fallback}
             starred={watchlist.has(selectedMint)}
             onStar={() => watchlist.toggle(selectedMint)}
-            onOpenMarkets={() => setSheetOpen(true)}
-            showPicker
+            onOpenMarkets={openMarkets}
+            marketsOpen={sheetOpen}
             pro={pro}
             pool={pool}
           />
@@ -291,11 +311,10 @@ export function SpotWorkspace({
 
           <TradingState market={marketValue} holdings={holdings} fills={fills} pro={pro} onRefresh={refresh} />
         </div>
-      </div>
 
-      {sheetOpen ? (
-        <div className={styles.sheetBackdrop} onClick={(event) => { if (event.target === event.currentTarget) setSheetOpen(false); }}>
-          <div className={styles.sheet} role="dialog" aria-modal="true" aria-label={text("Markets")} ref={sheetRef}>
+        {/* The markets: a menu under the market's name on a desk, a sheet from the bottom on a phone. */}
+        {sheetOpen ? (
+          <div className={styles.sheet} role="dialog" aria-modal="true" aria-label={text("Markets")} ref={sheetRef} data-dense style={anchor ? ({ "--spot-menu-top": `${anchor.top}px`, "--spot-menu-left": `${anchor.left}px`, "--spot-menu-room": `${anchor.room}px` } as CSSProperties) : undefined}>
             <div className={styles.sheetHead}>
               <b>{text("Markets")}</b>
               <button type="button" className={styles.sheetClose} onClick={() => setSheetOpen(false)} aria-label={text("Close")}>
@@ -304,8 +323,10 @@ export function SpotWorkspace({
             </div>
             {listPanel}
           </div>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
+
+      {sheetOpen ? <div className={styles.sheetBackdrop} onClick={() => setSheetOpen(false)} aria-hidden="true" /> : null}
     </>
   );
 }

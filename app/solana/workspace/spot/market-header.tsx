@@ -31,7 +31,9 @@ function categoryChip(market: SpotMarket, text: (english: string) => string): { 
 /**
  * The asset header — who this is, what it costs now, what moved today — and
  * Asset details one disclosure down. Everything printed is the provider's
- * figure; a stat the provider did not state is a dash, never a zero.
+ * figure; a stat the provider did not state is a dash, never a zero. Who this
+ * is — the icon, the name and the arrow beside it — is the one press that
+ * opens the markets.
  */
 export function MarketHeader({
   state,
@@ -39,7 +41,7 @@ export function MarketHeader({
   starred,
   onStar,
   onOpenMarkets,
-  showPicker,
+  marketsOpen,
   pro,
   pool,
 }: {
@@ -49,7 +51,8 @@ export function MarketHeader({
   starred: boolean;
   onStar: () => void;
   onOpenMarkets: () => void;
-  showPicker: boolean;
+  /** Whether the markets are open from this header now. */
+  marketsOpen: boolean;
   pro: boolean;
   pool: SpotPool | null;
 }) {
@@ -65,24 +68,26 @@ export function MarketHeader({
   const age = market ? marketAgeDays(market, Date.now()) : null;
 
   return (
-    <section className={`${styles.panel} ${styles.header}`} aria-label={text("Market")} data-terminal-header>
+    <section className={`${styles.panel} ${styles.header}`} aria-labelledby="spot-market-title" data-terminal-header>
       <div className={styles.headerTop}>
-        <div className={styles.identity}>
+        <button type="button" className={styles.identity} onClick={onOpenMarkets} aria-expanded={marketsOpen} aria-haspopup="dialog" title={text("Markets")} data-spot-picker>
           {mint ? <MarketIcon mint={mint} icon={icon} symbol={symbol || "?"} size={36} /> : null}
-          <div className={styles.identityText}>
-            <h2>
+          <span className={styles.identityText}>
+            <span className={styles.identityTitle}>
               {/* A market is selected from the first paint; while the catalogue
                   answers it is loading, and a mint the catalogue cannot name
                   is shown by its address rather than as nothing chosen. */}
-              {symbol || (!mint ? text("Pick a market") : state.status === "loading" ? text("Loading market…") : shortAddress(mint))}
+              <span id="spot-market-title" translate="no">{symbol || (!mint ? text("Pick a market") : state.status === "loading" ? text("Loading market…") : shortAddress(mint))}</span>
+              <CaretDown className={styles.caret} size={16} weight="bold" aria-hidden="true" />
+              <span className="sr-only"> · {text("Markets")}</span>
               {/* A token Ryntra no longer supports carries one state, not a green one beside it; the catalogue's word stays under the asset's details. */}
               {market?.verified && !isUnsupportedMarket(market) ? <span className={styles.chip} data-tone="verified">{text("Verified")}</span> : null}
               {market && !market.verified ? <span className={styles.chip} data-tone={market.audit.suspicious ? "risk" : "caution"}>{market.audit.suspicious ? text("Flagged") : text("Unverified")}</span> : null}
               {chip ? <span className={styles.chip}>{chip.label}</span> : null}
-            </h2>
-            <span>{name}</span>
-          </div>
-        </div>
+            </span>
+            <span className={styles.identityName}>{name}</span>
+          </span>
+        </button>
         <div className={styles.headerActions}>
           {mint ? (
             <button
@@ -93,12 +98,6 @@ export function MarketHeader({
               onClick={onStar}
             >
               <Star size={18} weight={starred ? "fill" : "regular"} aria-hidden="true" />
-            </button>
-          ) : null}
-          {showPicker ? (
-            <button type="button" className={styles.pickerButton} onClick={onOpenMarkets} data-spot-picker>
-              {text("Markets")}
-              <CaretDown size={14} aria-hidden="true" />
             </button>
           ) : null}
         </div>

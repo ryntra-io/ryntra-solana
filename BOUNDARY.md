@@ -12,7 +12,7 @@ moved counts as new. Generated at every update from the development history.
 | New | 1,314 |
 | Changed | 821 |
 | Unchanged | 914 |
-| Lines added / removed | +337,413 / −20,300 |
+| Lines added / removed | +337,505 / −20,396 |
 
 ## New since the tag
 

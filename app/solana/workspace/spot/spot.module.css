@@ -1,8 +1,8 @@
 /* Spot — one trading canvas.
    Tokens only (DESIGN.md → app/design/tokens.css). Laid out by the width the
-   canvas gives it beside the menu, never by the window's: three columns —
-   Markets · Market · Order ticket — where the canvas is wide, the chart and
-   the ticket with the markets one press away on a laptop, a phone stacking
+   canvas gives it beside the menu, never by the window's: the market and its
+   chart beside the order ticket, the markets one press away from the market's
+   name (a menu over the chart on a desk, a sheet on a phone), a phone stacking
    the same panels in the order a person acts. The trading state stands under
    the market. */
 
@@ -10,6 +10,7 @@
    gives Spot 970–1220 px, which the window's width never said. */
 .frame {
   container: spot / inline-size;
+  position: relative;
   min-width: 0;
 }
 
@@ -22,29 +23,19 @@
      keeps its own height. Measured on laptops (2026-10-09): 248–496 px wide
      and under the first screen before; the chart is now the widest panel and
      ends on the first screen. */
-  --spot-list: clamp(280px, 20cqi, 400px);
   --spot-ticket: clamp(340px, 24cqi, 440px);
   --spot-chart-h: var(--spot-fit, clamp(360px, 52vh, 640px));
   display: grid;
-  grid-template-columns: var(--spot-list) minmax(0, 1fr) var(--spot-ticket);
-  grid-template-rows: auto minmax(0, 1fr) auto auto;
-  grid-template-areas:
-    "markets header ticket"
-    "markets chart ticket"
-    "markets evidence ticket"
-    "markets state ticket";
-  gap: var(--ry-s3);
-  align-items: start;
-  min-width: 0;
-}
-
-.workspace[data-depth="guided"] {
   grid-template-columns: minmax(0, 1fr) var(--spot-ticket);
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
   grid-template-areas:
     "header ticket"
     "chart ticket"
     "evidence ticket"
     "state ticket";
+  gap: var(--ry-s3);
+  align-items: start;
+  min-width: 0;
 }
 
 /* The two sensors of the selected token: their own row between the chart and the wallet's state — side by side where the column is wide enough, stacked where it is not. */
@@ -92,26 +83,7 @@
   border-radius: var(--ry-r-card);
 }
 
-/* ── Markets ─────────────────────────────────────────────────────────── */
-
-.markets {
-  grid-area: markets;
-  position: relative;
-  align-self: stretch;
-  min-height: 0;
-  overflow: hidden;
-}
-
-/* The panel spans the header, the chart and the trading state and must not
-   size them: its content is taken out of flow, so the column's height is the
-   middle column's, and the list scrolls inside whatever is left. */
-.marketsInner {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  container: markets / inline-size;
-}
+/* ── Markets — the list in the menu and the sheet ─────────────────────── */
 
 .marketsHead {
   display: grid;
@@ -156,6 +128,15 @@
 
 .search input::placeholder {
   color: var(--ry-muted);
+}
+
+/* One focus for the search: the field's own ring, never a second box inside it. */
+.sheet .search input:focus-visible {
+  box-shadow: none;
+}
+
+.search:focus-within {
+  box-shadow: var(--ry-focus);
 }
 
 /* Five views in one row; a narrower column wraps them rather than clipping
@@ -305,9 +286,8 @@
   flex: 0 0 auto;
 }
 
-/* A narrow column carries the identity and drops the day's volume; the wide
-   column a wide screen gives it carries both. */
-@container markets (max-width: 339px) {
+/* A narrow list — a phone's sheet — carries the identity and drops the day's volume; the desk's menu carries both. */
+@container markets (max-width: 420px) {
   .rowVol {
     display: none;
   }
@@ -440,11 +420,11 @@
   min-width: 0;
 }
 
-/* Where the header has the room — a 1440–1536 px laptop beside the ticket, a wide desk beside the markets too —
-   it reads the market on one line: who it is, its price, the watch and the picker, the figures under it, so the
+/* Where the header has the room — a 1440 px laptop and wider beside the ticket —
+   it reads the market on one line: who it is (the press that opens the markets), its price, the watch, the figures under it, so the
    chart starts high on the first screen. A narrower header keeps two lines: a long name (a company's token, a
    meme with two chips) keeps its place rather than being squeezed under the price. */
-@container spot ((min-width: 1072px) and (max-width: 1259px)) or (min-width: 1500px) {
+@container spot (min-width: 1072px) {
   .header {
     grid-template-columns: minmax(min(280px, 100%), max-content) minmax(max-content, 1fr) auto;
     align-items: center;
@@ -462,6 +442,7 @@
   .header .identity {
     grid-column: 1;
     grid-row: 1;
+    justify-self: start;
   }
 
   .header > .priceRow {
@@ -488,12 +469,37 @@
   min-width: 0;
 }
 
+/* The market's name is the press that opens the markets: the icon, the name and its arrow as one control. */
 .identity {
   display: flex;
   align-items: center;
   gap: var(--ry-s3);
   min-width: 0;
-  flex: 1 1 auto;
+  flex: 0 1 auto;
+  margin: 0 calc(-1 * var(--ry-s2));
+  padding: var(--ry-s1) var(--ry-s2);
+  border: 0;
+  border-radius: var(--ry-r-btn-sm);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.identity:hover,
+.identity[aria-expanded="true"] {
+  background: var(--ry-hover);
+}
+
+.caret {
+  flex: 0 0 auto;
+  color: var(--ry-text);
+  transition: transform var(--rt-duration-fast) var(--rt-ease);
+}
+
+.identity[aria-expanded="true"] .caret {
+  transform: rotate(180deg);
 }
 
 .identity .icon,
@@ -524,7 +530,7 @@
   overflow-wrap: anywhere;
 }
 
-.identityText h2 {
+.identityTitle {
   margin: 0;
   font-family: var(--ry-font-sans);
   font-size: var(--ry-fs-title);
@@ -537,7 +543,7 @@
   flex-wrap: wrap;
 }
 
-.identityText span {
+.identityName {
   font-size: var(--ry-fs-dense);
   color: var(--ry-muted);
   white-space: nowrap;
@@ -575,27 +581,6 @@
 .chip[data-tone="risk"] {
   background: var(--ry-env-bg);
   color: var(--ry-risk);
-}
-
-.pickerButton {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--ry-s2);
-  min-height: 40px;
-  padding: 0 var(--ry-s3);
-  border: 1px solid var(--ry-border);
-  border-radius: var(--ry-r-btn-sm);
-  background: var(--ry-bg);
-  color: var(--ry-text);
-  font-family: var(--ry-font-sans);
-  font-size: var(--ry-fs-dense);
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.pickerButton:hover {
-  background: var(--ry-hover);
 }
 
 .priceRow {
@@ -673,6 +658,7 @@
   align-items: center;
   gap: var(--ry-s2);
   flex: 0 0 auto;
+  margin-inline-start: auto;
 }
 
 .ghost {
@@ -1810,7 +1796,7 @@
   padding: var(--ry-s2) 0;
 }
 
-/* ── Markets sheet (Simple, and every phone) ─────────────────────────── */
+/* ── The markets: a menu on a desk, a sheet on a phone ─────────────────────────── */
 
 .sheetBackdrop {
   position: fixed;
@@ -1823,6 +1809,11 @@
 }
 
 .sheet {
+  position: fixed;
+  inset: auto 0 0;
+  z-index: 61;
+  container: markets / inline-size;
+  margin-inline: auto;
   width: min(560px, 100%);
   max-height: min(80dvh, 720px);
   display: flex;
@@ -1859,50 +1850,35 @@
   cursor: pointer;
 }
 
+/* On a desk the markets drop from the market's name over the chart and move with it; a phone
+   keeps the sheet from the bottom. */
 @media (min-width: 901px) {
   .sheetBackdrop {
-    align-items: center;
+    background: color-mix(in srgb, var(--ry-bg) 35%, transparent);
   }
 
   .sheet {
+    position: absolute;
+    inset: var(--spot-menu-top, 0) auto auto var(--spot-menu-left, 0);
+    margin: 0;
+    width: min(440px, calc(100% - var(--spot-menu-left, 0px)));
+    max-height: min(640px, var(--spot-menu-room, calc(100dvh - 240px)));
     border-radius: var(--ry-r-card);
-    max-height: min(80vh, 720px);
   }
-}
-
-/* Pro has the column; the picker is for Simple and for narrow screens. */
-.workspace[data-depth="pro"] .pickerButton {
-  display: none;
 }
 
 /* ── Responsive — by the canvas's width ──────────────────────────────── */
 
-/* A laptop: the chart and the ticket; the markets one press away. */
+/* A laptop: a narrower ticket, the chart the widest panel. */
 @container spot (max-width: 1259px) {
-  .workspace,
-  .workspace[data-depth="guided"] {
+  .workspace {
     --spot-ticket: clamp(320px, 30cqi, 360px);
-    grid-template-columns: minmax(0, 1fr) var(--spot-ticket);
-    grid-template-areas:
-      "header ticket"
-      "chart ticket"
-      "evidence ticket"
-      "state ticket";
-  }
-
-  .markets {
-    display: none;
-  }
-
-  .workspace[data-depth="pro"] .pickerButton {
-    display: inline-flex;
   }
 }
 
 /* A phone, and a canvas as narrow: one column in the order a person acts. */
 @container spot (max-width: 759px) {
-  .workspace,
-  .workspace[data-depth="guided"] {
+  .workspace {
     --spot-chart-h: 300px;
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
