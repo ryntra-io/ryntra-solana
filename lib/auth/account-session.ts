@@ -1,5 +1,5 @@
 import { issueSessionRefToken } from "@/lib/beta/token";
-import { accountBindAuth, accountByAuthUser, accountResolveAuth, sessionOpen, type AccountResolveResult, type SessionMethod } from "@/lib/account/rpc";
+import { accountBindAuth, accountByAuthUser, accountResolveAuth, sessionOpen, sessionRevoke, type AccountResolveResult, type SessionMethod } from "@/lib/account/rpc";
 import { loginTargetOf, recordAccountLogin } from "@/lib/admin/activity";
 import { telegramIdMissing, type IdentitySummary } from "./identity-summary";
 
@@ -22,6 +22,9 @@ export type { IdentityProvider, IdentitySummary } from "./identity-summary";
  */
 
 export const CUSTOMER_SESSION_TTL_S = 30 * 24 * 3600;
+/** A wallet sign-in lives as long as an email one: one signature per visit, not per day. */
+export const WALLET_SIGNIN_TTL_S = CUSTOMER_SESSION_TTL_S;
+/** `prove` alone — a proof for a person signed in by another door, or the API. */
 export const WALLET_PROOF_TTL_S = 24 * 3600;
 export const ADMIN_SESSION_TTL_S = 12 * 3600;
 export const ADMIN_IDLE_S = 30 * 60;
@@ -141,4 +144,40 @@ export function cookieBase(requestUrl: string) {
     sameSite: "lax" as const,
     path: "/",
   };
+}
+
+/**
+ * A wallet sign-in that is in use stays open.
+ *
+ * The store fixes a session's expiry when it opens it, so "extend while the
+ * person keeps using the site" is a rotation: once half of the term has gone,
+ * the next visit opens a fresh session for the same account and the same
+ * signed address and signs a new cookie. Nobody signs anything: the person
+ * already proved the address, and the new row carries the very address the
+ * old one did. Anything short of a clean rotation returns `null` and the
+ * current session simply continues.
+ *
+ * The old row is not revoked here. A request already in flight with the old
+ * cookie — another tab, a data read, a refresh — must not find its session
+ * gone and read as «signed out»; no cookie names the old row after this
+ * response, it ends on its own expiry, and «sign out everywhere» closes it
+ * with the account like every other row.
+ */
+export async function renewWalletSignin(input: Readonly<{
+  sessionId: string | null;
+  accountId: string | null;
+  method: SessionMethod | null;
+  walletAddress: string | null;
+  expiresAt: string | null | undefined;
+  now?: number;
+}>): Promise<{ cookie: SessionCookie; expiresAt: string } | null> {
+  if (input.method !== "solana_siws" || !input.sessionId || !input.accountId || !input.walletAddress || !input.expiresAt) return null;
+  const left = Date.parse(input.expiresAt) - (input.now ?? Date.now());
+  if (!Number.isFinite(left) || left <= 0 || left > (WALLET_SIGNIN_TTL_S * 1000) / 2) return null;
+  const opened = await sessionOpen({ kind: "customer", method: "solana_siws", accountId: input.accountId,
+    walletChain: "solana", walletAddress: input.walletAddress, ttlSeconds: WALLET_SIGNIN_TTL_S });
+  if (!opened) return null;
+  const value = issueSessionRefToken(opened.id, Date.parse(opened.expiresAt));
+  if (!value) { await sessionRevoke(opened.id, "replaced"); return null; }
+  return { cookie: { name: "rt", value, maxAge: WALLET_SIGNIN_TTL_S }, expiresAt: opened.expiresAt };
 }

@@ -3,7 +3,7 @@ import { isAddress } from "@solana/kit";
 import { z } from "zod";
 
 import { accountByWallet, accountWalletLink, accountResolveSolana, sessionOpen, sessionResolve, sessionRevoke } from "@/lib/account/rpc";
-import { WALLET_PROOF_TTL_S, cookieBase } from "@/lib/auth/account-session";
+import { WALLET_PROOF_TTL_S, WALLET_SIGNIN_TTL_S, cookieBase } from "@/lib/auth/account-session";
 import { buildSiwsInput, siwsMessageText, verifySiws, type SiwsAction } from "@/lib/auth/siws";
 import { issueWalletNonce, walletNonceIssuedHere } from "@/lib/auth/wallet-nonce";
 import { consumeLoginNonce } from "@/lib/beta/rpc";
@@ -31,10 +31,15 @@ export const dynamic = "force-dynamic";
  *        proven address to the account signed in right now.
  *
  * `signin` is a separate, purpose-bound SIWS action that resolves an account
- * and issues a recorded customer session. `prove` still creates no account. A connected wallet in the
- * browser proves nothing until it signs; a signature over anything but this
- * server's message for this nonce is refused. Nothing here touches a
- * transaction.
+ * and issues a recorded customer session. That session names the address it
+ * signed with and is itself the proof of that address on every page
+ * (`readWalletProof`), so a person signs once per visit, not once per page;
+ * it lives as long as an email sign-in and is renewed while in use.
+ * `prove` still creates no account: the web asks for it only from a person
+ * already signed in by another door, and a person with no account signs in
+ * instead. A connected wallet in the browser proves nothing until it signs; a
+ * signature over anything but this server's message for this nonce is
+ * refused. Nothing here touches a transaction.
  *
  * THE NONCE IS CHECKED TWICE, FOR TWO DIFFERENT PROPERTIES — see
  * `app/api/auth/wallet/route.ts`: issuance (HMAC tag) first, then single use
@@ -164,7 +169,7 @@ export async function POST(req: NextRequest) {
     const account = await accountResolveSolana(address, body.locale);
     if (!account.ok) return fail(account.error, 503);
     customer = await sessionOpen({ kind: "customer", method: "solana_siws", accountId: account.accountId,
-      walletChain: "solana", walletAddress: address, ttlSeconds: WALLET_PROOF_TTL_S });
+      walletChain: "solana", walletAddress: address, ttlSeconds: WALLET_SIGNIN_TTL_S });
     if (!customer) return fail("unavailable", 503);
     customerToken = issueSessionRefToken(customer.id, Date.parse(customer.expiresAt));
     if (!customerToken) { await sessionRevoke(customer.id, "replaced"); return fail("unavailable", 503); }
@@ -183,22 +188,27 @@ export async function POST(req: NextRequest) {
     confirmedAccount = account.accountId;
   }
 
-  const proof = await sessionOpen({
-    kind: "wallet",
-    method: "solana_siws",
-    walletChain: "solana",
-    walletAddress: address,
-    ttlSeconds: WALLET_PROOF_TTL_S,
-  });
-  if (!proof) {
-    if (customer) await sessionRevoke(customer.id, "replaced");
-    return fail("unavailable", 503);
-  }
-  const token = issueSessionRefToken(proof.id, Date.parse(proof.expiresAt));
-  if (!token) {
-    await sessionRevoke(proof.id, "replaced");
-    if (customer) await sessionRevoke(customer.id, "replaced");
-    return fail("unavailable", 503);
+  /* A sign-in is its own proof: the customer session names the address it
+     signed with, and «sign out everywhere» closes it with the account. A
+     separate `rw` beside it would be a second, account-less credential that
+     outlives that sign-out, so a sign-in issues none (and the replaced one
+     above is gone). `prove` and `link` still open the short `rw` proof. */
+  let proof: { id: string; expiresAt: string } | null = null;
+  let token: string | null = null;
+  if (!customer) {
+    proof = await sessionOpen({
+      kind: "wallet",
+      method: "solana_siws",
+      walletChain: "solana",
+      walletAddress: address,
+      ttlSeconds: WALLET_PROOF_TTL_S,
+    });
+    if (!proof) return fail("unavailable", 503);
+    token = issueSessionRefToken(proof.id, Date.parse(proof.expiresAt));
+    if (!token) {
+      await sessionRevoke(proof.id, "replaced");
+      return fail("unavailable", 503);
+    }
   }
 
   /* A proven wallet that belongs to an account is that account's login by
@@ -220,8 +230,11 @@ export async function POST(req: NextRequest) {
   }
   await verifiedPresence;
 
-  const res = NextResponse.json({ ok: true, address, expiresAt: proof.expiresAt, linked: body.action === "link", signedIn: body.action === "signin" }, { headers: privateNoStoreHeaders() });
-  if (customerToken) res.cookies.set("rt", customerToken, { ...cookieBase(req.url), maxAge: WALLET_PROOF_TTL_S });
-  res.cookies.set("rw", token, { ...cookieBase(req.url), maxAge: WALLET_PROOF_TTL_S });
+  const res = NextResponse.json({ ok: true, address, expiresAt: customer?.expiresAt ?? proof?.expiresAt ?? null, linked: body.action === "link", signedIn: body.action === "signin" }, { headers: privateNoStoreHeaders() });
+  if (customerToken) {
+    res.cookies.set("rt", customerToken, { ...cookieBase(req.url), maxAge: WALLET_SIGNIN_TTL_S });
+    res.cookies.delete("rw");
+  }
+  if (token) res.cookies.set("rw", token, { ...cookieBase(req.url), maxAge: WALLET_PROOF_TTL_S });
   return res;
 }

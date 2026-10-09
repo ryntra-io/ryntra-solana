@@ -40,6 +40,17 @@ type Copy = Readonly<{
   rewardsRules: readonly string[];
   ranksTitle: string;
   ranksRules: readonly string[];
+  /** Recent rewards, folded to the newest few: open the rest of the list, fold it back. */
+  historyAll: (count: number) => string;
+  historyFold: string;
+  /** «Винагороди» in the header, and what it says when money is ready or on its way. */
+  header: string;
+  headerReady: (sum: string) => string;
+  /** Gathered, under the minimum a claim needs (or with payouts paused). */
+  headerGathered: (sum: string, minimum: string) => string;
+  /** Gathered past the minimum, but a claim would not go through now (payouts paused). */
+  headerHeld: (sum: string) => string;
+  headerPending: (sum: string) => string;
   badgesTitle: string;
   /** The line under the badges before one is chosen. */
   badgesHint: string;
@@ -130,6 +141,13 @@ const EN: Copy = {
     "From a trade by a friend you invited: 10% to 30% of the fee Ryntra receives, by your rank. From the friends they invited: 5%.",
     "Trades made before these rules began keep the earlier shares: 50%, 10% and 5% of the fee paid.",
   ],
+  historyAll: (count) => `Show ${count} more`,
+  historyFold: "Show fewer",
+  header: "Rewards",
+  headerReady: (sum) => `Rewards: ${sum} to claim`,
+  headerGathered: (sum, minimum) => `Rewards: ${sum} gathered · claim from ${minimum}`,
+  headerHeld: (sum) => `Rewards: ${sum} gathered`,
+  headerPending: (sum) => `Rewards: ${sum} on its way`,
   ranksTitle: "How ranks work",
   ranksRules: [
     "Bronze from 0 points, Silver from 100, Gold from 1,000, Sapphire from 10,000, Diamond from 50,000.",
@@ -188,6 +206,13 @@ const UK: Copy = {
     "З угоди друга, якого ви запросили: від 10% до 30% комісії, яку отримує Ryntra, за вашим рангом. З угод тих, кого запросили вони: 5%.",
     "Угоди, зроблені до цих правил, лишаються за попередніми частками: 50%, 10% і 5% сплаченої комісії.",
   ],
+  historyAll: (count) => `Показати ще ${count}`,
+  historyFold: "Згорнути",
+  header: "Винагороди",
+  headerReady: (sum) => `Винагороди: ${sum} можна забрати`,
+  headerGathered: (sum, minimum) => `Винагороди: накопичено ${sum} · забрати від ${minimum}`,
+  headerHeld: (sum) => `Винагороди: накопичено ${sum}`,
+  headerPending: (sum) => `Винагороди: ${sum} очікує`,
   ranksTitle: "Як працюють ранги",
   ranksRules: [
     "Бронза — від 0 очок, Срібло — від 100, Золото — від 1 000, Сапфір — від 10 000, Діамант — від 50 000.",

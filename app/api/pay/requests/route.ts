@@ -14,7 +14,7 @@ import {
 } from "@/lib/pay/model";
 import { createPaymentRequest, listPaymentRequestsByWallet, readPaymentRequest, readPaymentSettlement } from "@/lib/pay/store";
 import { mutationOriginAllowed } from "@/lib/security";
-import { getWalletProof } from "@/lib/session";
+import { readWalletProof } from "@/lib/session";
 import { fetchTokenCatalog } from "@/lib/solana/catalog";
 import { readMintAccount } from "@/lib/solana/mint";
 import { buildSolanaPayUrl } from "@/lib/solana/payment-request";
@@ -48,7 +48,9 @@ export async function GET(req: NextRequest) {
   const rate = consumeSolanaReadRequest(req.headers);
   if (!rate.allowed) return json({ error: "rate limited" }, 429);
   const address = new URL(req.url).searchParams.get("address") ?? "";
-  const proof = await getWalletProof();
+  const read = await readWalletProof();
+  if (read.status === "unavailable") return json({ error: "unavailable" }, 503);
+  const proof = read.status === "ok" ? read.proof : null;
   if (!proof || proof.chain !== "solana" || proof.address !== address) return json({ error: "proof required", proof: false }, 401);
 
   const store = getGuardRuntime().store;
@@ -70,7 +72,9 @@ export async function POST(req: NextRequest) {
   const rate = consumeSolanaReadRequest(req.headers);
   if (!rate.allowed) return json({ error: "rate limited" }, 429);
   if (!mutationOriginAllowed(req.url, req.headers.get("origin"), req.headers.get("sec-fetch-site"))) return json({ error: "forbidden" }, 403);
-  const proof = await getWalletProof();
+  const read = await readWalletProof();
+  if (read.status === "unavailable") return json({ error: "unavailable" }, 503);
+  const proof = read.status === "ok" ? read.proof : null;
   if (!proof || proof.chain !== "solana") return json({ error: "proof required", proof: false }, 401);
 
   const body = await readAgentControlJson(req);

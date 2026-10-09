@@ -124,6 +124,32 @@ function fromRecorded(resolved: ResolvedSession): Session | null {
   };
 }
 
+/**
+ * The cabinet session with the one fact `getSession` folds away: whether the
+ * store answered. `unavailable` is a signed cookie the store could not read
+ * right now — not a signed-out person. The account surfaces say «checking»
+ * for it and never sign anybody out because of it.
+ */
+export type SessionRead =
+  | Readonly<{ status: "ok"; session: Session }>
+  | Readonly<{ status: "absent" }>
+  | Readonly<{ status: "unavailable" }>;
+
+export async function readSession(): Promise<SessionRead> {
+  const jar = await cookies();
+  const token = jar.get("rt")?.value ?? "";
+  const parsed = verifySession(token);
+  if (!parsed) return { status: "absent" };
+  if (parsed.subject.kind === "session") {
+    const outcome = await sessionResolve(parsed.subject.sessionId);
+    if (outcome.status === "unavailable") return { status: "unavailable" };
+    const session = outcome.status === "ok" ? fromRecorded(outcome.session) : null;
+    return session ? { status: "ok", session } : { status: "absent" };
+  }
+  const session = await getSession();
+  return session ? { status: "ok", session } : { status: "absent" };
+}
+
 /** Resolve the cabinet session exclusively from the HttpOnly `rt` cookie. */
 export async function getSession(): Promise<Session | null> {
   const jar = await cookies();
@@ -133,7 +159,8 @@ export async function getSession(): Promise<Session | null> {
 
   /* A recorded session is the row's word, live: revoked, idle or expired rows
      refuse here and nothing is read from a cached copy. A store that does not
-     answer is a signed-out request, never a guessed one. */
+     answer grants nothing here; `readSession` is how a caller tells that apart
+     from a signed-out request. */
   if (parsed.subject.kind === "session") {
     const outcome = await sessionResolve(parsed.subject.sessionId);
     return outcome.status === "ok" ? fromRecorded(outcome.session) : null;
@@ -187,11 +214,16 @@ export async function getSession(): Promise<Session | null> {
 }
 
 /**
- * A proven wallet, from the `rw` cookie.
+ * A proven wallet: the `rw` cookie, or the wallet sign-in itself.
  *
- * Proof is a recorded wallet session minted only after a sign-in message the
- * server built was signed by that address and verified. A connected wallet in
- * the browser proves nothing and never reaches here.
+ * Proof is a recorded session minted only after a sign-in message the server
+ * built was signed by that address and verified. Two such sessions exist: the
+ * `rw` proof (`prove`, for a person signed in by another door, and the API),
+ * and the customer session a wallet sign-in opens (`rt`, method
+ * `solana_siws`), which names the address it signed with. Both are a
+ * signature by that address over this server's message, so one sign-in is
+ * the proof for every page — nobody signs twice to see their own data. A
+ * connected wallet in the browser proves nothing and never reaches here.
  */
 export type WalletProof = Readonly<{
   sessionId: string;
@@ -201,33 +233,77 @@ export type WalletProof = Readonly<{
   expiresAt: string;
 }>;
 
-export async function getWalletProof(): Promise<WalletProof | null> {
+export type WalletProofRead =
+  | Readonly<{ status: "ok"; proof: WalletProof }>
+  | Readonly<{ status: "absent" }>
+  | Readonly<{ status: "unavailable" }>;
+
+export async function readWalletProof(): Promise<WalletProofRead> {
   const jar = await cookies();
-  const token = jar.get("rw")?.value ?? "";
-  const parsed = verifySession(token);
-  if (!parsed || parsed.admin || parsed.subject.kind !== "session") return null;
-  const outcome = await sessionResolve(parsed.subject.sessionId);
-  if (outcome.status !== "ok") return null;
-  const s = outcome.session;
-  if (s.kind !== "wallet" || !s.walletChain || !s.walletAddress) return null;
-  return { sessionId: s.id, chain: s.walletChain, address: s.walletAddress, method: s.method, expiresAt: s.expiresAt };
+  let unavailable = false;
+  const proof = verifySession(jar.get("rw")?.value ?? "");
+  if (proof && !proof.admin && proof.subject.kind === "session") {
+    const outcome = await sessionResolve(proof.subject.sessionId);
+    if (outcome.status === "ok") {
+      const s = outcome.session;
+      if (s.kind === "wallet" && s.walletChain && s.walletAddress) {
+        return { status: "ok", proof: { sessionId: s.id, chain: s.walletChain, address: s.walletAddress, method: s.method, expiresAt: s.expiresAt } };
+      }
+    } else if (outcome.status === "unavailable") unavailable = true;
+  }
+  const signin = verifySession(jar.get("rt")?.value ?? "");
+  if (signin && !signin.admin && signin.subject.kind === "session") {
+    const outcome = await sessionResolve(signin.subject.sessionId);
+    if (outcome.status === "ok") {
+      const s = outcome.session;
+      if (s.kind === "customer" && s.method === "solana_siws" && s.walletChain && s.walletAddress && walletSessionBound(s)) {
+        return { status: "ok", proof: { sessionId: s.id, chain: s.walletChain, address: s.walletAddress, method: s.method, expiresAt: s.expiresAt } };
+      }
+    } else if (outcome.status === "unavailable") unavailable = true;
+  }
+  return unavailable ? { status: "unavailable" } : { status: "absent" };
+}
+
+/**
+ * Thrown by `getWalletProof` when the store could not answer. A missing proof
+ * is a 401 the person can fix by signing; a store that blinked is not, and
+ * reading it as «not proven» asked people to sign again for nothing. A route
+ * that wants to say 503 reads `readWalletProof(From)` instead.
+ */
+export class SessionStoreUnavailable extends Error {
+  constructor() {
+    super("session store unavailable");
+    this.name = "SessionStoreUnavailable";
+  }
+}
+
+export async function getWalletProof(): Promise<WalletProof | null> {
+  const read = await readWalletProof();
+  if (read.status === "unavailable") throw new SessionStoreUnavailable();
+  return read.status === "ok" ? read.proof : null;
 }
 
 /**
  * A proven wallet from whichever carrier the request uses: the native bearer
- * (`Authorization: Bearer …`, per the API contract) or the web's `rw` cookie.
+ * (`Authorization: Bearer …`, per the API contract) or the web's cookies.
  *
  * A bearer that is present and fails is a refusal — it never falls through to
  * the cookie, so a native client cannot be quietly served a browser's session
  * and a browser cannot be served a native one.
  */
-export async function getWalletProofFrom(headers: Headers): Promise<WalletProof | null> {
+export async function readWalletProofFrom(headers: Headers): Promise<WalletProofRead> {
   if (bearerToken(headers)) {
     const read = await resolveNativeSession(headers);
-    if (!read.ok) return null;
-    return { sessionId: read.session.sessionId, chain: "solana", address: read.session.address, method: read.resolved.method, expiresAt: read.session.expiresAt };
+    if (!read.ok) return read.code === "UNAVAILABLE" ? { status: "unavailable" } : { status: "absent" };
+    return { status: "ok", proof: { sessionId: read.session.sessionId, chain: "solana", address: read.session.address, method: read.resolved.method, expiresAt: read.session.expiresAt } };
   }
-  return getWalletProof();
+  return readWalletProof();
+}
+
+export async function getWalletProofFrom(headers: Headers): Promise<WalletProof | null> {
+  const read = await readWalletProofFrom(headers);
+  if (read.status === "unavailable") throw new SessionStoreUnavailable();
+  return read.status === "ok" ? read.proof : null;
 }
 
 /** Admin session from the `rta` cookie. Returns the admin's telegram id or null. */

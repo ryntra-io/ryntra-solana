@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
-import { getSession, canKeepPersonalData } from "@/lib/session";
+import { canKeepPersonalData, readSession, readWalletProof } from "@/lib/session";
 import { attachableAccountId } from "@/lib/auth/identity-link";
 import { accountLoginEnabled, customerDoorsEnabled, customerMethods, telegramClientId } from "@/lib/account/config";
 import { CABINET_BOOT_SCRIPT, THEME_BOOT_SCRIPT } from "./theme";
 import { normalizeWorkspaceLocale, WORKSPACE_LOCALE_COOKIE } from "@/app/shell/locale";
 import { SolanaI18nProvider } from "@/app/solana/workspace/i18n/provider";
 import { SolanaConnectionProvider } from "@/app/solana/workspace/connection";
+import { WalletProofSeed } from "@/app/solana/workspace/wallet-proof";
 import { HomeI18nProvider } from "./i18n/provider";
 import { WalletDataProvider } from "./wallet-data";
 import { ProductShell } from "./product-shell";
@@ -16,7 +17,15 @@ export const metadata: Metadata = { title: { default: "Ryntra", template: "%s ·
 export const dynamic = "force-dynamic";
 
 export default async function CabinetLayout({ children }: { children: React.ReactNode }) {
-  const [session, store] = await Promise.all([getSession(), cookies()]);
+  const [read, store] = await Promise.all([readSession(), cookies()]);
+  const session = read.status === "ok" ? read.session : null;
+  const walletSignin = session?.method === "solana_siws" ? session.identityWallet : null;
+  /* What the server already knows about the wallet's proof, handed to every
+     page before it renders: a wallet sign-in is the proof of its own address,
+     so the common case costs no second read. */
+  const proofRead = walletSignin ? null : await readWalletProof();
+  const proven = walletSignin ?? (proofRead?.status === "ok" ? proofRead.proof.address : null);
+  const checking = read.status === "unavailable" || proofRead?.status === "unavailable";
   const locale = normalizeWorkspaceLocale(store.get(WORKSPACE_LOCALE_COOKIE)?.value);
   /* Signed in means an account that can keep personal data: a recorded
      account session, or a legacy bot session that knows its account or passed
@@ -24,8 +33,11 @@ export default async function CabinetLayout({ children }: { children: React.Reac
   const signedIn = Boolean(session && canKeepPersonalData(session));
   const account: AccountSummary = {
     signedIn,
-    sessionKey: session?.sessionId ?? session?.accountId ?? null,
-    walletAddress: session?.method === "solana_siws" ? session.identityWallet : null,
+    /* The account, not the row: a wallet sign-in renewed in place is the same
+       person and must not remount the page they are on. */
+    sessionKey: session?.accountId ?? session?.sessionId ?? null,
+    walletAddress: walletSignin,
+    checking,
     expiresAt: session?.expiresAt ?? null,
     name: signedIn ? (session?.state.user.first_name ?? session?.state.user.username ?? null) : null,
     method: signedIn ? (session?.method ?? (session?.subjectKind === "WALLET" ? "wallet_siwe" : "telegram_link")) : null,
@@ -46,9 +58,11 @@ export default async function CabinetLayout({ children }: { children: React.Reac
           feedback dialog, toasts — take the terminal's own type and tokens. */}
       <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT + CABINET_BOOT_SCRIPT }} />
       <SolanaConnectionProvider>
-        <AccountProvider summary={account}>
-          <WalletDataProvider><ProductShell signedIn={signedIn}><AccountDataBoundary>{children}</AccountDataBoundary></ProductShell></WalletDataProvider>
-        </AccountProvider>
+        <WalletProofSeed address={proven} signedIn={signedIn} walletAddress={walletSignin} checking={checking} renderedAt={Date.now()}>
+          <AccountProvider summary={account}>
+            <WalletDataProvider><ProductShell signedIn={signedIn}><AccountDataBoundary>{children}</AccountDataBoundary></ProductShell></WalletDataProvider>
+          </AccountProvider>
+        </WalletProofSeed>
       </SolanaConnectionProvider>
     </HomeI18nProvider>
   </SolanaI18nProvider>;

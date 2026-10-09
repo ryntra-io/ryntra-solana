@@ -10,7 +10,7 @@ before every signature, a portfolio and a history with receipts. It runs at
 This repository is the product's source code as released — the web app, the
 Android app, the Evidence Kernel and the database schema, with their tests. It
 is private and shared read-only with invited reviewers. Every update is one
-commit, named for what it released; the latest is from 2026-10-08.
+commit, named for what it released; the latest is from 2026-10-09.
 
 ## What is here
 
@@ -23,7 +23,7 @@ commit, named for what it released; the latest is from 2026-10-08.
 | `supabase/migrations/`, `supabase/prepared/` | The database schema migration by migration, and the prepared SQL that is applied by hand (corrections and rollbacks) |
 | `public/` | Static assets |
 
-3,040 files come from the development repository as released, and each test
+3,048 files come from the development repository as released, and each test
 sits beside the code it tests (`*.test.mjs`); `README.md`, `BOUNDARY.md`,
 `LICENSE`, `.gitignore` and the scripts of `package.json` are written for this
 snapshot.
@@ -85,15 +85,15 @@ build-tools).
 
 The code as it stood before the hackathon is tagged
 `pre-hackathon-baseline-2026-09-11` in the development repository — commit `7fc5776f`,
-2026-09-11. Measured against that tag, path by path, for the 3,040 files
+2026-09-11. Measured against that tag, path by path, for the 3,048 files
 that come from the development repository:
 
 | Since the tag | Files |
 |---|---|
-| New | 1,305 |
-| Changed | 816 |
-| Unchanged | 919 |
-| Lines added / removed | +335,547 / −20,082 |
+| New | 1,313 |
+| Changed | 820 |
+| Unchanged | 915 |
+| Lines added / removed | +337,106 / −20,249 |
 
 [BOUNDARY.md](BOUNDARY.md) lists every new and every changed file. Shipped since
 then, as the public build log records it:
@@ -142,6 +142,8 @@ then, as the public build log records it:
 | 2026-10-07 | A recurring buy for any token with liquidity, next to Market in every order |
 | 2026-10-07 | Every launched token keeps a flight log: each event with its time, amount and transaction |
 | 2026-10-08 | A launched token's trades in History, each with its signed receipt and a link to share |
+| 2026-10-09 | One wallet signature per visit: sign in once and every page is yours |
+| 2026-10-09 | A shared trade shows up on X and Telegram as a large card, and Rewards sits in the header |
 
 ## What is not here
 

@@ -870,6 +870,14 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "This wallet holds no tokens yet.": "На цьому гаманці ще немає токенів.",
   "Balances could not be loaded just now. Try again in a moment.":
     "Баланси зараз не вдалося завантажити. Спробуйте за мить.",
+  "Too many attempts. Wait a minute.": "Забагато спроб. Зачекайте хвилину.",
+  "Sign-in is unavailable right now.": "Вхід зараз недоступний.",
+  "Wallet changed. Start sign-in again.": "Гаманець змінився. Почніть вхід знову.",
+  "Another account already linked this wallet.": "Цей гаманець уже прив'язано до іншого акаунта.",
+  "Sign in to your account first, then link the wallet.": "Спершу увійдіть в акаунт, потім прив'яжіть гаманець.",
+  "That signature could not be verified.": "Цей підпис не вдалося перевірити.",
+  "The request could not be completed.": "Запит не вдалося виконати.",
+  "Sign-in can't be checked right now. Try again in a moment.": "Вхід зараз не вдається перевірити. Спробуйте за мить.",
   "This site is not set up to sign swaps right now.": "Цей сайт зараз не налаштований підписувати обміни.",
   "This swap was checked and not offered for signing.": "Цей обмін перевірено і не запропоновано до підпису.",
   "This swap did not simulate cleanly, so it was not offered for signing.":

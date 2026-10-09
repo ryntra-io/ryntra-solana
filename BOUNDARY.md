@@ -9,10 +9,10 @@ moved counts as new. Generated at every update from the development history.
 
 | Since the tag | Files |
 |---|---|
-| New | 1,305 |
-| Changed | 816 |
-| Unchanged | 919 |
-| Lines added / removed | +335,547 / −20,082 |
+| New | 1,313 |
+| Changed | 820 |
+| Unchanged | 915 |
+| Lines added / removed | +337,106 / −20,249 |
 
 ## New since the tag
 
@@ -64,6 +64,7 @@ moved counts as new. Generated at every update from the development history.
 - `app/api/cron/reconcile/route.ts`
 - `app/api/growth/cards/[id]/image/card-art.tsx`
 - `app/api/growth/cards/[id]/image/route.tsx`
+- `app/api/growth/cards/[id]/image/serve.ts`
 - `app/api/growth/cards/origin.ts`
 - `app/api/growth/cards/route.ts`
 - `app/api/growth/leaderboards/route.ts`
@@ -92,6 +93,7 @@ moved counts as new. Generated at every update from the development history.
 - `app/api/predictions/quote/route.ts`
 - `app/api/predictions/watchlist/route.ts`
 - `app/api/preview/agg-lab/paper/route.ts`
+- `app/api/rewards/balance/route.ts`
 - `app/api/search/route.test.mjs`
 - `app/api/search/route.ts`
 - `app/api/solana/swap/golden.test.mjs`
@@ -403,6 +405,7 @@ moved counts as new. Generated at every update from the development history.
 - `app/preview/agg-lab/ready-app.tsx`
 - `app/preview/agg-lab/ryntra-adaptation.tsx`
 - `app/r/[code]/c/[card]/card-page.module.css`
+- `app/r/[code]/c/[card]/image/route.tsx`
 - `app/r/[code]/c/[card]/page.tsx`
 - `app/security/security-copy.ts`
 - `app/shell/help-topics.ts`
@@ -425,6 +428,8 @@ moved counts as new. Generated at every update from the development history.
 - `app/solana/workspace/rewards/badge.tsx`
 - `app/solana/workspace/rewards/badges-card.tsx`
 - `app/solana/workspace/rewards/card-motion.ts`
+- `app/solana/workspace/rewards/header-rewards.module.css`
+- `app/solana/workspace/rewards/header-rewards.tsx`
 - `app/solana/workspace/rewards/invite-banner.tsx`
 - `app/solana/workspace/rewards/invite.module.css`
 - `app/solana/workspace/rewards/leaderboard-view.tsx`
@@ -822,6 +827,8 @@ moved counts as new. Generated at every update from the development history.
 - `lib/account/config.test.mjs`
 - `lib/account/notifications.test.mjs`
 - `lib/account/notifications.ts`
+- `lib/account/wallet-proof-store.client.ts`
+- `lib/account/wallet-proof-store.test.mjs`
 - `lib/admin/feedback-context.test.mjs`
 - `lib/admin/feedback-context.ts`
 - `lib/admin/money-signals.server.ts`
@@ -885,6 +892,7 @@ moved counts as new. Generated at every update from the development history.
 - `lib/attribution/stats-model.ts`
 - `lib/attribution/stats.server.ts`
 - `lib/auth/native-session.ts`
+- `lib/auth/wallet-session.test.mjs`
 - `lib/autoinvest/asset.ts`
 - `lib/autoinvest/autoinvest.test.mjs`
 - `lib/autoinvest/budget.ts`
@@ -1367,7 +1375,10 @@ moved counts as new. Generated at every update from the development history.
 - `app/api/agents/mcp/hosted-mcp-e2e.test.mjs`
 - `app/api/agents/mcp/route.ts`
 - `app/api/auth/email/route.ts`
+- `app/api/auth/logout/route.ts`
 - `app/api/auth/oauth/route.ts`
+- `app/api/auth/solana/route.ts`
+- `app/api/auth/solana/session/route.ts`
 - `app/api/auth/telegram/route.ts`
 - `app/api/auth/wallet/route.ts`
 - `app/api/cron/recap/route.ts`
@@ -1776,6 +1787,7 @@ moved counts as new. Generated at every update from the development history.
 - `lib/agent-control/registry.ts`
 - `lib/agent-control/team-current.ts`
 - `lib/agent-control/tenancy.ts`
+- `lib/auth/account-session.ts`
 - `lib/auth/identity-summary.test.mjs`
 - `lib/auth/siwe.ts`
 - `lib/base/cctp-burn.test.mjs`

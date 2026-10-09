@@ -5,7 +5,7 @@ import { walletReceiptsList, walletReceiptsPut } from "@/lib/account/rpc";
 import { privateNoStoreHeaders } from "@/lib/http-control";
 import { mutationOriginAllowed } from "@/lib/security";
 import { bearerToken } from "@/lib/auth/native-session";
-import { getWalletProofFrom } from "@/lib/session";
+import { readWalletProofFrom } from "@/lib/session";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -39,7 +39,9 @@ export async function GET(req: NextRequest) {
   const address = new URL(req.url).searchParams.get("address") ?? "";
   /* The `rw` cookie in a browser, or the native bearer session for the same
      wallet (contract 1.1.0: receipts over the bearer). */
-  const proof = await getWalletProofFrom(req.headers);
+  const read = await readWalletProofFrom(req.headers);
+  if (read.status === "unavailable") return json({ error: "unavailable" }, 503);
+  const proof = read.status === "ok" ? read.proof : null;
   if (!proof || proof.chain !== "solana" || proof.address !== address) return json({ error: "proof required", proof: false }, 401);
   const rows = await walletReceiptsList("solana", address, 200);
   if (rows === null) return json({ error: "unavailable" }, 503);
@@ -59,7 +61,9 @@ export async function PUT(req: NextRequest) {
   } catch {
     return json({ error: "bad request" }, 400);
   }
-  const proof = await getWalletProofFrom(req.headers);
+  const read = await readWalletProofFrom(req.headers);
+  if (read.status === "unavailable") return json({ error: "unavailable" }, 503);
+  const proof = read.status === "ok" ? read.proof : null;
   if (!proof || proof.chain !== "solana" || proof.address !== parsed.address) return json({ error: "proof required", proof: false }, 401);
   const inserted = await walletReceiptsPut("solana", parsed.address, parsed.rows);
   if (inserted === null) return json({ error: "unavailable" }, 503);

@@ -1113,6 +1113,47 @@
   background: var(--ry-hover);
 }
 
+/* «Show all 20» under the newest few; the caret turns when they are open. */
+.historyToggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ry-s2);
+  justify-self: center;
+  min-height: 44px;
+  padding: 0 var(--ry-s4);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-pill, 999px);
+  background: transparent;
+  color: var(--ry-text);
+  font: inherit;
+  font-size: var(--ry-fs-dense, 0.875rem);
+  cursor: pointer;
+}
+
+.historyToggle:hover {
+  background: var(--ry-hover);
+}
+
+.historyToggle:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+}
+
+.historyToggle svg {
+  transition: transform 160ms ease-out;
+}
+
+.historyToggle svg[data-open] {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .historyToggle svg {
+    transition: none;
+  }
+}
+
 .glyph {
   display: inline-grid;
   place-items: center;

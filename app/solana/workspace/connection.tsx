@@ -21,10 +21,14 @@ import { explorerAddressUrl } from "@/lib/solana/explorer";
 import type { ProviderHealthState } from "@/lib/solana/health";
 import { isPhoneUserAgent, PHANTOM_DOWNLOAD_URL, phantomBrowseUrl } from "@/lib/solana/open-in-wallet";
 import { useSolanaI18n } from "./i18n/provider.tsx";
+import { announceAccountChange, clearWalletAccount } from "@/lib/account/wallet-auth.client";
+import { revalidateWalletFact } from "@/lib/account/wallet-proof-store.client";
 import {
   connectWallet,
   detectWallets,
   reconnectWallet,
+  registeredWallet,
+  selectSolanaAccount,
   subscribeWallets,
   watchWalletAccounts,
   type DetectedWallet,
@@ -72,6 +76,12 @@ export type SolanaConnectionValue = Readonly<{
   errorKind: ConnectionErrorKind | null;
   connect: (name?: string) => Promise<void>;
   disconnect: () => void;
+  /**
+   * The wallet is there but shows no account right now — locked, switching
+   * accounts, its extension restarting. The address and the wallet's name are
+   * kept and nobody is signed out: a pause is not a different wallet.
+   */
+  paused: boolean;
 }>;
 
 /**
@@ -128,6 +138,7 @@ export function useSolanaConnection(): SolanaConnectionValue {
 export function SolanaConnectionProvider({ children }: { children: ReactNode }) {
   const [wallets, setWallets] = useState<readonly DetectedWallet[]>([]);
   const [connection, setConnection] = useState<WalletConnection | null>(null);
+  const [paused, setPaused] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [errorKind, setErrorKind] = useState<ConnectionErrorKind | null>(null);
@@ -169,13 +180,47 @@ export function SolanaConnectionProvider({ children }: { children: ReactNode }) 
    */
   const restored = useRef(false);
   const connectedWalletName = connection?.wallet ?? null;
+  /* A wallet with no account for a moment — locked, between two accounts, its
+     extension restarting — is paused, not gone: the address, the name and the
+     hint stay, so unlocking it changes nothing and asks for no signature. Only
+     a different address replaces the connection; only Disconnect clears it. */
+  const connectedAddress = useRef<string | null>(null);
+  connectedAddress.current = connection?.address ?? null;
   useEffect(() => {
     if (!connectedWalletName) return;
+    /* Re-attached after a wallet registered again: a restarted extension may
+       already show another account, and the watcher only reports changes. */
+    const shown = registeredWallet(connectedWalletName);
+    const account = shown ? selectSolanaAccount(shown.accounts) : null;
+    if (account && account.address !== connectedAddress.current) {
+      setConnection({ wallet: connectedWalletName, address: account.address, chains: account.chains });
+      setPaused(false);
+    }
     return watchWalletAccounts(connectedWalletName, (next) => {
-      setConnection(next);
-      if (!next) writeWalletHint(null);
+      if (next) {
+        setConnection(next);
+        setPaused(false);
+      } else setPaused(true);
     });
-  }, [connectedWalletName]);
+  }, [connectedWalletName, wallets]);
+  /* A restarted extension registers a new wallet object the watcher above
+     never saw; ask it, silently, once per registration, whether it still
+     trusts this site. Not on every focus: a pause ends when the wallet
+     itself says so. */
+  useEffect(() => {
+    if (!paused || !connectedWalletName) return;
+    let live = true;
+    void (async () => {
+      const result = await reconnectWallet(connectedWalletName);
+      if (live && result.ok) {
+        setConnection(result.connection);
+        setPaused(false);
+      }
+    })();
+    return () => {
+      live = false;
+    };
+  }, [paused, connectedWalletName, wallets]);
   useEffect(() => {
     if (restored.current || connection) return;
     const hint = readWalletHint();
@@ -211,6 +256,7 @@ export function SolanaConnectionProvider({ children }: { children: ReactNode }) 
         const result = await connectWallet(target);
         if (result.ok) {
           setConnection(result.connection);
+          setPaused(false);
           writeWalletHint(result.connection.wallet);
         }
         /* A refusal is an ordinary answer — the person pressed cancel — and the
@@ -230,16 +276,22 @@ export function SolanaConnectionProvider({ children }: { children: ReactNode }) 
 
   const disconnect = useCallback(() => {
     setConnection(null);
+    setPaused(false);
     setError(null);
     setErrorKind(null);
     /* Disconnect has to mean it. Leaving the hint would silently reconnect on
-       the very next navigation, which is the opposite of what was asked. */
+       the very next navigation, which is the opposite of what was asked. It
+       is also the one wallet action that signs out: a pause never does, a
+       person pressing Disconnect on a shared computer expects to leave. */
     writeWalletHint(null);
+    void clearWalletAccount().catch(() => undefined).finally(() => {
+      void revalidateWalletFact({ fresh: true }).finally(() => announceAccountChange());
+    });
   }, []);
 
   const value = useMemo<SolanaConnectionValue>(
-    () => ({ wallets, connection, connecting, error, errorKind, connect, disconnect }),
-    [connect, connecting, connection, disconnect, error, errorKind, wallets],
+    () => ({ wallets, connection, connecting, error, errorKind, connect, disconnect, paused }),
+    [connect, connecting, connection, disconnect, error, errorKind, wallets, paused],
   );
 
   return (

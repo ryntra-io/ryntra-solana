@@ -28,7 +28,8 @@ test("the payer page and its status route read only the public projection", () =
 
 test("creating and listing requests sit behind proof of wallet ownership and same-origin", () => {
   const source = code("app/api/pay/requests/route.ts");
-  assert.match(source, /getWalletProof\(\)/);
+  assert.match(source, /readWalletProof\(\)/);
+  assert.match(source, /if \(read\.status === "unavailable"\) return json\(\{ error: "unavailable" \}, 503\);/, "a store that blinked is not a missing proof");
   assert.match(source, /proof\.chain !== "solana"/);
   assert.match(source, /recipient: proof\.address/, "the recipient is the proven address, never a body field");
   assert.match(source, /mutationOriginAllowed\(/);

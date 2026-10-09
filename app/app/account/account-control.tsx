@@ -27,8 +27,8 @@ import { useAccount } from "./account-context";
  * open it in place, where the reason for signing in is on the page.
  */
 export function WalletAccountIdentity() {
-  const { signedIn, walletAddress, copy, logout, logoutPending } = useAccount();
-  const { connection } = useSolanaConnection();
+  const { signedIn, checking, walletAddress, copy, logout, logoutPending } = useAccount();
+  const { connection, paused } = useSolanaConnection();
   const proof = useWalletProof();
   const address = connection?.address ?? null;
 
@@ -40,6 +40,7 @@ export function WalletAccountIdentity() {
           <Check size={14} weight="bold" aria-hidden />
           {other ? `${copy.identity.signedInOther} ${other}` : copy.identity.signedIn}
         </p>
+        {paused ? <p className="rs-menu-hint" role="status">{copy.identity.paused}</p> : null}
         {/* Settings is one row of the menu this block stands in, under the
             address — not a second link here. */}
         <button type="button" className="rs-menu-action" disabled={logoutPending} onClick={() => void logout("this")}>{copy.menu.logout}</button>
@@ -47,6 +48,13 @@ export function WalletAccountIdentity() {
       </>
     );
   }
+
+  /* The store blinked: the session is not known to be gone, so no second
+     signature is asked for — the line says so and the answer comes back. */
+  if (checking) return <>
+    <p className="rs-menu-body ry-identity-fact"><span className="ry-checking-dot" aria-hidden="true" />{copy.identity.checking}</p>
+    <p className="rs-menu-hint" role="status">{copy.identity.checkingHint}</p>
+  </>;
 
   /* Nothing to sign with yet: the panel below is already asking to connect. */
   if (!address) return null;

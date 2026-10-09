@@ -15,7 +15,7 @@ import { openFeedbackThread } from "@/lib/admin/store";
 import { getGuardRuntime } from "@/lib/guard/runtime";
 import { clientIp, FixedWindowLimiter } from "@/lib/http-control";
 import { mutationOriginAllowed } from "@/lib/security";
-import { getSession, getWalletProof } from "@/lib/session";
+import { getSession, readWalletProof } from "@/lib/session";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -70,7 +70,8 @@ export async function POST(req: NextRequest) {
      cookie names it — a claim on the wire is not a proof. Non-fatal: the
      thread is already open. */
   const wallet = isSolanaWallet(body.wallet) ? body.wallet : null;
-  const proof = wallet ? await getWalletProof() : null;
+  const proofRead = wallet ? await readWalletProof() : null;
+  const proof = proofRead?.status === "ok" ? proofRead.proof : null;
   await recordFeedbackContext(getGuardRuntime().store, {
     schema: "ryntra.feedback-context",
     schemaVersion: "1.0.0",

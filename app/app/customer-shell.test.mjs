@@ -12,8 +12,9 @@ test("all cabinet screens stay beneath one unkeyed wallet provider and shell", (
   assert.equal((layout.match(/<WalletDataProvider>/g) ?? []).length, 1);
   assert.equal((layout.match(/<ProductShell\b/g) ?? []).length, 1);
   /* The account provider sits between the wallet connection and the wallet
-     data — two principals, one tree, still unkeyed. */
-  assert.match(layout, /<SolanaConnectionProvider>\s*<AccountProvider summary=\{account\}>\s*<WalletDataProvider>\s*<ProductShell/);
+     data — two principals, one tree, still unkeyed — inside the one shared
+     proof answer the server seeds before the page renders. */
+  assert.match(layout, /<SolanaConnectionProvider>\s*<WalletProofSeed[^>]*>\s*<AccountProvider summary=\{account\}>\s*<WalletDataProvider>\s*<ProductShell/);
   assert.doesNotMatch(layout, /<SolanaConnectionProvider[^>]*\bkey=|<WalletDataProvider[^>]*\bkey=/);
   assert.doesNotMatch(layout, /\bredirect\(|<HomeShell|<AgentControlShell|<SolanaHubShell/);
   assert.match(shell, /product=\{\{\s*routes: PRODUCT_ROUTES/);

@@ -6,7 +6,7 @@ import { supabaseServer } from "@/lib/auth/supabase";
 import { verifySession } from "@/lib/beta/token";
 import { privateNoStoreHeaders } from "@/lib/http-control";
 import { mutationOriginAllowed } from "@/lib/security";
-import { getAdminSessionDetail, getSession, getWalletProof } from "@/lib/session";
+import { getAdminSessionDetail, getSession, readWalletProof } from "@/lib/session";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -39,7 +39,8 @@ export async function POST(req: NextRequest) {
     /* an empty body means this device */
   }
 
-  const [session, admin, proof] = await Promise.all([getSession(), getAdminSessionDetail(), getWalletProof()]);
+  const [session, admin, proofRead] = await Promise.all([getSession(), getAdminSessionDetail(), readWalletProof()]);
+  const proof = proofRead.status === "ok" ? proofRead.proof : null;
 
   /* Every step can fail on its own, and a cleared cookie is not a revocation.
      What the answer reports is what actually happened in the store, so a

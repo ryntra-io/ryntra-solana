@@ -16,7 +16,7 @@ import type { NextResponse } from "next/server";
 
 import { bearerToken, resolveNativeSession } from "../../auth/native-session.ts";
 import { mutationOriginAllowed } from "../../security.ts";
-import { getWalletProof } from "../../session.ts";
+import { readWalletProof } from "../../session.ts";
 import { apiFailure } from "./http.ts";
 
 export type WalletProofRead =
@@ -38,7 +38,9 @@ export async function requireWalletProof(request: Request, intent: "read" | "mut
   if (intent === "mutation" && !mutationOriginAllowed(request.url, request.headers.get("origin"), request.headers.get("sec-fetch-site"))) {
     return { ok: false, response: apiFailure("FORBIDDEN", "A change from a browser must come from this site.") };
   }
-  const proof = await getWalletProof();
+  const read = await readWalletProof();
+  if (read.status === "unavailable") return { ok: false, response: apiFailure("UNAVAILABLE", "The session store did not answer. Try again in a moment.") };
+  const proof = read.status === "ok" ? read.proof : null;
   if (!proof || proof.chain !== "solana") {
     return { ok: false, response: apiFailure("UNAUTHORIZED", "No proven wallet: sign in with the wallet first.") };
   }

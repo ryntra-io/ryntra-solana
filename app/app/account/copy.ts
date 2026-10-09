@@ -41,8 +41,10 @@ export type AccountCopy = Readonly<{
   returned: Readonly<{ ok: string; okNew: string; linked: string; cancel: string; error: string; telegramClaimed: string; telegramIdentity: string; link: string; state: string }>;
   menu: Readonly<{ method: string; settings: string; logout: string; logoutAll: string; logoutFailed: string; logoutAllFailed: string; walletNote: string }>;
   /** The account inside the wallet panel: the wallet is the account. */
-  identity: Readonly<{ lead: string; signIn: string; signing: string; signedIn: string; signedInOther: string; refused: string; failed: string; unsupported: string; taken: string }>;
+  identity: Readonly<{ lead: string; signIn: string; signing: string; checking: string; checkingHint: string; paused: string; signedIn: string; signedInOther: string; refused: string; failed: string; unsupported: string; taken: string }>;
   methods: Readonly<Record<"email_password" | "email_recovery" | "google_oidc" | "telegram_oidc" | "telegram_link" | "wallet_siwe" | "solana_siws", string>>;
+  checkingPage: Readonly<{ title: string; lead: string; still: string; again: string; asking: string }>;
+  privateGate: Readonly<{ lead: string; action: string }>;
   reset: Readonly<{ title: string; lead: string; done: string; signedOut: string; sessionsOpen: string; signOutAll: string }>;
 }>;
 
@@ -110,6 +112,9 @@ const EN: AccountCopy = {
   identity: {
     lead: "Sign in to keep your settings, alerts and plans. One signature — no funds move.",
     signIn: "Sign in with wallet",
+    checking: "Checking your sign-in…",
+    checkingHint: "Nothing to sign — the answer comes by itself in a moment.",
+    paused: "You're still signed in. Your wallet isn't available right now — unlock it when you need to sign.",
     signing: "Confirm the message in your wallet…",
     signedIn: "Signed in with this wallet",
     signedInOther: "Signed in with",
@@ -126,6 +131,17 @@ const EN: AccountCopy = {
     telegram_link: "Telegram bot",
     wallet_siwe: "wallet signature",
     solana_siws: "Solana signature",
+  },
+  checkingPage: {
+    title: "Checking your sign-in…",
+    lead: "Nothing to sign — this page opens by itself.",
+    still: "Still checking — your sign-in is still there and there is nothing to sign.",
+    again: "Check again",
+    asking: "Checking…",
+  },
+  privateGate: {
+    lead: "Confirm sign-in to open this wallet’s private account.",
+    action: "Sign in with wallet",
   },
   reset: {
     title: "Set a new password",
@@ -201,6 +217,9 @@ const UK: AccountCopy = {
   identity: {
     lead: "Увійди, щоб зберегти налаштування, сповіщення й плани. Один підпис — кошти не рухаються.",
     signIn: "Увійти гаманцем",
+    checking: "Перевіряємо вхід…",
+    checkingHint: "Підписувати нічого не треба — відповідь прийде сама за мить.",
+    paused: "Ти й далі в акаунті. Гаманець зараз недоступний — розблокуй його, коли треба буде підписати.",
     signing: "Підтвердь повідомлення в гаманці…",
     signedIn: "Вхід виконано цим гаманцем",
     signedInOther: "Вхід виконано гаманцем",
@@ -217,6 +236,17 @@ const UK: AccountCopy = {
     telegram_link: "Telegram-бот",
     wallet_siwe: "підпис гаманця",
     solana_siws: "підпис Solana",
+  },
+  checkingPage: {
+    title: "Перевіряємо вхід…",
+    lead: "Підписувати нічого не треба — сторінка відкриється сама.",
+    still: "Ще перевіряємо — твій вхід нікуди не дівся, підписувати нічого не треба.",
+    again: "Перевірити ще раз",
+    asking: "Перевіряємо…",
+  },
+  privateGate: {
+    lead: "Підтвердь вхід, щоб відкрити приватний акаунт цього гаманця.",
+    action: "Увійти гаманцем",
   },
   reset: {
     title: "Новий пароль",

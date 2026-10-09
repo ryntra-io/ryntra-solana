@@ -181,9 +181,9 @@ export function tradeCardPath(card: Pick<TradeCard, "code" | "id">): string {
   return `/r/${encodeURIComponent(card.code)}/c/${card.id}`;
 }
 
-/** The picture itself, versioned. */
+/** The picture itself, versioned, beside the card's page — never under `/api/`, which `robots.txt` closes to X's robot. */
 export function tradeCardImagePath(card: TradeCard): string {
-  return `/api/growth/cards/${card.id}/image?v=${tradeCardVersion(card)}`;
+  return `${tradeCardPath(card)}/image?v=${tradeCardVersion(card)}`;
 }
 
 /** A token's short name when nothing names it: four and four of the mint. */

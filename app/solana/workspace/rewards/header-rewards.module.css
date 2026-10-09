@@ -1,0 +1,119 @@
+/* «Винагороди» in the header: the neighbours' quiet button (the size and
+   border of «Спитати Ryntra»). Money gathered in Rewards: the sum, a warmer
+   border and a small orange light that breathes (the owner asked for it to
+   catch the eye; whether it may be claimed yet is said in its name); money
+   only on its way: the light, still. The orange is a light, never a filled
+   button: the screen's one orange action stays the screen's. */
+
+.button {
+  --ring: var(--ry-card);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn, 10px);
+  background: var(--ry-card);
+  color: var(--ry-text);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.button:hover {
+  --ring: var(--ry-hover);
+  border-color: var(--ry-border-strong);
+  background: var(--ry-hover);
+}
+
+.button:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+}
+
+/* Money gathered: the border warms toward the brand. */
+.button[data-light="breathing"] {
+  border-color: color-mix(in srgb, var(--ry-accent, #ff681c) 55%, var(--ry-border));
+}
+
+/* On Rewards itself: «you are here» wins over the warm border. */
+.button[aria-current="page"] {
+  border-color: var(--ry-border-strong);
+  background: var(--ry-hover);
+  --ring: var(--ry-hover);
+}
+
+.icon {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  color: var(--ry-accent, #ff681c);
+}
+
+.light {
+  position: absolute;
+  top: -3px;
+  right: -4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ry-accent, #ff681c);
+  box-shadow: 0 0 0 2px var(--ring);
+}
+
+/* The breath: a ring grows out of the dot and fades, every two seconds — not a flash. Only for money gathered, and not on Rewards itself. */
+.button[data-light="breathing"]:not([data-here]) .light::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--ry-accent, #ff681c);
+  animation: breathe 2s ease-out infinite;
+}
+
+@keyframes breathe {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  70%,
+  100% {
+    transform: scale(2.8);
+    opacity: 0;
+  }
+}
+
+.sum {
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button[data-light="breathing"]:not([data-here]) .light::after {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+/* As the header narrows: first the word goes (the gift and the sum stay), then on a phone the sum — the gift and its light stay. */
+@media (max-width: 1320px) {
+  .label {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .button {
+    width: 40px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .sum {
+    display: none;
+  }
+}

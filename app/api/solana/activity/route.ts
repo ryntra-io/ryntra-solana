@@ -29,7 +29,7 @@ import { SOLANA_NETWORKS, createSolanaRpcHandle } from "@/lib/solana/rpc";
 import { listRewardEntries } from "@/lib/rewards/ledger";
 import { rewardsView } from "@/lib/rewards/view";
 import { unconfiguredReserve } from "@/lib/rewards/balance";
-import { getWalletProofFrom } from "@/lib/session";
+import { readWalletProofFrom } from "@/lib/session";
 import { resolveRelayApiKey } from "@/lib/relay/api-key.server";
 import { byDeadline } from "@/lib/launch/flow.server";
 import { settleLaunchTrade } from "@/lib/launch/record.server";
@@ -277,7 +277,10 @@ export async function POST(request: Request) {
    * The proof is the `rw` cookie in a browser or the native bearer session
    * (contract 1.1.0) — the same wallet, whichever client asks.
    */
-  const proof = await getWalletProofFrom(request.headers);
+  /* Rewards are an extra on this read: a store that blinked leaves them out
+     rather than failing the history. */
+  const proofRead = await readWalletProofFrom(request.headers);
+  const proof = proofRead.status === "ok" ? proofRead.proof : null;
   const rewards =
     proof && proof.chain === "solana" && proof.address === parsed.data.owner
       ? rewardsView({

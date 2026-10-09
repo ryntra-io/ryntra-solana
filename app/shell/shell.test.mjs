@@ -79,7 +79,7 @@ test("opening the cabinet to visitors changed what is shown, never what is allow
   assert.match(paper, /rateBuckets/);
 
   // The layout still resolves the session; it just no longer walls on it.
-  assert.match(CABINET_LAYOUT, /getSession\(\)/);
+  assert.match(CABINET_LAYOUT, /readSession\(\)/);
   assert.doesNotMatch(CABINET_LAYOUT, /\bredirect\(|if\s*\(\s*!session/);
   /* Signed in means an account that can keep personal data;
      the channel join is no longer the definition. */

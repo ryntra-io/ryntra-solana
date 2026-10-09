@@ -5,7 +5,7 @@ import { getGuardRuntime } from "@/lib/guard/runtime";
 import { privateNoStoreHeaders } from "@/lib/http-control";
 import { mutationOriginAllowed } from "@/lib/security";
 import { bearerToken } from "@/lib/auth/native-session";
-import { getWalletProofFrom } from "@/lib/session";
+import { readWalletProofFrom } from "@/lib/session";
 import { SPOT_WATCHLIST_LIMIT, readSpotWatchlist, writeSpotWatchlist } from "@/lib/spot/watchlist";
 
 export const runtime = "nodejs";
@@ -39,7 +39,9 @@ function json(body: Record<string, unknown>, status = 200) {
 export async function GET(req: NextRequest) {
   const address = new URL(req.url).searchParams.get("address") ?? "";
   if (!BASE58.test(address)) return json({ error: "bad request" }, 400);
-  const proof = await getWalletProofFrom(req.headers);
+  const read = await readWalletProofFrom(req.headers);
+  if (read.status === "unavailable") return json({ error: "unavailable" }, 503);
+  const proof = read.status === "ok" ? read.proof : null;
   if (!proof || proof.chain !== "solana" || proof.address !== address) return json({ error: "proof required", proof: false }, 401);
   const mints = await readSpotWatchlist(getGuardRuntime().store, address);
   return json({ ok: true, address, mints });
@@ -57,7 +59,9 @@ export async function PUT(req: NextRequest) {
   } catch {
     return json({ error: "bad request" }, 400);
   }
-  const proof = await getWalletProofFrom(req.headers);
+  const read = await readWalletProofFrom(req.headers);
+  if (read.status === "unavailable") return json({ error: "unavailable" }, 503);
+  const proof = read.status === "ok" ? read.proof : null;
   if (!proof || proof.chain !== "solana" || proof.address !== parsed.address) return json({ error: "proof required", proof: false }, 401);
   const wrote = await writeSpotWatchlist(getGuardRuntime().store, parsed.address, parsed.mints, new Date().toISOString());
   if (!wrote.ok) return json({ error: wrote.reason === "WATCHLIST_INVALID" ? "bad request" : "unavailable" }, wrote.reason === "WATCHLIST_INVALID" ? 400 : 503);

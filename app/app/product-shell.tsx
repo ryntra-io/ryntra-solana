@@ -7,6 +7,7 @@ import { PRODUCT_SHELL_STRINGS, SHELL_CHROME_COPY } from "@/app/shell/chrome-cop
 import { MenuPreferences } from "@/app/shell/menu-preferences";
 import { SolanaConnectionControl } from "@/app/solana/workspace/connection";
 import { InviteBanner } from "@/app/solana/workspace/rewards/invite-banner";
+import { HeaderRewards } from "@/app/solana/workspace/rewards/header-rewards";
 import { useSolanaI18n } from "@/app/solana/workspace/i18n/provider";
 import { WalletAccountIdentity } from "./account/account-control";
 import { FeedbackLauncher } from "./feedback/feedback-launcher";
@@ -49,6 +50,8 @@ export function ProductShell({ children }: { children: ReactNode; signedIn: bool
             <Suspense fallback={null}>
               <AskRyntraButton locale={locale} />
             </Suspense>
+            {/* «Винагороди» at the top of every page, with what has gathered there — from Rewards. */}
+            <HeaderRewards />
             <NotificationsBell locale={locale} />
           </>
         }

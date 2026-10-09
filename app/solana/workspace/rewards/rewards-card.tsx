@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Check, Coins, Copy, ShareNetwork, UserPlus, UsersThree, Wallet } from "@phosphor-icons/react";
+import { ArrowRight, CaretDown, Check, Coins, Copy, ShareNetwork, UserPlus, UsersThree, Wallet } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -11,6 +11,7 @@ import { WalletGate } from "../wallet-gate.tsx";
 import { useWalletProof } from "../wallet-proof.tsx";
 import { rankCopy } from "./rank-copy.ts";
 import { BadgesCard, type AchievementsSummary } from "./badges-card.tsx";
+import { REWARDS_CHANGED_EVENT } from "./header-rewards.tsx";
 import { RankCard, type RankSummary } from "./rank-card.tsx";
 import { ReferralCard, useReferral } from "./referral-card.tsx";
 import { referralCopy } from "./referral-copy.ts";
@@ -105,6 +106,9 @@ function Glyph({ kind }: { kind: string }) {
   return <span className={styles.glyph} data-kind={kind}>{icon}</span>;
 }
 
+/** Rewards shown before «Show all»: the newest, enough to see that they come in. */
+const HISTORY_FOLDED = 4;
+
 export function RewardsCard() {
   const { connection } = useSolanaConnection();
   const { text, locale } = useSolanaI18n();
@@ -129,6 +133,9 @@ export function RewardsCard() {
   const inFlight = useRef<AbortController | null>(null);
   const [copied, setCopied] = useState(false);
   const [codeCopied, setCodeCopied] = useState(false);
+  /* Recent rewards fold to the newest few, so the page does not run on to its foot with every cent. */
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const historyToggle = useRef<HTMLButtonElement>(null);
   const inviteWords = referralCopy(locale);
   /* Read once for the whole page: an open invitation goes to the top, where
      somebody who followed a link sees it before anything else. */
@@ -190,6 +197,12 @@ export function RewardsCard() {
     const timer = window.setInterval(() => void check(), 4_000);
     return () => { controller.abort(); window.clearInterval(timer); };
   }, [address, proven, running, key, load]);
+
+  /* The header's «Винагороди» shows what is ready to claim: tell it when that changed here (a claim, a new reward). */
+  const shownAvailable = summary?.available ?? null;
+  useEffect(() => {
+    if (shownAvailable !== null) window.dispatchEvent(new Event(REWARDS_CHANGED_EVENT));
+  }, [shownAvailable]);
 
   const claim = useCallback(async () => {
     if (!address || !proven || !summary?.claimable || running || pending.current.has(address)) return;
@@ -503,8 +516,9 @@ export function RewardsCard() {
               </Link>
             </p>
           ) : (
-            <ul className={styles.rows}>
-              {summary.rows.map((row, index) => (
+            <>
+            <ul className={styles.rows} id="rewards-history-rows">
+              {(historyOpen ? summary.rows : summary.rows.slice(0, HISTORY_FOLDED)).map((row, index) => (
                 <li className={styles.row} key={`${row.at}:${row.kind}:${index}`}>
                   <Glyph kind={row.kind} />
                   <span className={styles.rowText}>
@@ -527,6 +541,25 @@ export function RewardsCard() {
                 </li>
               ))}
             </ul>
+            {summary.rows.length > HISTORY_FOLDED ? (
+              <button
+                type="button"
+                className={styles.historyToggle}
+                aria-expanded={historyOpen}
+                aria-controls="rewards-history-rows"
+                ref={historyToggle}
+                onClick={() => {
+                  const closing = historyOpen;
+                  setHistoryOpen(!historyOpen);
+                  /* Folding a long list from its foot would leave the reader below the section: bring the button back into view. */
+                  if (closing) requestAnimationFrame(() => historyToggle.current?.scrollIntoView({ block: "nearest" }));
+                }}
+              >
+                {historyOpen ? words.historyFold : words.historyAll(summary.rows.length - HISTORY_FOLDED)}
+                <CaretDown size={14} weight="bold" aria-hidden="true" data-open={historyOpen || undefined} />
+              </button>
+            ) : null}
+            </>
           )}
         </section>
       </div>
