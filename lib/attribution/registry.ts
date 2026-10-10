@@ -58,6 +58,19 @@
  *   the account, where the partner's claims of the configs' fees may land too.
  *   After graduation the pool no longer names the config, and this account is
  *   how a trade of a graduated launch is Ryntra's.
+ * - **Micro and the demo market** — their configs name the executor as the
+ *   partner's fee claimer, not the vault: the executor takes the migration fee,
+ *   the partner's share of the surplus and of the trading fees and the fees of
+ *   the partner's locked position itself, and keeps each market's budget from
+ *   them. A config row says so by naming the executor as its parent. Of what
+ *   the executor takes from Micro, three quarters of the partner's trading and
+ *   position fees are Ryntra's revenue, kept on the same wallet outside the
+ *   markets' budgets — a row of its own (`LAUNCH_REVENUE`), the executor's
+ *   address under another job, and the one row allowed to share an address:
+ *   it names the executor as its parent. Counted nowhere: the money is the
+ *   config's fees, counted there. The demo market is Ryntra's technical
+ *   validation of the whole cycle, marked so; its config counts nothing, since
+ *   what Ryntra pays itself there is not demand.
  *
  * A wallet that pays friends' rewards — the friends' payout wallet, and the
  * rewards wallet while it pays them too — is registered here and never
@@ -87,7 +100,7 @@ export const ATTRIBUTION_REGISTRY_VERSION = "1.0.0";
 export const REGISTRY_NETWORKS = [...NETWORK_IDS, "relay"] as const;
 export type RegistryNetwork = NetworkId | "relay";
 
-export const REGISTRY_ROLES = ["FEE", "PAYOUT_CASHBACK", "PAYOUT_FRIENDS", "PAYOUT_INTEGRATORS", "PAYOUT_REWARDS", "TREASURY", "LAUNCH_CONFIG", "LAUNCH_FEE_CLAIMER", "LAUNCH_POOL_PAYER", "LAUNCH_EXECUTOR", "LAUNCH_REFERRAL"] as const;
+export const REGISTRY_ROLES = ["FEE", "PAYOUT_CASHBACK", "PAYOUT_FRIENDS", "PAYOUT_INTEGRATORS", "PAYOUT_REWARDS", "TREASURY", "LAUNCH_CONFIG", "LAUNCH_FEE_CLAIMER", "LAUNCH_POOL_PAYER", "LAUNCH_EXECUTOR", "LAUNCH_REFERRAL", "LAUNCH_REVENUE"] as const;
 export type RegistryRole = (typeof REGISTRY_ROLES)[number];
 
 /** How the identity exists on its network. */
@@ -149,6 +162,8 @@ export type RegistryEntry = Readonly<{
   /** Set when the identity is retired; nothing after it is counted. */
   end: Readonly<{ block: number; time: string }> | null;
   countedAs: RegistryCount;
+  /** Ryntra's own technical validation, never demand: the demo market's config. */
+  technicalValidation?: true;
 }>;
 
 /** What a row is now, derived — never written by hand. */
@@ -241,6 +256,13 @@ export const ATTRIBUTION_REGISTRY: readonly RegistryEntry[] = Object.freeze([
   /* The executor: a wallet of its own with a small budget, its key held outside this repository (since 2026-10-09). It
      sends graduations and holds the Fee-Funded Liquidity Ladder; on mainnet only a key for this address is used. */
   { ...place("solana-launch-executor", "LAUNCH_EXECUTOR", "LAUNCH_EXECUTOR", ["launch"], "NONE"), address: "J7zLmXSewhb1kcqwpL4SKpKfivivwn6wmSHwSg6H4JeU" },
+  /* Micro and the demo market, created on mainnet 2026-10-10: their partner's fees go to the executor, which keeps each
+     market's budget from them. The demo market is Ryntra's technical validation and counts nothing. */
+  { ...place("solana-launch-config-micro", "LAUNCH_CONFIG", "DBC_CONFIG", ["launch"], "FEES"), parent: "solana-launch-executor", address: "3xh95YxdDBDiR35mWJo4E3hVoXNDqW4hdXemuWwsBD8w" },
+  { ...place("solana-launch-config-demo", "LAUNCH_CONFIG", "DBC_CONFIG", ["launch"], "NONE"), parent: "solana-launch-executor", technicalValidation: true, address: "GVDLyxgHraJcbmzds6i6hMgb3jSUUhSaHq5XVFnq6AS5" },
+  /* Ryntra's revenue from Micro: three quarters of the partner's trading and position fees, on the executor's wallet outside
+     the markets' budgets until the operator moves it to the multisig. */
+  { ...place("solana-launch-revenue-micro", "LAUNCH_REVENUE", "LAUNCH_EXECUTOR", ["launch"], "NONE"), parent: "solana-launch-executor", address: "J7zLmXSewhb1kcqwpL4SKpKfivivwn6wmSHwSg6H4JeU" },
   /* Meteora's referral in a launch's trades: the partner's vault's USDC account, which every trade through Ryntra — and the
      creator's first purchase — names as its referral since 2026-10-08. Counted by the swap event's referral fee, never by
      its credits. */
@@ -271,6 +293,7 @@ const EntrySchema = z
     address: z.string().nullable(),
     end: z.object({ block: z.number().int().positive(), time: z.string().datetime({ offset: true }) }).strict().nullable(),
     countedAs: z.enum(["FEES", "SUPPLY_SIDE", "NONE"]),
+    technicalValidation: z.literal(true).optional(),
   })
   .strict();
 
@@ -290,8 +313,10 @@ export function validateRegistry(rows: readonly RegistryEntry[] = ATTRIBUTION_RE
       /* One address, one job: a counter that reads an address reads one meaning. */
       const key = row.address.toLowerCase();
       const other = addresses.get(key);
-      if (other) problems.push(`${row.id}: the address is already ${other}'s`);
-      addresses.set(key, row.id);
+      /* The one exception: Ryntra's revenue from Micro is the executor's own wallet under another job, and names it. */
+      const sameWallet = row.role === "LAUNCH_REVENUE" && other !== undefined && other === row.parent;
+      if (other && !sameWallet) problems.push(`${row.id}: the address is already ${other}'s`);
+      if (!other) addresses.set(key, row.id);
     }
     if (row.address === null && row.end !== null) problems.push(`${row.id}: a row without an address cannot end`);
     const roleFits =
@@ -300,7 +325,7 @@ export function validateRegistry(rows: readonly RegistryEntry[] = ATTRIBUTION_RE
         : row.role === "TREASURY"
           ? row.kind === "TREASURY_WALLET" && row.countedAs === "NONE"
           : row.role === "LAUNCH_CONFIG"
-            ? row.kind === "DBC_CONFIG" && row.countedAs === "FEES"
+            ? row.kind === "DBC_CONFIG" && row.countedAs === (row.technicalValidation ? "NONE" : "FEES")
             : row.role === "LAUNCH_FEE_CLAIMER"
               ? row.kind === "DBC_FEE_CLAIMER" && row.countedAs === "NONE"
               : row.role === "LAUNCH_POOL_PAYER"
@@ -309,12 +334,25 @@ export function validateRegistry(rows: readonly RegistryEntry[] = ATTRIBUTION_RE
                   ? row.kind === "LAUNCH_EXECUTOR" && row.countedAs === "NONE"
                   : row.role === "LAUNCH_REFERRAL"
                     ? row.kind === "METEORA_REFERRAL_TOKEN_ACCOUNT" && row.countedAs === "FEES"
+                    : row.role === "LAUNCH_REVENUE"
+                      ? row.kind === "LAUNCH_EXECUTOR" && row.countedAs === "NONE"
                     : row.kind === "PAYOUT_WALLET" && row.countedAs === "SUPPLY_SIDE";
     if (!roleFits) problems.push(`${row.id}: the role, the kind and how it is counted disagree`);
     if (row.role !== "TREASURY" && row.products.length === 0) problems.push(`${row.id}: names no product`);
     if ((row.kind === "JUPITER_REFERRAL_TOKEN_ACCOUNT" || row.kind === "METEORA_REFERRAL_TOKEN_ACCOUNT") && (row.parent === null || row.mint === null)) problems.push(`${row.id}: a referral token account names its account and its mint`);
   }
   for (const row of rows) if (row.parent !== null && !rows.some((other) => other.id === row.parent)) problems.push(`${row.id}: its parent ${row.parent} is not registered`);
+  const roleOf = (id: string | null) => rows.find((other) => other.id === id)?.role ?? null;
+  for (const row of rows) {
+    if (row.technicalValidation && row.role !== "LAUNCH_CONFIG") problems.push(`${row.id}: only a launch config is a technical validation`);
+    /* A config's parent is the executor that claims its partner fees; none — the partner's vault does. */
+    if (row.role === "LAUNCH_CONFIG" && row.parent !== null && roleOf(row.parent) !== "LAUNCH_EXECUTOR") problems.push(`${row.id}: a config's claimer is the executor or the partner's vault`);
+    if (row.role === "LAUNCH_REVENUE") {
+      const executor = rows.find((other) => other.id === row.parent);
+      if (executor?.role !== "LAUNCH_EXECUTOR") problems.push(`${row.id}: Ryntra's revenue from Micro sits on the executor's wallet`);
+      else if (row.address !== null && row.address !== executor.address) problems.push(`${row.id}: Ryntra's revenue from Micro is the executor's own address`);
+    }
+  }
   /* One open fee wallet for each product (one wallet may serve several), one payout wallet per kind, one treasury. */
   for (const product of FEE_WALLET_PRODUCTS) {
     const count = rows.filter((row) => row.kind === "FEE_WALLET" && row.network === "solana" && row.end === null && row.products.includes(product)).length;

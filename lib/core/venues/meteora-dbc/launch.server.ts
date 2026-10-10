@@ -38,9 +38,11 @@ import { CpAmm, getBaseFeeModeFromPodAlignedData } from "@meteora-ag/cp-amm-sdk"
 import {
   DAMM_V2_MIGRATION_FEE_ADDRESS,
   DynamicBondingCurveClient,
+  buildCurve,
   buildCurveWithMarketCap,
   deriveDammV2PoolAddress,
   deriveDbcPoolAddress,
+  type BuildCurveParams,
   type BuildCurveWithMarketCapParams,
   type PoolConfig,
 } from "@meteora-ag/dynamic-bonding-curve-sdk";
@@ -334,7 +336,10 @@ export function configFieldsOf(config: Address, state: PoolConfig, hasTransferHo
 
 /** The SDK's curve for a preset, its enums cast from the mirrored numbers. */
 export function presetCurve(preset: LaunchPreset, quote: PresetQuote) {
-  return buildCurveWithMarketCap(presetCurveInput(preset, quote) as unknown as BuildCurveWithMarketCapParams);
+  const input = presetCurveInput(preset, quote);
+  /* A preset named by its threshold is built for exactly that amount raised; the others by their market caps. */
+  if ("migrationQuoteThreshold" in input) return buildCurve(input as unknown as BuildCurveParams);
+  return buildCurveWithMarketCap(input as unknown as BuildCurveWithMarketCapParams);
 }
 
 /** A preset's configs on a network: one for a USDC preset, one per community token for «Спільнота». */

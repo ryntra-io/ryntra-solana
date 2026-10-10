@@ -594,6 +594,8 @@ export function marketHealth(read: MarketRead, network: HealthDeps["network"], v
     creator: {
       address: read.record.creator,
       lock: lockView(read.lock),
+      /* Only a launch built through Ryntra records its lock; one adopted from the chain says nothing of it. */
+      lockRequired: launchPreset(read.record.preset)?.creatorLockMinDays != null && BigInt(read.record.firstBuyOutRaw ?? "0") > 0n && read.record.buildId !== "",
       sold: figures.creatorSold,
       soldBps: figures.creatorSoldShare?.bps ?? null,
       soldOf: figures.creatorSoldShare?.of ?? null,

@@ -106,7 +106,18 @@ async function shrinkPicture(file: File): Promise<Picture | null> {
   return null;
 }
 
-export function LaunchFlow({ locale, presets, paused = null }: { locale: WorkspaceLocale; presets: LaunchPresetsResponse; paused?: "all" | "launching" | null }) {
+export function LaunchFlow({
+  locale,
+  presets,
+  paused = null,
+  initialPreset = null,
+}: {
+  locale: WorkspaceLocale;
+  presets: LaunchPresetsResponse;
+  paused?: "all" | "launching" | null;
+  /** The preset the page opens on — the demo market's own address names it. */
+  initialPreset?: string | null;
+}) {
   const word = launchWords(locale);
   const { connection } = useSolanaConnection();
   const { reach } = useWalletReach();
@@ -114,7 +125,7 @@ export function LaunchFlow({ locale, presets, paused = null }: { locale: Workspa
   const [picture, setPicture] = useState<Picture | null>(null);
   const [pictureBad, setPictureBad] = useState(false);
   /* «Захищений» first where the network has it: the plan's default against snipers. */
-  const [presetId, setPresetId] = useState(presets.presets.find((entry) => entry.id === "protected")?.id ?? presets.presets[0]?.id ?? "classic");
+  const [presetId, setPresetId] = useState(presets.presets.find((entry) => entry.id === initialPreset)?.id ?? presets.presets.find((entry) => entry.id === "protected")?.id ?? presets.presets[0]?.id ?? "classic");
   const [buyText, setBuyText] = useState("");
   const [lockId, setLockId] = useState<string | null>(null);
   const [attempted, setAttempted] = useState(false);
@@ -147,9 +158,13 @@ export function LaunchFlow({ locale, presets, paused = null }: { locale: Workspa
     return () => window.clearTimeout(timer);
   }, [preset, buyRaw, paused]);
 
+  /* A preset whose first purchase is always locked offers only the schedules long enough, and the lock is on. */
+  const lockMinDays = preset?.creatorLockMinDays ?? null;
+  const lockChoices = lockMinDays === null ? presets.locks : presets.locks.filter((entry) => entry.cliffDays >= lockMinDays);
   useEffect(() => {
     if (!buying) setLockId(null);
-  }, [buying]);
+    else if (lockMinDays !== null && !lockChoices.some((entry) => entry.id === lockId)) setLockId(lockChoices[0]?.id ?? null);
+  }, [buying, lockMinDays, lockChoices, lockId]);
 
   const set = (key: keyof LaunchFormFields) => (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setFields((current) => ({ ...current, [key]: event.target.value }));
 
@@ -381,19 +396,24 @@ export function LaunchFlow({ locale, presets, paused = null }: { locale: Workspa
                 {buying ? (
                   <div className={styles.lockBox} data-on={lockId ? "" : undefined}>
                     <label className={styles.lockToggle}>
-                      <input type="checkbox" checked={lockId !== null} onChange={(event) => setLockId(event.target.checked ? presets.locks[0]?.id ?? null : null)} />
+                      <input
+                        type="checkbox"
+                        checked={lockId !== null}
+                        disabled={lockMinDays !== null}
+                        onChange={(event) => setLockId(event.target.checked ? lockChoices[0]?.id ?? null : null)}
+                      />
                       <span className={styles.lockIcon} aria-hidden>
                         {lockId ? <Lock size={18} weight="fill" /> : <LockOpen size={18} />}
                       </span>
                       <span className={styles.lockText}>
-                        <span className={styles.lockTitle}>{word("lockTitle")}</span>
-                        <span className={styles.hint}>{word("lockHint")}</span>
+                        <span className={styles.lockTitle}>{word(lockMinDays === null ? "lockTitle" : "lockRequiredTitle")}</span>
+                        <span className={styles.hint}>{lockMinDays === null ? word("lockHint") : word("lockRequiredHint", { preset: preset.name[locale], period: periodWord(lockMinDays, locale) })}</span>
                       </span>
                     </label>
                     {lockId ? (
                       <>
                         <div className={styles.segments} role="radiogroup" aria-label={word("lockTitle")}>
-                          {presets.locks.map((entry) => (
+                          {lockChoices.map((entry) => (
                             <button key={entry.id} type="button" role="radio" aria-checked={entry.id === lockId} className={styles.segment} onClick={() => setLockId(entry.id)}>
                               {word("lockSchedule", { cliff: periodWord(entry.cliffDays, locale), vest: periodWord(entry.vestDays, locale) })}
                             </button>
@@ -554,10 +574,17 @@ function PresetCard({ preset, locale, selected, onSelect }: { preset: LaunchPres
         <span className={styles.presetName}>{preset.name[locale]}</span>
         <span className={styles.radio} aria-hidden />
       </span>
+      {preset.technicalValidation ? <span className={styles.techChip} style={{ justifySelf: "start" }}>{word("presetTechnical")}</span> : null}
       <span className={styles.presetFacts}>
+        <span>
+          {preset.graduationQuote !== null
+            ? word("presetReachesRaised", { amount: formatNumber(preset.graduationQuote, locale), symbol: preset.pair.symbol, mc: "$" + formatNumber(Math.round(preset.graduationMarketCapUsd), locale) })
+            : word("presetReaches", { mc: "$" + formatNumber(Math.round(preset.graduationMarketCapUsd), locale) })}
+        </span>
         <span>{word("presetSniper", { start: formatBps(preset.sniperFee.startBps, locale), end: formatBps(preset.sniperFee.endBps, locale), time: formatDuration(preset.sniperFee.seconds, locale) })}</span>
         <span>{word("presetCreator", { pct: formatPercent(preset.creatorTradingFeePct, locale, 0) })}</span>
         <span>{word("presetCap", { pct: formatBps(preset.firstBuyCapBps, locale) })}</span>
+        {preset.creatorLockMinDays !== null ? <span>{word("presetLockRequired", { period: periodWord(preset.creatorLockMinDays, locale) })}</span> : null}
         {preset.pair.symbol !== "USDC" ? <span className={styles.presetPair}>{word("presetPair", { symbol: preset.pair.symbol })}</span> : null}
       </span>
     </button>
@@ -573,7 +600,14 @@ function PresetDetails({ preset, locale }: { preset: LaunchPresetView; locale: W
       </summary>
       <dl className={styles.rows}>
         <Row label={word("presetCurve")} value={`$${formatNumber(preset.startMarketCapUsd, locale)} → $${formatNumber(preset.graduationMarketCapUsd, locale)}`} />
-        <Row label={word("presetGraduation")} value={word("presetGraduationValue", { pct: formatPercent(preset.graduationFee.pct, locale, 0), creator: formatPercent(preset.graduationFee.creatorPct, locale, 0) })} />
+        <Row
+          label={word("presetGraduation")}
+          value={
+            preset.graduationFee.creatorPct === 0
+              ? word("presetGraduationBudget", { pct: formatPercent(preset.graduationFee.pct, locale, 0) })
+              : word("presetGraduationValue", { pct: formatPercent(preset.graduationFee.pct, locale, 0), creator: formatPercent(preset.graduationFee.creatorPct, locale, 0) })
+          }
+        />
         <Row label={word("presetLp")} value={word("presetLpValue")} />
         <Row label={word("presetToken")} value={word("presetTokenValue")} />
       </dl>

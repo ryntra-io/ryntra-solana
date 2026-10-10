@@ -117,8 +117,11 @@ export function switchAdmitted(
 ): Readonly<{ telegramId: number; door: "second-factor" | "telegram-link" }> | null {
   /* Admitted by the admin's own policy: a fresh second factor — or the Telegram link where the policy leaves it open, said as such. */
   if (fresh.ok) return { telegramId: fresh.admin.telegramId, door: fresh.transitional || fresh.admin.method === "telegram_link" ? "telegram-link" : "second-factor" };
-  /* The link's session is the cookie the bot's link set — never a recorded admin row. */
-  if (fresh.reason === "reverify" && session?.method === "telegram_link" && session.sessionId === null) return { telegramId: session.telegramId, door: "telegram-link" };
+  /*
+   * The link's session — recorded (`/api/session` mints a revocable row with this method) or the cookie alone. Only the
+   * bot's one-time link opens a session with this method; an account's session keeps its own method and its factor.
+   */
+  if (fresh.reason === "reverify" && session?.method === "telegram_link") return { telegramId: session.telegramId, door: "telegram-link" };
   return null;
 }
 

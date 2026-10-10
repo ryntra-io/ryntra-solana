@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowSquareOut, ArrowsClockwise, CaretDown, CircleNotch, Lock, TrendDown } from "@phosphor-icons/react";
+import { ArrowSquareOut, ArrowsClockwise, CaretDown, CircleNotch, Lock, LockOpen, TrendDown } from "@phosphor-icons/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { WorkspaceLocale } from "@/app/shell/locale";
@@ -388,6 +388,14 @@ function EngineLines({ health, locale, word, now }: { health: Health; locale: Wo
 
 function CreatorLockLine({ health, locale, word, now }: { health: Health; locale: WorkspaceLocale; word: Word; now: number }) {
   const lock = health.creator.lock;
+  /* Micro locks the creator's first purchase; a lock that did not land is said as the preset's rule not kept. */
+  if (!lock && health.creator.lockRequired) {
+    return (
+      <span className={styles.creatorSold}>
+        <LockOpen size={14} aria-hidden /> {word("creatorLockMissing")}
+      </span>
+    );
+  }
   if (!lock) return <>{word("creatorNoLock")}</>;
   const text =
     lock.cliffAt && Date.parse(lock.cliffAt) > now

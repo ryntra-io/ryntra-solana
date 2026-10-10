@@ -26,7 +26,7 @@
  */
 
 export const API_MAJOR = 1 as const;
-export const API_CONTRACT_VERSION = "1.37.0" as const;
+export const API_CONTRACT_VERSION = "1.38.0" as const;
 export const API_HEADER = "X-Ryntra-API" as const;
 export const API_VERSION_HEADER = "X-Ryntra-API-Version" as const;
 export const NETWORK = "solana:mainnet" as const;
@@ -4218,7 +4218,8 @@ export type PaySubmitError = Readonly<{ error: Readonly<{ code: PaySubmitErrorCo
  * wallet the bytes `build` returns (the creation and, when chosen, the lock)
  * and hands both to `submit` unchanged.
  */
-export type LaunchPresetId = "classic" | "protected" | "community";
+/** 1.38.0: `micro` for people, `demo` — Ryntra's technical validation, never in the presets for people. */
+export type LaunchPresetId = "classic" | "protected" | "community" | "micro" | "demo";
 export type LaunchLockId = "1m-3m" | "3m-6m" | "6m-12m";
 export type LaunchNetworkId = "solana:devnet" | "solana:mainnet";
 
@@ -4232,6 +4233,12 @@ export type LaunchPreset = Readonly<{
   creatorTradingFeePct: number;
   graduationFee: Readonly<{ pct: number; creatorPct: number }>;
   firstBuyCapBps: number;
+  /** 1.38.0: a first purchase must go under the creator's lock with at least this many days before anything unlocks; null — the creator's choice. */
+  creatorLockMinDays: number | null;
+  /** 1.38.0: the pair currency a curve must raise to reach the DEX (Micro: 750); null — named by its market cap. */
+  graduationQuote: number | null;
+  /** 1.38.0: the demo market — Ryntra's technical validation. */
+  technicalValidation: boolean;
   lpLockedForeverPct: 100;
 }>;
 
@@ -4902,7 +4909,8 @@ export type LaunchMarketHealthResponse = Readonly<{
   ladder: Readonly<{ pool: string; pairRaw: string; tokensRaw: string; pairFrom: number | null; pairTo: number | null }> | null;
   survival: Readonly<{ graduatedAt: string | null; daysSinceDex: number | null; priceVsDexBps: number | null; traded24h: boolean | null; lastTradeAt: string | null }>;
   holders: Readonly<{ count: number | null; atLeast: boolean; minUsd: 1 }>;
-  creator: Readonly<{ address: string; lock: LaunchMarketLock | null; sold: boolean | null; soldBps: number | null; soldOf: "bought" | "supply" | null }>;
+  /** 1.38.0 `lockRequired`: the preset locks the creator's first buy and they bought — a null `lock` then is the rule not kept. */
+  creator: Readonly<{ address: string; lock: LaunchMarketLock | null; lockRequired: boolean; sold: boolean | null; soldBps: number | null; soldOf: "bought" | "supply" | null }>;
   /** `atLeast`: from the mint's largest accounts — a floor. */
   concentration: Readonly<{ top10Bps: number | null; atLeast: boolean; marked: boolean | null; markBps: 6000 }>;
   engine: Readonly<{

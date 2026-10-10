@@ -847,6 +847,21 @@
  * failed. Ryntra's liquidity is named the Fee-Funded Liquidity Ladder in the words of this contract; its fields keep their
  * names (`floor`, `FLOOR_*`). A client that skips unknown keys needs no release; one that parses the flight log or the
  * pause strictly takes `marks` and `OPERATOR` (the phone reads neither).
+ *
+ * **1.38.0 — Micro and the demo market.** Additive. `LaunchPresetId` gains `micro` — a small market for people: USDC,
+ * graduation at exactly 750 USDC raised (Meteora's keepers migrate it too), the whole migration fee of 8 % to the
+ * partner — the market's budget, the creator 0 % of it — the creator 40 % of the curve's trading fees, the first buy at
+ * most 2 % of supply and always under the creator's lock, the graduated pool's fee from 2 % down to 0.25 % with its
+ * market cap and a quarter of the LP fee compounded — and `demo`, the demo market: Ryntra's technical validation of the
+ * whole cycle (50 USDC, a 30 % migration fee, otherwise as Micro), never in `GET /launch/presets`; a build on it from
+ * any wallet but Ryntra's own answers `VALIDATION_ERROR`. A preset gains `creatorLockMinDays` — a first purchase on
+ * it must go under the creator's lock with at least that many days before anything unlocks (Micro 180; null — the lock
+ * is the creator's choice; a build without it answers `VALIDATION_ERROR`) — and `technicalValidation`. A market's health
+ * gains `creator.lockRequired`: with it true and `lock` null the preset's lock did not land. A preset gains `graduationQuote`
+ * (Micro 750); `GET /launch/presets` lists a preset with `creatorLockMinDays` only to a client naming 1.38.0 or later in
+ * `X-Ryntra-API-Version`. A client that
+ * draws every preset from the list and skips unknown keys needs no release to show Micro; it must send a lock whose
+ * `cliffDays` reaches `creatorLockMinDays` with a first purchase on Micro, or the build is refused.
  */
 
 import {
@@ -897,7 +912,7 @@ import { LAUNCH_PRESET_IDS } from "../../core/venues/meteora-dbc/presets.ts";
 import { LaunchReceiptFactsSchema } from "../../core/venues/meteora-dbc/receipt.ts";
 
 export const API_MAJOR = 1;
-export const API_CONTRACT_VERSION = "1.37.0";
+export const API_CONTRACT_VERSION = "1.38.0";
 export const API_HEADER = "X-Ryntra-API";
 export const API_VERSION_HEADER = "X-Ryntra-API-Version";
 export const NETWORK = "solana:mainnet";
@@ -9449,6 +9464,15 @@ export const LaunchPresetSchema = z
     graduationFee: z.object({ pct: z.number().min(0).max(100), creatorPct: z.number().int().min(0).max(100) }).strict(),
     /** The most of the supply the creator's first purchase may receive, basis points. */
     firstBuyCapBps: z.number().int().positive().max(10_000),
+    /**
+     * 1.38.0 — a first purchase on this preset must go under the creator's lock with at least this many days before
+     * anything unlocks (Micro: 180); null — the lock is the creator's choice.
+     */
+    creatorLockMinDays: z.number().int().positive().nullable(),
+    /** 1.38.0 — the pair currency a curve must raise to reach the DEX, when the preset is named by it (Micro: 750); null — by its market cap. */
+    graduationQuote: z.number().positive().nullable(),
+    /** 1.38.0 — the demo market: Ryntra's technical validation, launched by Ryntra's own wallets alone; never in the presets for people. */
+    technicalValidation: z.boolean(),
     /** Every share of the graduated pool's liquidity locked for ever. */
     lpLockedForeverPct: z.literal(100),
   })
@@ -10481,6 +10505,11 @@ export const LaunchMarketHealthResponseSchema = z
       .object({
         address: Address,
         lock: LaunchMarketLockView.nullable(),
+        /**
+         * 1.38.0 — the preset requires the creator's first purchase under a lock (Micro) and the creator bought one: with
+         * `lock` null the preset's rule was not kept — the lock is a second transaction after the creation, and it did not land.
+         */
+        lockRequired: z.boolean(),
         /** Whether the creator sold any of the token; null when their trades were not read whole and no sale was seen. */
         sold: z.boolean().nullable(),
         /** How much they sold, of what they bought here or of the supply; null when nothing or not read. */

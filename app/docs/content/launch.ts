@@ -7,11 +7,16 @@ import { facts, list, note, p, section, steps, table, type DocPage } from "./mod
  * them since 2026-10-06. Every number is read from the presets' own file, the
  * one the configs on chain were built from, so the page cannot say a fee the
  * chain does not charge. «Спільнота» has no config on mainnet yet (one is made
- * per community token), so the page documents the two presets people can pick.
+ * per community token), so the page documents the three presets people can pick —
+ * Класичний, Захищений and Micro. The demo market is Ryntra's own technical
+ * validation and is not documented for people.
  */
 
 const CLASSIC = LAUNCH_PRESETS.classic;
 const PROTECTED = LAUNCH_PRESETS.protected;
+const MICRO = LAUNCH_PRESETS.micro;
+const round = (value: number) => Math.round(value);
+const microLockMonths = Math.round((MICRO.creatorLockMinDays ?? 0) / 30);
 const pct = (bps: number) => `${bps / 100}`.replace(/\.0+$/, "");
 const usd = (value: number) => `$${value.toLocaleString("en-US")}`;
 const usdUk = (value: number) => `$${value.toLocaleString("en-US").replace(/,/g, " ")}`;
@@ -41,45 +46,53 @@ export const LAUNCH: DocPage = {
           ["Network", "Solana"],
           ["Token", "Token-2022, a fixed supply of 1 000 000 000, 6 decimals"],
           ["Pays in", "USDC"],
-          ["Curve", `From ${usd(CLASSIC.curve.startMarketCapUsd)} to ${usd(CLASSIC.curve.graduationMarketCapUsd)} of market cap; then a DEX pool`],
-          ["Your signature", "One wallet window: the token, your first purchase if you want one, its lock if you choose it"],
+          ["Curve", `From ${usd(CLASSIC.curve.startMarketCapUsd)} to ${usd(CLASSIC.curve.graduationMarketCapUsd)} of market cap; on Micro from ${usd(round(MICRO.curve.startMarketCapUsd))} to ${usd(round(MICRO.curve.graduationMarketCapUsd))}, ${MICRO.curve.graduationQuote} USDC raised; then a DEX pool`],
+          ["Your signature", "One wallet window: the token, your first purchase if you want one, its lock if you choose it — always on Micro"],
           ["What it costs to create", "No creation fee; the network's rent and fee for the new accounts, shown before you sign"],
         ],
         [
           ["Мережа", "Solana"],
           ["Токен", "Token-2022, фіксована пропозиція 1 000 000 000, 6 знаків"],
           ["Валюта", "USDC"],
-          ["Крива", `Від ${usdUk(CLASSIC.curve.startMarketCapUsd)} до ${usdUk(CLASSIC.curve.graduationMarketCapUsd)} капіталізації; далі пул на DEX`],
-          ["Твій підпис", "Одне вікно гаманця: токен, твоя перша покупка, якщо хочеш, і її замок, якщо обереш"],
+          ["Крива", `Від ${usdUk(CLASSIC.curve.startMarketCapUsd)} до ${usdUk(CLASSIC.curve.graduationMarketCapUsd)} капіталізації; на Micro — від ${usdUk(round(MICRO.curve.startMarketCapUsd))} до ${usdUk(round(MICRO.curve.graduationMarketCapUsd))}, коли зібрано ${MICRO.curve.graduationQuote} USDC; далі пул на DEX`],
+          ["Твій підпис", "Одне вікно гаманця: токен, твоя перша покупка, якщо хочеш, і її замок, якщо обереш, — на Micro завжди"],
           ["Скільки коштує створити", "Плати за створення немає; оренда й комісія мережі за нові рахунки — видно до підпису"],
         ],
       ),
     ]),
-    section("presets", "Two presets", "Два пресети", [
+    section("presets", "Three presets", "Три пресети", [
       table(
-        { en: ["", CLASSIC.name.en, PROTECTED.name.en], uk: ["", CLASSIC.name.uk, PROTECTED.name.uk] },
+        { en: ["", CLASSIC.name.en, PROTECTED.name.en, MICRO.name.en], uk: ["", CLASSIC.name.uk, PROTECTED.name.uk, MICRO.name.uk] },
         {
           en: [
-            ["Fee for snipers", `${pct(CLASSIC.sniperFee.startBps)} % falling to ${pct(CLASSIC.sniperFee.endBps)} % over ${minutes(CLASSIC.sniperFee.seconds)} minutes`, `${pct(PROTECTED.sniperFee.startBps)} % falling to ${pct(PROTECTED.sniperFee.endBps)} % over ${minutes(PROTECTED.sniperFee.seconds)} minutes`],
-            ["Fee after that", `${pct(CLASSIC.sniperFee.endBps)} %, higher while the price swings`, `${pct(PROTECTED.sniperFee.endBps)} %, higher while the price swings`],
-            ["Your first purchase", `Up to ${pct(CLASSIC.creatorFirstBuyCapBps)} % of the supply`, `Up to ${pct(PROTECTED.creatorFirstBuyCapBps)} % of the supply`],
-            ["Your share of the curve's fee", `${CLASSIC.creatorTradingFeePct} % of what is left after Meteora's part`, `${PROTECTED.creatorTradingFeePct} % of what is left after Meteora's part`],
-            ["Graduation fee", `${CLASSIC.graduationFee.pct} % of the threshold, ${CLASSIC.graduationFee.creatorPct} % of it yours`, `${PROTECTED.graduationFee.pct} % of the threshold, ${PROTECTED.graduationFee.creatorPct} % of it yours`],
-            ["Liquidity after the DEX", "Yours and Ryntra's locked for ever, 100 %; you keep earning its fees", "The same"],
+            ["To reach the DEX", `${usd(CLASSIC.curve.graduationMarketCapUsd)} of market cap`, `${usd(PROTECTED.curve.graduationMarketCapUsd)} of market cap`, `${MICRO.curve.graduationQuote} USDC raised, ${usd(round(MICRO.curve.graduationMarketCapUsd))} of market cap`],
+            ["Fee for snipers", `${pct(CLASSIC.sniperFee.startBps)} % falling to ${pct(CLASSIC.sniperFee.endBps)} % over ${minutes(CLASSIC.sniperFee.seconds)} minutes`, `${pct(PROTECTED.sniperFee.startBps)} % falling to ${pct(PROTECTED.sniperFee.endBps)} % over ${minutes(PROTECTED.sniperFee.seconds)} minutes`, `${pct(MICRO.sniperFee.startBps)} % falling to ${pct(MICRO.sniperFee.endBps)} % over ${minutes(MICRO.sniperFee.seconds)} minutes`],
+            ["Fee after that", `${pct(CLASSIC.sniperFee.endBps)} %, higher while the price swings`, `${pct(PROTECTED.sniperFee.endBps)} %, higher while the price swings`, `${pct(MICRO.sniperFee.endBps)} %, higher while the price swings`],
+            ["Your first purchase", `Up to ${pct(CLASSIC.creatorFirstBuyCapBps)} % of the supply`, `Up to ${pct(PROTECTED.creatorFirstBuyCapBps)} % of the supply`, `Up to ${pct(MICRO.creatorFirstBuyCapBps)} % of the supply, signed into a lock: nothing unlocks for ${microLockMonths} months`],
+            ["Your share of the curve's fee", `${CLASSIC.creatorTradingFeePct} % of what is left after Meteora's part`, `${PROTECTED.creatorTradingFeePct} % of what is left after Meteora's part`, `${MICRO.creatorTradingFeePct} % of what is left after Meteora's part`],
+            ["Graduation fee", `${CLASSIC.graduationFee.pct} % of the threshold, ${CLASSIC.graduationFee.creatorPct} % of it yours`, `${PROTECTED.graduationFee.pct} % of the threshold, ${PROTECTED.graduationFee.creatorPct} % of it yours`, `${MICRO.graduationFee.pct} % of the threshold, all of it to the market's budget, none yours`],
+            ["Pool fee after the DEX", `${pct(CLASSIC.graduatedPool.startFeeBps)} % falling to ${pct(CLASSIC.graduatedPool.endFeeBps)} % as the market cap grows`, "The same", `${pct(MICRO.graduatedPool.startFeeBps)} % falling to ${pct(MICRO.graduatedPool.endFeeBps)} % as the market cap grows`],
+            ["Liquidity after the DEX", "Yours and Ryntra's locked for ever, 100 %; you keep earning its fees", "The same", "The same"],
           ],
           uk: [
-            ["Комісія для снайперів", `${pct(CLASSIC.sniperFee.startBps)} %, що спадає до ${pct(CLASSIC.sniperFee.endBps)} % за ${minutes(CLASSIC.sniperFee.seconds)} хв`, `${pct(PROTECTED.sniperFee.startBps)} %, що спадає до ${pct(PROTECTED.sniperFee.endBps)} % за ${minutes(PROTECTED.sniperFee.seconds)} хв`],
-            ["Комісія потім", `${pct(CLASSIC.sniperFee.endBps)} %, вища, поки ціна скаче`, `${pct(PROTECTED.sniperFee.endBps)} %, вища, поки ціна скаче`],
-            ["Твоя перша покупка", `До ${pct(CLASSIC.creatorFirstBuyCapBps)} % пропозиції`, `До ${pct(PROTECTED.creatorFirstBuyCapBps)} % пропозиції`],
-            ["Твоя частка комісії кривої", `${CLASSIC.creatorTradingFeePct} % того, що лишається після частки Meteora`, `${PROTECTED.creatorTradingFeePct} % того, що лишається після частки Meteora`],
-            ["Комісія виходу на DEX", `${CLASSIC.graduationFee.pct} % порогу, з них ${CLASSIC.graduationFee.creatorPct} % — твої`, `${PROTECTED.graduationFee.pct} % порогу, з них ${PROTECTED.graduationFee.creatorPct} % — твої`],
-            ["Ліквідність після DEX", "Твоя й Ryntra замкнені назавжди, 100 %; комісії з неї ти отримуєш і далі", "Так само"],
+            ["Вихід на DEX", `${usdUk(CLASSIC.curve.graduationMarketCapUsd)} капіталізації`, `${usdUk(PROTECTED.curve.graduationMarketCapUsd)} капіталізації`, `зібрано ${MICRO.curve.graduationQuote} USDC, ${usdUk(round(MICRO.curve.graduationMarketCapUsd))} капіталізації`],
+            ["Комісія для снайперів", `${pct(CLASSIC.sniperFee.startBps)} %, що спадає до ${pct(CLASSIC.sniperFee.endBps)} % за ${minutes(CLASSIC.sniperFee.seconds)} хв`, `${pct(PROTECTED.sniperFee.startBps)} %, що спадає до ${pct(PROTECTED.sniperFee.endBps)} % за ${minutes(PROTECTED.sniperFee.seconds)} хв`, `${pct(MICRO.sniperFee.startBps)} %, що спадає до ${pct(MICRO.sniperFee.endBps)} % за ${minutes(MICRO.sniperFee.seconds)} хв`],
+            ["Комісія потім", `${pct(CLASSIC.sniperFee.endBps)} %, вища, поки ціна скаче`, `${pct(PROTECTED.sniperFee.endBps)} %, вища, поки ціна скаче`, `${pct(MICRO.sniperFee.endBps)} %, вища, поки ціна скаче`],
+            ["Твоя перша покупка", `До ${pct(CLASSIC.creatorFirstBuyCapBps)} % пропозиції`, `До ${pct(PROTECTED.creatorFirstBuyCapBps)} % пропозиції`, `До ${pct(MICRO.creatorFirstBuyCapBps)} % пропозиції, підписується під замок: ${microLockMonths} міс. не розблоковується нічого`],
+            ["Твоя частка комісії кривої", `${CLASSIC.creatorTradingFeePct} % того, що лишається після частки Meteora`, `${PROTECTED.creatorTradingFeePct} % того, що лишається після частки Meteora`, `${MICRO.creatorTradingFeePct} % того, що лишається після частки Meteora`],
+            ["Комісія виходу на DEX", `${CLASSIC.graduationFee.pct} % порогу, з них ${CLASSIC.graduationFee.creatorPct} % — твої`, `${PROTECTED.graduationFee.pct} % порогу, з них ${PROTECTED.graduationFee.creatorPct} % — твої`, `${MICRO.graduationFee.pct} % порогу — увесь у бюджет ринку, твоїх 0 %`],
+            ["Комісія пулу після DEX", `${pct(CLASSIC.graduatedPool.startFeeBps)} %, що спадає до ${pct(CLASSIC.graduatedPool.endFeeBps)} % з ростом капіталізації`, "Так само", `${pct(MICRO.graduatedPool.startFeeBps)} %, що спадає до ${pct(MICRO.graduatedPool.endFeeBps)} % з ростом капіталізації`],
+            ["Ліквідність після DEX", "Твоя й Ryntra замкнені назавжди, 100 %; комісії з неї ти отримуєш і далі", "Так само", "Так само"],
           ],
         },
       ),
       note(
         "«Protected» is chosen for you: its fee for snipers is higher and lasts longer, so the first minutes belong to the people who follow you, not to bots. A preset is written into its config on chain for ever — nobody, Ryntra included, can change it for a token already launched.",
         "«Захищений» обрано за замовчуванням: його комісія для снайперів вища й триває довше, тож перші хвилини належать людям, що йдуть за тобою, а не ботам. Пресет записано в його конфіг у ланцюгу назавжди — ніхто, зокрема Ryntra, не змінить його для вже запущеного токена.",
+      ),
+      p(
+        `Micro is for a small market: it reaches the DEX once ${MICRO.curve.graduationQuote} USDC is raised. Its whole graduation fee is the market's budget — the partner's share, which only Ryntra's executor can claim on this config; until it does, it waits in Meteora's program — and you earn ${MICRO.creatorTradingFeePct} % of the curve's trading fee and your locked liquidity's fees, as on every preset. Your first purchase on Micro is signed into a lock together with the launch, so holders see you cannot sell it for ${microLockMonths} months; if the lock does not land, the token's page says the rule was not kept.`,
+        `Micro — для малого ринку: на DEX він виходить, щойно зібрано ${MICRO.curve.graduationQuote} USDC. Уся його комісія виходу на DEX — бюджет ринку: це частка партнера, яку на цьому конфігу може забрати лише виконавець Ryntra; доки не забрав, вона чекає в програмі Meteora; а ти отримуєш ${MICRO.creatorTradingFeePct} % торгової комісії кривої й комісії своєї замкненої ліквідності, як у кожному пресеті. Твою першу покупку на Micro ти підписуєш під замок разом із запуском — холдери бачать, що ${microLockMonths} міс. ти її не продаси; якщо замок не ляже, сторінка токена скаже, що правило не виконано.`,
       ),
     ]),
     section("how", "How to launch", "Як запустити", [
@@ -132,8 +145,8 @@ export const LAUNCH: DocPage = {
     ]),
     section("trade", "Trading a launch", "Торгівля токеном лаунчу", [
       p(
-        `Buy and sell on the token's page: on the curve with Meteora's own instruction, after the DEX in its pool — one transaction your wallet signs and pays, with the fee, the slippage and «at least» shown before you sign. Ryntra adds no fee of its own on the curve or in the pool: it earns as the partner of the config — ${100 - CLASSIC.creatorTradingFeePct} % of the curve's fee after Meteora's part, ${100 - CLASSIC.graduationFee.creatorPct} % of the graduation fee, and the fees of its own locked liquidity after the DEX. A graduated token can also be swapped in Swap, at Swap's own fee.`,
-        `Купуй і продавай на сторінці токена: на кривій — власною інструкцією Meteora, після DEX — у його пулі; одна транзакція, яку підписує й оплачує твій гаманець, з комісією, прослизанням і «щонайменше» до підпису. Ryntra не додає своєї комісії ні на кривій, ні в пулі: вона заробляє як партнер конфігу — ${100 - CLASSIC.creatorTradingFeePct} % комісії кривої після частки Meteora, ${100 - CLASSIC.graduationFee.creatorPct} % комісії виходу на DEX і комісії власної замкненої ліквідності після DEX. Токен, що вийшов на DEX, можна обміняти й в Обміні — за комісією Обміну.`,
+        `Buy and sell on the token's page: on the curve with Meteora's own instruction, after the DEX in its pool — one transaction your wallet signs and pays, with the fee, the slippage and «at least» shown before you sign. Ryntra adds no fee of its own on the curve or in the pool: it earns as the partner of the config — ${100 - CLASSIC.creatorTradingFeePct} % of the curve's fee after Meteora's part, ${100 - CLASSIC.graduationFee.creatorPct} % of the graduation fee (on Micro all of it, the market's budget), and the fees of its own locked liquidity after the DEX. A graduated token can also be swapped in Swap, at Swap's own fee.`,
+        `Купуй і продавай на сторінці токена: на кривій — власною інструкцією Meteora, після DEX — у його пулі; одна транзакція, яку підписує й оплачує твій гаманець, з комісією, прослизанням і «щонайменше» до підпису. Ryntra не додає своєї комісії ні на кривій, ні в пулі: вона заробляє як партнер конфігу — ${100 - CLASSIC.creatorTradingFeePct} % комісії кривої після частки Meteora, ${100 - CLASSIC.graduationFee.creatorPct} % комісії виходу на DEX (на Micro — усю, це бюджет ринку) і комісії власної замкненої ліквідності після DEX. Токен, що вийшов на DEX, можна обміняти й в Обміні — за комісією Обміну.`,
       ),
     ]),
     section("log", "The flight log", "Бортовий журнал", [

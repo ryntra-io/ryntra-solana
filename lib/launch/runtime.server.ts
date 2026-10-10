@@ -53,7 +53,9 @@ export function launchDeps(): LaunchDeps | null {
   if (network.cluster === "mainnet" && !storeSupportsConcurrentInstances(store)) return null;
   const poolPayer = launchPoolPayer(process.env, network);
   if (!poolPayer) return null;
-  return { network, connection: launchConnection(network), store, poolPayer, origin: network.origin, now: () => new Date(), second: launchArchiveConnection(network) };
+  /* On mainnet the demo market takes only Ryntra's own wallets; the devnet stand is Ryntra's own throughout. */
+  const ownWallet = async (wallet: string) => network.cluster !== "mainnet" || (await ryntraOwnWallets(network, store)).wallets.has(wallet);
+  return { network, connection: launchConnection(network), store, poolPayer, ownWallet, origin: network.origin, now: () => new Date(), second: launchArchiveConnection(network) };
 }
 
 /**
@@ -193,11 +195,15 @@ export function launchTrading(): boolean {
   return launchOpen();
 }
 
-/** The presets this network has configs for, with the numbers the form shows. */
-export function launchPresetsView(network: LaunchNetwork): LaunchPresetsResponse {
+/**
+ * The presets this network has configs for, with the numbers the form shows — the ones offered to people; the demo
+ * market, Ryntra's technical validation, only where its own page asks for it (`internal`), and the build takes it from
+ * Ryntra's own wallets alone.
+ */
+export function launchPresetsView(network: LaunchNetwork, options: Readonly<{ internal?: boolean }> = {}): LaunchPresetsResponse {
   return {
     network: network.chain,
-    presets: LAUNCH_PRESET_IDS.filter((id) => configsOfPreset(network.configs, id).length > 0 && network.pairs[id]).map((id) => {
+    presets: LAUNCH_PRESET_IDS.filter((id) => configsOfPreset(network.configs, id).length > 0 && network.pairs[id] && (LAUNCH_PRESETS[id].audience === "people" || options.internal === true)).map((id) => {
       const preset = LAUNCH_PRESETS[id];
       const pair = launchPair(network, id);
       return {
@@ -210,6 +216,9 @@ export function launchPresetsView(network: LaunchNetwork): LaunchPresetsResponse
         creatorTradingFeePct: preset.creatorTradingFeePct,
         graduationFee: { pct: preset.graduationFee.pct, creatorPct: preset.graduationFee.creatorPct },
         firstBuyCapBps: preset.creatorFirstBuyCapBps,
+        creatorLockMinDays: preset.creatorLockMinDays,
+        graduationQuote: preset.curve.graduationQuote ?? null,
+        technicalValidation: preset.audience === "internal",
         lpLockedForeverPct: 100,
       };
     }),
@@ -305,6 +314,7 @@ export const LAUNCH_FAILURE_CODES = {
   PRESET_UNAVAILABLE: "VALIDATION_ERROR",
   FIRST_BUY_ABOVE_CAP: "LAUNCH_FIRST_BUY_ABOVE_CAP",
   LOCK_NEEDS_PURCHASE: "VALIDATION_ERROR",
+  LOCK_REQUIRED: "VALIDATION_ERROR",
   SHARES_INVALID: "LAUNCH_SHARES_INVALID",
   NOT_BUILT: "LAUNCH_NOT_FOUND",
   BUILD_EXPIRED: "LAUNCH_BUILD_EXPIRED",

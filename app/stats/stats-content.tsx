@@ -660,7 +660,9 @@ function RegistryRow({ row, observed, copy, locale }: { row: PublicRegistryRow; 
   const network = networkName(row.network);
   const products = row.products.map((product) => words.products[product]).join(" · ");
   const symbol = row.mint ? KNOWN_SYMBOL[row.mint] ?? shortAddress(row.mint) : null;
-  const kind = row.kind === "JUPITER_REFERRAL_TOKEN_ACCOUNT" && symbol ? `${words.kinds[row.kind]} · ${symbol}` : words.kinds[row.kind];
+  const kindWord = row.role === "LAUNCH_REVENUE" ? words.revenueKind : row.kind === "JUPITER_REFERRAL_TOKEN_ACCOUNT" && symbol ? `${words.kinds[row.kind]} · ${symbol}` : words.kinds[row.kind];
+  /* The demo market's config: Ryntra's own technical validation, said where its job is. */
+  const kind = row.technicalValidation ? `${kindWord} · ${words.technicalValidation}` : kindWord;
   const address = row.address ?? "";
   const addressUrl = row.network === "solana" ? `${EXPLORER_ACCOUNT}${address}` : null;
   const start = row.start;

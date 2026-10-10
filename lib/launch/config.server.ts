@@ -88,7 +88,7 @@ export type LaunchNetwork = Readonly<{
   zap: boolean;
 }>;
 
-/* The devnet rehearsal of 05.10 (run 3, creator's share 40 %): its three configs and its test pair currencies. */
+/* The devnet rehearsals of 05.10 (run 3, creator's share 40 %) and 10.10 (Micro, the demo market): their configs and test pair currencies. */
 const DEVNET: Omit<LaunchNetwork, "origin"> = {
   cluster: "devnet",
   chain: "solana:devnet",
@@ -96,11 +96,16 @@ const DEVNET: Omit<LaunchNetwork, "origin"> = {
     classic: "9fRjQM1eDW6hNJRzeLoTZ1sub7tbuMcEbHEwd29UuDik",
     protected: "FWDh4JYHGBwZzDgjJP6VVt8cPkL2Xr7mKqyXEazvnYva",
     community: ["Ahh39x8jBcZxATVajcjfWUTsZBYmvwT6DwVTJLKEvr6v"],
+    /* The rehearsal of 2026-10-10: Micro and the demo market, the stand executor their fee claimer. */
+    micro: "BAhCUHp2SzGXVZ4kRTKxe3mrxFTK9dKGF7iBJPDoYZ6G",
+    demo: "3qwvEk69TGJupqGRXURfkQBJtGXh66pxcdAD4PpVEEAA",
   },
   pairs: {
     classic: { mint: "9gCUiQwyGzSaV5tCvn3jQWJfCqwdKDkhbPYgAG5mZiHB", symbol: "USDC", decimals: 6, usdPrice: 1, dollar: true },
     protected: { mint: "9gCUiQwyGzSaV5tCvn3jQWJfCqwdKDkhbPYgAG5mZiHB", symbol: "USDC", decimals: 6, usdPrice: 1, dollar: true },
     community: { mint: "8QwXVdfGjmnjZjF3TkzT4FZzA8J1gg9s8SfF9TUxFgEX", symbol: "COMM", decimals: 6, usdPrice: 0.01, dollar: false },
+    micro: { mint: "9gCUiQwyGzSaV5tCvn3jQWJfCqwdKDkhbPYgAG5mZiHB", symbol: "USDC", decimals: 6, usdPrice: 1, dollar: true },
+    demo: { mint: "9gCUiQwyGzSaV5tCvn3jQWJfCqwdKDkhbPYgAG5mZiHB", symbol: "USDC", decimals: 6, usdPrice: 1, dollar: true },
   },
   explorer: (kind, id) => `https://solscan.io/${kind}/${id}?cluster=devnet`,
   /* The rehearsal's partner vault on devnet — the same role the multisig's vault has on mainnet. */
@@ -131,8 +136,11 @@ const MAINNET: LaunchNetwork = {
   configs: {
     classic: registryAddress("solana-launch-config-classic") ?? "",
     protected: registryAddress("solana-launch-config-protected") ?? "",
+    /* Created 2026-10-10 on the operator's signature; the executor claims their partner fees. */
+    micro: registryAddress("solana-launch-config-micro") ?? "",
+    demo: registryAddress("solana-launch-config-demo") ?? "",
   },
-  pairs: { classic: USDC, protected: USDC },
+  pairs: { classic: USDC, protected: USDC, micro: USDC, demo: USDC },
   explorer: (kind, id) => `https://solscan.io/${kind}/${id}`,
   origin: "https://ryntra.io",
   referralOwner: registryAddress("solana-launch-fee-claimer"),

@@ -1,5 +1,6 @@
 /**
- * Ryntra Launch presets on Meteora DBC — Класичний · Захищений · Спільнота.
+ * Ryntra Launch presets on Meteora DBC — Класичний · Захищений · Спільнота ·
+ * Micro, and the demo market Ryntra uses for its own technical validation.
  *
  * A preset is the whole shape of a launch that a creator picks by name: the
  * pair currency, the curve, the fees on the curve and after it, who earns
@@ -42,8 +43,25 @@ export const DBC_ACTIVATION = { SLOT: 0, TIMESTAMP: 1 } as const;
 
 /* ----------------------------------------------------------- presets */
 
-export const LAUNCH_PRESET_IDS = ["classic", "protected", "community"] as const;
+export const LAUNCH_PRESET_IDS = ["classic", "protected", "community", "micro", "demo"] as const;
 export type LaunchPresetId = (typeof LAUNCH_PRESET_IDS)[number];
+
+/**
+ * Who may launch on a preset: everyone, or only Ryntra's own wallets — the
+ * demo market is a technical validation of the whole cycle, never offered to
+ * people. On chain anyone can open a pool on a config, so Ryntra's own launch
+ * is recognised by its creator, not by the config.
+ */
+export type PresetAudience = "people" | "internal";
+
+/**
+ * Who receives the partner's fees of a config: Ryntra's Squads vault, or —
+ * Micro and the demo market — the launch executor's wallet, which takes the
+ * migration fee, the partner's share of the surplus and of the trading fees and
+ * the fees of the partner's locked DAMM v2 position itself, and keeps the
+ * market's budget from them.
+ */
+export type PresetFeeClaimer = "multisig" | "executor";
 
 /** What the pair is quoted in: USDC, or — «Спільнота» — the community's own token. */
 export type PairCurrency = "USDC" | "COMMUNITY_TOKEN";
@@ -62,8 +80,14 @@ export type LaunchPreset = Readonly<{
     /** Metadata no one can change. */
     authority: (typeof DBC_TOKEN_AUTHORITY)["IMMUTABLE"];
   }>;
-  /** The curve by market cap in US dollars; for a community pair converted at the token's price when its config is made. */
-  curve: Readonly<{ startMarketCapUsd: number; graduationMarketCapUsd: number }>;
+  audience: PresetAudience;
+  feeClaimer: PresetFeeClaimer;
+  /**
+   * The curve by market cap in US dollars; for a community pair converted at the token's price when its config is made.
+   * A preset named by its threshold (`graduationQuote`) is built for that exact amount of the pair currency raised —
+   * its market caps then follow from the threshold, the migration fee and the curve's multiple.
+   */
+  curve: Readonly<{ startMarketCapUsd: number; graduationMarketCapUsd: number; graduationQuote?: number }>;
   /** The fee on the curve: high for the first minutes and falling exponentially — snipers pay the creator and Ryntra. */
   sniperFee: Readonly<{ startBps: number; endBps: number; periods: number; seconds: number }>;
   /** A volatility fee on top of the base fee, on the curve and in the graduated pool. */
@@ -89,6 +113,11 @@ export type LaunchPreset = Readonly<{
   lp: Readonly<{ partnerLockedPct: number; creatorLockedPct: number }>;
   /** Ryntra's rule in the creation transaction, not a config field: the creator's first purchase receives at most this share of supply. */
   creatorFirstBuyCapBps: number;
+  /**
+   * Ryntra's rule beside the launch, not a config field: a creator's first purchase must go under the creator's lock
+   * with at least this long before anything unlocks; null — the lock is the creator's choice.
+   */
+  creatorLockMinDays: number | null;
   /** A creation fee paid by the person who launches; zero — launching costs only the network's rent. */
   poolCreationFeeLamports: 0;
 }>;
@@ -106,9 +135,50 @@ const GRADUATED_POOL = {
 } as const;
 const LP = { partnerLockedPct: 50, creatorLockedPct: 50 } as const;
 
+/** Classic's curve multiple: the graduation market cap is fifteen times the start. */
+const CURVE_MULTIPLE = 15;
+
+/**
+ * The market caps of a curve that raises exactly `quote` of a USDC pair before graduation, with the migration fee
+ * `feePct` taken from it and the graduation market cap `multiple` times the start — the inverse of the SDK's own
+ * `buildCurveWithMarketCap`: the share of supply that migrates depends only on the multiple and the fee, so the
+ * threshold fixes the market cap.
+ */
+export function thresholdCurve(quote: number, feePct: number, multiple: number) {
+  const ratio = Math.sqrt(1 / multiple) * (1 - feePct / 100);
+  const percentageSupplyOnMigration = (100 * ratio) / (1 + ratio);
+  const graduationMarketCapUsd = (quote * (1 - feePct / 100) * 100) / percentageSupplyOnMigration;
+  return { graduationQuote: quote, percentageSupplyOnMigration, graduationMarketCapUsd, startMarketCapUsd: graduationMarketCapUsd / multiple } as const;
+}
+
+/**
+ * Micro — a small market for people: 750 USDC raised graduates it (Meteora's keepers migrate a USDC curve at 750 on
+ * their own), the whole migration fee goes to the market's budget and none to the creator, the creator earns 40 % of the
+ * curve's trading fees; the graduated pool's fee falls from 2 % to 0.25 % with its market cap and a quarter of the LP fee
+ * compounds into the pool. Numbers of the operator's MarketOS document (§14), the creator's share.
+ */
+const MICRO_FEE = { pct: 8, creatorPct: 0 } as const;
+const MICRO_CURVE = thresholdCurve(750, MICRO_FEE.pct, CURVE_MULTIPLE);
+/** The demo market: as Micro, with 50 USDC to graduate and a 30 % migration fee, so a small market's budget lives on fees too. */
+const DEMO_FEE = { pct: 30, creatorPct: 0 } as const;
+const DEMO_CURVE = thresholdCurve(50, DEMO_FEE.pct, CURVE_MULTIPLE);
+const MICRO_POOL = {
+  collectFeeMode: DAMM_V2_COLLECT_FEE_MODE.COMPOUNDING,
+  compoundingFeeBps: 2_500,
+  startFeeBps: 200,
+  endFeeBps: 25,
+  priceMultiple: 10,
+  periods: 20,
+  expiresAfterSeconds: 30 * 24 * 60 * 60,
+} as const;
+/** Six months before any of a creator's first purchase unlocks. */
+const CREATOR_LOCK_SIX_MONTHS = 180;
+
 export const LAUNCH_PRESETS: Readonly<Record<LaunchPresetId, LaunchPreset>> = Object.freeze({
   classic: {
     id: "classic",
+    audience: "people",
+    feeClaimer: "multisig",
     name: { uk: "Класичний", en: "Classic" },
     pair: "USDC",
     token: TOKEN,
@@ -120,10 +190,13 @@ export const LAUNCH_PRESETS: Readonly<Record<LaunchPresetId, LaunchPreset>> = Ob
     graduatedPool: GRADUATED_POOL,
     lp: LP,
     creatorFirstBuyCapBps: 500,
+    creatorLockMinDays: null,
     poolCreationFeeLamports: 0,
   },
   protected: {
     id: "protected",
+    audience: "people",
+    feeClaimer: "multisig",
     name: { uk: "Захищений", en: "Protected" },
     pair: "USDC",
     token: TOKEN,
@@ -135,10 +208,13 @@ export const LAUNCH_PRESETS: Readonly<Record<LaunchPresetId, LaunchPreset>> = Ob
     graduatedPool: GRADUATED_POOL,
     lp: LP,
     creatorFirstBuyCapBps: 200,
+    creatorLockMinDays: null,
     poolCreationFeeLamports: 0,
   },
   community: {
     id: "community",
+    audience: "people",
+    feeClaimer: "multisig",
     name: { uk: "Спільнота", en: "Community" },
     pair: "COMMUNITY_TOKEN",
     token: TOKEN,
@@ -150,9 +226,49 @@ export const LAUNCH_PRESETS: Readonly<Record<LaunchPresetId, LaunchPreset>> = Ob
     graduatedPool: GRADUATED_POOL,
     lp: LP,
     creatorFirstBuyCapBps: 500,
+    creatorLockMinDays: null,
+    poolCreationFeeLamports: 0,
+  },
+  micro: {
+    id: "micro",
+    name: { uk: "Micro", en: "Micro" },
+    audience: "people",
+    feeClaimer: "executor",
+    pair: "USDC",
+    token: TOKEN,
+    curve: { startMarketCapUsd: MICRO_CURVE.startMarketCapUsd, graduationMarketCapUsd: MICRO_CURVE.graduationMarketCapUsd, graduationQuote: MICRO_CURVE.graduationQuote },
+    sniperFee: { startBps: 2_000, endBps: 100, periods: 30, seconds: 120 },
+    dynamicFee: true,
+    creatorTradingFeePct: 40,
+    graduationFee: MICRO_FEE,
+    graduatedPool: MICRO_POOL,
+    lp: LP,
+    creatorFirstBuyCapBps: 200,
+    creatorLockMinDays: CREATOR_LOCK_SIX_MONTHS,
+    poolCreationFeeLamports: 0,
+  },
+  demo: {
+    id: "demo",
+    name: { uk: "Демо-ринок", en: "Demo market" },
+    audience: "internal",
+    feeClaimer: "executor",
+    pair: "USDC",
+    token: TOKEN,
+    curve: { startMarketCapUsd: DEMO_CURVE.startMarketCapUsd, graduationMarketCapUsd: DEMO_CURVE.graduationMarketCapUsd, graduationQuote: DEMO_CURVE.graduationQuote },
+    sniperFee: { startBps: 2_000, endBps: 100, periods: 30, seconds: 120 },
+    dynamicFee: true,
+    creatorTradingFeePct: 40,
+    graduationFee: DEMO_FEE,
+    graduatedPool: MICRO_POOL,
+    lp: LP,
+    creatorFirstBuyCapBps: 200,
+    creatorLockMinDays: CREATOR_LOCK_SIX_MONTHS,
     poolCreationFeeLamports: 0,
   },
 });
+
+/** The presets a person may pick in the form: every one but the demo market. */
+export const PEOPLE_PRESET_IDS: readonly LaunchPresetId[] = LAUNCH_PRESET_IDS.filter((id) => LAUNCH_PRESETS[id].audience === "people");
 
 export function launchPreset(id: string): LaunchPreset | null {
   return (LAUNCH_PRESET_IDS as readonly string[]).includes(id) ? LAUNCH_PRESETS[id as LaunchPresetId] : null;
@@ -172,6 +288,7 @@ export function presetCurveInput(preset: LaunchPreset, quote: PresetQuote) {
   if (!(quote.usdPrice > 0)) throw new Error("A config needs the pair currency's dollar price.");
   if (preset.pair === "USDC" && quote.usdPrice !== 1) throw new Error("A USDC pair is priced at one dollar.");
   const inQuote = (usd: number) => usd / quote.usdPrice;
+  const exact = preset.curve.graduationQuote === undefined ? null : thresholdCurve(preset.curve.graduationQuote, preset.graduationFee.pct, CURVE_MULTIPLE);
   return {
     token: {
       tokenType: preset.token.type,
@@ -226,6 +343,8 @@ export function presetCurveInput(preset: LaunchPreset, quote: PresetQuote) {
     activationType: DBC_ACTIVATION.TIMESTAMP,
     initialMarketCap: inQuote(preset.curve.startMarketCapUsd),
     migrationMarketCap: inQuote(preset.curve.graduationMarketCapUsd),
+    /* A preset named by its threshold: the SDK's `buildCurve` takes the amount raised itself, exactly. */
+    ...(exact ? { migrationQuoteThreshold: inQuote(exact.graduationQuote), percentageSupplyOnMigration: exact.percentageSupplyOnMigration } : {}),
   };
 }
 

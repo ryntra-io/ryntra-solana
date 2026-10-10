@@ -50,6 +50,11 @@ export type LaunchDeps = Readonly<{
   connection: Connection;
   store: GuardStore;
   poolPayer: Keypair;
+  /**
+   * Whether a wallet is one of Ryntra's own — the demo market, Ryntra's technical validation, takes a launch from no one
+   * else. Absent or failing: no wallet is, and the demo market is refused.
+   */
+  ownWallet?: (wallet: string) => Promise<boolean>;
   /** The public origin the metadata and share links live on. */
   origin: string;
   now: () => Date;
@@ -65,6 +70,7 @@ export type LaunchFailureCode =
   | "PRESET_UNAVAILABLE"
   | "FIRST_BUY_ABOVE_CAP"
   | "LOCK_NEEDS_PURCHASE"
+  | "LOCK_REQUIRED"
   | "SHARES_INVALID"
   | "NOT_BUILT"
   | "BUILD_EXPIRED"
@@ -197,11 +203,22 @@ async function sweepBuilds(deps: LaunchDeps): Promise<void> {
 export async function prepareLaunch(deps: LaunchDeps, input: PrepareInput): Promise<PreparedLaunch | LaunchFailure> {
   const preset = launchPreset(input.preset);
   if (!preset || !deps.network.configs[preset.id]) return fail("PRESET_UNAVAILABLE", "This preset has no config on this network.");
+  /* The demo market is Ryntra's own technical validation: only Ryntra's wallets launch on it through Ryntra. */
+  if (preset.audience === "internal" && !(await (deps.ownWallet?.(input.creator) ?? Promise.resolve(false)).catch(() => false))) {
+    return fail("PRESET_UNAVAILABLE", "This preset is not open to this wallet.");
+  }
   const stored = await metadataOfUri(deps.store, input.metadataUri, deps.origin);
   if (!stored) return fail("METADATA_NOT_FOUND", "The token's details were not found; fill the form again.");
   const check = checkLaunchForm({ name: stored.metadata.name, symbol: stored.metadata.symbol, description: stored.metadata.description, website: "", x: "", telegram: "" });
   if (check.hits.length) return fail("NAME_BORROWED", `The name or ticker reads as ${check.hits.map((hit) => hit.label).join(", ")}.`);
   if (input.lock && BigInt(input.firstBuyRaw) <= 0n) return fail("LOCK_NEEDS_PURCHASE", "Only a first purchase can be locked.");
+  /* Micro and the demo market: a creator's first purchase goes under the creator's lock, nothing unlocking for six months. */
+  if (preset.creatorLockMinDays !== null && BigInt(input.firstBuyRaw) > 0n) {
+    const chosen = input.lock ? creatorLockSchedule(input.lock) : null;
+    if (!chosen || chosen.cliffDays < preset.creatorLockMinDays) {
+      return fail("LOCK_REQUIRED", `On «${preset.name.en}» a first purchase is locked with nothing unlocking for ${preset.creatorLockMinDays} days.`);
+    }
+  }
   const shares = input.feeShares ?? [];
   if (shares.length > 0) {
     if (preset.id !== "community") return fail("SHARES_INVALID", "Only «Спільнота» shares the creator's fees.");

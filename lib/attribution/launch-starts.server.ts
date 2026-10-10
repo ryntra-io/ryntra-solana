@@ -79,13 +79,24 @@ export async function createdAt(connection: Reader, address: string): Promise<Re
   return tx.meta.preBalances[index] === 0 && (tx.meta.postBalances[index] ?? 0) > 0 ? oldest : null;
 }
 
-/** The partner's vault starts at the earliest config's creation — and only when every config's start is known. */
+/**
+ * The partner's vault starts at the earliest creation of the configs it claims for, and Ryntra's revenue from Micro at the
+ * earliest of the configs the executor claims for — each only when every such config's start is known.
+ */
 export function withFeeClaimer(rows: readonly RegistryEntry[], starts: readonly Start[]): readonly Start[] {
+  const earliestOf = (configs: readonly RegistryEntry[]): RegistryMoment | null => {
+    const read = configs.map((row) => starts.find((start) => start.id === row.id)?.moment ?? null);
+    if (read.length === 0 || read.some((moment) => moment === null)) return null;
+    return (read as RegistryMoment[]).reduce((first, moment) => ((moment.block ?? Infinity) < (first.block ?? Infinity) ? moment : first));
+  };
   const configs = rows.filter((row) => row.role === "LAUNCH_CONFIG");
-  const read = configs.map((row) => starts.find((start) => start.id === row.id)?.moment ?? null);
-  if (read.length === 0 || read.some((moment) => moment === null)) return starts;
-  const earliest = (read as RegistryMoment[]).reduce((first, moment) => ((moment.block ?? Infinity) < (first.block ?? Infinity) ? moment : first));
-  return [...starts, ...rows.filter((row) => row.role === "LAUNCH_FEE_CLAIMER").map((row) => ({ id: row.id, moment: earliest }))];
+  const vault = earliestOf(configs.filter((row) => row.parent === null));
+  const executor = earliestOf(configs.filter((row) => row.parent !== null && row.countedAs === "FEES"));
+  return [
+    ...starts,
+    ...(vault ? rows.filter((row) => row.role === "LAUNCH_FEE_CLAIMER").map((row) => ({ id: row.id, moment: vault })) : []),
+    ...(executor ? rows.filter((row) => row.role === "LAUNCH_REVENUE").map((row) => ({ id: row.id, moment: executor })) : []),
+  ];
 }
 
 /** A read in which some row did not answer: answered, never kept for a day. */
@@ -103,7 +114,7 @@ async function readStarts(): Promise<readonly Start[]> {
   const starts: Start[] = [];
   let failed = false;
   /* One at a time, and a refusal asked again once after a pause: a public endpoint answers a burst with 429. */
-  for (const row of rows.filter((entry) => entry.role !== "LAUNCH_FEE_CLAIMER")) {
+  for (const row of rows.filter((entry) => entry.role !== "LAUNCH_FEE_CLAIMER" && entry.role !== "LAUNCH_REVENUE")) {
     let read = false;
     for (let attempt = 0; attempt < 2 && !read; attempt += 1) {
       try {

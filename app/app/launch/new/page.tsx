@@ -23,10 +23,12 @@ export async function generateMetadata() {
  * with no pool payer or no shared store here only new launches do, while
  * trades and claims go on — the form says which.
  */
-export default async function LaunchNewPage() {
+export default async function LaunchNewPage({ searchParams }: { searchParams: Promise<{ preset?: string | string[] }> }) {
   const network = launchNetwork();
   if (!network) notFound();
   const locale = await solanaServerLocale();
   const paused = launchAccepting(network) ? null : launchTrading() ? "launching" : "all";
-  return <LaunchFlow locale={locale} presets={launchPresetsView(network)} paused={paused} />;
+  /* The demo market is never offered: Ryntra's own wallet opens it by its address, and the build refuses every other wallet. */
+  const internal = (await searchParams).preset === "demo";
+  return <LaunchFlow locale={locale} presets={launchPresetsView(network, { internal })} paused={paused} initialPreset={internal ? "demo" : null} />;
 }

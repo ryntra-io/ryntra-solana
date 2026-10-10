@@ -125,6 +125,7 @@ export const STATS_COPY = {
         LAUNCH_POOL_PAYER: "Launch pool creator",
         LAUNCH_EXECUTOR: "Launch executor",
         LAUNCH_REFERRAL: "Launch referral",
+        LAUNCH_REVENUE: "Ryntra revenue from Micro",
       } satisfies RoleWords,
       kinds: {
         FEE_WALLET: "Fee wallet",
@@ -141,6 +142,8 @@ export const STATS_COPY = {
       } satisfies KindWords,
       block: (network: string, block: string) => (network === "Solana" ? `Slot ${block}` : `${network} block ${block}`),
       noTransaction: "No transaction yet",
+      revenueKind: "The executor's wallet, outside the markets' budgets",
+      technicalValidation: "technical validation",
       json: "The same list as JSON",
     },
     feed: {
@@ -274,6 +277,7 @@ export const STATS_COPY = {
         LAUNCH_POOL_PAYER: "Створення пулів лаунчу",
         LAUNCH_EXECUTOR: "Виконавець лаунчу",
         LAUNCH_REFERRAL: "Реферал лаунчу",
+        LAUNCH_REVENUE: "Дохід Ryntra з Micro",
       } satisfies RoleWords,
       kinds: {
         FEE_WALLET: "Гаманець комісій",
@@ -290,6 +294,8 @@ export const STATS_COPY = {
       } satisfies KindWords,
       block: (network: string, block: string) => (network === "Solana" ? `Слот ${block}` : `Блок ${network} ${block}`),
       noTransaction: "Транзакцій ще немає",
+      revenueKind: "Гаманець виконавця, поза бюджетами ринків",
+      technicalValidation: "технічна валідація",
       json: "Той самий список у JSON",
     },
     feed: {
