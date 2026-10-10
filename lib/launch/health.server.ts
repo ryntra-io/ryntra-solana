@@ -6,6 +6,9 @@
  *   the curve with its config's prices and segments, the graduated pool, every
  *   trade found, every account of the mint (or the ones found);
  * - Ryntra's steps on it, read from their DLMM position;
+ * - its budget: on Micro and the demo market the executor's ledger of its
+ *   claims, or — where nothing is claimed — what the partner earned and waits
+ *   in Meteora's pools, from the programs' own counters;
  * - the executor's receipts of its acts, and the creator's lock;
  * - Ryntra's own wallets: the internal ones and its published identities;
  * - whether Ryntra's executor acts on this network now.
@@ -41,8 +44,9 @@ import {
 import { observeCreatorLock } from "../core/venues/meteora-dbc/creator-lock.server.ts";
 import { creatorActivity, creatorSoldShare, priceFromSqrtX64, uiAmount } from "../core/venues/meteora-dbc/market.ts";
 import { launchPreset } from "../core/venues/meteora-dbc/presets.ts";
-import { autopilotReceipts, floorRecord, type AutopilotReceipt } from "./autopilot.server.ts";
-import { marketBudget, type LadderRead } from "./budget.server.ts";
+import { inPoolBudget, type BudgetRisk } from "../core/launch/budget.ts";
+import { autopilotReceipts, budgetFiguresOf, floorRecord, type AutopilotReceipt } from "./autopilot.server.ts";
+import { executorClaimsPreset, exhaustedNow, marketBudget, type BudgetRead, type LadderRead, type MarketBudgetRecord } from "./budget.server.ts";
 import { launchExecutorAddress, launchPair } from "./config.server.ts";
 import type { ExecutorMarket } from "./executor.server.ts";
 import { readLaunchRecord, type LaunchRecord } from "./flow.server.ts";
@@ -118,6 +122,10 @@ export type MarketRead = Readonly<{
   /** The operator's stop on this market and what the executor keeps on it. */
   executorFacts: ExecutorFacts;
   ladder: LadderRead;
+  /** The market's budget: counted by the executor, waiting in Meteora's pools, or not kept here. */
+  budget: BudgetRead;
+  /** The risk limits of its budget the executor read last; empty when none, or no budget is kept. */
+  risks: Readonly<{ codes: readonly BudgetRisk[]; at: number | null }>;
   /** Ryntra's last act on this market, from its receipts. */
   lastAction: Readonly<{ kind: JournalKind; at: string | null; signature: string }> | null;
   lock: LockRead | null;
@@ -131,7 +139,7 @@ export type MarketRead = Readonly<{
  * market; `STOPPED` — its steps stand and its executor does not act here now (Launch's stop, no key, or no recent pass);
  * `RISK_LIMIT` — a limit the executor records.
  */
-export type MarketPause = Readonly<{ code: "OPERATOR" | "STOPPED" | "RISK_LIMIT"; at: number | null }>;
+export type MarketPause = Readonly<{ code: "OPERATOR" | "STOPPED" | "RISK_LIMIT"; at: number | null; risks?: readonly BudgetRisk[] }>;
 
 export type MarketFigures = Readonly<{
   cycle: CycleRead;
@@ -228,7 +236,8 @@ async function readLadder(deps: HealthDeps, token: string, tokenDecimals: number
     steps = await once();
   }
   if (!steps?.bins) return { state: "UNREAD", pool, position };
-  const price = (binId: number) => priceOfBin(binId, FLOOR_RULE.binStep, tokenDecimals, pairDecimals);
+  const binStep = stored.binStep ?? FLOOR_RULE.binStep;
+  const price = (binId: number) => priceOfBin(binId, binStep, tokenDecimals, pairDecimals);
   return {
     state: "PLACED",
     pool: stored.pool,
@@ -265,6 +274,7 @@ async function assemble(deps: HealthDeps, token: string): Promise<MarketRead | n
   /* A switch that could not be read is said as not read — no stop invented, and nothing of the executor's claimed. */
   const executorFacts = deps.executorOf ? await deps.executorOf(token).catch((): ExecutorFacts => ({ stop: null, market: null, unread: true })) : NO_EXECUTOR_FACTS;
   const ladder = await readLadder(deps, token, facts?.state.tokenDecimals ?? 6, pair.decimals);
+  const { budget, risks } = await readBudget(deps, record, wallets.wallets.has(record.creator));
   return marketReadOf({
     record,
     metadata: stored ? { name: stored.metadata.name, symbol: stored.metadata.symbol, image: stored.metadata.image ?? null } : null,
@@ -276,9 +286,36 @@ async function assemble(deps: HealthDeps, token: string): Promise<MarketRead | n
     executor: launchExecutorAddress(deps.network),
     runs,
     executorFacts,
+    budget,
+    risks,
     usdPerPair: pair.dollar ? 1 : pair.usdPrice > 0 ? pair.usdPrice : null,
     now: deps.now(),
   });
+}
+
+const NO_RISKS = Object.freeze({ codes: [] as readonly BudgetRisk[], at: null });
+
+/**
+ * A market's budget as this server can say it: on Micro and the demo market, the executor's ledger once it claimed
+ * anything (on a market Ryntra launched itself) — else what the partner earned that waits in Meteora's pools, read from
+ * the programs' counters (null when they were not read); elsewhere not kept here.
+ */
+async function readBudget(deps: HealthDeps, record: LaunchRecord, ours: boolean): Promise<Readonly<{ budget: BudgetRead; risks: MarketRead["risks"] }>> {
+  if (!executorClaimsPreset(record.preset)) return { budget: { kind: "NOT_COUNTED" }, risks: NO_RISKS };
+  const { readPartnerFees } = await import("../core/venues/meteora-dbc/partner.server.ts");
+  const [kept, partner] = await Promise.all([
+    ours ? budgetFiguresOf(deps.store, deps.network.cluster, record.token).catch(() => null) : Promise.resolve(null),
+    readPartnerFees(deps.connection, { token: record.token, pool: record.pool }).catch(() => null),
+  ]);
+  const inPool = partner ? inPoolBudget({ curveRaw: partner.curveRaw, migrationRaw: partner.migration.withdrawn ? 0n : partner.migration.raw, surplusRaw: partner.surplus.withdrawn ? 0n : partner.surplus.raw, lpRaw: partner.lp?.pairRaw ?? null }) : null;
+  const ledger: MarketBudgetRecord | null = kept?.record ?? null;
+  if (kept && ledger && ledger.claims.length) {
+    return {
+      budget: { kind: "COUNTED", figures: kept.figures, inPoolRaw: inPool ? inPool.budgetRaw : null, exhausted: exhaustedNow(ledger, kept.figures) },
+      risks: { codes: ledger.risks, at: ledger.riskAt },
+    };
+  }
+  return { budget: { kind: "IN_POOL", inPool }, risks: ledger ? { codes: ledger.risks, at: ledger.riskAt } : NO_RISKS };
 }
 
 /** A market's read from its parts — what the answers need of them, and the figures. Pure: the parts are its input. */
@@ -293,9 +330,13 @@ export function marketReadOf(args: Readonly<{
   executor: string | null;
   runs: ExecutorRuns;
   executorFacts?: ExecutorFacts;
+  budget?: BudgetRead;
+  risks?: MarketRead["risks"];
   usdPerPair: number | null;
   now: Date;
 }>): MarketRead {
+  const budget = args.budget ?? { kind: "NOT_COUNTED" };
+  const risks = args.risks ?? NO_RISKS;
   const { record, facts, ladder, executor } = args;
   const last = [...args.receipts].reverse().find((receipt) => receipt.actor === "ryntra") ?? null;
   const state = facts?.state ?? null;
@@ -310,6 +351,8 @@ export function marketReadOf(args: Readonly<{
     runs: args.runs,
     executorFacts: args.executorFacts ?? NO_EXECUTOR_FACTS,
     ladder,
+    budget,
+    risks,
     lastAction: last ? { kind: last.kind, at: last.at, signature: last.signature } : null,
     lock: args.lock,
     basics: state
@@ -324,7 +367,7 @@ export function marketReadOf(args: Readonly<{
         }
       : null,
     figures: facts
-      ? marketFigures({ facts, record, ladder, receipts: args.receipts, wallets: args.wallets.wallets, lock: args.lock, runs: args.runs, executorFacts: args.executorFacts, now: Math.floor(args.now.getTime() / 1000), usdPerPair: args.usdPerPair })
+      ? marketFigures({ facts, record, ladder, receipts: args.receipts, wallets: args.wallets.wallets, lock: args.lock, runs: args.runs, executorFacts: args.executorFacts, budget, risks, now: Math.floor(args.now.getTime() / 1000), usdPerPair: args.usdPerPair })
       : null,
     observedAt: args.now.toISOString(),
   };
@@ -335,8 +378,10 @@ export function marketReadOf(args: Readonly<{
  * executor does not act now, may not move them, or moves none — the ladder moves only on a market Ryntra launched itself
  * (`ours`). Null when Ryntra's acts there go on.
  */
-export function marketPause(args: Readonly<{ stop: ExecutorFacts["stop"]; migrated: boolean; ladder: LadderRead["state"]; runs: ExecutorRuns; ours: boolean }>): MarketPause | null {
+export function marketPause(args: Readonly<{ stop: ExecutorFacts["stop"]; migrated: boolean; ladder: LadderRead["state"]; runs: ExecutorRuns; ours: boolean; risks?: MarketRead["risks"] }>): MarketPause | null {
   if (args.stop) return { code: "OPERATOR", at: seconds(args.stop.at) };
+  /* A risk limit of the budget's, read by the executor while it acts here: no new money goes into the steps. */
+  if (args.migrated && args.ours && args.runs.acts && args.risks && args.risks.codes.length) return { code: "RISK_LIMIT", at: args.risks.at, risks: args.risks.codes };
   return args.migrated && args.ladder !== "NONE" && !(args.runs.acts && args.runs.ladder && args.ours) ? { code: "STOPPED", at: null } : null;
 }
 
@@ -353,6 +398,8 @@ export function marketFigures(args: Readonly<{
   lock: LockRead | null;
   runs: ExecutorRuns;
   executorFacts?: ExecutorFacts;
+  budget?: BudgetRead;
+  risks?: MarketRead["risks"];
   now: number;
   usdPerPair: number | null;
 }>): MarketFigures {
@@ -372,7 +419,8 @@ export function marketFigures(args: Readonly<{
   const placed = [...receipts].reverse().find((receipt) => receipt.kind === "FLOOR_PLACED") ?? null;
   const placedAt = seconds(placed?.at);
   const maintained = placedAt === null ? null : ([...receipts].reverse().find((receipt) => (receipt.kind === "FLOOR_RAISED" || receipt.kind === "FLOOR_ADDED") && (seconds(receipt.at) ?? 0) >= placedAt) ?? null);
-  const pause = marketPause({ stop, migrated: curve.migrated, ladder: ladder.state, runs, ours: args.wallets.has(creator) });
+  const pause = marketPause({ stop, migrated: curve.migrated, ladder: ladder.state, runs, ours: args.wallets.has(creator), risks: args.risks });
+  const exhausted = args.budget?.kind === "COUNTED" && args.budget.exhausted;
 
   const cycle = marketCycleState({
     migrated: curve.migrated,
@@ -384,7 +432,7 @@ export function marketFigures(args: Readonly<{
     foreignTrade: { seen: foreign.length > 0 ? true : facts.historyComplete ? false : null, at: foreignAt },
     graduatedAt,
     ladder: { placedAt: ladder.state === "NONE" ? null : placedAt, maintainedAt: ladder.state === "NONE" ? null : seconds(maintained?.at) },
-    budget: market?.budgetAt ? { state: "FUNDED", at: seconds(market.budgetAt) } : null,
+    budget: exhausted ? { state: "EXHAUSTED", at: null } : market?.budgetAt ? { state: "FUNDED", at: seconds(market.budgetAt) } : null,
     pause,
     migrationSent: market?.graduation != null,
     migrationFailedAt: market && market.failures > 0 ? market.failedAt : null,
@@ -498,7 +546,7 @@ export function marketRow(read: MarketRead, network: HealthDeps["network"]): Lau
     venue: basics ? (basics.migrated ? "pool" : "curve") : null,
     progress: basics ? { bps: basics.progressBps, migrated: basics.migrated } : null,
     poolLiquidity,
-    budget: marketBudget(read.ladder),
+    budget: marketBudget(read.ladder, read.budget),
     depth5Raw: figures?.depth.find((level) => level.dropBps === 500)?.pairRaw ?? null,
     daysSinceDex: figures?.survival.daysSinceDex ?? null,
     traded24h: figures?.survival.traded24h ?? null,
@@ -572,7 +620,7 @@ export function marketHealth(read: MarketRead, network: HealthDeps["network"], v
     technicalValidation: read.technicalValidation,
     venue: basics.migrated ? "pool" : "curve",
     depth: [...figures.depth],
-    budget: marketBudget(ladder),
+    budget: marketBudget(ladder, read.budget),
     ladder:
       ladder.state === "PLACED"
         ? {
@@ -610,7 +658,7 @@ export function marketHealth(read: MarketRead, network: HealthDeps["network"], v
       executor: read.executor,
       acts,
       lastAction: read.lastAction,
-      pause: figures.pause ? { code: figures.pause.code, at: iso(figures.pause.at) } : null,
+      pause: figures.pause ? { code: figures.pause.code, at: iso(figures.pause.at), ...(figures.pause.risks ? { risks: [...figures.pause.risks] } : {}) } : null,
     },
     rules: marketRules({
       migrated: basics.migrated,

@@ -10,8 +10,9 @@
  * - the token's market as read from the chain: every sale of the creator's
  *   («Творець продав»), with the share of what they bought sold by then;
  * - the executor's receipts: the graduation and who sent it, the Fee-Funded
- *   Liquidity Ladder opened, placed, emptied to move up, moved up, added to —
- *   each from its confirmed transaction;
+ *   Liquidity Ladder opened, placed, emptied to move up, moved up, added to,
+ *   the partner fees it claimed into the market's budget — each from its
+ *   confirmed transaction;
  * - the executor's and its operator's marks, beside them: its first pass over
  *   the market, each new state of the market's cycle with the transaction it
  *   rests on, a stop or a resume of the executor, a failed graduation it sends
@@ -103,7 +104,19 @@ async function assemble(deps: MarketDeps, token: string): Promise<LaunchJournalR
 
   const receipts = await autopilotReceipts(deps.store, deps.network.cluster, token);
   for (const receipt of receipts) {
-    events.push(journalEvent({ kind: receipt.kind, at: receipt.at, signature: receipt.signature, actor: receipt.actor, pairRaw: receipt.pairRaw, tokensRaw: receipt.tokensRaw, priceLow: receipt.priceLow, priceHigh: receipt.priceHigh }));
+    events.push(
+      journalEvent({
+        kind: receipt.kind,
+        at: receipt.at,
+        signature: receipt.signature,
+        actor: receipt.actor,
+        pairRaw: receipt.pairRaw,
+        tokensRaw: receipt.tokensRaw,
+        priceLow: receipt.priceLow,
+        priceHigh: receipt.priceHigh,
+        ...(receipt.kind === "FEE_CLAIMED" ? { source: receipt.source ?? null, budgetRaw: receipt.budgetRaw ?? null } : {}),
+      }),
+    );
   }
 
   /* A graduation without a receipt yet: the graduated pool's first transaction, when the market found it and it is the curve's migration. */
@@ -134,8 +147,8 @@ async function assemble(deps: MarketDeps, token: string): Promise<LaunchJournalR
         position: stored.position,
         pairRaw: steps.pairRaw,
         tokensRaw: steps.tokenRaw,
-        priceLow: priceOfBin(steps.lowerBinId, FLOOR_RULE.binStep, tokenDecimals, pair.decimals),
-        priceHigh: priceOfBin(steps.upperBinId, FLOOR_RULE.binStep, tokenDecimals, pair.decimals),
+        priceLow: priceOfBin(steps.lowerBinId, stored.binStep ?? FLOOR_RULE.binStep, tokenDecimals, pair.decimals),
+        priceHigh: priceOfBin(steps.upperBinId, stored.binStep ?? FLOOR_RULE.binStep, tokenDecimals, pair.decimals),
         placedRaw: stored.placedRaw,
         observedAt: deps.now().toISOString(),
       };
@@ -159,7 +172,7 @@ async function assemble(deps: MarketDeps, token: string): Promise<LaunchJournalR
     complete,
     floor,
     floorUnread,
-    marks: [...marks],
+    marks: marks.map(({ risks, ...mark }) => (risks ? { ...mark, risks: [...risks] } : mark)),
     observedAt: deps.now().toISOString(),
   };
 }

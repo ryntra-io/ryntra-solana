@@ -18,7 +18,8 @@
 
 import type { LaunchMarketRow, LaunchMarketsResponse } from "../api/v1/contract.ts";
 import { CYCLE_RANK } from "../core/launch/market-health.ts";
-import { marketBudget } from "./budget.server.ts";
+import { budgetFiguresOf } from "./autopilot.server.ts";
+import { executorClaimsPreset, exhaustedNow, marketBudget, type BudgetRead } from "./budget.server.ts";
 import { launchPair } from "./config.server.ts";
 import type { LaunchRecord } from "./flow.server.ts";
 import { lastGoodMarket, marketRow, readMarket, type HealthDeps, type MarketRead } from "./health.server.ts";
@@ -84,7 +85,7 @@ function behind(deps: HealthDeps, token: string) {
 }
 
 /** The row of a market whose chain was not read in time: the record's facts only — its lock as the record holds it —, every figure null. */
-export function unreadRow(record: LaunchRecord, deps: HealthDeps, technicalValidation: boolean): LaunchMarketRow {
+export function unreadRow(record: LaunchRecord, deps: HealthDeps, technicalValidation: boolean, budget: BudgetRead = { kind: "NOT_COUNTED" }): LaunchMarketRow {
   const pair = launchPair(deps.network, record.preset);
   return {
     token: record.token,
@@ -101,7 +102,7 @@ export function unreadRow(record: LaunchRecord, deps: HealthDeps, technicalValid
     venue: null,
     progress: null,
     poolLiquidity: null,
-    budget: marketBudget({ state: "NONE" }),
+    budget: marketBudget({ state: "NONE" }, budget),
     depth5Raw: null,
     daysSinceDex: null,
     traded24h: null,
@@ -111,6 +112,17 @@ export function unreadRow(record: LaunchRecord, deps: HealthDeps, technicalValid
     creatorSold: null,
     observedAt: deps.now().toISOString(),
   };
+}
+
+/**
+ * The budget of a market whose chain was not read in time: on Micro and the demo market, the executor's ledger when it
+ * has claimed there (the store's alone); else what waits in the pools — not read now, never said as none.
+ */
+async function unreadBudget(deps: HealthDeps, record: LaunchRecord, ours: boolean): Promise<BudgetRead> {
+  if (!executorClaimsPreset(record.preset)) return { kind: "NOT_COUNTED" };
+  const kept = ours ? await budgetFiguresOf(deps.store, deps.network.cluster, record.token).catch(() => null) : null;
+  if (kept?.record?.claims.length) return { kind: "COUNTED", figures: kept.figures, inPoolRaw: null, exhausted: exhaustedNow(kept.record, kept.figures) };
+  return { kind: "IN_POOL", inPool: null };
 }
 
 /** The data's own order: a trade in the last day first, then the furthest along the cycle, then the newest launch. */
@@ -165,6 +177,8 @@ async function assemble(deps: HealthDeps): Promise<LaunchMarketsResponse> {
     }
   };
   await Promise.all(Array.from({ length: Math.min(AT_ONCE, toRead.length) }, worker));
-  const markets = records.map((record) => rows.get(record.token) ?? unreadRow(record, deps, wallets.has(record.creator))).sort(marketOrder);
+  const markets = (
+    await Promise.all(records.map(async (record) => rows.get(record.token) ?? unreadRow(record, deps, wallets.has(record.creator), await unreadBudget(deps, record, wallets.has(record.creator)))))
+  ).sort(marketOrder);
   return { network: deps.network.chain, markets, complete: markets.every((row) => row.read), observedAt: deps.now().toISOString() };
 }

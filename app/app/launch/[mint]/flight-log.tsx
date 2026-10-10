@@ -50,6 +50,7 @@ const ICONS: Readonly<Record<LaunchJournalEventView["kind"], ReactNode>> = {
   FLOOR_WITHDRAWN: <ArrowBendDownLeft size={18} aria-hidden />,
   FLOOR_RAISED: <ArrowFatLineUp size={18} aria-hidden />,
   FLOOR_ADDED: <HandCoins size={18} aria-hidden />,
+  FEE_CLAIMED: <PiggyBank size={18} aria-hidden />,
 };
 
 /** A mark of the executor's or its operator's: by its kind, and a state by the state it names. */
@@ -317,7 +318,9 @@ function MarkItem({
     mark.kind === "STATE"
       ? mark.state === "ENDOWMENT_FUNDED" && mark.pairRaw
         ? say(word, "mark_STATE_budget", { amount: money(mark.pairRaw) })
-        : mark.state
+        : mark.state === "PAUSED_RISK" && mark.risks?.length
+          ? say(word, "mark_STATE_risks", { reasons: mark.risks.map((risk) => word(`budgetRisk_${risk}`)).join("; ") })
+          : mark.state
           ? say(word, `stateHint_${mark.state}` as LaunchWordKey, {})
           : null
       : mark.kind === "STOPPED"
@@ -470,5 +473,9 @@ function detail(entry: LaunchJournalEventView, word: Word, money: (raw: string) 
       return entry.pairRaw && entry.priceLow !== null && entry.priceHigh !== null
         ? say(word, `log_${entry.kind}_detail`, { amount: money(entry.pairRaw) }, { low: price(entry.priceLow), high: price(entry.priceHigh) })
         : null;
+    case "FEE_CLAIMED":
+      return entry.pairRaw && entry.source ? plain(`log_FEE_CLAIMED_${entry.source}`, { amount: money(entry.pairRaw), budget: money(entry.budgetRaw ?? "0") }) : null;
+    default:
+      return null;
   }
 }

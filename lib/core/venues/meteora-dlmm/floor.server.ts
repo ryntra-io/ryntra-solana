@@ -3,7 +3,8 @@
  *
  * One pool per token: the customizable permissionless DLMM pool of the token
  * (X) and its pair currency (Y), at Ryntra's rule (`FLOOR_RULE`: steps of 1 %,
- * a 1 % fee collected in the pair currency). Its address is found from the two
+ * a 1 % fee collected in the pair currency; a market's budget ladder — steps of
+ * 2.5 %, `BUDGET_LADDER`). Its address is found from the two
  * mints alone, so a token has one such pool whoever made it; Ryntra's executor
  * makes it when there is none. In it, one position of the executor's: the pair
  * currency in steps below the price — buy liquidity, the «Spot» shape.
@@ -93,7 +94,7 @@ export type FloorVenue = Readonly<{
    * launch owner's proof — so when the payer holds none, the same transaction first buys `proof.amountRaw` of the
    * pair currency's worth in the token's graduated DAMM v2 pool.
    */
-  createPool(args: Readonly<{ token: string; pair: string; activeBinId: number; payer: string; proof: Readonly<{ dammPool: string; amountRaw: bigint }> | null }>): Promise<Transaction>;
+  createPool(args: Readonly<{ token: string; pair: string; activeBinId: number; payer: string; proof: Readonly<{ dammPool: string; amountRaw: bigint }> | null; /** The pool's bin step: the Classic rule's 1 %, or a budget ladder's 2.5 %. */ binStep?: number }>): Promise<Transaction>;
   openSteps(args: Readonly<{ pool: string; owner: string; ladder: FloorLadder; amountRaw: bigint }>): Promise<Readonly<{ transactions: Transaction[]; position: Keypair }>>;
   /** The steps emptied and the pool's active bin taken to a price's bin; null when it is there already. */
   syncSteps(args: Readonly<{ pool: string; owner: string; position: string | null; activeBinId: number }>): Promise<Transaction | null>;
@@ -141,11 +142,11 @@ export function createFloorVenue(args: Readonly<{ connection: Connection; cluste
       };
     },
 
-    async createPool({ token, pair, activeBinId, payer: payerAddress, proof }) {
+    async createPool({ token, pair, activeBinId, payer: payerAddress, proof, binStep }) {
       const payer = new PublicKey(payerAddress);
       const created = await DLMM.createCustomizablePermissionlessLbPair2(
         connection,
-        new BN(FLOOR_RULE.binStep),
+        new BN(binStep ?? FLOOR_RULE.binStep),
         new PublicKey(token),
         new PublicKey(pair),
         new BN(activeBinId),

@@ -406,6 +406,12 @@ export const GUARD_COLLECTIONS = [
   "launchHolderSends",
   "launchHolderPositions",
   "launchHolderClaims",
+  /* Ryntra Launch, a market's budget (1.39.0): the executor's ledger of its claims on a market whose fee claimer it is,
+     the risk limits it read last and the steps' top-ups of the day, keyed `solana:<cluster>:<token>` (versioned); and
+     Ryntra's revenue on the executor's wallet with the operator's last word about it, keyed `solana:<cluster>`. A value in
+     the same column; no DDL. */
+  "launchBudgets",
+  "launchRevenue",
 ] as const;
 
 export type GuardCollectionName = (typeof GUARD_COLLECTIONS)[number];

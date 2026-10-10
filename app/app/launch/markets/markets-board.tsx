@@ -181,6 +181,59 @@ function NotRead({ word }: { word: Word }) {
   return <span className={styles.cellUnread}>{word("notRead")}</span>;
 }
 
+/**
+ * A market's budget in its row: what Ryntra's executor collected and what stands in the ladder; what waits in Meteora's
+ * pool where nothing is collected; on a preset whose partner fees go to the multisig, the ladder if any and that no
+ * budget is kept — never a zero for what is not there.
+ */
+function BudgetCell({ budget, ours, read, money, word }: { budget: LaunchMarketRow["budget"]; ours: boolean; read: boolean; money: (raw: string) => string; word: Word }) {
+  if (budget.state === "COUNTED" && budget.earnedRaw !== null) {
+    return (
+      <span className={styles.stateCell}>
+        <span className={styles.cellLine}>
+          <span className={styles.cellFigure}>{money(budget.earnedRaw)}</span> {word("budgetEarned")}
+        </span>
+        <span className={styles.cellSub}>
+          {budget.exhausted
+            ? word("budgetExhaustedShort")
+            : budget.deployed
+              ? `${money(budget.deployed.pairRaw)} ${word("budgetInLadder")}${budget.reserveRaw !== null ? ` · ${word("budgetReserveShort", { amount: money(budget.reserveRaw) })}` : ""}`
+              : read
+                ? word("budgetNoLadderYet")
+                : word("notRead")}
+        </span>
+      </span>
+    );
+  }
+  if (budget.state === "IN_POOL") {
+    return (
+      <span className={styles.stateCell}>
+        <span className={styles.cellLine}>
+          {budget.earnedRaw !== null ? <span className={styles.cellFigure}>{money(budget.earnedRaw)}</span> : <NotRead word={word} />} {word("budgetInPool")}
+        </span>
+        <span className={styles.cellSub}>{word(ours ? "budgetPoolClaims" : "budgetPoolWaits")}</span>
+      </span>
+    );
+  }
+  if (budget.deployed) {
+    return (
+      <span className={styles.stateCell}>
+        <span className={styles.cellLine}>
+          <span className={styles.cellFigure}>{money(budget.deployed.pairRaw)}</span> {word("budgetInLadder")}
+        </span>
+        <span className={styles.cellSub}>{word("budgetRest")}</span>
+      </span>
+    );
+  }
+  /* No budget on this preset: a quiet dash, the words for a screen reader and a pointer. */
+  return (
+    <span className={`${styles.cellMuted} ${styles.cellLine}`} title={word("budgetNotCounted")}>
+      <span aria-hidden>—</span>
+      <span className={styles.visuallyHidden}>{word("budgetNotCounted")}</span>
+    </span>
+  );
+}
+
 function MarketRow({
   row,
   locale,
@@ -303,16 +356,7 @@ function MarketRow({
         )}
       </td>
       <td data-label={word("colBudget")} role="cell">
-        {row.budget.deployed ? (
-          <span className={styles.stateCell}>
-            <span className={styles.cellLine}>
-              <span className={styles.cellFigure}>{money(row.budget.deployed.pairRaw)}</span> {word("budgetInLadder")}
-            </span>
-            <span className={styles.cellSub}>{word("budgetRest")}</span>
-          </span>
-        ) : (
-          <span className={`${styles.cellMuted} ${styles.cellLine}`}>{word("budgetNotCounted")}</span>
-        )}
+        <BudgetCell budget={row.budget} ours={row.technicalValidation} read={row.read} money={money} word={word} />
       </td>
       <td data-label={word("colHolders")} data-num role="cell">
         {row.holders !== null ? (

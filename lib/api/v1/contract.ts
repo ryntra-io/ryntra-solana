@@ -862,6 +862,19 @@
  * `X-Ryntra-API-Version`. A client that
  * draws every preset from the list and skips unknown keys needs no release to show Micro; it must send a lock whose
  * `cliffDays` reaches `creatorLockMinDays` with a first purchase on Micro, or the build is refused.
+ *
+ * **1.39.0 — a market's budget from its fees.** Additive. On Micro and the demo market Ryntra's executor is the config's
+ * fee claimer itself and claims, on the markets Ryntra launched itself, the migration fee and the partner's surplus whole
+ * and the partner's curve fees and locked DAMM v2 position's fees — a quarter of each of those two into the market's
+ * budget, three quarters Ryntra's revenue apart; on a market with no ladder (people's markets for now) nothing is claimed
+ * and the fees wait in Meteora's pools. A market's `budget` (row and health) gains `sources`, `placedRaw`, `revenueRaw`,
+ * `inPoolRaw` and `exhausted`; `state` `COUNTED` and `IN_POOL` are now assigned. The flight log gains the entry kind
+ * `FEE_CLAIMED` with `source` (`migration`, `surplus`, `curve`, `lp`) and `budgetRaw` (the budget's part), and its
+ * marks `risks` on a `STATE` mark into `PAUSED_RISK`: the budget's risk limits that hold (`DROP` — the price fell more
+ * than 30 % within an hour; `CREATOR_SOLD` — a sale from the creator's wallet in the market's first week; `LOW_SOL` — the
+ * executor below 0.1 SOL), each stopping new money into the steps. A market's health `engine.pause` with code
+ * `RISK_LIMIT` gains `risks`. A client that skips unknown keys needs no release; one that parses the flight log's kinds
+ * strictly takes `FEE_CLAIMED` (the phone reads no flight log).
  */
 
 import {
@@ -905,6 +918,7 @@ import { FEE_SOURCES } from "../../core/launch/creator-earnings.ts";
 import { EARNINGS_CARD_SOURCE } from "../../core/launch/earnings-card.ts";
 import { FEE_SHARE_MAX_RECIPIENTS, FEE_SHARE_MIN_BPS, FEE_SHARE_MIN_RECIPIENTS, FEE_SHARE_TOTAL_BPS } from "../../core/launch/fee-shares.ts";
 import { JOURNAL_ACTORS, JOURNAL_KINDS, JOURNAL_MARK_ACTORS, JOURNAL_MARK_KINDS } from "../../core/launch/autopilot.ts";
+import { BUDGET_RISKS, BUDGET_SOURCES } from "../../core/launch/budget.ts";
 import { CONCENTRATION_MARK_BPS, DEPTH_DROPS_BPS, HOLDER_MIN_USD, MARKET_CYCLE_STATES, MARKET_ENFORCEMENT, MARKET_KEEPERS, MARKET_RULE_CODES } from "../../core/launch/market-health.ts";
 import { HOLDER_CARD_SOURCE, HOLDER_GRANT_STATES, POSITION_PERMISSIONS } from "../../core/launch/holder.ts";
 import { LAUNCH_CHART_MARKERS, LAUNCH_HOLDER_LABELS, LAUNCH_RISK_CODES, LAUNCH_TRADE_SIDES, LAUNCH_TRADE_VENUES } from "../../core/venues/meteora-dbc/market.ts";
@@ -912,7 +926,7 @@ import { LAUNCH_PRESET_IDS } from "../../core/venues/meteora-dbc/presets.ts";
 import { LaunchReceiptFactsSchema } from "../../core/venues/meteora-dbc/receipt.ts";
 
 export const API_MAJOR = 1;
-export const API_CONTRACT_VERSION = "1.38.0";
+export const API_CONTRACT_VERSION = "1.39.0";
 export const API_HEADER = "X-Ryntra-API";
 export const API_VERSION_HEADER = "X-Ryntra-API-Version";
 export const NETWORK = "solana:mainnet";
@@ -10044,6 +10058,10 @@ export const LaunchJournalEventSchema = z
     soldOf: z.enum(["bought", "supply"]).nullable(),
     /** 1.36.0: what governs the entry — `rule` (a program enforces it), `policy` (Ryntra's server runs it), null for what the log observes. Absent before 1.36.0. */
     enforcement: z.enum(MARKET_ENFORCEMENT).nullable().optional(),
+    /** 1.39.0, `FEE_CLAIMED`: which partner fee the executor claimed; null or absent for every other kind. */
+    source: z.enum(BUDGET_SOURCES).nullable().optional(),
+    /** 1.39.0, `FEE_CLAIMED`: the market budget's part of it, raw; the rest of `pairRaw` is Ryntra's revenue. */
+    budgetRaw: LaunchRaw.nullable().optional(),
   })
   .strict();
 export type LaunchJournalEventView = z.infer<typeof LaunchJournalEventSchema>;
@@ -10087,6 +10105,8 @@ export const LaunchJournalMarkSchema = z
     scope: z.enum(["market", "all"]).nullable(),
     /** `ENDOWMENT_FUNDED`: the budget the market's ladder got, raw in the pair currency; null for every other mark. */
     pairRaw: LaunchRaw.nullable(),
+    /** 1.39.0: a `STATE` mark into `PAUSED_RISK` — the budget's risk limits that hold; absent or null for every other mark. */
+    risks: z.array(z.enum(BUDGET_RISKS)).max(BUDGET_RISKS.length).nullable().optional(),
   })
   .strict();
 export type LaunchJournalMarkView = z.infer<typeof LaunchJournalMarkSchema>;
@@ -10332,9 +10352,16 @@ const MarketStateView = z
 
 /**
  * The market's budget — what Ryntra earned on it for its liquidity, what is in Ryntra's steps, what is left. `NOT_COUNTED`:
- * Ryntra does not account this market's budget yet — `earnedRaw` and `reserveRaw` null, never zero; `IN_POOL`: the market
- * has no steps and what it earned waits in Meteora's pool, unclaimed; `COUNTED`: all three read. `ladder` — Ryntra's
- * steps: `NONE`, `PLACED` (with `deployed`), or `UNREAD` (there, and their position not read now).
+ * Ryntra keeps no budget for this market (its partner fees go to the partner's multisig) — `earnedRaw` and `reserveRaw`
+ * null, never zero; `IN_POOL`: the market has no steps and what it earned waits in Meteora's pools, unclaimed — `earnedRaw`
+ * the budget's part of it; `COUNTED`: Ryntra's executor claims the market's fees into its budget — all read. `ladder` —
+ * Ryntra's steps: `NONE`, `PLACED` (with `deployed`), or `UNREAD` (there, and their position not read now).
+ *
+ * 1.39.0, additive: `sources` — the budget's part by source (the migration fee and the partner's surplus whole, a
+ * quarter of the partner's curve fees and of its locked DAMM v2 position's fees); `placedRaw` — what went into the
+ * steps from the budget (at most 70 % of `earnedRaw`); `revenueRaw` — the other three quarters, Ryntra's revenue,
+ * never the market's; `inPoolRaw` — the budget's part still waiting in Meteora's pools; `exhausted` — the steps hold
+ * none of the pair currency and the reserve is below one step (5 USDC). Absent before 1.39.0 and on `NOT_COUNTED`.
  */
 export const LaunchMarketBudgetSchema = z
   .object({
@@ -10344,6 +10371,11 @@ export const LaunchMarketBudgetSchema = z
     ladder: z.enum(["NONE", "PLACED", "UNREAD"]),
     /** In Ryntra's steps now: the pair currency, and the token they bought and hold. */
     deployed: z.object({ pairRaw: LaunchRaw, tokensRaw: LaunchRaw }).strict().nullable(),
+    sources: z.object({ migration: LaunchRaw, surplus: LaunchRaw, curve: LaunchRaw, lp: LaunchRaw }).strict().nullable().optional(),
+    placedRaw: LaunchRaw.nullable().optional(),
+    revenueRaw: LaunchRaw.nullable().optional(),
+    inPoolRaw: LaunchRaw.nullable().optional(),
+    exhausted: z.boolean().optional(),
   })
   .strict();
 export type LaunchMarketBudgetView = z.infer<typeof LaunchMarketBudgetSchema>;
@@ -10542,9 +10574,17 @@ export const LaunchMarketHealthResponseSchema = z
         /**
          * A stop of Ryntra's acts on this market — `OPERATOR` (1.37.0): Ryntra's operator stopped the executor on this
          * market or on every market, at `at`; `STOPPED`: Ryntra's steps stand here and its executor does not act or may
-         * not move them now; `RISK_LIMIT`: a risk limit the executor records (none in this version). Null when none.
+         * not move them now; `RISK_LIMIT` (1.39.0): a risk limit of the market's budget holds — `risks`. Null when none.
          */
-        pause: z.object({ code: z.enum(["OPERATOR", "STOPPED", "RISK_LIMIT"]), at: Iso.nullable() }).strict().nullable(),
+        pause: z
+          .object({
+            code: z.enum(["OPERATOR", "STOPPED", "RISK_LIMIT"]),
+            at: Iso.nullable(),
+            /** 1.39.0, `RISK_LIMIT`: the budget's limits that hold — each stops new money into Ryntra's steps. */
+            risks: z.array(z.enum(BUDGET_RISKS)).max(BUDGET_RISKS.length).optional(),
+          })
+          .strict()
+          .nullable(),
       })
       .strict(),
     rules: z.array(LaunchMarketRuleSchema).max(32),

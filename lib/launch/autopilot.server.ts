@@ -14,11 +14,25 @@
  *   graduation sent by anyone else is recorded with whoever sent it, from the
  *   graduated pool's first transaction once that transaction is shown to be
  *   the curve's migration;
- * - **then the Fee-Funded Liquidity Ladder** (`FLOOR_RULE`), when its own
- *   operator stop is open, only on markets Ryntra launched itself (by the
- *   creator), the executor holding the pair currency for it and SOL for its
- *   rent: the DLMM pool (with the cent's proof the pool asks for), the steps
- *   below the price, moved up after the price, topped up when more is free;
+ * - **then the markets' budgets** — on Micro and the demo market, whose
+ *   config names the executor its fee claimer, and only on markets
+ *   Ryntra launched itself: the migration fee, the partner's surplus, its curve
+ *   fees and its locked DAMM v2 position's fees claimed one at a time, each
+ *   written down before the send and counted from its confirmed transaction —
+ *   into the market's budget, a quarter of the last two with Ryntra's revenue
+ *   apart; on people's markets nothing is claimed and the fees wait in
+ *   Meteora's pools;
+ * - **then the Fee-Funded Liquidity Ladder** — on the Classic and Protected
+ *   presets (`FLOOR_RULE`) when its own operator stop is open, the money the
+ *   operator put in; on Micro and the demo market from the market's budget
+ *   (`BUDGET_LADDER`, at most 70 % of it, 5 USDC a step, the risk limits read
+ *   every pass); only on markets Ryntra launched itself (by the creator), the
+ *   executor holding SOL for its rent: the DLMM pool (with the cent's proof
+ *   the pool asks for), the steps below the price, moved up after the price,
+ *   topped up when more is free;
+ * - **then Ryntra's revenue** — what the claims brought Ryntra and still sits
+ *   on the executor's wallet beyond the markets' budgets: above 100 USDC the
+ *   operator is told, once per 100 USDC more;
  * - **then what changed** — the executor's first pass over a market and each
  *   new state of its cycle, as marks in its flight log; a pass that changes
  *   nothing writes nothing.
@@ -30,9 +44,10 @@
  * move up whose steps were emptied is finished by the next pass, never left
  * with the money in the wallet.
  *
- * What the executor never does: claim the partner's fees (they go to the
- * partner's multisig, on the curve and from the locked LP), sign anything on a
- * market the operator stopped, pay any holder,
+ * What the executor never does: claim the partner's fees of a config whose fee
+ * claimer is the partner's multisig (Classic, Protected, «Спільнота»), sign
+ * anything outside its list (`./executor-signing.server.ts`) or on a market the
+ * operator stopped, pay any holder,
  * move the pair currency anywhere but into its own steps and back, or act on a
  * token another instance is acting on (a lease per token, compare-and-set).
  *
@@ -46,6 +61,25 @@ import { randomUUID } from "node:crypto";
 
 import { collectorShouldClaim, holderGrantState } from "../core/launch/holder.ts";
 import {
+  BUDGET_LADDER,
+  BUDGET_RULE,
+  addPriceSeen,
+  budgetExhausted,
+  budgetPlaceableRaw,
+  budgetRisk,
+  budgetSteps,
+  budgetTotals,
+  dayTopUpsRaw,
+  revenueAlertDue,
+  revenueLeftRaw,
+  splitClaim,
+  walletFreeRaw,
+  type BudgetDataProblem,
+  type BudgetRisk,
+  type BudgetSource,
+} from "../core/launch/budget.ts";
+import {
+  CLASSIC_SHAPE,
   EXECUTOR_JOURNALED_STATES,
   FLOOR_RULE,
   addSample,
@@ -60,20 +94,23 @@ import {
   referenceBin,
   type FloorLadder,
   type FloorSample,
+  type LadderShape,
   type JournalActor,
   type JournalMark,
 } from "../core/launch/autopilot.ts";
 import { marketCycleState, type MarketCycleState } from "../core/launch/market-health.ts";
+import type { PartnerFeesRead } from "../core/venues/meteora-dbc/partner.server.ts";
 import type { HolderPool, HolderVenue } from "../core/venues/meteora-damm-v2/holder.server.ts";
 import type { FloorPool, FloorVenue } from "../core/venues/meteora-dlmm/floor.server.ts";
 import { withBoundedCasRetry, type GuardStore } from "../guard/store.ts";
+import { budgetFigures, executorClaimsPreset, readBudgetRecord, readBudgetRecords, readRevenue, updateBudgetRecord, writeRevenue, type BudgetFigures, type MarketBudgetRecord } from "./budget.server.ts";
 import type { LaunchNetwork } from "./config.server.ts";
 import type { LaunchRecord, Sent } from "./flow.server.ts";
 import { noteGraduation } from "./graduation.server.ts";
 import { emptyExecutorMarket, readExecutorMarket, readExecutorMarkets, readExecutorStops, stopOn, updateExecutorMarket, writeJournalMark, type ExecutorMarket, type ExecutorStops } from "./executor.server.ts";
 import { allHolderPositions, dropHolderClaim, holderClaims, setHolderClaim, writeHolderClaim, type HolderClaimReceipt, type HolderPositionRecord } from "./holder.server.ts";
 
-export type AutopilotKind = "GRADUATED" | "FLOOR_POOL" | "FLOOR_PLACED" | "FLOOR_WITHDRAWN" | "FLOOR_RAISED" | "FLOOR_ADDED";
+export type AutopilotKind = "GRADUATED" | "FLOOR_POOL" | "FLOOR_PLACED" | "FLOOR_WITHDRAWN" | "FLOOR_RAISED" | "FLOOR_ADDED" | "FEE_CLAIMED";
 
 /** One act on a token, as the confirmed transaction shows it. */
 export type AutopilotReceipt = Readonly<{
@@ -96,6 +133,9 @@ export type AutopilotReceipt = Readonly<{
   priceHigh: number | null;
   /** The executor's SOL the act took — fees and rent; null for an act someone else sent. */
   lamports: string | null;
+  /** A claim into the market's budget: which fee, and the budget's part of `pairRaw` — the rest is Ryntra's revenue. */
+  source?: BudgetSource | null;
+  budgetRaw?: string | null;
 }>;
 
 type Pending = Readonly<{
@@ -145,6 +185,12 @@ export type FloorRecord = Readonly<{
   redeposit?: Redeposit | null;
   /** The pool's creation, written down before its send: a creation whose answer was lost still gets its receipt. */
   poolSent?: Readonly<{ signature: string; validUntil: number }> | null;
+  /**
+   * Whose money the steps hold: the operator's (Classic, Protected — `FLOOR_RULE`) or the market's budget (Micro, the demo
+   * market — `BUDGET_LADDER`); and the bin step of the pool they stand in. Absent on older records: the operator's, 1 %.
+   */
+  funding?: "owner" | "budget";
+  binStep?: number;
   updatedAt: string;
 }>;
 
@@ -185,6 +231,14 @@ export type AutopilotChain = Readonly<{
   transaction(signature: string): Promise<TxFacts | null>;
   price(dammPool: string, token: string): Promise<Readonly<{ price: number; pairMint: string; tokenDecimals: number; pairDecimals: number }> | null>;
   partnerEarned(record: LaunchRecord): Promise<bigint>;
+  /** The partner's fees on a launch as Meteora's programs count them, and the config's fee claimer. */
+  partnerFees(record: LaunchRecord): Promise<PartnerFeesRead>;
+  /** One source's claim, built only where the config's fee claimer is the executor. */
+  buildPartnerClaim(read: PartnerFeesRead, source: BudgetSource): Promise<Transaction>;
+  /** The graduated pool's price as a second node reads it; null when there is no second node or it gave none. */
+  priceSecond(dammPool: string, token: string): Promise<number | null>;
+  /** What a wallet holds of a mint, raw; null when it could not be read. */
+  heldBy(owner: string, mint: string): Promise<bigint | null>;
   /** A mint's decimals; they never change. */
   decimals(mint: string): Promise<number>;
   held(mint: string): Promise<bigint>;
@@ -192,8 +246,11 @@ export type AutopilotChain = Readonly<{
   floor: FloorVenue;
   /** Holders' positions in graduated pools: the pool, a position, and the collector's claim to the owner's own accounts. */
   holder: Pick<HolderVenue, "pool" | "readPosition" | "buildCollectorClaim">;
-  /** Signs with the executor (and a new account's key) on a fresh blockhash. */
-  prepare(tx: Transaction, extra: readonly Keypair[]): Promise<Readonly<{ signature: string; validUntil: number }>>;
+  /**
+   * Signs with the executor (and a new account's key) on a fresh blockhash — only what the executor's list allows;
+   * `payees`: wallets besides the executor whose own accounts the transaction may pay (a holder's, for the collector).
+   */
+  prepare(tx: Transaction, extra: readonly Keypair[], payees?: readonly string[]): Promise<Readonly<{ signature: string; validUntil: number }>>;
   send(tx: Transaction, validUntil: number): Promise<Sent>;
   outcome(signature: string, validUntil: number): Promise<Sent["outcome"] | "EXPIRED">;
 }>;
@@ -208,6 +265,8 @@ export type AutopilotDeps = Readonly<{
   now: () => Date;
   /** After this moment (ms) nothing new is signed: the pass sets it so a send it starts can still be seen through. */
   deadline?: number;
+  /** Tells the operator — Ryntra's revenue on the executor's wallet above 100 USDC; true when the word was delivered. */
+  alert?: (text: string) => Promise<boolean>;
 }>;
 
 export type AutopilotStep = Readonly<{ token: string; step: string; signature?: string }>;
@@ -215,7 +274,7 @@ export type AutopilotReport = Readonly<{ state: "RAN"; executor: string; steps: 
 
 /** The states of a market on the DEX: a pass reaches these after every market still on its curve. */
 const ON_DEX: ReadonlySet<MarketCycleState> = new Set<MarketCycleState>(["CORE_MARKET_LIVE", "ENDOWMENT_FUNDED", "LADDER_ACTIVE", "MAINTAINING", "PAUSED_RISK", "MATURE", "ENDOWMENT_EXHAUSTED"]);
-/** The presets the ladder of this subtask stands on — money the operator puts in, opened by the ladder's own stop. */
+/** The presets whose ladder stands on money the operator puts in, opened by the ladder's own stop (Micro's and the demo market's stands on their budget). */
 const LADDER_PRESETS: ReadonlySet<string> = new Set(["classic", "protected"]);
 /** Failed graduations that landed, written into the log in one run; the rest of the run is counted. */
 export const GRADUATION_FAILURES_LOGGED = 3;
@@ -269,6 +328,15 @@ export async function runAutopilot(given: AutopilotDeps, options: Readonly<{ onl
   if (!stops) return { state: "RAN", executor: deps.chain.executor, steps: [{ token: "*", step: "STOPS_UNREAD" }] };
   const steps: AutopilotStep[] = [];
   const curves = new Map<string, CurveRead>();
+  /* Whether a launch is Ryntra's own, by its creator — asked once a pass. */
+  const ours = new Map<string, boolean>();
+  const ryntraLaunched = async (record: LaunchRecord) => {
+    const known = ours.get(record.creator);
+    if (known !== undefined) return known;
+    const answer = await deps.ryntraLaunched(record.creator).catch(() => false);
+    ours.set(record.creator, answer);
+    return answer;
+  };
   const graduated: Array<Readonly<{ record: LaunchRecord; curve: CurveRead }>> = [];
 
   /*
@@ -287,6 +355,8 @@ export async function runAutopilot(given: AutopilotDeps, options: Readonly<{ onl
         const out: AutopilotStep[] = [];
         /* The executor's first pass over a market goes into its log once, before anything it does there. */
         if (!stopped) out.push(...(await watchOnce(deps, record.token)));
+        /* A budget market's creator, watched from the first pass for the first week — a sale on the curve counts too. */
+        if (executorClaimsPreset(record.preset) && (await ryntraLaunched(record))) await watchCreator(deps, record).catch(() => undefined);
         const curve = await deps.chain.curve(record);
         if (!curve) return [...out, { token: record.token, step: "NO_CURVE" }];
         curves.set(record.token, curve);
@@ -307,28 +377,57 @@ export async function runAutopilot(given: AutopilotDeps, options: Readonly<{ onl
     );
   }
 
-  /* Then the Fee-Funded Liquidity Ladder, oldest launch first — in phase 0 only on markets Ryntra launched itself. */
-  if (deps.floorOpen) {
-    for (const { record, curve } of graduated) {
-      if (deps.now().getTime() > end) break;
-      if (!curve.dammPool) continue;
-      if (stopOn(stops, record.token)) {
-        steps.push({ token: record.token, step: "STOPPED" });
-        continue;
-      }
-      /* The ladder of this subtask stands on the Classic and Protected presets; Micro's and the demo market's comes with their budget. */
-      if (!LADDER_PRESETS.has(record.preset)) {
-        steps.push({ token: record.token, step: "FLOOR_NOT_THIS_PRESET" });
-        continue;
-      }
-      if (!(await deps.ryntraLaunched(record.creator).catch(() => false))) {
-        steps.push({ token: record.token, step: "FLOOR_NOT_OURS" });
-        continue;
-      }
-      const dammPool = curve.dammPool;
-      steps.push(...(await leased(deps, record.token, () => floor(deps, record, dammPool, end))));
+  /*
+   * Then the markets' budgets, oldest launch first: on Micro and the demo market the executor claims the partner's fees
+   * itself — in phase 0 only on markets Ryntra launched itself; on people's markets the fees wait in Meteora's pools.
+   */
+  const budgeted = graduated.filter(({ record }) => executorClaimsPreset(record.preset));
+  for (const { record } of budgeted) {
+    if (deps.now().getTime() > end) break;
+    if (stopOn(stops, record.token)) {
+      steps.push({ token: record.token, step: "STOPPED" });
+      continue;
     }
-  } else if (graduated.length) steps.push({ token: "*", step: "FLOOR_CLOSED" });
+    if (!(await ryntraLaunched(record))) {
+      steps.push({ token: record.token, step: "BUDGET_IN_POOL" });
+      continue;
+    }
+    steps.push(...(await leased(deps, record.token, () => claimBudget(deps, record))));
+  }
+
+  /*
+   * Then the Fee-Funded Liquidity Ladder, oldest launch first — in phase 0 only on markets Ryntra launched itself: on
+   * Micro and the demo market from the market's budget; on Classic and Protected from the operator's money, while its
+   * own stop is open.
+   */
+  let ownerClosed = false;
+  for (const { record, curve } of graduated) {
+    if (deps.now().getTime() > end) break;
+    if (!curve.dammPool) continue;
+    const funding = executorClaimsPreset(record.preset) ? "budget" : LADDER_PRESETS.has(record.preset) ? "owner" : null;
+    if (funding === null) {
+      steps.push({ token: record.token, step: "FLOOR_NOT_THIS_PRESET" });
+      continue;
+    }
+    if (funding === "owner" && !deps.floorOpen) {
+      ownerClosed = true;
+      continue;
+    }
+    if (stopOn(stops, record.token)) {
+      steps.push({ token: record.token, step: "STOPPED" });
+      continue;
+    }
+    if (!(await ryntraLaunched(record))) {
+      steps.push({ token: record.token, step: "FLOOR_NOT_OURS" });
+      continue;
+    }
+    const dammPool = curve.dammPool;
+    steps.push(...(await leased(deps, record.token, () => floor(deps, record, dammPool, end, funding))));
+  }
+  if (ownerClosed) steps.push({ token: "*", step: "FLOOR_CLOSED" });
+
+  /* Then Ryntra's revenue on the executor's wallet: above 100 USDC the operator is told. */
+  if (budgeted.length) steps.push(...(await noteRevenue(deps).catch((error: unknown) => [{ token: "*", step: `REVENUE_ERROR: ${message(error)}` }])));
 
   /* Then the holders' positions: the fees their owners let Ryntra's collector bring to their wallets. */
   if (!stops.all?.stopped) steps.push(...(await collectForHolders(deps, end, stops).catch((error: unknown) => [{ token: "*", step: `HOLDERS_ERROR: ${message(error)}` }])));
@@ -390,8 +489,9 @@ async function settleMoved(deps: AutopilotDeps, record: LaunchRecord, curve: Cur
  * executor writes down: from the move to the DEX on. Null on the curve.
  */
 export function executorStateOf(
-  args: Readonly<{ record: LaunchRecord; curve: CurveRead; market: ExecutorMarket; floor: FloorRecord | null; receipts: readonly AutopilotReceipt[]; now: number }>,
+  args: Readonly<{ record: LaunchRecord; curve: CurveRead; market: ExecutorMarket; floor: FloorRecord | null; receipts: readonly AutopilotReceipt[]; now: number; budget?: MarketBudgetRecord | null }>,
 ): MarketCycleState | null {
+  const budget = args.budget ?? null;
   const { curve, market, receipts, now } = args;
   const graduation = receipts.find((receipt) => receipt.kind === "GRADUATED") ?? null;
   const placed = [...receipts].reverse().find((receipt) => receipt.kind === "FLOOR_PLACED") ?? null;
@@ -408,8 +508,9 @@ export function executorStateOf(
     foreignTrade: { seen: null, at: null },
     graduatedAt: curve.migrated ? (seconds(graduation?.at) ?? curve.finishedAt) : null,
     ladder: { placedAt, maintainedAt: maintained ? (seconds(maintained.at) ?? now) : null },
-    budget: market.budgetAt ? { state: "FUNDED", at: seconds(market.budgetAt) } : null,
-    pause: null,
+    budget: budget?.exhaustedAt ? { state: "EXHAUSTED", at: seconds(budget.exhaustedAt) } : market.budgetAt ? { state: "FUNDED", at: seconds(market.budgetAt) } : null,
+    /* A risk limit of the budget's holds: no new money goes into the steps until it clears. */
+    pause: curve.migrated && budget && budget.risks.length ? { at: budget.riskAt } : null,
     migrationSent: market.graduation !== null,
     migrationFailedAt: market.failures > 0 ? market.failedAt : null,
     now,
@@ -424,7 +525,8 @@ async function noteState(deps: AutopilotDeps, record: LaunchRecord, curve: Curve
   const market = (await readExecutorMarket(deps.store, cluster, token)) ?? emptyExecutorMarket(cluster, token, deps.now());
   const receipts = await autopilotReceipts(deps.store, cluster, token);
   const stored = await floorRecord(deps.store, cluster, token);
-  const state = executorStateOf({ record, curve, market, floor: stored, receipts, now: unix(deps) });
+  const budget = executorClaimsPreset(record.preset) ? await readBudgetRecord(deps.store, cluster, token) : null;
+  const state = executorStateOf({ record, curve, market, floor: stored, receipts, now: unix(deps), budget });
   if (state === null || state === market.state) return [];
   /* A retry in flight after a failed graduation is not a new state of the market: the log has the failure, then the DEX. */
   if (state === "MIGRATING" && market.state === "MIGRATION_FAILED") return [];
@@ -439,7 +541,17 @@ async function noteState(deps: AutopilotDeps, record: LaunchRecord, curve: Curve
           : state === "MAINTAINING"
             ? latest(["FLOOR_RAISED", "FLOOR_ADDED"])
             : null;
-  const mark: JournalMark = { kind: "STATE", at: iso(deps), actor: "ryntra", state, from: market.state, signature, scope: null, pairRaw: state === "ENDOWMENT_FUNDED" ? market.budgetRaw : null };
+  const mark: JournalMark = {
+    kind: "STATE",
+    at: iso(deps),
+    actor: "ryntra",
+    state,
+    from: market.state,
+    signature,
+    scope: null,
+    pairRaw: state === "ENDOWMENT_FUNDED" ? market.budgetRaw : null,
+    ...(state === "PAUSED_RISK" ? { risks: [...(budget?.risks ?? [])] } : {}),
+  };
   /* The mark first, keyed by the record's next version: a pass that dies before the record is written writes the same mark again, not a second one. */
   await writeJournalMark(deps.store, cluster, token, mark, `STATE:${state}:v${market.version + 1}`);
   await updateExecutorMarket(deps.store, cluster, token, deps.now(), (current) => ({ ...current, state }));
@@ -508,7 +620,8 @@ async function collectOne(deps: AutopilotDeps, row: HolderPositionRecord, pools:
   if (!tx) {
     return [{ token: row.token, step: "HOLDER_NO_ACCOUNT" }];
   }
-  const prepared = await prepareChecked(deps, row.token, tx, []);
+  /* The program pays a delegate's claim only to the position's owner: their accounts are the one destination allowed. */
+  const prepared = await prepareChecked(deps, row.token, tx, [], [read.owner]);
   const claim: HolderClaimReceipt = {
     cluster: deps.network.cluster,
     position: row.position,
@@ -566,11 +679,11 @@ class OutOfTime extends Error {}
  * written down for it: the operator's switch read again from the store — a stop flipped while the pass runs holds at
  * once —, and the pass still inside its time, so a send is never started that the minute cannot see through.
  */
-async function prepareChecked(deps: AutopilotDeps, token: string, tx: Transaction, extra: readonly Keypair[]): Promise<Readonly<{ signature: string; validUntil: number }>> {
+async function prepareChecked(deps: AutopilotDeps, token: string, tx: Transaction, extra: readonly Keypair[], payees: readonly string[] = []): Promise<Readonly<{ signature: string; validUntil: number }>> {
   if (deps.deadline !== undefined && deps.now().getTime() > deps.deadline) throw new OutOfTime("out of time");
   const stops = await readExecutorStops(deps.store, deps.network.cluster).catch(() => null);
   if (!stops || stopOn(stops, token)) throw new StoppedNow("stopped");
-  return deps.chain.prepare(tx, extra);
+  return deps.chain.prepare(tx, extra, payees);
 }
 
 async function leased(deps: AutopilotDeps, token: string, act: () => Promise<AutopilotStep[]>): Promise<AutopilotStep[]> {
@@ -730,14 +843,20 @@ export function isMigration(logs: readonly string[]): boolean {
 
 type Save = (next: Omit<FloorRecord, "version" | "updatedAt">) => Promise<FloorRecord>;
 
-async function floor(deps: AutopilotDeps, record: LaunchRecord, dammPool: string, end: number): Promise<AutopilotStep[]> {
+/** A budget ladder's geometry before its depth is known: steps of 2.5 %, the first ≈ −4.8 %, the deepest −39 %. */
+export const BUDGET_SHAPE: LadderShape = Object.freeze({ binStep: BUDGET_LADDER.binStep, topGapBins: BUDGET_LADDER.topGapBins, depthBins: BUDGET_LADDER.maxStepsByDepth, raiseStepBins: BUDGET_LADDER.raiseStepBins });
+
+async function floor(deps: AutopilotDeps, record: LaunchRecord, dammPool: string, end: number, funding: "owner" | "budget" = "owner"): Promise<AutopilotStep[]> {
   const token = record.token;
   const floors = deps.store.versioned<FloorRecord>(FLOORS);
   const key = floorKey(deps.network.cluster, token);
   const now = Math.floor(deps.now().getTime() / 1000);
+  const base = funding === "budget" ? BUDGET_SHAPE : CLASSIC_SHAPE;
   let current: FloorRecord =
     (await floors.get(key)) ??
-    { version: -1, cluster: deps.network.cluster, token, state: "WATCHING", pool: null, position: null, lowerBinId: null, upperBinId: null, placedRaw: "0", samples: [], raiseSeen: null, blocked: null, pending: null, redeposit: null, updatedAt: deps.now().toISOString() };
+    { version: -1, cluster: deps.network.cluster, token, state: "WATCHING", pool: null, position: null, lowerBinId: null, upperBinId: null, placedRaw: "0", samples: [], raiseSeen: null, blocked: null, pending: null, redeposit: null, funding, binStep: base.binStep, updatedAt: deps.now().toISOString() };
+  /* A record keeps the pool it was made for: its own bin step, the operator's 1 % on records from before budgets. */
+  const shape: LadderShape = { ...base, binStep: current.binStep ?? CLASSIC_SHAPE.binStep };
   const save: Save = async (next) => {
     const written: FloorRecord = { ...next, version: current.version + 1, updatedAt: deps.now().toISOString() };
     if (!(await floors.compareAndSet(key, current.version < 0 ? null : current.version, written))) throw new Error("The liquidity's record changed under this pass.");
@@ -755,18 +874,46 @@ async function floor(deps: AutopilotDeps, record: LaunchRecord, dammPool: string
 
   const price = await deps.chain.price(dammPool, token);
   if (!price || !(price.price > 0)) return [{ token, step: "NO_PRICE" }];
-  const marketBin = binOfPrice(price.price, FLOOR_RULE.binStep, price.tokenDecimals, price.pairDecimals);
+  const marketBin = binOfPrice(price.price, shape.binStep, price.tokenDecimals, price.pairDecimals);
   const samples = addSample(current.samples, now, marketBin);
   const reference = referenceBin(marketBin, samples);
-  const earned = await deps.chain.partnerEarned(record);
   /*
    * What emptying the steps took out sits in the wallet but is owed back to them: never free for a top-up. While the
    * amount is not read yet, nothing is free.
    */
   const owed = current.redeposit ? (current.redeposit.raw === null ? null : BigInt(current.redeposit.raw)) : 0n;
-  const held = await deps.chain.held(price.pairMint);
-  const free = owed === null ? 0n : held > owed ? held - owed : 0n;
-  const budget = floorBudgetRaw({ partnerEarnedRaw: earned, placedRaw: BigInt(current.placedRaw), freeRaw: free });
+  /*
+   * One wallet holds every market's budget, the money owed back to steps being moved and Ryntra's revenue: a ladder may
+   * take only what is its own — a budget market its own reserve, the operator's Classic ladder none of the budgets and
+   * none of the revenue.
+   */
+  const shares = await walletShares(deps, price.pairMint);
+  const ownReserve = funding === "budget" ? (shares.reserves.get(token) ?? 0n) : 0n;
+  const free = owed === null || shares.owedUnread ? 0n : walletFreeRaw({ walletPairRaw: shares.held, reservesRaw: shares.reservesTotal, ownReserveRaw: ownReserve, owedRaw: shares.owedTotal, revenueLeftRaw: shares.revenueLeft });
+  let budget: bigint;
+  let gate: BudgetGate | null = null;
+  if (funding === "budget") {
+    /* The risk limits first: with the price unchecked or the reads interrupted, this pass only reads — but a move already begun puts its money back. */
+    gate = await budgetGate(deps, record, dammPool, price.price, now);
+    if (!gate.act) {
+      if (gate.data === "STALE") await save({ ...current, samples });
+      if (current.state === "PLACED" && current.redeposit && current.pool && current.position) return [{ token, step: `BUDGET_DATA_${gate.data}` }, ...(await finishMove(deps, current, current.samples, 0n, save))];
+      return [{ token, step: `BUDGET_DATA_${gate.data}` }];
+    }
+    budget = gate.risks.length
+      ? 0n
+      : budgetPlaceableRaw({
+          earnedRaw: gate.figures.totals.earnedRaw,
+          placedRaw: BigInt(current.placedRaw),
+          costsRaw: gate.figures.costsRaw,
+          freeRaw: free,
+          topUp: current.state === "PLACED",
+          dayTopUpsRaw: dayTopUpsRaw(gate.record?.topUps ?? [], now),
+        });
+  } else {
+    const earned = await deps.chain.partnerEarned(record);
+    budget = floorBudgetRaw({ partnerEarnedRaw: earned, placedRaw: BigInt(current.placedRaw), freeRaw: free });
+  }
   const owner = deps.chain.executor;
 
   if (current.state === "WATCHING") {
@@ -776,7 +923,7 @@ async function floor(deps: AutopilotDeps, record: LaunchRecord, dammPool: string
     }
     if (budget === 0n) {
       await save({ ...current, samples });
-      return [{ token, step: "FLOOR_NO_BUDGET" }];
+      return [{ token, step: gate?.risks.length ? `BUDGET_RISK_${gate.risks.join("_")}` : "FLOOR_NO_BUDGET" }];
     }
     if ((await deps.chain.lamports()) < FLOOR_START_LAMPORTS) {
       await save({ ...current, samples });
@@ -799,14 +946,14 @@ async function floor(deps: AutopilotDeps, record: LaunchRecord, dammPool: string
       }
       await save({ ...current, samples, poolSent: null });
     }
-    if (pool && !poolAccepted(pool, owner, now)) {
+    if (pool && !poolAccepted(pool, owner, now, shape.binStep)) {
       await save({ ...current, samples, blocked: "POOL_TAKEN" });
       return [{ token, step: "FLOOR_BLOCKED_POOL_TAKEN" }];
     }
     const steps: AutopilotStep[] = [];
     if (!pool) {
       const proof = (await deps.chain.held(token)) > 0n ? null : { dammPool, amountRaw: PROOF_RAW };
-      const tx = await deps.chain.floor.createPool({ token, pair: price.pairMint, activeBinId: reference, payer: owner, proof });
+      const tx = await deps.chain.floor.createPool({ token, pair: price.pairMint, activeBinId: reference, payer: owner, proof, binStep: shape.binStep });
       const prepared = await prepareChecked(deps, token, tx, []);
       const sentDown = await save({ ...current, samples, poolSent: { signature: prepared.signature, validUntil: prepared.validUntil } });
       const sent = await deps.chain.send(tx, prepared.validUntil);
@@ -821,6 +968,12 @@ async function floor(deps: AutopilotDeps, record: LaunchRecord, dammPool: string
         await save({ ...sentDown, poolSent: null });
       }
       steps.push({ token, step: "FLOOR_POOL", signature: sent.signature });
+      /* The proof's cent came out of what was free: the steps get the rest, never another's money. */
+      if (proof && budget + proof.amountRaw > free) budget = free > proof.amountRaw ? free - proof.amountRaw : 0n;
+      if (budget === 0n || (funding === "budget" && budget < BUDGET_RULE.minStepRaw)) {
+        await save({ ...current, samples, pool: null });
+        return [...steps, { token, step: "FLOOR_NO_BUDGET" }];
+      }
       pool = await deps.chain.floor.pool(token, price.pairMint);
       if (!pool) return [...steps, { token, step: "FLOOR_POOL_UNREAD" }];
       if (deps.now().getTime() > end) {
@@ -838,7 +991,8 @@ async function floor(deps: AutopilotDeps, record: LaunchRecord, dammPool: string
       }
       pool = { ...pool, activeBinId: reference };
     }
-    const ladder = floorLadder(pool.activeBinId);
+    /* A budget's ladder: as many steps as it pays 5 USDC each for; the Classic rule: its 45. */
+    const ladder = floorLadder(pool.activeBinId, funding === "budget" ? { ...shape, depthBins: Math.max(1, budgetSteps(budget)) } : shape);
     const opened = await deps.chain.floor.openSteps({ pool: pool.pool, owner, ladder, amountRaw: budget });
     const tx = opened.transactions[0]!;
     const prepared = await prepareChecked(deps, token, tx, [opened.position]);
@@ -856,7 +1010,9 @@ async function floor(deps: AutopilotDeps, record: LaunchRecord, dammPool: string
   const read = await deps.chain.floor.readSteps(current.pool, current.position);
   if (!read) return [{ token, step: "FLOOR_UNREAD" }];
   const holdsToken = BigInt(read.tokenRaw) > TOKEN_DUST_RAW;
-  const decision = floorRaise({ ladder: { lowerBinId: read.lowerBinId, upperBinId: read.upperBinId }, marketBinId: reference, holdsToken, seen: current.raiseSeen, at: now });
+  /* What the budget's steps hold now, and whether the budget is exhausted — the steps empty of the pair currency, the reserve below a step. */
+  if (gate) await noteSteps(deps, record, gate.figures, BigInt(read.pairRaw));
+  const decision = floorRaise({ ladder: { lowerBinId: read.lowerBinId, upperBinId: read.upperBinId }, marketBinId: reference, holdsToken, seen: current.raiseSeen, at: now, shape });
   if (decision.raise) {
     if ((await deps.chain.lamports()) < EXECUTOR_FLOOR_LAMPORTS + FLOOR_MOVE_LAMPORTS) {
       await save({ ...current, samples });
@@ -864,9 +1020,13 @@ async function floor(deps: AutopilotDeps, record: LaunchRecord, dammPool: string
     }
     return startMove(deps, current, decision.ladder, samples, budget, save);
   }
-  /* More is free for these steps: added to them where they stand, the position holding only the pair currency. */
+  /*
+   * More is free for these steps: added to them where they stand, the position holding only the pair currency. A budget's
+   * ladder grows deeper as the money allows — never fewer than 5 USDC a step, never below −39 %.
+   */
   if (budget > 0n && !holdsToken && (await deps.chain.lamports()) >= EXECUTOR_FLOOR_LAMPORTS + FLOOR_MOVE_LAMPORTS) {
-    const ladder = { lowerBinId: read.lowerBinId, upperBinId: read.upperBinId };
+    const deeper = gate ? read.upperBinId - Math.max(1, budgetSteps(BigInt(read.pairRaw) + budget)) + 1 : read.lowerBinId;
+    const ladder = { lowerBinId: Math.min(read.lowerBinId, deeper), upperBinId: read.upperBinId };
     return place(deps, current, ladder, budget, "FLOOR_ADDED", samples, save);
   }
   await save({ ...current, samples, raiseSeen: decision.seen });
@@ -874,8 +1034,8 @@ async function floor(deps: AutopilotDeps, record: LaunchRecord, dammPool: string
 }
 
 /** A pool of the pair the steps may stand in: ours, or one made on the same terms — open now, nobody able to switch it off. */
-export function poolAccepted(pool: FloorPool, executor: string, now: number): boolean {
-  if (!pool.tokenIsX || pool.binStep !== FLOOR_RULE.binStep) return false;
+export function poolAccepted(pool: FloorPool, executor: string, now: number, binStep: number = FLOOR_RULE.binStep): boolean {
+  if (!pool.tokenIsX || pool.binStep !== binStep) return false;
   if (pool.creator === executor) return true;
   return pool.baseFeeBps === FLOOR_RULE.feeBps && pool.collectsFeeInY && pool.enabled && !pool.creatorCanSwitchOff && !pool.alphaVault && pool.activationAt !== null && pool.activationAt <= now;
 }
@@ -886,7 +1046,7 @@ export function poolAccepted(pool: FloorPool, executor: string, now: number): bo
  */
 async function startMove(deps: AutopilotDeps, current: FloorRecord, ladder: FloorLadder, samples: readonly FloorSample[], budget: bigint, save: Save): Promise<AutopilotStep[]> {
   const token = current.token;
-  const activeBinId = ladder.upperBinId + FLOOR_RULE.topGapBins;
+  const activeBinId = ladder.upperBinId + (current.funding === "budget" ? BUDGET_LADDER.topGapBins : FLOOR_RULE.topGapBins);
   const tx = await deps.chain.floor.syncSteps({ pool: current.pool!, owner: deps.chain.executor, position: current.position!, activeBinId });
   if (!tx) return place(deps, current, ladder, budget, "FLOOR_RAISED", samples, save);
   const prepared = await prepareChecked(deps, token, tx, []);
@@ -932,7 +1092,7 @@ async function finishMove(deps: AutopilotDeps, current: FloorRecord, samples: re
   }
   /* The pool's price may have been moved since — `go_to_a_bin` asks no signature: taken back first, through empty bins. */
   const pool = await deps.chain.floor.pool(token, pairMint);
-  const target = ladder.upperBinId + FLOOR_RULE.topGapBins;
+  const target = ladder.upperBinId + (current.funding === "budget" ? BUDGET_LADDER.topGapBins : FLOOR_RULE.topGapBins);
   if (pool && pool.activeBinId !== target) {
     const tx = await deps.chain.floor.syncSteps({ pool: record.pool!, owner: deps.chain.executor, position: record.position, activeBinId: target });
     if (tx) {
@@ -1002,11 +1162,26 @@ async function settle(deps: AutopilotDeps, current: FloorRecord, known?: Sent["o
       pairRaw,
       pool: current.pool,
       position: pending.position,
-      ladder: { lowerBinId: pending.lowerBinId, upperBinId: pending.upperBinId, priceLow: priceOfBin(pending.lowerBinId, FLOOR_RULE.binStep, decimals.token, decimals.pair), priceHigh: priceOfBin(pending.upperBinId, FLOOR_RULE.binStep, decimals.token, decimals.pair) },
+      ladder: {
+        lowerBinId: pending.lowerBinId,
+        upperBinId: pending.upperBinId,
+        priceLow: priceOfBin(pending.lowerBinId, current.binStep ?? FLOOR_RULE.binStep, decimals.token, decimals.pair),
+        priceHigh: priceOfBin(pending.upperBinId, current.binStep ?? FLOOR_RULE.binStep, decimals.token, decimals.pair),
+      },
     }),
   );
   /* What was ever placed grows by money from outside the steps only: a placement's amount, a move's or a top-up's top-up. */
   const added = pending.kind === "FLOOR_PLACED" ? (putIn > 0n ? putIn : 0n) : BigInt(pending.pairRaw);
+  /* A budget's top-up counts against the day's ceiling — once, by the transaction that made it. */
+  if (current.funding === "budget" && pending.kind !== "FLOOR_PLACED" && added > 0n) {
+    const at = seconds(facts.at) ?? unix(deps);
+    await updateBudgetRecord(deps.store, { cluster: deps.network.cluster, token: current.token, pairMint, now: deps.now() }, (row) => ({
+      ...row,
+      topUps: row.topUps.some((entry) => entry.signature === pending.signature)
+        ? row.topUps
+        : [...row.topUps.filter((entry) => entry.at > at - BUDGET_RULE.dayBeforeSeconds), { at, raw: added.toString(), signature: pending.signature }],
+    }));
+  }
   return {
     ...current,
     state: "PLACED",
@@ -1017,6 +1192,256 @@ async function settle(deps: AutopilotDeps, current: FloorRecord, known?: Sent["o
     pending: null,
     redeposit: null,
   };
+}
+
+/* ------------------------------------------------------------------ the markets' budgets */
+
+/** The order the executor claims a market's fees in: the largest and one-time first. */
+const CLAIM_ORDER: readonly BudgetSource[] = ["migration", "surplus", "curve", "lp"];
+
+/** A market's budget figures now: its ledger, what its steps took from it, what its pool cost. */
+export async function budgetFiguresOf(store: GuardStore, cluster: string, token: string): Promise<Readonly<{ record: MarketBudgetRecord | null; figures: BudgetFigures }>> {
+  const [record, stored, receipts] = await Promise.all([readBudgetRecord(store, cluster, token), floorRecord(store, cluster, token), autopilotReceipts(store, cluster, token)]);
+  const costs = receipts.filter((row) => row.kind === "FLOOR_POOL").reduce((total, row) => total + BigInt(row.pairRaw ?? "0"), 0n);
+  return { record, figures: budgetFigures({ record, placedRaw: BigInt(stored?.placedRaw ?? "0"), costsRaw: costs }) };
+}
+
+/**
+ * One claim of a market's partner fees into its budget, one source a pass: a claim of its own still in flight is read
+ * first; then the first source that holds a fee — the migration fee, the partner's surplus, the curve's fees, and the
+ * locked position's fees once a day from 1 USDC. Only where the config's fee claimer on chain is the executor. Written
+ * down before the send; counted only from the confirmed transaction — what the executor's accounts received.
+ */
+async function claimBudget(deps: AutopilotDeps, record: LaunchRecord): Promise<AutopilotStep[]> {
+  const token = record.token;
+  const where = { cluster: deps.network.cluster, token, pairMint: record.pairMint, now: deps.now() };
+  const known = await readBudgetRecord(deps.store, deps.network.cluster, token);
+  if (known?.pending) return [await settleClaim(deps, record, known.pending)];
+  const read = await deps.chain.partnerFees(record);
+  /* The config on chain names the claimer: a market whose fee claimer is not the executor is never claimed by it. */
+  if (read.feeClaimer !== deps.chain.executor) return [{ token, step: "BUDGET_NOT_CLAIMER" }];
+  const now = unix(deps);
+  const holds = (source: BudgetSource): boolean => {
+    if (source === "migration") return read.migrated && !read.migration.withdrawn && read.migration.raw > 0n;
+    if (source === "surplus") return !read.surplus.withdrawn && read.surplus.raw > 0n;
+    if (source === "curve") return read.curveRaw >= BUDGET_RULE.curveClaimMinRaw;
+    const last = known?.lpClaimedAt ?? null;
+    return read.lp !== null && read.lp.pairRaw >= BUDGET_RULE.lpClaimMinRaw && (last === null || now - last >= BUDGET_RULE.lpClaimEverySeconds);
+  };
+  const source = CLAIM_ORDER.find(holds);
+  if (!source) return [{ token, step: "BUDGET_NOTHING" }];
+  if ((await deps.chain.lamports()) < EXECUTOR_FLOOR_LAMPORTS) return [{ token, step: "BUDGET_LOW_SOL" }];
+  const tx = await deps.chain.buildPartnerClaim(read, source);
+  const prepared = await prepareChecked(deps, token, tx, []);
+  const pending = { source, signature: prepared.signature, validUntil: prepared.validUntil, sentAt: iso(deps) };
+  /* Written before the send: a lost answer still leaves the claim to read, and no second is sent over it. */
+  await updateBudgetRecord(deps.store, where, (row) => ({ ...row, pairMint: record.pairMint, pending }));
+  const sent = await deps.chain.send(tx, prepared.validUntil);
+  if (sent.outcome === "REJECTED" || sent.outcome === "FAILED") {
+    await updateBudgetRecord(deps.store, where, (row) => ({ ...row, pending: row.pending?.signature === pending.signature ? null : row.pending }));
+    return [{ token, step: `BUDGET_CLAIM_${sent.outcome}`, signature: sent.signature }];
+  }
+  return [await settleClaim(deps, record, pending)];
+}
+
+/**
+ * A claim read from its transaction: counted once into the ledger — the budget's part and Ryntra's revenue apart — with
+ * its receipt in the flight log; let go when it never landed; left in flight while not known.
+ */
+async function settleClaim(deps: AutopilotDeps, record: LaunchRecord, pending: NonNullable<MarketBudgetRecord["pending"]>): Promise<AutopilotStep> {
+  const token = record.token;
+  const where = { cluster: deps.network.cluster, token, pairMint: record.pairMint, now: deps.now() };
+  const facts = await deps.chain.transaction(pending.signature);
+  const drop = () => updateBudgetRecord(deps.store, where, (row) => ({ ...row, pending: row.pending?.signature === pending.signature ? null : row.pending }));
+  if (!facts) {
+    const outcome = await deps.chain.outcome(pending.signature, pending.validUntil);
+    if (outcome === "EXPIRED" || outcome === "REJECTED" || outcome === "FAILED") {
+      await drop();
+      return { token, step: "BUDGET_CLAIM_LAPSED", signature: pending.signature };
+    }
+    return { token, step: "BUDGET_CLAIM_PENDING", signature: pending.signature };
+  }
+  if (facts.failed) {
+    await drop();
+    return { token, step: "BUDGET_CLAIM_FAILED", signature: pending.signature };
+  }
+  const pairIn = facts.delta(record.pairMint);
+  const tokensIn = facts.delta(token);
+  const pair = pairIn > 0n ? pairIn : 0n;
+  const tokens = tokensIn > 0n ? tokensIn : 0n;
+  const split = splitClaim(pending.source, pair);
+  const tokenSplit = splitClaim(pending.source, tokens);
+  const claim = {
+    source: pending.source,
+    signature: pending.signature,
+    at: facts.at,
+    pairRaw: pair.toString(),
+    tokensRaw: tokens.toString(),
+    budgetRaw: split.budgetRaw.toString(),
+    revenueRaw: split.revenueRaw.toString(),
+    budgetTokensRaw: tokenSplit.budgetRaw.toString(),
+  };
+  /* The receipt first, under the transaction's own key: written twice it stays one. */
+  if (pair > 0n || tokens > 0n) {
+    await writeReceipt(deps, { ...receiptOf(deps, { kind: "FEE_CLAIMED", token, signature: pending.signature, facts, actor: "ryntra", pairRaw: pair.toString() }), source: pending.source, budgetRaw: split.budgetRaw.toString() });
+  }
+  const at = seconds(facts.at) ?? unix(deps);
+  const updated = await updateBudgetRecord(deps.store, where, (row) => ({
+    ...row,
+    claims: row.claims.some((entry) => entry.signature === claim.signature) ? row.claims : [...row.claims, claim],
+    pending: row.pending?.signature === pending.signature ? null : row.pending,
+    lpClaimedAt: pending.source === "lp" ? at : row.lpClaimedAt,
+  }));
+  /* The market's budget is funded with its first claim that brought it anything: the state's mark names how much. */
+  const earned = budgetTotals(updated.claims).earnedRaw;
+  if (earned > 0n) {
+    await updateExecutorMarket(deps.store, deps.network.cluster, token, deps.now(), (market) => (market.budgetAt ? market : { ...market, budgetAt: facts.at ?? iso(deps), budgetRaw: earned.toString() }));
+  }
+  return { token, step: "BUDGET_CLAIMED", signature: pending.signature };
+}
+
+type BudgetGate = Readonly<{
+  act: boolean;
+  data: BudgetDataProblem | null;
+  risks: readonly BudgetRisk[];
+  record: MarketBudgetRecord | null;
+  figures: BudgetFigures;
+}>;
+
+/**
+ * The risk limits of a market's budget, read for this pass: the price checked on a second node, the reads without
+ * a gap, the fall within the hour, a sale from the creator's wallet in the first week, the executor's SOL. What it read
+ * is kept for the next pass; a limit that holds is kept with the moment it began.
+ */
+async function budgetGate(deps: AutopilotDeps, record: LaunchRecord, dammPool: string, price: number, now: number): Promise<BudgetGate> {
+  const token = record.token;
+  const where = { cluster: deps.network.cluster, token, pairMint: record.pairMint, now: deps.now() };
+  /* A second node's failure to answer is a price not checked — said apart from no second node at all. */
+  const [second, lamports, known] = await Promise.all([
+    deps.chain.priceSecond(dammPool, token).catch(() => Number.NaN),
+    deps.chain.lamports(),
+    budgetFiguresOf(deps.store, deps.network.cluster, token),
+  ]);
+  const launchedAt = seconds(record.launchedAt) ?? now;
+  const before = known.record;
+  const read = budgetRisk({ price, second, seen: before?.seen ?? [], now, launchedAt, creatorSoldAt: before?.creatorSoldAt ?? null, lamports });
+  const checked = read.data === null || read.data === "STALE";
+  const same = (a: readonly string[], b: readonly string[]) => a.length === b.length && a.every((entry, index) => entry === b[index]);
+  const updated = await updateBudgetRecord(deps.store, where, (row) => ({
+    ...row,
+    pairMint: record.pairMint,
+    /* A price not checked against the second node is not kept: the next pass decides on reads it can trust. */
+    seen: checked ? addPriceSeen(row.seen, now, price) : row.seen,
+    risks: checked ? [...read.risks] : row.risks,
+    riskAt: !checked ? row.riskAt : read.risks.length === 0 ? null : same(row.risks, read.risks) && row.riskAt !== null ? row.riskAt : now,
+  }));
+  return { act: read.act, data: read.data, risks: read.risks, record: updated, figures: known.figures };
+}
+
+/**
+ * The creator of a budget market, watched from the executor's first pass for the market's first week: the most their
+ * wallet held of the token, and a fall below it — a sale, or a move out — is kept for good: no new money goes into the
+ * steps after it. (Micro's first purchase sits in the creator's lock, not the wallet.)
+ */
+async function watchCreator(deps: AutopilotDeps, record: LaunchRecord): Promise<void> {
+  const now = unix(deps);
+  const launchedAt = seconds(record.launchedAt) ?? now;
+  if (now - launchedAt > BUDGET_RULE.creatorSaleWindowSeconds) return;
+  const held = await deps.chain.heldBy(record.creator, record.token);
+  if (held === null) return;
+  /* A pass that sees nothing new writes nothing. */
+  const known = await readBudgetRecord(deps.store, deps.network.cluster, record.token);
+  const knownHigh = known?.creatorHighRaw ? BigInt(known.creatorHighRaw) : null;
+  if (knownHigh !== null && held <= knownHigh && (known!.creatorSoldAt !== null || held + TOKEN_DUST_RAW >= knownHigh)) return;
+  await updateBudgetRecord(deps.store, { cluster: deps.network.cluster, token: record.token, pairMint: record.pairMint, now: deps.now() }, (row) => {
+    const high = row.creatorHighRaw ? BigInt(row.creatorHighRaw) : null;
+    if (high === null || held > high) return { ...row, creatorHighRaw: held.toString() };
+    if (row.creatorSoldAt === null && held + TOKEN_DUST_RAW < high) return { ...row, creatorSoldAt: now };
+    return row;
+  });
+}
+
+type WalletShares = Readonly<{ held: bigint; reserves: ReadonlyMap<string, bigint>; reservesTotal: bigint; owedTotal: bigint; revenueLeft: bigint; owedUnread: boolean }>;
+
+/**
+ * The executor's wallet in one pair currency, divided: each budget market's reserve, the money owed back to steps being
+ * moved on every market, and Ryntra's revenue still on it — counted with the revenue the claims brought since the last
+ * pass's count; the rest is the operator's.
+ */
+async function walletShares(deps: AutopilotDeps, pairMint: string): Promise<WalletShares> {
+  const cluster = deps.network.cluster;
+  const rows = (await readBudgetRecords(deps.store, cluster)).filter((row) => row.pairMint === pairMint);
+  const reserves = new Map<string, bigint>();
+  for (const row of rows) reserves.set(row.token, (await budgetFiguresOf(deps.store, cluster, row.token)).figures.reserveRaw);
+  const reservesTotal = [...reserves.values()].reduce((total, value) => total + value, 0n);
+  let owedTotal = 0n;
+  let owedUnread = false;
+  for (const stored of await deps.store.versioned<FloorRecord>(FLOORS).valuesWithPrefix(`solana:${cluster}:`)) {
+    if (!stored.redeposit) continue;
+    /* Steps emptied by a move whose answer is not read: how much is owed back is not known — nothing is free meanwhile. */
+    if (stored.redeposit.raw === null) owedUnread = true;
+    else owedTotal += BigInt(stored.redeposit.raw);
+  }
+  const held = await deps.chain.held(pairMint);
+  const claimed = rows.reduce((total, row) => total + budgetTotals(row.claims).revenueRaw, 0n);
+  const before = await readRevenue(deps.store, cluster);
+  const revenueLeft = revenueLeftRaw({
+    prevLeftRaw: BigInt(before?.onWalletRaw ?? "0"),
+    prevClaimedRaw: BigInt(before?.claimedRaw ?? "0"),
+    claimedRaw: claimed,
+    walletPairRaw: held,
+    reservesRaw: reservesTotal,
+    owedRaw: owedTotal,
+  });
+  return { held, reserves, reservesTotal, owedTotal, revenueLeft, owedUnread };
+}
+
+/** What the budget's steps hold, kept for the market's state: exhausted when they hold none of the pair currency and the reserve is below a step. */
+async function noteSteps(deps: AutopilotDeps, record: LaunchRecord, figures: BudgetFigures, stepsPairRaw: bigint): Promise<void> {
+  const exhausted = budgetExhausted({ placedRaw: figures.placedRaw, stepsPairRaw, reserveRaw: figures.reserveRaw });
+  await updateBudgetRecord(deps.store, { cluster: deps.network.cluster, token: record.token, pairMint: record.pairMint, now: deps.now() }, (row) => ({
+    ...row,
+    stepsPairRaw: stepsPairRaw.toString(),
+    exhaustedAt: exhausted ? (row.exhaustedAt ?? iso(deps)) : null,
+  }));
+}
+
+/**
+ * Ryntra's revenue still on the executor's wallet — what the claims brought Ryntra, bounded by the wallet beyond the
+ * markets' reserves and the money owed back to steps being moved. Above 100 USDC the operator is told, and again only
+ * when it has grown by another 100 USDC since; once it stands below 100 again, the next crossing is told anew.
+ */
+async function noteRevenue(deps: AutopilotDeps): Promise<AutopilotStep[]> {
+  const cluster = deps.network.cluster;
+  const rows = await readBudgetRecords(deps.store, cluster);
+  const claimed = rows.reduce((total, row) => total + budgetTotals(row.claims).revenueRaw, 0n);
+  if (claimed === 0n) return [];
+  const pairMint = rows.find((row) => row.claims.length)?.pairMint ?? rows[0]!.pairMint;
+  const shares = await walletShares(deps, pairMint);
+  const onWallet = shares.revenueLeft;
+  const before = await readRevenue(deps.store, cluster);
+  const below = onWallet <= BUDGET_RULE.revenueAlertRaw;
+  const lastAlert = !below && before?.alertedRaw ? BigInt(before.alertedRaw) : null;
+  /* A word that did not reach the operator is tried again an hour later, not every minute. */
+  const triedLately = before?.attemptAt ? deps.now().getTime() - Date.parse(before.attemptAt) < 3_600_000 : false;
+  const due = revenueAlertDue({ onWalletRaw: onWallet, lastAlertRaw: lastAlert }) && !triedLately;
+  let delivered: boolean | null = below ? null : (before?.delivered ?? null);
+  let alertedRaw = below ? null : (before?.alertedRaw ?? null);
+  let alertedAt = below ? null : (before?.alertedAt ?? null);
+  let attemptAt = below ? null : (before?.attemptAt ?? null);
+  if (due) {
+    const usdc = (value: bigint) => (Number(value) / 1_000_000).toFixed(2);
+    const text = `Ryntra: дохід Ryntra на гаманці виконавця — ${usdc(onWallet)} USDC (понад ${usdc(BUDGET_RULE.revenueAlertRaw)}). Перекажи його на мультисиг своїм підписом. Бюджети ринків (${usdc(shares.reservesTotal)} USDC) лишаються на гаманці — це не надлишок.`;
+    delivered = deps.alert ? await deps.alert(text).catch(() => false) : false;
+    /* Only a word that reached the operator moves the mark; the next is due 100 USDC later. */
+    if (delivered) {
+      alertedRaw = onWallet.toString();
+      alertedAt = iso(deps);
+      attemptAt = null;
+    } else attemptAt = iso(deps);
+  }
+  await writeRevenue(deps.store, { cluster, executor: deps.chain.executor, pairMint, claimedRaw: claimed.toString(), onWalletRaw: onWallet.toString(), reservesRaw: shares.reservesTotal.toString(), alertedRaw, alertedAt, delivered, attemptAt, at: iso(deps) });
+  return due ? [{ token: "*", step: delivered ? "REVENUE_ALERTED" : "REVENUE_ALERT_UNDELIVERED" }] : [];
 }
 
 /* ------------------------------------------------------------------ receipts */

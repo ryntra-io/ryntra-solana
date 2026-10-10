@@ -9,10 +9,10 @@ moved counts as new. Generated at every update from the development history.
 
 | Since the tag | Files |
 |---|---|
-| New | 1,337 |
+| New | 1,343 |
 | Changed | 823 |
 | Unchanged | 912 |
-| Lines added / removed | +344,616 / −20,397 |
+| Lines added / removed | +346,929 / −20,397 |
 
 ## New since the tag
 
@@ -939,6 +939,8 @@ moved counts as new. Generated at every update from the development history.
 - `lib/core/fee-policy.ts`
 - `lib/core/launch/autopilot.test.mjs`
 - `lib/core/launch/autopilot.ts`
+- `lib/core/launch/budget.test.mjs`
+- `lib/core/launch/budget.ts`
 - `lib/core/launch/creator-earnings.test.mjs`
 - `lib/core/launch/creator-earnings.ts`
 - `lib/core/launch/creator-lock.ts`
@@ -971,6 +973,7 @@ moved counts as new. Generated at every update from the development history.
 - `lib/core/venues/meteora-dbc/market.server.ts`
 - `lib/core/venues/meteora-dbc/market.test.mjs`
 - `lib/core/venues/meteora-dbc/market.ts`
+- `lib/core/venues/meteora-dbc/partner.server.ts`
 - `lib/core/venues/meteora-dbc/presets.test.mjs`
 - `lib/core/venues/meteora-dbc/presets.ts`
 - `lib/core/venues/meteora-dbc/receipt.test.mjs`
@@ -1034,10 +1037,13 @@ moved counts as new. Generated at every update from the development history.
 - `lib/launch/autopilot.server.ts`
 - `lib/launch/autopilot.test.mjs`
 - `lib/launch/budget.server.ts`
+- `lib/launch/budget.test.mjs`
 - `lib/launch/config.server.ts`
 - `lib/launch/creator.server.ts`
 - `lib/launch/executor-admin.server.ts`
 - `lib/launch/executor-cron.server.ts`
+- `lib/launch/executor-signing.server.ts`
+- `lib/launch/executor-signing.test.mjs`
 - `lib/launch/executor.server.ts`
 - `lib/launch/flow.server.ts`
 - `lib/launch/form.ts`

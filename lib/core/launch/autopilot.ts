@@ -25,6 +25,7 @@
  */
 
 import type { CreatorFeesRead } from "./creator-earnings.ts";
+import type { BudgetRisk, BudgetSource } from "./budget.ts";
 import type { MarketCycleState } from "./market-health.ts";
 
 /**
@@ -80,10 +81,19 @@ export function priceOfBin(binId: number, binStep: number, decimalsX: number, de
 
 export type FloorLadder = Readonly<{ lowerBinId: number; upperBinId: number }>;
 
+/**
+ * The geometry of a ladder: its pool's bin step, how far below the price its first step stands, how deep it goes and
+ * how far the price must rise before it moves — the Classic rule (`FLOOR_RULE`), or a budget's (`BUDGET_LADDER`,
+ * steps of 2.5 %, its depth from the budget).
+ */
+export type LadderShape = Readonly<{ binStep: number; topGapBins: number; depthBins: number; raiseStepBins: number }>;
+
+export const CLASSIC_SHAPE: LadderShape = Object.freeze({ binStep: FLOOR_RULE.binStep, topGapBins: FLOOR_RULE.topGapBins, depthBins: FLOOR_RULE.depthBins, raiseStepBins: FLOOR_RULE.raiseStepBins });
+
 /** The steps for a price's bin: from `topGapBins` below it, `depthBins` deep. */
-export function floorLadder(marketBinId: number): FloorLadder {
-  const upperBinId = marketBinId - FLOOR_RULE.topGapBins;
-  return { lowerBinId: upperBinId - FLOOR_RULE.depthBins + 1, upperBinId };
+export function floorLadder(marketBinId: number, shape: LadderShape = CLASSIC_SHAPE): FloorLadder {
+  const upperBinId = marketBinId - shape.topGapBins;
+  return { lowerBinId: upperBinId - shape.depthBins + 1, upperBinId };
 }
 
 /** One read of the price's bin by the executor, unix seconds. */
@@ -128,16 +138,19 @@ export function floorRaise(args: Readonly<{
   holdsToken: boolean;
   seen: Readonly<{ at: number; marketBinId: number }> | null;
   at: number;
+  /** The ladder's geometry; the Classic rule when absent. Its depth on a move is the ladder's own. */
+  shape?: LadderShape;
 }>): RaiseDecision {
-  const next = floorLadder(args.marketBinId);
-  const high = next.upperBinId >= args.ladder.upperBinId + FLOOR_RULE.raiseStepBins;
+  const shape: LadderShape = { ...(args.shape ?? CLASSIC_SHAPE), depthBins: args.ladder.upperBinId - args.ladder.lowerBinId + 1 };
+  const next = floorLadder(args.marketBinId, shape);
+  const high = next.upperBinId >= args.ladder.upperBinId + shape.raiseStepBins;
   if (!high || args.holdsToken) return { raise: false, seen: null };
   /* A first read too old is no confirmation: a price seen long ago and a spike now are not a price that held. */
   const seen = args.seen !== null && args.at - args.seen.at <= FLOOR_RULE.seenMaxAgeSeconds ? args.seen : null;
-  const confirmed = seen !== null && args.at - seen.at >= FLOOR_RULE.raiseConfirmSeconds && floorLadder(seen.marketBinId).upperBinId >= args.ladder.upperBinId + FLOOR_RULE.raiseStepBins;
+  const confirmed = seen !== null && args.at - seen.at >= FLOOR_RULE.raiseConfirmSeconds && floorLadder(seen.marketBinId, shape).upperBinId >= args.ladder.upperBinId + shape.raiseStepBins;
   if (!confirmed) return { raise: false, seen: seen ?? { at: args.at, marketBinId: args.marketBinId } };
   /* The lower of the two reads: the price held at least there. */
-  return { raise: true, ladder: floorLadder(Math.min(args.marketBinId, seen.marketBinId)) };
+  return { raise: true, ladder: floorLadder(Math.min(args.marketBinId, seen.marketBinId), shape) };
 }
 
 /** What Ryntra earned as the partner on a launch: its part of the curve's trading fee and of the graduation fee. */
@@ -159,7 +172,11 @@ export function floorBudgetRaw(args: Readonly<{ partnerEarnedRaw: bigint; placed
 /** Meteora's migration keepers on mainnet (its documentation, 2026-10-07): a graduation they sent is Meteora's. */
 export const METEORA_MIGRATION_KEEPERS = Object.freeze(["Asi5DTGEeiso6k7ya6ndDabEZ7DRCgfTpCBLPH5E3aQs", "DeQ8dPv6ReZNQ45NfiWwS5CchWpB2BVq1QMyNV8L2uSW"]);
 
-export const JOURNAL_KINDS = ["LAUNCHED", "CREATOR_LOCKED", "FEES_SHARED", "CREATOR_SOLD", "GRADUATED", "FLOOR_POOL", "FLOOR_PLACED", "FLOOR_WITHDRAWN", "FLOOR_RAISED", "FLOOR_ADDED"] as const;
+/**
+ * The kinds of the log's entries. `FEE_CLAIMED` (1.39.0): Ryntra's executor claimed a partner fee of a market whose fee
+ * claimer it is — into the market's budget whole, or a quarter of it with Ryntra's revenue apart (`budgetRaw`).
+ */
+export const JOURNAL_KINDS = ["LAUNCHED", "CREATOR_LOCKED", "FEES_SHARED", "CREATOR_SOLD", "GRADUATED", "FLOOR_POOL", "FLOOR_PLACED", "FLOOR_WITHDRAWN", "FLOOR_RAISED", "FLOOR_ADDED", "FEE_CLAIMED"] as const;
 export type JournalKind = (typeof JOURNAL_KINDS)[number];
 
 /** Who did it: the creator, Ryntra's executor, Meteora's keeper, or another wallet. */
@@ -182,6 +199,9 @@ export type JournalEvent = Readonly<{
   /** For a sale of the creator's: the share of what they bought sold so far, in basis points (of the supply when they sold more than they bought here). */
   soldBps: number | null;
   soldOf: "bought" | "supply" | null;
+  /** A claim into the market's budget: which fee it was, and the budget's part of it (raw); null for every other kind. */
+  source?: BudgetSource | null;
+  budgetRaw?: string | null;
 }>;
 
 const event = (fields: Partial<JournalEvent> & Pick<JournalEvent, "kind" | "at" | "signature" | "actor">): JournalEvent => ({
@@ -252,6 +272,7 @@ export const JOURNAL_ENFORCEMENT: Readonly<Record<JournalKind, "rule" | "policy"
   FLOOR_WITHDRAWN: "policy",
   FLOOR_RAISED: "policy",
   FLOOR_ADDED: "policy",
+  FEE_CLAIMED: "policy",
 });
 
 /** The log in time order, the newest first; one entry per transaction and kind. */
@@ -308,6 +329,8 @@ export type JournalMark = Readonly<{
   scope: "market" | "all" | null;
   /** The budget the market got, raw in the pair currency; null for every other mark. */
   pairRaw: string | null;
+  /** A pause for a risk limit (1.39.0): the limits that hold; absent or null for every other mark. */
+  risks?: readonly BudgetRisk[] | null;
 }>;
 
 /**
@@ -323,6 +346,8 @@ export const EXECUTOR_JOURNALED_STATES: ReadonlySet<MarketCycleState> = new Set<
   "MAINTAINING",
   "MATURE",
   "ENDOWMENT_EXHAUSTED",
+  /* A risk limit of the budget's (1.39.0); the operator's stop stays the switch's own mark. */
+  "PAUSED_RISK",
 ]);
 
 /** The longest a failed graduation waits before the executor sends it again. */

@@ -26,7 +26,7 @@
  */
 
 export const API_MAJOR = 1 as const;
-export const API_CONTRACT_VERSION = "1.38.0" as const;
+export const API_CONTRACT_VERSION = "1.39.0" as const;
 export const API_HEADER = "X-Ryntra-API" as const;
 export const API_VERSION_HEADER = "X-Ryntra-API-Version" as const;
 export const NETWORK = "solana:mainnet" as const;
@@ -4593,7 +4593,12 @@ export type LaunchClaimSubmitResponse = Readonly<{
 
 /* ------------------------------------------------------------ 1.32.0 — the flight log */
 
-export type LaunchJournalKind = "LAUNCHED" | "CREATOR_LOCKED" | "FEES_SHARED" | "CREATOR_SOLD" | "GRADUATED" | "FLOOR_POOL" | "FLOOR_PLACED" | "FLOOR_WITHDRAWN" | "FLOOR_RAISED" | "FLOOR_ADDED";
+/** 1.39.0 adds `FEE_CLAIMED`: the executor claimed a partner fee of a market whose fee claimer it is, into the market's budget. */
+export type LaunchJournalKind = "LAUNCHED" | "CREATOR_LOCKED" | "FEES_SHARED" | "CREATOR_SOLD" | "GRADUATED" | "FLOOR_POOL" | "FLOOR_PLACED" | "FLOOR_WITHDRAWN" | "FLOOR_RAISED" | "FLOOR_ADDED" | "FEE_CLAIMED";
+/** 1.39.0: the partner fees a market's budget comes from. */
+export type LaunchBudgetSource = "migration" | "surplus" | "curve" | "lp";
+/** 1.39.0: the budget's risk limits — each stops new money into Ryntra's steps. */
+export type LaunchBudgetRisk = "DROP" | "CREATOR_SOLD" | "LOW_SOL";
 /** Who did it: the creator, Ryntra's executor, Meteora's keeper, another wallet. */
 export type LaunchJournalActor = "creator" | "ryntra" | "meteora" | "other";
 
@@ -4613,6 +4618,9 @@ export type LaunchJournalEvent = Readonly<{
   soldOf: "bought" | "supply" | null;
   /** 1.36.0: what governs the entry — `rule` (a program enforces it), `policy` (Ryntra's server runs it), null for what the log observes. */
   enforcement?: "rule" | "policy" | null;
+  /** 1.39.0, `FEE_CLAIMED`: which partner fee, and the market budget's part of `pairRaw` — the rest is Ryntra's revenue. */
+  source?: LaunchBudgetSource | null;
+  budgetRaw?: string | null;
 }>;
 
 /** The Fee-Funded Liquidity Ladder on a graduated launch as it stands: in steps below the price, from Ryntra's fees on this token. It holds no price. */
@@ -4646,6 +4654,8 @@ export type LaunchJournalMark = Readonly<{
   scope: "market" | "all" | null;
   /** `ENDOWMENT_FUNDED`: the ladder's budget, raw in the pair currency. */
   pairRaw: string | null;
+  /** 1.39.0: a `STATE` mark into `PAUSED_RISK` — the budget's limits that hold. */
+  risks?: LaunchBudgetRisk[] | null;
 }>;
 
 /** `GET /api/v1/launch/{mint}/journal` — the newest first. `complete` false: something was not read (the creator's trades in part, or a graduation not known yet) — an entry not read is not «none». `floorUnread`: the ladder is there, its position not read now. */
@@ -4822,13 +4832,22 @@ export type LaunchMarketRuleCode =
 
 export type LaunchMarketStateView = Readonly<{ code: LaunchMarketCycleState; since: string | null }>;
 
-/** The market's budget. `NOT_COUNTED`: earned and reserve null — never zero; `ladder` says whether Ryntra's steps stand and were read. */
+/**
+ * The market's budget. `NOT_COUNTED`: no budget kept here — earned and reserve null, never zero; `IN_POOL`: no ladder, what
+ * it earned waits in Meteora's pools; `COUNTED`: the executor claims its fees into its budget. `ladder` says whether Ryntra's
+ * steps stand and were read. 1.39.0: `sources`, `placedRaw`, `revenueRaw` (Ryntra's, never the market's), `inPoolRaw`, `exhausted`.
+ */
 export type LaunchMarketBudget = Readonly<{
   state: "NOT_COUNTED" | "IN_POOL" | "COUNTED";
   earnedRaw: string | null;
   reserveRaw: string | null;
   ladder: "NONE" | "PLACED" | "UNREAD";
   deployed: Readonly<{ pairRaw: string; tokensRaw: string }> | null;
+  sources?: Readonly<{ migration: string; surplus: string; curve: string; lp: string }> | null;
+  placedRaw?: string | null;
+  revenueRaw?: string | null;
+  inPoolRaw?: string | null;
+  exhausted?: boolean;
 }>;
 
 /** Executable depth at one drop (200, 500 or 1 000 basis points): the pair currency paid out until then, raw — `"0"` while the curve is full; null when not read. */
@@ -4919,7 +4938,7 @@ export type LaunchMarketHealthResponse = Readonly<{
     acts: boolean;
     lastAction: Readonly<{ kind: LaunchJournalKind; at: string | null; signature: string }> | null;
     /** 1.37.0: `OPERATOR` — Ryntra's operator stopped the executor on this market or on every market. */
-    pause: Readonly<{ code: "OPERATOR" | "STOPPED" | "RISK_LIMIT"; at: string | null }> | null;
+    pause: Readonly<{ code: "OPERATOR" | "STOPPED" | "RISK_LIMIT"; at: string | null; /** 1.39.0, `RISK_LIMIT`: the budget's limits that hold. */ risks?: LaunchBudgetRisk[] }> | null;
   }>;
   rules: readonly LaunchMarketRule[];
   /** False when the token's receipt was not read: its own rules and the pool's locked positions are missing from `rules`. */

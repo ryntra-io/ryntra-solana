@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowSquareOut, ArrowsClockwise, CaretDown, CircleNotch, Lock, LockOpen, TrendDown } from "@phosphor-icons/react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
 import type { WorkspaceLocale } from "@/app/shell/locale";
 import type { LaunchMarketHealthResponse } from "@/lib/api/v1/contract";
@@ -34,6 +34,7 @@ const ACTION_WORD: Readonly<Record<NonNullable<Health["engine"]["lastAction"]>["
   FLOOR_WITHDRAWN: "log_FLOOR_WITHDRAWN",
   FLOOR_RAISED: "log_FLOOR_RAISED",
   FLOOR_ADDED: "log_FLOOR_ADDED",
+  FEE_CLAIMED: "log_FEE_CLAIMED",
 };
 
 /**
@@ -103,7 +104,6 @@ export function MarketHealth({ token, locale, refresh, marksShown }: { token: st
 
   const money = (raw: string) => pairMoney(raw, health.pair, locale);
   const notRead = <span className={styles.cellUnread}>{word("notRead")}</span>;
-  const notCounted = <span className={styles.cellMuted}>{word("notCounted")}</span>;
   const deepest = Math.max(1, ...health.depth.map((level) => (level.pairRaw === null ? 0 : Number(level.pairRaw))));
   const curveFull = health.venue === "curve" && FULL_CURVE.has(health.state.code);
   /* «Чесний лаунч» on the same page says what its receipt's marks hold: here, the rest — nothing is lost when it shows fewer. */
@@ -175,28 +175,7 @@ export function MarketHealth({ token, locale, refresh, marksShown }: { token: st
 
         <div className={styles.healthTile}>
           <h3 className={styles.healthLabel}>{word("hBudget")}</h3>
-          <dl className={styles.healthRows}>
-            <div>
-              <dt>{word("hEarned")}</dt>
-              <dd>{health.budget.earnedRaw !== null ? <span className={styles.cellFigure}>{money(health.budget.earnedRaw)}</span> : notCounted}</dd>
-            </div>
-            <div>
-              <dt>{word("hDeployed")}</dt>
-              <dd>
-                {health.budget.deployed ? (
-                  <span className={styles.cellFigure}>{money(health.budget.deployed.pairRaw)}</span>
-                ) : health.budget.ladder === "UNREAD" ? (
-                  notRead
-                ) : (
-                  <span className={styles.cellMuted}>{word("hNoLadder")}</span>
-                )}
-              </dd>
-            </div>
-            <div>
-              <dt>{word("hReserve")}</dt>
-              <dd>{health.budget.reserveRaw !== null ? <span className={styles.cellFigure}>{money(health.budget.reserveRaw)}</span> : notCounted}</dd>
-            </div>
-          </dl>
+          <BudgetLines health={health} money={money} word={word} notRead={notRead} />
         </div>
 
         <div className={styles.healthTile}>
@@ -357,13 +336,104 @@ function LadderLine({ health, locale, word }: { health: Health; locale: Workspac
   return <p className={styles.cellSub}>{word(ladder.pairTo < health.price.pair * 0.9 ? "hLadderDeeper" : "hLadderRange", values)}</p>;
 }
 
+/**
+ * The market's budget: earned · deployed · reserve where Ryntra's executor collects it; on a market with no ladder, what
+ * it earned waiting in Meteora's pool; on a preset whose partner fees go to the multisig, that no budget is kept. Where
+ * the budget comes from and Ryntra's revenue apart — one press away.
+ */
+function BudgetLines({ health, money, word, notRead }: { health: Health; money: (raw: string) => string; word: Word; notRead: ReactNode }) {
+  const budget = health.budget;
+  const deployed = budget.deployed ? <span className={styles.cellFigure}>{money(budget.deployed.pairRaw)}</span> : budget.ladder === "UNREAD" ? notRead : <span className={styles.cellMuted}>{word("hNoLadder")}</span>;
+  if (budget.state === "NOT_COUNTED") {
+    return (
+      <>
+        {budget.ladder !== "NONE" ? (
+          <dl className={styles.healthRows}>
+            <div>
+              <dt>{word("hDeployed")}</dt>
+              <dd>{deployed}</dd>
+            </div>
+          </dl>
+        ) : (
+          <p className={styles.healthFigure}>
+            <span className={styles.cellMuted}>{word("budgetNotCounted")}</span>
+          </p>
+        )}
+        <p className={styles.cellSub}>{word("hBudgetNone")}</p>
+      </>
+    );
+  }
+  if (budget.state === "IN_POOL") {
+    return (
+      <>
+        <dl className={styles.healthRows}>
+          <div>
+            <dt>{word("hEarnedInPool")}</dt>
+            <dd>{budget.earnedRaw !== null ? <span className={styles.cellFigure}>{money(budget.earnedRaw)}</span> : notRead}</dd>
+          </div>
+          <div>
+            <dt>{word("hDeployed")}</dt>
+            <dd>{deployed}</dd>
+          </div>
+        </dl>
+        <p className={styles.cellSub}>{word(budget.ladder !== "NONE" ? "hInPoolLadder" : health.technicalValidation ? "hInPoolOurs" : "hInPoolPeople")}</p>
+      </>
+    );
+  }
+  const sources = budget.sources ?? null;
+  return (
+    <>
+      <dl className={styles.healthRows}>
+        <div>
+          <dt>{word("hEarned")}</dt>
+          <dd>{budget.earnedRaw !== null ? <span className={styles.cellFigure}>{money(budget.earnedRaw)}</span> : notRead}</dd>
+        </div>
+        <div>
+          <dt>{word("hDeployed")}</dt>
+          <dd>{deployed}</dd>
+        </div>
+        <div>
+          <dt>{word("hReserve")}</dt>
+          <dd>{budget.reserveRaw !== null ? <span className={styles.cellFigure}>{money(budget.reserveRaw)}</span> : notRead}</dd>
+        </div>
+      </dl>
+      {budget.exhausted ? <p className={styles.healthMark}>{word("hBudgetExhausted", { symbol: health.pair.symbol })}</p> : null}
+      {budget.inPoolRaw && BigInt(budget.inPoolRaw) >= 10_000n ? <p className={styles.cellSub}>{word("hStillInPool", { amount: money(budget.inPoolRaw) })}</p> : null}
+      {sources ? (
+        <details className={styles.details}>
+          <summary className={styles.summary}>
+            {word("hSources")} <CaretDown size={14} aria-hidden className={styles.caret} />
+          </summary>
+          <dl className={styles.healthRows}>
+            {(["migration", "surplus", "curve", "lp"] as const).map((source) => (
+              <div key={source}>
+                <dt>{word(`src_${source}`)}</dt>
+                <dd>
+                  <span className={styles.cellFigure}>{money(sources[source])}</span>
+                </dd>
+              </div>
+            ))}
+          </dl>
+          {budget.revenueRaw && BigInt(budget.revenueRaw) > 0n ? <p className={styles.cellSub}>{word("hRevenueApart", { amount: money(budget.revenueRaw) })}</p> : null}
+        </details>
+      ) : null}
+    </>
+  );
+}
+
 /** Ryntra's executor here: a stop first — the operator's, or steps that stand still —; then whether it acts here now, and its last action on this market. */
 function EngineLines({ health, locale, word, now }: { health: Health; locale: WorkspaceLocale; word: Word; now: number }) {
   const engine = health.engine;
   if (engine.executor === null) return <p className={styles.cellSub}>{word("hNoExecutor")}</p>;
   return (
     <div className={styles.healthList}>
-      {engine.pause ? <p className={styles.healthMark}>{word(`hPause_${engine.pause.code}`)}</p> : null}
+      {engine.pause ? (
+        <p className={styles.healthMark}>
+          {engine.pause.code === "RISK_LIMIT" && engine.pause.risks?.length
+            ? word("hPauseRisks", { reasons: engine.pause.risks.map((risk) => word(`budgetRisk_${risk}`)).join("; ") })
+            : word(`hPause_${engine.pause.code}`)}
+        </p>
+      ) : null}
       {/* Not acting: said once — by the pause where its steps stand, else in a line that names what is left to anyone. */}
       {!engine.acts && !engine.pause ? <p className={styles.cellSub}>{word(health.venue === "curve" ? "hExecutorIdle" : "hExecutorIdleDex")}</p> : null}
       {/* Acting here: what it does on this market, said before what it last did. */}

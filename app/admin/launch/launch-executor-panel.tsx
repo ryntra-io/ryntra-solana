@@ -14,6 +14,8 @@ import { adminPost } from "../reverify";
 
 const word = launchWords("uk");
 const LAMPORTS_PER_SOL = 1_000_000_000;
+/** A raw USDC amount (six decimals) in dollars and cents. */
+const usdc = (raw: string) => (Number(raw) / 1_000_000).toFixed(2);
 
 /** What the operator is about to flip, waiting for its second press. */
 type Pending = Readonly<{ token: string | null; action: "stop" | "resume" }>;
@@ -200,7 +202,23 @@ export function LaunchExecutorPanel() {
                 <dt>Драбина</dt>
                 <dd>{status.ladderOpen ? "відкрито" : "закрито"}</dd>
               </div>
+              <div>
+                <dt>Дохід Ryntra на гаманці</dt>
+                <dd className={ext.kvMono}>{status.revenue ? `${usdc(status.revenue.onWalletRaw)} USDC` : "ще немає"}</dd>
+              </div>
+              {status.revenue ? (
+                <div>
+                  <dt>Бюджети ринків</dt>
+                  <dd className={ext.kvMono}>{usdc(status.revenue.reservesRaw)} USDC</dd>
+                </div>
+              ) : null}
             </dl>
+            {status.revenue && BigInt(status.revenue.onWalletRaw) > 100_000_000n ? (
+              <p className={ext.subtle}>
+                Дохід понад 100 USDC — перекажи його на мультисиг своїм підписом; бюджети ринків лишаються на гаманці.
+                {status.revenue.alertedAt ? ` Сповіщення ${status.revenue.delivered ? "надіслано" : "не дійшло в Telegram"} ${since(status.revenue.alertedAt)}.` : ""}
+              </p>
+            ) : null}
             <div className={styles.btnRow}>
               <Switch token={null} stopped={status.all.stopped} label={status.all.stopped ? "Відновити виконавця на всіх ринках" : "Зупинити виконавця на всіх ринках"} />
               <span className={ext.subtle}>

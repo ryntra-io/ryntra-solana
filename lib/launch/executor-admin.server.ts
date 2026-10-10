@@ -15,6 +15,7 @@ import { PublicKey } from "@solana/web3.js";
 import type { MarketCycleState } from "../core/launch/market-health.ts";
 import type { GuardStore } from "../guard/store.ts";
 import { lastAutopilotPass } from "./autopilot.server.ts";
+import { readRevenue } from "./budget.server.ts";
 import { launchConnection, launchExecutor, launchExecutorAddress, launchFloorOpen, launchOpen, type LaunchNetwork } from "./config.server.ts";
 import { readExecutorMarket, readExecutorStops, setExecutorStop, stopOn, type SwitchOutcome } from "./executor.server.ts";
 import type { LaunchRecord } from "./flow.server.ts";
@@ -48,6 +49,12 @@ export type ExecutorStatus = Readonly<{
   lamports: string | null;
   all: Readonly<{ stopped: boolean; at: string | null }>;
   markets: readonly ExecutorMarketRow[];
+  /**
+   * Ryntra's revenue on the executor's wallet from the markets whose fees it claims (raw USDC): what the claims brought,
+   * what of it is still on the wallet beyond the markets' budgets, the budgets themselves, and the last word to the
+   * operator; null before the first claim.
+   */
+  revenue: Readonly<{ claimedRaw: string; onWalletRaw: string; reservesRaw: string; alertedAt: string | null; delivered: boolean | null; at: string }> | null;
   observedAt: string;
 }>;
 
@@ -58,7 +65,7 @@ async function launchedRecords(store: GuardStore, cluster: string): Promise<Laun
 
 export async function executorStatus(network: LaunchNetwork, store: GuardStore, now: Date = new Date()): Promise<ExecutorStatus> {
   const executor = launchExecutorAddress(network);
-  const [records, stops, pass, lamports] = await Promise.all([
+  const [records, stops, pass, lamports, revenue] = await Promise.all([
     launchedRecords(store, network.cluster),
     readExecutorStops(store, network.cluster),
     lastAutopilotPass(store, network.cluster),
@@ -68,6 +75,7 @@ export async function executorStatus(network: LaunchNetwork, store: GuardStore, 
           .then((value) => String(value))
           .catch(() => null)
       : Promise.resolve(null),
+    readRevenue(store, network.cluster),
   ]);
   const markets = await Promise.all(
     records.map(async (record): Promise<ExecutorMarketRow> => {
@@ -96,6 +104,7 @@ export async function executorStatus(network: LaunchNetwork, store: GuardStore, 
     lamports,
     all: { stopped: stops.all?.stopped === true, at: stops.all?.at ?? null },
     markets,
+    revenue: revenue ? { claimedRaw: revenue.claimedRaw, onWalletRaw: revenue.onWalletRaw, reservesRaw: revenue.reservesRaw, alertedAt: revenue.alertedAt, delivered: revenue.delivered, at: revenue.at } : null,
     observedAt: now.toISOString(),
   };
 }

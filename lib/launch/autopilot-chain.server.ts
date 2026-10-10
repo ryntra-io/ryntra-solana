@@ -1,7 +1,9 @@
 /**
  * The chain as Ryntra Launch's executor reaches it — Meteora's own SDKs for
- * the curve, the graduated pool and the DLMM steps, the executor's key for
- * signing, one send per transaction and the chain's own word on each.
+ * the curve, the graduated pool and the DLMM steps, the partner's fees where
+ * the executor is the config's fee claimer, the executor's key for signing —
+ * only what its list allows (`./executor-signing.server.ts`) —, one send per
+ * transaction and the chain's own word on each.
  *
  * `autopilotDeps()` gives the executor's pass everything it needs here, or the
  * reason it does not run: no network, Launch's operator stop closed, or no
@@ -10,21 +12,26 @@
  */
 
 import { CpAmm } from "@meteora-ag/cp-amm-sdk";
+import { IDL as DlmmIdl } from "@meteora-ag/dlmm";
 import { DAMM_V2_MIGRATION_FEE_ADDRESS, DynamicBondingCurveClient, deriveDammV2PoolAddress } from "@meteora-ag/dynamic-bonding-curve-sdk";
 import { getBase58Decoder } from "@solana/kit";
-import { ComputeBudgetProgram, Keypair, PublicKey, type Connection, type Transaction } from "@solana/web3.js";
+import { ComputeBudgetProgram, Connection, Keypair, PublicKey, type Transaction } from "@solana/web3.js";
 
 import { partnerEarnedRaw } from "../core/launch/autopilot.ts";
 import { readCreatorFees } from "../core/venues/meteora-dbc/claim.server.ts";
+import { buildPartnerClaim, readPartnerFees } from "../core/venues/meteora-dbc/partner.server.ts";
 import { dammPrice } from "../core/venues/meteora-dbc/market.server.ts";
 import { heldRaw } from "../core/venues/meteora-dbc/trade.server.ts";
 import { createHolderVenue } from "../core/venues/meteora-damm-v2/holder.server.ts";
 import { createFloorVenue } from "../core/venues/meteora-dlmm/floor.server.ts";
 import { getGuardRuntime } from "../guard/runtime.ts";
-import { storeSupportsConcurrentInstances } from "../guard/store.ts";
+import { storeSupportsConcurrentInstances, type GuardStore } from "../guard/store.ts";
+import { resolveEndpoint, resolveEndpoints } from "../solana/rpc.ts";
+import { sendPlainDelivery } from "../telegram/api.ts";
 import type { AutopilotChain, AutopilotDeps, TxFacts } from "./autopilot.server.ts";
-import { launchArchiveConnection, launchConnection, launchExecutor, launchFloorOpen, launchHistoryConnection, launchNetwork, launchOpen, launchWritesHere, type LaunchNetwork } from "./config.server.ts";
-import { executorPaused, type AutopilotPaused } from "./executor.server.ts";
+import { launchArchiveConnection, launchConnection, launchExecutor, launchFloorOpen, launchHistoryConnection, launchHistoryEndpoint, launchNetwork, launchOpen, launchWritesHere, type LaunchNetwork } from "./config.server.ts";
+import { assertExecutorSignable, type Idl } from "./executor-signing.server.ts";
+import { executorPaused, operatorTelegramId, readExecutorStops, type AutopilotPaused } from "./executor.server.ts";
 import { sendOnce, signatureOutcome } from "./flow.server.ts";
 import { ryntraOwnWallets } from "./runtime.server.ts";
 
@@ -41,7 +48,25 @@ export function autopilotDeps(): AutopilotDeps | Readonly<{ paused: AutopilotPau
   if (paused || !network || !executor) return { paused: paused ?? "NO_EXECUTOR" };
   /* A launch is Ryntra's own by its creator — one of Ryntra's internal wallets; a list read in part leaves a creator out, never in. */
   const ryntraLaunched = async (creator: string) => (await ryntraOwnWallets(network, store)).wallets.has(creator);
-  return { network, store, chain: autopilotChain(network, executor), floorOpen: launchFloorOpen(), ryntraLaunched, now: () => new Date() };
+  return { network, store, chain: autopilotChain(network, executor), floorOpen: launchFloorOpen(), ryntraLaunched, now: () => new Date(), alert: (text) => operatorAlert(text, store, network.cluster) };
+}
+
+/** A word to the operator in Telegram; false when no address is known or the message did not go. */
+async function operatorAlert(text: string, store: GuardStore, cluster: string): Promise<boolean> {
+  const id = operatorTelegramId(process.env, await readExecutorStops(store, cluster).catch(() => null));
+  if (id === null) return false;
+  return (await sendPlainDelivery(id, text).catch(() => ({ kind: "failed" as const }))).kind === "sent";
+}
+
+/* One per process: a node other than the executor's own, for the price a market's budget is checked against. */
+const SECONDS = new Map<string, Connection>();
+function secondConnection(network: LaunchNetwork): Connection | null {
+  const primary = resolveEndpoint(network.cluster);
+  const url = [...resolveEndpoints(network.cluster).map((endpoint) => endpoint.url), launchHistoryEndpoint(network)].find((candidate) => candidate !== primary) ?? null;
+  if (!url) return null;
+  const known = SECONDS.get(url) ?? new Connection(url, { commitment: "confirmed", disableRetryOnRateLimit: true });
+  SECONDS.set(url, known);
+  return known;
 }
 
 export function autopilotChain(network: LaunchNetwork, executor: Keypair): AutopilotChain {
@@ -59,7 +84,9 @@ export function autopilotChain(network: LaunchNetwork, executor: Keypair): Autop
     return tx;
   };
 
-  const prepare: AutopilotChain["prepare"] = async (tx, extra) => {
+  const prepare: AutopilotChain["prepare"] = async (tx, extra, payees = []) => {
+    /* Nothing outside the executor's list is ever signed — checked here, before the key touches the bytes. */
+    assertExecutorSignable(tx.instructions, owner.toBase58(), DlmmIdl as unknown as Idl, payees);
     const latest = await connection.getLatestBlockhash("confirmed");
     priced(tx);
     tx.feePayer = owner;
@@ -161,6 +188,23 @@ export function autopilotChain(network: LaunchNetwork, executor: Keypair): Autop
 
     async partnerEarned(record) {
       return partnerEarnedRaw((await readCreatorFees(connection, { token: record.token, pool: record.pool })).read);
+    },
+
+    partnerFees: (record) => readPartnerFees(connection, { token: record.token, pool: record.pool }),
+    buildPartnerClaim: (read, source) => buildPartnerClaim(connection, { read, source, claimer: owner.toBase58() }),
+
+    async priceSecond(dammPool, token) {
+      const other = secondConnection(network);
+      if (!other) return null;
+      const state = await new CpAmm(other).fetchPoolState(new PublicKey(dammPool));
+      const tokenIsA = state.tokenAMint.toBase58() === token;
+      const pairMint = (tokenIsA ? state.tokenBMint : state.tokenAMint).toBase58();
+      return dammPrice(state.sqrtPrice.toString(), tokenIsA, await decimalsOf(token), await decimalsOf(pairMint));
+    },
+
+    async heldBy(wallet, mint) {
+      const accounts = await connection.getParsedTokenAccountsByOwner(new PublicKey(wallet), { mint: new PublicKey(mint) }, "confirmed");
+      return accounts.value.reduce((total, row) => total + BigInt((row.account.data as { parsed?: { info?: { tokenAmount?: { amount?: string } } } }).parsed?.info?.tokenAmount?.amount ?? "0"), 0n);
     },
 
     decimals: decimalsOf,

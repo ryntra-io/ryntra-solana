@@ -112,6 +112,20 @@ export async function setExecutorStop(
   });
 }
 
+/**
+ * Where a word to the operator goes in Telegram: the founder's id the error monitor already writes to
+ * (`ALERT_TELEGRAM_ID`), else the admin who last flipped the executor's switch on this network (recorded as
+ * `admin:<telegram id>`); null when neither is known.
+ */
+export function operatorTelegramId(env: Readonly<Record<string, string | undefined>>, stops: ExecutorStops | null): number | null {
+  const configured = Number(env.ALERT_TELEGRAM_ID ?? "");
+  if (Number.isSafeInteger(configured) && configured > 0) return configured;
+  const flips = [stops?.all ?? null, ...(stops ? [...stops.markets.values()] : [])].filter((row): row is NonNullable<typeof row> => row !== null && /^admin:\d+$/.test(row.by));
+  const last = flips.sort((a, b) => Date.parse(b.at) - Date.parse(a.at))[0];
+  const id = last ? Number(last.by.slice("admin:".length)) : Number.NaN;
+  return Number.isSafeInteger(id) && id > 0 ? id : null;
+}
+
 /* ------------------------------------------------------------ what the executor keeps per market */
 
 export type ExecutorMarket = Readonly<{
