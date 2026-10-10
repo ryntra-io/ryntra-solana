@@ -259,6 +259,15 @@ async function readLock(deps: HealthDeps, record: LaunchRecord): Promise<LockRea
   return { escrow: record.lock.escrow, cliffAt: observed.cliffAt, endsAt: observed.endsAt };
 }
 
+/**
+ * Whether the executor keeps a market's ladder: on Micro and the demo market the ladder stands on the market's budget
+ * and runs wherever the executor acts — the operator's ladder stop (`launchFloorOpen`) opens only the ladders of the
+ * operator's own money. Before 10.10 that stop, closed on production, made the demo market's live ladder read «paused».
+ */
+export function ladderRunsFor(record: Pick<LaunchRecord, "preset">, runs: ExecutorRuns): ExecutorRuns {
+  return executorClaimsPreset(record.preset) ? { ...runs, ladder: runs.acts } : runs;
+}
+
 async function assemble(deps: HealthDeps, token: string): Promise<MarketRead | null> {
   const record = await readLaunchRecord(deps, deps.network.cluster, token);
   if (!record || record.state === "PENDING") return null;
@@ -284,7 +293,7 @@ async function assemble(deps: HealthDeps, token: string): Promise<MarketRead | n
     facts,
     ladder,
     executor: launchExecutorAddress(deps.network),
-    runs,
+    runs: ladderRunsFor(record, runs),
     executorFacts,
     budget,
     risks,
@@ -305,9 +314,10 @@ async function readBudget(deps: HealthDeps, record: LaunchRecord, ours: boolean)
   const { readPartnerFees } = await import("../core/venues/meteora-dbc/partner.server.ts");
   const [kept, partner] = await Promise.all([
     ours ? budgetFiguresOf(deps.store, deps.network.cluster, record.token).catch(() => null) : Promise.resolve(null),
-    readPartnerFees(deps.connection, { token: record.token, pool: record.pool }).catch(() => null),
+    readPartnerFees(deps.connection, { token: record.token, pool: record.pool }, { indexed: deps.second ?? null }).catch(() => null),
   ]);
-  const inPool = partner ? inPoolBudget({ curveRaw: partner.curveRaw, migrationRaw: partner.migration.withdrawn ? 0n : partner.migration.raw, surplusRaw: partner.surplus.withdrawn ? 0n : partner.surplus.raw, lpRaw: partner.lp?.pairRaw ?? null }) : null;
+  /* A locked position not looked up is a sum not read — never a smaller one. */
+  const inPool = partner && !partner.lpUnread ? inPoolBudget({ curveRaw: partner.curveRaw, migrationRaw: partner.migration.withdrawn ? 0n : partner.migration.raw, surplusRaw: partner.surplus.withdrawn ? 0n : partner.surplus.raw, lpRaw: partner.lp?.pairRaw ?? null }) : null;
   const ledger: MarketBudgetRecord | null = kept?.record ?? null;
   if (kept && ledger && ledger.claims.length) {
     return {

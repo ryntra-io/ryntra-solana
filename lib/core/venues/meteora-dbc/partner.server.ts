@@ -43,13 +43,21 @@ export type PartnerFeesRead = Readonly<{
   migration: Readonly<{ raw: bigint; withdrawn: boolean }>;
   /** The partner's share of the surplus by Meteora's formula, and whether it was withdrawn. */
   surplus: Readonly<{ raw: bigint; withdrawn: boolean }>;
-  /** The graduated pool and the fee claimer's locked position in it with its unclaimed fees; null before graduation or when it holds none. */
+  /** The graduated pool and the fee claimer's locked position in it with its unclaimed fees; null before graduation, when it holds none, or when it was not read (`lpUnread`). */
   lp: Readonly<{ pool: string; position: string; positionNftAccount: string; pairRaw: bigint; tokenRaw: bigint }> | null;
+  /** The locked position could not be looked up now: the curve's own sources are read and claimable all the same. */
+  lpUnread: boolean;
   /** The graduated pool's address; null before graduation. */
   dammPool: string | null;
 }>;
 
-export async function readPartnerFees(connection: Connection, args: Readonly<{ token: string; pool: string }>): Promise<PartnerFeesRead> {
+/**
+ * `indexed`: a node that answers the indexed lookup of the fee claimer's position (a wallet's token accounts) — the
+ * public primary on mainnet refuses it ("indexed requests require a personal token"), and before 10.10 that refusal
+ * failed the whole read after graduation, so the migration fee was never claimed. The lookup's failure now leaves only
+ * the position unread.
+ */
+export async function readPartnerFees(connection: Connection, args: Readonly<{ token: string; pool: string }>, options: Readonly<{ indexed?: Connection | null }> = {}): Promise<PartnerFeesRead> {
   const client = new DynamicBondingCurveClient(connection, "confirmed");
   const virtual = await client.state.getPool(new PublicKey(args.pool));
   if (!virtual) throw new Error(`No curve at ${args.pool}.`);
@@ -61,25 +69,45 @@ export async function readPartnerFees(connection: Connection, args: Readonly<{ t
   const full = migrated || Number(state.finishCurveTimestamp.toString()) > 0;
   const surplusWithdrawn = (state as unknown as { isPartnerWithdrawSurplus: number }).isPartnerWithdrawSurplus === 1;
   let lp: PartnerFeesRead["lp"] = null;
+  let lpUnread = false;
   let dammPool: string | null = null;
   if (migrated) {
     const dammConfig = DAMM_V2_MIGRATION_FEE_ADDRESS[config.migrationFeeOption];
     if (dammConfig) {
-      const cpAmm = new CpAmm(connection);
       const address = deriveDammV2PoolAddress(dammConfig, new PublicKey(args.token), config.quoteMint);
       dammPool = address.toBase58();
-      const poolState = await cpAmm.fetchPoolState(address);
-      const found = (await cpAmm.getUserPositionByPool(address, config.feeClaimer))[0] ?? null;
-      if (found) {
-        const pairIsB = poolState.tokenBMint.equals(config.quoteMint);
-        const unclaimed = getUnClaimLpFee(poolState, found.positionState);
-        lp = {
-          pool: dammPool,
-          position: found.position.toBase58(),
-          positionNftAccount: found.positionNftAccount.toBase58(),
-          pairRaw: BigInt((pairIsB ? unclaimed.feeTokenB : unclaimed.feeTokenA).toString()),
-          tokenRaw: BigInt((pairIsB ? unclaimed.feeTokenA : unclaimed.feeTokenB).toString()),
-        };
+      try {
+        const poolState = await new CpAmm(connection).fetchPoolState(address);
+        /*
+         * The primary first, the indexed node only when it refuses: on mainnet the public primary refuses the lookup at
+         * once; the second node also checks the budget's price every pass, and a public one that is asked more answers
+         * «too many requests» to that check too (devnet, 10.10).
+         */
+        let found: Awaited<ReturnType<CpAmm["getUserPositionByPool"]>>[number] | null = null;
+        let lookedUp = false;
+        for (const node of options.indexed && options.indexed !== connection ? [connection, options.indexed] : [connection]) {
+          try {
+            found = (await new CpAmm(node).getUserPositionByPool(address, config.feeClaimer))[0] ?? null;
+            lookedUp = true;
+            break;
+          } catch {
+            /* the next node */
+          }
+        }
+        if (!lookedUp) throw new Error("No node looked the position up.");
+        if (found) {
+          const pairIsB = poolState.tokenBMint.equals(config.quoteMint);
+          const unclaimed = getUnClaimLpFee(poolState, found.positionState);
+          lp = {
+            pool: dammPool,
+            position: found.position.toBase58(),
+            positionNftAccount: found.positionNftAccount.toBase58(),
+            pairRaw: BigInt((pairIsB ? unclaimed.feeTokenB : unclaimed.feeTokenA).toString()),
+            tokenRaw: BigInt((pairIsB ? unclaimed.feeTokenA : unclaimed.feeTokenB).toString()),
+          };
+        }
+      } catch {
+        lpUnread = true;
       }
     }
   }
@@ -101,6 +129,7 @@ export async function readPartnerFees(connection: Connection, args: Readonly<{ t
       withdrawn: surplusWithdrawn,
     },
     lp,
+    lpUnread,
     dammPool,
   };
 }

@@ -117,6 +117,18 @@ export function holderEntryFeeRaw(swappedRaw: bigint, bps: number): bigint {
   return (swappedRaw * BigInt(bps)) / 10_000n;
 }
 
+/**
+ * How far Zap may let the pool's square-root price move inside the entry, basis points: the entry's own swap's move,
+ * measured on the pool as it stands (`ownSqrtMoveBps`), plus half the slippage the person allows for others' trades —
+ * the square-root price moves half as far as the price, so others may move the price by the slippage and no more. The
+ * slippage alone refused every entry into a small pool, where half a few dollars moves it (10.10, $STAIR).
+ */
+export function zapPriceMoveBps(ownSqrtMoveBps: number, slippageBps: number): number {
+  const own = Number.isFinite(ownSqrtMoveBps) && ownSqrtMoveBps > 0 ? Math.ceil(ownSqrtMoveBps) : 0;
+  const others = Math.ceil(Math.max(0, Number.isFinite(slippageBps) ? slippageBps : 0) / 2);
+  return Math.min(10_000, own + others);
+}
+
 /* ------------------------------------------------------------ when the collector claims */
 
 /** The collector claims a position at most once a day … */
@@ -128,6 +140,18 @@ export function collectorShouldClaim(args: Readonly<{ claimablePairRaw: bigint; 
   if (!args.pairIsDollar) return false;
   if (args.claimablePairRaw < HOLDER_CLAIM_MIN_UNITS * 10n ** BigInt(args.pairDecimals)) return false;
   return !args.lastClaimAt || args.now - Date.parse(args.lastClaimAt) >= HOLDER_CLAIM_EVERY_MS;
+}
+
+/**
+ * The collector's queue for one position, as the person reads it: the earliest moment the next claim may go — a day
+ * after the last one, or now — and whether a whole dollar is already waiting. Both must hold, so the claim goes on the
+ * collector's first pass after the later of the two.
+ */
+export function collectorNextClaim(args: Readonly<{ claimablePairRaw: bigint; pairDecimals: number; lastClaimAt: string | null; now: number }>): Readonly<{ notBefore: string; enoughWaiting: boolean; dueNow: boolean }> {
+  const last = args.lastClaimAt ? Date.parse(args.lastClaimAt) : Number.NaN;
+  const notBefore = Number.isFinite(last) ? Math.max(args.now, last + HOLDER_CLAIM_EVERY_MS) : args.now;
+  const enoughWaiting = args.claimablePairRaw >= HOLDER_CLAIM_MIN_UNITS * 10n ** BigInt(args.pairDecimals);
+  return { notBefore: new Date(notBefore).toISOString(), enoughWaiting, dueNow: enoughWaiting && notBefore <= args.now };
 }
 
 /* ------------------------------------------------------------ the earnings card */

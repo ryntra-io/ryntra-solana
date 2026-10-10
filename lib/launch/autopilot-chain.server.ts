@@ -190,7 +190,7 @@ export function autopilotChain(network: LaunchNetwork, executor: Keypair): Autop
       return partnerEarnedRaw((await readCreatorFees(connection, { token: record.token, pool: record.pool })).read);
     },
 
-    partnerFees: (record) => readPartnerFees(connection, { token: record.token, pool: record.pool }),
+    partnerFees: (record) => readPartnerFees(connection, { token: record.token, pool: record.pool }, { indexed: second }),
     buildPartnerClaim: (read, source) => buildPartnerClaim(connection, { read, source, claimer: owner.toBase58() }),
 
     async priceSecond(dammPool, token) {

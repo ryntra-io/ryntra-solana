@@ -46,6 +46,11 @@ export function formatDate(at: number | string, locale: WorkspaceLocale): string
   return new Intl.DateTimeFormat(tag(locale), { day: "numeric", month: "short", year: "numeric" }).format(new Date(at));
 }
 
+/** A day and its time: «11 жовт., 18:24» — a moment within the next days. */
+export function formatWhen(at: number | string, locale: WorkspaceLocale): string {
+  return new Intl.DateTimeFormat(tag(locale), { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }).format(new Date(at));
+}
+
 export function formatDuration(seconds: number, locale: WorkspaceLocale): string {
   if (seconds % 60 === 0 && seconds < 3600) return locale === "uk" ? `${seconds / 60} хв` : `${seconds / 60} min`;
   return locale === "uk" ? `${seconds} с` : `${seconds} s`;

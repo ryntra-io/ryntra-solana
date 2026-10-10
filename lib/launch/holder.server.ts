@@ -46,7 +46,7 @@ import type {
   LaunchHolderSubmitResponse,
 } from "../api/v1/contract.ts";
 import { resolveInternalWallets } from "../admin/internal-wallets.ts";
-import { HOLDER_GRANT_BITMASK, holderEarningsCard, holderGrantState, permissionsOf, type HolderCardRow } from "../core/launch/holder.ts";
+import { HOLDER_GRANT_BITMASK, collectorNextClaim, holderEarningsCard, holderGrantState, permissionsOf, type HolderCardRow } from "../core/launch/holder.ts";
 import { createHolderVenue, HolderRefusal, type HolderPool, type HolderPositionRead, type HolderVenue } from "../core/venues/meteora-damm-v2/holder.server.ts";
 import { compareWalletTransaction } from "../solana/wallet-modification.ts";
 import { launchExecutorAddress, launchPair, launchPoolFee } from "./config.server.ts";
@@ -250,6 +250,11 @@ function positionView(deps: HolderDeps, record: HolderPositionRecord, read: Hold
     now,
     collectedPairRaw: collected.toString(),
     claims: confirmed.slice(0, 20).map((claim) => ({ signature: claim.signature, at: claim.at, pairRaw: claim.pairRaw, tokenRaw: claim.tokenRaw })),
+    /* The queue as the collector itself reads it: its last attempt in any state (newest first), the same dollar rule. */
+    nextCollection:
+      now && now.state === "OPEN" && now.grant === "GRANTED" && record.pairDollar
+        ? (({ notBefore, enoughWaiting }) => ({ notBefore, enoughWaiting }))(collectorNextClaim({ claimablePairRaw: BigInt(now.unclaimedPairRaw), pairDecimals: decimals.pair, lastClaimAt: claims[0]?.sentAt ?? null, now: deps.now().getTime() }))
+        : null,
   };
 }
 

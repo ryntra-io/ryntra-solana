@@ -38,7 +38,7 @@ import {
 import { ComputeBudgetProgram, Keypair, PublicKey, Transaction, type Connection, type TransactionInstruction } from "@solana/web3.js";
 import BN from "bn.js";
 
-import { HOLDER_GRANT_BITMASK, holderEntryFeeRaw } from "../../launch/holder.ts";
+import { HOLDER_GRANT_BITMASK, holderEntryFeeRaw, zapPriceMoveBps } from "../../launch/holder.ts";
 import { dammPrice } from "../meteora-dbc/market.server.ts";
 
 export type HolderInputSide = "pair" | "token";
@@ -237,6 +237,36 @@ export function createHolderVenue(config: HolderVenueConfig) {
     };
   }
 
+  /**
+   * How far the entry's own swap moves the pool's square-root price, basis points: the entry simulated against the pool
+   * as it stands — the wallet's signature not checked, nothing sent — and the pool read after it. Refused when the
+   * simulation fails: an entry the network would refuse is never handed to the wallet.
+   */
+  async function ownSqrtMoveBps(ixs: readonly TransactionInstruction[], owner: PublicKey, nft: Keypair, poolAddress: string, before: BN): Promise<number> {
+    const tx = new Transaction().add(...ixs);
+    tx.feePayer = owner;
+    tx.recentBlockhash = (await connection.getLatestBlockhash("confirmed")).blockhash;
+    tx.partialSign(nft);
+    const wire = tx.serialize({ requireAllSignatures: false, verifySignatures: false }).toString("base64");
+    const rpc = connection as unknown as { _rpcRequest(method: string, args: unknown[]): Promise<{ result?: { value?: { err: unknown; accounts?: Array<{ data: [string, string] } | null> } }; error?: { message?: string } }> };
+    const answer = await rpc._rpcRequest("simulateTransaction", [
+      wire,
+      { encoding: "base64", sigVerify: false, replaceRecentBlockhash: true, commitment: "confirmed", accounts: { encoding: "base64", addresses: [poolAddress] } },
+    ]);
+    const value = answer.result?.value;
+    if (!value || answer.error) throw new Error(`The entry could not be simulated: ${answer.error?.message ?? "no answer"}`);
+    /* Said as it is — the network's own reason — never as a wallet's mismatch. */
+    if (value.err) throw new Error(`The network would refuse this entry now (${JSON.stringify(value.err).slice(0, 120)}); nothing was built. Try again.`);
+    const after = value.accounts?.[0];
+    if (!after) throw new Error("The pool was not read after the simulated entry.");
+    const state = program.coder.accounts.decode("pool", Buffer.from(after.data[0], "base64")) as PoolState;
+    /* The price the simulated build read just before it — not the request's first read, so others' trades in between are not counted as the entry's. */
+    if (before.isZero()) throw new Error("The pool has no price.");
+    const moved = state.sqrtPrice.sub(before).abs().muln(10_000);
+    /* Up to the next basis point: the entry's own move always fits. */
+    return moved.add(before.subn(1)).div(before).toNumber();
+  }
+
   /** Ryntra's permission on a position: an Approve of 0 names the collector, the bitmask says what it may sign. */
   async function grantInstructions(owner: PublicKey, position: PublicKey, nftAccount: PublicKey): Promise<TransactionInstruction[]> {
     if (!config.collector) throw new HolderRefusal("NO_COLLECTOR", "This network has no collector yet.");
@@ -310,30 +340,40 @@ export function createHolderVenue(config: HolderVenueConfig) {
         tokenADecimal: p.tokenIsA ? p.tokenDecimals : p.pairDecimals,
         tokenBDecimal: p.tokenIsA ? p.pairDecimals : p.tokenDecimals,
       });
-      const params = await zap.getZapInDammV2DirectPoolParams({
-        user: owner,
-        inputTokenMint: inMint,
-        amountIn: new BN(depositRaw.toString()),
-        pool: new PublicKey(p.address),
-        positionNftMint: nft.publicKey,
-        maxSqrtPriceChangeBps: args.slippageBps,
-        maxTransferAmountExtendPercentage: 0,
-        maxAccounts: 30,
-        slippageBps: args.slippageBps,
-        dammV2Quote: {
-          swapInAmount: swapped,
-          consumedInAmount: swapped,
-          swapOutAmount: dammQuote.swapOutAmount,
-          minSwapOutAmount: dammQuote.minSwapOutAmount,
-          totalFee: dammQuote.totalFee,
-          priceImpact: dammQuote.priceImpact,
-        },
-        jupiterQuote: null,
-      });
-      const built = await zap.buildZapInDammV2Transaction(params);
-      /* The token accounts are created above; Zap's own setup would create them again. */
-      const ledger = built.ledgerTransaction.instructions;
-      ixs.push(...ledger, ...built.zapInTransaction.instructions, ...built.cleanUpTransaction.instructions);
+      const zapIxs = async (maxSqrtPriceChangeBps: number): Promise<Readonly<{ ixs: TransactionInstruction[]; pre: BN }>> => {
+        const params = await zap.getZapInDammV2DirectPoolParams({
+          user: owner,
+          inputTokenMint: inMint,
+          amountIn: new BN(depositRaw.toString()),
+          pool: new PublicKey(p.address),
+          positionNftMint: nft.publicKey,
+          maxSqrtPriceChangeBps,
+          maxTransferAmountExtendPercentage: 0,
+          maxAccounts: 30,
+          slippageBps: args.slippageBps,
+          dammV2Quote: {
+            swapInAmount: swapped,
+            consumedInAmount: swapped,
+            swapOutAmount: dammQuote.swapOutAmount,
+            minSwapOutAmount: dammQuote.minSwapOutAmount,
+            totalFee: dammQuote.totalFee,
+            priceImpact: dammQuote.priceImpact,
+          },
+          jupiterQuote: null,
+        });
+        const built = await zap.buildZapInDammV2Transaction(params);
+        /* The token accounts are created above; Zap's own setup would create them again. */
+        return { ixs: [...built.ledgerTransaction.instructions, ...built.zapInTransaction.instructions, ...built.cleanUpTransaction.instructions], pre: params.preSqrtPrice };
+      };
+      /*
+       * Zap's guard is the only bound on the price in this route, and the program picks its own swap's size: the entry
+       * is simulated against the pool as it stands with the whole range allowed, the pool's square-root price read after
+       * it, and the guard set to that move plus half the slippage — others may move the price by the slippage, never more.
+       * The slippage alone refused every entry into a small pool, where half a few dollars moves it (10.10, $STAIR).
+       */
+      const probe = await zapIxs(10_000);
+      const own = await ownSqrtMoveBps([...ixs, ...probe.ixs], owner, nft, p.address, probe.pre);
+      ixs.push(...(await zapIxs(zapPriceMoveBps(own, args.slippageBps))).ixs);
     } else {
       /* The stand's devnet: the share Zap would swap, swapped in this pool, then both sides added. */
       const swapTx = await cpAmm.swap2({

@@ -28,6 +28,7 @@ const ACTION_WORD: Readonly<Record<NonNullable<Health["engine"]["lastAction"]>["
   CREATOR_LOCKED: "log_CREATOR_LOCKED",
   FEES_SHARED: "log_FEES_SHARED",
   CREATOR_SOLD: "log_CREATOR_SOLD",
+  CREATOR_BOUGHT: "log_CREATOR_BOUGHT",
   GRADUATED: "log_GRADUATED",
   FLOOR_POOL: "log_FLOOR_POOL",
   FLOOR_PLACED: "log_FLOOR_PLACED",

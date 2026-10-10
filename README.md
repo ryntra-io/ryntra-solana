@@ -10,7 +10,7 @@ before every signature, a portfolio and a history with receipts. It runs at
 This repository is the product's source code as released — the web app, the
 Android app, the Evidence Kernel and the database schema, with their tests. It
 is private and shared read-only with invited reviewers. Every update is one
-commit, named for what it released; the latest is from 2026-10-10.
+commit, named for what it released; the latest is from 2026-10-11.
 
 ## What is here
 
@@ -93,7 +93,7 @@ that come from the development repository:
 | New | 1,343 |
 | Changed | 823 |
 | Unchanged | 912 |
-| Lines added / removed | +346,929 / −20,397 |
+| Lines added / removed | +347,219 / −20,397 |
 
 [BOUNDARY.md](BOUNDARY.md) lists every new and every changed file. Shipped since
 then, as the public build log records it:
@@ -149,6 +149,7 @@ then, as the public build log records it:
 | 2026-10-09 | The launch executor runs on mainnet, every step in the market's flight log |
 | 2026-10-10 | Micro: a small market that reaches the DEX at 750 USDC, its launch fee all for the market |
 | 2026-10-10 | A market's budget from its own fees |
+| 2026-10-10 | A market's whole cycle on mainnet: launch, the DEX, its budget and its ladder |
 
 ## What is not here
 

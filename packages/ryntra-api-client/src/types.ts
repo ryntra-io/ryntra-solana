@@ -26,7 +26,7 @@
  */
 
 export const API_MAJOR = 1 as const;
-export const API_CONTRACT_VERSION = "1.39.0" as const;
+export const API_CONTRACT_VERSION = "1.40.0" as const;
 export const API_HEADER = "X-Ryntra-API" as const;
 export const API_VERSION_HEADER = "X-Ryntra-API-Version" as const;
 export const NETWORK = "solana:mainnet" as const;
@@ -4593,8 +4593,8 @@ export type LaunchClaimSubmitResponse = Readonly<{
 
 /* ------------------------------------------------------------ 1.32.0 — the flight log */
 
-/** 1.39.0 adds `FEE_CLAIMED`: the executor claimed a partner fee of a market whose fee claimer it is, into the market's budget. */
-export type LaunchJournalKind = "LAUNCHED" | "CREATOR_LOCKED" | "FEES_SHARED" | "CREATOR_SOLD" | "GRADUATED" | "FLOOR_POOL" | "FLOOR_PLACED" | "FLOOR_WITHDRAWN" | "FLOOR_RAISED" | "FLOOR_ADDED" | "FEE_CLAIMED";
+/** 1.39.0 adds `FEE_CLAIMED`: the executor claimed a partner fee of a market whose fee claimer it is, into the market's budget. 1.40.0 adds `CREATOR_BOUGHT`: a purchase from the creator's wallet after the launch. */
+export type LaunchJournalKind = "LAUNCHED" | "CREATOR_LOCKED" | "FEES_SHARED" | "CREATOR_SOLD" | "GRADUATED" | "FLOOR_POOL" | "FLOOR_PLACED" | "FLOOR_WITHDRAWN" | "FLOOR_RAISED" | "FLOOR_ADDED" | "FEE_CLAIMED" | "CREATOR_BOUGHT";
 /** 1.39.0: the partner fees a market's budget comes from. */
 export type LaunchBudgetSource = "migration" | "surplus" | "curve" | "lp";
 /** 1.39.0: the budget's risk limits — each stops new money into Ryntra's steps. */
@@ -4720,6 +4720,8 @@ export type LaunchHolderPositionView = Readonly<{
   }> | null;
   collectedPairRaw: string;
   claims: readonly LaunchHolderClaim[];
+  /** 1.40.0: the collector's queue — the earliest next claim and whether a dollar waits; null when it does not claim here. */
+  nextCollection?: Readonly<{ notBefore: string; enoughWaiting: boolean }> | null;
 }>;
 
 /** `GET /api/v1/launch/{mint}/holder/{address}` — the token's pool for a holder; `open` false — draw nothing of the entry. */

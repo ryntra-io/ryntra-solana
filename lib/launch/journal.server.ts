@@ -29,7 +29,7 @@
 import type { Connection } from "@solana/web3.js";
 
 import type { LaunchFloorView, LaunchJournalEventView, LaunchJournalResponse } from "../api/v1/contract.ts";
-import { FLOOR_RULE, JOURNAL_ENFORCEMENT, creatorSoldEvents, graduationActor, journal, journalEvent, priceOfBin, type JournalEvent } from "../core/launch/autopilot.ts";
+import { FLOOR_RULE, JOURNAL_ENFORCEMENT, creatorBoughtEvents, creatorSoldEvents, graduationActor, isPoolEntry, journal, journalEvent, priceOfBin, type JournalEvent } from "../core/launch/autopilot.ts";
 import { autopilotReceipts, floorRecord, isMigration } from "./autopilot.server.ts";
 import { launchExecutorAddress, launchPair } from "./config.server.ts";
 import { journalMarks } from "./executor.server.ts";
@@ -100,7 +100,16 @@ async function assemble(deps: MarketDeps, token: string): Promise<LaunchJournalR
   const facts = await readLaunchMarketFacts(deps, token).catch(() => null);
   let complete = facts !== null && facts.creatorTradesComplete;
   const tokenDecimals = facts?.response.tokenDecimals ?? 6;
-  if (facts) events.push(...creatorSoldEvents(facts.creatorTrades.map((trade) => ({ signature: trade.signature, at: trade.at, side: trade.side, tokensRaw: trade.tokensRaw, pairRaw: trade.pairRaw })), BigInt(facts.supplyRaw)));
+  if (facts) {
+    const trades = facts.creatorTrades.map((trade) => ({ signature: trade.signature, at: trade.at, side: trade.side, tokensRaw: trade.tokensRaw, pairRaw: trade.pairRaw }));
+    /* A purchase whose tokens went into a pool position in the same transaction is a holder's entry, not the creator's buy. */
+    const entries = new Set<string>();
+    for (const signature of new Set(trades.filter((trade) => trade.side === "buy" && trade.signature !== record.signature).map((trade) => trade.signature))) {
+      const read = await transactionOf(deps.connection, second, signature);
+      if (read && isPoolEntry(read.logs)) entries.add(signature);
+    }
+    events.push(...creatorBoughtEvents(trades.filter((trade) => !entries.has(trade.signature)), record.signature), ...creatorSoldEvents(trades, BigInt(facts.supplyRaw)));
+  }
 
   const receipts = await autopilotReceipts(deps.store, deps.network.cluster, token);
   for (const receipt of receipts) {

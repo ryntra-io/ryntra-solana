@@ -21,6 +21,7 @@ import {
   ShareNetwork,
   Storefront,
   TrendDown,
+  TrendUp,
   WarningCircle,
   Wrench,
 } from "@phosphor-icons/react";
@@ -44,6 +45,7 @@ const ICONS: Readonly<Record<LaunchJournalEventView["kind"], ReactNode>> = {
   CREATOR_LOCKED: <Lock size={18} weight="fill" aria-hidden />,
   FEES_SHARED: <ShareNetwork size={18} aria-hidden />,
   CREATOR_SOLD: <TrendDown size={18} aria-hidden />,
+  CREATOR_BOUGHT: <TrendUp size={18} aria-hidden />,
   GRADUATED: <FlagCheckered size={18} aria-hidden />,
   FLOOR_POOL: <Coins size={18} aria-hidden />,
   FLOOR_PLACED: <HandCoins size={18} aria-hidden />,
@@ -461,6 +463,8 @@ function detail(entry: LaunchJournalEventView, word: Word, money: (raw: string) 
     case "CREATOR_SOLD":
       if (!entry.tokensRaw || !entry.pairRaw || entry.soldBps === null) return null;
       return plain(entry.soldOf === "supply" ? "log_CREATOR_SOLD_supply" : "log_CREATOR_SOLD_detail", { tokens: tokens(entry.tokensRaw), amount: money(entry.pairRaw), pct: formatBps(entry.soldBps, locale) });
+    case "CREATOR_BOUGHT":
+      return entry.tokensRaw && entry.pairRaw ? plain("log_CREATOR_BOUGHT_detail", { tokens: tokens(entry.tokensRaw), amount: money(entry.pairRaw) }) : null;
     case "GRADUATED":
       return entry.pairRaw ? plain(`log_GRADUATED_${entry.actor === "ryntra" ? "ryntra" : entry.actor === "meteora" ? "meteora" : "other"}`, { amount: money(entry.pairRaw) }) : null;
     case "FLOOR_POOL":

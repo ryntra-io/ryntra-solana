@@ -21,7 +21,7 @@ import type {
 import { poolOutcomes } from "@/lib/core/launch/holder";
 import { signTransactions } from "@/lib/solana/wallet.client";
 
-import { explorerUrl, formatBps, formatDate, formatMove, formatNumber, formatRaw, fromRaw, rovingNext, toRaw } from "../launch-format";
+import { explorerUrl, formatBps, formatDate, formatMove, formatNumber, formatRaw, formatWhen, fromRaw, rovingNext, toRaw } from "../launch-format";
 import { launchWords, type LaunchWordKey } from "../launch-words";
 import styles from "../launch.module.css";
 
@@ -613,6 +613,7 @@ function PositionRow({
             </div>
           </dl>
           <p className={styles.positionHolds}>{word("posHolds", { pair: money(now.pairRaw), tokens: `${formatRaw(now.tokenRaw, data.tokenDecimals, locale, 0)} $${symbol}` })}</p>
+          {position.nextCollection ? <CollectorQueue next={position.nextCollection} locale={locale} /> : null}
           <div className={styles.positionActions}>
             {grant && grant !== "NONE" ? (
               <button type="button" className="rw-btn" disabled={state.phase === "busy" || !connection} onClick={() => void act("revoke")}>
@@ -657,5 +658,20 @@ function PositionRow({
         </>
       )}
     </article>
+  );
+}
+
+/**
+ * The collector's queue for this position, in one line, as the server reads it by the collector's own rule and attempts:
+ * the next collection goes on the collector's first pass once a dollar waits and a day has passed since its last attempt.
+ */
+function CollectorQueue({ next, locale }: Readonly<{ next: Readonly<{ notBefore: string; enoughWaiting: boolean }>; locale: WorkspaceLocale }>) {
+  const word = launchWords(locale);
+  const later = Date.parse(next.notBefore) > Date.now();
+  const text = next.enoughWaiting ? (later ? word("collectorNotBefore", { when: formatWhen(next.notBefore, locale) }) : word("collectorDue")) : later ? word("collectorWaitDollarAfter", { when: formatWhen(next.notBefore, locale) }) : word("collectorWaitDollar");
+  return (
+    <p className={styles.hint}>
+      <Clock size={14} aria-hidden /> {text}
+    </p>
   );
 }

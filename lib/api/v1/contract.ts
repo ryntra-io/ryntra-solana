@@ -875,6 +875,13 @@
  * executor below 0.1 SOL), each stopping new money into the steps. A market's health `engine.pause` with code
  * `RISK_LIMIT` gains `risks`. A client that skips unknown keys needs no release; one that parses the flight log's kinds
  * strictly takes `FEE_CLAIMED` (the phone reads no flight log).
+ *
+ * **1.40.0 — the creator's purchases in the flight log.** Additive. The flight log gains the entry kind `CREATOR_BOUGHT`:
+ * a purchase from the creator's wallet after the launch, one entry a transaction with `tokensRaw` and `pairRaw` — the
+ * first one, in the creation transaction itself, stays `LAUNCHED`'s. Every trade of the creator's is now in the log, a
+ * purchase as a sale. Its enforcement is null: a fact the log observes, not an act under a rule. A client
+ * that parses the flight log's kinds strictly takes `CREATOR_BOUGHT` (the phone reads no flight log). A holder's position
+ * gains `nextCollection` — the collector's queue by the collector's own rule and attempts.
  */
 
 import {
@@ -926,7 +933,7 @@ import { LAUNCH_PRESET_IDS } from "../../core/venues/meteora-dbc/presets.ts";
 import { LaunchReceiptFactsSchema } from "../../core/venues/meteora-dbc/receipt.ts";
 
 export const API_MAJOR = 1;
-export const API_CONTRACT_VERSION = "1.39.0";
+export const API_CONTRACT_VERSION = "1.40.0";
 export const API_HEADER = "X-Ryntra-API";
 export const API_VERSION_HEADER = "X-Ryntra-API-Version";
 export const NETWORK = "solana:mainnet";
@@ -10182,6 +10189,13 @@ export const LaunchHolderPositionSchema = z
     /** What Ryntra's collector brought to the owner's wallet, in the pair currency, raw. */
     collectedPairRaw: LaunchRaw,
     claims: z.array(LaunchHolderClaimSchema).max(20),
+    /**
+     * 1.40.0: the collector's queue for this position, by the same rule and the same attempts the collector reads — the
+     * earliest moment of its next claim (a day after its last attempt, sent or failed, or now) and whether a whole
+     * dollar waits; both must hold. Null when the collector does not claim this position (no permission, not open, a
+     * pair that is not a dollar). Absent before 1.40.0.
+     */
+    nextCollection: z.object({ notBefore: Iso, enoughWaiting: z.boolean() }).strict().nullable().optional(),
   })
   .strict();
 export type LaunchHolderPositionView = z.infer<typeof LaunchHolderPositionSchema>;

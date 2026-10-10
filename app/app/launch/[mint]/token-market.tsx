@@ -335,7 +335,7 @@ export function TokenMarket({
               })}{" "}
               ·{" "}
               {word("progressLeft", {
-                amount: formatRaw((BigInt(market.progress.thresholdRaw) - BigInt(market.progress.reserveRaw) > 0n ? BigInt(market.progress.thresholdRaw) - BigInt(market.progress.reserveRaw) : 0n).toString(), market.pair.decimals, locale, 0),
+                amount: leftToDex(market.progress.thresholdRaw, market.progress.reserveRaw, market.pair.decimals, locale),
                 symbol: market.pair.symbol,
               })}
             </p>
@@ -436,6 +436,19 @@ export function TokenMarket({
       ) : null}
     </div>
   );
+}
+
+/**
+ * What the curve still needs before the DEX: whole units, and cents once less than one is left — 0.26 USDC short of the
+ * threshold read «0 USDC more» on $STAIR (10.10) while the curve stood at 99.48 %.
+ */
+function leftToDex(thresholdRaw: string, reserveRaw: string, decimals: number, locale: WorkspaceLocale): string {
+  const left = BigInt(thresholdRaw) - BigInt(reserveRaw);
+  if (left <= 0n) return formatRaw("0", decimals, locale, 0);
+  const unit = 10n ** BigInt(decimals);
+  /* Rounded up, never down: what is said is always enough — a cent below one unit, a whole unit above it. */
+  const step = left < unit ? 10n ** BigInt(Math.max(0, decimals - 2)) : unit;
+  return formatRaw((((left + step - 1n) / step) * step).toString(), decimals, locale, left < unit ? 2 : 0);
 }
 
 /** In the card «worth a look»: every fact worth a look but «the creator sold» (the banner above), and a history read in part as context beside them. */

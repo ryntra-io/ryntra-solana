@@ -175,8 +175,10 @@ export const METEORA_MIGRATION_KEEPERS = Object.freeze(["Asi5DTGEeiso6k7ya6ndDab
 /**
  * The kinds of the log's entries. `FEE_CLAIMED` (1.39.0): Ryntra's executor claimed a partner fee of a market whose fee
  * claimer it is — into the market's budget whole, or a quarter of it with Ryntra's revenue apart (`budgetRaw`).
+ * `CREATOR_BOUGHT` (1.40.0): a purchase from the creator's wallet after the launch — the first one, in the creation
+ * transaction itself, is `LAUNCHED`'s.
  */
-export const JOURNAL_KINDS = ["LAUNCHED", "CREATOR_LOCKED", "FEES_SHARED", "CREATOR_SOLD", "GRADUATED", "FLOOR_POOL", "FLOOR_PLACED", "FLOOR_WITHDRAWN", "FLOOR_RAISED", "FLOOR_ADDED", "FEE_CLAIMED"] as const;
+export const JOURNAL_KINDS = ["LAUNCHED", "CREATOR_LOCKED", "FEES_SHARED", "CREATOR_SOLD", "GRADUATED", "FLOOR_POOL", "FLOOR_PLACED", "FLOOR_WITHDRAWN", "FLOOR_RAISED", "FLOOR_ADDED", "FEE_CLAIMED", "CREATOR_BOUGHT"] as const;
 export type JournalKind = (typeof JOURNAL_KINDS)[number];
 
 /** Who did it: the creator, Ryntra's executor, Meteora's keeper, or another wallet. */
@@ -249,6 +251,35 @@ export function creatorSoldEvents(trades: readonly CreatorTradeSeen[], supplyRaw
   return out;
 }
 
+/**
+ * «Творець купив» as log events — each purchase from the creator's wallet after the launch, one entry a transaction,
+ * the purchases inside it added up. The creation transaction's own purchase (`launchSignature`) is the launch's entry,
+ * never a second one. Every trade of the creator's is in the log, a purchase as a sale.
+ */
+export function creatorBoughtEvents(trades: readonly CreatorTradeSeen[], launchSignature: string): JournalEvent[] {
+  const byTransaction = new Map<string, { at: number; tokens: bigint; pair: bigint; first: number }>();
+  [...trades].forEach((trade, index) => {
+    if (trade.side !== "buy" || trade.signature === launchSignature) return;
+    const known = byTransaction.get(trade.signature);
+    if (known) {
+      known.tokens += BigInt(trade.tokensRaw);
+      known.pair += BigInt(trade.pairRaw);
+    } else byTransaction.set(trade.signature, { at: trade.at, tokens: BigInt(trade.tokensRaw), pair: BigInt(trade.pairRaw), first: index });
+  });
+  return [...byTransaction.entries()]
+    .sort((a, b) => a[1].at - b[1].at || a[1].first - b[1].first)
+    .map(([signature, trade]) => event({ kind: "CREATOR_BOUGHT", at: new Date(trade.at * 1000).toISOString(), signature, actor: "creator", tokensRaw: trade.tokens.toString(), pairRaw: trade.pair.toString() }));
+}
+
+/**
+ * A transaction that put liquidity into a pool — Meteora's Zap or an add of both sides: its swap leg is a holder's entry,
+ * not a purchase. The tokens it bought went straight into the position, never into the wallet ($STAIR, 10.10: the
+ * creator's 5 USDC entry through Zap read «Творець купив»).
+ */
+export function isPoolEntry(logs: readonly string[]): boolean {
+  return logs.some((line) => /Instruction: (ZapInDammV2|AddLiquidity)\s*$/.test(line));
+}
+
 /** Who sent a graduation: Ryntra's executor, a Meteora keeper, or another wallet — from the transaction's fee payer. */
 export function graduationActor(feePayer: string, executor: string | null): JournalActor {
   if (executor !== null && feePayer === executor) return "ryntra";
@@ -266,6 +297,7 @@ export const JOURNAL_ENFORCEMENT: Readonly<Record<JournalKind, "rule" | "policy"
   CREATOR_LOCKED: "rule",
   FEES_SHARED: "rule",
   CREATOR_SOLD: null,
+  CREATOR_BOUGHT: null,
   GRADUATED: "rule",
   FLOOR_POOL: "policy",
   FLOOR_PLACED: "policy",

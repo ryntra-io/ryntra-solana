@@ -1229,7 +1229,8 @@ async function claimBudget(deps: AutopilotDeps, record: LaunchRecord): Promise<A
     return read.lp !== null && read.lp.pairRaw >= BUDGET_RULE.lpClaimMinRaw && (last === null || now - last >= BUDGET_RULE.lpClaimEverySeconds);
   };
   const source = CLAIM_ORDER.find(holds);
-  if (!source) return [{ token, step: "BUDGET_NOTHING" }];
+  /* The locked position not looked up this pass: said in the pass's steps, so a node that keeps refusing is seen. */
+  if (!source) return [{ token, step: read.lpUnread ? "BUDGET_LP_UNREAD" : "BUDGET_NOTHING" }];
   if ((await deps.chain.lamports()) < EXECUTOR_FLOOR_LAMPORTS) return [{ token, step: "BUDGET_LOW_SOL" }];
   const tx = await deps.chain.buildPartnerClaim(read, source);
   const prepared = await prepareChecked(deps, token, tx, []);
