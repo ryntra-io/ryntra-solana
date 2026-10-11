@@ -360,6 +360,29 @@ export function OrderTicket({
     : null;
   const accountReserveSol = prepared && BigInt(prepared.order.rentFeeLamports) > 0n ? (Number(BigInt(prepared.order.rentFeeLamports)) / 1e9).toFixed(6) : null;
   const inputUsd = order?.inUsdValue ? Number(order.inUsdValue) : null;
+  /* The wallet's position in this market, as the wallet shows it, priced at the market's live figure; nothing without a holding. */
+  const position = useMemo(() => {
+    if (!connection || !baseHolding || baseDecimals === null || !/^\d+$/.test(baseHolding.amountRaw) || BigInt(baseHolding.amountRaw) <= 0n) return null;
+    const units = baseNumber(baseHolding.amountRaw, baseHolding.decimals);
+    if (units === null || !Number.isFinite(units) || units <= 0) return null;
+    const price = market?.price ?? null;
+    return { units, usd: price !== null && Number.isFinite(price) ? units * price : null };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [connection, baseHolding, baseDecimals, market?.price, scaledBase]);
+  const amountRef = useRef<HTMLInputElement>(null);
+  const openSale = useCallback(() => {
+    setOrderType("market");
+    setSide("SELL");
+    setAmount("");
+    /* The amount field is where the sale starts; on a phone it is under the chart, so it is brought into view. */
+    window.requestAnimationFrame(() => {
+      const field = amountRef.current;
+      if (!field) return;
+      field.focus({ preventScroll: true });
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      field.scrollIntoView({ block: "nearest", behavior: reduce ? "auto" : "smooth" });
+    });
+  }, []);
   const outputUsd = order?.outUsdValue ? Number(order.outUsdValue) : null;
   /* The asset's verdict outlives the estimate's own refresh — no «Review» flickers in for a blocked pair while the next estimate for the same amount is asked; another amount is judged afresh. */
   const [blockedPair, setBlockedPair] = useState<string | null>(null);
@@ -581,6 +604,23 @@ export function OrderTicket({
               </button>
             </div>
           ) : null}
+          {/* «Твоя позиція», as on a company's page: what the wallet holds of this market and what it is worth, and
+              «Продати» — quiet, the ticket's own action stays the one orange press. The press turns this ticket to the
+              sale and puts the cursor in its amount: the same Review, signature and receipt as every sale here. */}
+          {position ? (
+            <div className={styles.position} data-position data-dense>
+              <div className={styles.positionText}>
+                <span className={styles.positionLabel}>{text("Your position")}</span>
+                <b className={styles.positionValue} translate="no">{position.usd === null ? "—" : formatUsdPrice(position.usd, locale)}</b>
+                <span className={styles.positionUnits} translate="no">{`${formatAmount(position.units, locale)} ${baseSymbol}`}</span>
+              </div>
+              {side === "SELL" && orderType === "market" ? null : (
+                <button type="button" className={styles.positionSell} data-position-sell disabled={busy || phase === "REVIEW" || underPlan || underRule} onClick={openSale}>
+                  {text("Sell")}
+                </button>
+              )}
+            </div>
+          ) : null}
           {/* «Ринок · Регулярно»: the order now, or the rule that reminds of it — on every token. */}
           <div className={styles.ticketRow}>
             <div
@@ -617,11 +657,6 @@ export function OrderTicket({
                 {text("Recurring")}
               </button>
             </div>
-            {orderType === "market" && baseHolding && baseDecimals !== null ? (
-              <span>
-                {text("You hold")} <b>{formatAmount(baseNumber(baseHolding.amountRaw, baseHolding.decimals), locale)} {baseSymbol}</b>
-              </span>
-            ) : null}
           </div>
           {orderType === "recurring" && baseMint ? (
             !connection ? (
@@ -708,6 +743,7 @@ export function OrderTicket({
             </div>
             <div className={styles.amountLine}>
               <input
+                ref={amountRef}
                 className={styles.amountInput}
                 type="text"
                 inputMode="decimal"

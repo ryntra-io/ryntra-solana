@@ -684,6 +684,148 @@
   background: var(--ry-hover);
 }
 
+/* «Що це за монета»: the creator's description on a line of its own (a press opens the rest), under it the site, X and
+   Telegram named by what they open and the mark that both are the creator's, not checked — two short lines, so the
+   chart keeps the first screen. Quiet type: the price and the figures stay the header's loudest. */
+.about {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px var(--ry-s4);
+  min-width: 0;
+}
+
+.aboutBody {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ry-s2);
+  flex: 1 1 100%;
+  min-width: 0;
+}
+
+.aboutText {
+  margin: 0;
+  min-width: 0;
+  flex: 0 1 auto;
+  color: var(--ry-text);
+  font-size: var(--ry-fs-dense);
+  line-height: var(--ry-lh-body);
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+  overflow: hidden;
+}
+
+.aboutText[data-open="true"] {
+  display: block;
+  -webkit-line-clamp: unset;
+  line-clamp: none;
+  max-width: 88ch;
+}
+
+.aboutText[data-quiet="true"] {
+  color: var(--ry-muted);
+}
+
+.aboutBone {
+  display: block;
+  width: min(360px, 70%);
+  height: 0.9em;
+  margin: 0.3em 0;
+  border-radius: 4px;
+  background: var(--ry-hover);
+}
+
+.aboutMore {
+  flex: 0 0 auto;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--ry-iris-lift);
+  font: inherit;
+  font-size: var(--ry-fs-dense);
+  line-height: var(--ry-lh-body);
+  cursor: pointer;
+}
+
+.aboutMore:hover {
+  text-decoration: underline;
+}
+
+.aboutFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px var(--ry-s3);
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.aboutLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  max-width: 100%;
+  color: var(--ry-iris-lift);
+  font-size: var(--ry-fs-dense);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.aboutLink > svg {
+  flex: 0 0 auto;
+  color: var(--ry-muted);
+}
+
+.aboutLink > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.aboutLink:hover {
+  text-decoration: underline;
+}
+
+/* On the light theme the brand's text value for light ground: the lift is ~3:1 on white, the sink 5.1:1. */
+:global([data-theme="light"]) .aboutLink,
+:global([data-theme="light"]) .aboutMore {
+  color: var(--ry-iris-sink);
+}
+
+.aboutSource {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+/* A laptop's short window (720–800 px tall): the header's rows stand closer, so the line about the coin costs the
+   chart no more than it must and the chart still ends on the first screen. */
+@media (max-height: 800px) and (pointer: fine) {
+  .header {
+    gap: var(--ry-s1);
+    padding-block: var(--ry-s2);
+  }
+
+  .stats {
+    padding-top: var(--ry-s1);
+  }
+}
+
+/* The line is a dense group under a mouse; under a finger its links and «Ще» take 44 px. */
+@media (pointer: coarse) {
+  .aboutLink,
+  .aboutMore {
+    min-height: 44px;
+  }
+}
+
 /* Asset details: one disclosure, one click deep. */
 
 .details {
@@ -842,6 +984,62 @@
   border-color: var(--ry-border);
 }
 
+/* «Ціна · Капіталізація»: one more pair beside the timeframes, set off by a hairline. */
+.seriesSwitch {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-inline-start: var(--ry-s1);
+  padding-inline-start: var(--ry-s2);
+  border-inline-start: 1px solid var(--ry-border);
+}
+
+/* The chart measures itself for the head below; the capitalisation's note sits on the chart, at the foot of the
+   plot by the drawing tools, so it is read at every width without taking a row of the first screen. */
+.chart {
+  position: relative;
+  container: spotchart / inline-size;
+}
+
+.capNote {
+  position: absolute;
+  left: calc(var(--ry-s3) + 48px);
+  bottom: calc(var(--ry-s2) + 30px);
+  margin: 0;
+  padding: 2px var(--ry-s2);
+  border-radius: var(--ry-r-chip);
+  background: color-mix(in srgb, var(--ry-card) 72%, transparent);
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+  line-height: 1.35;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* A phone's chart: the pair shares the second row with the chart's tools, «Indicators» as its icon alone, and no
+   hairline at a row's start. */
+@container spotchart (max-width: 560px) {
+  .seriesSwitch {
+    margin-inline-start: 0;
+    padding-inline-start: 0;
+    border-inline-start: 0;
+  }
+
+  /* The icon alone: a square as wide as the other tools, the word clipped after it (its title names it). */
+  .chart :global(.pc-actions .pc-btn[title="Indicators"]) {
+    justify-content: flex-start;
+    width: 44px;
+    padding-inline: 14px;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+}
+
+/* Words, not figures: the pair is set in the sans, after the timeframes' mono rule. */
+.chart .seriesSwitch button {
+  font-family: var(--ry-font-sans);
+}
+
 .chartNote {
   margin-inline-start: auto;
   color: var(--ry-muted);
@@ -943,6 +1141,83 @@
   font-weight: 600;
 }
 
+/* «Твоя позиція» at the ticket's head, as on a company's page: what it is worth, how much of the coin, and a quiet
+   «Продати» — an outline, never orange: the ticket's own action is the one orange press. */
+.position {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ry-s3);
+  padding: var(--ry-s2) var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-chip);
+  background: var(--ry-env-bg);
+  min-width: 0;
+}
+
+.positionText {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 2px var(--ry-s2);
+  min-width: 0;
+}
+
+.positionLabel {
+  flex: 1 0 100%;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.positionValue {
+  color: var(--ry-text);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-data);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.positionUnits {
+  min-width: 0;
+  color: var(--ry-muted);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.positionSell {
+  flex: 0 0 auto;
+  min-height: 32px;
+  padding: 0 var(--ry-s4);
+  border: 1px solid var(--ry-border-strong, var(--ry-border));
+  border-radius: var(--ry-r-btn-sm);
+  background: transparent;
+  color: var(--ry-text);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.positionSell:hover:not(:disabled) {
+  background: var(--ry-hover);
+}
+
+.positionSell:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (pointer: coarse) {
+  .positionSell {
+    min-height: 44px;
+  }
+}
+
 .orderType {
   display: inline-flex;
   align-items: center;
@@ -1029,7 +1304,13 @@
 }
 
 .amountBox:focus-within {
-  border-color: var(--ry-border-strong);
+  border-color: var(--ry-iris);
+  box-shadow: var(--ry-focus);
+}
+
+/* The field's own ring would draw a square inside the rounded box: the box carries the focus. */
+.amountBox:focus-within .amountInput:focus-visible {
+  box-shadow: none;
 }
 
 .amountHead {
@@ -1927,6 +2208,9 @@
   }
 
   /* Tap targets: 44px on a phone. */
+  .positionSell,
+  .aboutLink,
+  .aboutMore,
   .details > summary,
   .view,
   .star,

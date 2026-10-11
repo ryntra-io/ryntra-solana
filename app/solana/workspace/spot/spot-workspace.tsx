@@ -19,7 +19,7 @@ import { useWalletProof } from "../wallet-proof.tsx";
 import { MarketHeader } from "./market-header.tsx";
 import { MarketList } from "./market-list.tsx";
 import { OrderTicket } from "./order-ticket.tsx";
-import { SpotChart, useSpotTimeframe } from "./spot-chart.tsx";
+import { capFactorOf, SpotChart, useSpotTimeframe } from "./spot-chart.tsx";
 import { TradingState } from "./trading-state.tsx";
 import { useSpotCandles, useSpotFills, useSpotHoldings, useSpotList, useSpotMarket, useSpotWatchlist } from "./use-spot-data.ts";
 
@@ -274,7 +274,7 @@ export function SpotWorkspace({
             pool={pool}
           />
 
-          <SpotChart symbol={symbol} candles={candles} timeframe={timeframe} onTimeframe={setTimeframe} pro={pro} />
+          <SpotChart symbol={symbol} candles={candles} timeframe={timeframe} onTimeframe={setTimeframe} pro={pro} capFactor={capFactorOf(marketValue)} />
 
           {/* The two sensors of the selected token, on request — what the market did and how the token is built; a rule of the plan only where a plan can be made — a stock representation. */}
           <div className={styles.evidence}>

@@ -72,6 +72,8 @@ export type ProChartProps = {
   /** className of the chart canvas div — keeps existing height CSS ("dm-chart" | "spot-chart") */
   chartClassName?: string;
   features?: ProChartFeatures;
+  /** How the price axis and the crosshair print a value — e.g. a market cap as «$4.6M»; read when the chart is built, so a caller that changes it remounts the chart. */
+  priceFormatter?: (value: number) => string;
 };
 
 /* ---- series construction per chart type ---- */
@@ -137,7 +139,7 @@ function makeTimeFormatters(tz: "utc" | "local") {
   };
 }
 
-function buildChartOptions(theme: ChartTheme, s: ChartSettings) {
+function buildChartOptions(theme: ChartTheme, s: ChartSettings, priceFormatter?: (value: number) => string) {
   const base = chartOptions(theme);
   const fmt = makeTimeFormatters(s.timezone);
   const gridColors = base.grid as { vertLines?: { color?: string }; horzLines?: { color?: string } };
@@ -148,7 +150,7 @@ function buildChartOptions(theme: ChartTheme, s: ChartSettings) {
       ? { vertLines: { color: gridColors.vertLines?.color, visible: true }, horzLines: { color: gridColors.horzLines?.color, visible: true } }
       : { vertLines: { visible: false }, horzLines: { visible: false } },
     crosshair: { mode: s.crosshair === "magnet" ? CrosshairMode.Magnet : CrosshairMode.Normal },
-    localization: { timeFormatter: fmt.timeFormatter },
+    localization: priceFormatter ? { timeFormatter: fmt.timeFormatter, priceFormatter } : { timeFormatter: fmt.timeFormatter },
     timeScale: { ...base.timeScale, tickMarkFormatter: fmt.tickMarkFormatter },
   };
 }
@@ -176,8 +178,10 @@ export const ProChart = forwardRef<ProChartHandle, ProChartProps>(function ProCh
   const {
     candles, symbolLabel, tfSeconds, theme, accent, timeframes, tf, onTfChange,
     priceLines, riskLines, onRiskLineDrag, onRiskLineCommit,
-    storageNamespace, drawingScope, note, chartClassName, features,
+    storageNamespace, drawingScope, note, chartClassName, features, priceFormatter,
   } = props;
+  const priceFormatterRef = useRef(priceFormatter);
+  priceFormatterRef.current = priceFormatter;
   const feat = { drawings: true, indicators: true, settings: true, fullscreen: true, ...features };
 
   const [settings, setSettings] = useState<ChartSettings>(() => loadChartSettings());
@@ -269,7 +273,7 @@ export const ProChart = forwardRef<ProChartHandle, ProChartProps>(function ProCh
     const el = chartElRef.current;
     if (!el) return;
     const s = settingsRef.current;
-    const chart = createChart(el, buildChartOptions(theme, s));
+    const chart = createChart(el, buildChartOptions(theme, s, priceFormatterRef.current));
     const series = addMainSeries(chart, s, accentHex);
     series.setData(candlesRef.current.map((c) => mapBar(c, s.chartType)));
     chart.priceScale("right").applyOptions({
@@ -401,7 +405,7 @@ export const ProChart = forwardRef<ProChartHandle, ProChartProps>(function ProCh
     const chart = chartRef.current;
     if (!chart) return;
     if (next.chartType !== prev.chartType) return; // rebuild effect takes over
-    chart.applyOptions(buildChartOptions(theme, next));
+    chart.applyOptions(buildChartOptions(theme, next, priceFormatterRef.current));
     chart.priceScale("right").applyOptions({
       mode: next.scale.log ? PriceScaleMode.Logarithmic : PriceScaleMode.Normal,
       autoScale: next.scale.autoScale,

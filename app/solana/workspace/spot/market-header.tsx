@@ -1,8 +1,8 @@
 "use client";
 
-import { ArrowSquareOut, CaretDown, Copy, Star } from "@phosphor-icons/react";
+import { ArrowSquareOut, CaretDown, Copy, Globe, Info, Star, TelegramLogo, XLogo } from "@phosphor-icons/react";
 import Link from "next/link";
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 
 import type { SpotPool } from "@/lib/spot/candles";
 import { isUnsupportedMarket, marketAgeDays, type SpotMarket } from "@/lib/spot/markets";
@@ -13,9 +13,10 @@ import { formatAge, formatCount, formatPercent, formatUsdCompact, formatUsdPrice
 import { StockHeaderLine } from "./stock-context.tsx";
 import { ShareTrade } from "../rewards/share-trade.tsx";
 import { AskRynLens } from "@/app/app/lens/ask-ryn-lens";
-import type { MarketState } from "./use-spot-data.ts";
+import { useTokenAbout, type MarketState } from "./use-spot-data.ts";
+import { linkFace } from "@/lib/spot/token-about";
 
-import { TOKEN_2022_PROGRAM_ID } from "@/lib/solana/send-kinds";
+import { TOKEN_2022_PROGRAM_ID, WRAPPED_SOL_MINT } from "@/lib/solana/send-kinds";
 
 import styles from "./spot.module.css";
 
@@ -178,8 +179,96 @@ export function MarketHeader({
         </dl>
       ) : null}
 
+      {market && !isUnsupportedMarket(market) ? <TokenAboutLine market={market} /> : null}
+
       {market ? <AssetDetails market={market} pool={pool} /> : null}
     </section>
+  );
+}
+
+/**
+ * «Що це за монета»: what the token's creator says it is — the description in
+ * its metadata (`useTokenAbout`) — and where it lives: its site, X and
+ * Telegram as Jupiter's catalogue states them, each named by what it opens.
+ * Both are the creator's own words and addresses, and the line says so: Ryntra
+ * checked neither. A token whose creator wrote nothing says that (B.11); a read
+ * that failed says that instead. SOL is the network's own coin and has no
+ * creator to quote — its line is the one fact about it.
+ */
+function TokenAboutLine({ market }: { market: SpotMarket }) {
+  const { text } = useSolanaI18n();
+  const native = market.mint === WRAPPED_SOL_MINT;
+  const about = useTokenAbout(native ? null : market.mint, market.name, market.symbol);
+  const [open, setOpen] = useState(false);
+  const [clipped, setClipped] = useState(false);
+  const textRef = useRef<HTMLParagraphElement>(null);
+  const links = (
+    [
+      ["website", market.links.website],
+      ["twitter", market.links.twitter],
+      ["telegram", market.links.telegram],
+    ] as const
+  ).filter((entry): entry is readonly ["website" | "twitter" | "telegram", string] => typeof entry[1] === "string");
+  const description = !native && about.status === "ready" ? about.about.description : null;
+  const line = native
+    ? text("The Solana network's own coin: every transaction's fee is paid in it.")
+    : description ??
+      (about.status === "loading"
+        ? null
+        : about.status === "unavailable" || about.about.state === "unread"
+          ? text("What the token says about itself could not be read just now.")
+          : text("The token's creator wrote no description."));
+  /* «Ще» only where the description does not fit its line. An unverified or flagged coin's description is set quiet: the creator's words, not the page's. */
+  useLayoutEffect(() => {
+    const element = textRef.current;
+    if (!element || open) return;
+    const measure = () => setClipped(element.scrollHeight > element.clientHeight + 1);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [line, open]);
+  const fromCreator = description !== null || links.length > 0;
+  return (
+    <div className={styles.about} data-dense data-token-about={native ? "native" : about.status === "ready" ? about.about.state : about.status}>
+      <div className={styles.aboutBody}>
+        {line === null ? (
+          <span className={styles.aboutBone} aria-hidden="true" />
+        ) : (
+          <p ref={textRef} className={styles.aboutText} data-open={open ? "true" : undefined} data-quiet={(description === null && !native) || (description !== null && (!market.verified || market.audit.suspicious)) ? "true" : undefined}>
+            {line}
+          </p>
+        )}
+        {clipped || open ? (
+          <button type="button" className={styles.aboutMore} aria-expanded={open} onClick={() => setOpen((value) => !value)}>
+            {open ? text("Less") : text("More")}
+          </button>
+        ) : null}
+      </div>
+      {links.length > 0 || fromCreator ? (
+        <div className={styles.aboutFoot}>
+          {links.map(([kind, href]) => {
+            const face = linkFace(kind, href);
+            const kindWord = face.mark === "x" ? "X" : face.mark === "telegram" ? "Telegram" : text("Website");
+            const Mark = face.mark === "x" ? XLogo : face.mark === "telegram" ? TelegramLogo : Globe;
+            return (
+              <a key={kind} className={styles.aboutLink} href={href} target="_blank" rel="noreferrer noopener nofollow ugc" data-about-link={kind} aria-label={`${kindWord}: ${face.label}`}>
+                <Mark size={14} weight="bold" aria-hidden="true" />
+                <span translate="no">{face.label}</span>
+              </a>
+            );
+          })}
+          {fromCreator ? (
+            /* The mark is reachable by keyboard and says the whole of it to a reader of the screen; a mouse reads it on hover. */
+            <span className={styles.aboutSource} data-unverified tabIndex={0} title={text("The description and the links are set by the token's creator; Ryntra has not checked them.")}>
+              <Info size={12} weight="bold" aria-hidden="true" />
+              <span aria-hidden="true">{text("From the creator · not checked")}</span>
+              <span className="sr-only">{text("The description and the links are set by the token's creator; Ryntra has not checked them.")}</span>
+            </span>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -196,11 +285,6 @@ function AssetDetails({ market, pool }: { market: SpotMarket; pool: SpotPool | n
     }
   };
   const program = market.tokenProgram === TOKEN_2022_PROGRAM_ID ? "Token-2022" : market.tokenProgram ? "SPL Token" : "—";
-  const links = [
-    market.links.website ? { label: text("Website"), href: market.links.website } : null,
-    market.links.twitter ? { label: "X", href: market.links.twitter } : null,
-    market.links.telegram ? { label: "Telegram", href: market.links.telegram } : null,
-  ].filter((link): link is { label: string; href: string } => link !== null);
 
   return (
     <details className={styles.details}>
@@ -248,19 +332,6 @@ function AssetDetails({ market, pool }: { market: SpotMarket; pool: SpotPool | n
               <a href={`https://www.geckoterminal.com/solana/pools/${pool.address}`} target="_blank" rel="noreferrer noopener">
                 {pool.name}{pool.dex ? ` · ${pool.dex}` : ""} · GeckoTerminal <ArrowSquareOut size={12} aria-hidden="true" />
               </a>
-            </dd>
-          </div>
-        ) : null}
-        {links.length > 0 ? (
-          <div>
-            <dt>{text("Links")}</dt>
-            <dd>
-              {links.map((link, index) => (
-                <span key={link.href}>
-                  {index > 0 ? " · " : ""}
-                  <a href={link.href} target="_blank" rel="noreferrer noopener">{link.label} <ArrowSquareOut size={12} aria-hidden="true" /></a>
-                </span>
-              ))}
             </dd>
           </div>
         ) : null}

@@ -43,7 +43,7 @@ test("the quote and the order count «Перевірка» on the order they ans
 
 test("the sheets draw the server's lines and count none of them", () => {
   for (const [name, sheet] of [["purchase", BUY_SHEET], ["sale", SELL_SHEET]]) {
-    assert.match(sheet, /const check: SwapCheck \| null = prepared \? \(prepared\.check \?\? null\) : \(quoted\?\.check \?\? null\);/, `${name}: the order's lines once a Review is prepared, the quote's before`);
+    assert.match(sheet, /(?:const check: SwapCheck \| null = |if \(!linesOf\) return )prepared \? \(prepared\.check \?\? null\) : \(quoted\?\.check \?\? null\);/,`${name}: the order's lines once a Review is prepared, the quote's before`);
     assert.doesNotMatch(sheet, /buyCosts\(|reserveOverPurchase\(|WRAPPED_SOL_MINT|solUsd/, `${name}: no count of the costs, the reserve or SOL on the page`);
     assert.match(sheet, /costs \? approxUsd\(costs\.usd, numbers\) : "—"/, `${name}: «Усі витрати» the server's, a dash where it could not count`);
     assert.match(sheet, /costs\.issuerFee\.basisPoints/, `${name}: the issuer's fee the server read from the chain`);

@@ -7,11 +7,52 @@ import { readResolvedTheme, watchResolvedTheme } from "@/app/app/theme";
 import { SPOT_TIMEFRAMES, TIMEFRAME_SOURCE, type SpotTimeframe, isSpotTimeframe } from "@/lib/spot/candles";
 
 import { useSolanaI18n } from "../i18n/provider.tsx";
+import { formatUsdAxis } from "./spot-format.ts";
 import type { CandlesState, NoChartCode } from "./use-spot-data.ts";
 
 import styles from "./spot.module.css";
 
 const TF_KEY = "ryntra.spot.timeframe.v1";
+const SERIES_KEY = "ryntra.spot.series.v1";
+
+/** What the chart draws: the price, or the market's capitalisation over the same candles. */
+export type SpotSeries = "price" | "cap";
+
+/**
+ * The capitalisation over a market's candles: each candle times the supply
+ * the catalogue counts today (its market cap over its price), so the line is
+ * the price's own line on a capitalisation's scale. A supply that changed over
+ * the window is not redrawn — the chart says the scale is today's supply. Null
+ * without both figures, or for a tokenized stock, whose token supply is no
+ * company's value.
+ */
+export function capFactorOf(market: Readonly<{ price: number | null; marketCapUsd: number | null; category: string | null }> | null): number | null {
+  if (!market || market.category === "stock") return null;
+  const { price, marketCapUsd } = market;
+  if (price === null || marketCapUsd === null || !Number.isFinite(price) || !Number.isFinite(marketCapUsd) || price <= 0 || marketCapUsd <= 0) return null;
+  const factor = marketCapUsd / price;
+  return Number.isFinite(factor) && factor > 0 ? factor : null;
+}
+
+function useSpotSeries(): [SpotSeries, (next: SpotSeries) => void] {
+  const [series, setSeries] = useState<SpotSeries>("price");
+  useEffect(() => {
+    try {
+      if (window.localStorage.getItem(SERIES_KEY) === "cap") setSeries("cap");
+    } catch {
+      /* A denied store keeps the price. */
+    }
+  }, []);
+  const set = (next: SpotSeries) => {
+    setSeries(next);
+    try {
+      window.localStorage.setItem(SERIES_KEY, next);
+    } catch {
+      /* Nothing to keep. */
+    }
+  };
+  return [series, set];
+}
 
 export function useSpotTimeframe(): [SpotTimeframe, (next: SpotTimeframe) => void] {
   const [timeframe, setTimeframe] = useState<SpotTimeframe>("1h");
@@ -40,6 +81,12 @@ export function useSpotTimeframe(): [SpotTimeframe, (next: SpotTimeframe) => voi
  * frame; a source that stopped answering keeps the last read and says that.
  * Pro turns on indicators and chart settings; Simple is the candles, the
  * timeframes and the price.
+ *
+ * «Ціна · Капіталізація» beside the timeframes switches the same candles to
+ * the market's capitalisation (`capFactorOf`) — the axis in compact dollars,
+ * a line under the switch that the scale is today's supply, and drawings kept
+ * apart from the price's. A market without a capitalisation, or a tokenized
+ * stock, has no switch.
  */
 export function SpotChart({
   symbol,
@@ -47,21 +94,32 @@ export function SpotChart({
   timeframe,
   onTimeframe,
   pro,
+  capFactor = null,
 }: {
   symbol: string;
   candles: CandlesState;
   timeframe: SpotTimeframe;
   onTimeframe: (next: SpotTimeframe) => void;
   pro: boolean;
+  /** The supply the market cap is counted on (`capFactorOf`); null: no capitalisation to switch to. */
+  capFactor?: number | null;
 }) {
-  const { text } = useSolanaI18n();
+  const { text, locale } = useSolanaI18n();
+  const [chosen, setSeries] = useSpotSeries();
+  const series: SpotSeries = capFactor === null ? "price" : chosen;
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   useEffect(() => {
     setTheme(readResolvedTheme());
     return watchResolvedTheme(setTheme);
   }, []);
 
-  const rows = useMemo(() => (candles.value ? [...candles.value.candles] : []), [candles.value]);
+  const rows = useMemo(() => {
+    const source = candles.value ? candles.value.candles : [];
+    if (series !== "cap" || capFactor === null) return [...source];
+    return source.map((candle) => ({ ...candle, open: candle.open * capFactor, high: candle.high * capFactor, low: candle.low * capFactor, close: candle.close * capFactor }));
+  }, [candles.value, series, capFactor]);
+  /* Four significant figures in the header's own «$…B» shape: the axis steps read apart («$1.234B», «$1.241B»), narrow in both languages. */
+  const capFormatter = useMemo(() => (value: number) => formatUsdAxis(value, locale), [locale]);
   const tfSeconds = TIMEFRAME_SOURCE[timeframe].seconds;
   const note =
     candles.status === "unavailable" && rows.length > 0
@@ -99,9 +157,27 @@ export function SpotChart({
     );
   }
 
+  const switcher =
+    capFactor === null ? null : (
+      <span className={styles.seriesSwitch} role="group" aria-label={text("The chart shows")} data-chart-series={series}>
+        {(["price", "cap"] as const).map((entry) => (
+          <button key={entry} type="button" className={series === entry ? "on" : ""} aria-pressed={series === entry} onClick={() => setSeries(entry)} title={entry === "cap" ? text("Market cap at today's circulating supply") : undefined}>
+            {entry === "price" ? text("Price") : text("Market cap")}
+          </button>
+        ))}
+      </span>
+    );
+  const head = switcher || note ? (
+    <>
+      {switcher}
+      {note ? <span className={styles.chartNote}>{note}</span> : null}
+    </>
+  ) : undefined;
+
   return (
     <section className={`${styles.panel} ${styles.chart}`} aria-label={text("Chart")} data-terminal-chart data-dense>
       <ProChart
+        key={series}
         candles={rows}
         symbolLabel={symbol}
         tfSeconds={tfSeconds}
@@ -112,11 +188,18 @@ export function SpotChart({
           if (isSpotTimeframe(next)) onTimeframe(next);
         }}
         storageNamespace="spot"
-        drawingScope={`spot:${symbol}`}
-        note={note ? <span className={styles.chartNote}>{note}</span> : undefined}
+        drawingScope={series === "cap" ? `spot:${symbol}:cap` : `spot:${symbol}`}
+        note={head}
+        priceFormatter={series === "cap" ? capFormatter : undefined}
         chartClassName={styles.chartCanvas}
         features={pro ? { indicators: true, settings: true, drawings: true, fullscreen: true } : { indicators: false, settings: false, drawings: false, fullscreen: false }}
       />
+      {/* What the capitalisation is counted on, on the chart itself at every width: the past at today's supply. */}
+      {series === "cap" ? (
+        <p className={styles.capNote} data-cap-note>
+          {text("Market cap at today's circulating supply")}
+        </p>
+      ) : null}
     </section>
   );
 }

@@ -43,7 +43,9 @@ test("the Review is four lines — what leaves, what arrives at least, all costs
   assert.match(review, /word\("atLeast"\)/);
   assert.match(review, /data-issuer-fee/);
   /* 1.20.0: the lines are the server's — the order's `check`, the issuer's fee from the chain inside «Усі витрати» — and nothing is counted on the page. */
-  assert.match(SELL_SHEET, /const check: SwapCheck \| null = prepared \? \(prepared\.check \?\? null\) : \(quoted\?\.check \?\? null\);/);
+  assert.match(SELL_SHEET, /const check: SaleLines \| null = useMemo\(\(\) => \{\s*if \(!linesOf\) return prepared \? \(prepared\.check \?\? null\) : \(quoted\?\.check \?\? null\);/);
+  /* A coin's lines are counted by its own sale (`coin-sale.tsx`, `coinSaleLines`) on the same order and handed in — the sheet still counts none. */
+  assert.match(SELL_SHEET, /return order \? linesOf\(order, prepared \? "order" : "quote"\) : null;/);
   assert.match(SELL_SHEET, /costs\.issuerFee\.basisPoints/, "the fee is the one the server read from the chain for the mint");
   assert.doesNotMatch(SELL_SHEET, /buyCosts\(|WRAPPED_SOL_MINT|solUsd/, "no count of the costs on the page, no SOL price read for it");
   assert.match(review, /data-sale-may-fail/);
@@ -64,7 +66,9 @@ test("a PreStocks token says what it is and that selling may not be possible bef
 test("the receipt says «Продано» with the sum and what was sold, and the way to History and the transaction", () => {
   const receipt = SELL_SHEET.slice(SELL_SHEET.indexOf("/* ------------------------------------------------------------ the receipt */"), SELL_SHEET.indexOf("/* ------------------------------------------------------------ the Review */"));
   assert.match(receipt, /`\$\{word\("sold"\)\}\$\{got !== null \? ` · \$\{formatUsdMoney\(got, numbers\)\}` : ""\}`/);
-  assert.match(receipt, /unitsPhrase\(gave, unit, name, lang, numbers\)/);
+  assert.match(receipt, /amountWords\(gave\)/);
+  /* A company's shares or tokens in words; a coin by its symbol — «5,2 JUP». */
+  assert.match(SELL_SHEET, /const amountWords = \(value: number\) => \(coin \? `\$\{formatUnits\(value, numbers\)\} \$\{symbol\}` : unitsPhrase\(/);
   assert.match(receipt, /href="\/app\/activity"/);
   assert.match(receipt, /explorerTxUrl\("mainnet", settled\.signature\)/);
   assert.equal(INVEST_WORDS.sold.uk, "Продано");
@@ -97,11 +101,13 @@ test("the company page: «Продати» beside the holder's position, quiet �
   assert.match(COMPANY_CSS, /\.sell\[data-sell-open="true"\] \{\s*visibility: hidden;/, "the action steps aside while its sheet is open");
 });
 
-test("Portfolio: «Продати» on a company position, quiet, the sheet on the spot — never on crypto, dust, a retired token or a position with its own issuer event", () => {
+test("Portfolio: «Продати» on a company or a coin position, quiet, the sheet on the spot — never on USDC, dust, a retired token or a position with its own issuer event", () => {
   assert.match(HOLDINGS, /const listed = row\.category === "stock" && !row\.retired && !row\.event && row\.price !== null && row\.value !== null && row\.value >= DUST_MICRO_USD \? stockRows\?\.get\(row\.mint\) : undefined;/);
-  assert.match(HOLDINGS, /const sellable = listed !== undefined && !listed\.halted;/);
+  assert.match(HOLDINGS, /const coinSellable = row\.category !== "stock" && row\.tradeable && !row\.retired && !row\.event && row\.mint !== SOLANA_MAINNET_USDC_MINT && row\.price !== null && row\.value !== null && row\.value >= DUST_MICRO_USD;/);
+  assert.match(HOLDINGS, /const sellable = \(listed !== undefined && !listed\.halted\) \|\| coinSellable;/);
   assert.match(HOLDINGS, /className=\{`rw-btn \$\{styles\.sell\}`\}/);
-  assert.match(HOLDINGS, /<PositionSale mint=\{sale\?\.mint \?\? null\} placeholder=\{sale\} locale=\{locale\} onClose=\{\(\) => setSale\(null\)\} \/>/);
+  assert.match(HOLDINGS, /<PositionSale mint=\{sale && !sale\.coin \? sale\.mint : null\} placeholder=\{sale\} locale=\{locale\} onClose=\{\(\) => setSale\(null\)\} \/>/);
+  assert.match(HOLDINGS, /<CoinPositionSale mint=\{sale && sale\.coin \? sale\.mint : null\} placeholder=\{sale\} locale=\{locale\} onClose=\{\(\) => setSale\(null\)\} \/>/);
   assert.equal(HOLDINGS.split("rw-btn--primary").length - 1, 0, "the page's one orange action is the wallet's next step, in FundingActions");
   assert.match(SELL_SHEET, /export function PositionSale\(/);
   assert.match(SELL_SHEET, /const read = useStockAsset\(mint\);/, "the company read as its page reads it");

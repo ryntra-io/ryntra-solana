@@ -395,6 +395,9 @@ export const INVEST_WORDS = {
   /* One sentence with the server's «Що це» on a private company's sale (contract 1.20.0). */
   saleMayFail: bi(SALE_MAY_FAIL.en, SALE_MAY_FAIL.uk),
   nothingToSell: bi("There is none of this company in your wallet now.", "Цієї компанії зараз немає в гаманці."),
+  nothingToSellCoin: bi("There is none of this coin in your wallet now.", "Цієї монети зараз немає в гаманці."),
+  solKeptForFees: bi("All the SOL here stays for the network's fees — there is none to sell.", "Уся ця SOL лишається на плату мережі — продати нічого."),
+  coinUnread: bi("This coin could not be read right now. Try again in a moment.", "Монету зараз не вдалося прочитати. Спробуй за мить."),
   nothingSold: bi("Nothing happened — your position did not change. You can try again.", "Нічого не сталося — позиція не змінилась. Можна спробувати ще раз."),
   saleRejected: bi("The network rejected the sale. Only the network fee was spent.", "Мережа відхилила продаж. Списано лише плату мережі."),
   saleUnknownTx: bi("The outcome is not known yet. Do not sell again until it is.", "Результат ще невідомий. Не продавай ще раз, доки він не з'ясується."),
@@ -476,6 +479,12 @@ export function sellForWord(locale: WorkspaceLocale, sum: string, whole = false)
 export function heldLine(locale: WorkspaceLocale, units: string, usd: string | null): string {
   const worth = usd === null ? "" : ` ≈ ${usd}`;
   return locale === "uk" ? `У тебе ${units}${worth}` : `You hold ${units}${worth}`;
+}
+
+/** «Можна продати 0,11 SOL ≈ $12,30 · 0,01 SOL лишається на плату мережі» — SOL under its sale's action: what may be sold, and what stays. */
+export function sellableSolLine(locale: WorkspaceLocale, units: string, usd: string | null): string {
+  const worth = usd === null ? "" : ` ≈ ${usd}`;
+  return locale === "uk" ? `Можна продати ${units}${worth} · 0,01 SOL лишається на плату мережі` : `You can sell ${units}${worth} · 0.01 SOL stays for the network's fees`;
 }
 
 /** «Накопичено $0,60 · нагадаю від $1» · «$0.60 gathered · reminder from $1» — what a «З кожної оплати» rule waits with. */

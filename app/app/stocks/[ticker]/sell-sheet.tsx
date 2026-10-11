@@ -6,10 +6,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 
-import { approxUsd, dollars, parseDollars, unitsFromRaw, unitsPhrase } from "@/app/app/invest/company-model";
+import { approxUsd, dollars, formatUnits, parseDollars, unitsFromRaw, unitsPhrase } from "@/app/app/invest/company-model";
 import { solShort } from "@/app/app/invest/funding-model";
-import { heldLine, investWords, numberLocale, reserveLine, sellForWord } from "@/app/app/invest/invest-words";
-import { isOverPosition, isWholePosition, MIN_SALE_USD, openingSaleUsd, positionUsd, rawForUsd, SALE_SHARE_PRESETS_PCT, saleAssetOf, shareRaw, shareUsd, unitsOf, type SaleAsset } from "@/app/app/invest/sale-model";
+import { heldLine, investWords, sellableSolLine, numberLocale, reserveLine, sellForWord } from "@/app/app/invest/invest-words";
+import { isOverPosition, solForSale, isWholePosition, MIN_SALE_USD, openingSaleUsd, positionUsd, rawForUsd, SALE_SHARE_PRESETS_PCT, saleAssetOf, shareRaw, shareUsd, unitsOf, type SaleAsset, type SaleLines } from "@/app/app/invest/sale-model";
 import { useWalletData } from "@/app/app/wallet-data";
 import type { WorkspaceLocale } from "@/app/shell/locale";
 import { useSolanaConnection } from "@/app/solana/workspace/connection";
@@ -25,7 +25,7 @@ import { classifySpotFill } from "@/lib/solana/fill-outcome";
 import { SOLANA_MAINNET_USDC_MINT } from "@/lib/solana/send-kinds";
 import { swapFailureCopy } from "@/lib/solana/swap-failure-copy";
 import { SPOT_SALE_SIDE } from "@/lib/spot/ticket-state";
-import type { SwapCheck } from "@/lib/stocks/check";
+import type { CheckBasis, CheckOrderFigures } from "@/lib/stocks/check";
 
 import company from "./company.module.css";
 import { useSheetAboveKeyboard } from "./sheet-keyboard";
@@ -73,6 +73,14 @@ export type SellSheetProps = Readonly<{
   placeholder?: Readonly<{ mint: string; name: string; icon: string | null }> | null;
   /** The company could not be read. */
   failed?: boolean;
+  /** A coin's sale (`CoinPositionSale`): its unread state is said of the coin. */
+  coin?: boolean;
+  /**
+   * A coin's «Перевірка» lines on the order the server answered — the server
+   * counts a company's (`check`, 1.20.0) and no coin's, so the coin's sale
+   * hands in the count (`coinSaleLines`); the sheet draws, never counts.
+   */
+  linesOf?: ((order: CheckOrderFigures, basis: CheckBasis) => SaleLines | null) | null;
   locale: WorkspaceLocale;
   onClose: () => void;
   onConnect: () => void;
@@ -130,9 +138,9 @@ export function SellSheet(props: SellSheetProps) {
     >
       {open || busy ? (
         asset ? (
-          <SellFlow key={asset.mint} asset={asset} locale={locale} titleId={titleId} onBusy={setBusy} onClose={requestClose} onConnect={props.onConnect} />
+          <SellFlow key={asset.mint} asset={asset} linesOf={props.linesOf ?? null} locale={locale} titleId={titleId} onBusy={setBusy} onClose={requestClose} onConnect={props.onConnect} />
         ) : (
-          <SellPending placeholder={placeholder} failed={failed} locale={locale} titleId={titleId} onClose={requestClose} />
+          <SellPending placeholder={placeholder} failed={failed} coin={props.coin === true} locale={locale} titleId={titleId} onClose={requestClose} />
         )
       ) : null}
     </dialog>
@@ -176,7 +184,7 @@ export function SheetHead({ mint, name, icon, title, titleId, onClose, disabled,
 }
 
 /** A position's company still being read, or unread: its own logo and name, and one line. */
-function SellPending({ placeholder, failed, locale, titleId, onClose }: Readonly<{ placeholder: SellSheetProps["placeholder"]; failed: boolean; locale: WorkspaceLocale; titleId: string; onClose: () => void }>) {
+function SellPending({ placeholder, failed, coin, locale, titleId, onClose }: Readonly<{ placeholder: SellSheetProps["placeholder"]; failed: boolean; coin: boolean; locale: WorkspaceLocale; titleId: string; onClose: () => void }>) {
   const word = investWords(locale);
   return (
     <div className={company.sheetBody} data-sheet={failed ? "sale-unread" : "sale-reading"}>
@@ -184,7 +192,7 @@ function SellPending({ placeholder, failed, locale, titleId, onClose }: Readonly
       {failed ? (
         <>
           <p className={company.sheetNote} role="status">
-            {word("companyUnread")}
+            {coin ? word("coinUnread") : word("companyUnread")}
           </p>
           <div className={company.sheetActions}>
             <button type="button" className="rw-btn rw-btn--primary" onClick={onClose}>
@@ -199,7 +207,7 @@ function SellPending({ placeholder, failed, locale, titleId, onClose }: Readonly
   );
 }
 
-function SellFlow({ asset, locale, titleId, onBusy, onClose, onConnect }: Readonly<{ asset: SaleAsset; locale: WorkspaceLocale; titleId: string; onBusy: (busy: boolean) => void; onClose: () => void; onConnect: () => void }>) {
+function SellFlow({ asset, linesOf, locale, titleId, onBusy, onClose, onConnect }: Readonly<{ asset: SaleAsset; linesOf: SellSheetProps["linesOf"]; locale: WorkspaceLocale; titleId: string; onBusy: (busy: boolean) => void; onClose: () => void; onConnect: () => void }>) {
   const word = investWords(locale);
   const numbers = numberLocale(locale);
   const lang = locale === "uk" ? "uk" : "en";
@@ -208,13 +216,19 @@ function SellFlow({ asset, locale, titleId, onBusy, onClose, onConnect }: Readon
   const { holdings, refresh } = useWalletData();
   const router = useRouter();
   const { mint, symbol, name, icon, unit, preIpo, truth } = asset;
+  const coin = unit === "coin";
+  /* SOL is the wallet's own lamports, not a token account: its row is the native one, and what may be sold leaves the network's fee behind. */
+  const native = asset.nativeSol === true;
   /* The mint's decimals when the chain read did not bring them — the venue's own read; what the sale costs is the server's count (1.20.0). */
   const market = useSpotMarket(asset.decimals === null ? mint : null);
+  /* «5,2 JUP» for a coin; a company's shares or tokens in words. */
+  const amountWords = (value: number) => (coin ? `${formatUnits(value, numbers)} ${symbol}` : unitsPhrase(value, unit, name, lang, numbers));
   const baseDecimals = asset.decimals ?? (market.status === "ready" ? market.value.decimals : null);
 
   /* ------------------------------------------------------------ the position */
-  const heldRow = holdings.status === "ready" ? (holdings.data.find((row) => row.mint === mint) ?? null) : null;
-  const readRaw = heldRow && RAW.test(heldRow.amountRaw) ? BigInt(heldRow.amountRaw) : holdings.status === "ready" ? 0n : null;
+  const heldRow = holdings.status === "ready" ? (holdings.data.find((row) => (native ? row.kind === "NATIVE_SOL" : row.mint === mint)) ?? null) : null;
+  const heldAmount = heldRow && RAW.test(heldRow.amountRaw) ? BigInt(heldRow.amountRaw) : null;
+  const readRaw = heldAmount !== null ? (native ? solForSale(heldAmount) : heldAmount) : holdings.status === "ready" ? 0n : null;
   /* The position as last read, while the wallet is read again — after a signature, or a send the network refused — so an open Review is never closed by the re-read itself. */
   const [lastRaw, setLastRaw] = useState<bigint | null>(null);
   useEffect(() => {
@@ -295,7 +309,12 @@ function SellFlow({ asset, locale, titleId, onBusy, onClose, onConnect }: Readon
    * reserve the simulation proved. The sheet draws them and counts none of
    * them, so the phone shows the same figures.
    */
-  const check: SwapCheck | null = prepared ? (prepared.check ?? null) : (quoted?.check ?? null);
+  const check: SaleLines | null = useMemo(() => {
+    if (!linesOf) return prepared ? (prepared.check ?? null) : (quoted?.check ?? null);
+    /* A coin's: the same order, its lines handed in by the coin's sale. */
+    const order = prepared?.order ?? quoted?.order ?? null;
+    return order ? linesOf(order, prepared ? "order" : "quote") : null;
+  }, [linesOf, prepared, quoted]);
   const outUsdc = check?.get.amount ?? null;
   const costs = amount ? (check?.costs ?? null) : null;
   /* «з них комісія емітента 3% ≈ $0,03» — the share of the sale the mint withholds on the transfer, at the rate the chain states. */
@@ -341,7 +360,7 @@ function SellFlow({ asset, locale, titleId, onBusy, onClose, onConnect }: Readon
           <p className={company.receiptTitle} translate="no">
             {title}
           </p>
-          {outcome.kind === "FILLED" && gave !== null ? <p className={company.receiptSub}>{unitsPhrase(gave, unit, name, lang, numbers)}</p> : null}
+          {outcome.kind === "FILLED" && gave !== null ? <p className={company.receiptSub}>{amountWords(gave)}</p> : null}
           {outcome.kind === "FILLED" && outcome.note ? <p className={company.receiptNote}>{outcome.note === "BELOW_MINIMUM" ? word("belowMinimum") : word("notAsReviewed")}</p> : null}
         </div>
         <div className={company.sheetActions}>
@@ -395,7 +414,7 @@ function SellFlow({ asset, locale, titleId, onBusy, onClose, onConnect }: Readon
   const inReview = (phase === "REVIEW" || phase === "SIGNING" || phase === "EXECUTING") && prepared !== null;
   if (inReview && prepared) {
     /* The order's own lines, as the server counted them on these exact bytes (1.20.0); a figure it could not count is a dash, never one counted here. */
-    const lines = prepared.check ?? null;
+    const lines = check;
     const sellUnits = lines?.spend.amount ?? null;
     const sellUsd = lines?.spend.usd ?? null;
     const minUsdc = lines?.get.atLeast ?? null;
@@ -414,7 +433,7 @@ function SellFlow({ asset, locale, titleId, onBusy, onClose, onConnect }: Readon
           <div>
             <dt>{word("rowSell")}</dt>
             <dd translate="no">
-              {sellUnits === null ? "—" : unitsPhrase(sellUnits, unit, name, lang, numbers)}
+              {sellUnits === null ? "—" : amountWords(sellUnits)}
               {sellUsd !== null ? <span>{approxUsd(sellUsd, numbers)}</span> : null}
             </dd>
           </div>
@@ -511,7 +530,7 @@ function SellFlow({ asset, locale, titleId, onBusy, onClose, onConnect }: Readon
       ) : null}
       {none ? (
         <p className={company.sheetNote} data-empty="token">
-          {word("nothingToSell")}
+          {native ? word("solKeptForFees") : coin ? word("nothingToSellCoin") : word("nothingToSell")}
         </p>
       ) : (
         <>
@@ -557,7 +576,7 @@ function SellFlow({ asset, locale, titleId, onBusy, onClose, onConnect }: Readon
         </button>
         {heldUnits !== null && heldUnits > 0 ? (
           <p className={company.sheetLinks}>
-            <span translate="no">{heldLine(locale, unitsPhrase(heldUnits, unit, name, lang, numbers), valueUsd !== null ? formatUsdMoney(valueUsd, numbers) : null)}</span>
+            <span translate="no">{(native ? sellableSolLine : heldLine)(locale, amountWords(heldUnits), valueUsd !== null ? formatUsdMoney(valueUsd, numbers) : null)}</span>
           </p>
         ) : null}
       </div>

@@ -31,7 +31,15 @@ function movementText(movement: SolanaWalletAction["out"], locale: string): stri
  * The holding is the wallet's balance of the asset, priced from the market's
  * live figure. Neither is a second Portfolio — that page has the whole picture
  * and is one link away.
+ *
+ * The tabs are one list (`tabs` below): the wallet's own two now. The token
+ * page's market tabs — «Холдери», «Угоди» (who bought, how much, who sells,
+ * the capitalisation at the trade), «Ліквідність», «Ризик», «Соцмережі» — are
+ * the token page's own work and join this list as entries with their own
+ * bodies when their data is live; none is drawn before it has something to
+ * show.
  */
+export type TradingStateTab = "holding" | "fills";
 export function TradingState({
   market,
   holdings,
@@ -47,7 +55,7 @@ export function TradingState({
 }) {
   const { text, locale } = useSolanaI18n();
   const { connection } = useSolanaConnection();
-  const [tab, setTab] = useState<"holding" | "fills">("holding");
+  const [tab, setTab] = useState<TradingStateTab>("holding");
   const mint = market?.mint ?? null;
 
   const holding = useMemo<SpotHolding | null>(() => {
@@ -78,15 +86,20 @@ export function TradingState({
   }, [fills.value, mint]);
 
   const active = pro ? tab : "holding";
+  const tabs: readonly Readonly<{ id: TradingStateTab; label: string }>[] = [
+    { id: "holding", label: text("Holding") },
+    { id: "fills", label: `${text("Recent fills")}${rows.length > 0 ? ` · ${rows.length}` : ""}` },
+  ];
 
   return (
     <section className={`${styles.panel} ${styles.state}`} aria-label={text("Trading state")}>
       {pro ? (
         <div className={styles.stateTabs} data-dense role="tablist">
-          <button type="button" role="tab" className={styles.stateTab} aria-selected={tab === "holding"} onClick={() => setTab("holding")}>{text("Holding")}</button>
-          <button type="button" role="tab" className={styles.stateTab} aria-selected={tab === "fills"} onClick={() => setTab("fills")}>
-            {text("Recent fills")}{rows.length > 0 ? ` · ${rows.length}` : ""}
-          </button>
+          {tabs.map((entry) => (
+            <button key={entry.id} type="button" role="tab" className={styles.stateTab} aria-selected={tab === entry.id} onClick={() => setTab(entry.id)} data-state-tab={entry.id}>
+              {entry.label}
+            </button>
+          ))}
         </div>
       ) : null}
       <div className={styles.stateBody}>

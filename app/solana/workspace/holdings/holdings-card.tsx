@@ -34,6 +34,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { AutoinvestBlock } from "@/app/app/invest/autoinvest-block";
+import { CoinPositionSale } from "@/app/app/stocks/[ticker]/coin-sale";
 import { PositionSale } from "@/app/app/stocks/[ticker]/sell-sheet";
 import { FundingActions } from "@/app/app/invest/funding-actions";
 import { WarnSheet, WatchLine } from "@/app/app/invest/position-watch";
@@ -46,6 +47,7 @@ import { Panel } from "@/app/shell/panel";
 import type { PositionWatchView } from "@/lib/api/v1/contract";
 import type { SolanaWalletAction } from "@/lib/solana/action-ledger";
 import { displayAmount } from "@/lib/solana/amounts";
+import { SOLANA_MAINNET_USDC_MINT } from "@/lib/solana/send-kinds";
 import { eventLine, isWatched, SELL_FOR_USDC, swapActionWord, windowState } from "@/lib/stocks/conversion-watch";
 import { lifecycleEventFor } from "@/lib/stocks/lifecycle-events";
 import { isRetiredMint } from "@/lib/stocks/retired";
@@ -134,8 +136,8 @@ export function HoldingsCard() {
   /* The plan a holding belongs to: the wallet's own plans by mint, so a position can be opened as the decision it came from. Nothing about value is computed here. */
   const plansByMint = usePlansByMint(connection?.address ?? null);
   const [dustOpen, setDustOpen] = useState(false);
-  /* «Продати з позиції»: the position whose sale's sheet is open, and its own logo and name for the head while the company is read. */
-  const [sale, setSale] = useState<Readonly<{ mint: string; name: string; icon: string | null }> | null>(null);
+  /* «Продати з позиції»: the position whose sale's sheet is open — a company's or a coin's — and its own logo and name for the head while it is read. */
+  const [sale, setSale] = useState<Readonly<{ mint: string; name: string; icon: string | null; coin: boolean }> | null>(null);
   /* Нагляд over each company the wallet holds: its state and one action under the row; «Ryntra попередить» opens its sheet. */
   const watches = usePositions();
   const [warning, setWarning] = useState<PositionWatchView | null>(null);
@@ -413,11 +415,13 @@ export function HoldingsCard() {
 
         <ul className={styles.list}>
           {(searching ? rows : [...positions, ...(dustOpen ? dust : [])]).map((row) => {
-            /* A company the wallet holds is sold from its position: a stock Ryntra lists, priced, not paused, and not dust. A position whose issuer event already offers the sale keeps that one; crypto is not sold here. */
+            /* A company the wallet holds is sold from its position: a stock Ryntra lists, priced, not paused, and not dust. A position whose issuer event already offers the sale keeps that one. */
             const listed = row.category === "stock" && !row.retired && !row.event && row.price !== null && row.value !== null && row.value >= DUST_MICRO_USD ? stockRows?.get(row.mint) : undefined;
-            const sellable = listed !== undefined && !listed.halted;
+            /* And a coin the same way, into USDC from the same sheet: any priced coin Spot trades, not dust — never USDC itself. */
+            const coinSellable = row.category !== "stock" && row.tradeable && !row.retired && !row.event && row.mint !== SOLANA_MAINNET_USDC_MINT && row.price !== null && row.value !== null && row.value >= DUST_MICRO_USD;
+            const sellable = (listed !== undefined && !listed.halted) || coinSellable;
             const watch = row.category === "stock" && !row.retired ? watches.of(row.mint) : null;
-            const openSale = () => setSale({ mint: row.mint, name: listed?.name ?? row.name ?? row.ticker, icon: row.icon });
+            const openSale = () => setSale({ mint: row.mint, name: listed?.name ?? row.name ?? row.ticker, icon: row.icon, coin: coinSellable });
             /* «Пауза емітента»: nothing can be sold now. «Дія»: the row's own «Продати» is the sale the watch asks for — marked in the state's colour, and the line under the name says why. */
             const sellButton = sellable && watch?.state !== "issuer-paused";
             const urgent = sellButton && watch?.action === "open-sale" ? (watch.reason === "target" ? "target" : "limit") : undefined;
@@ -502,7 +506,8 @@ export function HoldingsCard() {
         ) : null}
       </section>
 
-      <PositionSale mint={sale?.mint ?? null} placeholder={sale} locale={locale} onClose={() => setSale(null)} />
+      <PositionSale mint={sale && !sale.coin ? sale.mint : null} placeholder={sale} locale={locale} onClose={() => setSale(null)} />
+      <CoinPositionSale mint={sale && sale.coin ? sale.mint : null} placeholder={sale} locale={locale} onClose={() => setSale(null)} />
       <WarnSheet view={warning} locale={locale} onClose={() => setWarning(null)} />
 
       {/* «Автоінвест» — the wallet's rules and the month's budget, the block Home draws: the right column from 1280 px, under the value on a narrower desk, after the positions on a phone. */}

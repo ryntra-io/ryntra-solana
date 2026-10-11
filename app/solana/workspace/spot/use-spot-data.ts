@@ -10,6 +10,7 @@ import { TIMEFRAME_TTL_MS } from "@/lib/spot/candles";
 import type { SpotMarket, SpotMarketListRow, SpotView } from "@/lib/spot/markets";
 import { spotListReadIncomplete, spotReadRetryDelayMs } from "@/lib/spot/read-retry";
 import { currentSpotSnapshot } from "@/lib/spot/ticket-state";
+import type { TokenAbout } from "@/lib/spot/token-about";
 import { createWatchlistWriter } from "@/lib/spot/watchlist-client";
 
 /**
@@ -191,6 +192,40 @@ export function useSpotMarket(mint: string | null): MarketState {
       window.clearInterval(interval);
       if (retryTimer !== undefined) window.clearTimeout(retryTimer);
     };
+  }, [mint, setState]);
+  return state;
+}
+
+/* ------------------------------------------------------------ what it is */
+
+export type TokenAboutRead = Readonly<{ status: "loading" } | { status: "ready"; about: TokenAbout } | { status: "unavailable" }>;
+
+/**
+ * «Що це за монета»: the description the token's creator wrote in its
+ * metadata (`/api/spot/about`), read once per market — a creator rarely
+ * rewrites it, and the edge keeps it for an hour. A route that did not answer
+ * is `unavailable`, which the header says as such, never as a silence.
+ */
+export function useTokenAbout(mint: string | null, name: string, symbol: string): TokenAboutRead {
+  const [state, setState] = useScopedRead<TokenAboutRead>(mint, { status: "loading" });
+  /* The names the header shows are only a filter for a description that repeats them; a later read of them does not ask again. */
+  const names = useRef({ name, symbol });
+  names.current = { name, symbol };
+  useEffect(() => {
+    if (!mint) return;
+    const controller = new AbortController();
+    setState({ status: "loading" });
+    const query = new URLSearchParams({ mint });
+    if (names.current.name) query.set("name", names.current.name);
+    if (names.current.symbol) query.set("symbol", names.current.symbol);
+    void getJson<{ about: TokenAbout }>(`/api/spot/about?${query.toString()}`, controller.signal).then((read) => {
+      if (!read.ok) {
+        if (read.reason !== "aborted") setState({ status: "unavailable" });
+        return;
+      }
+      setState({ status: "ready", about: read.value.about });
+    });
+    return () => controller.abort();
   }, [mint, setState]);
   return state;
 }

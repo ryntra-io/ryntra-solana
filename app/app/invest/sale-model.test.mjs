@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { DEFAULT_SALE_USD, isOverPosition, isWholePosition, MIN_SALE_USD, openingSaleUsd, positionUsd, rawForUsd, SALE_SHARE_PRESETS_PCT, saleAssetOf, shareRaw, shareUsd, unitsOf } from "./sale-model.ts";
+import { coinSaleAssetOf, coinSaleLines, coinTruth, DEFAULT_SALE_USD, SOL_SALE_RESERVE_LAMPORTS, solForSale, isOverPosition, isWholePosition, MIN_SALE_USD, openingSaleUsd, positionUsd, rawForUsd, SALE_SHARE_PRESETS_PCT, saleAssetOf, shareRaw, shareUsd, unitsOf } from "./sale-model.ts";
 
 /**
  * «Продати з позиції»: a sum in dollars or a share of the position → the raw
@@ -97,4 +97,54 @@ test("the company's facts for its sale read as the company page reads them — t
   assert.equal(apple.issuerFeeBps, null);
   assert.equal(apple.multiplier, null);
   assert.match(apple.truth, /^A token that tracks the price of Apple/);
+});
+
+/* ------------------------------------------------------------ a coin */
+
+const SOL_MINT = "So11111111111111111111111111111111111111112";
+const USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
+const JUP = { mint: "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN", symbol: "JUP", name: "Jupiter", icon: null, decimals: 6, price: 0.5, verified: true, category: "crypto", audit: { suspicious: false } };
+
+test("a coin is sold from the same sheet: said by its symbol, what it is from the catalogue's facts, sellable while priced", () => {
+  const asset = coinSaleAssetOf(JUP, "uk", SOL_MINT);
+  assert.equal(asset.unit, "coin");
+  assert.equal(asset.multiplier, null);
+  assert.equal(asset.issuerFeeBps, null);
+  assert.equal(asset.sellable, true);
+  assert.equal(asset.truth, "Монета Solana · ціну задає ринок · перевірена Jupiter");
+  assert.equal(asset.truthCaution, false);
+  assert.equal(coinSaleAssetOf({ ...JUP, price: null }, "en", SOL_MINT).sellable, false, "no price, no sale");
+  assert.deepEqual(coinTruth({ ...JUP, category: "meme", verified: false }, "en", SOL_MINT), { line: "A Solana meme coin · the market sets its price · not verified by Jupiter — check the address", caution: true });
+  assert.equal(coinTruth({ ...JUP, audit: { suspicious: true } }, "uk", SOL_MINT).caution, true);
+  assert.equal(coinTruth({ ...JUP, mint: SOL_MINT }, "en", SOL_MINT).line, "SOL, the Solana network's own coin · the market sets its price");
+});
+
+test("a coin's «Перевірка» is counted by the server's rules from the order it answered — a figure it cannot count is null", () => {
+  const asset = coinSaleAssetOf(JUP, "en", SOL_MINT);
+  const order = {
+    inAmountRaw: "20000000", outAmountRaw: "9950000", minReceivedRaw: "9900000",
+    inUsdValue: "10.00", outUsdValue: "9.95", totalFeeBasisPoints: 25, priceImpactPct: "0.01",
+    signatureFeeLamports: "5000", priorityFeeLamports: "0", rentFeeLamports: "2039280",
+  };
+  const quote = coinSaleLines({ order, basis: "quote", asset, solUsd: 200, usdcMint: USDC_MINT });
+  assert.equal(quote.spend.amount, 20);
+  assert.equal(quote.spend.usd, 10);
+  assert.equal(quote.get.amount, 9.95);
+  assert.equal(quote.get.atLeast, 9.9);
+  assert.ok(Math.abs(quote.costs.usd - (0.05 + 0.001)) < 1e-9, "the venue's values' difference and the network's fee at SOL's price");
+  assert.equal(quote.reserve, null, "no reserve on a quote — only the order's simulation proves one");
+  assert.equal(quote.what.truth.en, asset.truth);
+  const placed = coinSaleLines({ order, basis: "order", asset, solUsd: 200, usdcMint: USDC_MINT });
+  assert.equal(placed.reserve.lamports, "2039280");
+  assert.ok(Math.abs(placed.reserve.usd - 0.407856) < 1e-9);
+  assert.equal(coinSaleLines({ order, basis: "quote", asset, solUsd: null, usdcMint: USDC_MINT }).costs, null, "without SOL's price the costs are unknown, never smaller");
+  assert.equal(coinSaleLines({ order, basis: "quote", asset: { ...asset, decimals: null }, solUsd: 200, usdcMint: USDC_MINT }), null);
+});
+
+test("a sale of SOL leaves 0.01 SOL to carry it; «100 %» is everything above", () => {
+  assert.equal(SOL_SALE_RESERVE_LAMPORTS, 10_000_000n);
+  assert.equal(solForSale(120_000_000n), 110_000_000n);
+  assert.equal(solForSale(9_000_000n), 0n, "a wallet with less than the reserve has none to sell");
+  assert.equal(coinSaleAssetOf({ ...JUP, mint: SOL_MINT, name: "Wrapped SOL", symbol: "SOL" }, "en", SOL_MINT).name, "SOL");
+  assert.equal(coinSaleAssetOf({ ...JUP, mint: SOL_MINT }, "en", SOL_MINT).nativeSol, true);
 });

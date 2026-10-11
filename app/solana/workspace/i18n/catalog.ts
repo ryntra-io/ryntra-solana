@@ -22,6 +22,16 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Balance unavailable": "Баланс недоступний",
   "No tokens found": "Токенів не знайдено",
   /* Spot — one market terminal. */
+  /* Spot — the coin as a stock has it: what it is, its position, its capitalisation. */
+  "Less": "Менше",
+  "Your position": "Твоя позиція",
+  "The Solana network's own coin: every transaction's fee is paid in it.": "Рідна монета мережі Solana: нею платять комісію за кожну транзакцію.",
+  "What the token says about itself could not be read just now.": "Що токен каже про себе, зараз не вдалося прочитати.",
+  "The token's creator wrote no description.": "Творець токена не написав опису.",
+  "From the creator · not checked": "Від творця · не перевірено",
+  "The description and the links are set by the token's creator; Ryntra has not checked them.": "Опис і посилання задає творець токена; Ryntra їх не перевіряла.",
+  "The chart shows": "Графік показує",
+  "Market cap at today's circulating supply": "Капіталізація за нинішньої кількості в обігу",
   "Tokenized": "Токенізований",
   "Tokenized asset": "Токенізований актив",
   "Meme": "Мем",

@@ -9,10 +9,10 @@ moved counts as new. Generated at every update from the development history.
 
 | Since the tag | Files |
 |---|---|
-| New | 1,346 |
-| Changed | 823 |
-| Unchanged | 912 |
-| Lines added / removed | +348,009 / −20,434 |
+| New | 1,351 |
+| Changed | 824 |
+| Unchanged | 911 |
+| Lines added / removed | +349,428 / −20,494 |
 
 ## New since the tag
 
@@ -106,6 +106,7 @@ moved counts as new. Generated at every update from the development history.
 - `app/api/solana/swap/golden.test.mjs`
 - `app/api/solana/swap/golden/fixtures.mjs`
 - `app/api/solana/swap/golden/transcripts.json`
+- `app/api/spot/about/route.ts`
 - `app/api/stats/registry/route.ts`
 - `app/api/stats/route.ts`
 - `app/api/stocks/asset/route.ts`
@@ -325,6 +326,7 @@ moved counts as new. Generated at every update from the development history.
 - `app/app/stocks/[ticker]/autoinvest-sheet.tsx`
 - `app/app/stocks/[ticker]/buy-actions.ts`
 - `app/app/stocks/[ticker]/buy-sheet.tsx`
+- `app/app/stocks/[ticker]/coin-sale.tsx`
 - `app/app/stocks/[ticker]/company-actions.tsx`
 - `app/app/stocks/[ticker]/company-event.tsx`
 - `app/app/stocks/[ticker]/company-facts-blocks.tsx`
@@ -1232,6 +1234,9 @@ moved counts as new. Generated at every update from the development history.
 - `lib/spot/read-retry.ts`
 - `lib/spot/ticket-state.test.mjs`
 - `lib/spot/ticket-state.ts`
+- `lib/spot/token-about.server.ts`
+- `lib/spot/token-about.test.mjs`
+- `lib/spot/token-about.ts`
 - `lib/spot/watchlist-client.test.mjs`
 - `lib/spot/watchlist-client.ts`
 - `lib/stocks/asset.server.ts`
@@ -1529,6 +1534,7 @@ moved counts as new. Generated at every update from the development history.
 - `app/brand/ryntra-brand.tsx`
 - `app/company/company.test.mjs`
 - `app/company/page.tsx`
+- `app/components/chart/ProChart.tsx`
 - `app/components/mark.tsx`
 - `app/components/plan-card.tsx`
 - `app/components/tiles/tile.tsx`

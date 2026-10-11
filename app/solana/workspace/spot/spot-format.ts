@@ -38,6 +38,17 @@ export function formatUsdCompact(value: number | null, locale: string): string {
   return `$${new Intl.NumberFormat(locale, { maximumFractionDigits: abs >= 1 ? 0 : 2 }).format(value)}`;
 }
 
+/**
+ * Compact USD for a chart's axis, the stat's own shape with the figures an axis needs to read its steps apart:
+ * `$1.234B`, `$48.56M`, `$912.4K` — four significant figures, the same `$…B` in both languages.
+ */
+export function formatUsdAxis(value: number, locale: string): string {
+  if (!Number.isFinite(value)) return DASH;
+  const abs = Math.abs(value);
+  const [scaled, unit] = abs >= 1e9 ? [value / 1e9, "B"] : abs >= 1e6 ? [value / 1e6, "M"] : abs >= 1e3 ? [value / 1e3, "K"] : [value, ""];
+  return `$${new Intl.NumberFormat(locale, { maximumSignificantDigits: 4 }).format(scaled)}${unit}`;
+}
+
 /** A count: `2,342,610` or compact above a million. */
 export function formatCount(value: number | null, locale: string): string {
   if (value === null || !Number.isFinite(value)) return DASH;
