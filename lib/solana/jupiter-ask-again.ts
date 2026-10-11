@@ -43,3 +43,48 @@ export async function askOnceMoreAfterRate<T extends Answer>(ask: () => Promise<
   await (options.sleep ?? pause)(wait);
   return ask();
 }
+
+/**
+ * The pause before the signable order is asked again after the venue's own
+ * 4xx or 5xx. Production on 2026-10-03 and 10-04 carried `ORDER_REFUSED` two
+ * and three times within seconds, and the next press passed: the venue would
+ * not build the order for a moment. A second — the venue's moment, and well
+ * inside the press a person is waiting on.
+ */
+export const JUPITER_ORDER_REFUSAL_PAUSE_MS = 1_000;
+
+/**
+ * A first answer that took longer than this is not asked again: the order
+ * route has sixty seconds (`maxDuration`), and a second ask may itself take
+ * up to ~26 s (a fetch, the rate window's ten, a fetch) before the simulation
+ * and the proof — so ten for the first, one for the pause, and the rest is
+ * kept. The refusal is said instead — the person may press again.
+ */
+export const JUPITER_ORDER_REFUSAL_ASK_AGAIN_WITHIN_MS = 10_000;
+
+/** The venue answered the order with its own 4xx (`REFUSED`) or 5xx (`HTTP_ERROR`) — never its rate, a missing route or a wallet short of funds. */
+export function refusedForAMoment(answer: Answer): boolean {
+  return !answer.ok && (answer.code === "REFUSED" || answer.code === "HTTP_ERROR");
+}
+
+/**
+ * Ask; after the venue's own 4xx or 5xx, pause and ask once more — the
+ * signable order only, in the swap's prepare half, where nothing is locked,
+ * stored or signed before the venue answers (the owner's lock is reserved at
+ * its very end), so the second ask builds at most the one Review the first
+ * would have. Once: a second refusal is the answer. `/execute` is never asked
+ * again. `noted` hears the first refusal, for the log.
+ */
+export async function askOnceMoreAfterRefusal<T extends Answer>(
+  ask: () => Promise<T>,
+  options: Readonly<{ sleep?: (ms: number) => Promise<void>; pauseMs?: number; noted?: (first: T) => void; now?: () => number }> = {},
+): Promise<T> {
+  const now = options.now ?? Date.now;
+  const started = now();
+  const first = await ask();
+  if (!refusedForAMoment(first)) return first;
+  if (now() - started > JUPITER_ORDER_REFUSAL_ASK_AGAIN_WITHIN_MS) return first;
+  options.noted?.(first);
+  await (options.sleep ?? pause)(options.pauseMs ?? JUPITER_ORDER_REFUSAL_PAUSE_MS);
+  return ask();
+}

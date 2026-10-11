@@ -43,7 +43,7 @@ import { findStockRow } from "../../stocks/universe.server.ts";
 import { resolveServiceFeeConfig } from "../../swap/service-fee.server.ts";
 import type { TradeIntent } from "../contracts.ts";
 import { definePipeline, NEXT, need, runPipeline, type PipelineRun, type PipelineStep, type StepResult } from "../pipeline.ts";
-import { createJupiterSwapVenue, JupiterOrderRefusal } from "../venues/jupiter.ts";
+import { createJupiterSwapVenue } from "../venues/jupiter.ts";
 import {
   SOLANA_SWAP_REVIEW_GUARD,
   handleOf,
@@ -52,6 +52,7 @@ import {
   type SwapReviewGuardContext,
 } from "./guard.ts";
 import type { SwapRefusal } from "./refusal.ts";
+import { askVenueOrder, venueRefusal } from "./venue-order.ts";
 
 /** What the order route admitted: a valid request from an accepted carrier. */
 export type SwapPrepareRequest = Readonly<{
@@ -190,6 +191,16 @@ const assetPassports: PipelineStep<SwapPrepareContext, SwapRefusal> = {
  * rather than reading «Забагато запитів»: nothing is locked, stored or signed
  * before the provider answers, so the second ask builds at most the one Review
  * the first would have.
+ *
+ * Refused by the venue's own 4xx or 5xx, the whole ask is made once more after
+ * a second's pause (`askOnceMoreAfterRefusal`), on the same ground: production
+ * carried `ORDER_REFUSED` two and three times within seconds on 2026-10-03 and
+ * 10-04, and the next press passed. Here the venue is asked at most twice
+ * per request; the phone asks the route again on its own as well (once after
+ * `ORDER_REFUSED`, twice after `ORDER_HTTP_ERROR`). The first refusal is
+ * written to the log with the venue's sentence («asked again»), so one request
+ * may write two lines: that one, and the route's «refused» if the second ask
+ * fails too.
  */
 const venueOrder: PipelineStep<SwapPrepareContext, SwapRefusal> = {
   stage: "build",
@@ -215,23 +226,13 @@ const venueOrder: PipelineStep<SwapPrepareContext, SwapRefusal> = {
       account,
       ...(planSlippageBps !== undefined ? { slippageBps: planSlippageBps } : {}),
     };
-    try {
-      const quote = await venue.quote(intent);
-      context.unsigned = await venue.build(quote, account);
-      context.order = quote.native;
-    } catch (cause) {
-      if (!(cause instanceof JupiterOrderRefusal)) throw cause;
-      const orderResult = cause.failure;
-      const status =
-        orderResult.code === "NO_ROUTE" || orderResult.code === "BUILD_FAILED"
-          ? 409
-          : orderResult.code === "RATE_LIMITED"
-            ? 429
-            : 502;
-      return refuse(status, `ORDER_${orderResult.code}`, orderResult.reason, {
-        provider: { errorCode: orderResult.errorCode, router: orderResult.router ?? null },
-      });
+    const answer = await askVenueOrder(venue, intent);
+    if (!answer.ok) {
+      const refusal = venueRefusal(answer);
+      return refuse(refusal.status, refusal.code, refusal.message, refusal.extra);
     }
+    context.unsigned = await venue.build(answer.quote, account);
+    context.order = answer.quote.native;
     return NEXT;
   },
 };

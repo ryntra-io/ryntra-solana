@@ -22,17 +22,22 @@ export function currentSpotSnapshot<T>(snapshot: { key: string | null; state: T 
 }
 
 export type SpotTicketAction = "WAIT" | "RECOVER" | "REFRESH_REVIEW" | "SIGN" | "AMOUNT" |
-  "NETWORK_FEE" | "INSUFFICIENT_BALANCE" | "REFRESH_QUOTE" | "UNAVAILABLE" | "REVIEW";
+  "NETWORK_FEE" | "INSUFFICIENT_BALANCE" | "UNAVAILABLE" | "REVIEW";
 
+/**
+ * The ticket's one action. «Перевірка» (`REVIEW`) asks the order route for its
+ * own fresh order on the amount in the field: it waits for no estimate and no
+ * fresh one (2026-10-11 — the first press is the one that works);
+ * the Review's own window binds the signature. An estimate that refused for
+ * this very amount for a reason no press changes — the same asset, a refused
+ * passport — offers no Review.
+ */
 export function spotTicketAction(state: {
   phase: string;
   hasAttempt: boolean;
   lockedReview: boolean;
   hasPrepared: boolean;
   reviewReady: boolean;
-  hasQuote: boolean;
-  quoteFresh: boolean;
-  quoting: boolean;
   amountValid: boolean;
   insufficientBalance: boolean;
   cannotPayFee: boolean;
@@ -47,10 +52,7 @@ export function spotTicketAction(state: {
   if (!state.amountValid) return "AMOUNT";
   if (state.cannotPayFee) return "NETWORK_FEE";
   if (state.insufficientBalance) return "INSUFFICIENT_BALANCE";
-  if (state.blocked || state.actionFailureRetryable === false) return "UNAVAILABLE";
-  if (state.quoteFailureRetryable !== null) return state.quoteFailureRetryable ? "REFRESH_QUOTE" : "UNAVAILABLE";
-  if (state.quoting || !state.hasQuote) return "WAIT";
-  if (!state.quoteFresh) return "REFRESH_QUOTE";
+  if (state.blocked || state.actionFailureRetryable === false || state.quoteFailureRetryable === false) return "UNAVAILABLE";
   return "REVIEW";
 }
 

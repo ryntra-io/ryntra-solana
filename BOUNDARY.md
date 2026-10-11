@@ -9,10 +9,10 @@ moved counts as new. Generated at every update from the development history.
 
 | Since the tag | Files |
 |---|---|
-| New | 1,344 |
+| New | 1,346 |
 | Changed | 823 |
 | Unchanged | 912 |
-| Lines added / removed | +347,673 / −20,397 |
+| Lines added / removed | +348,009 / −20,434 |
 
 ## New since the tag
 
@@ -958,8 +958,10 @@ moved counts as new. Generated at every update from the development history.
 - `lib/core/solana-swap/fee-route.test.mjs`
 - `lib/core/solana-swap/guard.ts`
 - `lib/core/solana-swap/prepare.ts`
+- `lib/core/solana-swap/refusal.test.mjs`
 - `lib/core/solana-swap/refusal.ts`
 - `lib/core/solana-swap/settle.ts`
+- `lib/core/solana-swap/venue-order.ts`
 - `lib/core/venues/jupiter.ts`
 - `lib/core/venues/meteora-damm-v2/holder.server.ts`
 - `lib/core/venues/meteora-dbc/claim.server.ts`

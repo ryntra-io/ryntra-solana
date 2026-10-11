@@ -877,18 +877,14 @@ test("the Swap surface quotes server-side, keeps its deep link, and renders ever
   assert.match(card, /Reading both assets…/, "A leg with unknown decimals is quoted instead of waited for.");
   assert.match(card, /legsResolved/, "The card quotes before both legs' decimals are known.");
 
-  /* A stale quote must still stop before the signature — but stopping is not
-     the same as stranding. The freshness branch comes BEFORE the one that
-     offers the Review, and it now offers the refresh instead of disabling the
-     only control and hiding the way forward in a secondary link. */
-  const staleBranch = card.indexOf("} else if (!fresh) {");
-  const reviewBranch = card.indexOf("Review swap");
-  assert.ok(staleBranch > 0, "A stale quote no longer stops before the signature.");
-  assert.ok(
-    reviewBranch > staleBranch,
-    "The Review branch now precedes the freshness check, so a stale quote can reach a signature.",
-  );
-  assert.match(card, /Refresh quote/, "A stale quote offers no way to ask for a new one.");
+  /* A stale estimate never reaches a signature — the signature is over the
+     Review's own fresh order, bound by its own window. Since 2026-10-11 the
+     Review waits for no estimate at all (the first press is the one
+     that works): «Review swap» asks the order route on the amount in the field,
+     and an expired Review offers a new one. */
+  assert.doesNotMatch(card, /\} else if \(!fresh\) \{/, "The Review waits for a fresh estimate again.");
+  assert.match(card, /if \(!connection \|\| attempt\) return;/, "The Review waits for an estimate again.");
+  assert.match(card, /reviewSecondsLeft === null \|\| reviewSecondsLeft <= 0[\s\S]*?ctaLabel = text\("Get a new quote"\)/, "An expired Review can reach a signature.");
   assert.ok(!/signTransaction|signAndSend/.test(page), "The page must not sign; signing lives in the reviewed card.");
 
   /* The verdict's vocabulary stays closed: the surface never introduces the
@@ -936,9 +932,8 @@ test("the swap card is keyed V2, fee-honest, freshness-bound and canary-gated", 
   /* Freshness is on the card and binding: a live countdown off the Review
      window, and an expired quote cannot reach a signature. */
   assert.match(card, /Date\.parse\(quote\.expiresAt\)/, "Freshness is no longer read from the Review window.");
-  assert.match(card, /const fresh = quote !== null && Date\.parse\(quote\.expiresAt\) > Date\.now\(\)/, "Freshness must belong to the current matching quote.");
-  assert.match(card, /Refresh quote/, "An expired quote has no explicit new-order recovery.");
-  assert.match(card, /setRefreshTicket/, "Asking again is not a control; it needs an edit to the amount.");
+  /* The estimate refreshes itself; the Review is asked on the amount in the field and does not wait for it (2026-10-11). */
+  assert.match(card, /setRefreshTicket/, "An expired estimate is no longer asked again.");
 
   /* The signature is over bytes fetched at the moment of the click and checked
      back after the wallet returns them. */

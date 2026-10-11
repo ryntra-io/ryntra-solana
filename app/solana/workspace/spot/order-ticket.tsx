@@ -290,7 +290,7 @@ export function OrderTicket({
     return plainAmount(rawFromScaledRaw(BigInt(parsed.raw), scaledBase).toString(), baseDecimals);
   }, [amount, side, scaledBase, baseDecimals]);
   const ticket = useSpotTicket({ connection, side, baseMint, baseDecimals, baseSymbol, quote, amount: hookAmount, planBinding: underPlan ? planBinding : null, ruleBinding: underRule ? ruleBinding : null, text, onSettled: () => { onSettled(); void rulesRead.reload(); }, onRefresh });
-  const { inputMint, inputDecimals, outputDecimals, quoted, quoting, phase, prepared, settled, attempt } = ticket;
+  const { inputMint, outputMint, inputDecimals, outputDecimals, quoted, quoting, phase, prepared, settled, attempt } = ticket;
   /* A Review longer than a laptop's ticket opens at its own head — the countdown, then the four answers, just above
      «Підписати» — never half a row of the lines before it; a phone's ticket does not scroll on its own and is left
      where the person is. */
@@ -320,7 +320,8 @@ export function OrderTicket({
     [holdings.status, inputHolding, side, scaledBase],
   );
 
-  const amountOk = inputDecimals !== null && parseHumanAmount(hookAmount, inputDecimals).ok;
+  /* Both legs known, so «Перевірка» never offers a press its hook would ignore while the market is still read. */
+  const amountOk = inputDecimals !== null && outputDecimals !== null && baseMint !== null && parseHumanAmount(hookAmount, inputDecimals).ok;
   const parsedAmount = inputDecimals === null ? null : parseHumanAmount(hookAmount, inputDecimals);
   const balanceKnown = holdings.status === "ready" && (inputHolding !== null || !holdings.partial);
   const insufficientBalance = balanceKnown && parsedAmount?.ok === true && BigInt(parsedAmount.raw) > BigInt(inputHolding?.spendableRaw ?? "0");
@@ -360,7 +361,12 @@ export function OrderTicket({
   const accountReserveSol = prepared && BigInt(prepared.order.rentFeeLamports) > 0n ? (Number(BigInt(prepared.order.rentFeeLamports)) / 1e9).toFixed(6) : null;
   const inputUsd = order?.inUsdValue ? Number(order.inUsdValue) : null;
   const outputUsd = order?.outUsdValue ? Number(order.outUsdValue) : null;
-  const blocked = quoted?.verdict.verdict === "BLOCKED";
+  /* The asset's verdict outlives the estimate's own refresh — no «Review» flickers in for a blocked pair while the next estimate for the same amount is asked; another amount is judged afresh. */
+  const [blockedPair, setBlockedPair] = useState<string | null>(null);
+  useEffect(() => {
+    if (quoted) setBlockedPair(quoted.verdict.verdict === "BLOCKED" ? `${quoted.order.inputMint}:${quoted.order.outputMint}:${quoted.order.inAmountRaw}` : null);
+  }, [quoted]);
+  const blocked = quoted ? quoted.verdict.verdict === "BLOCKED" : blockedPair === `${inputMint}:${outputMint}:${parsedAmount?.ok ? parsedAmount.raw : null}`;
   const reviewWarnings = prepared ? prepared.policy.verdict.findings.filter((finding) => finding.outcome === "REVIEW") : [];
   const verb = side === "BUY" ? text("Buy") : text("Sell");
 
@@ -369,7 +375,7 @@ export function OrderTicket({
   const action = spotTicketAction({
     phase, hasAttempt: attempt !== null, lockedReview: ticket.lockedReview !== null,
     hasPrepared: prepared !== null, reviewReady: prepared?.preSign.ready === true && ticket.preparedReadiness?.ready === true,
-    hasQuote: quoted !== null, quoteFresh: ticket.quoteFresh, quoting, amountValid: amountOk,
+    amountValid: amountOk,
     insufficientBalance, cannotPayFee, blocked,
     quoteFailureRetryable: ticket.quoteFailure ? swapFailureCopy(ticket.quoteFailure.code, text).retryable : null,
     actionFailureRetryable: ticket.actionFailure ? swapFailureCopy(ticket.actionFailure.code, text).retryable : null,
@@ -378,8 +384,8 @@ export function OrderTicket({
     case "RECOVER": cta = { label: text("Check transaction"), disabled: false, onClick: () => void ticket.recover() }; break;
     case "REFRESH_REVIEW": cta = { label: text("Get a new quote"), disabled: false, onClick: () => void ticket.cancelReview(true) }; break;
     case "SIGN": cta = { label: `${text("Sign")} · ${verb} ${baseSymbol}`, disabled: false, onClick: () => void ticket.sign() }; break;
-    case "REVIEW": cta = { label: text("Review"), disabled: false, onClick: () => void ticket.review() }; break;
-    case "REFRESH_QUOTE": cta = { label: text("Refresh quote"), disabled: false, onClick: ticket.refreshQuote }; break;
+    /* «Перевірка» waits for no estimate; one that failed is asked again beside it, once per press. */
+    case "REVIEW": cta = { label: text("Review"), disabled: false, onClick: () => { if (ticket.quoteFailure) ticket.refreshQuote(); void ticket.review(); } }; break;
     case "INSUFFICIENT_BALANCE": cta = { label: text("Insufficient balance"), disabled: true }; break;
     case "NETWORK_FEE": cta = { label: text("Add SOL for the network fee"), disabled: true }; break;
     case "UNAVAILABLE": cta = { label: text("Not available right now"), disabled: true }; break;
@@ -898,7 +904,7 @@ export function OrderTicket({
           ) : null}
           {reviewWarnings.length > 0 ? <p className={styles.warning}>{text("Review this order carefully.")}</p> : null}
           {blocked ? <p className={styles.error}>{text("This asset did not pass Ryntra's checks, so no order is offered for it.")}</p> : null}
-          {ticket.quoteFailureMessage && amountOk && !blocked ? <p className={styles.error}>{ticket.quoteFailureMessage}</p> : null}
+          {ticket.quoteFailureMessage && amountOk && !blocked && ((!prepared && !ticket.actionFailure && phase === "IDLE") || (ticket.quoteFailure !== null && !swapFailureCopy(ticket.quoteFailure.code, text).retryable)) ? <p className={styles.error}>{ticket.quoteFailureMessage}</p> : null}
           {ruleRefusal ? <p className={styles.error}>{ruleRefusal}</p> : ticket.actionFailureMessage ? <p className={styles.error}>{ticket.actionFailureMessage}</p> : null}
           {connection && (holdings.status === "unavailable" || holdings.partial) ? (
             <p className={styles.note}>{text("Some balances could not be read.")} <button className={styles.ghost} type="button" onClick={onRefresh} disabled={busy}>{text("Read again")}</button></p>

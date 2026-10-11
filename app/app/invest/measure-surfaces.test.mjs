@@ -104,7 +104,9 @@ test("the swap's quote and its signable order are asked once more after the prov
   /* The ask lives in the venue's own quote; the venue's step runs in the swap's prepare half before the transaction check and the Review's reservation. */
   const quoteMethod = VENUE.slice(VENUE.indexOf("async quote("), VENUE.indexOf("async build("));
   assert.match(quoteMethod, /askOnceMoreAfterRate\(/, "the venue's quote asks once more after the provider's pause");
-  assert.match(stepBody(PREPARE, "venue-order"), /await venue\.quote\(intent\)/);
+  /* Since 2026-10-11 through \`askVenueOrder\` (\`venue-order.ts\`), which also asks once more after the venue's own 4xx or 5xx. */
+  assert.match(stepBody(PREPARE, "venue-order"), /await askVenueOrder\(venue, intent\)/);
+  assert.match(source("../../../lib/core/solana-swap/venue-order.ts"), /await venue\.quote\(intent\)/);
   const steps = PREPARE.slice(PREPARE.indexOf("  steps: ["), PREPARE.indexOf("  ],", PREPARE.indexOf("  steps: [")));
   const venueAt = steps.indexOf("venueOrder,");
   assert.ok(venueAt > 0 && venueAt < steps.indexOf("transactionCheck,"), "the second ask comes before anything is built on the answer");

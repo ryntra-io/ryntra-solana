@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { consumeAgentControlRequest, readAgentControlJson } from "@/lib/agent-control/http";
 import { prepareSolanaSwap, swapPrepareContext } from "@/lib/core/solana-swap/prepare";
+import { swapOrderLogLine } from "@/lib/core/solana-swap/refusal";
 import { resolveSolanaLaneState } from "@/lib/solana/lane-state";
 import { privateNoStoreHeaders, rateLimitHeaders, type RateLimitDecision } from "@/lib/http-control";
 import { readSwapCarrier, walletMismatch } from "@/lib/solana/swap-carrier.server";
@@ -109,8 +110,12 @@ function failure(
      failed Reviews on 2026-09-10 and the log held five request lines and not
      one reason — so the only way to learn what happened was to reproduce it.
      The code and the status, never the taker and never the amount: what is
-     needed to fix a route is not the same as what a person is trading. */
-  if (status >= 500) console.error(`swap-order refused: ${code} (HTTP ${status})`);
+     needed to fix a route is not the same as what a person is trading.
+     Since 2026-10-11 the sentence too — the venue's own words on an
+     `ORDER_…` refusal, the route's own on the rest — with every address and
+     sum taken out (`swapOrderLogLine`): a code alone told nobody why Jupiter
+     refused. */
+  if (status >= 500) console.error(swapOrderLogLine("refused", { code, status, message, extra }));
   return Response.json(
     { error: { code, message, ...extra } },
     { status, headers: responseHeaders(rate) },

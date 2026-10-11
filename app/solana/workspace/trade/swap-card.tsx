@@ -908,9 +908,16 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
     setRefreshTicket((ticket) => ticket + 1);
   }, [attempt, phase, prepared, quote, quoting, secondsLeft]);
 
-  const fresh = quote !== null && Date.parse(quote.expiresAt) > Date.now();
   const verdict = quote?.verdict ?? null;
-  const blocked = verdict?.verdict === "BLOCKED";
+  /* The asset's verdict outlives the estimate's own refresh: a blocked pair
+     stays «Unavailable for this asset» while the next estimate for the same
+     amount is asked, never flickering to «Review swap» in between; another
+     amount is judged afresh. */
+  const [blockedPair, setBlockedPair] = useState<string | null>(null);
+  useEffect(() => {
+    if (quote) setBlockedPair(quote.verdict?.verdict === "BLOCKED" ? `${quote.order.inputMint}:${quote.order.outputMint}:${quote.order.inAmountRaw}` : null);
+  }, [quote]);
+  const blocked = quote ? verdict?.verdict === "BLOCKED" : blockedPair === `${sellMint}:${buyMint}:${currentInput.amountRaw}`;
 
   const flip = useCallback(() => {
     setSellMint(buyMint);
@@ -969,8 +976,11 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
     setSearching(false);
   }, [picker]);
 
+  /* «Перевірка» asks the order route for its own fresh order on the amount in
+     the field now — the estimate above need not be fresh, nor settled from the
+     typing (2026-10-11: the first press is the one that works). */
   const requestExactReview = useCallback(async () => {
-    if (!connection || !quote || attempt) return;
+    if (!connection || attempt) return;
     const my = ++actionTicket.current;
     setActionFailure(null);
     setPrepared(null);
@@ -1026,7 +1036,7 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
     setReviewInvalidated(false);
     setLockedReview(null);
     setPhase("REVIEW");
-  }, [amount, attempt, buyMint, connection, quote, rememberAttempt, sellDecimals, sellMint]);
+  }, [amount, attempt, buyMint, connection, rememberAttempt, sellDecimals, sellMint]);
 
   const signReviewedOrder = useCallback(async () => {
     if (!connection || !prepared || attempt) return;
@@ -1554,19 +1564,13 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
     ctaLabel = text("Add SOL for the network fee");
   } else if (insufficientBalance) {
     ctaLabel = text("Insufficient balance");
-  } else if (quoting && !quote) {
-    ctaLabel = text("Finding a route…");
-  } else if (quoteFailure) {
-    const retryable = swapFailureCopy(quoteFailure.code, text).retryable;
-    ctaLabel = retryable ? text("Refresh quote") : text("Try another pair");
-    ctaDisabled = !retryable;
-  } else if (!quote) {
-    ctaLabel = text("Enter an amount");
   } else if (blocked) {
     ctaLabel = text("Unavailable for this asset");
-  } else if (!fresh) {
-    ctaLabel = text("Refresh quote");
-    ctaDisabled = false;
+  } else if (quoteFailure && !swapFailureCopy(quoteFailure.code, text).retryable) {
+    /* The estimate for this very amount refused for a reason no press changes
+       — the same asset on both sides, a refused passport: a Review would be
+       refused the same way. */
+    ctaLabel = text("Try another pair");
   } else if (actionFailure && !swapFailureCopy(actionFailure.code, text).retryable) {
     /* The last attempt failed for a reason no amount of pressing will change —
        the lane is closed, or this deployment cannot sign. Say so on the button
@@ -1601,10 +1605,10 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
       void signReviewedOrder();
       return;
     }
-    if (quoteFailure || (quote && !fresh)) {
-      setRefreshTicket((ticket) => ticket + 1);
-      return;
-    }
+    /* No estimate is waited for first: the Review is the venue's own fresh
+       order, and its window — not the estimate's — binds the signature. An
+       estimate that failed is asked again beside it, once per press. */
+    if (quoteFailure) setRefreshTicket((ticket) => ticket + 1);
     void requestExactReview();
   };
 
@@ -1910,7 +1914,10 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
             </span>
           </div>
 
-          {quoteFailure ? (
+          {/* The estimate's refusal says nothing once the Review has answered for
+              itself — its own refusal below, or its exact order — unless no
+              press can change it: then it is the reason the button gives. */}
+          {quoteFailure && ((!prepared && !actionFailure && phase === "IDLE") || !swapFailureCopy(quoteFailure.code, text).retryable) ? (
             <div className={styles.errorRow}>{failureCopy(quoteFailure.code, text)}</div>
           ) : null}
 

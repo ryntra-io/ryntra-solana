@@ -717,7 +717,6 @@ export function useSpotTicket(input: SpotTicketInput) {
     bytesChanged,
     settled,
     settledContext,
-    quoteFresh: quoted !== null && Date.parse(quoted.expiresAt) > Date.now(),
     secondsLeft,
     reviewSecondsLeft,
     review,
