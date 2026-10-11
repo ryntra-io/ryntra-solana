@@ -3,6 +3,7 @@ import { apiFailure, apiJson, apiMajorRefusal, readApiBody } from "@/lib/api/v1/
 import { rateLimitHeaders } from "@/lib/http-control";
 import { launchNetwork } from "@/lib/launch/config.server";
 import { buildLaunchHolder } from "@/lib/launch/holder.server";
+import { provenWalletOf } from "@/lib/launch/holder-proof.server";
 import { consumeSharedLaunchWrite, launchTradingDeps } from "@/lib/launch/runtime.server";
 
 export const runtime = "nodejs";
@@ -29,7 +30,7 @@ export async function POST(request: Request, context: { params: Promise<{ mint: 
   if (!BASE58.test(mint)) return apiFailure("VALIDATION_ERROR", "mint: not an address");
   const read = await readApiBody(request, LaunchHolderBuildRequestSchema);
   if (!read.ok) return read.response;
-  const built = await buildLaunchHolder(deps, mint, read.body).catch(() => ({ ok: false as const, code: "UNAVAILABLE" as const, message: "The network could not be read now; nothing was built. Try again." }));
+  const built = await buildLaunchHolder({ ...deps, proven: provenWalletOf(request) }, mint, read.body).catch(() => ({ ok: false as const, code: "UNAVAILABLE" as const, message: "The network could not be read now; nothing was built. Try again." }));
   if (!built.ok) return apiFailure(built.code, built.message);
   return apiJson(built.build satisfies LaunchHolderBuildResponse);
 }

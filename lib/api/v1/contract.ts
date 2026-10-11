@@ -882,6 +882,13 @@
  * purchase as a sale. Its enforcement is null: a fact the log observes, not an act under a rule. A client
  * that parses the flight log's kinds strictly takes `CREATOR_BOUGHT` (the phone reads no flight log). A holder's position
  * gains `nextCollection` — the collector's queue by the collector's own rule and attempts.
+ *
+ * **1.41.0 — a holder's entry for people.** Additive. A holder's position read now gains `closedAccounts`: the owner's
+ * token or pair account the program pays the fees into, closed — the collector waits and never reopens it at its cost;
+ * `nextCollection` is then null — and `claimsCount`, every claim the collector made (`claims` keeps the newest 20). `open` on `GET /api/v1/launch/{mint}/holder/{address}` and `GET
+ * /api/v1/launch/holders/{address}` is the same for every address: true wherever the entry is open to people; while it
+ * is closed, true only for an operator's own wallet that the request proved it signs for (a wallet sign-in) — a named
+ * address alone never tells whose it is. A client that skips unknown keys needs no release.
  */
 
 import {
@@ -933,7 +940,7 @@ import { LAUNCH_PRESET_IDS } from "../../core/venues/meteora-dbc/presets.ts";
 import { LaunchReceiptFactsSchema } from "../../core/venues/meteora-dbc/receipt.ts";
 
 export const API_MAJOR = 1;
-export const API_CONTRACT_VERSION = "1.40.0";
+export const API_CONTRACT_VERSION = "1.41.0";
 export const API_HEADER = "X-Ryntra-API";
 export const API_VERSION_HEADER = "X-Ryntra-API-Version";
 export const NETWORK = "solana:mainnet";
@@ -10183,11 +10190,19 @@ export const LaunchHolderPositionSchema = z
         claimedPairRaw: LaunchRaw,
         /** The permission as Ryntra's collector reads it: GRANTED is the only state it acts on. */
         grant: z.enum(HOLDER_GRANT_STATES),
+        /**
+         * 1.41.0: the owner's accounts the program pays the fees into that are closed now — the token's, the pair's. The
+         * collector never reopens them at its cost and waits; the owner opens one again or claims the fees themselves.
+         * Absent before 1.41.0.
+         */
+        closedAccounts: z.array(z.enum(["token", "pair"])).max(2).optional(),
       })
       .strict()
       .nullable(),
     /** What Ryntra's collector brought to the owner's wallet, in the pair currency, raw. */
     collectedPairRaw: LaunchRaw,
+    /** 1.41.0: every claim the collector made for this position — `claims` carries the newest 20. Absent before 1.41.0. */
+    claimsCount: z.number().int().nonnegative().optional(),
     claims: z.array(LaunchHolderClaimSchema).max(20),
     /**
      * 1.40.0: the collector's queue for this position, by the same rule and the same attempts the collector reads — the
@@ -10207,7 +10222,10 @@ export const LaunchHolderResponseSchema = z
     token: Address,
     /** The graduated pool; null while the token is on its curve. */
     pool: Address.nullable(),
-    /** Whether the entry is built for this wallet here. */
+    /**
+     * Whether the entry is built here — the same for every address (1.41.0): true wherever it is open to people; while it
+     * is closed, true only for an operator's own wallet this request proved it signs for.
+     */
     open: z.boolean(),
     /** Ryntra's collector — the delegate the permission names; null while this network has none. */
     collector: Address.nullable(),

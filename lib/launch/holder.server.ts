@@ -17,10 +17,12 @@
  *    position is written down before the send, so a lost answer keeps it.
  * 4. **The permission**: «Увімкнути» and «Відкликати», one signature each.
  *
- * **Who may enter.** Until our own security review of this mechanism and a
- * lawyer's opinion, on mainnet the entry is built only for the
- * Owner's own wallets — the list the admin keeps and the deployment's
- * `RYNTRA_INTERNAL_WALLETS`; everyone else's page draws nothing of it. The
+ * **Who may enter.** `HOLDER_OPEN_TO_PEOPLE` is the switch: on, everyone — once our own security review of the
+ * permission is clean (the decision of 2026-10-08: its boundary in the program's code, the collector's tries refused on
+ * devnet and again on mainnet with Ryntra's own wallet). Off, on mainnet the entry is built only for the operator's own
+ * wallets — the list the admin keeps and the deployment's `RYNTRA_INTERNAL_WALLETS` — and only once the request proved,
+ * by a wallet sign-in, that it signs for that wallet. `open` then reads the same for every address merely named. (The
+ * positions a wallet holds are public chain facts — the collector is the delegate on each — and are read as such.) The
  * devnet stand has no people and is open.
  */
 
@@ -55,13 +57,21 @@ import { readLaunchRecord, sendOnce, signatureOutcome } from "./flow.server.ts";
 import { forgetLaunchMarket } from "./market.server.ts";
 import { launchMarketReader } from "./trade-index.server.ts";
 
-export type HolderDeps = Pick<LaunchDeps, "network" | "connection" | "store" | "now"> & Pick<LaunchReadDeps, "second" | "adopt"> & Readonly<{ env?: NodeJS.ProcessEnv }>;
+export type HolderDeps = Pick<LaunchDeps, "network" | "connection" | "store" | "now"> &
+  Pick<LaunchReadDeps, "second" | "adopt"> &
+  Readonly<{
+    env?: NodeJS.ProcessEnv;
+    /** The wallet this request proved it signs for (a wallet sign-in), read only while the entry is closed to people. */
+    proven?: (() => Promise<string | null>) | null;
+    /** The switch as the tests set it; the deployment always reads `HOLDER_OPEN_TO_PEOPLE`. */
+    openToPeople?: boolean;
+  }>;
 
 /**
- * Whether the entry is open to people. False until our own security review of the permission and a lawyer's opinion;
- * until then, on mainnet, only the operator's own wallets.
+ * Whether the entry is open to people — the switch. On since 2026-10-11, once our own security review of the permission
+ * came out clean; turned off again, on mainnet only the operator's own wallets enter, each proven by its sign-in.
  */
-export const HOLDER_OPEN_TO_PEOPLE = false;
+export const HOLDER_OPEN_TO_PEOPLE = true;
 
 /** How long a built entry or permission waits for the signature. */
 export const HOLDER_BUILD_TTL_MS = 90 * 1000;
@@ -72,6 +82,8 @@ const BUILDS = "launchHolderBuilds";
 const SENDS = "launchHolderSends";
 const POSITIONS = "launchHolderPositions";
 const CLAIMS = "launchHolderClaims";
+/** The collector's own pace per position (`launch/autopilot.server.ts`): when it reads each one again. */
+export const HOLDER_CHECKS = "launchHolderChecks";
 
 export type HolderFailure = Readonly<{ ok: false; code: ApiErrorCode; message: string }>;
 const fail = (code: ApiErrorCode, message: string): HolderFailure => ({ ok: false, code, message });
@@ -142,10 +154,16 @@ const key = (...parts: string[]) => parts.join(":");
 export const holderPositionKey = (cluster: string, wallet: string, position: string) => key(cluster, wallet, position);
 export const holderClaimKey = (cluster: string, position: string, signature: string) => key(cluster, position, signature);
 
-/** Whether the entry is built for this wallet here: the stand for anyone, mainnet for the operator's own wallets until it opens. */
+/**
+ * Whether the entry is built for this wallet here: the stand and — once open to people — mainnet for anyone; closed, on
+ * mainnet only an operator's own wallet that this request proved it signs for. An address merely named reads closed
+ * like every other: `open` never tells whose wallets are the operator's.
+ */
 export async function holderOpenFor(deps: HolderDeps, wallet: string): Promise<boolean> {
-  if (deps.network.cluster !== "mainnet" || HOLDER_OPEN_TO_PEOPLE) return true;
+  if (deps.network.cluster !== "mainnet" || (deps.openToPeople ?? HOLDER_OPEN_TO_PEOPLE)) return true;
   try {
+    const proven = deps.proven ? await deps.proven() : null;
+    if (proven !== wallet) return false;
     const { wallets } = await resolveInternalWallets(deps.store, deps.env ?? process.env);
     return wallets.has(wallet);
   } catch {
@@ -233,6 +251,7 @@ function positionView(deps: HolderDeps, record: HolderPositionRecord, read: Hold
       unclaimedTokenRaw: read.unclaimedTokenRaw,
       claimedPairRaw: read.claimedPairRaw,
       grant: holderGrantState({ delegate: read.delegate, delegatedAmount: read.delegatedAmount, bitmask: read.bitmask, collector }),
+      closedAccounts: closedAccountsOf(read),
     };
   }
   return {
@@ -249,13 +268,20 @@ function positionView(deps: HolderDeps, record: HolderPositionRecord, read: Hold
     feeRaw: record.feeRaw,
     now,
     collectedPairRaw: collected.toString(),
+    claimsCount: confirmed.length,
     claims: confirmed.slice(0, 20).map((claim) => ({ signature: claim.signature, at: claim.at, pairRaw: claim.pairRaw, tokenRaw: claim.tokenRaw })),
     /* The queue as the collector itself reads it: its last attempt in any state (newest first), the same dollar rule. */
     nextCollection:
-      now && now.state === "OPEN" && now.grant === "GRANTED" && record.pairDollar
+      now && now.state === "OPEN" && now.grant === "GRANTED" && record.pairDollar && !now.closedAccounts?.length
         ? (({ notBefore, enoughWaiting }) => ({ notBefore, enoughWaiting }))(collectorNextClaim({ claimablePairRaw: BigInt(now.unclaimedPairRaw), pairDecimals: decimals.pair, lastClaimAt: claims[0]?.sentAt ?? null, now: deps.now().getTime() }))
         : null,
   };
+}
+
+/** The owner's accounts a claim pays into that are closed now: the collector does not reopen them at its cost and waits. */
+export function closedAccountsOf(read: Readonly<{ ownerAccounts?: Readonly<{ token: boolean; pair: boolean }> | null }>): Array<"token" | "pair"> {
+  if (!read.ownerAccounts) return [];
+  return (["token", "pair"] as const).filter((side) => !read.ownerAccounts![side]);
 }
 
 /** The token's pool as the page's holder card reads it, with this wallet's positions in it. */
@@ -324,9 +350,13 @@ export async function quoteLaunchHolder(deps: HolderDeps, token: string, input: 
   }
 }
 
-/** Builds older than an hour past their expiry are removed. */
+/** Builds older than an hour past their expiry are removed — at most once in five minutes an instance: a sweep lists them all. */
+let sweptAt = 0;
 async function sweep(deps: HolderDeps): Promise<void> {
-  const stale = deps.now().getTime() - 60 * 60 * 1000;
+  const at = deps.now().getTime();
+  if (at - sweptAt < 5 * 60 * 1000) return;
+  sweptAt = at;
+  const stale = at - 60 * 60 * 1000;
   const builds = deps.store.collection<HolderBuild>(BUILDS);
   for (const build of await builds.valuesWithPrefix(`${deps.network.cluster}:`)) if (Date.parse(build.expiresAt) < stale) await builds.delete(key(build.cluster, build.id));
   const sends = deps.store.collection<Readonly<{ cluster: string; id: string; at: string }>>(SENDS);
@@ -549,6 +579,17 @@ export async function readHolderEarningsCard(deps: HolderDeps, wallet: string): 
 /** Every position entered through Ryntra on this network, for the collector's pass. */
 export async function allHolderPositions(store: HolderDeps["store"], cluster: string): Promise<HolderPositionRecord[]> {
   return (await store.collection<HolderPositionRecord>(POSITIONS).valuesWithPrefix(`${cluster}:`)).filter((row) => row.cluster === cluster);
+}
+
+/** A position's record as the collector's pass settles a lost entry: open once the chain shows it, gone when it never landed. */
+export async function putHolderPosition(store: HolderDeps["store"], record: HolderPositionRecord): Promise<void> {
+  await store.collection<HolderPositionRecord>(POSITIONS).set(holderPositionKey(record.cluster, record.wallet, record.position), record);
+}
+
+export async function dropHolderPosition(store: HolderDeps["store"], record: HolderPositionRecord): Promise<void> {
+  await store.collection<HolderPositionRecord>(POSITIONS).delete(holderPositionKey(record.cluster, record.wallet, record.position));
+  /* The collector's pace for it goes with it. */
+  await store.collection(HOLDER_CHECKS).delete(`${record.cluster}:${record.position}`);
 }
 
 export async function writeHolderClaim(store: HolderDeps["store"], receipt: HolderClaimReceipt): Promise<void> {

@@ -460,7 +460,8 @@ export function createHolderVenue(config: HolderVenueConfig) {
     const nftAccount = derivePositionNftAccount(new PublicKey(args.nftMint));
     const [positionInfo, nftInfo] = await connection.getMultipleAccountsInfo([new PublicKey(args.position), nftAccount], "confirmed");
     if (!positionInfo) return { position: args.position, nftMint: args.nftMint, nftAccount: nftAccount.toBase58(), closed: true as const };
-    const state = await cpAmm.fetchPositionState(new PublicKey(args.position));
+    /* Decoded from the account already read: one read a position, not two. */
+    const state = program.coder.accounts.decode("position", positionInfo.data) as Awaited<ReturnType<typeof cpAmm.fetchPositionState>>;
     const account = tokenAccountOf(nftAccount, nftInfo, TOKEN_2022_PROGRAM_ID);
     const held = account && account.amount === 1n;
     const liquidity = state.unlockedLiquidity.add(state.vestedLiquidity).add(state.permanentLockedLiquidity);
@@ -479,12 +480,24 @@ export function createHolderVenue(config: HolderVenueConfig) {
     const unclaimed = getUnClaimLpFee(p.state, state);
     const tokenOf = (a: BN, b: BN) => (p.tokenIsA ? a : b).toString();
     const pairOf = (a: BN, b: BN) => (p.tokenIsA ? b : a).toString();
+    /* The owner's two accounts the program pays the fees into: one the owner closed, the collector waits on. */
+    let ownerAccounts: Readonly<{ token: boolean; pair: boolean }> | null = null;
+    if (held) {
+      const { a: tokenAProgram, b: tokenBProgram } = programs(p);
+      const [infoA, infoB] = await connection.getMultipleAccountsInfo([ata(account.owner, p.state.tokenAMint, tokenAProgram), ata(account.owner, p.state.tokenBMint, tokenBProgram)], "confirmed");
+      /* Lamports anyone sends to the address make an account the system owns: only the token program's is the account. */
+      const a = Boolean(infoA && infoA.owner.equals(tokenAProgram));
+      const b = Boolean(infoB && infoB.owner.equals(tokenBProgram));
+      ownerAccounts = { token: p.tokenIsA ? a : b, pair: p.tokenIsA ? b : a };
+    }
     return {
       position: args.position,
       nftMint: args.nftMint,
       nftAccount: nftAccount.toBase58(),
       closed: false as const,
       owner: held ? account.owner.toBase58() : null,
+      /** Whether the owner's associated accounts of the token and of the pair exist now; null while the NFT is not held. */
+      ownerAccounts,
       delegate: held && account.delegate ? account.delegate.toBase58() : null,
       delegatedAmount: held ? account.delegatedAmount.toString() : "0",
       bitmask: Number((state as unknown as { delegatePermission?: number }).delegatePermission ?? 0),
@@ -511,7 +524,7 @@ export function createHolderVenue(config: HolderVenueConfig) {
     /* The program pays only into the owner's own accounts and needs both. One the owner closed is not reopened at the
        collector's cost every day: the claim waits, and the owner can claim themselves. */
     const [infoA, infoB] = await connection.getMultipleAccountsInfo([ownerA, ownerB], "confirmed");
-    if (!infoA || !infoB) return null;
+    if (!infoA?.owner.equals(tokenAProgram) || !infoB?.owner.equals(tokenBProgram)) return null;
     return new Transaction().add(
       await program.methods
         .claimPositionFee()

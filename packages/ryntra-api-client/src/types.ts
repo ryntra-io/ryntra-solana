@@ -26,7 +26,7 @@
  */
 
 export const API_MAJOR = 1 as const;
-export const API_CONTRACT_VERSION = "1.40.0" as const;
+export const API_CONTRACT_VERSION = "1.41.0" as const;
 export const API_HEADER = "X-Ryntra-API" as const;
 export const API_VERSION_HEADER = "X-Ryntra-API-Version" as const;
 export const NETWORK = "solana:mainnet" as const;
@@ -4717,14 +4717,18 @@ export type LaunchHolderPositionView = Readonly<{
     unclaimedTokenRaw: string;
     claimedPairRaw: string;
     grant: LaunchHolderGrantState;
+    /** 1.41.0: the owner's accounts the fees are paid into that are closed now; the collector waits on them. */
+    closedAccounts?: ReadonlyArray<"token" | "pair">;
   }> | null;
   collectedPairRaw: string;
+  /** 1.41.0: every claim the collector made; `claims` keeps the newest 20. */
+  claimsCount?: number;
   claims: readonly LaunchHolderClaim[];
   /** 1.40.0: the collector's queue — the earliest next claim and whether a dollar waits; null when it does not claim here. */
   nextCollection?: Readonly<{ notBefore: string; enoughWaiting: boolean }> | null;
 }>;
 
-/** `GET /api/v1/launch/{mint}/holder/{address}` — the token's pool for a holder; `open` false — draw nothing of the entry. */
+/** `GET /api/v1/launch/{mint}/holder/{address}` — the token's pool for a holder; `open` false — draw nothing of the entry (1.41.0: the same for every address unless the request proved an operator's wallet). */
 export type LaunchHolderResponse = Readonly<{
   network: LaunchNetworkId;
   token: string;

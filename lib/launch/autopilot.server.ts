@@ -59,7 +59,7 @@
 import type { Keypair, Transaction } from "@solana/web3.js";
 import { randomUUID } from "node:crypto";
 
-import { collectorShouldClaim, holderGrantState } from "../core/launch/holder.ts";
+import { HOLDER_CLAIM_EVERY_MS, collectorShouldClaim, holderGrantState } from "../core/launch/holder.ts";
 import {
   BUDGET_LADDER,
   BUDGET_RULE,
@@ -108,7 +108,7 @@ import type { LaunchNetwork } from "./config.server.ts";
 import type { LaunchRecord, Sent } from "./flow.server.ts";
 import { noteGraduation } from "./graduation.server.ts";
 import { emptyExecutorMarket, readExecutorMarket, readExecutorMarkets, readExecutorStops, stopOn, updateExecutorMarket, writeJournalMark, type ExecutorMarket, type ExecutorStops } from "./executor.server.ts";
-import { allHolderPositions, dropHolderClaim, holderClaims, setHolderClaim, writeHolderClaim, type HolderClaimReceipt, type HolderPositionRecord } from "./holder.server.ts";
+import { HOLDER_CHECKS, allHolderPositions, closedAccountsOf, dropHolderClaim, dropHolderPosition, putHolderPosition, holderClaims, setHolderClaim, writeHolderClaim, type HolderClaimReceipt, type HolderPositionRecord } from "./holder.server.ts";
 
 export type AutopilotKind = "GRADUATED" | "FLOOR_POOL" | "FLOOR_PLACED" | "FLOOR_WITHDRAWN" | "FLOOR_RAISED" | "FLOOR_ADDED" | "FEE_CLAIMED";
 
@@ -567,9 +567,23 @@ async function noteState(deps: AutopilotDeps, record: LaunchRecord, curve: Curve
  */
 async function collectForHolders(deps: AutopilotDeps, end: number, stops: ExecutorStops): Promise<AutopilotStep[]> {
   /* A position on a market the operator stopped waits: the collector signs nothing there either. */
-  const rows = (await allHolderPositions(deps.store, deps.network.cluster)).filter((row) => row.state === "OPEN" && stopOn(stops, row.token) === null);
-  if (!rows.length) return [];
+  const all = (await allHolderPositions(deps.store, deps.network.cluster)).filter((row) => stopOn(stops, row.token) === null);
   const steps: AutopilotStep[] = [];
+  /* An entry whose answer was lost is settled here too: the holder need not come back for the collector to start. */
+  const opened: HolderPositionRecord[] = [];
+  /* A few a pass: a burst of lost answers never eats the pass before the claims. */
+  for (const row of all.filter((each) => each.state === "PENDING").slice(0, 10)) {
+    if (deps.now().getTime() > end) break;
+    const now = await settleEntryOf(deps, row).catch(() => row);
+    if (now && now.state === "OPEN") opened.push(now);
+  }
+  /* The positions not due yet are skipped without a read; the rest go oldest-checked first, so none waits behind the others. */
+  const checks = new Map((await deps.store.collection<HolderCheck>(HOLDER_CHECKS).valuesWithPrefix(`${deps.network.cluster}:`)).map((check) => [check.position, check]));
+  const at = deps.now().getTime();
+  const rows = [...all.filter((row) => row.state === "OPEN"), ...opened]
+    .filter((row) => (checks.get(row.position)?.nextAt ?? 0) <= at)
+    .sort((a, b) => (checks.get(a.position)?.checkedAt ?? 0) - (checks.get(b.position)?.checkedAt ?? 0));
+  if (!rows.length) return steps;
   const pools = new Map<string, HolderPool>();
   for (const row of rows) {
     if (deps.now().getTime() > end) break;
@@ -584,9 +598,54 @@ async function collectForHolders(deps: AutopilotDeps, end: number, stops: Execut
       }
     });
     steps.push(...done.map((step) => (step.step === "LEASED" ? { token: row.token, step: "HOLDER_LEASED" } : step)));
+    await noteHolderCheck(deps, row.position, done.map((step) => step.step)).catch(() => undefined);
     if (done.some((step) => step.step === "HOLDER_LOW_SOL")) break;
   }
   return steps;
+}
+
+/**
+ * When the collector reads a position again — its own pace, apart from the day rule: under a dollar, without the
+ * permission or with an account of the owner's closed (only a read, no fee), an hour; a claim refused or failed, six
+ * hours (a claim costs the collector its fee, a retry every minute would pay it for nothing); a position closed, a day;
+ * a read that failed, ten minutes; a claim made or one to read, the next pass.
+ */
+type HolderCheck = Readonly<{ position: string; checkedAt: number; nextAt: number }>;
+const HOUR_MS = 60 * 60 * 1000;
+async function noteHolderCheck(deps: AutopilotDeps, position: string, results: readonly string[]): Promise<void> {
+  const at = deps.now().getTime();
+  const later = results.some((step) => step === "HOLDER_CLOSED")
+    ? 24 * HOUR_MS
+    : results.some((step) => /^HOLDER_(CLAIM_REFUSED|CLAIM_FAILED|CLAIM_LAPSED|MOVED)$/.test(step))
+      ? 6 * HOUR_MS
+      : results.some((step) => /^HOLDER_(WAIT|NO_ACCOUNT|NONE|WIDER|OTHER_DELEGATE|TRANSFERABLE)$/.test(step))
+        ? HOUR_MS
+        : results.some((step) => step.startsWith("HOLDER_ERROR"))
+          ? 10 * 60 * 1000
+          : 0;
+  await deps.store.collection<HolderCheck>(HOLDER_CHECKS).set(`${deps.network.cluster}:${position}`, { position, checkedAt: at, nextAt: at + later });
+}
+
+/** A PENDING entry as the chain settles it: landed — OPEN; never landed and no position — gone; not known yet — as it was. */
+async function settleEntryOf(deps: AutopilotDeps, row: HolderPositionRecord): Promise<HolderPositionRecord | null> {
+  const outcome = await deps.chain.outcome(row.entrySignature, Number(row.validUntil));
+  if (outcome === "CONFIRMED") {
+    const open: HolderPositionRecord = { ...row, state: "OPEN" };
+    await putHolderPosition(deps.store, open);
+    return open;
+  }
+  if (outcome === "FAILED" || outcome === "REJECTED" || outcome === "EXPIRED") {
+    const pool = await deps.chain.holder.pool(row.pool, row.token);
+    const read = await deps.chain.holder.readPosition(pool, row);
+    if (read.closed) {
+      await dropHolderPosition(deps.store, row);
+      return null;
+    }
+    const open: HolderPositionRecord = { ...row, state: "OPEN" };
+    await putHolderPosition(deps.store, open);
+    return open;
+  }
+  return row;
 }
 
 async function collectOne(deps: AutopilotDeps, row: HolderPositionRecord, pools: Map<string, HolderPool>): Promise<AutopilotStep[]> {
@@ -595,6 +654,11 @@ async function collectOne(deps: AutopilotDeps, row: HolderPositionRecord, pools:
   const pending = claims.find((claim) => claim.state === "PENDING");
   if (pending) {
     return [await settleHolderClaim(deps, row.token, pending)];
+  }
+  /* Claimed within the day: nothing to read on chain until the day is out — the rule is at most a claim a day. */
+  const last = claims[0]?.sentAt ?? null;
+  if (last && deps.now().getTime() - Date.parse(last) < HOLDER_CLAIM_EVERY_MS) {
+    return [{ token: row.token, step: "HOLDER_WAIT" }];
   }
   const pool = pools.get(row.pool) ?? (await deps.chain.holder.pool(row.pool, row.token));
   pools.set(row.pool, pool);
@@ -609,7 +673,10 @@ async function collectOne(deps: AutopilotDeps, row: HolderPositionRecord, pools:
   if (grant !== "GRANTED") {
     return [{ token: row.token, step: `HOLDER_${grant}` }];
   }
-  const last = claims[0]?.sentAt ?? null;
+  /* An account of the owner's the fees are paid into is closed: the collector does not reopen it at its cost; it waits, and the position says so. */
+  if (closedAccountsOf(read).length) {
+    return [{ token: row.token, step: "HOLDER_NO_ACCOUNT" }];
+  }
   if (!collectorShouldClaim({ claimablePairRaw: BigInt(read.unclaimedPairRaw), pairDecimals: pool.pairDecimals, pairIsDollar: row.pairDollar === true, lastClaimAt: last, now: deps.now().getTime() })) {
     return [{ token: row.token, step: "HOLDER_WAIT" }];
   }

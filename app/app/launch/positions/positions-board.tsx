@@ -10,7 +10,7 @@ import { useSolanaConnection } from "@/app/solana/workspace/connection";
 import type { LaunchHolderPositionsResponse } from "@/lib/api/v1/contract";
 
 import { Positions } from "../[mint]/pool-panel";
-import { formatDate, formatMove, formatRaw } from "../launch-format";
+import { formatDate, formatMove, formatNumber, formatRaw } from "../launch-format";
 import { launchWords } from "../launch-words";
 import styles from "../launch.module.css";
 
@@ -136,7 +136,11 @@ function Totals({ data, locale }: { data: LaunchHolderPositionsResponse; locale:
         {word("positionsTotals")}
       </h2>
       {card.amounts.map((amount) => {
+        /* As the position's own row says it: a sum below a cent is «< $0,01», never a false zero. */
         const money = (raw: string) => {
+          const value = BigInt(raw);
+          const cent = 10n ** BigInt(Math.max(0, amount.decimals - 2));
+          if (value > 0n && value < cent) return amount.dollar ? `< $${formatNumber(0.01, locale, 2)}` : `< ${formatNumber(0.01, locale, 2)} ${amount.symbol}`;
           const text = formatRaw(raw, amount.decimals, locale, 2);
           return amount.dollar ? `$${text}` : `${text} ${amount.symbol}`;
         };

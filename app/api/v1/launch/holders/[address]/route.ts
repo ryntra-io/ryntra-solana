@@ -3,6 +3,7 @@ import { apiFailure, apiJson, apiMajorRefusal } from "@/lib/api/v1/http";
 import { rateLimitHeaders } from "@/lib/http-control";
 import { launchNetwork } from "@/lib/launch/config.server";
 import { readHolderPositions } from "@/lib/launch/holder.server";
+import { provenWalletOf } from "@/lib/launch/holder-proof.server";
 import { consumeLaunchWrite, launchMarketDeps } from "@/lib/launch/runtime.server";
 
 export const runtime = "nodejs";
@@ -25,7 +26,7 @@ export async function GET(request: Request, context: { params: Promise<{ address
   if (!rate.allowed) return apiFailure("RATE_LIMITED", "Too many requests.", { headers: rateLimitHeaders(rate) });
   const { address } = await context.params;
   if (!BASE58.test(address)) return apiFailure("VALIDATION_ERROR", "address: not a wallet");
-  const read = await readHolderPositions(deps, address).catch(() => ({ ok: false as const, code: "UNAVAILABLE" as const, message: "The positions could not be read now. Try again." }));
+  const read = await readHolderPositions({ ...deps, proven: provenWalletOf(request) }, address).catch(() => ({ ok: false as const, code: "UNAVAILABLE" as const, message: "The positions could not be read now. Try again." }));
   if (!read.ok) return apiFailure(read.code, read.message);
   return apiJson(read.positions satisfies LaunchHolderPositionsResponse);
 }

@@ -3213,19 +3213,36 @@
   border-radius: var(--ry-r-btn);
 }
 
-.collectorTitle {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin: 0;
-  font-size: var(--ry-fs-label);
+.collectorPromise {
+  display: grid;
+  gap: 2px;
+  margin: 0 0 4px;
+  font-size: 1.125rem;
   font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
   color: var(--ry-text);
 }
 
-.collectorTitle svg {
+.collectorPromise span {
+  display: block;
+}
+
+.warnIcon {
   flex: none;
-  color: var(--ry-pnl-pos);
+  margin-top: 3px;
+  color: var(--ry-caution);
+}
+
+/* «Рахунок закрито» — the icon hangs, the words wrap under themselves. */
+.accountClosed {
+  display: grid;
+  grid-template-columns: 14px 1fr;
+  gap: 6px;
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  line-height: 1.5;
+  color: var(--ry-text);
 }
 
 .collectorLine {
@@ -3446,10 +3463,23 @@
 }
 
 .claimList li {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--ry-s2);
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  column-gap: var(--ry-s3);
+  align-items: baseline;
+}
+
+/* A claim's amount: the dollars, and the token's part on its own line beneath. */
+.claimAmount {
+  display: grid;
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.claimTokens {
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+  overflow-wrap: anywhere;
 }
 
 .positionsBoard {

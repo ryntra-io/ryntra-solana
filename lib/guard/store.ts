@@ -412,6 +412,9 @@ export const GUARD_COLLECTIONS = [
      the same column; no DDL. */
   "launchBudgets",
   "launchRevenue",
+  /* Ryntra Launch, the holders' collector's own pace (1.41.0): when it reads each position again — an hour under a
+     dollar, six after a refused claim — keyed `<cluster>:<position>`. A value in the same column; no DDL. */
+  "launchHolderChecks",
 ] as const;
 
 export type GuardCollectionName = (typeof GUARD_COLLECTIONS)[number];

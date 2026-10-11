@@ -3,6 +3,7 @@ import { apiFailure, apiJson, apiMajorRefusal, readApiBody } from "@/lib/api/v1/
 import { rateLimitHeaders } from "@/lib/http-control";
 import { launchNetwork } from "@/lib/launch/config.server";
 import { quoteLaunchHolder } from "@/lib/launch/holder.server";
+import { provenWalletOf } from "@/lib/launch/holder-proof.server";
 import { consumeLaunchWrite, launchMarketDeps } from "@/lib/launch/runtime.server";
 
 export const runtime = "nodejs";
@@ -27,7 +28,7 @@ export async function POST(request: Request, context: { params: Promise<{ mint: 
   if (!BASE58.test(mint)) return apiFailure("VALIDATION_ERROR", "mint: not an address");
   const read = await readApiBody(request, LaunchHolderQuoteRequestSchema);
   if (!read.ok) return read.response;
-  const quoted = await quoteLaunchHolder(deps, mint, read.body).catch(() => ({ ok: false as const, code: "UNAVAILABLE" as const, message: "The pool could not be read now. Try again." }));
+  const quoted = await quoteLaunchHolder({ ...deps, proven: provenWalletOf(request) }, mint, read.body).catch(() => ({ ok: false as const, code: "UNAVAILABLE" as const, message: "The pool could not be read now. Try again." }));
   if (!quoted.ok) return apiFailure(quoted.code, quoted.message);
   return apiJson(quoted.quote satisfies LaunchHolderQuoteResponse);
 }

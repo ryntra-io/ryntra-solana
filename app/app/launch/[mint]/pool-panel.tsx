@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowSquareOut, CaretDown, CheckCircle, CircleNotch, Clock, ShieldCheck, Warning } from "@phosphor-icons/react";
+import { ArrowSquareOut, CaretDown, CheckCircle, CircleNotch, Clock, Warning } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 
@@ -33,9 +33,9 @@ import styles from "../launch.module.css";
  * the price-move simulator and «Це не депозит» before the one orange action;
  * then the wallet's positions here, each with what it earned and «Відкликати».
  *
- * The card draws nothing until the server says the entry is open to this
- * wallet or the wallet already holds a position here: until our security
- * review and a lawyer's opinion, on mainnet that is the operator's own wallets.
+ * The card draws nothing until the server says the entry is open or the
+ * wallet already holds a position here: open to everyone with the switch on;
+ * off, only an operator's wallet its sign-in proved.
  */
 
 type Phase = "idle" | "prepare" | "sign" | "send" | "done" | "error";
@@ -411,9 +411,9 @@ function Collector({ data, word, locale }: { data: LaunchHolderResponse; word: W
   if (!data.collector) return <p className={styles.hint}>{word("collectorOff")}</p>;
   return (
     <div className={styles.collector}>
-      <p className={styles.collectorTitle}>
-        <ShieldCheck size={18} weight="fill" aria-hidden />
-        {word("collectorTitle")}
+      {/* The permission in four lines, large, one column — the block's title. No badge beside it: it is a boundary, not a seal. */}
+      <p className={styles.collectorPromise}>
+        <span>{word("collectorPromise1")}</span> <span>{word("collectorPromise2")}</span> <span>{word("collectorPromise3")}</span> <span>{word("collectorPromise4")}</span>
       </p>
       <p className={styles.collectorLine}>
         {data.compoundingBps ? word("collectorLine", { pct: formatBps(data.compoundingBps, locale) }) : word("collectorLineNoCompound")}
@@ -423,9 +423,7 @@ function Collector({ data, word, locale }: { data: LaunchHolderResponse; word: W
           {word("collectorBounds")} <CaretDown size={14} aria-hidden className={styles.caret} />
         </summary>
         <ul className={styles.collectorBounds}>
-          <li>{word("collectorCan")}</li>
           <li>{word("collectorCannot")}</li>
-          <li>{word("collectorRevoke")}</li>
           <li>{word("collectorNoReinvest")}</li>
           <li>{word("collectorChain")}</li>
         </ul>
@@ -613,7 +611,19 @@ function PositionRow({
             </div>
           </dl>
           <p className={styles.positionHolds}>{word("posHolds", { pair: money(now.pairRaw), tokens: `${formatRaw(now.tokenRaw, data.tokenDecimals, locale, 0)} $${symbol}` })}</p>
-          {position.nextCollection ? <CollectorQueue next={position.nextCollection} locale={locale} /> : null}
+          {/* An account of the owner's the fees are paid into is closed: the collector waits on it rather than reopen it at its cost. */}
+          {grant === "GRANTED" && now.closedAccounts?.length ? (
+            <p className={styles.accountClosed} role="status">
+              <Warning size={14} weight="fill" aria-hidden className={styles.warnIcon} />
+              <span>
+                {now.closedAccounts.length > 1
+                  ? word("posAccountsClosed", { coins: `${data.pair.symbol} ${locale === "uk" ? "і" : "and"} $${symbol}` })
+                  : word("posAccountClosed", { coins: now.closedAccounts[0] === "pair" ? data.pair.symbol : `$${symbol}` })}
+              </span>
+            </p>
+          ) : position.nextCollection ? (
+            <CollectorQueue next={position.nextCollection} locale={locale} />
+          ) : null}
           <div className={styles.positionActions}>
             {grant && grant !== "NONE" ? (
               <button type="button" className="rw-btn" disabled={state.phase === "busy" || !connection} onClick={() => void act("revoke")}>
@@ -640,13 +650,16 @@ function PositionRow({
           {position.claims.length ? (
             <details className={styles.details}>
               <summary className={styles.summary}>
-                {word("posClaims", { n: position.claims.length })} <CaretDown size={14} aria-hidden className={styles.caret} />
+                {word("posClaims", { n: position.claimsCount ?? position.claims.length })} <CaretDown size={14} aria-hidden className={styles.caret} />
               </summary>
               <ul className={styles.claimList}>
                 {position.claims.map((claim) => (
                   <li key={claim.signature}>
-                    <span className={styles.mono}>{money(claim.pairRaw)}</span>
-                    {claim.at ? <span className={styles.positionWhen}>{formatDate(claim.at, locale)}</span> : null}
+                    <span className={styles.positionWhen}>{claim.at ? formatDate(claim.at, locale) : ""}</span>
+                    <span className={styles.claimAmount}>
+                      <span className={styles.mono}>{money(claim.pairRaw)}</span>
+                      {BigInt(claim.tokenRaw) > 0n ? <span className={styles.claimTokens}>+ {formatRaw(claim.tokenRaw, data.tokenDecimals, locale, 0)} ${symbol}</span> : null}
+                    </span>
                     <a className={styles.markLink} href={explorerUrl(data.network, "tx", claim.signature)} target="_blank" rel="noreferrer noopener">
                       {word("viewTx")} <ArrowSquareOut size={12} aria-hidden />
                     </a>

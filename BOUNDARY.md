@@ -9,10 +9,10 @@ moved counts as new. Generated at every update from the development history.
 
 | Since the tag | Files |
 |---|---|
-| New | 1,343 |
+| New | 1,344 |
 | Changed | 823 |
 | Unchanged | 912 |
-| Lines added / removed | +347,219 / −20,397 |
+| Lines added / removed | +347,673 / −20,397 |
 
 ## New since the tag
 
@@ -1049,6 +1049,7 @@ moved counts as new. Generated at every update from the development history.
 - `lib/launch/form.ts`
 - `lib/launch/graduation.server.ts`
 - `lib/launch/health.server.ts`
+- `lib/launch/holder-proof.server.ts`
 - `lib/launch/holder.server.ts`
 - `lib/launch/holder.test.mjs`
 - `lib/launch/journal.server.ts`
