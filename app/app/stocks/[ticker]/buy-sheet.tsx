@@ -17,6 +17,7 @@ import { useSolanaConnection } from "@/app/solana/workspace/connection";
 import { openSolanaConnection } from "@/app/solana/workspace/connection-trigger.client";
 import { useSolanaI18n } from "@/app/solana/workspace/i18n/provider";
 import { MarketIcon } from "@/app/solana/workspace/spot/market-list";
+import { QuickBuy } from "@/app/solana/workspace/spot/quick-buy";
 import { formatUsdMoney, formatUsdPrice } from "@/app/solana/workspace/spot/spot-format";
 import { useSpotMarket } from "@/app/solana/workspace/spot/use-spot-data";
 import { SPOT_QUOTE_ASSETS, useSpotTicket } from "@/app/solana/workspace/spot/use-spot-ticket";
@@ -147,6 +148,8 @@ export type BuySheetProps = Readonly<{
   quiet?: boolean;
   /** «Умова ціни»: the facts a rule's price condition is judged on, as the page read them — the sheet reads them again while a rule's purchase is open. */
   conditionFacts?: PriceFacts | null;
+  /** «Швидка купівля» over «Купити»: the person's dollar sums, each one tap from the sheet on that sum with its Review. */
+  quickBuy?: boolean;
 }>;
 
 /** The rule's purchase offered first while its reminder is open: its sum, what the reminder is, and the press that opens it. */
@@ -182,6 +185,19 @@ export function BuySheet(props: BuySheetProps) {
   const [amountText, setAmountText] = useState(String(DEFAULT_USD));
   const [limit, setLimit] = useState<LossLimitPreset | null>(null);
   const [resume, setResume] = useState(false);
+  /* A quick sum pressed: the sheet opens on it, a plain purchase with no loss limit, and its Review is asked for once. */
+  const [quickTap, setQuickTap] = useState(0);
+  const pickQuick = useCallback((usd: number) => {
+    setAmountText(String(usd));
+    setLimit(null);
+    setQuickTap((tap) => tap + 1);
+    setOpen(true);
+  }, []);
+  /* «Купити» itself is a sum the person chooses in the sheet: no quick tap carries over into it. */
+  const openPlain = useCallback(() => {
+    setQuickTap(0);
+    setOpen(true);
+  }, []);
 
   const wasOpen = useRef(false);
   const closedOnRule = useRef(false);
@@ -273,7 +289,7 @@ export function BuySheet(props: BuySheetProps) {
           <button type="button" className={`rw-btn rw-btn--primary ${company.buy}`} data-sheet-open={open ? "true" : undefined} data-rule-first="true" aria-haspopup="dialog" onClick={ruleOffer.onBuy}>
             {buyByRuleWord(props.locale, ruleOffer.amountUsd)}
           </button>
-          <button type="button" className={`rw-btn ${company.plainBuy}`} aria-haspopup="dialog" aria-describedby={plainNoteId} onClick={() => setOpen(true)}>
+          <button type="button" className={`rw-btn ${company.plainBuy}`} aria-haspopup="dialog" aria-describedby={plainNoteId} onClick={openPlain}>
             {word("plainPurchase")}
           </button>
           <p id={plainNoteId} className={company.plainNote}>
@@ -281,9 +297,12 @@ export function BuySheet(props: BuySheetProps) {
           </p>
         </>
       ) : (
-        <button type="button" className={`${primary} ${company.buy}`} data-sheet-open={open ? "true" : undefined} data-quiet={quiet ? "true" : undefined} aria-haspopup="dialog" onClick={() => setOpen(true)}>
-          {word("buy")}
-        </button>
+        <>
+          {props.quickBuy ? <QuickBuy locale={props.locale === "uk" ? "uk" : "en"} onPick={pickQuick} size="comfort" label /> : null}
+          <button type="button" className={`${primary} ${company.buy}`} data-sheet-open={open ? "true" : undefined} data-quiet={quiet ? "true" : undefined} aria-haspopup="dialog" onClick={openPlain}>
+            {word("buy")}
+          </button>
+        </>
       )}
       <dialog
         ref={dialog}
@@ -304,6 +323,7 @@ export function BuySheet(props: BuySheetProps) {
             {...props}
             ruleBuy={ruleBuy}
             titleId={titleId}
+            quickTap={quickTap}
             amountText={amountText}
             onAmountText={setAmountText}
             limit={limit}
@@ -369,8 +389,11 @@ function BuyFlow({
   ruleOffer = null,
   eventLine = null,
   conditionFacts = null,
+  quickTap = 0,
 }: BuySheetProps & {
   titleId: string;
+  /** The count of quick sums pressed: a new one asks for the Review of the sheet's sum once. */
+  quickTap?: number;
   amountText: string;
   onAmountText: (value: string) => void;
   limit: LossLimitPreset | null;
@@ -603,6 +626,16 @@ function BuyFlow({
     autoReviewed.current = true;
     setWantReview(true);
   }, [ruleMode, ruleOpen, budgetHolds, conditionHolds, connection, proven, baseDecimals, attempt, phase, insufficient, cannotPayFee, holdings.status]);
+
+  /* One tap from a quick sum: its Review, once, as soon as the wallet is read — or the sheet says what stands in the way (the balance, SOL for the fee) and waits for the person. */
+  const quickAnswered = useRef(0);
+  useEffect(() => {
+    if (quickTap === 0 || quickAnswered.current === quickTap || ruleMode) return;
+    if (!connection || baseDecimals === null || holdings.status !== "ready") return;
+    quickAnswered.current = quickTap;
+    if (attempt || phase !== "IDLE" || limit || !valid || insufficient || cannotPayFee) return;
+    setWantReview(true);
+  }, [quickTap, ruleMode, connection, baseDecimals, holdings.status, attempt, phase, limit, valid, insufficient, cannotPayFee]);
 
   /* -------------------------------------------------------- what it buys — as the server counts it */
   /*

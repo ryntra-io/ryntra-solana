@@ -452,6 +452,28 @@
     min-width: 0;
   }
 
+  /* «Поділитися угодою» in the one-line header: its icon, the words kept as its name and pushed past its edge — with
+     them the price line ran past the card and cut «Powered by». The two-line header and the phone keep the words. */
+  .header > .priceRow [data-share-trade] {
+    flex: 0 0 44px;
+    justify-content: flex-start;
+    gap: 44px;
+    width: 44px;
+    padding-inline: 13px;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .header > .priceRow [data-share-trade] svg {
+    flex: none;
+  }
+
+  /* With it the line needs its room: a short name gives back what its column held for a long one, and the gaps close. */
+  .header:has(> .priceRow [data-share-trade]) {
+    grid-template-columns: max-content minmax(max-content, 1fr) auto;
+    column-gap: var(--ry-s3);
+  }
+
   .header .headerActions {
     grid-column: 3;
     grid-row: 1;
@@ -581,6 +603,11 @@
 .chip[data-tone="risk"] {
   background: var(--ry-env-bg);
   color: var(--ry-risk);
+}
+
+/* The share button's slot is no box of its own: the button stays the price line's item. */
+.shareSlot {
+  display: contents;
 }
 
 .priceRow {
@@ -1303,7 +1330,8 @@
   background: var(--ry-bg);
 }
 
-.amountBox:focus-within {
+/* The box glows for its own amount, not for the quick sums inside it — they ring themselves. */
+.amountBox:focus-within:not(:has([data-quick-buy] :focus, [data-quick-sell] :focus)) {
   border-color: var(--ry-iris);
   box-shadow: var(--ry-focus);
 }
@@ -1427,33 +1455,6 @@
   width: 18px;
   height: 18px;
   font-size: var(--ry-fs-label-sm);
-}
-
-.quickFills {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--ry-s1);
-}
-
-.quickFills button {
-  min-height: 28px;
-  border: 1px solid var(--ry-border);
-  border-radius: var(--ry-r-chip);
-  background: transparent;
-  color: var(--ry-muted);
-  font-family: var(--ry-font-mono);
-  font-size: var(--ry-fs-label);
-  cursor: pointer;
-}
-
-.quickFills button:hover:not(:disabled) {
-  color: var(--ry-text);
-  background: var(--ry-hover);
-}
-
-.quickFills button:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
 }
 
 .usdLine {
@@ -2218,7 +2219,6 @@
   .side,
   .stateTab,
   .orderTypeTab,
-  .quickFills button,
   .quoteOption,
   .chart :global(.dm-tfs button),
   .chart :global(.pc-btn),
@@ -2252,7 +2252,6 @@
   .side,
   .stateTab,
   .orderTypeTab,
-  .quickFills button,
   .quoteOption,
   .chart :global(.dm-tfs button),
   .chart :global(.pc-btn),

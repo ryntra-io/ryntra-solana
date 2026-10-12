@@ -23,12 +23,15 @@ import { swapFailureCopy } from "@/lib/solana/swap-failure-copy";
 import { additionalJupiterFeeBps, serviceFeeReviewText, serviceFeeText, type RyntraServiceFee } from "@/lib/swap/service-fee";
 import { spotFillAmounts, spotTicketAction } from "@/lib/spot/ticket-state";
 import { tradingAvailability, type SpotMarket } from "@/lib/spot/markets";
+import { QUICK_SELL_SHARES_PCT, quickBuyAmount } from "@/lib/spot/quick-trade";
 
 import { useSolanaConnection } from "../connection.tsx";
 import { useSolanaI18n } from "../i18n/provider.tsx";
+import { ShareTrade } from "../rewards/share-trade.tsx";
 import { WalletConnectRow } from "../wallet-connect.tsx";
 import { MarketIcon } from "./market-list.tsx";
 import { PlanChip, PlanReviewBlock, planRefusalSentence } from "./plan-review-block.tsx";
+import { QuickBuy, QuickSell } from "./quick-buy.tsx";
 import { QuoteAssetSwitch } from "./quote-asset-switch.tsx";
 import { StockReviewBlock, useStockAsset } from "./stock-context.tsx";
 import { formatAmount, formatPrice, formatUsdPrice, rawToNumber } from "./spot-format.ts";
@@ -309,16 +312,46 @@ export function OrderTicket({
   const outputSymbol = side === "BUY" ? baseSymbol : quote.symbol;
   const spendable = inputHolding ? (side === "SELL" ? baseNumber(inputHolding.spendableRaw, inputHolding.decimals) : rawToNumber(inputHolding.spendableRaw, inputHolding.decimals)) : null;
 
+  /* A quick sale: a share of what the wallet holds, in the field as the wallet shows it. */
   const fillShare = useCallback(
-    (numerator: bigint, denominator: bigint) => {
-      if (!inputHolding || holdings.status !== "ready") return;
+    (numerator: bigint, denominator: bigint): string | null => {
+      if (!inputHolding || holdings.status !== "ready") return null;
       const raw = BigInt(inputHolding.spendableRaw);
+      if (raw <= 0n) return null;
       const share = denominator === 1n ? raw : (raw * numerator) / denominator;
       /* The field shows the wallet's unit; a scaled sale is typed in it and converted back on the way to the hook. */
-      setAmount(side === "SELL" && scaledBase !== null ? scaledAmountString(share, inputHolding.decimals, scaledBase, Math.min(6, inputHolding.decimals)).replace(/\.?0+$/, "") : plainAmount(share.toString(), inputHolding.decimals));
+      const value = side === "SELL" && scaledBase !== null ? scaledAmountString(share, inputHolding.decimals, scaledBase, Math.min(6, inputHolding.decimals)).replace(/\.?0+$/, "") : plainAmount(share.toString(), inputHolding.decimals);
+      setAmount(value);
+      return value;
     },
     [holdings.status, inputHolding, side, scaledBase],
   );
+
+  /*
+   * One tap: a quick sum or a quick share goes into the field, and the exact
+   * Review opens on it as soon as the ticket can judge it — the wallet read,
+   * the amount valid, the balance enough. The Review and the signature are the
+   * same as every order's; the tap never signs. Anything typed afterwards, or
+   * a balance that does not cover it, leaves the field filled and the Review
+   * to the person's own press.
+   */
+  const [quickReview, setQuickReview] = useState<string | null>(null);
+  const solUsd = (() => {
+    const native = holdingOf(holdings, WRAPPED_SOL_MINT);
+    const price = native?.catalog?.usdPrice ? Number(native.catalog.usdPrice) : null;
+    return price !== null && Number.isFinite(price) && price > 0 ? price : null;
+  })();
+  const quickPayment = { symbol: quote.symbol, decimals: quote.decimals, dollar: quote.mint !== WRAPPED_SOL_MINT };
+  const pickQuickBuy = (usd: number) => {
+    const value = quickBuyAmount(usd, quickPayment, solUsd);
+    if (value === null) return;
+    setAmount(value);
+    setQuickReview(value);
+  };
+  const pickQuickShare = (pct: number) => {
+    const value = fillShare(BigInt(pct), 100n);
+    if (value !== null) setQuickReview(value);
+  };
 
   /* Both legs known, so «Перевірка» never offers a press its hook would ignore while the market is still read. */
   const amountOk = inputDecimals !== null && outputDecimals !== null && baseMint !== null && parseHumanAmount(hookAmount, inputDecimals).ok;
@@ -391,6 +424,36 @@ export function OrderTicket({
   }, [quoted]);
   const blocked = quoted ? quoted.verdict.verdict === "BLOCKED" : blockedPair === `${inputMint}:${outputMint}:${parsedAmount?.ok ? parsedAmount.raw : null}`;
   const reviewWarnings = prepared ? prepared.policy.verdict.findings.filter((finding) => finding.outcome === "REVIEW") : [];
+
+  /* The quick tap's Review, once — and never over another Review, a signature in flight or an attempt to check. */
+  const { review: openReview } = ticket;
+  /* The tap's Review is brought into view once it opens — on a phone «Підписати» is under the fold — to the middle of the screen, never to its edge behind the bottom menu. */
+  const quickOpened = useRef(false);
+  useEffect(() => {
+    if (quickReview === null) return;
+    if (amount !== quickReview || !connection || attempt !== null || phase !== "IDLE") {
+      setQuickReview(null);
+      return;
+    }
+    if (!amountOk || holdings.status !== "ready") return;
+    setQuickReview(null);
+    if (insufficientBalance || cannotPayFee || blocked) return;
+    quickOpened.current = true;
+    void openReview();
+  }, [quickReview, amount, connection, attempt, phase, amountOk, holdings.status, insufficientBalance, cannotPayFee, blocked, openReview]);
+  /* A tap the ticket could not judge within ten seconds (the wallet still read) leaves the sum in the field and the Review to the person — never a Review that opens on its own minutes later. */
+  useEffect(() => {
+    if (quickReview === null) return undefined;
+    const timer = window.setTimeout(() => setQuickReview(null), 10_000);
+    return () => window.clearTimeout(timer);
+  }, [quickReview]);
+  useEffect(() => {
+    if (!quickOpened.current || phase === "PREPARING") return;
+    quickOpened.current = false;
+    if (phase !== "REVIEW" || !prepared) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.requestAnimationFrame(() => ticketRef.current?.querySelector<HTMLElement>("[data-terminal-cta]")?.scrollIntoView({ block: "center", behavior: reduce ? "auto" : "smooth" }));
+  }, [phase, prepared]);
   const verb = side === "BUY" ? text("Buy") : text("Sell");
 
   /* The primary action, one at a time. */
@@ -574,6 +637,8 @@ export function OrderTicket({
               <Link className={styles.ghost} href="/app/activity">{text("History")}</Link>
             </div>
           ) : null}
+          {/* The card of this trade, with the person's invitation link — read afresh for the trade just settled; nothing until the wallet has proved itself and the trade is measured. */}
+          {outcome.kind === "FILLED" && baseMint ? <ShareTrade key={settled.signature} mint={baseMint} /> : null}
           <button type="button" className={outcome.kind === "FILLED" ? styles.secondary : styles.cta} onClick={() => { ticket.reset(); setAmount(""); onRefresh(); if (ruleBinding) onLeaveRule?.(); }}>
             {outcome.kind === "NOTHING_HAPPENED" ? text("Trade again") : text("New order")}
           </button>
@@ -772,15 +837,20 @@ export function OrderTicket({
             </div>
             {/* The dollar value of what is typed, wherever it is not a dollar already. */}
             {inputUsd !== null && (side === "SELL" || quote.symbol !== "USDC") ? <span className={styles.usdLine}>≈ {formatUsdPrice(inputUsd, locale)}</span> : null}
-            {/* A Review fixes the amount: the shares leave it, and its answers stand closer to «Підписати». */}
-            {connection && !underRule && phase !== "REVIEW" ? (
-              <div className={styles.quickFills} data-quick-fills data-dense>
-                {([["25%", 1n, 4n], ["50%", 1n, 2n], ["75%", 3n, 4n], ["MAX", 1n, 1n]] as const).map(([label, numerator, denominator]) => (
-                  <button key={label} type="button" disabled={!inputHolding || holdings.status !== "ready" || busy} onClick={() => fillShare(numerator, denominator)}>
-                    {label}
-                  </button>
-                ))}
-              </div>
+            {/* «Швидка купівля» — the person's dollar sums — and «Швидкий продаж» — shares of the position: one tap
+                puts it in the field and opens the Review. A Review fixes the amount: the chips leave it, and its answers
+                stand closer to «Підписати». */}
+            {!underRule && phase !== "REVIEW" ? (
+              side === "BUY" ? (
+                <QuickBuy
+                  locale={locale === "uk" ? "uk" : "en"}
+                  onPick={pickQuickBuy}
+                  disabled={busy || !baseMint || (!quickPayment.dollar && solUsd === null)}
+                  note={!quickPayment.dollar && solUsd === null ? (connection ? text("SOL's price is not read yet: pay in USDC or type the amount.") : text("Connect a wallet to buy in SOL by the dollar, or pay in USDC.")) : null}
+                />
+              ) : connection ? (
+                <QuickSell locale={locale === "uk" ? "uk" : "en"} shares={QUICK_SELL_SHARES_PCT} onPick={pickQuickShare} disabled={!inputHolding || holdings.status !== "ready" || busy} />
+              ) : null
             ) : null}
           </div>
 

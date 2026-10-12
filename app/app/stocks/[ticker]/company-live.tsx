@@ -6,13 +6,15 @@ import { yearRange } from "@/app/app/invest/company-facts-model";
 import { anchorPoints, formatUnits, rangePoints, unitsPhrase } from "@/app/app/invest/company-model";
 import { investWords, numberLocale } from "@/app/app/invest/invest-words";
 import { WarnSheet, WatchLine } from "@/app/app/invest/position-watch";
-import type { SaleAsset } from "@/app/app/invest/sale-model";
+import { MIN_SALE_USD, SALE_SHARE_PRESETS_PCT, type SaleAsset } from "@/app/app/invest/sale-model";
 import { usePositions } from "@/app/app/invest/use-positions";
 import { useWalletData } from "@/app/app/wallet-data";
 import { shownRaw } from "@/app/app/wallet-view-model";
 import type { WorkspaceLocale } from "@/app/shell/locale";
 import type { PositionWatchView } from "@/lib/api/v1/contract";
 import { openSolanaConnection } from "@/app/solana/workspace/connection-trigger.client";
+import { ShareTrade } from "@/app/solana/workspace/rewards/share-trade";
+import { QuickSell } from "@/app/solana/workspace/spot/quick-buy";
 import { formatUsdMoney, formatUsdPrice } from "@/app/solana/workspace/spot/spot-format";
 import { useSpotCandles } from "@/app/solana/workspace/spot/use-spot-data";
 
@@ -99,6 +101,16 @@ export function YourPosition({ mint, name, price, unit, locale, sale = null }: {
   const numbers = numberLocale(locale);
   const { holdings } = useWalletData();
   const [selling, setSelling] = useState(false);
+  /* «Швидкий продаж»: the share pressed and the press's count — the sheet opens on it with its Review. */
+  const [quickShare, setQuickShare] = useState<Readonly<{ pct: number; tap: number }> | null>(null);
+  const openSale = useCallback(() => {
+    setQuickShare(null);
+    setSelling(true);
+  }, []);
+  const sellShare = useCallback((pct: number) => {
+    setQuickShare((current) => ({ pct, tap: (current?.tap ?? 0) + 1 }));
+    setSelling(true);
+  }, []);
   const [warning, setWarning] = useState<PositionWatchView | null>(null);
   const positions = usePositions();
   const watch = positions.of(mint);
@@ -111,6 +123,7 @@ export function YourPosition({ mint, name, price, unit, locale, sale = null }: {
   /* A closed sale re-reads Нагляд: a position sold, or sold in part, says so at once. */
   const closeSale = useCallback(() => {
     setSelling(false);
+    setQuickShare(null);
     reloadPositions();
   }, [reloadPositions]);
   const position = (() => {
@@ -163,23 +176,47 @@ export function YourPosition({ mint, name, price, unit, locale, sale = null }: {
             <span className={company.positionUnits}>{unitsPhrase(position.amount, unit, name, locale === "uk" ? "uk" : "en", numbers)}</span>
           </div>
           {canSell && !saleInLine ? (
-            <button type="button" className={`rw-btn ${company.sell}`} aria-haspopup="dialog" data-sell-open={selling ? "true" : undefined} onClick={() => setSelling(true)}>
+            <button type="button" className={`rw-btn ${company.sell}`} aria-haspopup="dialog" data-sell-open={selling ? "true" : undefined} onClick={openSale}>
               {word("sell")}
             </button>
           ) : null}
         </div>
+      ) : null}
+      {/* A share of the position in one tap: the same sheet, on that share, with its Review — a share worth under a dollar is not a sale, all of it always is. */}
+      {position && canSell && !saleInLine ? (
+        <QuickSell
+          locale={locale === "uk" ? "uk" : "en"}
+          shares={SALE_SHARE_PRESETS_PCT}
+          onPick={sellShare}
+          size="comfort"
+          label
+          disabled={selling}
+          unavailable={(pct) => pct < 100 && position.value !== null && (position.value * pct) / 100 < MIN_SALE_USD}
+        />
       ) : null}
       {position && watch ? (
         <WatchLine
           view={watch}
           locale={locale}
           place="page"
-          onSale={canSell ? () => setSelling(true) : undefined}
+          onSale={canSell ? openSale : undefined}
           onWarn={() => setWarning(watch)}
         />
       ) : null}
-      {canSell && sale ? <SellSheet open={selling} asset={sale} locale={locale} onClose={closeSale} onConnect={connectFirst} /> : null}
+      {canSell && sale ? <SellSheet open={selling} asset={sale} quickShare={quickShare} locale={locale} onClose={closeSale} onConnect={connectFirst} /> : null}
       <WarnSheet view={warning} locale={locale} onClose={() => setWarning(null)} />
     </>
   );
+}
+
+/**
+ * «Поділитися угодою» on a company's page: a card of the reader's own trade of
+ * this company, with their invitation link (the Growth line's card). Read
+ * again whenever the wallet's position in the company changes — a purchase or
+ * a sale settled in the sheets above offers its card at once.
+ */
+export function CompanyShare({ mint }: Readonly<{ mint: string }>) {
+  const { holdings } = useWalletData();
+  const held = holdings.status === "ready" ? (holdings.data.find((entry) => entry.mint === mint)?.amountRaw ?? "0") : "unread";
+  return <ShareTrade key={held} mint={mint} align="end" />;
 }

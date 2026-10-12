@@ -1,0 +1,164 @@
+/* «Швидка купівля» and «Швидкий продаж»: one row of chips, the same on a ticket, a company's page and a launch's page. */
+
+.quick {
+  display: grid;
+  gap: var(--ry-s1);
+  min-width: 0;
+}
+
+.label {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+  gap: var(--ry-s1);
+  margin: 0;
+}
+
+.quick[data-size="comfort"] .row {
+  gap: var(--ry-s2);
+}
+
+.row[data-shares] {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.chip,
+.tool,
+.field {
+  min-height: 32px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-chip);
+  background: transparent;
+  color: var(--ry-text);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label);
+  font-variant-numeric: tabular-nums;
+}
+
+.quick[data-size="comfort"] .chip,
+.quick[data-size="comfort"] .tool,
+.quick[data-size="comfort"] .field {
+  min-height: 44px;
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-card);
+  font-size: var(--ry-fs-copy);
+  font-weight: 600;
+}
+
+.chip {
+  min-width: 0;
+  padding: 0 var(--ry-s1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.tool {
+  display: inline-grid;
+  place-items: center;
+  min-width: 32px;
+  padding: 0;
+  color: var(--ry-muted);
+  cursor: pointer;
+}
+
+.quick[data-size="comfort"] .tool {
+  min-width: 44px;
+}
+
+/* «regular» — a launch's panel, as tall as its slippage pills. */
+.quick[data-size="regular"] .chip,
+.quick[data-size="regular"] .tool,
+.quick[data-size="regular"] .field {
+  min-height: 36px;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-bg);
+}
+
+.quick[data-size="regular"] .tool {
+  min-width: 36px;
+}
+
+.note {
+  margin: 0;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+}
+
+.chip:hover:not(:disabled),
+.tool:hover:not(:disabled) {
+  color: var(--ry-text);
+  background: var(--ry-hover);
+}
+
+.chip[aria-pressed="true"] {
+  border-color: var(--ry-text);
+  background: var(--ry-elevated);
+}
+
+.chip:disabled,
+.tool:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.chip:focus-visible,
+.tool:focus-visible,
+.field:focus-within {
+  outline: 2px solid var(--ry-text);
+  outline-offset: 1px;
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  padding: 0 var(--ry-s1);
+  color: var(--ry-muted);
+  cursor: text;
+}
+
+.field[data-invalid="true"] {
+  border-color: var(--ry-risk);
+}
+
+/* The field's ring is its box's: no second ring inside it. */
+.field .input:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.input {
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ry-text);
+  font: inherit;
+  outline: none;
+}
+
+.error {
+  margin: 0;
+  color: var(--ry-risk);
+  font-size: var(--ry-fs-label);
+}
+
+@media (pointer: coarse) {
+  .chip,
+  .tool,
+  .field {
+    min-height: 44px;
+  }
+
+  .tool {
+    min-width: 44px;
+  }
+}

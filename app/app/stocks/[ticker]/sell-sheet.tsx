@@ -84,6 +84,8 @@ export type SellSheetProps = Readonly<{
   locale: WorkspaceLocale;
   onClose: () => void;
   onConnect: () => void;
+  /** «Швидкий продаж»: the share of the position the sheet opens on, with its Review asked for once per tap. */
+  quickShare?: Readonly<{ pct: number; tap: number }> | null;
 }>;
 
 export function SellSheet(props: SellSheetProps) {
@@ -138,7 +140,7 @@ export function SellSheet(props: SellSheetProps) {
     >
       {open || busy ? (
         asset ? (
-          <SellFlow key={asset.mint} asset={asset} linesOf={props.linesOf ?? null} locale={locale} titleId={titleId} onBusy={setBusy} onClose={requestClose} onConnect={props.onConnect} />
+          <SellFlow key={asset.mint} asset={asset} linesOf={props.linesOf ?? null} locale={locale} titleId={titleId} quickShare={props.quickShare ?? null} onBusy={setBusy} onClose={requestClose} onConnect={props.onConnect} />
         ) : (
           <SellPending placeholder={placeholder} failed={failed} coin={props.coin === true} locale={locale} titleId={titleId} onClose={requestClose} />
         )
@@ -207,7 +209,7 @@ function SellPending({ placeholder, failed, coin, locale, titleId, onClose }: Re
   );
 }
 
-function SellFlow({ asset, linesOf, locale, titleId, onBusy, onClose, onConnect }: Readonly<{ asset: SaleAsset; linesOf: SellSheetProps["linesOf"]; locale: WorkspaceLocale; titleId: string; onBusy: (busy: boolean) => void; onClose: () => void; onConnect: () => void }>) {
+function SellFlow({ asset, linesOf, locale, titleId, quickShare = null, onBusy, onClose, onConnect }: Readonly<{ asset: SaleAsset; linesOf: SellSheetProps["linesOf"]; locale: WorkspaceLocale; titleId: string; quickShare?: SellSheetProps["quickShare"]; onBusy: (busy: boolean) => void; onClose: () => void; onConnect: () => void }>) {
   const word = investWords(locale);
   const numbers = numberLocale(locale);
   const lang = locale === "uk" ? "uk" : "en";
@@ -330,6 +332,33 @@ function SellFlow({ asset, linesOf, locale, titleId, onBusy, onClose, onConnect 
     if (code === "WALLET_REFUSED") return word("walletDeclined");
     return ticket.actionFailureMessage ?? null;
   })();
+
+  /* One tap from a quick share: the share goes in once the position is read, and its Review is asked for once the sale can be judged — or the sheet says what stands in the way and waits for the person. */
+  const quickPicked = useRef(0);
+  const [quickArmed, setQuickArmed] = useState(0);
+  useEffect(() => {
+    if (!quickShare || quickPicked.current === quickShare.tap || heldRaw === null || baseDecimals === null) return;
+    quickPicked.current = quickShare.tap;
+    pickShare(quickShare.pct);
+    setQuickArmed(quickShare.tap);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quickShare, heldRaw, baseDecimals]);
+  const { review: openReview } = ticket;
+  useEffect(() => {
+    if (quickArmed === 0 || !quickShare) return;
+    /* The person chose another share before the sale could be judged: the tap is theirs no longer. */
+    if (pct !== quickShare.pct) {
+      setQuickArmed(0);
+      return;
+    }
+    if (!connection || holdings.status !== "ready") return;
+    if (attempt || phase !== "IDLE" || !valid || belowMinimum || cannotPayFee || blocked || !asset.sellable) {
+      setQuickArmed(0);
+      return;
+    }
+    setQuickArmed(0);
+    void openReview();
+  }, [quickArmed, quickShare, pct, connection, holdings.status, attempt, phase, valid, belowMinimum, cannotPayFee, blocked, asset.sellable, openReview]);
 
   const head = (title: string) => <SheetHead mint={mint} name={name} icon={icon} title={title} titleId={titleId} onClose={onClose} disabled={working} locale={locale} />;
 

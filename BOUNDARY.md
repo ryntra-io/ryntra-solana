@@ -9,10 +9,10 @@ moved counts as new. Generated at every update from the development history.
 
 | Since the tag | Files |
 |---|---|
-| New | 1,379 |
+| New | 1,383 |
 | Changed | 825 |
 | Unchanged | 910 |
-| Lines added / removed | +361,342 / −20,533 |
+| Lines added / removed | +362,213 / −20,549 |
 
 ## New since the tag
 
@@ -465,6 +465,8 @@ moved counts as new. Generated at every update from the development history.
 - `app/solana/workspace/rewards/share-trade.tsx`
 - `app/solana/workspace/rewards/share.module.css`
 - `app/solana/workspace/spot/plan-review-block.tsx`
+- `app/solana/workspace/spot/quick-buy.module.css`
+- `app/solana/workspace/spot/quick-buy.tsx`
 - `app/solana/workspace/spot/quote-asset-switch.tsx`
 - `app/solana/workspace/spot/recurring-ticket.test.mjs`
 - `app/solana/workspace/spot/stock-context.tsx`
@@ -1254,6 +1256,8 @@ moved counts as new. Generated at every update from the development history.
 - `lib/spot/coin-shelf.test.mjs`
 - `lib/spot/coin-shelf.ts`
 - `lib/spot/markets-budget.test.mjs`
+- `lib/spot/quick-trade.test.mjs`
+- `lib/spot/quick-trade.ts`
 - `lib/spot/read-retry.test.mjs`
 - `lib/spot/read-retry.ts`
 - `lib/spot/ticket-state.test.mjs`

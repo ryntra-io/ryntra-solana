@@ -2,16 +2,18 @@
 
 import { ArrowCounterClockwise, ArrowRight, ArrowSquareOut, CaretDown, CheckCircle, CircleNotch, Clock, Warning } from "@phosphor-icons/react";
 import Link from "next/link";
-import { useCallback, useEffect, useId, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { useWalletReach } from "@/app/app/invest/use-wallet-reach";
 import type { WorkspaceLocale } from "@/app/shell/locale";
 import { useSolanaConnection } from "@/app/solana/workspace/connection";
+import { QuickBuy, QuickSell } from "@/app/solana/workspace/spot/quick-buy";
 import type { LaunchMarketResponse, LaunchTradeBuildResponse, LaunchTradeQuoteResponse, LaunchTradeSubmitResponse, LaunchWalletResponse } from "@/lib/api/v1/contract";
 import { storeBoundSolanaReceipt } from "@/lib/solana/send-receipt-vault.client";
 import { signTransactions } from "@/lib/solana/wallet.client";
+import { QUICK_SELL_SHARES_PCT, quickShareRaw } from "@/lib/spot/quick-trade";
 
-import { explorerUrl, formatBps, formatMoneyShort, formatMove, formatNumber, formatPercent, formatRaw, fromRaw, rovingNext, toRaw } from "../launch-format";
+import { explorerUrl, formatBps, formatMoneyShort, formatMove, formatNumber, formatRaw, fromRaw, rovingNext, toRaw } from "../launch-format";
 import { launchWords } from "../launch-words";
 import styles from "../launch.module.css";
 import { PausedNote } from "../paused-note";
@@ -139,14 +141,32 @@ export function TradePanel({
   }, [receiptHash, receiptSignature, wallet, base]);
 
   const shown = quote.key === key ? quote.data : null;
-  const presets = useMemo(() => (side === "buy" ? (pair.dollar ? ["10", "50", "100"] : ["1000", "5000", "20000"]) : ["25", "50", "100"]), [side, pair.dollar]);
+  /* A pair that is not a dollar keeps its own round amounts; a dollar pair takes the person's quick sums, the same as on every page. */
+  const pairPresets = useMemo(() => (pair.dollar ? [] : ["1000", "5000", "20000"]), [pair.dollar]);
 
+  /* A quick sum or share: the amount goes in, the trade is counted at once as typed, and the keyboard lands on the trade's
+     own button as soon as it can be pressed — the panel's count is this page's Review, and the wallet still signs. */
+  const heldTokens = held && /^\d+$/.test(held.tokenRaw) ? BigInt(held.tokenRaw) : 0n;
+  const [focusTrade, setFocusTrade] = useState(false);
   const choose = (value: string) => {
-    if (side === "buy") return setText(value);
-    if (!held) return;
-    const raw = (BigInt(held.tokenRaw) * BigInt(value)) / 100n;
-    setText(fromRaw(raw, market.tokenDecimals));
+    setText(value);
+    setFocusTrade(true);
   };
+  const chooseShare = (pct: number) => {
+    if (heldTokens <= 0n) return;
+    choose(fromRaw(quickShareRaw(heldTokens, pct), market.tokenDecimals));
+  };
+  const tradeButton = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!focusTrade || quote.loading || !shown) return;
+    setFocusTrade(false);
+    window.requestAnimationFrame(() => {
+      const button = tradeButton.current;
+      if (!button || button.disabled) return;
+      button.focus({ preventScroll: true });
+      button.scrollIntoView({ block: "nearest", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+    });
+  }, [focusTrade, quote.loading, shown]);
 
   const trade = async () => {
     if (!connection) {
@@ -352,17 +372,26 @@ export function TradePanel({
             value={text}
             disabled={busy}
             aria-invalid={over || amountRaw === null ? true : undefined}
-            onChange={(event) => setText(event.target.value)}
+            onChange={(event) => {
+              setText(event.target.value);
+              setFocusTrade(false);
+            }}
           />
           <span className={styles.suffix}>{unit}</span>
         </div>
-        <div className={styles.quickRow}>
-          {presets.map((value) => (
-            <button key={value} type="button" className={styles.quick} disabled={busy || (side === "sell" && !held)} onClick={() => choose(value)}>
-              {side === "buy" ? (pair.dollar ? `$${value}` : `${formatNumber(Number(value), locale)}`) : value === "100" ? word("max") : formatPercent(Number(value), locale, 0)}
-            </button>
-          ))}
-        </div>
+        {side === "sell" ? (
+          <QuickSell locale={locale === "uk" ? "uk" : "en"} shares={QUICK_SELL_SHARES_PCT} onPick={chooseShare} disabled={busy || heldTokens <= 0n} size="regular" />
+        ) : pair.dollar ? (
+          <QuickBuy locale={locale === "uk" ? "uk" : "en"} onPick={(usd) => choose(String(usd))} disabled={busy} size="regular" />
+        ) : (
+          <div className={styles.quickRow}>
+            {pairPresets.map((value) => (
+              <button key={value} type="button" className={styles.quick} disabled={busy} onClick={() => choose(value)}>
+                {formatNumber(Number(value), locale)}
+              </button>
+            ))}
+          </div>
+        )}
         {over ? <p className={styles.problem}>{word("moreThanHeld")}</p> : amountRaw === null ? <p className={styles.problem}>{word("errAmount")}</p> : null}
         <div className={styles.slipRow}>
           <span id={ids.slip} className={styles.slipLabel}>
@@ -495,6 +524,7 @@ export function TradePanel({
       ) : null}
 
       <button
+        ref={tradeButton}
         type="button"
         className="rw-btn rw-btn--primary"
         disabled={busy || (Boolean(connection) && (amountRaw === null || amountRaw <= 0n || over || !shown))}

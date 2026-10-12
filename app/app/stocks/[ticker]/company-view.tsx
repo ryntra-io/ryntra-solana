@@ -32,7 +32,7 @@ import { CompanyWarning, PathEvent, type CompanyEventFacts } from "./company-eve
 import { AboutCompany, KeyStats, PopularAside, TokenTrading, TokenTradingSkeleton, WhatYouBuy } from "./company-facts-blocks";
 import { CompanyPathStrip } from "./company-path";
 import { pathDay, swapLines } from "./company-path-words";
-import { YourPosition } from "./company-live";
+import { CompanyShare, YourPosition } from "./company-live";
 import { CompanyQuote } from "./company-quote";
 import { DealBlock } from "./deal-block";
 import { LiquidityBlock, LiquiditySkeleton } from "./liquidity-block";
@@ -221,6 +221,7 @@ export function CompanyView({ locale, asset, target = null, counterpart = null, 
                   conditionFacts={conditionFacts}
                   conditionReference={conditionReference}
                   locale={locale}
+                  quickBuy
                 />
               ) : (
                 <p className={company.status} role="status">
@@ -229,6 +230,7 @@ export function CompanyView({ locale, asset, target = null, counterpart = null, 
               )}
               {buyable ? <p className={company.buyNote}>{word("fromDollarWallet")}</p> : null}
               <YourPosition mint={rep.mint} name={name} price={row.market.priceUsd} unit={unit} locale={locale} sale={sale} />
+              <CompanyShare mint={rep.mint} />
             </div>
             {/* The way on to the next company: the same popular companies as Home, in the same published order, without this one. */}
             <Suspense fallback={null}>

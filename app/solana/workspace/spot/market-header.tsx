@@ -134,7 +134,12 @@ export function MarketHeader({
         {state.status === "unavailable" ? <span className={styles.priceMeta}>{text("Price feed unavailable")}</span> : null}
         {state.status === "ready" && state.stale ? <span className={styles.priceMeta}>{text("Last known price")}</span> : null}
         {/* «Поділитися»: a card of this wallet's trade of this token (from Rewards), in the price line (the end of it on a desk, a line of its own under the price on a phone), so the name keeps its room; nothing without a trade. */}
-        {mint ? <ShareTrade mint={mint} align="end" /> : null}
+        {/* On the one-line header of a desk the button is its icon: the slot names it for a pointer that rests on it. */}
+        {mint ? (
+          <span className={styles.shareSlot} title={text("Share a trade")}>
+            <ShareTrade mint={mint} align="end" />
+          </span>
+        ) : null}
       </div>
 
       {/* A tokenized stock carries its reference, its session and its deviation
