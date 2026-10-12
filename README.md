@@ -1,11 +1,39 @@
 # Ryntra on Solana — source
 
-Ryntra is an app to invest in tokenized stocks from $1, in your own wallet, on
-Solana. Choose a dollar amount to invest, or set Autoinvest by your own
-rule; Ryntra prepares each purchase and shows it before you sign, and your
-wallet signs it. Around it: swaps and a spot terminal, trading plans, a review
-before every signature, a portfolio and a history with receipts. It runs at
-[ryntra.io](https://ryntra.io/app) on desktop and phone, and as an Android app.
+**Trade, launch and run your money.** Ryntra is one app for active money on
+Solana, on the web and on Android: trade coins, memes and tokenized stocks from
+one list, launch a token on a Meteora bonding curve, put your buying on a
+schedule, and keep a receipt for every operation — every transaction reviewed
+before it is signed, and signed in your own wallet. Ryntra never holds keys or
+money. It runs at [ryntra.io](https://ryntra.io/app) and as **Ryntra for
+Android, live in the Solana dApp Store** (1.12.0, since 12 October 2026).
+
+## The Android app at a glance
+
+`apps/mobile/` — a native React Native / Expo app, not a WebView or a PWA,
+started on 14 September 2026 and shipped as signed releases (1.9.0 → 1.12.0),
+tested on a Solana Seeker with real mainnet purchases.
+
+- **The wallet is the account:** Mobile Wallet Adapter connect and Sign-In With
+  Solana; the Seeker's wallet signs every transaction, the app never sees a key,
+  and a signed operation is recovered after the app closes instead of being
+  sent twice.
+- **Trade:** one screener for coins, memes, tokenized stocks and private-company
+  tokens, every figure with the time it was read; buy, sell and swap with a
+  Review of everything that leaves and arrives and every fee; a receipt for
+  every operation, shareable as a picture without the wallet address.
+- **Launch:** a token from the phone on a Meteora bonding curve — the rules,
+  fees and market caps shown before signing; every market launched through
+  Ryntra in one list read from the chain, with its health and flight log.
+- **Recurring buys:** daily, weekly, monthly, on a price drop or from each USDC
+  payment, under a price condition and a monthly budget; the wallet signs each
+  purchase.
+- **Built for the phone:** camera and QR, payment links, haptics, light and dark
+  themes, English and Ukrainian; account-data deletion and «Report» / «Hide»
+  for launched tokens, as the dApp Store asks.
+
+The signed APK: [android-v1.12.0](https://github.com/ryntra-io/ryntra-solana-evidence/releases/download/android-v1.12.0/ryntra-1.12.0.apk).
+How to build it yourself: [The Android app](#the-android-app) below.
 
 This repository is the product's source code as released — the web app, the
 Android app, the Evidence Kernel and the database schema, with their tests. It
