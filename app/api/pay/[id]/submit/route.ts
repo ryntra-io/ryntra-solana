@@ -42,7 +42,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
   const rate = consumeSolanaReadRequest(request.headers);
   if (!rate.allowed) return failure(429, "RATE_LIMITED", "Too many requests.", rate);
   /* The payment page's origin for a browser, the native bearer for the phone
-     (1.22.0, the swap routes' rule since the mobile line's request 13): a
+     (1.22.0, the same rule the swap routes follow): a
      bearer that fails is refused by its own code and never falls through, and
      a bearer pays only as its own wallet. The browser's refusal keeps its
      code and words. */

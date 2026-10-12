@@ -1,4 +1,4 @@
-// Client-side Arcus trading keys (track B, slice 1).
+// Client-side Arcus trading keys.
 // The Ed25519 PRIVATE key is generated in the browser and stored ONLY in IndexedDB —
 // it never touches Ryntra servers (non-custodial by construction). Arcus enforces that
 // API keys are trade-only: withdrawals require a separate wallet signature.

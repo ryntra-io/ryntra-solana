@@ -512,8 +512,8 @@ export async function submitHolderPermission(deps: HolderDeps, token: string, in
 /* ------------------------------------------------------------ «Мої позиції» and the earnings card */
 
 /**
- * Every position this wallet entered through Ryntra, across launches, read from the chain now, and the data the Growth
- * line's earnings card draws — what went in, what it is worth, the fees, with the period.
+ * Every position this wallet entered through Ryntra, across launches, read from the chain now, and the data the growth
+ * module's earnings card draws — what went in, what it is worth, the fees, with the period.
  */
 export async function readHolderPositions(deps: HolderDeps, wallet: string): Promise<Readonly<{ ok: true; positions: LaunchHolderPositionsResponse }> | HolderFailure> {
   const venue = venueOf(deps);
@@ -570,7 +570,7 @@ function mutableCard(card: ReturnType<typeof holderEarningsCard>): LaunchHolderP
   return { ...card, period: { ...card.period }, amounts: card.amounts.map((amount) => ({ ...amount })), receipts: [...card.receipts] };
 }
 
-/** The data of a holder's earnings card through the core — what the Growth line's card draws. */
+/** The data of a holder's earnings card through the core — what the growth module's card draws. */
 export async function readHolderEarningsCard(deps: HolderDeps, wallet: string): Promise<LaunchHolderPositionsResponse["card"] | null> {
   const read = await readHolderPositions(deps, wallet);
   return read.ok ? read.positions.card : null;

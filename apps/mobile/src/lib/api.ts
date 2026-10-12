@@ -2,7 +2,7 @@
  * The one door to the Ryntra API. The app has no financial logic of its own:
  * every figure, quote and receipt comes from `ryntra.io`. The public routes
  * are called as they are; the native contract (v1 — sign-in, session,
- * watchlist) goes through the client the web line publishes, pinned by
+ * watchlist) goes through the client the web app publishes, pinned by
  * content in `./api/v1` (see PIN.json) and never edited here.
  */
 
@@ -366,7 +366,7 @@ export function fetchCandles(mint: string, timeframe: Timeframe, signal?: AbortS
   return apiGet<CandlesResponse>(`/api/spot/candles?mint=${mint}&tf=${timeframe}`, { signal })
 }
 
-/* ---- Stocks (the web line's ---- */
+/* ---- Stocks ---- */
 
 export type StockIssuerId = 'xstocks' | 'backpack' | 'ondo' | 'prestocks' | (string & {})
 
@@ -636,7 +636,7 @@ export type StockUniverseRow = Readonly<{
   period: SessionPeriod
   volume: number | null
   liquidity: number | null
-  /** `listed-equity` or `pre-ipo` — a private company's token (PreStocks), «Це не акція» (request 26, served since 2026-09-23). */
+  /** `listed-equity` or `pre-ipo` — a private company's token (PreStocks), «Це не акція» (served since 2026-09-23). */
   kind?: 'listed-equity' | 'pre-ipo' | (string & {})
   /** Whether the issuer offers a new purchase; absent reads as offered. */
   tradable?: boolean
@@ -1438,7 +1438,7 @@ export type MonitoringNote = Readonly<{
   paper: boolean
   unread: boolean
   createdAt: string
-  /** The language the note's own words are in (request 20). */
+  /** The language the note's own words are in. */
   locale?: 'en' | 'uk'
   /** The occurrence's identity — for a rule's reminder `autoinvest:<rule>:<due>@<symbol>` (1.12.0). */
   triggerId?: string

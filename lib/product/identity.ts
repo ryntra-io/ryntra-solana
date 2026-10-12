@@ -14,7 +14,7 @@
  * recorded; the identity, network boundary, description and audience line of
  * the earlier product left on 2026-09-29.
  */
-export const PRODUCT_CANON = {
+export const PRODUCT_IDENTITY = {
   category: "Risk, Strategy & Evidence OS",
   companyIdentity:
     "Ryntra is a venue-neutral Risk, Strategy & Evidence OS for programmable assets.",

@@ -19,7 +19,7 @@ const ICONS: Readonly<Record<ShellTab, Readonly<{ icon: IconName; active: IconNa
 }
 
 /**
- * Головна · Ринки · + Лаунч · Портфель · Ще — the menu v6.2 on a phone,
+ * Головна · Ринки · + Лаунч · Портфель · Ще — the current menu on a phone,
  * the web's own five. The «+» is an action: a press opens «Запустити
  * токен» over the bar and never becomes the bar's current place. Ryntra is a
  * button on the screens and a row of «Ще», not a place here.

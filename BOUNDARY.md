@@ -9,8 +9,8 @@ moved counts as new. Generated at every update from the development history.
 
 | Since the tag | Files |
 |---|---|
-| New | 1,391 |
-| Changed | 825 |
+| New | 1,393 |
+| Changed | 823 |
 | Unchanged | 910 |
 | Lines added / removed | +365,296 / −20,560 |
 
@@ -1194,6 +1194,8 @@ moved counts as new. Generated at every update from the development history.
 - `lib/predictions/tools.ts`
 - `lib/predictions/vault.ts`
 - `lib/predictions/watchlist.ts`
+- `lib/product/identity.test.mjs`
+- `lib/product/identity.ts`
 - `lib/rewards/benefit-jobs.test.mjs`
 - `lib/rewards/benefit-jobs.ts`
 - `lib/rewards/benefit-replay.server.ts`
@@ -1967,8 +1969,6 @@ moved counts as new. Generated at every update from the development history.
 - `lib/points/view.ts`
 - `lib/product/agent-control-surfaces.ts`
 - `lib/product/agent-control-view.ts`
-- `lib/product/canon.test.mjs`
-- `lib/product/canon.ts`
 - `lib/product/capabilities.test.mjs`
 - `lib/product/capabilities.ts`
 - `lib/product/capability-maturity.ts`

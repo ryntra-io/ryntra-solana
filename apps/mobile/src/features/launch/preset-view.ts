@@ -3,7 +3,7 @@
  * /api/v1/launch/presets`): its facts, and the rules the new market will
  * stand on — each a program's rule or Ryntra's policy, keyed as the server's
  * market health keys them (`MARKET_RULE_KEEPING` in
- * `lib/core/launch/market-health.ts` on the web line). Every figure is the
+ * `lib/core/launch/market-health.ts` in the web app). Every figure is the
  * preset's own; a preset the phone has not seen before (Micro, once the
  * server lists it) is said the same way. Nothing of a constitution — no
  * version, no hash — until the server has one. Pure: the screens and the

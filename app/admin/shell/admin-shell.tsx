@@ -8,7 +8,7 @@ import type { AdminNavId } from "./nav";
  *
  * The server half only decides the environment label; the frame is a client
  * component because on a phone the navigation is a drawer the operator opens,
- * not a list stacked above the page. The founder opens the bot's admin link on
+ * not a list stacked above the page. The operator opens the bot's admin link on
  * a phone, and the first screen has to be the Overview, not the menu.
  */
 export function AdminShellV2({

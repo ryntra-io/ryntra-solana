@@ -18,18 +18,18 @@ function blobId(file) {
   return createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex')
 }
 
-test("the pinned client copies are the web line's content at the named commit, unedited", () => {
+test("the pinned client copies are the package's content at the named commit, unedited", () => {
   for (const [file, expected] of Object.entries(pin.files)) {
     assert.equal(blobId(file), expected, `${file} differs from ${pin.package} at ${pin.commit}`)
   }
 })
 
 test('the pin names the contract version the copies implement', () => {
-  // A package whose constant lags its own types is pinned by what it carries, the lag named with its request (request 38).
+  // A package whose constant lags its own types is pinned by what it carries, the lag named with the contract version it awaits.
   assert.equal(API_CONTRACT_VERSION, pin.packageConstant ?? pin.contractVersion)
   if (pin.packageConstant !== undefined) {
     assert.notEqual(pin.packageConstant, pin.contractVersion, 'a lag is named only when there is one')
-    assert.match(pin.lag, /Request \d+ to line A/)
+    assert.match(pin.lag, /\bcontract \d+\.\d+\.\d+\b/)
   }
   assert.equal(API_MAJOR, pin.contractMajor)
 })

@@ -13,7 +13,7 @@ import test from "node:test";
  */
 
 const ROOTS = ["app/app", "app/shell", "app/solana/workspace"];
-/* The Growth line's own paths: its pages answer to the same law through its handoff. */
+/* The growth module's own paths: its pages answer to the same law through their own checks. */
 const GROWTH = [/^app\/app\/rewards\//, /^app\/solana\/workspace\/rewards\//];
 const DESK = 700;
 

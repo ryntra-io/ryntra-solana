@@ -76,7 +76,7 @@ const planDraftCard = {
   handoff: { kind: 'builder', href: `/app/strategies/new?mint=${SOL}&draft=${DRAFT}`, label: 'Open the draft in the builder', primary: true },
 }
 
-test('the context parameter is the web line’s own: written and read back, anything else is no context', () => {
+test('the context parameter is the web app’s own: written and read back, anything else is no context', () => {
   const cases = [
     { kind: 'asset', mint: SOL, symbol: 'SOL' },
     { kind: 'asset', mint: NVDA },
@@ -226,7 +226,7 @@ test('handoffs: none twice, one primary first, and each onto the phone’s own p
     primary: false,
     words: { kind: 'asset', symbol: 'SOL' },
   })
-  // Results open the phone's own Results screen (M13).
+  // Results open the phone's own Results screen.
   assert.equal(handoffView(kept[2], []).path, '/results')
   assert.deepEqual(handoffView(kept[2], []).words, { kind: 'results' })
   assert.deepEqual(handoffView(kept[0], []).words, { kind: 'server' })

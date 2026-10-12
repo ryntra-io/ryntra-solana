@@ -243,7 +243,7 @@ test('the ticket has two legs from the mode: a Buy pays the quote asset, a Sell 
   assert.deepEqual(tradeOrigin('buy'), { surface: 'SPOT', side: 'BUY' })
   assert.deepEqual(tradeOrigin('sell'), { surface: 'SPOT', side: 'SELL' })
   assert.equal(tradeOrigin('swap'), null)
-  // M16: a Buy under an autoinvest reminder names the rule and the occurrence; a Sell never does.
+  // A Buy under an autoinvest reminder names the rule and the occurrence; a Sell never does.
   const rule = { ruleId: 'rule_5e1f0c2a9b8d4e7f6a3c1b0d9e8f7a6b', dueAt: '2026-09-24T16:00:00.000Z' }
   assert.deepEqual(tradeOrigin('buy', null, rule), { surface: 'SPOT', side: 'BUY', rule })
   assert.deepEqual(tradeOrigin('sell', null, rule), { surface: 'SPOT', side: 'SELL' })

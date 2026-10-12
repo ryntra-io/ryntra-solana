@@ -153,7 +153,7 @@ function Summary({ figures, at }: { figures: readonly Readonly<{ label: string; 
 }
 
 /**
- * Results (M13) — what happened against what was planned, the phone's own
+ * Results — what happened against what was planned, the phone's own
  * screen over the contract where a ↗ to ryntra.io stood: each «Автоінвест»
  * rule's reminders against what was bought; the positions under a plan; the
  * plans that made no trade and why; every operation against the plan it was

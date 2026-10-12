@@ -81,7 +81,7 @@ test('a list offers a stock token only from a supported issuer; what a person ke
 })
 
 const APP = fileURLToPath(new URL('../../', import.meta.url))
-// The contract client is the web line's pinned copy, kept byte for byte; its words are not the app's.
+// The contract client is the web app's pinned copy, kept byte for byte; its words are not the app's.
 const PINNED = join(APP, 'src', 'lib', 'api', 'v1')
 
 function sourceFiles(dir) {

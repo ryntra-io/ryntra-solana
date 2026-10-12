@@ -8,7 +8,7 @@ import { quickActions } from './quick-actions'
 
 /**
  * The launcher's quick actions, in the app's language — set again when the
- * language changes — and a press on one opens its place (M9). Lives in the
+ * language changes — and a press on one opens its place. Lives in the
  * tabs' layout: a press while the app is closed lands after the shell is up.
  */
 export function useQuickActions() {

@@ -169,8 +169,8 @@ type Variant = 'sheet' | 'panel'
  * action puts it in. «Якщо впаде»: the sum and how far the price must fall
  * below the price now — «Ryntra нагадає при $241,59 або нижче · ціна зараз
  * $254,30»; one reminder each time it falls below that line. The sum reads
- * «Кожна купівля» — it is each purchase, never the month's budget
- * (M20). **Межі.** The month's budget for
+ * «Кожна купівля» — it is each purchase, never the month's budget.
+ * **Межі.** The month's budget for
  * every rule, the person's own, as its own line — «Бюджет не задано · Задати»
  * or «Бюджет місяця $10 з $50 · Змінити» — that opens the budget's own sheet
  * over this one («Не більше на місяць»); a sum the month's rest does not
@@ -181,7 +181,7 @@ type Variant = 'sheet' | 'panel'
  * never a transaction — and every purchase later is its own signature on a
  * fresh «Перевірка».
  *
- * **Умова ціни** (M25, the web's: a
+ * **Умова ціни** (the web's: a
  * company with a reference — PreStocks' valuation for a private one, the
  * reference per share for a listed one — offers «Не купувати, якщо дорожче за
  * орієнтир більш ніж на N %», 5 % (the server's default) unless the person
@@ -191,7 +191,7 @@ type Variant = 'sheet' | 'panel'
  * deferred says why — the reason, the figure and the data's time — and until
  * when the rule checks again.
  *
- * **З оплат** (M26, the web's: the
+ * **З оплат** (the web's: the
  * third kind sets money aside from the wallet's own USDC — «Що відкладати»:
  * «Округлення» of every payment to $1 or $5, «$ з оплати» typed from $0,10 to
  * $100, or «% з надходжень» 5 · 10 · 20 % — with the web's example on its own

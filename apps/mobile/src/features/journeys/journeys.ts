@@ -3,12 +3,12 @@
  *
  * Home is judged by whether it shortens the way to an asset, a plan, a
  * Review and back from a note. The phone keeps a short ring of those
- * transitions for the person who tests it and for the founder who reads the
+ * transitions for the person who tests it and for whoever reads the
  * test: the name of the step, where it started, where it led, the account
  * state, the time — and nothing else. No address, no session, no amount,
  * no plan text, no note text and no identifier of a record ever enters a
  * journey; the sanitizer refuses them by shape. The record lives on the
- * device only until the web line publishes an events route (request 25).
+ * device only until the server publishes an events route.
  */
 
 export const JOURNEY_NAMES = [

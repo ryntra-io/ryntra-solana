@@ -83,7 +83,7 @@ const PAY_CHOICES: readonly Choice<PayDollar>[] = [
 
 /**
  * The purchase in dollars — the one action on a company's page
- * (M15), drawn as a sheet over the company's page.
+ * drawn as a sheet over the company's page.
  *
  * **The sum.** A sum in dollars from $1 — typed freely,
  * the sheet opening on $10, a default and never advice — or a share of the
@@ -107,7 +107,7 @@ const PAY_CHOICES: readonly Choice<PayDollar>[] = [
  * «✓ У тебе є частинка Apple · $10» with what arrived. A signature whose
  * outcome is not known yet is checked here, never repeated.
  *
- * **За правилом (M16.** A reminder of an autoinvest rule opens
+ * **За правилом.** A reminder of an autoinvest rule opens
  * this sheet on the rule's sum: the rule is read afresh, and while its
  * reminder is open the fresh «Перевірка» is prepared at once — the same four
  * rows, the same signature, the order bound to the rule (`origin.rule`). A
@@ -119,7 +119,7 @@ const PAY_CHOICES: readonly Choice<PayDollar>[] = [
  * company's reminder is open says so before any sum — «Це звичайна купівля:
  * нагадування правила на $20 лишиться відкритим».
  *
- * **Умова ціни (M25.** A rule with a price condition is
+ * **Умова ціни.** A rule with a price condition is
  * judged again here on the company's figures, read afresh while the sheet is
  * open: met, its purchase carries the condition's line — the deviation, the
  * reference, the limit, the data's time — over the purchase and in

@@ -1,7 +1,7 @@
 import { verifyTypedData, type Address, type Hex } from "viem";
 
 /**
- * The human authorization axis: EIP-712, signed in a founder-controlled wallet.
+ * The human authorization axis: EIP-712, signed in an owner-controlled wallet.
  *
  * **Ryntra never produces one of these.** It builds the typed structure, shows
  * it, and checks what comes back. The private key stays in the wallet and the

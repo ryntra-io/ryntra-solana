@@ -124,7 +124,7 @@ export function planTools(intent: Intent, context: AgentContext | null): readonl
     case "execute": {
       const trade = { side: intent.side ?? "BUY", amountUsd: intent.amounts.tradeUsd ?? intent.amounts.budgetUsd ?? null };
       if (first) return [{ name: "prepare_trade_draft", input: { query: first, ...trade } }];
-      /* The mobile line's request 29: a plan's or a note's context names the asset *this* means — the plan's own, read first. */
+      /* A plan's or a note's context names the asset *this* means — the plan's own, read first. */
       if (context?.kind === "plan") return [{ name: "prepare_trade_for_plan", input: { planId: context.planId, ...trade } }];
       if (context?.kind === "note") return [{ name: "prepare_trade_for_plan", input: { inboxId: context.inboxId, ...trade } }];
       return [];

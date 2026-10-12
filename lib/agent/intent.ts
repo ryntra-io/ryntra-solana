@@ -158,7 +158,7 @@ const RULES: readonly Rule[] = [
     weight: 50,
     any: [
       /\b(results?|outcome|how did (my|the) plan (do|go)|plan vs actual|executed under)\b/i,
-      /* The mobile line's request 28 (2026-09-23): what happened with, or how is, a plan — the plan named by its asset, the last one or this one. */
+      /* What happened with, or how is, a plan — the plan named by its asset, the last one or this one. */
       /\bwhat (happened|became of|came of) (with |to )?(my|the|this|that) (last |latest |previous |recent )?([a-z0-9$]{2,12} )?plan\b/i,
       /\bhow('?s| is| was| did) (my|the|this|that) (last |latest |previous |recent )?([a-z0-9$]{2,12} )?plan (doing|going|do|go|turn(ing)? out|perform(ing)?|work(ing)?)\b/i,
       /\bdid (my|the|this|that) (last |latest |previous |recent )?([a-z0-9$]{2,12} )?plan (work|pay off|hit|fail)\b/i,

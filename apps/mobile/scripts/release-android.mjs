@@ -22,7 +22,7 @@
  * 5. the artifact copied to `dist/` (ignored) under a name that carries the
  *    version, the version code and the git commit, and its signing
  *    certificate's SHA-256 printed — the fingerprint `assetlinks.json` and
- *    the wallets' identity verification need (request 5)
+ *    the wallets' identity verification need
  *
  * `--unsigned` builds the same release with no key at all
  * (RYNTRA_RELEASE_UNSIGNED=1) as `dist/ryntra-<…>-unsigned.apk` and prints
@@ -51,7 +51,7 @@ const abi = [...args].find((arg) => arg.startsWith('--abi='))?.slice('--abi='.le
 const verifyApk = [...args].find((arg) => arg.startsWith('--verify='))?.slice('--verify='.length) ?? null
 const windows = process.platform === 'win32'
 
-// The shared Expo debug certificate (request 5): a release is never signed with it.
+// The shared Expo debug certificate: a release is never signed with it.
 const DEBUG_CERT_SHA256 =
   'FA:C6:17:45:DC:09:03:78:6F:B9:ED:E6:2A:96:2B:39:9F:73:48:F0:BB:6F:89:9B:83:32:66:75:91:03:3B:9C'
 
@@ -167,10 +167,10 @@ if (verifyApk) {
   step('alignment')
   if (!aligned(file)) fail('not aligned (zipalign -c -P 16 4); align before signing, never after')
   console.log('aligned: 4 bytes, native libraries on 16 KB pages')
-  step('the certificate for assetlinks.json (request 5)')
+  step('the certificate for assetlinks.json')
   console.log(sha256)
   console.log(
-    `\nrelease-android: ${file} is the release. Compare the SHA-256 above with the Owner's own record of the key before it goes anywhere.`,
+    `\nrelease-android: ${file} is the release. Compare the SHA-256 above with the release key's own record before it goes anywhere.`,
   )
   process.exit(0)
 }
@@ -205,7 +205,7 @@ run('node', [
 
 /* ---- 4. gradle ---- */
 const task = aab ? ':app:bundleRelease' : ':app:assembleRelease'
-step(`gradle ${task}${unsigned ? ' (unsigned, for the Owner to sign)' : ''}`)
+step(`gradle ${task}${unsigned ? ' (unsigned, for the publisher to sign)' : ''}`)
 run(
   join(root, 'android', windows ? 'gradlew.bat' : 'gradlew'),
   [task, '--console=plain', ...(abi ? [`-PreactNativeArchitectures=${abi}`] : [])],
@@ -247,13 +247,13 @@ if (!aab && aapt2) {
 
 if (unsigned) {
   const signed = join(dist, `${base}.apk`)
-  step("the Owner's signature")
+  step('the release signature')
   console.log(
     [
-      'The Owner signs it on this machine, in a PowerShell window of their own; apksigner asks for the',
+      'The publisher signs it on this machine, in a PowerShell window of their own; apksigner asks for the',
       "keystore's password (and the key's, when it differs) at its own prompt, and nothing is shown or kept:",
       '',
-      `  & "${apksigner}" sign --ks "PATH_TO_THE_OWNERS_KEYSTORE" --v4-signing-enabled false --out "${signed}" "${target}"`,
+      `  & "${apksigner}" sign --ks "PATH_TO_THE_RELEASE_KEYSTORE" --v4-signing-enabled false --out "${signed}" "${target}"`,
       '',
       '(--ks-key-alias <alias> is needed only when the keystore holds more than one key.) Then:',
       '',
@@ -271,5 +271,5 @@ if (!aab && apksigner) {
   run(keytool, ['-printcert', '-jarfile', target])
 }
 console.log(
-  "\nrelease-android: done. Compare the SHA-256 above with the Owner's own record of the key before it goes anywhere.",
+  "\nrelease-android: done. Compare the SHA-256 above with the release key's own record before it goes anywhere.",
 )

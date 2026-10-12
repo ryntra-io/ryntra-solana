@@ -7,7 +7,7 @@
  * copied by hand into the wallet read model, and how the copy went stale twice:
  * on 2026-09-07 the first `RECEIVE` row turned every Activity, Home and
  * Portfolio read of that wallet into "could not be loaded", and on 2026-09-08
- * the founder's first `CROSS_SWAP` row did it again, minutes after the swap
+ * the first production `CROSS_SWAP` row did it again, minutes after the swap
  * itself settled correctly on both chains.
  *
  * Nothing here imports anything. A new lane is added once, here, and both the
@@ -29,7 +29,7 @@ export type SolanaActionDestination = (typeof SOLANA_ACTION_DESTINATIONS)[number
  *
  * Keyed rather than chained, and here rather than in two components: History
  * and Home each carried their own ladder of ternaries ending in `null`, so the
- * fourth destination fell out of both and the founder's first Robinhood Chain
+ * fourth destination fell out of both and the first production Robinhood Chain
  * swap read "Swapped across chains 0.05 SOL" — no asset received, no chain, no
  * hint of where the money had gone.
  */

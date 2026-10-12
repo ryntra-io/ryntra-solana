@@ -191,7 +191,7 @@ export function useTrade(
       receive,
       amountRaw: typedRaw,
       origin: tradeOrigin(mode, plan, rule),
-      // A pause before the order is asked again ends it when the sheet closed or a new Review was asked for (M27).
+      // A pause before the order is asked again ends it when the sheet closed or a new Review was asked for.
       cancelled: () => ticket.current !== my,
     })
     if (ticket.current !== my) return

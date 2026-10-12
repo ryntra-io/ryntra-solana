@@ -529,7 +529,7 @@ test('every refusal has its sentence, in both languages, and the codes land wher
     REVIEW_INVALIDATED: 'priceExpired',
     INVALID_AMOUNT: 'amount',
     VALIDATION_ERROR: 'notAccepted',
-    // M16: the order route's word on an autoinvest reminder.
+    // The order route's word on an autoinvest reminder.
     RULE_NOT_DUE: 'ruleClosed',
     RULE_NOT_FOUND: 'ruleGone',
     RULE_MISMATCH: 'ruleMismatch',
@@ -588,7 +588,7 @@ test('the sheet’s one action follows what stands between the person and a Revi
 })
 
 test('nothing on the purchase offers what does not work yet, and the wallet’s vault is never named', () => {
-  // The loss limit is not on the phone yet; «Автоінвест» and «Купувати щотижня» are, since M16.
+  // The loss limit is not on the phone yet; «Автоінвест» and «Купувати щотижня» are.
   const forbidden = /Seed Vault|межу збитку|loss limit/i
   const texts = []
   for (const locale of ['uk', 'en']) {
@@ -605,7 +605,7 @@ test('nothing on the purchase offers what does not work yet, and the wallet’s 
     .replace(/\/\*[\s\S]*?\*\//g, '')
     .replace(/^\s*\/\/.*$/gm, '')
   assert.doesNotMatch(sheet, /Seed Vault|lossLimit|loss limit/i)
-  // M16: the receipt names the rule a purchase was made under and offers «Купувати щотижня» after a plain one.
+  // The receipt names the rule a purchase was made under and offers «Купувати щотижня» after a plain one.
   assert.match(sheet, /ruleMark\.words\.byRule/)
   assert.match(sheet, /ruleWords\.buyWeekly/)
 })

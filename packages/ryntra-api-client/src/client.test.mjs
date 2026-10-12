@@ -262,7 +262,7 @@ test("1.23.0: «Ризик портфеля» is a v1 path behind the bearer; th
   assert.equal(read.risk.findings[0].watchReason, "limit", "the reason is the server's; the client judges none");
 });
 
-test("1.22.0 (request 38): the package, its constant and the contract name one version", async () => {
+test("1.22.0: the package, its constant and the contract name one version", async () => {
   const { readFileSync } = await import("node:fs");
   const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
   const { API_CONTRACT_VERSION: contract } = await import("../../../lib/api/v1/contract.ts");

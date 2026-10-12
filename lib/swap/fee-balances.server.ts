@@ -8,7 +8,7 @@
  * and where the two disagree the account is right.
  *
  * Both readers are read-only and neither can move anything. Withdrawal is a
- * founder action with a wallet, at `relay.link/claim-app-fees` for Relay and by
+ * operator action with a wallet, at `relay.link/claim-app-fees` for Relay and by
  * transferring from the referral token account for Jupiter.
  */
 

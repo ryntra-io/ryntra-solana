@@ -180,8 +180,8 @@ const moved: readonly (readonly [string, string])[] = [
      is Spot. */
   ["/app/perps", "/app/spot"],
   /* The prediction demo leaves the surface: its pages, its paper account and its code stay, and
-     every address of it — a market, a plan — leads to Markets until the
-     Owner says otherwise. Temporary, so the demo can take its address back. */
+     every address of it — a market, a plan — leads to Markets for now.
+     Temporary, so the demo can take its address back. */
   ["/app/predictions", "/app/markets"],
   ["/app/predictions/:path*", "/app/markets"],
   ["/docs/trade/predictions", "/docs/start/cabinet"],

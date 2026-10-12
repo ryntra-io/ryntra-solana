@@ -8,7 +8,7 @@ import { AGENT_COPY } from './copy.ts'
 
 const APP = fileURLToPath(new URL('../../../', import.meta.url))
 const SRC = join(APP, 'src')
-// The contract client is the web line's pinned copy, kept byte for byte; its comments are not the app's words.
+// The contract client is the web app's pinned copy, kept byte for byte; its comments are not the app's words.
 const PINNED = join(SRC, 'lib', 'api', 'v1')
 
 /** Every file the app is built from: its source (not the tests, not the pinned contract copy) and its app config. */

@@ -62,7 +62,7 @@ test("the slim row keeps the identity, the figures and the states, and judges th
   assert.equal(tagOnly.deviation, null);
 });
 
-test("the slim row names a pending multiplier until it activates, and when the session next changes (request 26)", () => {
+test("the slim row names a pending multiplier until it activates, and when the session next changes", () => {
   const at = new Date(NOW + 3 * 86_400_000).toISOString();
   const pending = serverRow({ multiplier: { current: 1.0017, pending: 1.0021, effectiveAt: at }, multiplierState: "pending" });
   const before = toSlimRow(pending, NOW);

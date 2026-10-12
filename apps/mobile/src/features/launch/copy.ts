@@ -1,6 +1,6 @@
 /**
  * Launch's words in both languages — the web's own (`app/app/launch/launch-words.ts`
- * on the web line), so the phone and the web say one thing one way — and the
+ * in the web app), so the phone and the web say one thing one way — and the
  * few the phone needs where it does the same by other means (a camera, a
  * gallery). Short: one line per idea, a number where there is one, the hard
  * facts said before the signature.
@@ -1138,7 +1138,7 @@ export const LAUNCH_WORDS = {
   addr_ladder: bi("Ryntra's ladder", 'Драбина Ryntra'),
   addr_executor: bi("Ryntra's executor", 'Виконавець Ryntra'),
 
-  // The preset said before the signature (M38.4)
+  // The preset said before the signature
   presetWay: bi('Market cap: starts at {start}, DEX at {end}', 'Капіталізація: старт {start}, вихід на DEX — {end}'),
   hRulesBefore: bi('What will govern this market', 'Що триматиме цей ринок'),
   rulesBeforeLine: bi(
@@ -1157,7 +1157,7 @@ export const LAUNCH_WORDS = {
     "The creator's first buy: at most {pct} of the supply",
     'Перша покупка творця — не більше {pct} пропозиції',
   ),
-  // «Мої лаунчі»: each market's state and health, what it earned by source (M38.4)
+  // «Мої лаунчі»: each market's state and health, what it earned by source
   mineBySource: bi('Earned, by source', 'Зароблено за джерелами'),
 } as const
 

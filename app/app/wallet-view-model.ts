@@ -39,11 +39,11 @@ export function decodeWalletCollection(ok:boolean,payload:unknown,kind:"holdings
      "Some activity could not be loaded".
 
      That sentence was written here on 2026-09-07, after the first `RECEIVE` row
-     — the founder's own paid payment request — turned every Activity, Home and
+     — a paid payment request — turned every Activity, Home and
      Portfolio read of that wallet into "could not be loaded". The fix at the
      time added one string to a list copied by hand from the ledger, because the
      ledger reaches the Guard store and a browser cannot import it. On
-     2026-09-08 the founder's first `CROSS_SWAP` row did exactly the same thing,
+     2026-09-08 the first `CROSS_SWAP` row did exactly the same thing,
      minutes after the swap itself had settled correctly on both chains. The
      list now lives in `action-lanes.ts`, which imports nothing and is imported
      here rather than retyped. */

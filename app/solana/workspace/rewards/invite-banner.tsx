@@ -30,8 +30,7 @@ import styles from "./invite.module.css";
  * untouched, and «Винагороди» still shows it.
  *
  * Mounted by the core's product shell (`app/app/product-shell.tsx`), which is
- * the core line's file: the insertion is a request in the Growth line's
- * handoff with a patch beside it.
+ * the core's file.
  */
 export function InviteBanner() {
   const pathname = usePathname() ?? "";

@@ -21,7 +21,7 @@ import type { RouteFee, RouteHop, RoutePlan } from "./plan.ts";
  * ```
  *
  * The key comes from registering an account at `api.soroswap.finance/register`.
- * **No agent may do that**, so it is a founder action and this adapter is built
+ * **No agent may do that**, so it is an operator action and this adapter is built
  * to be finished by one rather than to pretend it already was.
  *
  * ## What that means in practice
@@ -89,7 +89,7 @@ async function getJson(
     const response = await fetch(url, { ...rest, signal: AbortSignal.timeout(timeoutMs) });
     if (!response.ok) {
       /* 403 is the shape this provider returns for "no key", and it is worth
-         distinguishing from an outage: one is a founder action and the other is
+         distinguishing from an outage: one is an operator action and the other is
          somebody else's incident. */
       return {
         ok: false,

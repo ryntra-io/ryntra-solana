@@ -586,7 +586,7 @@
  * Ryntra's own RPC by the same `execute` route; its outcome receipt pins the
  * action `action:jupiter-swap/build-own-rpc-submit@1`. A `/order` order is unchanged, except that its referral
  * rate is now the flow's. The native carrier stayed on `/order` until its client
- * read this version (line B's M30); since 2026-10-05 it takes the same lanes as
+ * read this version; since 2026-10-05 it takes the same lanes as
  * the web, with no change to any shape: a client that sums a fee by mechanism adds the new one
  * beside `JUPITER_REFERRAL` — the fee is already inside Jupiter's total.
  *
@@ -787,7 +787,7 @@
  * flight is settled from the chain first. `capabilities.launch.tradeReceipt`
  * names it. A client that does not know `LAUNCH` reads the row as a swap.
  *
- * **1.35.0 — the referral binds on its own (the Growth line's «Ріст v6-9»).**
+ * **1.35.0 — the referral binds on its own.**
  * `GET /api/rewards/referral` and `POST` share `RewardsReferralStateSchema`,
  * which gains three optional keys: `binding` (`{ open, until }` — with no
  * inviter yet, whether one can still be added: before the first trade `until`
@@ -4265,7 +4265,7 @@ export type RewardsPoints = z.infer<typeof RewardsPointsSchema>;
 export const REWARD_RANKS_V1 = ["BRONZE", "SILVER", "GOLD", "SAPPHIRE", "DIAMOND"] as const;
 
 /**
- * The wallet's rank (Growth line, rules 2.0.0): Ryntra points over the last 30
+ * The wallet's rank (rewards rules 2.0.0): Ryntra points over the last 30
  * days — a dollar of fee Ryntra received on the wallet's own trades or its
  * invited friends' trades is a point, a launch that reached a DEX adds a fixed
  * number — and the share of the received fee a friend's trade pays at this rank.
@@ -4384,7 +4384,7 @@ export type RewardsError = z.infer<typeof RewardsErrorSchema>;
 
 /* ---- rewards: the referral */
 
-/** `ALREADY_CHANGED` (Growth v6-9): the one change of inviter was already made. A new value — a strict client should treat unknown ones as a refusal. */
+/** `ALREADY_CHANGED` (1.35.0): the one change of inviter was already made. A new value — a strict client should treat unknown ones as a refusal. */
 export const REFERRAL_REFUSALS_V1 = ["SELF_REFERRAL", "UNKNOWN_CODE", "ALREADY_REFERRED", "ALREADY_EARNING", "CYCLE", "ALREADY_CHANGED"] as const;
 
 /** A code and whose it is, masked. */
@@ -4394,7 +4394,7 @@ export const RewardsReferralPreviewSchema = z
 export type RewardsReferralPreview = z.infer<typeof RewardsReferralPreviewSchema>;
 
 /**
- * A window on the proven wallet's own read (Growth v6-9; optional fields — a
+ * A window on the proven wallet's own read (1.35.0; optional fields — a
  * client that ignores unknown keys is unaffected, one that parses this state
  * strictly must take the new keys): `binding` — with no inviter yet, whether one can still be added:
  * always before the first trade (`until` null), for seven days after it
@@ -4448,7 +4448,7 @@ export const RewardsReferralRequestSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("pending"), code: z.string().min(1).max(40) }),
   z.object({ action: z.literal("dismiss") }),
   z.object({ action: z.literal("confirm"), code: z.string().min(1).max(40), address: Address }),
-  /** Growth v6-9: the one change of inviter, inside the window (a plain binding with none yet). */
+  /** 1.35.0: the one change of inviter, inside the window (a plain binding with none yet). */
   z.object({ action: z.literal("change"), code: z.string().min(1).max(40), address: Address }),
 ]);
 export type RewardsReferralRequest = z.input<typeof RewardsReferralRequestSchema>;

@@ -37,7 +37,7 @@ export function noteRefOfHref(href: string | null | undefined): NoteRef | null {
  * Where a note or a card leads on the phone.
  *
  * `plan` is the one owned plan the record speaks of. `choose` says the
- * surface names a plan only by its symbol (line A request 22) and more than
+ * surface names a plan only by its symbol and more than
  * one of the wallet's plans wears it — the person picks, the phone never
  * guesses. `web` is a record the phone has no surface for (a paper
  * prediction plan until its row lands). `gone` is a plan no longer among
@@ -49,12 +49,12 @@ export type NoteTarget =
   | Readonly<{ kind: 'web'; href: string }>
   | Readonly<{ kind: 'gone'; symbol: string | null }>
   | Readonly<{ kind: 'unknown' }>
-  /** An autoinvest rule's reminder (M16): its company, with the rule and the occurrence — the rule is read afresh there. */
+  /** An autoinvest rule's reminder: its company, with the rule and the occurrence — the rule is read afresh there. */
   | Readonly<{ kind: 'rule'; ruleId: string; dueAt: string | null; symbol: string | null }>
   /** The month's autoinvest budget, spent (1.13.0): Home, with the budget's sheet open — the note's one action, «Змінити бюджет». */
   | Readonly<{ kind: 'budget' }>
   /**
-   * An issuer's window to swap a token the wallet holds (1.15.0, `issuer-event`; M19): the token's page with the
+   * An issuer's window to swap a token the wallet holds (1.15.0, `issuer-event`): the token's page with the
    * swap's sheet open — its one action, «Обміняти на SpaceX (SPCXx)»; the page reads the wallet afresh.
    */
   | Readonly<{ kind: 'issuer'; mint: string }>
@@ -273,7 +273,7 @@ export function quietHoursText(hours: QuietHours | null | undefined): string | n
   return `${hours.start}–${hours.end}`
 }
 
-/** The language a note was written in, when the server says and it is not the one on screen (request 20). */
+/** The language a note was written in, when the server says and it is not the one on screen. */
 export function noteLanguageMismatch(note: MonitoringNote, locale: Locale): boolean {
   return typeof note.locale === 'string' && note.locale !== locale
 }

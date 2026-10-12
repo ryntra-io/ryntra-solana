@@ -15,8 +15,8 @@ const config = [
       // that branch's to keep, and linting them here reports findings no edit
       // in this tree can fix.
       ".worktrees/**",
-      // apps/mobile is the mobile line: its own package, lint and tests, owned
-      // by the mobile worktree; this configuration never applies to it.
+      // apps/mobile is the mobile app: its own package, lint and tests; this
+      // configuration never applies to it.
       "apps/**",
       "output/**",
       "videos/**",

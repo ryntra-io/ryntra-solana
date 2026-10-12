@@ -3,8 +3,8 @@
  * 24 вер. о 19:00», «Якщо NVIDIA впаде на 5 % — докупити $20», «Округлення
  * кожної оплати до $1», «Накопичено $0,60 · нагадаю від $1», «Цього місяця
  * $45 з $100» — in both languages («Автоінвест» ·
- * «Щотижня» · «Якщо впаде на 5 %» · «Бюджет місяця»; v5.5 : «З кожної
- * оплати»; never DCA, trigger or «купує автоматично»). The web line's own
+ * «Щотижня» · «Якщо впаде на 5 %» · «Бюджет місяця» · «З кожної
+ * оплати»; never DCA, trigger or «купує автоматично»). The web app's own
  * phrases (`lib/autoinvest/words.ts`, `app/app/invest/invest-words.ts`), so
  * the reminder a person gets and the rule they set on the phone say the same
  * thing. Pure.

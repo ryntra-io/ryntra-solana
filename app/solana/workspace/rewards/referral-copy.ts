@@ -5,7 +5,7 @@ import type { WorkspaceLocale } from "@/app/shell/locale";
  *
  * Kept here rather than in the workspace catalogue for the same reason as
  * `rank-copy.ts`: the catalogue is the core's file and the referral programme
- * is the Growth line's. Sentences the card already said before stay in the
+ * is the growth module's. Sentences the card already said before stay in the
  * catalogue; the ones that are new, or that had to stop saying something
  * untrue, live here.
  */

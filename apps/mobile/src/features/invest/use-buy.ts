@@ -53,7 +53,7 @@ export type BuyCompany = Readonly<{
   /** The one line of truth; null when no issuer document was read. */
   truth: string | null
   /**
-   * The issuer's event before a purchase (the IPO and conversion watch; M19): the token bought must
+   * The issuer's event before a purchase (the IPO and conversion watch): the token bought must
    * be swapped by the issuer's deadline — said under the truth, before any sum, and again in «Перевірка»; null for none.
    */
   eventLine?: string | null
@@ -73,7 +73,7 @@ export type RuleBuy = Readonly<{ amountUsd: number | null; binding: RuleBinding 
 
 /**
  * One purchase in dollars on the phone — the sheet's state over Trade's own
- * flow (M3: the server's exact Review, the wallet's signature over those
+ * flow (the server's exact Review, the wallet's signature over those
  * bytes, the one submission, the receipt, the recovery of a signature the app
  * closed on). This hook adds only what the company's sheet says around it:
  * the sum in dollars — from $1, opening on $10 — and its quick shares of the

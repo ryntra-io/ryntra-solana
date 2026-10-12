@@ -12,7 +12,6 @@ import {
   isAttached,
   showsError,
 } from "./connection.ts";
-import { needsDevelopmentRepository } from "../../lib/development-repository.mjs";
 
 const read = (path) => readFileSync(new URL("../../" + path, import.meta.url), "utf8");
 const CONTROL = read("app/shell/connection-control.tsx");
@@ -267,27 +266,6 @@ test("a page with more than one connector offers the choice", () => {
   const failure = CONTROL.slice(CONTROL.indexOf("showsError(snapshot)")).split(/\n(?=function )/)[0];
   assert.ok(failure.includes("copy.retry"), "The failure slice missed the section; this gate is scanning nothing.");
   assert.ok(failure.includes("ConnectAction"), "The failure section offers no way back to the wallet list.");
-});
-
-test("every record states the counts the contract actually produces", { skip: needsDevelopmentRepository("the development records it reads") }, () => {
-  /* Positive, derived from the code. A guard that blacklists one false spelling
-     can be satisfied by saying something else false or by saying nothing; this
-     demands the true sentence, and the numbers in it come from the arrays — so
-     growing the contract to eight states fails every document still claiming
-     seven. */
-  const WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
-  const contract = `Connection contract: ${WORDS[CONNECTION_STATES.length]} states; ${WORDS[CONNECTION_CAPABILITIES.length]} capabilities.`;
-
-  for (const doc of ["docs/STATE.md", "docs/tasks/active/RYN-SHELL-V2-001.md"]) {
-    const lines = read(doc)
-      .split(/\r?\n/)
-      .map((line) => line.replaceAll("*", "").trim());
-    assert.equal(
-      lines.filter((line) => line === contract).length,
-      1,
-      `${doc} must contain exactly one standalone canonical line: ${contract}`,
-    );
-  }
 });
 
 test("a connection made from the open panel closes it, and a browser with no wallet is shown the way on", () => {

@@ -39,8 +39,8 @@ const POLL_MS = 10_000;
  * Phantom documents one mobile path: a QR or link that opens the page inside
  * its in-app browser (`https://phantom.app/ul/browse/<url>?ref=<ref>`), where
  * the page's own Pay with wallet then finds the wallet. Solflare mirrors it.
- * The founder's Phantom scanner refused our standard `solana:` transfer
- * request twice as "not a valid address", so the phone path is the page
+ * Phantom's scanner refused our standard `solana:` transfer request twice
+ * in testing as "not a valid address", so the phone path is the page
  * itself: the QR carries the page's HTTPS link for any camera, and on a
  * phone the page offers the wallet apps that can open it.
  */

@@ -45,7 +45,7 @@ test("every ledger lane passes the activity read, and an unknown one costs a row
   /* This has now happened twice on production. The first RECEIVE row — a paid
      payment request — failed the whole wallet read on 2026-09-07, and the fix
      added one string to the copy of the lane list this decoder carried. On
-     2026-09-08 the founder's first CROSS_SWAP row did it again, minutes after
+     2026-09-08 the first CROSS_SWAP row did it again, minutes after
      the swap had settled correctly on both chains. So the list is imported,
      every lane in it is asserted here, and a lane from some future build is
      dropped with the read marked incomplete instead of throwing. */

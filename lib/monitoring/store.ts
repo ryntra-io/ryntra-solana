@@ -33,7 +33,7 @@ export type MonitorRecord = Readonly<{
   updatedAt: string;
 }>;
 
-/** The record a card stands for (the mobile line's request 22): the kind and the exact id, never a symbol to match on. */
+/** The record a card stands for: the kind and the exact id, never a symbol to match on. */
 export type MonitorSubject = Readonly<{ kind: MonitorSubjectKind; id: string }>;
 
 /** A note's subject: a monitor's record, or (1.12.0) the autoinvest rule whose reminder the note is — a rule is not a monitor — or (1.13.0) the month's autoinvest budget, spent — or (1.15.0) an issuer's event about a token the wallet holds, `id` its mint: a window to swap it before the issuer's cut-off. */
@@ -43,7 +43,7 @@ export type InboxSubject = Readonly<{ kind: InboxSubjectKind; id: string }>;
 /** 1.13.0: what became of a rule's reminder, read when the surface is read — never stored on the note; 1.18.0: `deferred`, the price condition holds it back. */
 export type InboxRuleState = "due" | "pending" | "bought" | "missed" | "held" | "deferred";
 
-/** The finding as figures (request 23): the kind, its outcome and the facts behind the sentence, for a reader in any language. */
+/** The finding as figures: the kind, its outcome and the facts behind the sentence, for a reader in any language. */
 export type InboxFinding = Readonly<{ kind: ConditionKind; outcome: FindingOutcome; facts: FindingFacts }>;
 
 export type InboxRecord = Readonly<{

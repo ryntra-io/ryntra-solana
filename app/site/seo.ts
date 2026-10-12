@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { PRODUCT_CANON } from "@/lib/product/canon";
+import { PRODUCT_IDENTITY } from "@/lib/product/identity";
 import { HOMEPAGE_CATEGORY, HOMEPAGE_COPY } from "@/lib/site/homepage-copy";
 import { SITE_NAME, TWITTER, landingOgImage, languageAlternates, localizedUrl, openGraphLocales } from "@/app/seo";
 
@@ -45,7 +45,7 @@ export function sitePageMetadata({
 }): Metadata {
   const canonical = localizedUrl(path, locale);
   const languages = index ? languageAlternates(path) : undefined;
-  const category = audience === "guard" ? PRODUCT_CANON.guardCategory : HOMEPAGE_CATEGORY;
+  const category = audience === "guard" ? PRODUCT_IDENTITY.guardCategory : HOMEPAGE_CATEGORY;
   /* The landing's card, where a page has none of its own. The old trust line
      said «Paper-first», which the product no longer is. */
   const card = image ?? { url: landingOgImage(locale), alt: HOMEPAGE_COPY[locale].ogAlt };

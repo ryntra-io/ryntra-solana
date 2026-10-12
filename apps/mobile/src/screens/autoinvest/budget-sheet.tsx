@@ -26,8 +26,8 @@ import { type, useTheme } from '@/theme'
 /**
  * «Бюджет місяця» — the person's own ceiling for every rule in a calendar
  * month, a sheet like the purchase's: a sum
- * in dollars under «Не більше на місяць», from $1
- * (M21), typed or $31 · $50 · $100 · $200 — the first a dollar a day
+ * in dollars under «Не більше на місяць», from $1,
+ * typed or $31 · $50 · $100 · $200 — the first a dollar a day
  * for the longest month — what the month has taken so far («Цього місяця $45 з
  * $100»), one line on what the ceiling does and one on what counts,
  * «Зберегти» — and «Прибрати бюджет» while there is one. Only the person sets

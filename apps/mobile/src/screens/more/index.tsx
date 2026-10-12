@@ -26,7 +26,7 @@ const GROUPS: readonly (readonly MoreRow[])[] = [
 ]
 
 /**
- * «Ще» — the menu v6.2 on a phone: the sections the bar does not
+ * «Ще» — the current menu on a phone: the sections the bar does not
  * hold, each with the web's caption — Торгувати · Боти · Гроші · Винагороди —
  * then Ryntra, the assistant, and Налаштування. One version for everyone,
  * guests included; a row opens the phone's own screen. `receive=1` — an older

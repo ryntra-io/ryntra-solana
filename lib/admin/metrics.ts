@@ -9,7 +9,7 @@
  * Units are deliberate. An account is an authenticated account; a login is one
  * confirmed server exchange; an event is one permitted action; a thread is one
  * support thread. Rows of notes are rows of notes, never people. Operator
- * accounts (the founder's own) are excluded from product metrics and reported
+ * accounts (the team's own) are excluded from product metrics and reported
  * on their own line.
  */
 

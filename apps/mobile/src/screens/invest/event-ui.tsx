@@ -25,7 +25,7 @@ export type EventActions = Readonly<{
 
 /**
  * The issuer's event on a private company's page and under a held position
- * (the IPO and conversion watch; M19, as ryntra.io draws it): the deadline in
+ * (the IPO and conversion watch, as ryntra.io draws it): the deadline in
  * a box before any figure — for a holder, the swap as the one orange action
  * right under it and the sale beside it, quiet. Nothing here swaps: each
  * action opens the swap's sheet, where «Перевірка» and the wallet's signature

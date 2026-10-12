@@ -38,8 +38,8 @@ const MICRO_LAMPORTS_PER_LAMPORT = 1_000_000n;
 /**
  * The Lighthouse instruction variants a wallet may attach.
  *
- * `AssertAccountInfoMulti` and `AssertTokenAccountMulti`, the two the founder's
- * own wallet was captured using. Both only read state and fail the transaction
+ * `AssertAccountInfoMulti` and `AssertTokenAccountMulti`, the two a real
+ * wallet was captured using. Both only read state and fail the transaction
  * when an assertion does not hold; neither can move anything. Any other
  * variant is refused rather than assumed harmless.
  */

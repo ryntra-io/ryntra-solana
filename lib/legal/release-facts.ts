@@ -55,7 +55,7 @@ export const LEGAL_RELEASE_FACTS = {
     documents: ["xStocks", "Backpack", "Ondo", "PreStocks"] as string[],
     /* Whether a person in Ukraine may hold each token has not been verified. */
     ukraineVerified: false,
-    /* The owner's standing policy: Ryntra adds no country list of its own on top of the issuers'. */
+    /* Standing policy: Ryntra adds no country list of its own on top of the issuers'. */
     ryntraIssuerCountryDenylistEnabled: false,
     counselReviewed: false,
   },
@@ -67,7 +67,7 @@ export const LEGAL_RELEASE_FACTS = {
     counselReviewed: false,
   },
   android: {
-    /* The app is not released; its privacy is written ahead of the store package (the mobile line's request 27). */
+    /* The app is not released; its privacy is written ahead of the store package. */
     released: false,
     pushProviderConfigured: false,
   },

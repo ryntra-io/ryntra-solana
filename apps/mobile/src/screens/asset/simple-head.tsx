@@ -24,7 +24,7 @@ export type SimpleWarning = Readonly<{ key: string; text: string; tone: 'warning
  * its name, before any figure — its issuer's own line («Це не акція OpenAI ·
  * комісія емітента 3% на кожен переказ · емітент може заморозити чи забрати
  * токен» — and under its price the one number it carries: the price against PreStocks'
- * own valuation. «Шлях компанії» (M24, as the web's
+ * own valuation. «Шлях компанії» (as the web's
  * draws it) stands under the name, where the company has
  * a path to say. An issuer's event about the token — a window to swap it before
  * a cut-off — stands between the name and the price: before any figure;

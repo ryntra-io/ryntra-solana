@@ -150,7 +150,7 @@ function LanguagePicker({ labels }: { labels: SettingsCopy['locales'] }) {
 /**
  * «Налаштування» — a row of «Ще»: the wallet and its monitoring,
  * the look and the language, and where the product lives. What «Ще» drew
- * below its doors before the menu v6.2, gathered in one place.
+ * below its doors before the current menu, gathered in one place.
  */
 export function SettingsScreen() {
   const router = useRouter()

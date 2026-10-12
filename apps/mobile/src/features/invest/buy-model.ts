@@ -1,6 +1,6 @@
 /**
  * A company and its purchase in dollars on the beginner's path — the pure half
- * (M15; the issuer's fee of a private company's token, M18).
+ * (with the issuer's fee of a private company's token).
  *
  * What a beginner reads about a company and about a purchase is decided here
  * once and tested: the one line of truth about what the token is (from the
@@ -8,7 +8,7 @@
  * a sum of dollars as it is typed, how much of the company it buys, the four
  * rows of «Перевірка» as the server counts them (contract 1.20.0), what the
  * server's answer after a signature means, and the one action the sheet
- * offers. The rules are the web line's own for the same page and the same
+ * offers. The rules are the web app's own for the same page and the same
  * sheet, so the phone and ryntra.io say the same thing; every figure is the
  * server's order — built, judged and priced by the Review route — read into the
  * person's words, never a figure of the phone's own. Nothing here reads the
@@ -110,8 +110,7 @@ export function exchangeState(
 /* ---- the sum ---- */
 
 /**
- * The least a purchase in dollars is — a dollar («Може хтось
- * хоче на долар купляти. Кожний день по долару»). It was $10, from the v5.0
+ * The least a purchase in dollars is — a dollar. It was $10 in an earlier
  * draft, which had copied Jupiter's minimums for its DCA vault, Trigger orders
  * and the gasless swap; a plain swap order has none. The web's own.
  */
@@ -731,7 +730,7 @@ export function buyOrderRows(
     company: string
     truth: string | null
     preIpo: boolean
-    /** The issuer's event said again under «Що це» (the IPO and conversion watch; M19); null for none. */
+    /** The issuer's event said again under «Що це» (the IPO and conversion watch); null for none. */
     eventLine?: string | null
     /** The mint's own fee on the transfer that delivers the token; null when it charges none. */
     issuerFee?: IssuerFee | null
@@ -803,7 +802,7 @@ const NOTHING_MOVED = new Set(['EXPIRED_BEFORE_SUBMIT', 'UNKNOWN_TO_CHAIN', 'EXP
 
 /**
  * A settled answer in the purchase's words — *У тебе є частинка*, *Нічого не
- * сталося*, *Мережа відхилила* — judged by Trade's own rule (M3's
+ * сталося*, *Мережа відхилила* — judged by Trade's own rule (the
  * `settledView`), so the receipt on the sheet and the card in Trade never
  * disagree on what happened; the figures are the chain's where the answer
  * carries them.
@@ -893,7 +892,7 @@ export type BuyFailureKey = (typeof BUY_FAILURE_KEYS)[number]
 
 /**
  * A refusal's stable code — the server's, the wallet's or Trade's own — into
- * the sentence «Простий» says for it. The same codes Trade reads (M3's
+ * the sentence «Простий» says for it. The same codes Trade reads (the
  * `tradeFailureCopy`), grouped by what the person can do next; the words live
  * in the copy, in both languages.
  */

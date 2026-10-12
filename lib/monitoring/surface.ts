@@ -47,7 +47,7 @@ export function noteInLocale(row: InboxRecord, locale: "en" | "uk"): InboxRecord
  * says nothing of carries no `ruleState`.
  */
 export function composeMonitoringSurface(monitors: readonly MonitorRecord[], notes: readonly InboxRecord[], locale: "en" | "uk", ruleStateOf: (note: InboxRecord) => InboxRuleState | null = () => null): MonitoringSurface {
-  /* Every note in the reader's language where it holds both (request 20/23), a rule's reminder with what became of it. */
+  /* Every note in the reader's language where it holds both, a rule's reminder with what became of it. */
   const recent = notes.map((row) => {
     const read = noteInLocale(row, locale);
     const ruleState = read.subject?.kind === "autoinvest-rule" ? ruleStateOf(read) : null;

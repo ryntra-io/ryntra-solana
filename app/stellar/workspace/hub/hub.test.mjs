@@ -4,7 +4,7 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 /**
- * The gate that would have caught what reached the founder.
+ * The gate that would have caught what shipped.
  *
  * On 2026-08-13 the Stellar Hub shipped styled with `--line` and `--fg-faint`.
  * Neither token exists. CSS does not treat that as an error — it treats the

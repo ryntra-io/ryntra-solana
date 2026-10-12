@@ -3,8 +3,8 @@
  * in dollars, keyed by the reference the reward names (a signature, or a
  * bridge's source transaction).
  *
- * Pure: the reward rows are read by the caller. The ledger is the Growth
- * line's; this module only reads it, through its own rule for a later
+ * Pure: the reward rows are read by the caller. The ledger is the growth
+ * module's; this module only reads it, through its own rule for a later
  * valuation (`effectiveRewardEntries`), so a figure here is the figure the
  * person's own Rewards page adds up.
  */

@@ -59,7 +59,7 @@ import { CONTACTS } from "@/lib/site/contacts";
  * carries the one honest Beta chip, and the explaining pages come last. The
  * previous "Products" version mixed abstractions with places and never linked
  * the Workspace Map at all, which is how "how do I get into a workspace"
- * became a three-hop guess — reported by the founder, at night.
+ * became a three-hop guess.
  *
  * Second, there is one primary action and it matches reality: **Open a
  * workspace**, to the map of what opens with no account. `Request beta

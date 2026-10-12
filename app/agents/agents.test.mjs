@@ -148,8 +148,8 @@ test("Mission Control and its Guided and Pro rails expose only implemented, trut
   /*
    * Every sidebar destination except the docs link renders inside the shell.
    * The previous hrefs pointed at the public passport/verify pages, which
-   * ejected the operator into website chrome mid-task — the founder reproduced
-   * it live. The docs entry is the one allowed outbound link and must say so.
+   * ejected the operator into website chrome mid-task — a manual run reproduced
+   * it. The docs entry is the one allowed outbound link and must say so.
    */
   const manifest = read("./workspace/agent-manifest.ts");
   for (const href of [

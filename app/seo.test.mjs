@@ -331,7 +331,7 @@ test("all locale summaries preserve the loop, WRRD, non-custody/human authority,
   }
 });
 
-test("the Handbook and structured data consume canon/registry without invented review or shipped-loop claims", () => {
+test("the Handbook and structured data consume the identity and the registry without invented review or shipped-loop claims", () => {
   /* This used to read `/methodology`. That page is gone — it was one of four
      public documents restating the same boundaries — so the same obligations
      are checked against the document that replaced it. The terms below are the
@@ -399,7 +399,7 @@ test("the Handbook and structured data consume canon/registry without invented r
   assert.match(handbook, /truth\.capabilities/);
   assert.doesNotMatch(layout, /\bfeatureList\b/, "static root JSON-LD must not freeze drift-prone capability claims");
   assert.match(layout, /HOMEPAGE_COPY/);
-  assert.doesNotMatch(layout, /PRODUCT_CANON\.(shippedLoopBoundary|northStar|arcusBoundary)/);
+  assert.doesNotMatch(layout, /PRODUCT_IDENTITY\.(shippedLoopBoundary|northStar|arcusBoundary)/);
   assert.doesNotMatch(layout, /offers:\s*\{/);
   /* The landing's graph is the page's own words: the
      feature list is «Працює зараз», which `(home)/landing.test.mjs` ties item

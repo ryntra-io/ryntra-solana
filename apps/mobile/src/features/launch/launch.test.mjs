@@ -40,7 +40,7 @@ const CREATOR = '4MS4RQ3Vj2oYFHJz4EtLyxtq6panVcDUpDyXdoGxfQ1n'
 const MINT = 'So11111111111111111111111111111111111111112'
 const USDC = { mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', symbol: 'USDC', decimals: 6, dollar: true }
 
-test('the moderation module is the web line’s own, unedited', () => {
+test('the moderation module is the web app’s own, unedited', () => {
   const content = readFileSync(join(here, 'moderation.ts'), 'utf8').replace(/\r\n/g, '\n')
   const bytes = Buffer.from(content, 'utf8')
   const blob = createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex')

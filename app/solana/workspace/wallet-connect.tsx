@@ -5,7 +5,7 @@
  *
  * There was already exactly one connection *implementation* — the provider in
  * `connection.tsx`, mounted once in the layout. What there were five of was
- * *entry points*, with three different behaviours, and that is what the founder
+ * *entry points*, with three different behaviours, and that is what a person
  * hit: the control in the shell header offered a choice and named its failures,
  * while the control inside Send and Swap silently picked a wallet for you and
  * then said nothing at all when that wallet did not answer.

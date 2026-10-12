@@ -114,7 +114,7 @@ export async function POST(request: Request) {
   /* A network that is not open is refused before anything is read, with the
      one code the card turns into "not open yet". Base answers through the
      bridge lane exactly as before; Ethereum needs its own switch, set only
-     after its first founder-signed transfer has been read back. */
+     after its first owner-signed transfer has been read back. */
   const networkState = resolveSolanaBridgeNetworkState(lane.evmChain);
   if (networkState !== "OPEN" && lane.evmChain !== "base") {
     return bridgeFailure(409, "ROUTE_NOT_OPEN", `Bridging with ${cctpChainLabel(lane.evmChain)} is not open yet.`, rate, {
@@ -122,7 +122,7 @@ export async function POST(request: Request) {
     });
   }
 
-  /* A customer bridging is never refused for the state of the founder's own
+  /* A customer bridging is never refused for the state of the operator's own
      experiment configuration. Unreadable, it becomes the deterministic closed
      fallback and every action reads outside the envelope; the burn route
      refuses an owner canary separately while that is true. */
@@ -323,13 +323,13 @@ export async function POST(request: Request) {
      *
      * A person typed this destination and asked for this exact amount to be
      * reviewed. That is a human approval of a destination and a figure, and it
-     * is the same thing the Send lane records — there from a founder-set
+     * is the same thing the Send lane records — there from an operator-set
      * environment approval naming the recipient and amount, here from the
      * moment the owner asks. It is **not** a claim that anything was signed:
      * the wallet is the irreversible step and it has not been opened.
      *
      * It also cannot be used to widen anything. The owner-canary policy still
-     * requires this destination to be on the founder's own allowlist, so a
+     * requires this destination to be on the operator's own allowlist, so a
      * caller that set this flag by hand would still meet a BLOCK.
      */
     humanApproval: input.recipientConfirmed ? "RECORDED" : "NOT_RECORDED",

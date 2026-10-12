@@ -37,7 +37,7 @@ const ROUTE_DEADLINE_MS = 50_000;
  * The only route that can submit a Solana transaction.
  *
  * M1B opens one action-shaped mainnet envelope: exact classic-USDC ATA
- * creation under the founder-recorded tuple and durable canary reservation.
+ * creation under the operator-recorded tuple and durable canary reservation.
  * The request carries the reviewed plan, preflight and verdict; the service
  * verifies the returned signature over that message, submits once, recovers
  * by signature status first, observes the chain independently and mints the
@@ -134,11 +134,11 @@ export async function POST(request: Request) {
    * either — it was resolved, refused the request with 503 when it could not
    * be parsed, and then never consulted again.
    *
-   * That made the founder's own experiment configuration a precondition for
+   * That made the operator's own experiment configuration a precondition for
    * every stranger's transfer, and it failed in the worst possible place: this
    * route runs *after* the wallet signature, so a malformed canary variable
    * turned an approved mainnet transfer into an error nobody could see from
-   * the screen. It is the same shape as the defect `001A` closed, where a lane
+   * the screen. It is the same shape as an earlier defect, where a lane
    * gate lived only in `order` and `execute` and was invisible until somebody
    * pressed the button.
    *

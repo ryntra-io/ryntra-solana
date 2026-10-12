@@ -55,7 +55,7 @@ function QuietLink({ icon, label, onPress }: { icon: IconName; label: string; on
 }
 
 /**
- * Home — the investor's Home, for everyone (M14).
+ * Home — the investor's Home, for everyone.
  * A person knows in five seconds what to do: a
  * guest reads one promise and one action, «Під'єднати гаманець»; a wallet
  * reads what it holds — «Твої інвестиції»
@@ -65,11 +65,10 @@ function QuietLink({ icon, label, onPress }: { icon: IconName; label: string; on
  * published order. A signature whose outcome is not known yet is the one
  * line said before anything else. A connected wallet reads its «Автоінвест»
  * between them — the month's budget as its own line and the rules with their
- * switches (M16, M20), the same block Portfolio draws; a
+ * switches, the same block Portfolio draws; a
  * wallet not signed in reads there one line and a quiet «Увійти гаманцем».
  * What changed and what needs a look — the plans, the watchlist's moves, the
- * markets' movers, the brief — is one quiet tap deeper, «Що змінилося»
- * (M10's Home).
+ * markets' movers, the brief — is one quiet tap deeper, «Що змінилося».
  */
 export function InvestorHome() {
   const router = useRouter()
@@ -111,7 +110,7 @@ export function InvestorHome() {
   }
   const openMarkets = (door: Door, tab: ScreenerTab = 'all') =>
     go(door, () => router.navigate(marketsPath(tab) as never))
-  // What changed and what needs a look — M10's Home, one tap deeper.
+  // What changed and what needs a look — the command-centre Home, one tap deeper.
   const changes = (
     <QuietLink
       icon="pulse-outline"

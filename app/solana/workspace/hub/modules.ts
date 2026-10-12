@@ -45,7 +45,7 @@ import { translateSolana } from "../i18n/catalog.ts";
  * regression fixture and never a release gate, and the product names five
  * status axes. So the environment axis is `MAINNET · OFFCHAIN`, the mode axis
  * is `READ_ONLY · USER_SIGNED · NONE`, and the word above `AVAILABLE` is
- * `OWNER_CANARY_VERIFIED` — the M5 promotion word, earned per action family by
+ * `OWNER_CANARY_VERIFIED` — the promotion word, earned per action family by
  * one owner-signed mainnet action, never by a devnet rehearsal.
  *
  * `NONE` survives on the mode axis because the named modes have no value for a

@@ -40,7 +40,7 @@ export type WorksNowKey =
   | "assistant"
   | "experienced";
 
-/** What the next rows of the queue build, web and phone; the key names the row. */
+/** What is being built next, web and phone; the key names the item. */
 export type BuildingKey = "android" | "warn";
 export type NextKey = "fairPrice" | "assetTruth" | "startFromZero";
 export type RuleKindKey = "schedule" | "dip" | "payments";

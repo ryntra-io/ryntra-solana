@@ -31,8 +31,7 @@ import {
 import { INVEST_COPY } from './copy.ts'
 
 /**
- * «Від $1» on the phone (M21, «Чому 10? …
- * Кожний день по долару»; the web's: a purchase, an
+ * «Від $1» on the phone (the web's: a purchase, an
  * «Автоінвест» rule and the month's budget from one dollar; the sheets open on
  * $10 — a default, never advice; the purchase's quick choices are shares of
  * the wallet's dollars; a company without a route at the sum says its own

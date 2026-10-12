@@ -31,11 +31,11 @@ type Door =
   'asset' | 'plan' | 'plans' | 'new-plan' | 'portfolio' | 'inbox' | 'trade' | 'markets' | 'watchlist' | 'choose'
 
 /**
- * «Що змінилося» — Home one tap deeper (M10's command centre,
+ * «Що змінилося» — Home one tap deeper (the command centre,
  * a screen of its own since one version). It answers one question: what
- * changed, and what needs a look. The unfinished operation first (M3's recovery), then the
- * plans that need attention (M7's cards, honest about a card two plans
- * share), the portfolio in one line (M4's read), the active plans,
+ * changed, and what needs a look. The unfinished operation first (its recovery), then the
+ * plans that need attention (the monitoring's cards, honest about a card two plans
+ * share), the portfolio in one line, the active plans,
  * the watchlist's moves since the person last looked, and a short list of
  * what changed with its doors. A guest sees the markets and one next
  * action; a wallet without a session sees its public figures and the one

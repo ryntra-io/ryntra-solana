@@ -8,9 +8,9 @@ const first = (value: string | string[] | undefined): string | undefined => (Arr
 
 /**
  * `/asset/<mint>` — a market by its address; anything else goes back to Markets. `buy=1` opens a company's
- * purchase; `rule=<id>&due=<instant>` opens the purchase under that autoinvest reminder (M16); `autoinvest=1`
+ * purchase; `rule=<id>&due=<instant>` opens the purchase under that autoinvest reminder; `autoinvest=1`
  * opens the company's «Автоінвест» sheet; `convert=1` opens the swap before the issuer's deadline and `sell=1` the
- * sale for USDC, where the token has such an event (M19).
+ * sale for USDC, where the token has such an event.
  */
 export default function AssetRoute() {
   const params = useLocalSearchParams<{

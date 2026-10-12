@@ -145,7 +145,7 @@ test("the frozen /app/radar decision is closed rather than left open", () => {
      saying it is waiting for something. */
   assert.equal(ROUTES.includes('{ path: "/app/research"'), false);
   assert.equal(ROUTES.includes('{ path: "/app/research/[id]"'), false);
-  assert.match(ROUTES, /\{ path: "\/app\/radar", reason: "closed by RYN-HOME-004/);
+  assert.match(ROUTES, /\{ path: "\/app\/radar", reason: "closed/);
   /* And no redirect was added, because a redirect-only route is still a route.
      The decision may be *explained* in a comment — that is where it belongs. */
   assert.equal(codeOnly(RESEARCH).includes("/app/radar"), false);

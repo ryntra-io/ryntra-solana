@@ -57,7 +57,7 @@ const rawOf = (value: string | undefined): bigint | null => (value && /^\d+$/.te
 
 /**
  * The swap before the issuer's deadline, or the quiet sale, on the phone —
- * the sheet's state over Trade's own flow (M3: the server's exact Review, the
+ * the sheet's state over Trade's own flow (the server's exact Review, the
  * wallet's signature over those bytes, the one submission, the receipt, the
  * recovery of a signature the app closed on), as a Sell of the private token
  * into the listed one (or into USDC). This hook adds only what the sheet says

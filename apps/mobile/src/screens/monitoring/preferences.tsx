@@ -167,7 +167,7 @@ function QuietHoursCard({
  * the person switches them; quiet hours for both. Every switch is the
  * server's preference written at once and read back; the phone's own
  * registration is the device registry's record. Connecting a Telegram
- * channel stays on ryntra.io — the bearer has no door to it (request 17).
+ * channel stays on ryntra.io — the bearer has no door to it.
  */
 export function NotificationPreferencesScreen() {
   const insets = useSafeAreaInsets()

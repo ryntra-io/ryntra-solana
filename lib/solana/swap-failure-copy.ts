@@ -141,7 +141,7 @@ export function swapFailureCopy(
      clothes, and saying so beats a sentence that describes the swap — which
      did nothing, because nothing was ever signed.
 
-     This is the code the founder's screen actually produced on 2026-09-10:
+     This is the code the production screen actually produced on 2026-09-10:
      `/api/solana/swap/order` declared no time budget, blew the platform
      default, and five presses in twenty-four seconds each got a bodyless 502
      that no log recorded and no sentence named. */

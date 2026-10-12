@@ -29,8 +29,8 @@ const RAW = /^(0|[1-9][0-9]*)$/;
  * The deployment's ceiling on a wallet-added priority fee.
  *
  * $0.01 at $100/SOL, deliberately tiny and independently repriced. It was
- * named and described as "the M1B adoption cap", which put a closed task's id
- * into a refusal an ordinary sender could meet on any congested minute.
+ * named and described as "the M1B adoption cap", which put an internal canary's
+ * name into a refusal an ordinary sender could meet on any congested minute.
  */
 export const MAX_WALLET_PRIORITY_FEE_LAMPORTS = "100000";
 

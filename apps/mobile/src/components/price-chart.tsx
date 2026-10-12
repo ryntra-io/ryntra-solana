@@ -17,7 +17,7 @@ export type PriceChartProps = {
   /** The language of the figures and the days on the chart. */
   locale?: Locale
   /**
-   * The line is drawn through each bar's middle, not its close (a day's line, M27): every figure it names is said as
+   * The line is drawn through each bar's middle, not its close (a day's line): every figure it names is said as
    * «≈», an estimate between the two sides of the pool's trades rather than one trade.
    */
   approx?: boolean

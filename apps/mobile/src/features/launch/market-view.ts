@@ -3,7 +3,7 @@
  * 1.36.0): a state's tone and its words, a rule's sentence, depth, holders,
  * concentration, the creator's lock, Ryntra's ladder and executor — the
  * web's own (`app/app/launch/market-view.ts`, `markets-board.tsx`,
- * `market-health.tsx` on the web line). A figure the server did not read is
+ * `market-health.tsx` in the web app). A figure the server did not read is
  * `null` and said «Не прочитано»; a budget not accounted is «Ще не рахуємо»;
  * neither is ever drawn as zero. Pure: the screens and the tests read it.
  */

@@ -17,8 +17,8 @@ import styles from "@/app/app/home-surface.module.css";
  * The operations display layer.
  *
  * Every state on this page is rendered as a chip plus one short reason, and the
- * long sentence lives behind the section's info control. That is the whole rule
- * the founder restated after four surfaces shipped as walls of text: a reader
+ * long sentence lives behind the section's info control. That is the whole rule,
+ * restated after four surfaces shipped as walls of text: a reader
  * has two seconds to see what is down, what it affects and where to go.
  *
  * **A kill switch is drawn as a state, never as a control.** There is no

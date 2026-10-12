@@ -13,7 +13,7 @@
  *   fee and guard instructions); sent once; the receipt is read back from the
  *   programs' own events and the wallet's own balance, and kept by wallet and
  *   signature.
- * - A launch the chain shows graduated earns its creator the Growth line's
+ * - A launch the chain shows graduated earns its creator the growth module's
  *   points, once per mint (`recordLaunchGraduation` in `lib/rewards`).
  *
  * Everything here is public on chain — who created a token, its fees, a
@@ -164,7 +164,7 @@ function cardView(card: CreatorEarningsCard, network: LaunchCreatorCabinetRespon
   return { ...card, network, period: { ...card.period }, amounts: card.amounts.map((amount) => ({ ...amount })), receipts: [...card.receipts] };
 }
 
-/** The creator earnings card's data for the Growth line's card: the same figures the cabinet shows. */
+/** The creator earnings card's data for the growth module's card: the same figures the cabinet shows. */
 export async function readCreatorEarningsCard(deps: CabinetDeps, wallet: string): Promise<LaunchCreatorCabinetResponse["card"]> {
   return (await readCreatorCabinet(deps, wallet)).card;
 }

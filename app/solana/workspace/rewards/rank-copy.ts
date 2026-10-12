@@ -4,7 +4,7 @@ import type { WorkspaceLocale } from "@/app/shell/locale";
  * The words of ranks, in both languages, beside the card that says them.
  *
  * Kept here rather than in the workspace catalogue because the catalogue is
- * the core's file and ranks are the Growth line's: this page's new sentences
+ * the core's file and ranks are the growth module's: this page's new sentences
  * live with the page. Every sentence has both languages by construction — a
  * missing one is a type error, not a mixed-language page.
  */

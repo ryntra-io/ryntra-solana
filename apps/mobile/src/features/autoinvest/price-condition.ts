@@ -1,5 +1,5 @@
 /**
- * «Умова ціни» on the phone — the pure half (M25;
+ * «Умова ціни» on the phone — the pure half (as
  * the web's, contract 1.18.0).
  *
  * A rule buys only when the price is not above its reference by more than the
@@ -15,7 +15,7 @@
  * half an hour, a copy its source calls stale, or a missing figure makes the
  * rule wait — an unknown is never a pass.
  *
- * The judgement and the words are the web line's own
+ * The judgement and the words are the web app's own
  * (`lib/autoinvest/price-condition.ts`, `app/app/invest/price-condition-view.ts`),
  * so what the phone says now is what the rule's tick and the order route
  * decide on the same figures, in the same words (the English with the

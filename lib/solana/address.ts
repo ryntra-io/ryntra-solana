@@ -5,7 +5,7 @@
  * carried the regex, and every surface that collects an address carried
  * nothing — so a value that could never be an address travelled to the network,
  * was read against the chain, and came back as a schema refusal that named no
- * field. The founder hit exactly that: a recipient beginning `wallet-` produced
+ * field. A manual test hit exactly that: a recipient beginning `wallet-` produced
  * "The transfer proposal or policy was not accepted."
  *
  * So the shape lives here, with no imports, and the schema consumes it. One

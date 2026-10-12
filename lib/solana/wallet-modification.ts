@@ -512,7 +512,7 @@ export function compareWalletTransaction(args: {
       const logLevel = bytes[1];
       /* Every reason this can refuse, named.
          The refusal used to print one sentence and a discriminator for eight
-         different conditions, so a founder who hit it on the bridge learned
+         different conditions, so a person who hit it on the bridge learned
          only that something was wrong — and `06` is a variant this guard
          *accepts*, which made the sentence read as a contradiction. The rule is
          unchanged; what changed is that it says which clause stopped it, so the

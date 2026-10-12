@@ -2,21 +2,21 @@ import type { Copy } from '../../lib/i18n.ts'
 
 /**
  * Every word «Автоінвест» says on the phone, in
- * both languages — the web line's own for the same sheet, card and block
+ * both languages — the web app's own for the same sheet, card and block
  * (`app/app/invest/invest-words.ts`), so the phone and ryntra.io say the same
  * thing. The web's words: «Автоінвест» · «Щотижня» · «Якщо впаде на 5 %» ·
  * «Бюджет місяця» · «Ryntra нагадає — ти підтвердиш одним дотиком» · «Гроші
  * лишаються у твоєму гаманці»; never DCA, trigger, «купує автоматично» or a
- * promise of a price or a profit. «Автоінвест» made clear ( * M20): the rule's sum is «Кожна купівля», the budget's «Не більше на
+ * promise of a price or a profit. «Автоінвест» made clear: the rule's sum is «Кожна купівля», the budget's «Не більше на
  * місяць», the budget its own line — «Бюджет не задано · Задати» — and while
  * a rule's reminder is open its purchase is «Купити $20 за правилом», an
  * ordinary one saying the reminder stays open. «З кожної оплати»
- * (M26) in the web's words — «З оплат» · «Що відкладати» · «Накопичено» ·
+ * in the web's words — «З оплат» · «Що відкладати» · «Накопичено» ·
  * «Нагадаю від» · «Мій рахунок». Four phrases are the phone's own:
  * `reminderClosedDip` — a fall's rule has no day for the next reminder to
- * come on (asked of the web as request 34) — and `reminderClosedPayments`
+ * come on (the web has no phrase for it) — and `reminderClosedPayments`
  * likewise for a rule that gathers from payments, `fixedBounds` where the web
- * says «Мінімум — $1» under a sum whose least is $0,10 (both request 39), and
+ * says «Мінімум — $1» under a sum whose least is $0,10, and
  * `signInForRules`, where the web asks the wallet's proof and the phone its
  * sign-in.
  */
@@ -163,11 +163,11 @@ export type AutoinvestCopy = Readonly<{
   readUnavailable: string
   /** The web's `?` beside what counts («З кожної оплати»), word for word. */
   paymentsHelp: Readonly<{ title: string; short: string; what: string; example: readonly string[]; important: string }>
-  /** The phone's own: a sum typed for «$ з оплати» outside its bounds (the web says «Мінімум — $1» there — request 39). */
+  /** The phone's own: a sum typed for «$ з оплати» outside its bounds (the web says «Мінімум — $1» there). */
   fixedBounds: (min: string, max: string) => string
-  /** The phone's own: a closed reminder of a rule with no day — the next comes once it gathers again (request 39). */
+  /** The phone's own: a closed reminder of a rule with no day — the next comes once it gathers again. */
   reminderClosedPayments: string
-  /* «Регулярна купівля для всього» (M35, 1.31.0): any token with liquidity — the floor and the facts of risk before the button */
+  /* «Регулярна купівля для всього» (1.31.0): any token with liquidity — the floor and the facts of risk before the button */
   pickToken: string
   allTokens: string
   pickTokenFromMarkets: string

@@ -176,7 +176,7 @@ export function coarserBars(bars: readonly Candle[], stepSeconds: number): Candl
   return folded
 }
 
-/** How wide a bar of each range's line may be: a day's line is drawn from quarter hours (M27); the others as read. */
+/** How wide a bar of each range's line may be: a day's line is drawn from quarter hours; the others as read. */
 export const RANGE_STEP_SECONDS: Readonly<Record<ChartRange, number>> = {
   '1d': 900,
   '1w': 0,

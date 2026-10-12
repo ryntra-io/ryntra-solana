@@ -12,7 +12,7 @@
  * or freeze it, its organic score and the venue's list — are said before the
  * button: facts as the venue states them, never a verdict.
  *
- * The words are the web line's own (`lib/autoinvest/floor.ts`,
+ * The words are the web app's own (`lib/autoinvest/floor.ts`,
  * `app/app/invest/invest-words.ts`), so the phone and ryntra.io say the same
  * thing of the same token. Pure: nothing here reads the network.
  */

@@ -91,7 +91,7 @@ test("both sheets stand above a phone's keyboard, their one action in sight", ()
 
 test("the swap's quote and its signable order are asked once more after the provider's own pause; /execute never", () => {
   /* A quote — a read — waits at most 2.5 s (the rule of 2026-09-15). */
-  /* Since fee policy v2 the quote is the lane choice's — the web's and the phone's alike (line B's request 41) — whose every ask is asked once more the same way. */
+  /* Since fee policy v2 the quote is the lane choice's — the web's and the phone's alike — whose every ask is asked once more the same way. */
   assert.match(QUOTE_ROUTE, /await chooseQuote\(\{/);
   const LANES = source("../../../lib/core/solana-swap/fee-route.server.ts");
   /* The v2 branch's own ask, not only the as-now one: the phone's quotes take it too. */

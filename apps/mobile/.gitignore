@@ -19,16 +19,12 @@ google-services.json
 *.p12
 *.pem
 
-# read-only copy of the product law (refresh with scripts/sync-canon.mjs)
-docs/canon/
-
 # local
 .DS_Store
 Thumbs.db
 *.log
 
-# third-party agent skills: installed locally by scripts/skills/install.mjs from
-# scripts/skills/manifest.json; the pin of record is skills-lock.json + docs/SKILLS.md
+# local tooling directories, never tracked
 .agents/
 .codex/
 .claude/skills/

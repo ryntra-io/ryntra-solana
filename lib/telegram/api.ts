@@ -125,7 +125,7 @@ export async function isChannelMember(channel: string, userId: number): Promise<
   return ["creator", "administrator", "member"].includes(r.status);
 }
 
-/** Is the user an admin/creator of the channel? Used to gate founder commands. */
+/** Is the user an admin/creator of the channel? Used to gate operator commands. */
 export async function isChannelAdmin(channel: string, userId: number): Promise<boolean> {
   const r = await tg<{ status: string }>("getChatMember", { chat_id: channel, user_id: userId });
   return r ? ["creator", "administrator"].includes(r.status) : false;

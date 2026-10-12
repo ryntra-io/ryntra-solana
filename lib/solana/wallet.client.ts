@@ -288,7 +288,7 @@ export type ConnectResult =
  * What a wallet's own throw actually meant.
  *
  * The three answers are not interchangeable and calling them all `REFUSED` is
- * how this surface told the founder a lie: a MetaMask with an unanswered popup
+ * how this surface told a person a lie: a MetaMask with an unanswered popup
  * throws `-32002`, the panel titled it "The wallet refused", and `Try again`
  * re-sent the request the extension was already refusing to queue. Nobody had
  * refused anything and the one action that would have helped — open the

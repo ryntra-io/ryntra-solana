@@ -1,5 +1,5 @@
 /**
- * The shell as a value — pure. The menu v6.2 on a phone, the
+ * The shell as a value — pure. The current menu on a phone, the
  * web's own (`app/shell/domains.ts`, `mobileNavigation`): five places —
  * Головна · Ринки · + Лаунч · Портфель · Ще. The middle «+» is an action, not
  * a place: it opens «Запустити токен» over the bar. Ryntra is not a place in

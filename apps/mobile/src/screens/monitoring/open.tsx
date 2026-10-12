@@ -35,12 +35,12 @@ const SYMBOL = /^[A-Za-z0-9._-]{1,32}$/
  * The resolver behind every deep link into the monitoring: `?n=<note|monitor>`
  * from a push, a Telegram button or the web's own link, `?href=<web path>`
  * for a page the phone has no surface for, `?rule=<id>&due=<instant>` for an
- * autoinvest reminder's own link (M16). It reads the wallet's surface and
+ * autoinvest reminder's own link. It reads the wallet's surface and
  * plans afresh, marks the note read as the web's link does, and replaces
  * itself with the exact plan — or, for a reminder, with its company's
  * purchase under the rule, the rule read afresh first; for the note that the
  * month's budget is spent, with Home and the budget's sheet; for an issuer's
- * event (M19), with the token's page and its swap's sheet — and the event's own
+ * event, with the token's page and its swap's sheet — and the event's own
  * link, `?stock=<symbol>&open=convert|sell`, finds the token on the shelf and
  * opens the same, no session needed to read it. When the surface names
  * a symbol two plans share, it asks — it never guesses. Nothing here carries a
@@ -100,7 +100,7 @@ export function OpenNoteScreen() {
           ?.mint ?? null)
       : null
 
-  /* An issuer's event by its own link (M19): the token by its symbol, the swap or the sale. */
+  /* An issuer's event by its own link: the token by its symbol, the swap or the sale. */
   const linkStock = first(params.stock)
   const linkOpen = first(params.open)
   const stockSymbol = !ref && linkStock && SYMBOL.test(linkStock) ? linkStock : null

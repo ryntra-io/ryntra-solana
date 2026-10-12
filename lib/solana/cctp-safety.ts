@@ -275,11 +275,11 @@ export function evaluateCctpSafety(input: CctpSafetyInput): CctpSafetyVerdict {
    *
    * This function was the one consumer in the repository that read `.decision`
    * without reading `.scope`. That is why an ordinary person's bridge was
-   * refused by a policy written to bound a $20 founder experiment: their
+   * refused by a policy written to bound a $20 owner experiment: their
    * destination is not on the owner allowlist, so the verdict was `BLOCK`, so
    * the burn was blocked — a refusal about somebody else's budget.
    *
-   * Inside the envelope nothing changes: the founder's own canary is still
+   * Inside the envelope nothing changes: the owner's own canary is still
    * decided by it, still bounded, still charged.
    */
   const canary = input.canaryVerdict.decision;

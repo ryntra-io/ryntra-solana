@@ -241,7 +241,7 @@ test('a rule’s sum is from $1 to $100 000 in dollars and cents; the request is
 
 /* ---- the words ---- */
 
-test('a rule is said in both languages the web line’s way', () => {
+test('a rule is said in both languages the web app’s way', () => {
   assert.equal(ruleLine(weekly(4, '19:00'), 'uk'), 'Щотижня · чт о 19:00')
   assert.equal(ruleLine(weekly(4, '19:00'), 'en'), 'Every week · Thu at 19:00')
   const monthly = { cadence: 'monthly', weekday: null, monthDay: 1, time: '10:00', timeZone: 'Europe/Kyiv' }

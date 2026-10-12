@@ -769,7 +769,7 @@ export function SendCard() {
 
   /* Both halves, because the decision comes from both: the capability verdict
      names what a person has to weigh, and the safety verdict is what opens or
-     closes the wallet. Listing only one produced the screen the founder hit —
+     closes the wallet. Listing only one produced a screen seen in testing —
      a refusal above a note about something that was not the reason. */
   const warnings = useMemo(() => {
     if (!plan) return [] as readonly Readonly<{ line: string; stops: boolean }>[];

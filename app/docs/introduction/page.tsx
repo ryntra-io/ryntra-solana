@@ -33,7 +33,7 @@ export default function Page() {
           meta="Start here"
           lead="Ryntra is a venue-neutral Risk, Strategy & Evidence OS for programmable assets. It helps a person understand what they are about to do, write the rule down before acting, check it against evidence that carries its own freshness, authorize it in their own wallet, and keep a record that survives the outcome."
           bare
-        source={["Rendered from: lib/product/canon.ts"]}
+        source={["Rendered from: lib/product/identity.ts"]}
         >
           <div className="rx-hb-block">
             <h3 className="rx-h3 rx-hb-h3">What it is for</h3>

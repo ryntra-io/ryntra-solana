@@ -58,7 +58,7 @@ function poolLine(
  *
  * `simple` is «Простий»'s line: the price alone, in the
  * person's language, over a day, a week, a month or a year (the web's own four
- * ranges; M15), a day drawn through the middle of each quarter hour folded
+ * ranges), a day drawn through the middle of each quarter hour folded
  * from its five-minute bars, its figures said as «≈», so a pool trading on
  * both sides of a wide spread does not zigzag the line — the change over
  * a longer range said under the line from closes, a history

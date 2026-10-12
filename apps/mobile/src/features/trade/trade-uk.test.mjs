@@ -19,7 +19,7 @@ import {
 import { TRADE_COPY } from './copy.ts'
 import { ApiError } from '../../lib/api.ts'
 
-/* Trade in Ukrainian (M22): the Review's rows, its figures and notes, the
+/* Trade in Ukrainian: the Review's rows, its figures and notes, the
    receipt and every refusal in the person's language — the web's Spot words —
    while the English stays word for word what it was. */
 

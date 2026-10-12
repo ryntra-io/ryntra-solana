@@ -28,10 +28,8 @@ import { needsDevelopmentRepository } from "../../lib/development-repository.mjs
  *
  *   - the first screen — the landing's line word for word and one action;
  *   - «Працює зараз» — every item tied to the code that does it on production;
- *   - «Будуємо» and «Далі» — every item tied to a row of the queue that is not
- *     done, failing the day it is, so the item moves rather than lingering;
- *     the ties live here, never in the page's code, so no task id reaches a
- *     browser;
+ *   - «Будуємо» and «Далі» — plain words with no date, id or figure, drawn
+ *     on the landing only;
  *   - the pictures — every one a file of `ryntra.io` screens, at its size;
  *   - the words — both languages the same shape, the product's own names,
  *     no forbidden word, nothing internal.
@@ -227,50 +225,13 @@ test("«Працює зараз» — every item is tied to the code that does i
   }
 });
 
-/**
- * «Будуємо» and «Далі»: each item and the row of the queue that builds it —
- * the web app's task list or the phone app's. When a row closes, this
- * fails: the item moves to «Працює зараз» with a proof above, or leaves the
- * page — or, while the thing it names is still being built, passes to the row
- * that builds it now. The Android app: M8 «Реліз» (the release signed,
- * 2026-09-28) and M17 «Пакет» (the dApp Store package, 2026-09-29) closed,
- * and the app is not in a store yet, so the item stays in «Будуємо». M9
- * «Polish» closed on 2026-10-05; the item now rides on the phone line's next
- * open row, M6 — a feature, not the publication — only because the app is
- * still being built. It moves to «Працює зараз» once a store lists the app.
- */
-const ROWS = {
-  android: { registry: "mobile", row: "M6" },
-  warn: { registry: "web", row: "RYN-PROTECT-SIGNAL-001" },
-  fairPrice: { registry: "web", row: "RYN-FAIR-PRICE-001" },
-  assetTruth: { registry: "web", row: "RYN-ASSET-TRUTH-001" },
-  startFromZero: { registry: "web", row: "RYN-ONBOARD-001" },
-};
-
-function rowStatus({ registry, row }) {
-  if (registry === "web") {
-    const index = read("../../docs/tasks/INDEX.md");
-    const match = new RegExp(`^\\|\\s*\\d+\\s*\\|\\s*\`${row}\`\\s*\\|\\s*([A-Z_]+)\\s*\\|`, "m").exec(index);
-    return match?.[1] ?? null;
-  }
-  const tasks = read("../../apps/mobile/docs/TASKS.md");
-  const match = new RegExp(`^\\|\\s*${row}\\s*\\|[^|]*\\|\\s*([A-Z_]+)\\s*\\|`, "m").exec(tasks);
-  return match?.[1] ?? null;
-}
-
-test("«Будуємо» and «Далі» — every item is a row of the queue that is not done yet", { skip: needsDevelopmentRepository("the web and phone apps' task lists") }, () => {
+test("«Будуємо» and «Далі» carry no dates, ids or figures, and only the landing draws them", () => {
   for (const locale of LOCALES) {
     const items = [...LANDING_COPY[locale].status.building.items, ...LANDING_COPY[locale].status.next.items];
-    assert.deepEqual(new Set(items.map((item) => item.key)), new Set(Object.keys(ROWS)), `${locale}: every item has its row`);
     for (const item of items) {
       /* No dates, no ids, no per cents on the page. */
       assert.doesNotMatch(item.text, /\d|RYN-|\bM\d/u, `${locale}: «${item.text}» carries a date, an id or a figure`);
     }
-  }
-  for (const [key, binding] of Object.entries(ROWS)) {
-    const status = rowStatus(binding);
-    assert.ok(status, `«${key}»: ${binding.row} is not in the ${binding.registry} registry`);
-    assert.ok(!["DONE", "CANCELLED"].includes(status), `«${key}»: ${binding.row} is ${status} — move the item to «Працює зараз» with its proof, or take it off the page`);
   }
   /* Nowhere but the landing: the app draws no roadmap; only `/` and `/uk` show one. */
   assert.doesNotMatch(read("../app/home/page.tsx"), /status\.building|status\.next|landing-copy/);

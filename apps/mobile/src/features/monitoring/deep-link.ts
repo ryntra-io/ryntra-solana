@@ -61,7 +61,7 @@ export type MappedLink = Readonly<{
 
 /**
  * The path and query of a link the app may receive: the site's, the app's scheme (`ryntra://`, or the development
- * build's own `ryntra-dev://`, M27), or a bare path. Null when it is none of these.
+ * build's own `ryntra-dev://`), or a bare path. Null when it is none of these.
  */
 export function pathOfLink(url: string): string | null {
   const trimmed = url.trim()
@@ -105,10 +105,10 @@ export function mapDeepLink(url: string, options: MapOptions = {}): MappedLink {
     const search = params.toString()
     return { path: search ? `${legacy}?${search}` : legacy, kind: 'native' }
   }
-  // Markets on a list of an older shell (M2's `/lists`, the tab's `stock`, `meme`): the screener on the same assets.
+  // Markets on a list of an older shell (`/lists`, the tab's `stock`, `meme`): the screener on the same assets.
   if (name === '/lists') return { path: screenerPath(params, 'all'), kind: 'native' }
   if (name === '/(tabs)/markets' && params.toString()) return { path: screenerPath(params, 'all'), kind: 'native' }
-  // The plans live in «Боти → Мої боти» since the menu v6.2; a plan's own page stays where it was.
+  // The plans live in «Боти → Мої боти» since the current menu; a plan's own page stays where it was.
   if (name === '/plans') return { path: BOTS_PATH, kind: 'native' }
   if (NATIVE_PATHS.test(path)) return { path, kind: 'native' }
 
@@ -164,7 +164,7 @@ function withQuery(path: string, entries: readonly (readonly [string, string | n
  * Markets on a tab (the stock screener and Trends lead there), «Боти» (the
  * plans, the results, the recurring buy), a token by its address, Swap,
  * Portfolio, History, Rewards, Top up and Receive — the same places on both,
- * the menu v6.2. Null when the path is none of them.
+ * the current menu. Null when the path is none of them.
  */
 function agentPathOf(name: string, params: URLSearchParams, options: MapOptions): string | null {
   const rawMint = params.get('mint')

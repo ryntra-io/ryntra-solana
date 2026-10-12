@@ -40,7 +40,7 @@ export type ProofStatus = "idle" | "checking" | "proven" | "unproven";
 
 const UNKNOWN: WalletFact = Object.freeze({ status: "unknown", signedIn: false, walletAddress: null, provenAddress: null, expiresAt: null, at: 0 });
 const CHANNEL = "ryntra-wallet-proof-state";
-/** The invitation line listens here for the address, on any page (Growth line). */
+/** The invitation line listens here for the address, on any page (the growth module). */
 const PROVEN_CHANNEL = "ryntra-wallet-proven";
 const STALE_MS = 60_000;
 

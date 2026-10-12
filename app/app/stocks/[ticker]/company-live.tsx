@@ -211,7 +211,7 @@ export function YourPosition({ mint, name, price, unit, locale, sale = null }: {
 
 /**
  * «Поділитися угодою» on a company's page: a card of the reader's own trade of
- * this company, with their invitation link (the Growth line's card). Read
+ * this company, with their invitation link (the growth module's card). Read
  * again whenever the wallet's position in the company changes — a purchase or
  * a sale settled in the sheets above offers its card at once.
  */

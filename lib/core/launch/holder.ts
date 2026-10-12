@@ -200,7 +200,7 @@ export type HolderEarningsCard = Readonly<{
 }>;
 
 /**
- * The data the Growth line's card draws for a holder's positions: what went in, what it is worth now — a loss to the
+ * The data the growth module's card draws for a holder's positions: what went in, what it is worth now — a loss to the
  * price as visible as a gain — and the fees, each currency apart, with the period. Positions not read now are counted
  * apart and left out of the figures. No promise and no projection.
  */

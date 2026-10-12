@@ -200,7 +200,7 @@ test("a note's language is compared with the screen's, never translated", () => 
   assert.equal(noteLanguageMismatch(note({ locale: undefined }), 'uk'), false)
 })
 
-/* ---- «Автоінвест» notes (M16, contract 1.12.0–1.13.0) ---- */
+/* ---- «Автоінвест» notes (contract 1.12.0–1.13.0) ---- */
 
 const RULE = 'rule_5e1f0c2a9b8d4e7f6a3c1b0d9e8f7a6b'
 const RULE_NOTE = 'inb_aaaaaaaaaaaaaaaaaaaaaaaa'

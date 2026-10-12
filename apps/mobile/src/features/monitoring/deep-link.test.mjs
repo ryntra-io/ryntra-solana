@@ -89,7 +89,7 @@ test("the app's own routes and the development client's link pass through untouc
   )
 })
 
-test("the older shells' Trade, Strategies and Agent tab paths open where they belong now, the query kept (M10, M34)", () => {
+test("the older shells' Trade, Strategies and Agent tab paths open where they belong now, the query kept", () => {
   assert.deepEqual(mapDeepLink('ryntra:///(tabs)/trade?mint=So111&side=sell'), {
     path: '/trade?mint=So111&side=sell',
     kind: 'native',
@@ -97,7 +97,7 @@ test("the older shells' Trade, Strategies and Agent tab paths open where they be
   assert.deepEqual(mapDeepLink('ryntra:///(tabs)/trade'), { path: '/trade', kind: 'native' })
   assert.deepEqual(mapDeepLink('https://ryntra.io/(tabs)/strategies'), { path: '/bots', kind: 'native' })
   assert.equal(redirectSystemPath({ path: 'ryntra:///(tabs)/strategies/', initial: false }), '/bots')
-  // The Agent was a place in the bar until the menu v6.2: its link opens Ryntra, the question kept for the composer.
+  // The Agent was a place in the bar until the current menu: its link opens Ryntra, the question kept for the composer.
   assert.deepEqual(mapDeepLink('ryntra:///(tabs)/agent'), { path: '/ryn', kind: 'native' })
   assert.deepEqual(mapDeepLink('ryntra:///(tabs)/agent?q=hi'), { path: '/ryn?q=hi', kind: 'native' })
   assert.deepEqual(mapDeepLink('ryntra:///(tabs)/create'), { path: '/launch', kind: 'native' })
@@ -128,7 +128,7 @@ test('the resolver may open only ryntra.io/app pages', () => {
 const SOL = 'So11111111111111111111111111111111111111112'
 const DRAFT = 'agd_0123456789abcdef01234567'
 
-test("Ryntra's own page opens the conversation for its context; a question only fills the composer (M11)", () => {
+test("Ryntra's own page opens the conversation for its context; a question only fills the composer", () => {
   assert.deepEqual(mapDeepLink(`https://ryntra.io/app/ryn?context=asset:${SOL}:SOL`), {
     path: `/ryn?context=asset%3A${SOL}%3ASOL`,
     kind: 'native',
@@ -222,7 +222,7 @@ test("the builder handoffs carry Ryntra's draft, a market rule and — from Rynt
   assert.deepEqual(mapDeepLink('/app/strategies/new'), { path: '/plans/pick', kind: 'native' })
 })
 
-test('a reminder’s own link (its Telegram button) opens the resolver, which reads the rule — the link buys nothing (M16)', () => {
+test('a reminder’s own link (its Telegram button) opens the resolver, which reads the rule — the link buys nothing', () => {
   const rule = 'rule_5e1f0c2a9b8d4e7f6a3c1b0d9e8f7a6b'
   const due = '2026-09-24T16:00:00.000Z'
   assert.deepEqual(mapDeepLink(`https://ryntra.io/app/stocks/NVDAx?rule=${rule}&due=${encodeURIComponent(due)}`), {
@@ -256,8 +256,8 @@ test('the month’s budget link (its note’s Telegram button) opens Home with t
   assert.deepEqual(mapDeepLink('https://ryntra.io/app/home?budget=delete'), { path: '/(tabs)', kind: 'native' })
 })
 
-test('one version: every address «Профі» owned opens its place a tap deeper, and the new screens pass through (M20)', () => {
-  // The web's places and pages onto the phone's own (the menu v6.2).
+test('one version: every address «Профі» owned opens its place a tap deeper, and the new screens pass through', () => {
+  // The web's places and pages onto the phone's own (the current menu).
   assert.deepEqual(mapDeepLink('https://ryntra.io/app/markets'), { path: '/(tabs)/markets', kind: 'native' })
   assert.deepEqual(mapDeepLink('https://ryntra.io/app/swap'), { path: '/trade?mode=swap', kind: 'native' })
   assert.deepEqual(mapDeepLink('https://ryntra.io/app/rewards'), { path: '/rewards', kind: 'native' })
@@ -297,7 +297,7 @@ test('an issuer event’s own link opens the resolver on the token’s swap or s
   assert.equal(mapDeepLink('https://ryntra.io/app/stocks/%3Cscript%3E?convert=1').path, '/(tabs)/markets?tab=stocks')
 })
 
-test('a Launch link opens the phone’s own Launch: the form, «Мої лаунчі» and a token’s page (M33)', () => {
+test('a Launch link opens the phone’s own Launch: the form, «Мої лаунчі» and a token’s page', () => {
   const mint = 'So11111111111111111111111111111111111111112'
   assert.deepEqual(mapDeepLink('https://ryntra.io/app/launch/new'), { path: '/launch', kind: 'native' })
   assert.deepEqual(mapDeepLink('/app/launch'), { path: '/launch', kind: 'native' })
@@ -311,7 +311,7 @@ test('a Launch link opens the phone’s own Launch: the form, «Мої лаун�
   assert.deepEqual(mapDeepLink('/launch/mine'), { path: '/launch/mine', kind: 'native' })
 })
 
-test('the menu v6.2: every old address leads to its new place on the phone, as on the web (M34)', () => {
+test('the current menu: every old address leads to its new place on the phone, as on the web', () => {
   const to = (url) => mapDeepLink(url).path
   // «Ринки» — one screener: the stock screener, Trends and the older lists open it on the same assets.
   assert.equal(to('https://ryntra.io/app/stocks'), '/(tabs)/markets?tab=stocks')

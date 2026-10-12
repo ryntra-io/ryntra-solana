@@ -1,5 +1,5 @@
 /**
- * The home-screen widget as values — pure (M9). The widget shows what Home's
+ * The home-screen widget as values — pure. The widget shows what Home's
  * portfolio card shows, smaller: the wallet's value, the day's move, the time
  * of the read; a wallet not connected says so, and a press opens Ryntra on
  * Portfolio. Amounts Home hides stay hidden here. Every figure carries its

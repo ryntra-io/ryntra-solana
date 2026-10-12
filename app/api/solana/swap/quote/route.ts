@@ -123,7 +123,7 @@ export async function POST(request: Request) {
   }
 
   const config = resolveServiceFeeConfig();
-  /* Fee policy v2 prices the lane the Review will be built on, for the web and the phone alike (the phone reads 1.24.0 since M30): one product, one fee for the same purchase. */
+  /* Fee policy v2 prices the lane the Review will be built on, for the web and the phone alike (the phone reads it from contract 1.24.0): one product, one fee for the same purchase. */
   const result = await chooseQuote({ inputMint: input.inputMint, outputMint: input.outputMint, amountRaw: input.amountRaw, selection, handle, config }).then((choice) =>
     choice.ok ? ({ ok: true, order: choice.order } as const) : choice.failure,
   );

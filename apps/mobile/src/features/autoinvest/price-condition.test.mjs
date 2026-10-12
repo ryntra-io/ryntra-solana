@@ -38,7 +38,7 @@ import {
 } from './rule-model.ts'
 
 /*
- * «Умова ціни» on the phone (M25 — the web's
+ * «Умова ціни» on the phone — the web's
  * (contract 1.18.0): a rule buys only when the price is
  * not above its reference by more than the person's limit and the data are
  * fresh; otherwise «Купівлю відкладено» with the reason, the figure and the

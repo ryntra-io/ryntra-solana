@@ -185,14 +185,14 @@ export const GUARD_COLLECTIONS = [
      counter missed repairs itself the first time either party opens Rewards,
      and one it already has stays exactly as it is. */
   "rewardReferralEdges",
-  /* Ranks (the Growth line, rules 2.0.0). `rewardRules` holds the moment each
+  /* Ranks (the growth module, rules 2.0.0). `rewardRules` holds the moment each
      rules version came into force, written once with `insertIfAbsent`;
      `rankEvents` are points earned without a fee — a launch that reached a
      DEX — keyed `wallet:kind:ref`, append-only. Values in the same column; no
      DDL. */
   "rewardRules",
   "rankEvents",
-  /* Leaderboards and seasons (the Growth line). `growthBoards` caches each
+  /* Leaderboards and seasons (the growth module). `growthBoards` caches each
      week's computed figures and each season's counts so a board is not
      recomputed from every ledger on every read; `growthSeasons` holds when the
      first season began, written once; `growthPrefs` is one row per wallet
@@ -200,7 +200,7 @@ export const GUARD_COLLECTIONS = [
   "growthBoards",
   "growthSeasons",
   "growthPrefs",
-  /* Trade cards (the Growth line): one row per card a wallet made of its own
+  /* Trade cards (the growth module): one row per card a wallet made of its own
      trade — the figures, rank and code frozen at that moment — written once
      with `insertIfAbsent`, read by the card's public page and picture. No
      money, no DDL. */

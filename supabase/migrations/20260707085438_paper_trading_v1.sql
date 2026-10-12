@@ -1,5 +1,5 @@
 -- Repo mirror of the migration applied to Supabase project `ryntra` (lbphobwqzwdkbmyedlwb).
--- M5: paper trading + journal-before-trade. Same security model as beta gate:
+-- Paper trading + journal-before-trade. Same security model as beta gate:
 -- RLS with no policies; access only via SECURITY DEFINER RPCs gated by the app secret.
 
 create table if not exists public.paper_trades (

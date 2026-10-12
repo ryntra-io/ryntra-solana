@@ -39,8 +39,8 @@ import { formatMoment, formatPrice } from '@/utils/format'
  * the issuer, the backing, the dividends, the issuer's fee) and «Торги на
  * Solana · 24 год» (the token's day). A figure no source states is not drawn;
  * a block with nothing to say is not drawn at all. The company's SEC figures,
- * its industry and what it does are the web's own files, asked of line A
- * (request 37) — nothing stands in for them.
+ * its industry and what it does are the web's own files, not served by
+ * the contract — nothing stands in for them.
  */
 export function CompanyFacts({
   mint,

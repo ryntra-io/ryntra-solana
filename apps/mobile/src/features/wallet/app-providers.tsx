@@ -22,7 +22,7 @@ const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
 })
 
-// The last answers kept on the device come back before the first screen, and what changes is kept again (M9).
+// The last answers kept on the device come back before the first screen, and what changes is kept again.
 restoreKeptQueries(queryClient)
 keepQueries(queryClient)
 

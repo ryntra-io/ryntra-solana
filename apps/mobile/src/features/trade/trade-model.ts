@@ -5,7 +5,7 @@
  * before a wallet is opened (the same rule the web keeps), the words for
  * every refusal the routes can give, and the one attempt record that survives
  * the app closing. Every word and figure comes out in the language asked for
- * (M22) — English unless Ukrainian is asked. Nothing here talks to the network
+ * — English unless Ukrainian is asked. Nothing here talks to the network
  * or holds a key.
  */
 
@@ -505,7 +505,7 @@ const RETRYABLE: ReadonlySet<TradeFailureKey> = new Set<TradeFailureKey>([
 export function tradeFailureKey(code: string): TradeFailureKey {
   if (/SWAP_PAUSED/.test(code)) return 'paused'
   if (/^ASSET_NOT_OFFERED$/.test(code)) return 'notOffered'
-  /* The server answers a native client by its bearer only once line A opens these routes to it (request 13). */
+  /* The server answers a native client by its bearer only on the routes opened to it. */
   if (/^FORBIDDEN_ORIGIN$/.test(code)) return 'forbiddenOrigin'
   if (
     /PROOF_NOT_SIGNED|ISSUER_KEY_MISSING|STORE_NOT_DURABLE|PROVIDER_KEY_MISSING|NO_INDEPENDENT_RPC|PRODUCTION_KEY_REQUIRED|DURABLE_MULTI_WRITER/.test(

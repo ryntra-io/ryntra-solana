@@ -3,7 +3,7 @@ import { assertAgentControlStartupEnvironment } from "@/lib/agent-control/startu
 
 // Next.js 15 native instrumentation. onRequestError catches every uncaught server
 // error (route handlers, RSC, middleware) in one place and forwards it to our monitor
-// (console + Sentry + founder Telegram alert). No SDK, no build changes.
+// (console + Sentry + operator Telegram alert). No SDK, no build changes.
 export const onRequestError: Instrumentation.onRequestError = async (err, request, context) => {
   const { reportError } = await import("@/lib/monitor");
   // Path only, NEVER the query string: a request that arrives with a secret in its query

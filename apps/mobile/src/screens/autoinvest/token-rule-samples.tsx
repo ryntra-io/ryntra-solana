@@ -17,7 +17,7 @@ import { HomeRuleCard } from './rules-block'
 import { RuleCard } from './rule-card'
 
 /*
- * «Регулярна купівля для всього» (M35, 1.31.0) as the gallery shows it, on
+ * «Регулярна купівля для всього» (1.31.0) as the gallery shows it, on
  * labelled sample data — a development build only: a meme's facts of risk and
  * its floor, a token under the floor, a SOL rule with its price condition
  * against the price when it was turned on, and a BONK rule whose purchase the

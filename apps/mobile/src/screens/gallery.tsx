@@ -113,7 +113,7 @@ const SAMPLE_OUTCOMES: readonly BuyOutcome[] = [
   { kind: 'not-filled' },
 ]
 
-/* The IPO and conversion watch (M19): SpaceX went public, its PreStocks token SPACEX (×5) to be swapped into xStocks'
+/* The IPO and conversion watch: SpaceX went public, its PreStocks token SPACEX (×5) to be swapped into xStocks'
    SPCXx by 23:59 UTC on 12 March 2027 — about $10 of it swapped, and the same sold for USDC, as a route would quote it. */
 const SAMPLE_SPACEX = 'PreANxuXjsy2pvisWWMNB6YaJNzr7681wJJr2rHsfTh'
 const SAMPLE_SPCXX = 'Xs3oZwbHvqis4NYcf4YKWmEia2eC84wSiVrcYcTqpH8'
@@ -127,7 +127,7 @@ const SAMPLE_EVENT: IssuerEvent = {
   open: true,
   noticeUrl: 'https://www.prestocks.com/spacex',
 }
-/* «Шлях компанії» (M24): SpaceX's path as production states it on SPACEX's row (at `private`, the swap open) and SPCXx's
+/* «Шлях компанії»: SpaceX's path as production states it on SPACEX's row (at `private`, the swap open) and SPCXx's
    (at `solana`), and OpenAI's while it is private — the web's registry of 2026-09-25. */
 const pathStep = (step: string, state: string, fields: Partial<CompanyPath['steps'][number]> = {}) => ({
   step,
@@ -224,7 +224,7 @@ const SAMPLE_SPACEX_HOLDING = {
   },
 }
 
-/* «Автоінвест» (M16): one rule of Apple — $20 every Thursday at 19:00 in Kyiv — in each of the states its card says. */
+/* «Автоінвест»: one rule of Apple — $20 every Thursday at 19:00 in Kyiv — in each of the states its card says. */
 const SAMPLE_RULE_NOW = Date.parse('2026-09-24T16:05:00.000Z')
 const sampleOccurrence = (
   dueAt: string,
@@ -243,7 +243,7 @@ const sampleOccurrence = (
   amountUsd: null,
   events: null,
 })
-/* «Умова ціни» (M25, 1.18.0): the rule's judgements as the server keeps them — OpenAI 30 % above PreStocks' valuation
+/* «Умова ціни» (1.18.0): the rule's judgements as the server keeps them — OpenAI 30 % above PreStocks' valuation
    (the web's own example), its data gone old, and Apple within its limit as a Review states it. */
 const SAMPLE_CONDITION_ABOVE: RuleConditionCheck = {
   verdict: 'above',
@@ -298,7 +298,7 @@ const SAMPLE_RULE: AutoinvestRule = {
   createdAt: SAMPLE_AT,
   updatedAt: SAMPLE_AT,
 }
-/* «З кожної оплати» (M26, 1.19.0): the contract's own example — every payment rounded up to $1 into Apple; a $3,40
+/* «З кожної оплати» (1.19.0): the contract's own example — every payment rounded up to $1 into Apple; a $3,40
    payment with its Solana Pay label waits with $0,60, then a $2,30 one makes $1,30 and one reminder on exactly it. */
 const SAMPLE_PAYMENT_OUT = {
   signature: 'sample-payment-1',
@@ -621,10 +621,10 @@ export function GalleryScreen() {
             </Pressable>
           }
         >
-          <Section title="Receipts · every kind and its picture (M38.3)">
+          <Section title="Receipts · every kind and its picture">
             <ReceiptSamples />
           </Section>
-          <Section title="Recurring buy · any token (M35)">
+          <Section title="Recurring buy · any token">
             <TokenRuleSamples />
           </Section>
           <Section title="Launch · markets launched on Ryntra, a market's health and its flight log (1.36.0)">
@@ -715,7 +715,7 @@ export function GalleryScreen() {
               />
             ) : null}
             <BuyReviewTable rows={checkRows('reserveFirst')} words={buyCopy} />
-            {/* No route for $1 (M21): the company's own minimum read from the quote, and the one action that puts it in —
+            {/* No route for $1: the company's own minimum read from the quote, and the one action that puts it in —
                 what the sheet says when the venue answers «no route» below $5, as no company does today. */}
             <Card className="gap-3">
               <Txt variant="ui" tone="muted" className="text-center">
@@ -840,7 +840,7 @@ export function GalleryScreen() {
                 `${ruleCopy.priceCondition} · ${conditionReviewLine(SAMPLE_CONDITION_MET, SAMPLE_RULE_NOW, 'Europe/Kyiv', locale)}`,
               )}
             />
-            {/* «З кожної оплати» (M26): the rule's newest payments as its sheet lists them, then the reminder's receipt. */}
+            {/* «З кожної оплати»: the rule's newest payments as its sheet lists them, then the reminder's receipt. */}
             <SamplePaymentEvents />
             <SamplePaymentEvents payments={SAMPLE_PAYMENTS_DUE.payments} />
             <RuleMarkLine line={`${ruleCopy.byRule} · ${ruleWhenLine(SAMPLE_PAYMENTS_RULE, locale)}`} next={null} />

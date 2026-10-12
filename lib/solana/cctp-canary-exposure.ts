@@ -85,15 +85,15 @@ export const CCTP_CANARY_NOT_IN_SCOPE: CctpCanarySettlement = {
  * Whether the owner-canary policy is needed at all for this transfer.
  *
  * Asked before the policy is resolved, not after. The policy is read from the
- * founder's own environment, and resolving it can fail — a malformed allowlist,
- * a bad state word. Resolving it unconditionally therefore made his experiment
+ * operator's own environment, and resolving it can fail — a malformed allowlist,
+ * a bad state word. Resolving it unconditionally therefore made the operator's experiment
  * configuration a precondition for a stranger's bridge, which is the thing this
  * check exists to end: the canary is an internal instrument and may not decide
  * an ordinary action.
  *
  * Outside the envelope no budget is taken, no reservation is written and no
  * ceiling applies, so there is nothing for a policy to say. Inside it, the
- * policy carries the ceiling that protects the founder from his own instrument,
+ * policy carries the ceiling that protects the operator from their own instrument,
  * and an unreadable one must still refuse.
  */
 export function cctpCanaryExposureNeeded(verdict: SolanaCanaryVerdict): boolean {
@@ -214,7 +214,7 @@ export async function markCctpCanarySubmitted(args: {
  * in the request that arms the wallet and the outcome is only known in the one
  * that reports the transaction. Without this the reservation would be held for
  * ever on a burn that visibly confirmed, which overstates the owner's spend and
- * eventually stops his own instrument working.
+ * eventually stops the owner's own instrument working.
  *
  * It converts nothing and grants nothing. `openCctpCanaryExposure` is still what
  * establishes that a row exists and what its key is; this only says that a row

@@ -7,7 +7,7 @@
  *
  * All three are **public receiving addresses**. Nothing here is a secret, and
  * nothing here is a key: Jupiter's referral account is a program account whose
- * partner authority is the founder's wallet, Relay's is a claim address that
+ * partner authority is the operator's wallet, Relay's is a claim address that
  * proves ownership by signature at withdrawal time, and Mayan's is an ordinary
  * Solana address. This lane can therefore take a fee without ever holding
  * anything that could spend one.

@@ -18,7 +18,7 @@
  * lines all inherited full-strength `#f2f6fd` and the type hierarchy collapsed
  * into one flat wall of bright text.
  *
- * That is what the founder saw and called a test page, and it was invisible to
+ * That is what made the page read as a test page, and it was invisible to
  * every source-level gate: typecheck, lint and the test suite all pass over a
  * stylesheet whose tokens do not exist. Only reading the computed border width
  * off the live element found it.

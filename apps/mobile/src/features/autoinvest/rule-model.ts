@@ -1,5 +1,5 @@
 /**
- * «Автоінвест» on the phone — the pure half (M16).
+ * «Автоінвест» on the phone — the pure half.
  *
  * A rule is the person's company and a sum in dollars, and when it reminds:
  * «Регулярно» — how often and when on their own clock; «Якщо впаде» — when the
@@ -9,10 +9,10 @@
  * purchase is the wallet's own signature. Never caught up: a reminder whose
  * day passed is «Пропущено». «Бюджет місяця» is the person's own ceiling for
  * every rule; a purchase it does not cover stands until the 1st. «Умова ціни»
- * (1.18.0; M25): a rule may carry a limit its price must stay within; a
+ * (1.18.0): a rule may carry a limit its price must stay within; a
  * purchase it holds back is `deferred` — its card, its sheet and its reminder
  * say so and offer nothing (the judgement and its words: `price-condition.ts`).
- * «З кожної оплати» (1.19.0; M26): a rule may gather from the wallet's own
+ * «З кожної оплати» (1.19.0): a rule may gather from the wallet's own
  * USDC payments instead of a clock or a fall — its sum is the least a reminder
  * opens at, and each reminder carries its own sum, what it gathered; a
  * purchase under it is exactly that (the terms and the share: `payments.ts`).
@@ -20,7 +20,7 @@
  * Decided here once and tested: where a new rule starts, the rule a company
  * already has, the one line a rule's card says, what one tap on a reminder may
  * do now, the reminder a note of the inbox is, the month as its bar says it,
- * and a refusal of the server in the sheet's words. The web line's own rules
+ * and a refusal of the server in the sheet's words. The web app's own rules
  * for the same page and sheet (`app/app/invest/autoinvest-model.ts`,
  * `lib/autoinvest/{dip,limits}.ts`), so the phone and ryntra.io agree.
  * Nothing here reads the network or a key; the clock is an argument.
@@ -47,8 +47,8 @@ import {
 
 /**
  * The contract's bounds (`capabilities.rules`): the least and the most a rule's
- * purchase is — a dollar since 1.16.0 («Кожний день по
- * долару»; it was $10 from the v5.0 draft) — and how many rules a wallet holds.
+ * purchase is — a dollar since 1.16.0 (it was $10 in an
+ * earlier draft) — and how many rules a wallet holds.
  */
 export const RULE_MIN_USD = 1
 export const RULE_MAX_USD = 100_000

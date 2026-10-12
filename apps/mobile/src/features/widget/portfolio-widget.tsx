@@ -1,5 +1,5 @@
 'use no memo'
-// The widget library draws plain functions; the React Compiler's memoization breaks its tree (M9).
+// The widget library draws plain functions; the React Compiler's memoization breaks its tree.
 
 import { FlexWidget, TextWidget } from 'react-native-android-widget'
 

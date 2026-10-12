@@ -5,7 +5,7 @@ import type { BuyFailureKey } from './buy-model.ts'
 /**
  * Every word a company's page and its purchase in dollars say on the
  * beginner's path, in both languages. The words are the web
- * line's own for the same page and the same sheet, so the phone and ryntra.io
+ * app's own for the same page and the same sheet, so the phone and ryntra.io
  * say the same thing; the Ukrainian speaks «ти» and has no English word on the
  * way to a purchase. The wallet signs with its own biometrics — the
  * app says «Підтверди в гаманці», never the vault's name. Nothing here offers

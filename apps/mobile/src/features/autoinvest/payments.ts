@@ -1,5 +1,5 @@
 /**
- * «З кожної оплати» on the phone — the pure half (M26;
+ * «З кожної оплати» on the phone — the pure half (as
  * the web's, contract 1.19.0).
  *
  * The third kind of «Автоінвест» rule sets money aside from the wallet's own

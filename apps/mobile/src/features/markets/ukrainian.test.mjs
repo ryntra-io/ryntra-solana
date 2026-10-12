@@ -10,14 +10,14 @@ import { TRADE_COPY } from '../trade/copy.ts'
 import { MARKETS_COPY } from './copy.ts'
 
 /*
- * «Українська всюди» (M22): the screens that spoke English in Ukrainian —
+ * «Українська всюди»: the screens that spoke English in Ukrainian —
  * Markets' four lists and the search, the asset's «Деталі», Trade — now say
  * every word in the person's language. These checks read every word of their
  * dictionaries, functions called with a placeholder: the Ukrainian carries no
  * English word, the English no Cyrillic one. The names the product keeps in
  * every language — Ryntra, the venue, the chain, the chart source, the tokens
  * the fees are paid in — are the only Latin words a Ukrainian line may hold;
- * since «Шлях компанії» (M24) also «IPO», the step the web's Ukrainian names so.
+ * since «Шлях компанії» also «IPO», the step the web's Ukrainian names so.
  */
 
 const KEPT_NAMES = ['Ryntra', 'Jupiter', 'GeckoTerminal', 'Solana', 'PreStocks', 'USDC', 'SOL', 'IPO']

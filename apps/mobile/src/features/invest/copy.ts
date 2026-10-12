@@ -4,7 +4,7 @@ import type { Copy } from '../../lib/i18n.ts'
  * Every word the beginner's path says on Home, Markets, a company's page,
  * «Поповнити» and «Отримати», in both languages.
  * The words a beginner reads — a company
- * by its name, a price in dollars, one action — are the web line's own, so the
+ * by its name, a price in dollars, one action — are the web app's own, so the
  * phone and ryntra.io say the same thing; the Ukrainian speaks «ти».
  */
 export type InvestCopy = Readonly<{

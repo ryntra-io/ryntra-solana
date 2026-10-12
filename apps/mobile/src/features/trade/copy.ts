@@ -5,7 +5,7 @@ import type { ReviewWarningKey, TradeFailureKey, TradeMode } from './trade-model
 /**
  * Every word Trade says — the ticket, the asset picker, «Перевірка» and its
  * rows, the wallet's signature, the receipt, the recovery of a signature and
- * every refusal — in both languages (M22). The words are the web's own for the
+ * every refusal — in both languages. The words are the web's own for the
  * same surface (its Spot order ticket and swap card, `app/solana/workspace`),
  * and the phone's own where the phone already says the same thing on a
  * purchase (`buy-copy.ts`: «Перевірка», «Під’єднати гаманець», «Увійти

@@ -7,8 +7,8 @@ import { test } from 'node:test'
  * The one attempt per wallet is the record that stops a duplicate:
  * a signature whose send could not be confirmed must reach the
  * screen at once, so its one action is the check — never a new purchase the
- * store would refuse. Seen on a Seeker on 2026-09-28 (M26's
- * acceptance): the send failed after the signature, the attempt was stored,
+ * store would refuse. Seen on a Seeker on 2026-09-28 (an
+ * acceptance run): the send failed after the signature, the attempt was stored,
  * and the purchase sheet went on offering «Купити» because the React Compiler
  * had kept the first render's read of the store by the wallet alone. The hook
  * is built here by the app's own compiler, and the attempt must be parsed

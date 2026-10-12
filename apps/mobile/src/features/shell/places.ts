@@ -1,8 +1,8 @@
 /**
- * What each place holds a tap deeper, pure — the menu v6.2 on a phone,
+ * What each place holds a tap deeper, pure — the current menu on a phone,
  * the web's own (`app/shell/domains.ts`).
  *
- * - **Головна** — «Що змінилося»: the command-centre Home of M10 (what needs
+ * - **Головна** — «Що змінилося»: the command-centre Home (what needs
  *   a look, the plans, the watchlist's moves, the markets' movers, the brief).
  * - **Ринки** — one screener for every asset (`features/markets/screener.ts`).
  * - **Портфель** — beside the positions: Боти (what runs on the person's
@@ -25,7 +25,7 @@ export type PlaceDestination =
   | Readonly<{ kind: 'sheet'; sheet: 'top-up' }>
   | Readonly<{ kind: 'web'; path: string }>
 
-/** Home's one door a tap deeper: M10's Home — what changed and what needs a look. */
+/** Home's one door a tap deeper: the command-centre Home — what changed and what needs a look. */
 export const CHANGES_PATH = '/changes'
 
 /** «Боти»: everything that runs on the person's rule. */

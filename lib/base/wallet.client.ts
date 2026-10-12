@@ -242,8 +242,8 @@ export function writeEvmWalletHint(connected: boolean): void {
  * So "silent" is a property of the wallets that were tested, not of the method,
  * and no caller may treat this as free. Call it only when the surface actually
  * has an Ethereum-style side **and** `readEvmWalletHint()` says one was
- * connected here before. The founder met that modal on a Solana-to-Solana swap,
- * on a card with no Ethereum anything on it.
+ * connected here before. A manual test met that modal on a Solana-to-Solana
+ * swap, on a card with no Ethereum anything on it.
  *
  * Never a signature. An empty answer means "not connected here", which is a
  * fact and not a failure.
@@ -432,7 +432,7 @@ export type EvmReceiptResult =
  * so a caller that continues immediately either asks the person to guess when
  * to press again, or reads a zero allowance and asks them to approve a second
  * time — a second prompt and a second fee for an approval they already gave.
- * The founder's Base to Solana canary on 2026-09-07 went exactly that way, with
+ * The first Base to Solana canary on 2026-09-07 went exactly that way, with
  * three minutes and forty-eight seconds of guessing between the two.
  *
  * This only reads. It never signs and never resends, and a timeout is reported

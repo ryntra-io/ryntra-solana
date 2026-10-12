@@ -46,8 +46,8 @@ export type SlimStockRow = Readonly<{
   volume: number | null;
   liquidity: number | null;
   /**
-   * The issuer events a list can name without a read per asset (the mobile
-   * line's request 26): the multiplier the chain has published and not yet
+   * The issuer events a list can name without a read per asset: the
+   * multiplier the chain has published and not yet
    * activated, and when it activates — judged again at answer time, so a
    * copy served after the activation names nothing pending — and when the
    * trading period in `period` next changes, as the issuer or the feed

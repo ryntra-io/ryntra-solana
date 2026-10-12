@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 
 /*
- * «Автоінвест» made clear on the phone (M20, part 2) — the
+ * «Автоінвест» made clear on the phone — the
  * web's own (`app/app/invest/autoinvest-surfaces.test.mjs`): the block on
  * Home and in Portfolio for every connected wallet, the rule's purchase first
  * while its reminder is open and the ordinary purchase second, saying the

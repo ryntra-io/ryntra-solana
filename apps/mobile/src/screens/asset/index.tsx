@@ -131,7 +131,7 @@ export type AssetScreenProps = {
 }
 
 /**
- * The asset — one page for everyone (M14, M15):
+ * The asset — one page for everyone:
  * the company's name, one price in dollars with the day's
  * change and the local time, the line over a day, a week, a month or a year,
  * the label of what the token is (its line in «Що ти купуєш») and whether the
@@ -150,7 +150,7 @@ export type AssetScreenProps = {
  * for an amount — each the venue's, the issuer's or the chain's figure with
  * its time.
  *
- * «Автоінвест» (M16 stands under «Купити»: a quiet door to a
+ * «Автоінвест» stands under «Купити»: a quiet door to a
  * new rule — «Регулярно», or «Якщо впаде» from the price this page read — or,
  * once the company has one, the rule itself, with what comes next. **While
  * its reminder is open** the rule's purchase is the
@@ -161,7 +161,7 @@ export type AssetScreenProps = {
  * Home lands here and is read afresh first; one the month's budget does not
  * cover offers «Змінити бюджет», the budget's sheet over it.
  *
- * **Нагляд за IPO й обміном** (M19: a private token whose
+ * **Нагляд за IPO й обміном** (a private token whose
  * issuer opened a window to swap it says so between its name and its price —
  * «SpaceX вийшла на біржу. SPACEX треба обміняти до 12 березня 2027 — після
  * строку токен згорить.»; a wallet that holds it reads «Обміняй SPACEX до …»
@@ -171,17 +171,17 @@ export type AssetScreenProps = {
  * wallet's signature decide. A purchase of the token says first that it must
  * be swapped by the deadline.
  *
- * **Сторінка компанії, повна** (M23, the web's: under
+ * **Сторінка компанії, повна** (the web's: under
  * the name, who the company is — «NVDA · Nasdaq», «Приватна компанія»; over
  * «Купити», the label of what the token is, its line waiting in «Що ти купуєш»;
  * under the purchase, the facts at rest — «Ключові показники», «Про компанію»,
  * «Що ти купуєш», «Торги на Solana · 24 год» (`company-facts.tsx`) — and only
  * then «Деталі», as the web's page closes. The company's SEC figures, its
- * industry and what it does are the web's own files, asked of line A
- * (request 37); nothing stands in for them.
+ * industry and what it does are the web's own files, not served by
+ * the contract; nothing stands in for them.
  *
- * **Шлях компанії** (M24, the web's: under the purchase
- * (M27 — the price and «Купити» hold the first screen; above them only on the
+ * **Шлях компанії** (the web's: under the purchase
+ * (the price and «Купити» hold the first screen; above them only on the
  * private token's own page, whose path carries the swap deadline),
  * where the contract gives a path, the strip Приватна · PreStocks → IPO → Біржа
  * → Solana (`company-path.tsx`) — this token «цей токен», the company's other
@@ -572,7 +572,7 @@ export function AssetScreen({
     const rep = stockRep
     const privateCompany = rep?.instrument?.class === 'pre-ipo'
     const name = displayName(detail, stock.data ?? null, nameOf(mint))
-    // The issuer's fee as the chain states it names itself in a private company's line (the web's own, M23).
+    // The issuer's fee as the chain states it names itself in a private company's line (the web's own).
     const feeBps = stock.data?.row.transferFee?.basisPoints ?? null
     const truth = rep ? truthLine(rep.issuer.id, name, locale, feeBps) : null
     /* Who the company is, under its name, and the label of what its token is — the web's head and purchase card. */
@@ -625,7 +625,7 @@ export function AssetScreen({
     }
 
     /* The issuer's event, before any figure: a holder's line with the swap and the sale under it, everyone's line alone
-       — in its own box, or, where «Шлях компанії» stands on the private token's page, as the path's line (M24). */
+       — in its own box, or, where «Шлях компанії» stands on the private token's page, as the path's line. */
     // A holder's swap and sale only once their sheet can open — the token read (convertToken); until then the line alone.
     const holderActions =
       event && holder && convertToken
@@ -638,7 +638,7 @@ export function AssetScreen({
         : null
     // «Шлях компанії» stands above the price only for a holder of the private token, whose swap is the path's own line
     // and the page's one orange action; for everyone else it stands under the purchase, so the price and «Купити»
-    // hold the first screen, and the issuer's event is said before any figure in its own two lines (M19, M27).
+    // hold the first screen, and the issuer's event is said before any figure in its own two lines.
     const pathAbove = pathCarriesEvent && holder
     const eventBanner =
       event && !pathAbove ? (

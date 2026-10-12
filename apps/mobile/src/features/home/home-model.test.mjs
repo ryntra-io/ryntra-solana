@@ -398,7 +398,7 @@ test('the freshest time wins; junk is ignored', () => {
   assert.equal(freshestAt(null, undefined, 'junk'), null)
 })
 
-test("the brief says the portfolio's day only for a read from today (M9)", () => {
+test("the brief says the portfolio's day only for a read from today", () => {
   const portfolio = {
     coverage: 'COMPLETE',
     total: 1000,

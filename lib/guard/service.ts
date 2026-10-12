@@ -1919,9 +1919,9 @@ export function createGuardService(options: ServiceOptions) {
     };
     const parsedReceipt = DecisionSettlementReceiptSchema.safeParse(receipt);
     if (!parsedReceipt.success) {
-      /* The sentence alone sent a session hunting through a 1,500-line schema
-         for a field it never named, while a founder watched a settled swap
-         refuse its receipt. It now names the members that failed — paths and
+      /* The sentence alone sent a reader hunting through a 1,500-line schema
+         for a field it never named, while a settled swap refused its
+         receipt. It now names the members that failed — paths and
          issue codes, never values: the failure is a shape, and money does not
          belong in an error string. */
       const faults = parsedReceipt.error.issues

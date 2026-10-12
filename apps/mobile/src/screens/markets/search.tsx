@@ -39,7 +39,7 @@ function LoadingRows({ label }: { label: string }) {
 }
 
 /**
- * Search by name, ticker or contract address (the menu v6.2). The
+ * Search by name, ticker or contract address. The
  * confirmed stocks answer company names at once from the universe already
  * loaded; the venue's catalogue answers everything else after the typing
  * settles. A pasted contract address opens its token at once (`/token/<address>`

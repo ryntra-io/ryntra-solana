@@ -15,9 +15,8 @@
  * that rate is under Jupiter's minimum: never more than the flow's rate.
  *
  * The phone takes the same decision as the web: it was kept on «as now»
- * until its client read the contract that names `/build` (1.24.0, line B's
- * M30), and since 2026-10-05 (line B's request 41) who carries the request no
- * longer picks the lane.
+ * until its client read the contract that names `/build` (1.24.0), and since
+ * 2026-10-05 who carries the request no longer picks the lane.
  */
 
 import { associatedTokenAccount } from "../../attribution/ata.ts";
@@ -249,7 +248,7 @@ export async function chooseExecutableOrder(args: Readonly<{
       () => fetchOrder({ inputMint, outputMint, amountRaw, taker, referral, ...(slippageBps !== undefined ? { slippageBps } : {}) }, endpoint),
       { maxWaitMs: JUPITER_ORDER_RETRY_WAIT_MAX_MS },
     );
-  /* One product, one fee: the phone reads contract 1.24.0 (line B, M30), so who carries the request no longer picks the lane. */
+  /* One product, one fee: the phone reads contract 1.24.0, so who carries the request no longer picks the lane. */
   if ((deps.policy ?? feePolicyInForce()) === "as-now") {
     const result = await askOrder(deps.referral ? await deps.referral(null, config) : await asNowReferral(config));
     return result.ok ? { ok: true, order: result.order, flow: "AS_NOW", lane: "ORDER" } : { ok: false, failure: result, flow: "AS_NOW" };

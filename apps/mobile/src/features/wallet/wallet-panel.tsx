@@ -86,7 +86,7 @@ export function WalletPanel() {
           <Txt variant="data" tone="muted" accessibilityLabel={`Address ${address}`}>
             {shortAddress(address, 6)}
           </Txt>
-          {/* The chip above says connected or signed in; the line says only when the session ends (M27). */}
+          {/* The chip above says connected or signed in; the line says only when the session ends. */}
           {session ? (
             <Txt variant="ui" tone="faint">
               {copy.sessionUntil(formatMoment(session.expiresAt, now, locale))}

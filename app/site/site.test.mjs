@@ -214,7 +214,7 @@ test("the global chrome presents one product family, not a second product", () =
 
   /* The doors group links doors: every open-now row lands inside a workspace,
      not on prose about one. "How do I get into the workspace" being a
-     three-hop guess is the founder-reported defect this menu replaced. */
+     three-hop guess is the defect this menu replaced. */
   const openGroup = PRODUCT_NAV_GROUPS.find((group) => group.id === "open");
   for (const item of openGroup.items) {
     assert.match(item.href ?? "", /\/workspace$/, `${item.id} must link straight to its workspace`);

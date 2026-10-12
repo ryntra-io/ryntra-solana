@@ -16,7 +16,7 @@
  *
  * **The defaults are public and are stated as public.** They exist so the
  * evidence core works from a clean clone with no account anywhere. The
- * production pair is a named founder input and enters through the environment,
+ * production pair is a named operator input and enters through the environment,
  * never through code, never through a log, never through a commit.
  *
  * The default order is evidence rather than taste, and it was measured while
@@ -130,7 +130,7 @@ export type SolanaEndpoint = Readonly<{
   url: string;
   /** The host alone. A provider URL can carry a key in its path or query. */
   host: string;
-  /** Whether the founder supplied it, or it is the committed public default. */
+  /** Whether the operator supplied it, or it is the committed public default. */
   fromEnv: boolean;
 }>;
 

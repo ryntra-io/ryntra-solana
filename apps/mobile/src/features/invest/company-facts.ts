@@ -1,5 +1,5 @@
 /**
- * A company's facts at rest — the pure half (M23; the web's,
+ * A company's facts at rest — the pure half (the web's,
  * its `company-facts-model.ts` and
  * `company-facts-blocks.tsx`).
  *
@@ -17,7 +17,7 @@
  * The web reads the company's SEC figures, its industry and «Про компанію»'s
  * lines from files of its own (`lib/stocks/company-facts.data.ts`,
  * `company-profiles.ts`, `company-sectors.ts`) — no route serves them, so the
- * phone asks line A for them (request 37) and says nothing in their place.
+ * phone says nothing in their place.
  * No fetch, no clock, no React.
  */
 
@@ -147,7 +147,7 @@ export type CompanyHead = Readonly<{
 
 /**
  * Who the company is, under its name (the web's head): the ticker on its
- * exchange — the industry once the contract serves it (request 37) — for a
+ * exchange — the industry once the contract serves it — for a
  * listed company; «Приватна компанія» for a private one, or, once it has gone
  * public and its token waits to be swapped, what the token is: «SPACEX · токен
  * PreStocks».
@@ -193,7 +193,7 @@ export type CompanyFact = Readonly<{ key: string; label: string; value: string; 
  * «Ключові показники» for a private company: PreStocks' own valuation of it and
  * the one the token's price implies, each under its issuer's name and the
  * time Ryntra read it. The listed company's figures from its SEC filings wait
- * for the contract (request 37).
+ * for the contract.
  */
 export function privateStats(
   mark: Readonly<{
@@ -220,8 +220,8 @@ export function privateStats(
 /**
  * «Про компанію» as far as the contract says it: a private company's status,
  * a listed one's exchange and ticker. What the company does, its industry, its
- * headquarters, its fiscal year and its latest report are the web's own files
- * — request 37.
+ * headquarters, its fiscal year and its latest report are the web's own files,
+ * not served by the contract.
  */
 export function aboutFacts(head: CompanyHead, words: CompanyCopy): CompanyFact[] {
   const facts: CompanyFact[] = []

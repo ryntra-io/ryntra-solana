@@ -4,7 +4,7 @@
  * The adapter names the Jupiter Swap API V2 order→execute surface so that a
  * Swap Outcome Receipt can pin the exact registry entries it settled under.
  * Registering the adapter grants nothing: execution stays behind the owner
- * canary policy, the founder's wallet signature and the durable submit-once
+ * canary policy, the owner's wallet signature and the durable submit-once
  * boundary. A verifier that has never heard of Jupiter still reads the closed
  * class — this action moves value.
  */

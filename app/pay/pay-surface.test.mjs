@@ -49,7 +49,7 @@ test("the transaction and submit routes refuse cross-site calls, pay only as the
   const submit = code("lib/pay/transaction.ts");
   assert.match(submit, /actual !== expectedMessageHash/, "the submit boundary compares the signed message hash to the pinned one");
   /* Phantom recompiles the message with a ComputeBudget pair and Lighthouse
-     guards before signing; the founder's second wallet was refused as "a
+     guards before signing; a second test wallet was refused as "a
      different transaction". A mismatch must go through the Send lane's shared
      comparison, which admits only those recognised additions. */
   assert.match(submit, /compareWalletTransaction\(\{[\s\S]*expectsTokenGuard: tolerance\.expectsTokenGuard/);

@@ -1,5 +1,5 @@
 /**
- * The quick actions a long press on Ryntra's icon opens (M9) — four doors
+ * The quick actions a long press on Ryntra's icon opens — four doors
  * into the places, pure. Search first, then the three places a person opens
  * the app for; Home is where the app opens anyway, More is a list of doors
  * itself. Each opens its place, never an action: nothing is bought, signed or

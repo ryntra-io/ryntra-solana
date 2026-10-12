@@ -1,5 +1,5 @@
 /**
- * Results on the phone (M13) — what happened against what was planned, read
+ * Results on the phone — what happened against what was planned, read
  * from the contract and never recomputed: the plans' own projections
  * (`GET /api/v1/plans/results`, `GET /api/v1/plans/memory`, 1.9.0) and each
  * «Автоінвест» rule's reminders as the server states them

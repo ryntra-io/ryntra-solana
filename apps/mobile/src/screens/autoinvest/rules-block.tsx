@@ -53,7 +53,7 @@ import { BudgetSheet } from './budget-sheet'
 
 /**
  * «Автоінвест» — one block on Home and in Portfolio, for every connected
- * wallet (M16, M20). The month's budget
+ * wallet. The month's budget
  * as its own line — «Бюджет не задано · Задати», or «Бюджет місяця $45 з
  * $100 · Змінити» over its bar (spent, «Бюджет вичерпано · Правила стоять до
  * 1-го числа») — once there is a rule or a ceiling for it to bound; the

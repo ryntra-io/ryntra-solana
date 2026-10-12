@@ -39,7 +39,7 @@ function Sentences({
 }: {
   sentences: readonly SentenceView[]
   tone?: 'fg' | 'muted'
-  /** The numbers of the sources each sentence stands on — shown where the sources are (M27). */
+  /** The numbers of the sources each sentence stands on — shown where the sources are. */
   marks?: boolean
 }) {
   return (
@@ -127,7 +127,7 @@ function handoffTitle(view: HandoffView, copy: AgentCopy): string {
   }
 }
 
-/** How many of the answer's points stand at rest; the others, with the next steps, are under «Деталі» (M27). */
+/** How many of the answer's points stand at rest; the others, with the next steps, are under «Деталі». */
 const LEAD_AT_REST = 1
 
 /**
@@ -135,7 +135,7 @@ const LEAD_AT_REST = 1
  * or an honest *not enough data*, the answer's first point with the numbers
  * of the sources it stands on, a draft to act on and the doors. One tap deeper,
  * under «Деталі»: the rest of what is known, the figures Ryntra read and the
- * next steps (M27); what could
+ * next steps; what could
  * make it wrong, the risks and what to check; the sources with their times and
  * states. `emphasis` gives the
  * turn the screen's one orange action; without it every button is quiet.
@@ -146,11 +146,11 @@ export function RynTurn({ turn, context, emphasis = false }: { turn: AgentTurn; 
   const lead = emphasis ? turnLead(turn) : null
   const [deeperOpen, setDeeperOpen] = useState(false)
   const [sourcesOpen, setSourcesOpen] = useState(false)
-  // At rest the answer says its first point; the rest of what it knows and the next steps are one tap deeper (M27).
+  // At rest the answer says its first point; the rest of what it knows and the next steps are one tap deeper.
   const [allOpen, setAllOpen] = useState(false)
   const leadShown = allOpen ? view.lead : view.lead.slice(0, LEAD_AT_REST)
   // The figures Ryntra read (a market, a stock, the evidence) are the answer's grounds, one tap deeper; a draft — the
-  // place where the person acts — stays at rest (M27).
+  // place where the person acts — stays at rest.
   const readCards = view.cards.filter((card) => !isDraftCard(card)).length
   const folded = view.lead.length > LEAD_AT_REST || view.actions.length > 0 || readCards > 0
   // Two web pages can be one screen on the phone (Spot and the asset passport are both the asset): offered once.

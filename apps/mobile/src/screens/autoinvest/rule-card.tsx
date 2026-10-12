@@ -23,7 +23,7 @@ import type { AutoinvestRule, RuleBudget } from '@/lib/api'
 import { useCopy, useLocale } from '@/lib/i18n'
 
 /**
- * A company's rule in «Автоінвест»'s place under «Купити» ( * M16): how much and how often, and what comes next — the next purchase, the
+ * A company's rule in «Автоінвест»'s place under «Купити»: how much and how often, and what comes next — the next purchase, the
  * pause, the month's budget holding it, or, while its reminder is open, «Час
  * твоєї покупки». A purchase the price condition holds back says «Купівлю
  * відкладено · правило перевірить знову» with why under it — the reason, the

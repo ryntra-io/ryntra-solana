@@ -284,7 +284,7 @@ export async function submitPaymentTransaction(args: {
  * transaction-modifying signers, and Phantom in particular recompiles the
  * message with a ComputeBudget pair and its own Lighthouse guard assertions
  * before signing. The first release refused exactly that as "a different
- * transaction", and the founder's second wallet could not pay. So a mismatch
+ * transaction", and a second wallet in testing could not pay. So a mismatch
  * goes to `compareWalletTransaction`, the shared module that proves every
  * business instruction, account role, signer and blockhash stayed the same
  * and that the additions are the recognised fee and guard programs only —

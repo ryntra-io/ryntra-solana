@@ -112,7 +112,7 @@ if (existsSync(gradle)) {
 const keySet = KEY_VARS.filter((name) => process.env[name])
 if (requireKey) {
   check(
-    "the Owner's keystore in the environment",
+    'the release keystore in the environment',
     keySet.length === KEY_VARS.length,
     `${keySet.length} of ${KEY_VARS.length} variables set`,
   )
@@ -121,10 +121,10 @@ if (requireKey) {
   }
 } else {
   info(
-    "the Owner's keystore in the environment",
+    'the release keystore in the environment',
     keySet.length === KEY_VARS.length
       ? 'set'
-      : `${keySet.length} of ${KEY_VARS.length} variables set — a build signed from the environment needs all four; an unsigned one for the Owner's apksigner (--unsigned) none`,
+      : `${keySet.length} of ${KEY_VARS.length} variables set — a build signed from the environment needs all four; an unsigned one for the publisher's apksigner (--unsigned) none`,
   )
 }
 
@@ -148,7 +148,7 @@ check(
 )
 
 /* ---- the code as shipped ---- */
-// Wherever the door lives (More until M34, Settings since), it opens under __DEV__ only, and the route itself turns a release away.
+// Wherever the door lives (More earlier, Settings now), it opens under __DEV__ only, and the route itself turns a release away.
 const galleryDoors = tracked.filter(
   (file) => file.startsWith('src/screens/') && /\.tsx$/.test(file) && read(file).includes("'/gallery'"),
 )

@@ -1,7 +1,7 @@
 /**
  * What «Бортовий журнал» says on a market's page, decided once (contracts
  * 1.32.0 and 1.36.0, `GET /api/v1/launch/{mint}/journal`) — the web's own
- * (`app/app/launch/[mint]/flight-log.tsx` on the web line): the newest entry
+ * (`app/app/launch/[mint]/flight-log.tsx` in the web app): the newest entry
  * first, each in words with its amounts, its mark — a program's rule,
  * Ryntra's policy, or what the log only observes — and its transaction; a
  * move up of Ryntra's ladder is one entry with the emptying before it;

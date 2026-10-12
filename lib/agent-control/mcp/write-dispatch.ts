@@ -12,13 +12,13 @@ import { mcpWriteTool } from "./write-tools.ts";
 /**
  * The five writes, once, in protocol-neutral form.
  *
- * `013` put this dispatch inside the stdio server, where it had one caller.
+ * This dispatch first lived inside the stdio server, where it had one caller.
  * Release D adds a second — the hosted endpoint — and two copies of a gate is
  * how a gate stops being one. So the decision moved here and both servers call
  * it; what stays in each server is only the shaping of an MCP result, which is
  * genuinely per transport.
  *
- * The order `013` established is preserved exactly. `admitMcpWrite` runs
+ * The order the stdio server established is preserved exactly. `admitMcpWrite` runs
  * **before** the input schema and before any body, because that is the server
  * `MUST` half of the MCP specification's security split and it is what makes
  * the published tool annotations decide nothing. The registry answers before

@@ -41,7 +41,7 @@ async function call(scope: string, fn: string, args: Record<string, unknown>, qu
     if (!res.ok) return { kind: "http", status: res.status, text };
     return { kind: "ok", text };
   } catch (e) {
-    // network/timeout — real infra failure, worth waking the founder up (throttled in monitor)
+    // network/timeout — real infra failure, worth waking the operator up (throttled in monitor)
     if (!quiet) void reportError(`${scope}-rpc:${fn}`, e);
     return { kind: "infra", error: "temporarily unavailable" };
   }

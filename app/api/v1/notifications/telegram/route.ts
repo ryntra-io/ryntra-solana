@@ -9,8 +9,8 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * The proven wallet's Telegram channel (contract 1.11.0, the mobile line's
- * request 17): whether a chat is connected and which handle, never the id;
+ * The proven wallet's Telegram channel (contract 1.11.0): whether a chat is
+ * connected and which handle, never the id;
  * the bot link with a signed fifteen-minute code; the disconnect. The same
  * channel Settings connects on ryntra.io — the binding is written only by the
  * bot when the person presses Start.
