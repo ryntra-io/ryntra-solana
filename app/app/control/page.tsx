@@ -132,8 +132,8 @@ const COPY = {
 /**
  * Ryntra Home — compact Agent Control projections.
  *
- * Frozen decision 27: *Strategy and Agent Control appear as projections, not
- * copies.* This route is that sentence as a page. Every tile carries the
+ * The rule: *Strategy and Agent Control appear as projections, not
+ * copies.* This route is that rule as a page. Every tile carries the
  * surface that owns its fact and a link to it; `authority` is the constant
  * `PROJECTION`; and there is no control here that pauses, resumes, revokes,
  * authorizes or trips a kill switch — those live in Agent Control, with the

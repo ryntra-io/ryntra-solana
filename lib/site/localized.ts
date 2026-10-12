@@ -62,7 +62,7 @@ const DOC_SLUG_SET: ReadonlySet<string> = new Set(DOC_SLUGS);
 /**
  * The pages with an address in each language: the landing, Home, Markets, the
  * public pages of the site and the documentation's hub. The legal texts are
- * English until a lawyer gives them Ukrainian (plan decision 7), the reviewer
+ * English until a lawyer gives them Ukrainian, the reviewer
  * and developer pages stay out of the index, and the rest of the app is a
  * person's own — none of them has a `/uk` twin.
  */

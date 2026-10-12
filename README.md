@@ -118,8 +118,8 @@ that come from the development repository:
 
 | Since the tag | Files |
 |---|---|
-| New | 1,391 |
-| Changed | 825 |
+| New | 1,393 |
+| Changed | 823 |
 | Unchanged | 910 |
 | Lines added / removed | +365,296 / −20,560 |
 

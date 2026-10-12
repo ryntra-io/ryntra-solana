@@ -136,8 +136,7 @@ function agentControlNavigationState() {
  * which meant the cabinet) with places (the ecosystem hubs), linked the places to
  * their landings rather than their doors, and did not link the Workspace Map
  * at all — so the answer to "how do I get into a workspace" was three hops
- * long and started with a guess. Founder-reported, at night, as "я сам не
- * розумію, куди деяка вкладка".
+ * long and started with a guess.
  *
  * Three groups now, in the order of a real visit: the doors that open with no
  * account (straight to each workspace, not to prose about it), the cabinet

@@ -8,7 +8,7 @@ import {
 /**
  * Agent Control, projected — and the word is load-bearing.
  *
- * Frozen decision 27: *Strategy and Agent Control appear as projections, not
+ * The rule: *Strategy and Agent Control appear as projections, not
  * copies.* A copy is what this surface becomes the moment one tile computes its
  * own answer: two places that must agree about whether a mandate is active, and
  * this repository has recorded what happens to two places that must agree.
