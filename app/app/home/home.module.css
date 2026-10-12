@@ -239,6 +239,15 @@ div.pending {
   border-top: 1px solid var(--ry-border);
 }
 
+/* ── Pulse over the full width, Home's own blocks under it ── */
+
+.page {
+  display: grid;
+  gap: var(--ry-s7);
+  width: 100%;
+  min-width: 0;
+}
+
 /* ── Width: a main column and a right one from 1280 px ── */
 
 .layout {

@@ -25,9 +25,14 @@ import { companyFromTokenName, POPULAR_WIDE_COUNT, type ShelfCard } from "@/lib/
 import { HomeAside } from "./home-aside";
 import home from "./home.module.css";
 import { PortfolioRisk } from "./portfolio-risk";
+import { Pulse } from "./pulse";
 
 /**
- * «Простий»'s Home.
+ * Home.
+ *
+ * **Pulse first**: the five feeds of Solana's tokens over
+ * the full width; the blocks below are Home as it was — they stay under the
+ * feeds until the menu v6 («Меню 2») rebuilds the page.
  *
  * **A guest** reads what is live — «Акції, крипта, меми — і свій токен» — one
  * orange action, «Під'єднати гаманець», and the popular companies, each one
@@ -73,7 +78,9 @@ export function HomeSurface({ locale, children }: { locale: WorkspaceLocale; chi
   }, []);
 
   return (
-    <div className={home.layout}>
+    <div className={home.page}>
+      <Pulse locale={locale} />
+      <div className={home.layout}>
       <div className={home.main}>
         {connection ? <WalletHead locale={locale} /> : <GuestHead locale={locale} settled={settled} />}
         <section className={styles.section} aria-labelledby="popular-title" data-block="popular">
@@ -91,6 +98,7 @@ export function HomeSurface({ locale, children }: { locale: WorkspaceLocale; chi
         </section>
       </div>
       <HomeAside locale={locale} />
+      </div>
     </div>
   );
 }
@@ -109,7 +117,7 @@ function GuestHead({ locale, settled }: { locale: WorkspaceLocale; settled: bool
     <>
       <section className={`${styles.hero} ${home.head} ${home.guest}`} data-settled={settled ? "true" : undefined} aria-labelledby="home-title" data-block="head">
         <div className={home.headMain}>
-          <h1 id="home-title" className={styles.heroTitle}>{word("guestHeadline")}</h1>
+          <h2 id="home-title" className={styles.heroTitle}>{word("guestHeadline")}</h2>
           <p className={styles.heroLine}>{word("guestLine")}</p>
           <div className={styles.actions}>
             <button type="button" className="rw-btn rw-btn--primary" onClick={reach}>
@@ -192,7 +200,7 @@ function WalletHead({ locale }: { locale: WorkspaceLocale }) {
     <>
       <section className={`${styles.hero} ${home.head}`} aria-labelledby="home-title" data-need={need} data-block="head">
         <div className={home.headMain}>
-          <h1 id="home-title" className={styles.balanceLabel}>{word("yourInvestments")}</h1>
+          <h2 id="home-title" className={styles.balanceLabel}>{word("yourInvestments")}</h2>
           {holdings.status === "ready" && totals ? (
             <>
               <p className={styles.balance}>{usdValueIn(totals.total, locale)}</p>

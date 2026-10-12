@@ -103,6 +103,22 @@ async function getRows(
   /** A detail read keeps the token page's facts of the same rows (`tokenFactsOf`), so the page asks Jupiter once. */
   keepFacts = false,
 ): Promise<{ ok: true; rows: SpotMarket[] } | SpotSourceFailure> {
+  const read = await getRawRows(path, ceiling, timeoutMs);
+  if (!read.ok) return read;
+  const rows: SpotMarket[] = [];
+  for (const raw of read.raw) {
+    const market = normalizeSpotMarket(raw);
+    if (market) rows.push(market);
+    if (market && keepFacts) {
+      const facts = tokenFactsOf(raw);
+      if (facts) tokenFacts.set(facts.mint, { value: facts, readAt: Date.now() });
+    }
+  }
+  return { ok: true, rows };
+}
+
+/** One Tokens V2 list as Jupiter answered it — the rows not yet read into any shape. */
+async function getRawRows(path: string, ceiling: number, timeoutMs: number): Promise<{ ok: true; raw: readonly unknown[] } | SpotSourceFailure> {
   const endpoint = resolveJupiterCatalogEndpoint();
   let response: Response;
   for (let attempt = 0; ; attempt += 1) {
@@ -140,16 +156,57 @@ async function getRows(
     return { ok: false, code: "MALFORMED", reason: message };
   }
   if (body.length > MAX_ROWS) return { ok: false, code: "MALFORMED", reason: `Jupiter Tokens exceeded the ${MAX_ROWS}-row ceiling.` };
-  const rows: SpotMarket[] = [];
-  for (const raw of body) {
-    const market = normalizeSpotMarket(raw);
-    if (market) rows.push(market);
-    if (market && keepFacts) {
-      const facts = tokenFactsOf(raw);
-      if (facts) tokenFacts.set(facts.mint, { value: facts, readAt: Date.now() });
-    }
+  return { ok: true, raw: body };
+}
+
+const rawCaches = new Map<string, Cached<readonly unknown[]>>();
+/** The most lists the raw cache keeps. */
+const RAW_KEYS = 48;
+const rawInflight = new Map<string, Promise<{ ok: true; raw: readonly unknown[] } | SpotSourceFailure>>();
+
+/**
+ * A Tokens V2 list as Jupiter answered it, for a reader that needs more of a
+ * row than the market shape keeps (Pulse: the launchpad, the four windows,
+ * the day a token left its curve). The same rule as every list here: fresh →
+ * as it is; stale within the grace → as it is, stated stale, and read again
+ * behind it while the provider's window allows; older → read now, one read
+ * shared by everyone asking.
+ */
+export async function readJupiterList(path: string, ttlMs: number, graceMs = STALE_GRACE_MS): Promise<{ ok: true; raw: readonly unknown[]; readAt: number; stale: boolean } | SpotSourceFailure> {
+  const now = Date.now();
+  const hit = rawCaches.get(path);
+  if (hit && now - hit.readAt < ttlMs) return { ok: true, raw: hit.value, readAt: hit.readAt, stale: false };
+  const refresh = () => {
+    const pending = rawInflight.get(path);
+    if (pending) return pending;
+    const run = getRawRows(path, LIST_CEILING_BYTES, 8_000)
+      .then((result) => {
+        if (result.ok) {
+          /* The newest read last; the oldest key goes once the cache holds its ceiling — searches by mint make a new key often. */
+          rawCaches.delete(path);
+          rawCaches.set(path, { value: result.raw, readAt: Date.now() });
+          while (rawCaches.size > RAW_KEYS) rawCaches.delete(rawCaches.keys().next().value as string);
+        }
+        return result;
+      })
+      .catch((failure: unknown): SpotSourceFailure => ({ ok: false, code: "UNREACHABLE", reason: `The catalogue read failed: ${failure instanceof Error ? failure.message : String(failure)}` }))
+      .finally(() => {
+        if (rawInflight.get(path) === run) rawInflight.delete(path);
+      });
+    rawInflight.set(path, run);
+    return run;
+  };
+  if (hit && now - hit.readAt < graceMs) {
+    if (jupiterBackgroundAllowed(now)) void refresh();
+    return { ok: true, raw: hit.value, readAt: hit.readAt, stale: true };
   }
-  return { ok: true, rows };
+  const result = await refresh();
+  if (!result.ok) {
+    /* The read failed: the held copy, within the catalogue's own grace, with its own time. */
+    if (hit && now - hit.readAt < STALE_GRACE_MS) return { ok: true, raw: hit.value, readAt: hit.readAt, stale: true };
+    return result;
+  }
+  return { ok: true, raw: result.raw, readAt: rawCaches.get(path)?.readAt ?? Date.now(), stale: false };
 }
 
 /* ------------------------------------------------------------- the caches */
@@ -390,4 +447,6 @@ export function resetSpotMarketCaches(): void {
   inflight.clear();
   details.clear();
   tokenFacts.clear();
+  rawCaches.clear();
+  rawInflight.clear();
 }

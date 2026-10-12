@@ -23,7 +23,7 @@ commit, named for what it released; the latest is from 2026-10-12.
 | `supabase/migrations/`, `supabase/prepared/` | The database schema migration by migration, and the prepared SQL that is applied by hand (corrections and rollbacks) |
 | `public/` | Static assets |
 
-3,118 files come from the development repository as released, and each test
+3,126 files come from the development repository as released, and each test
 sits beside the code it tests (`*.test.mjs`); `README.md`, `BOUNDARY.md`,
 `LICENSE`, `.gitignore` and the scripts of `package.json` are written for this
 snapshot.
@@ -85,15 +85,15 @@ build-tools).
 
 The code as it stood before the hackathon is tagged
 `pre-hackathon-baseline-2026-09-11` in the development repository — commit `7fc5776f`,
-2026-09-11. Measured against that tag, path by path, for the 3,118 files
+2026-09-11. Measured against that tag, path by path, for the 3,126 files
 that come from the development repository:
 
 | Since the tag | Files |
 |---|---|
-| New | 1,383 |
+| New | 1,391 |
 | Changed | 825 |
 | Unchanged | 910 |
-| Lines added / removed | +362,213 / −20,549 |
+| Lines added / removed | +365,296 / −20,560 |
 
 [BOUNDARY.md](BOUNDARY.md) lists every new and every changed file. Shipped since
 then, as the public build log records it:
@@ -155,6 +155,7 @@ then, as the public build log records it:
 | 2026-10-11 | A coin gets what a stock has: your position and «Sell», what it is, its market cap |
 | 2026-10-12 | The token page: who bought and sold, who holds, the risk facts and the chart's marks |
 | 2026-10-12 | Quick buy and quick sell: one tap to the Review, on every token, stock and launch |
+| 2026-10-12 | Pulse on Home: new tokens, curves close to the DEX and the market's moves, live |
 
 ## What is not here
 

@@ -103,6 +103,7 @@ export function OrderTicket({
   onLeavePlan,
   initialSide = null,
   initialAmount = null,
+  initialQuick = null,
   ruleBinding = null,
   onRuleBuy,
   onLeaveRule,
@@ -122,6 +123,8 @@ export function OrderTicket({
   /** The side and the sum an asset page carried in, the ticket's opening state only. */
   initialSide?: SpotSide | null;
   initialAmount?: string | null;
+  /** A quick sum tapped on a Pulse card, with the token it was tapped for: tapped here once, on that token only. */
+  initialQuick?: Readonly<{ usd: number; mint: string }> | null;
   /** 1.31.0: the rule's reminder the address named (`?rule=&due=`), or null: the ticket is the rule's purchase while it is open. */
   ruleBinding?: RuleBinding | null;
   /** A reminder bought from the rule's own panel here: the ticket turns into its purchase. */
@@ -348,6 +351,33 @@ export function OrderTicket({
     setAmount(value);
     setQuickReview(value);
   };
+  /* A Pulse card's quick sum is this ticket's own tap, once: after a remembered wallet has had its moment to come back, so the Review can open on it; without a wallet the sum stays in the field. */
+  const carriedQuick = useRef(initialQuick);
+  const [walletWaited, setWalletWaited] = useState(false);
+  useEffect(() => {
+    if (carriedQuick.current === null) return undefined;
+    const timer = window.setTimeout(() => setWalletWaited(true), 2_500);
+    return () => window.clearTimeout(timer);
+  }, []);
+  useEffect(() => {
+    const carried = carriedQuick.current;
+    if (carried === null || side !== "BUY" || !baseMint) return;
+    /* Another market chosen before the sum landed: the sum was for the card's token, not this one. */
+    if (baseMint !== carried.mint) {
+      carriedQuick.current = null;
+      return;
+    }
+    const usd = carried.usd;
+    if (!connection && !walletWaited) return;
+    /* Paid in SOL the sum needs the wallet's price of SOL: it waits for the wallet's read, and without one the field stays empty. */
+    if (!quickPayment.dollar && solUsd === null && connection && holdings.status === "loading" && !walletWaited) return;
+    carriedQuick.current = null;
+    const value = quickBuyAmount(usd, quickPayment, solUsd);
+    if (value === null) return;
+    setAmount(value);
+    setQuickReview(value);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [side, baseMint, connection, walletWaited, solUsd, holdings.status, quickPayment.dollar]);
   const pickQuickShare = (pct: number) => {
     const value = fillShare(BigInt(pct), 100n);
     if (value !== null) setQuickReview(value);

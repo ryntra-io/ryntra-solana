@@ -1,0 +1,969 @@
+/*
+ * Pulse — the top of Home. One card in the screener's language: the feeds
+ * as tabs, the window and the filters beside them, then rows — the token,
+ * its figures in mono, the facts against it, four quick sums. The row's
+ * columns follow the card's own width (a container), so the same rows read
+ * on a laptop beside the menu, a wide desk and a phone.
+ */
+
+.pulse {
+  display: grid;
+  gap: var(--ry-s3);
+  min-width: 0;
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--ry-s1) var(--ry-s3);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-page);
+  line-height: var(--ry-lh-tight);
+  letter-spacing: var(--ry-ls-head);
+  color: var(--ry-text);
+}
+
+.lead {
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  color: var(--ry-muted);
+}
+
+/* A phone's first screen goes to the feed, not to the promise above it. */
+@media (max-width: 719px) {
+  .lead {
+    display: none;
+  }
+}
+
+.card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+  container: pulse / inline-size;
+  /* Four quick sums: one width for the heads and every row, so the columns line up. */
+  --quick-width: 188px;
+}
+
+/* ── The toolbar: feeds, then the window and the filters ───────────────── */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--ry-s2) var(--ry-s3);
+  padding: var(--ry-s3) var(--ry-s4);
+  border-bottom: 1px solid var(--ry-border);
+}
+
+.tabs {
+  display: flex;
+  gap: 2px;
+  min-width: 0;
+  max-width: 100%;
+  margin: -3px;
+  padding: 3px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.tab {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 var(--ry-s3);
+  border: 0;
+  border-radius: var(--ry-r-pill);
+  background: transparent;
+  color: var(--ry-muted);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--rt-duration-fast) var(--rt-ease), color var(--rt-duration-fast) var(--rt-ease);
+}
+
+.tab:hover {
+  color: var(--ry-text);
+}
+
+.tab[aria-selected="true"] {
+  background: var(--ry-elevated);
+  box-shadow: inset 0 0 0 1px var(--ry-border-strong, var(--ry-border));
+  color: var(--ry-text);
+}
+
+.tab:focus-visible,
+.chip:focus-visible,
+.filterButton:focus-visible,
+.more:focus-visible,
+.reset:focus-visible,
+.pending:focus-visible,
+.risk:focus-visible,
+.quickSum:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+}
+
+/* Inside the token's clipped column the ring is drawn within the link. */
+.link:focus-visible {
+  outline: 2px solid var(--ry-text);
+  outline-offset: -2px;
+}
+
+.tools {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ry-s2);
+}
+
+.segment {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-pill);
+}
+
+.chip {
+  min-height: 32px;
+  padding: 0 var(--ry-s3);
+  border: 0;
+  border-radius: var(--ry-r-pill);
+  background: transparent;
+  color: var(--ry-muted);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.chip:hover {
+  color: var(--ry-text);
+}
+
+.chip[aria-pressed="true"] {
+  background: var(--ry-elevated);
+  color: var(--ry-text);
+}
+
+.filterButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-pill);
+  background: transparent;
+  color: var(--ry-text);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.filterButton:hover {
+  background: var(--ry-hover);
+}
+
+.filterButton[data-active="true"] {
+  border-color: var(--ry-border-strong, var(--ry-border));
+}
+
+.caret {
+  transition: transform var(--rt-duration-fast) var(--rt-ease);
+}
+
+.filterButton[aria-expanded="true"] .caret {
+  transform: rotate(180deg);
+}
+
+.badge {
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-text);
+  color: var(--ry-card);
+  font-size: var(--ry-fs-label-sm);
+  line-height: 18px;
+  text-align: center;
+}
+
+/* ── Filters: small fields under the toolbar ───────────────────────────── */
+
+.filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(176px, 1fr));
+  align-items: end;
+  gap: var(--ry-s3);
+  padding: var(--ry-s3) var(--ry-s4);
+  border-bottom: 1px solid var(--ry-border);
+  background: color-mix(in srgb, var(--ry-elevated) 45%, transparent);
+}
+
+.group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.group legend {
+  width: 100%;
+  margin-bottom: 4px;
+  padding: 0;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.inputBox {
+  display: grid;
+  flex: 1 1 72px;
+  gap: 2px;
+  min-width: 0;
+}
+
+.input {
+  min-width: 0;
+  height: 36px;
+  padding: 0 var(--ry-s2);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  background: var(--ry-bg, var(--ry-card));
+  color: var(--ry-text);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label);
+  font-variant-numeric: tabular-nums;
+}
+
+.input::placeholder {
+  color: var(--ry-text-muted, var(--ry-muted));
+  font-family: var(--ry-font-sans);
+}
+
+.input:focus-visible {
+  outline: none;
+  border-color: var(--ry-border-strong, var(--ry-border));
+  box-shadow: var(--ry-focus);
+}
+
+.input[aria-invalid="true"] {
+  border-color: var(--ry-caution);
+}
+
+.invalid {
+  color: var(--ry-caution);
+  font-size: var(--ry-fs-label-sm);
+  line-height: 1.3;
+}
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  min-height: 36px;
+  color: var(--ry-text);
+  font-size: var(--ry-fs-label);
+  cursor: pointer;
+}
+
+.check input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--ry-text);
+}
+
+.reset {
+  justify-self: start;
+  min-height: 36px;
+  padding: 0 var(--ry-s3);
+  border: 0;
+  border-radius: var(--ry-r-pill);
+  background: transparent;
+  color: var(--ry-muted);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.reset:hover {
+  color: var(--ry-text);
+}
+
+/* ── The feed ──────────────────────────────────────────────────────────── */
+
+.panel {
+  display: grid;
+  min-width: 0;
+}
+
+.note {
+  margin: 0;
+  padding: var(--ry-s2) var(--ry-s4);
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+  line-height: 1.45;
+}
+
+.held {
+  margin: 0 var(--ry-s4) var(--ry-s2);
+  padding: var(--ry-s2) var(--ry-s3);
+  border-radius: var(--ry-r-btn-sm);
+  background: color-mix(in srgb, var(--ry-caution) 10%, transparent);
+  color: var(--ry-text);
+  font-size: var(--ry-fs-label);
+}
+
+/* The list and, over its top edge, the pill of newer figures — floating, so no row moves under a finger. */
+.list {
+  position: relative;
+  display: grid;
+  min-width: 0;
+}
+
+.pending {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  z-index: 4;
+  transform: translateX(-50%);
+  min-height: 32px;
+  box-shadow: var(--ry-shadow-md);
+  padding: 0 var(--ry-s3);
+  border: 1px solid var(--ry-border-strong, var(--ry-border));
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-elevated);
+  color: var(--ry-text);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.status {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: var(--ry-s3);
+  min-height: 240px;
+  padding: var(--ry-s6) var(--ry-s4);
+  border-top: 1px solid var(--ry-border);
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-copy);
+  text-align: center;
+}
+
+.status p {
+  margin: 0;
+  max-width: 52ch;
+}
+
+/*
+ * One grid for the column heads and every row. Below 960 px a row is a small
+ * card of its own: the token and its change, the price, the market cap and
+ * the volume, then the facts and the quick sums. From 960 px it is a line
+ * that adds the liquidity; from 1100 px the holders and the top ten.
+ */
+.columns,
+.row {
+  display: grid;
+  align-items: center;
+  gap: var(--ry-s2) var(--ry-s3);
+  padding: var(--ry-s3) var(--ry-s4);
+}
+
+.columns {
+  display: none;
+}
+
+.rows {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--ry-border);
+}
+
+.row {
+  position: relative;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-areas:
+    "asset asset change"
+    "price marketCap volume"
+    "risk risk risk"
+    "quick quick quick";
+  row-gap: 6px;
+  border-bottom: 1px solid var(--ry-border);
+  transition: background-color var(--rt-duration-fast) var(--rt-ease);
+}
+
+.row:last-child {
+  border-bottom: 0;
+}
+
+.row:hover {
+  background: var(--ry-hover);
+}
+
+.asset {
+  grid-area: asset;
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s3);
+  min-width: 0;
+}
+
+.icon {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-elevated);
+  object-fit: cover;
+  display: inline-grid;
+  place-items: center;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.names {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2px;
+  min-width: 0;
+  /* The name, its tags and its curve stay inside the token's column; the row's link reaches past it by its own box. */
+  overflow: hidden;
+}
+
+.link {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ry-s2);
+  min-width: 0;
+  color: var(--ry-text);
+  text-decoration: none;
+  border-radius: 4px;
+}
+
+/* The whole row opens the token; the facts and the quick sums sit above that. */
+.link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.symbol {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 650;
+  font-size: var(--ry-fs-value);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.name {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.tags {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+  white-space: nowrap;
+}
+
+.pad,
+.ryntra,
+.tech {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  padding: 1px 6px;
+  border-radius: var(--ry-r-pill);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.pad {
+  background: var(--ry-elevated);
+  color: var(--ry-muted);
+}
+
+.ryntra {
+  flex: 0 0 auto;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ry-accent) 55%, transparent);
+  color: var(--ry-text);
+  font-weight: 650;
+}
+
+.tech {
+  flex: 0 0 auto;
+  box-shadow: inset 0 0 0 1px var(--ry-border);
+  color: var(--ry-muted);
+}
+
+.row[data-ryntra="true"] .tags {
+  flex-wrap: wrap;
+  row-gap: 4px;
+}
+
+.age {
+  flex: 0 0 auto;
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.curve {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  margin-top: 2px;
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-text);
+}
+
+.curveBar {
+  position: relative;
+  flex: 1 1 32px;
+  min-width: 24px;
+  max-width: 88px;
+  height: 4px;
+  overflow: hidden;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-elevated);
+}
+
+/* The way to the DEX is a measure, not a verdict: the figure's own colour, never a buy's green. */
+.curveBar > span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: inherit;
+  background: var(--ry-text);
+  opacity: 0.7;
+}
+
+.curveText {
+  flex: 0 0 auto;
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.figure {
+  display: grid;
+  gap: 0;
+  min-width: 0;
+}
+
+.figureLabel {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+  white-space: nowrap;
+}
+
+.figureValue {
+  overflow: hidden;
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--ry-fs-label);
+  color: var(--ry-text);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.row > .figure[data-col="price"] { grid-area: price; }
+.row > .figure[data-col="marketCap"] { grid-area: marketCap; }
+.row > .figure[data-col="volume"] { grid-area: volume; }
+
+/* A card shows three figures; the liquidity, the holders and the top ten wait for a line. */
+.row > .figure[data-col="liquidity"],
+.row > .figure[data-col="holders"],
+.row > .figure[data-col="top10"] {
+  display: none;
+}
+
+.change {
+  grid-area: change;
+  justify-self: end;
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.change[data-tone="up"] {
+  color: var(--ry-pnl-pos);
+}
+
+.change[data-tone="down"] {
+  color: var(--ry-pnl-neg);
+}
+
+.change[data-tone="flat"] {
+  color: var(--ry-muted);
+}
+
+/* ── The facts against a token: a count by colour, the facts on a press ── */
+
+.facts {
+  grid-area: risk;
+  position: relative;
+  z-index: 2;
+  justify-self: start;
+}
+
+.risk {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 44px;
+  min-height: 32px;
+  justify-content: center;
+  padding: 0 10px;
+  white-space: nowrap;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-pill);
+  background: transparent;
+  color: var(--ry-muted);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+/* On a card the facts carry their name; on a line the column head says it. */
+.riskLabel {
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+}
+
+.risk:hover {
+  background: var(--ry-hover);
+}
+
+.risk[data-level="1"] {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--ry-caution) 14%, transparent);
+  color: var(--ry-caution);
+}
+
+.risk[data-level="2"] {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--ry-risk) 14%, transparent);
+  color: var(--ry-risk);
+}
+
+.factsList {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 5;
+  display: grid;
+  gap: 6px;
+  width: max-content;
+  max-width: min(300px, 80vw);
+  padding: var(--ry-s3);
+  border: 1px solid var(--ry-border-strong, var(--ry-border));
+  border-radius: var(--ry-r-btn-sm);
+  background: var(--ry-elevated);
+  box-shadow: var(--ry-shadow-md);
+  color: var(--ry-text);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-label);
+  line-height: 1.4;
+  white-space: normal;
+}
+
+.factNote {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+}
+
+.quick {
+  grid-area: quick;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.quickSum {
+  display: inline-grid;
+  flex: 1 1 0;
+  place-items: center;
+  min-width: 0;
+  height: 44px;
+  padding: 0 var(--ry-s1);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-card);
+  color: var(--ry-text);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label);
+  font-variant-numeric: tabular-nums;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color var(--rt-duration-fast) var(--rt-ease), border-color var(--rt-duration-fast) var(--rt-ease);
+}
+
+.quickSum:hover {
+  border-color: var(--ry-border-strong, var(--ry-border));
+  background: var(--ry-elevated);
+}
+
+/* A narrow card: the filters two to a line. */
+@container pulse (max-width: 719px) {
+  .filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .check,
+  .reset {
+    grid-column: 1 / -1;
+  }
+
+  /* Every feed in sight: the tabs wrap rather than hide behind a scroll. */
+  .tabs {
+    flex-wrap: wrap;
+    overflow: visible;
+  }
+
+  .tab {
+    min-height: 36px;
+  }
+}
+
+/* A line from 960 px: the token, four figures, the change, the facts and the quick sums. */
+@container pulse (min-width: 960px) {
+  .columns,
+  .row {
+    grid-template-columns: minmax(150px, 1fr) 112px 76px 96px 76px 88px 56px var(--quick-width);
+    grid-template-areas: "asset price marketCap volume liquidity change risk quick";
+    column-gap: 10px;
+    padding-block: var(--ry-s2);
+  }
+
+  .row {
+    min-height: 60px;
+  }
+
+  .columns {
+    display: grid;
+    border-top: 1px solid var(--ry-border);
+    color: var(--ry-muted);
+    font-size: var(--ry-fs-label-sm);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .columns > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: right;
+  }
+
+  .columns > [data-col="asset"] { grid-area: asset; text-align: left; }
+  .columns > [data-col="price"] { grid-area: price; }
+  .columns > [data-col="marketCap"] { grid-area: marketCap; }
+  .columns > [data-col="volume"] { grid-area: volume; }
+  .columns > [data-col="liquidity"] { grid-area: liquidity; }
+  .columns > [data-col="holders"],
+  .columns > [data-col="top10"] { display: none; }
+  .columns > [data-col="change"] { grid-area: change; }
+  .columns > [data-col="risk"] { grid-area: risk; text-align: center; white-space: normal; line-height: 1.15; }
+  .columns > [data-col="quick"] { grid-area: quick; text-align: center; }
+
+  .rows {
+    border-top: 0;
+  }
+
+  .row > .figure[data-col="liquidity"] { display: grid; grid-area: liquidity; }
+
+  .figure {
+    justify-items: end;
+  }
+
+  .figureLabel {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .figureValue {
+    max-width: 100%;
+    font-size: var(--ry-fs-dense);
+  }
+
+  .facts {
+    justify-self: center;
+  }
+
+  .riskLabel {
+    display: none;
+  }
+
+  .factsList {
+    left: auto;
+    right: 0;
+  }
+
+  .quick {
+    gap: 4px;
+  }
+
+  .quickSum {
+    height: 32px;
+  }
+}
+
+/* A wide card adds who holds the token. */
+@container pulse (min-width: 1100px) {
+  .columns,
+  .row {
+    grid-template-columns: minmax(150px, 1fr) 112px 76px 96px 76px 72px 60px 88px 56px var(--quick-width);
+    grid-template-areas: "asset price marketCap volume liquidity holders top10 change risk quick";
+  }
+
+  .columns > [data-col="holders"] { display: block; grid-area: holders; }
+  .columns > [data-col="top10"] { display: block; grid-area: top10; }
+  .row > .figure[data-col="holders"] { display: grid; grid-area: holders; }
+  .row > .figure[data-col="top10"] { display: grid; grid-area: top10; }
+}
+
+/* ── The foot ──────────────────────────────────────────────────────────── */
+
+.foot {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ry-s2) var(--ry-s3);
+  padding: var(--ry-s3) var(--ry-s4);
+  border-top: 1px solid var(--ry-border);
+}
+
+.count {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+}
+
+.more {
+  min-height: 36px;
+  padding: 0 var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-pill);
+  background: transparent;
+  color: var(--ry-text);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.more:hover {
+  background: var(--ry-hover);
+}
+
+.hint {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+}
+
+.sources {
+  margin-inline-start: auto;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+}
+
+.skeleton {
+  display: grid;
+  gap: 6px;
+  padding: var(--ry-s3) var(--ry-s4) var(--ry-s4);
+  border-top: 1px solid var(--ry-border);
+}
+
+.bone {
+  display: block;
+  height: 48px;
+  border-radius: var(--ry-r-btn-sm);
+  background: color-mix(in srgb, var(--ry-text) 8%, transparent);
+  animation: pulse-bone 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse-bone {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bone {
+    animation: none;
+    opacity: 0.7;
+  }
+
+  .caret {
+    transition: none;
+  }
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

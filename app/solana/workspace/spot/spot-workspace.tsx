@@ -47,6 +47,7 @@ export function SpotWorkspace({
   initialSide = null,
   initialAmount = null,
   initialRule = null,
+  initialQuickUsd = null,
 }: {
   initialMint: string | null;
   initialView: SpotView | null;
@@ -56,6 +57,8 @@ export function SpotWorkspace({
   initialAmount?: string | null;
   /** 1.31.0: a rule's reminder the address named (`?rule=&due=`) — the ticket is its purchase while it is open. */
   initialRule?: RuleBinding | null;
+  /** A quick sum tapped on a Pulse card (`?buy=`): the ticket's own quick tap, once. */
+  initialQuickUsd?: number | null;
 }) {
   const { text, locale } = useSolanaI18n();
   /* Spot is a tool of Markets' «Для досвідчених»: one version, and its face
@@ -104,12 +107,13 @@ export function SpotWorkspace({
   }, []);
   /* The carried intent is the ticket's opening state, not the address's memory: a reload does not type the sum again. */
   useEffect(() => {
-    if (initialSide === null && initialAmount === null) return;
     const url = new URL(window.location.href);
+    if (!["side", "amount", "buy"].some((name) => url.searchParams.has(name))) return;
     url.searchParams.delete("side");
     url.searchParams.delete("amount");
+    url.searchParams.delete("buy");
     window.history.replaceState(null, "", `${url.pathname}?${url.searchParams.toString()}`);
-  }, [initialSide, initialAmount]);
+  }, [initialSide, initialAmount, initialQuickUsd]);
   const [selectedRow, setSelectedRow] = useState<SpotMarketListRow | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   /* Where the menu drops from on a desk: under the market's name, in the frame's own coordinates, so it moves
@@ -305,6 +309,7 @@ export function SpotWorkspace({
             planBinding={planBinding}
             initialSide={initialSide}
             initialAmount={initialAmount}
+            initialQuick={initialQuickUsd !== null && initialMint ? { usd: initialQuickUsd, mint: initialMint } : null}
             proven={proven}
             proving={proof.state.status === "signing"}
             onProve={() => void proof.prove()}

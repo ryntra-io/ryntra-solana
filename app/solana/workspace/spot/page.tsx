@@ -1,5 +1,6 @@
 import { PLAN_ID, RULE_ID, type ExecutionPlanBinding, type RuleBinding } from "@/lib/api/v1/contract";
 import { isSpotView, type SpotView } from "@/lib/spot/markets";
+import { quickSum } from "@/lib/spot/quick-trade";
 
 import { solanaServerText } from "../i18n/server.ts";
 import { SpotWorkspace } from "./spot-workspace.tsx";
@@ -29,8 +30,11 @@ export async function generateMetadata() {
  * them on arrival so a reload does not re-type them. `?rule=&due=` (1.31.0)
  * opens the ticket as a rule's purchase — a token's reminder lands here — a
  * reference the server judges for the proven wallet, never permission.
+ * `?buy=` is a quick sum tapped on a Pulse card: it goes into the ticket as
+ * the ticket's own quick sums do, and the exact Review opens on it once the
+ * wallet is read — the tap never signs, and the address forgets it.
  */
-export default async function SpotPage({ searchParams }: { searchParams: Promise<{ mint?: string; view?: string; plan?: string; v?: string; side?: string; amount?: string; rule?: string; due?: string }> }) {
+export default async function SpotPage({ searchParams }: { searchParams: Promise<{ mint?: string; view?: string; plan?: string; v?: string; side?: string; amount?: string; rule?: string; due?: string; buy?: string }> }) {
   const params = await searchParams;
   const mint = params.mint && MINT_SHAPE.test(params.mint) ? params.mint : null;
   const view: SpotView | null = isSpotView(params.view) ? params.view : null;
@@ -42,13 +46,14 @@ export default async function SpotPage({ searchParams }: { searchParams: Promise
   /* A rule's reminder: a well-formed rule id and an instant, or nothing. */
   const dueMs = params.due ? Date.parse(params.due) : Number.NaN;
   const rule: RuleBinding | null = mint && params.rule && RULE_ID.test(params.rule) && Number.isFinite(dueMs) ? { ruleId: params.rule, dueAt: new Date(dueMs).toISOString() } : null;
+  const quickUsd = mint && params.buy ? quickSum(params.buy) : null;
   const { text } = await solanaServerText();
   /* The section's tab «Спот» above already names the page; the title stays for a screen reader and gives its
      line on a laptop to the chart. */
   return (
     <>
       <h1 className="sr-only">{text("Spot")}</h1>
-      <SpotWorkspace initialMint={mint} initialView={view} initialPlan={plan} initialSide={side} initialAmount={amount} initialRule={rule} />
+      <SpotWorkspace initialMint={mint} initialView={view} initialPlan={plan} initialSide={side} initialAmount={amount} initialRule={rule} initialQuickUsd={side === "SELL" ? null : quickUsd} />
     </>
   );
 }

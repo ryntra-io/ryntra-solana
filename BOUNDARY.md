@@ -9,10 +9,10 @@ moved counts as new. Generated at every update from the development history.
 
 | Since the tag | Files |
 |---|---|
-| New | 1,383 |
+| New | 1,391 |
 | Changed | 825 |
 | Unchanged | 910 |
-| Lines added / removed | +362,213 / −20,549 |
+| Lines added / removed | +365,296 / −20,560 |
 
 ## New since the tag
 
@@ -107,6 +107,7 @@ moved counts as new. Generated at every update from the development history.
 - `app/api/solana/swap/golden/fixtures.mjs`
 - `app/api/solana/swap/golden/transcripts.json`
 - `app/api/spot/about/route.ts`
+- `app/api/spot/pulse/route.ts`
 - `app/api/spot/token/route.ts`
 - `app/api/stats/registry/route.ts`
 - `app/api/stats/route.ts`
@@ -205,6 +206,10 @@ moved counts as new. Generated at every update from the development history.
 - `app/app/home/home.module.css`
 - `app/app/home/page.tsx`
 - `app/app/home/portfolio-risk.tsx`
+- `app/app/home/pulse-words.test.mjs`
+- `app/app/home/pulse-words.ts`
+- `app/app/home/pulse.module.css`
+- `app/app/home/pulse.tsx`
 - `app/app/home/risk-surface.test.mjs`
 - `app/app/home/width.test.mjs`
 - `app/app/invest/autoinvest-block.tsx`
@@ -1256,6 +1261,9 @@ moved counts as new. Generated at every update from the development history.
 - `lib/spot/coin-shelf.test.mjs`
 - `lib/spot/coin-shelf.ts`
 - `lib/spot/markets-budget.test.mjs`
+- `lib/spot/pulse.server.ts`
+- `lib/spot/pulse.test.mjs`
+- `lib/spot/pulse.ts`
 - `lib/spot/quick-trade.test.mjs`
 - `lib/spot/quick-trade.ts`
 - `lib/spot/read-retry.test.mjs`

@@ -144,10 +144,6 @@ function asFiniteNumber(value: unknown): number | null {
   return null;
 }
 
-function asBoolean(value: unknown): boolean | null {
-  return typeof value === "boolean" ? value : null;
-}
-
 function asHttpUrl(value: unknown): string | null {
   const text = asString(value, 512);
   if (!text) return null;
@@ -201,6 +197,18 @@ export function issuerOfTags(tags: readonly string[]): SpotIssuer | null {
 }
 
 /**
+ * Whether a right over the holders (minting, freezing) is off. Jupiter states an off right as `audit.*Disabled: true`
+ * and a right still on by the authority's address at the top of the row (`mintAuthority`, `freezeAuthority`) with no
+ * `*Disabled` key at all — measured 2026-10-12 on ORCA, USDC, RENDER. So an address, or an explicit `false`, is «on»; an
+ * explicit `true` is «off»; neither is not stated.
+ */
+function authorityDisabled(disabled: unknown, authority: unknown): boolean | null {
+  if (disabled === true) return true;
+  if (disabled === false || (typeof authority === "string" && authority.length > 0)) return false;
+  return null;
+}
+
+/**
  * One Tokens V2 row → one market, or null when the row has no usable identity.
  */
 export function normalizeSpotMarket(raw: unknown): SpotMarket | null {
@@ -245,8 +253,8 @@ export function normalizeSpotMarket(raw: unknown): SpotMarket | null {
     issuer: retired ? UNSUPPORTED_ISSUER : issuerOfTags(tags),
     firstPoolAt: firstPool ? asIsoTime(firstPool.createdAt) : null,
     audit: {
-      mintAuthorityDisabled: audit ? asBoolean(audit.mintAuthorityDisabled) : null,
-      freezeAuthorityDisabled: audit ? asBoolean(audit.freezeAuthorityDisabled) : null,
+      mintAuthorityDisabled: authorityDisabled(audit?.mintAuthorityDisabled, row.mintAuthority),
+      freezeAuthorityDisabled: authorityDisabled(audit?.freezeAuthorityDisabled, row.freezeAuthority),
       topHoldersPct: audit ? asFiniteNumber(audit.topHoldersPercentage) : null,
       devBalancePct: audit ? asFiniteNumber(audit.devBalancePercentage) : null,
       suspicious: audit?.isSus === true,

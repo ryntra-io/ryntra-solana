@@ -11,7 +11,7 @@ import { QuickBuy, QuickSell } from "@/app/solana/workspace/spot/quick-buy";
 import type { LaunchMarketResponse, LaunchTradeBuildResponse, LaunchTradeQuoteResponse, LaunchTradeSubmitResponse, LaunchWalletResponse } from "@/lib/api/v1/contract";
 import { storeBoundSolanaReceipt } from "@/lib/solana/send-receipt-vault.client";
 import { signTransactions } from "@/lib/solana/wallet.client";
-import { QUICK_SELL_SHARES_PCT, quickShareRaw } from "@/lib/spot/quick-trade";
+import { QUICK_SELL_SHARES_PCT, quickShareRaw, quickSum } from "@/lib/spot/quick-trade";
 
 import { explorerUrl, formatBps, formatMoneyShort, formatMove, formatNumber, formatRaw, fromRaw, rovingNext, toRaw } from "../launch-format";
 import { launchWords } from "../launch-words";
@@ -152,6 +152,21 @@ export function TradePanel({
     setText(value);
     setFocusTrade(true);
   };
+  /* A quick sum tapped on a Pulse card (`?buy=`) is this panel's own tap, once, on a dollar pair; the address forgets it. */
+  const carriedQuick = useRef(true);
+  useEffect(() => {
+    if (!carriedQuick.current) return;
+    carriedQuick.current = false;
+    const url = new URL(window.location.href);
+    const usd = quickSum(url.searchParams.get("buy") ?? "");
+    if (!url.searchParams.has("buy")) return;
+    url.searchParams.delete("buy");
+    window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+    if (usd === null || !pair.dollar || paused) return;
+    setSide("buy");
+    setText(String(usd));
+    setFocusTrade(true);
+  }, [pair.dollar, paused]);
   const chooseShare = (pct: number) => {
     if (heldTokens <= 0n) return;
     choose(fromRaw(quickShareRaw(heldTokens, pct), market.tokenDecimals));
