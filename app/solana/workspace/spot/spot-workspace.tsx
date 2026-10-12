@@ -7,13 +7,13 @@ import type { ExecutionPlanBinding, RuleBinding } from "@/lib/api/v1/contract";
 import { WRAPPED_SOL_MINT } from "@/lib/solana/send-kinds";
 import type { SpotMarketListRow, SpotView } from "@/lib/spot/markets";
 import { isSpotView } from "@/lib/spot/markets";
+import type { TokenFacts, TokenMark } from "@/lib/spot/token-page";
 
 import { LensPanel } from "@/app/app/lens/lens-panel";
 import { useFitHeight } from "@/app/components/chart/use-fit-height";
 
 import { useSolanaConnection } from "../connection.tsx";
 import { EvidenceCard } from "../evidence/evidence-card.tsx";
-import { RiskCard } from "../evidence/risk-card.tsx";
 import { useSolanaI18n } from "../i18n/provider.tsx";
 import { useWalletProof } from "../wallet-proof.tsx";
 import { MarketHeader } from "./market-header.tsx";
@@ -21,7 +21,7 @@ import { MarketList } from "./market-list.tsx";
 import { OrderTicket } from "./order-ticket.tsx";
 import { capFactorOf, SpotChart, useSpotTimeframe } from "./spot-chart.tsx";
 import { TradingState } from "./trading-state.tsx";
-import { useSpotCandles, useSpotFills, useSpotHoldings, useSpotList, useSpotMarket, useSpotWatchlist } from "./use-spot-data.ts";
+import { useSpotCandles, useSpotFills, useSpotHoldings, useSpotList, useSpotMarket, useSpotWatchlist, useTokenPart } from "./use-spot-data.ts";
 
 import styles from "./spot.module.css";
 
@@ -162,6 +162,17 @@ export function SpotWorkspace({
   const candles = useSpotCandles(selectedMint, timeframe);
   const holdings = useSpotHoldings(owner, generation);
   const fills = useSpotFills(owner, generation);
+  /* The token page's overview: the header's windows and the chart's marks, read on arrival and kept fresh. */
+  const overview = useTokenPart<{ marks: readonly TokenMark[]; facts: TokenFacts | null; observedAt: string }>(selectedMint, "overview", true);
+  const facts = overview.status === "ready" ? overview.value.facts : overview.status === "loading" || overview.status === "unavailable" ? (overview.value?.facts ?? null) : null;
+  const marks = overview.status === "ready" ? overview.value.marks : overview.status === "loading" || overview.status === "unavailable" ? (overview.value?.marks ?? []) : [];
+  /* The person's own trades of this market, from the wallet's history: the chart marks them beside the market's. */
+  const ownTrades = useMemo(() => {
+    if (!fills.value) return [];
+    return fills.value
+      .filter((action) => action.outcome === "DONE" && (action.out?.mint === selectedMint || action.in?.mint === selectedMint))
+      .map((action) => ({ t: Math.floor(Date.parse(action.updatedAt) / 1000), side: action.in?.mint === selectedMint ? ("buy" as const) : ("sell" as const) }));
+  }, [fills.value, selectedMint]);
 
   /* The address bar follows the selection, without a navigation. */
   useEffect(() => {
@@ -272,20 +283,14 @@ export function SpotWorkspace({
             marketsOpen={sheetOpen}
             pro={pro}
             pool={pool}
+            facts={facts}
           />
 
-          <SpotChart symbol={symbol} candles={candles} timeframe={timeframe} onTimeframe={setTimeframe} pro={pro} capFactor={capFactorOf(marketValue)} />
+          <SpotChart symbol={symbol} candles={candles} timeframe={timeframe} onTimeframe={setTimeframe} pro={pro} capFactor={capFactorOf(marketValue)} marks={marks} ownTrades={ownTrades} />
 
-          {/* The two sensors of the selected token, on request — what the market did and how the token is built; a rule of the plan only where a plan can be made — a stock representation. */}
+          {/* What the market did, on request; how the token is built is the «Ризик» tab's (`token-tabs.tsx`). A rule of the plan only where a plan can be made — a stock representation. */}
           <div className={styles.evidence}>
             <EvidenceCard key={selectedMint} mint={selectedMint} locale={locale} planHref={marketValue?.category === "stock" ? `/app/strategies/new?mint=${encodeURIComponent(selectedMint)}` : null} />
-            <RiskCard
-              key={`risk-${selectedMint}`}
-              mint={selectedMint}
-              locale={locale}
-              planHref={marketValue?.category === "stock" ? `/app/strategies/new?mint=${encodeURIComponent(selectedMint)}` : null}
-              assetKind={marketValue?.category === "stock" ? "issuer-backed" : marketValue?.category === "meme" ? "meme" : marketValue?.category === "crypto" ? "crypto" : "unknown"}
-            />
             {/* The Brief on the selected token, and the Critic on request — the person's own plan, record and the token's structure, before the ticket. Closed until *Ask Ryntra* under Asset details is pressed, and then a full-width row of this same area: a second box on the `evidence` grid area drew over the Risk card. */}
             <LensPanel key={`lens-${selectedMint}`} subject={symbol ? { kind: "asset", mint: selectedMint, symbol } : { kind: "asset", mint: selectedMint }} locale={locale} trigger="page" frameClassName={styles.lensRow} />
           </div>
@@ -309,7 +314,7 @@ export function SpotWorkspace({
             onLeaveRule={leaveRule}
           />
 
-          <TradingState market={marketValue} holdings={holdings} fills={fills} pro={pro} onRefresh={refresh} />
+          <TradingState market={marketValue} facts={facts} native={selectedMint === WRAPPED_SOL_MINT} holdings={holdings} fills={fills} pro={pro} onRefresh={refresh} />
         </div>
 
         {/* The markets: a menu under the market's name on a desk, a sheet from the bottom on a phone. */}

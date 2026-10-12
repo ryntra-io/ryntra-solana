@@ -55,12 +55,15 @@ import {
 } from '@/features/invest/buy-model'
 import { INVEST_COPY } from '@/features/invest/copy'
 import { useBuy, type BuyCompany, type BuyController } from '@/features/invest/use-buy'
+import { RECEIPTS_COPY } from '@/features/receipts/copy'
+import { docFromSwap, outcomeStatus } from '@/features/receipts/receipt-doc'
 import type { TradeContext } from '@/features/trade/trade-model'
 import { useNow } from '@/hooks/use-now'
 import type { AutoinvestRule } from '@/lib/api'
 import { useCopy, type Locale } from '@/lib/i18n'
 import { TopUpSheet } from '@/screens/home/top-up-sheet'
 import { EventLine } from '@/screens/invest/event-ui'
+import { ShareReceiptSheet } from '@/screens/receipts/share-receipt'
 import { type, useTheme } from '@/theme'
 import { DASH } from '@/utils/format'
 import { openLink } from '@/lib/open-link'
@@ -1055,6 +1058,8 @@ function Receipt({
   onHistory: () => void
 }) {
   const ruleWords = useCopy(AUTOINVEST_COPY)
+  const receiptWords = useCopy(RECEIPTS_COPY)
+  const [sharing, setSharing] = useState(false)
   const { trade, locale } = buy
   const settled = trade.settled!
   const context = settled.context
@@ -1097,9 +1102,28 @@ function Receipt({
     )
   }
 
+  const face = receiptFace(outcome, context, company, words, locale)
+  const doc = docFromSwap(
+    {
+      // The picture's title carries no sum: the amounts are the person's to show.
+      title:
+        outcome.kind === 'filled'
+          ? company.unit === 'token'
+            ? words.ownToken(company.name)
+            : words.ownPiece(company.name)
+          : face.headline,
+      status: outcomeStatus(outcome.kind),
+      settlement: settled.settlement,
+      context,
+      at: settled.at,
+      rule: ruleMark !== null,
+      multipliers: { receive: company.multiplier },
+    },
+    locale,
+  )
   return (
     <View className="gap-4 pb-2">
-      <BuyReceiptFace face={receiptFace(outcome, context, company, words, locale)} />
+      <BuyReceiptFace face={face} />
       {ruleMark ? (
         // The receipt's mark of the rule, and when it reminds next («квитанція з позначкою правила»).
         <RuleMarkLine
@@ -1115,7 +1139,8 @@ function Receipt({
       {weekly !== null && onBuyWeekly ? (
         <Button title={ruleWords.buyWeekly} variant="secondary" size="lg" onPress={() => onBuyWeekly(weekly)} />
       ) : null}
-      <QuietLinks links={links} />
+      <QuietLinks links={[...links, { label: receiptWords.share, onPress: () => setSharing(true) }]} />
+      {sharing ? <ShareReceiptSheet doc={doc} visible onClose={() => setSharing(false)} /> : null}
     </View>
   )
 }

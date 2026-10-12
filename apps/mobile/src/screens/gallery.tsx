@@ -56,8 +56,14 @@ import type { AutoinvestRule, CompanyPath, RuleBudget, RuleConditionCheck, RuleO
 import { useCopy, useLocale } from '@/lib/i18n'
 import { CompanyPathStrip } from '@/screens/asset/company-path'
 import { AttentionRow } from '@/screens/home/blocks'
-import { LaunchDoneSamples, LaunchMineSamples, LaunchTokenSamples } from '@/screens/launch/launch-samples'
+import {
+  LaunchDoneSamples,
+  LaunchMarketsSamples,
+  LaunchMineSamples,
+  LaunchTokenSamples,
+} from '@/screens/launch/launch-samples'
 import { MoneySamples } from '@/screens/money/money-samples'
+import { ReceiptSamples } from '@/screens/receipts/receipt-samples'
 import { TokenRuleSamples } from '@/screens/autoinvest/token-rule-samples'
 import { PaymentEvents } from '@/screens/autoinvest/autoinvest-sheet'
 import { RuleCard } from '@/screens/autoinvest/rule-card'
@@ -615,8 +621,14 @@ export function GalleryScreen() {
             </Pressable>
           }
         >
+          <Section title="Receipts · every kind and its picture (M38.3)">
+            <ReceiptSamples />
+          </Section>
           <Section title="Recurring buy · any token (M35)">
             <TokenRuleSamples />
+          </Section>
+          <Section title="Launch · markets launched on Ryntra, a market's health and its flight log (1.36.0)">
+            <LaunchMarketsSamples />
           </Section>
           <Section title="Launch · a token's page">
             <LaunchTokenSamples />

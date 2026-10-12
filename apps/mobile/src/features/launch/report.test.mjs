@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
-import { HIDDEN_LIMIT, parseHidden, toggleHidden } from './hidden-model.ts'
+import { HIDDEN_LIMIT, parseHidden, shownPicture, toggleHidden } from './hidden-model.ts'
 import { reportTokenMailto } from './report.ts'
 
 const MINT = 'Ckp1DhbW5vNJbHbsvAUNWzFT9Vi1NLuWfE3t6Vk5pump'
@@ -53,4 +53,10 @@ test('past the limit the oldest hidden falls off', () => {
   assert.equal(next.length, HIDDEN_LIMIT)
   assert.equal(next.at(-1), MINT)
   assert.equal(next[0], many[1])
+})
+
+test('a token hidden on this phone draws no picture anywhere — its page and «Лаунчі на Ryntra» alike', () => {
+  assert.equal(shownPicture('https://ryntra.io/api/launch/image/abc', true), null)
+  assert.equal(shownPicture('https://ryntra.io/api/launch/image/abc', false), 'https://ryntra.io/api/launch/image/abc')
+  assert.equal(shownPicture(null, false), null)
 })

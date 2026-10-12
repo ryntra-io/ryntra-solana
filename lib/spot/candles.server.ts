@@ -34,7 +34,8 @@ const multipliers = new Map<string, { value: number | null; at: number }>();
  * the unit on screen. A mint that could not be read, or carries no such
  * extension, answers null and the candles stay as they came.
  */
-async function scaledUnitMultiplier(mint: string, now: number): Promise<number | null> {
+/** The active multiplier of a scaled-UI token (a stock's reinvested dividends), cached ten minutes; null for any other token. */
+export async function scaledUnitMultiplier(mint: string, now: number): Promise<number | null> {
   const hit = multipliers.get(mint);
   if (hit && now - hit.at < MULTIPLIER_TTL_MS) return hit.value;
   let value: number | null = null;
@@ -54,10 +55,14 @@ async function scaledUnitMultiplier(mint: string, now: number): Promise<number |
   return value;
 }
 
-const BASE = "https://api.geckoterminal.com/api/v2/networks/solana";
+export const GECKO_SOLANA_BASE = "https://api.geckoterminal.com/api/v2/networks/solana";
+const BASE = GECKO_SOLANA_BASE;
 const POOL_TTL_MS = 60 * 60_000;
 const STALE_GRACE_MS = 30 * 60_000;
 const BUCKET_PER_MINUTE = 24;
+/* The chart is the page's first screen: the token page's own reads (its pools, trades, checks) stop while fewer than this
+   many calls are left in the minute, so a page full of tabs never takes the chart down. */
+const CHART_RESERVE = 8;
 const CANDLE_LIMIT = 300;
 /* A year and a day of daily bars: «1Р» on a company page in «Простий» is a
    year, not three hundred days. The source allows a thousand; the
@@ -94,16 +99,17 @@ export const NO_CHART_REASONS: Readonly<Record<"NO_POOL" | "NO_MAJOR_QUOTE" | "T
 /* A sliding one-minute window. Refusing locally is what keeps the source from
    refusing us for the next minute, which would take every chart down at once. */
 const calls: number[] = [];
-function takeCall(): boolean {
+function takeCall(priority: "chart" | "page"): boolean {
   const now = Date.now();
   while (calls.length > 0 && now - calls[0] > 60_000) calls.shift();
-  if (calls.length >= BUCKET_PER_MINUTE) return false;
+  if (calls.length >= BUCKET_PER_MINUTE - (priority === "page" ? CHART_RESERVE : 0)) return false;
   calls.push(now);
   return true;
 }
 
-async function getJson(url: string): Promise<{ ok: true; body: unknown } | SpotCandlesFailure> {
-  if (!takeCall()) return { ok: false, code: "RATE_LIMITED", reason: "The chart source's minute budget is spent; the last read is shown." };
+/** One read of GeckoTerminal inside this instance's minute budget — the chart, the pools and the trades share it. */
+export async function getJson(url: string, priority: "chart" | "page" = "chart"): Promise<{ ok: true; body: unknown } | SpotCandlesFailure> {
+  if (!takeCall(priority)) return { ok: false, code: "RATE_LIMITED", reason: "The chart source's minute budget is spent; the last read is shown." };
   let response: Response;
   try {
     response = await fetch(url, { headers: { accept: "application/json" }, signal: AbortSignal.timeout(8_000) });
@@ -134,6 +140,27 @@ async function getJson(url: string): Promise<{ ok: true; body: unknown } | SpotC
 
 type PoolRefusal = "NO_POOL" | "NO_MAJOR_QUOTE" | "THIN" | "QUIET";
 const pools = new Map<string, { value: SpotPool | null; refusal: PoolRefusal | null; readAt: number }>();
+/* The answer the choice was made from, kept for the token page's pools and trades: one read of the mint's pools serves both. */
+const poolBodies = new Map<string, { body: unknown; readAt: number }>();
+const POOL_BODY_TTL_MS = 5 * 60_000;
+
+/**
+ * GeckoTerminal's list of a mint's pools, as it answered — the chart's choice
+ * and the token page's «Ліквідність» and trades read the same answer, kept
+ * five minutes.
+ */
+export async function readTokenPoolsBody(mint: string, priority: "chart" | "page" = "chart"): Promise<{ ok: true; body: unknown; observedAt: string } | SpotCandlesFailure> {
+  const hit = poolBodies.get(mint);
+  const now = Date.now();
+  if (hit && now - hit.readAt < POOL_BODY_TTL_MS) return { ok: true, body: hit.body, observedAt: new Date(hit.readAt).toISOString() };
+  const read = await getJson(`${BASE}/tokens/${encodeURIComponent(mint)}/pools?page=1`, priority);
+  if (!read.ok) {
+    if (hit) return { ok: true, body: hit.body, observedAt: new Date(hit.readAt).toISOString() };
+    return read;
+  }
+  poolBodies.set(mint, { body: read.body, readAt: now });
+  return { ok: true, body: read.body, observedAt: new Date(now).toISOString() };
+}
 /* A refusal is remembered for less than a choice: a pool can be funded or
    wake up within the hour, and the frame should follow. */
 const POOL_REFUSAL_TTL_MS = 10 * 60_000;
@@ -146,7 +173,7 @@ export async function resolveSpotPool(mint: string): Promise<{ ok: true; pool: S
     const refusal = hit.refusal ?? "NO_POOL";
     return { ok: false, code: refusal, reason: NO_CHART_REASONS[refusal] };
   }
-  const read = await getJson(`${BASE}/tokens/${encodeURIComponent(mint)}/pools?page=1`);
+  const read = await readTokenPoolsBody(mint);
   if (!read.ok) {
     if (hit?.value) return { ok: true, pool: hit.value };
     return read;
@@ -216,6 +243,7 @@ export async function readSpotCandles(mint: string, timeframe: SpotTimeframe): P
 /** Test seam. */
 export function resetSpotCandleCaches(): void {
   pools.clear();
+  poolBodies.clear();
   reads.clear();
   noChart.clear();
   multipliers.clear();

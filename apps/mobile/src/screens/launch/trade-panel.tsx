@@ -31,16 +31,22 @@ import {
 } from '@/features/launch/launch-format'
 import { isPaused, sendTitleKey, tradeFailureKey } from '@/features/launch/launch-model'
 import { useLaunchWallet, useTradeQuote } from '@/features/launch/use-launch'
+import { RECEIPTS_COPY } from '@/features/receipts/copy'
+import { docFromLaunchTrade } from '@/features/receipts/receipt-doc'
 import { useAccount } from '@/features/session/use-account'
 import { useWallet } from '@/features/wallet/use-wallet'
-import { ApiError } from '@/lib/api'
+import { ApiError, SOL_MINT } from '@/lib/api'
 import type { LaunchMarketResponse, LaunchTradeSide } from '@/lib/api/v1/types'
 import { feel } from '@/lib/haptics'
-import type { Locale } from '@/lib/i18n'
+import { useCopy, type Locale } from '@/lib/i18n'
+import { ShareReceiptButton } from '@/screens/receipts/share-receipt'
 
 import { ExplorerLink, PausedNote, Row, Steps } from './parts'
 
 const SLIPPAGES = ['50', '100', '300', '500'] as const
+/** Lamports a SOL buy keeps for the network fee and the new token account's rent. */
+const SOL_BUY_RESERVE = 3_000_000n
+
 type Phase = 'idle' | FlowStep | 'done' | 'error'
 
 /**
@@ -70,6 +76,9 @@ export function TradePanel({
   const [phase, setPhase] = useState<Phase>('idle')
   const [failure, setFailure] = useState<LaunchFailure | null>(null)
   const [result, setResult] = useState<Extract<TradeOutcome, { ok: true }> | null>(null)
+  // When the trade came back — the receipt's time; the answer carries none.
+  const [doneAt, setDoneAt] = useState<string | null>(null)
+  const receiptWords = useCopy(RECEIPTS_COPY)
   const [paused, setPaused] = useState(false)
   const [split, setSplit] = useState(false)
   const running = useRef(false)
@@ -105,10 +114,14 @@ export function TradePanel({
       ? market.curveFee
       : null
 
+  // A share of what the wallet holds on this side — the pair currency to buy, the token to sell — rounded down.
+  // Buying with SOL keeps the network fee and a new token account's rent (≈0.002 SOL, kept as 0.003) out of the share.
+  const solBuy = side === 'buy' && pair.mint === SOL_MINT
+  const shareBase =
+    spendable === null ? null : solBuy ? (spendable > SOL_BUY_RESERVE ? spendable - SOL_BUY_RESERVE : 0n) : spendable
   const choose = (value: string) => {
-    if (side === 'buy') return setText(value)
-    if (!held.data) return
-    setText(fromRaw((BigInt(held.data.tokenRaw) * BigInt(value)) / 100n, market.tokenDecimals))
+    if (shareBase === null || shareBase === 0n) return
+    setText(fromRaw((shareBase * BigInt(value)) / 100n, decimals))
   }
 
   const trade = async () => {
@@ -136,6 +149,7 @@ export function TradePanel({
       if (outcome.ok) {
         feel(outcome.submit.state === 'CONFIRMED' ? 'done' : 'sent')
         setResult(outcome)
+        setDoneAt(new Date().toISOString())
         setPhase('done')
         setText('')
         void queryClient.invalidateQueries({ queryKey: ['launch', 'market', market.token] })
@@ -186,6 +200,14 @@ export function TradePanel({
     const bought = result.side === 'buy'
     const confirmed = result.submit.state === 'CONFIRMED'
     const filled = result.submit.filled
+    const title = confirmed
+      ? word(bought ? 'boughtTitle' : 'soldTitle', {
+          tokens: filled
+            ? tokens(filled.tokensRaw)
+            : `≈ ${tokens(bought ? result.quote.amountOutRaw : result.quote.amountInRaw)}`,
+          symbol,
+        })
+      : word('tradePendingTitle')
     return (
       <Card className="items-center gap-2 py-5" accessibilityLiveRegion="polite">
         <Icon
@@ -194,14 +216,7 @@ export function TradePanel({
           color={confirmed ? 'successInk' : 'muted'}
         />
         <Txt variant="title" className="text-center">
-          {confirmed
-            ? word(bought ? 'boughtTitle' : 'soldTitle', {
-                tokens: filled
-                  ? tokens(filled.tokensRaw)
-                  : `≈ ${tokens(bought ? result.quote.amountOutRaw : result.quote.amountInRaw)}`,
-                symbol,
-              })
-            : word('tradePendingTitle')}
+          {title}
         </Txt>
         {confirmed ? (
           <Txt variant="data" tone="muted">
@@ -214,12 +229,29 @@ export function TradePanel({
           {confirmed ? word('tradeDoneLine') : word('tradePendingLine')}
         </Txt>
         <ExplorerLink label={word('viewTx')} url={explorerUrl(market.network, 'tx', result.submit.signature)} />
+        <ShareReceiptButton
+          variant="button"
+          doc={docFromLaunchTrade(
+            {
+              token: market.token,
+              symbol,
+              tokenDecimals: market.tokenDecimals,
+              pair,
+              quote: result.quote,
+              submit: result.submit,
+              title: confirmed ? receiptWords[bought ? 'launchBought' : 'launchSold'](symbol) : title,
+              at: doneAt ?? result.quote.observedAt,
+            },
+            locale,
+          )}
+        />
         <Button title={word('tradeAgain')} variant="secondary" onPress={() => setPhase('idle')} />
       </Card>
     )
   }
 
-  const quick = side === 'buy' ? (pair.dollar ? ['10', '50', '100'] : ['1000', '5000', '20000']) : ['25', '50', '100']
+  // 25 · 50 · 75 · 100 % on both sides, as on every purchase; all of a SOL pair is never offered — the network's fee is paid in it.
+  const quick = solBuy ? ['25', '50', '75'] : ['25', '50', '75', '100']
   return (
     <Card className="gap-3">
       <View className="flex-row items-center justify-between gap-3">
@@ -263,10 +295,11 @@ export function TradePanel({
             : null
         }
       />
-      {/* Quick amounts are actions that fill the field, not a choice that stays: buttons, not radios. */}
+      {/* Quick shares are actions that fill the field, not a choice that stays: buttons, not radios. Without a wallet — none. */}
+      {address ? (
       <View className="flex-row gap-2">
         {quick.map((value) => {
-          const off = busy || (side === 'sell' && !held.data)
+          const off = busy || shareBase === null || shareBase === 0n
           return (
             <Pressable
               key={value}
@@ -276,19 +309,12 @@ export function TradePanel({
               onPress={() => choose(value)}
               className={`h-11 flex-1 items-center justify-center rounded-pill border border-line active:bg-hover ${off ? 'opacity-50' : ''}`}
             >
-              <Txt variant="ui">
-                {side === 'buy'
-                  ? pair.dollar
-                    ? `$${value}`
-                    : formatNumber(Number(value), locale)
-                  : value === '100'
-                    ? word('max')
-                    : formatPercent(Number(value), locale, 0)}
-              </Txt>
+              <Txt variant="ui">{formatPercent(Number(value), locale, 0)}</Txt>
             </Pressable>
           )
         })}
       </View>
+      ) : null}
       <View className="flex-row items-center justify-between gap-3">
         <Txt variant="ui" tone="muted">
           {word('slippage')}

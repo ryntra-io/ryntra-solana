@@ -68,6 +68,8 @@ export type HistoryRow = Readonly<{
   plan: Readonly<{ planId: string; version: number }> | null
   /** A purchase made under an autoinvest reminder (`origin.rule`, 1.12.0) — the receipt's mark of the rule. */
   rule: boolean
+  /** A launch's trade (`origin.surface` `LAUNCH`, 1.34.0): the token and where it ran. */
+  launch: Readonly<{ token: string | null; venue: 'curve' | 'pool' | null }> | null
 }>
 
 export function historyStatus(outcome: string): HistoryStatus {
@@ -159,6 +161,10 @@ export function historyRow(action: WalletAction, locale: Locale, known: KnownMin
     mints,
     plan: action.origin?.plan ? { planId: action.origin.plan.planId, version: action.origin.plan.version } : null,
     rule: Boolean(action.origin?.rule),
+    launch:
+      action.origin?.surface === 'LAUNCH'
+        ? { token: action.origin.token ?? null, venue: action.origin.venue ?? null }
+        : null,
   }
 }
 

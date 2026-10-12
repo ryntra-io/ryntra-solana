@@ -17,6 +17,7 @@ import { useEffect, useState } from "react";
 
 import type { StockAsset } from "@/lib/stocks/asset.server";
 import { LIFECYCLE_WORDS, markPremiumPct } from "@/lib/stocks/instrument";
+import { fairPriceOf, FAIR_PRICE_WORDS } from "@/lib/stocks/issuer-terms";
 import { REFERENCE_STATE_WORDS, SESSION_WORDS } from "@/lib/stocks/session";
 import { deviationPct, perShareExecutable, scaledAmountString } from "@/lib/stocks/units";
 import type { SlimStockRow } from "@/app/app/stocks/stock-model";
@@ -163,6 +164,10 @@ export function StockHeaderLine({ mint, symbol }: { mint: string; symbol: string
           <b className={tone === "up" ? styles.up : tone === "down" ? styles.down : styles.flat} translate="no">{formatPercent(row.deviationPct, locale)}</b>
         </span>
       ) : null}
+      {/* «Ціна чесна»: the deviation in one word, the same word as the token page's «Актив» tab. */}
+      <span className={styles.chip} data-fair-price={fairPriceOf(row.deviationPct)} data-tone={fairPriceOf(row.deviationPct) === "fair" || fairPriceOf(row.deviationPct) === "cheaper" ? "verified" : fairPriceOf(row.deviationPct) === "no-reference" ? undefined : "caution"}>
+        {FAIR_PRICE_WORDS[fairPriceOf(row.deviationPct)][uk ? "uk" : "en"]}
+      </span>
       <Link href={`/app/stocks/${encodeURIComponent(symbol)}`}>{text("Research")} →</Link>
     </p>
   );

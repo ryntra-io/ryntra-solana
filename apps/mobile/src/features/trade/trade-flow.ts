@@ -139,19 +139,27 @@ function readiness(order: SwapOrderResponse, now: number, invalidated = false) {
 }
 
 /**
- * The pauses before the order is asked again when the venue said it was asked too often (`ORDER_RATE_LIMITED`): the
- * route locks, stores and builds nothing before the venue answers (line A's order route, `askOnceMoreAfterRate`), so
- * asking again builds at most the one Review the first ask would have. A pause the server names (`retryAfterSeconds`)
- * is kept when it is longer; one longer than `ORDER_RETRY_MAX_MS` is not waited out here — the refusal is said.
+ * The pauses before the order is asked again when the venue said it was asked too often (`ORDER_RATE_LIMITED`) or
+ * refused to build it a moment ago (`ORDER_REFUSED`, its own 4xx; `ORDER_HTTP_ERROR`, its 5xx): the route checks the
+ * owner's lock is free, then asks the venue, and reserves the lock and stores the Review only at its very end (line
+ * A's `SOLANA_SWAP_PREPARE`), so asking again builds at most the one Review the first ask would have. Production
+ * showed these refusals pass on the next press (2026-10-03, -04: two and three presses within seconds) — the phone
+ * asks again itself, so the person's first press is the one that works. A pause the server names
+ * (`retryAfterSeconds`) is kept when it is longer; one longer than `ORDER_RETRY_MAX_MS` is not waited out here — the
+ * refusal is said.
  */
 export const ORDER_RETRY_DELAYS_MS: readonly number[] = [1_500, 3_000]
 export const ORDER_RETRY_MAX_MS = 5_000
+/** The venue's refusals that pass on their own: asked again, never a route that does not exist or a wallet short of funds. */
+const ORDER_RETRY_CODES: ReadonlySet<string> = new Set(['ORDER_RATE_LIMITED', 'ORDER_REFUSED', 'ORDER_HTTP_ERROR'])
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
 
 /** How long to wait before the order is asked again, or null when this refusal is not asked again. */
 export function orderRetryDelay(error: unknown, tries: number): number | null {
-  if (!(error instanceof ApiError) || error.code !== 'ORDER_RATE_LIMITED') return null
+  if (!(error instanceof ApiError) || !ORDER_RETRY_CODES.has(error.code)) return null
+  // A venue's 4xx may be for good (a mint it never routes): asked again once, never twice.
+  if (error.code === 'ORDER_REFUSED' && tries > 0) return null
   const planned = ORDER_RETRY_DELAYS_MS[tries]
   if (planned === undefined) return null
   const named = error.details.retryAfterSeconds
@@ -165,8 +173,9 @@ export function orderRetryDelay(error: unknown, tries: number): number | null {
  * signature of this wallet is still unresolved, and by the server when the
  * wallet holds an open Review elsewhere (`OWNER_SWAP_LOCKED`) — with a
  * signature that is an attempt to recover, without one a Review to release.
- * The venue's own «too many requests» is asked again twice, with a pause,
- * before it is said (`ORDER_RETRY_DELAYS_MS`) — never after `cancelled` says
+ * The venue's own «too many requests» and its own failure are asked again
+ * twice, its refusal of a moment once, with a pause, before it is said
+ * (`orderRetryDelay`) — never after `cancelled` says
  * the person closed the sheet or asked anew during a pause.
  */
 export async function prepareReview(

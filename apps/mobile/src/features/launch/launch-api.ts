@@ -1,5 +1,5 @@
 /**
- * Launch's routes (contract §3t, §3v, §3x, §3y): one set for the web and the
+ * Launch's routes (contract §3t, §3v, §3x, §3y, §3ad): one set for the web and the
  * phone, no bearer and no cookie — the creator's own signature inside a
  * transaction is the proof. Served only where `capabilities.launch` is
  * present; every build and send answers `LAUNCH_PAUSED` while Launch's stop
@@ -14,7 +14,11 @@ import type {
   LaunchClaimSubmitResponse,
   LaunchCreatorCabinetResponse,
   LaunchCreatorResponse,
+  LaunchJournalResponse,
+  LaunchMarketCardResponse,
+  LaunchMarketHealthResponse,
   LaunchMarketResponse,
+  LaunchMarketsResponse,
   LaunchMetadataRequest,
   LaunchMetadataResponse,
   LaunchPresetId,
@@ -73,6 +77,26 @@ export function quoteLaunchTrade(
   signal?: AbortSignal,
 ): Promise<LaunchTradeQuoteResponse> {
   return apiRequest('POST', `${at(mint)}/trade/quote`, request, { signal })
+}
+
+/** «Лаунчі на Ryntra» (1.36.0): every market launched on Ryntra on this network — public, no wallet. */
+export function fetchLaunchMarkets(signal?: AbortSignal): Promise<LaunchMarketsResponse> {
+  return apiGet('/api/v1/launch/markets', { signal, timeoutMs: MARKET_TIMEOUT_MS })
+}
+
+/** One market's row and the addresses it lives at (1.36.0). */
+export function fetchLaunchMarketCard(mint: string, signal?: AbortSignal): Promise<LaunchMarketCardResponse> {
+  return apiGet(`/api/v1/launch/markets/${encodeURIComponent(mint)}`, { signal, timeoutMs: MARKET_TIMEOUT_MS })
+}
+
+/** A market's health by fixed definitions, and the rules that keep it (1.36.0). */
+export function fetchLaunchHealth(mint: string, signal?: AbortSignal): Promise<LaunchMarketHealthResponse> {
+  return apiGet(`${at(mint)}/health`, { signal, timeoutMs: MARKET_TIMEOUT_MS })
+}
+
+/** A launch's flight log, the newest first (1.32.0; each entry's mark and the log's `total` since 1.36.0). */
+export function fetchLaunchJournal(mint: string, signal?: AbortSignal): Promise<LaunchJournalResponse> {
+  return apiGet(`${at(mint)}/journal`, { signal, timeoutMs: MARKET_TIMEOUT_MS })
 }
 
 export function fetchCreatorCabinet(address: string, signal?: AbortSignal): Promise<LaunchCreatorCabinetResponse> {

@@ -514,3 +514,57 @@ export function useHoldingOf(holdings: HoldingsState, mint: string | null, wrapp
     return holdings.value.find((row) => row.mint === mint) ?? null;
   }, [holdings, mint, wrappedSol]);
 }
+
+/* ------------------------------------------------------ the token page */
+
+export type TokenPart = "overview" | "trades" | "holders" | "risk" | "pools";
+
+/** A part of the token page: its answer, an answer that the part has nothing for this token (`none`), or a failure with its reason. */
+export type TokenPartRead<T> =
+  | Readonly<{ status: "idle" }>
+  | Readonly<{ status: "loading"; value: T | null }>
+  | Readonly<{ status: "ready"; value: T }>
+  | Readonly<{ status: "none"; code: string; reason: string }>
+  | Readonly<{ status: "unavailable"; value: T | null; reason: string }>;
+
+const TOKEN_PART_REFRESH_MS: Readonly<Record<TokenPart, number>> = { overview: 60_000, trades: 45_000, holders: 90_000, risk: 120_000, pools: 180_000 };
+
+/**
+ * One part of the token page (`/api/spot/token`), read while `active` — a tab
+ * reads only when it is open — and refreshed at the part's own cadence while
+ * the tab is visible. The last answer stays on screen through a failed
+ * refresh, and the failure is said beside it.
+ */
+export function useTokenPart<T>(mint: string | null, part: TokenPart, active: boolean): TokenPartRead<T> & Readonly<{ retry: () => void }> {
+  const [state, setState] = useScopedRead<TokenPartRead<T>>(mint ? `${mint}:${part}` : null, { status: "idle" });
+  const [attempt, setAttempt] = useState(0);
+  const retry = useCallback(() => setAttempt((value) => value + 1), []);
+  useEffect(() => {
+    if (!mint || !active) return;
+    let controller = new AbortController();
+    const read = () => {
+      controller.abort();
+      controller = new AbortController();
+      setState((current) => (current.status === "ready" ? current : { status: "loading", value: current.status === "unavailable" ? current.value : null }));
+      void getJson<T & { none?: { code: string; reason: string } }>(`/api/spot/token?mint=${encodeURIComponent(mint)}&part=${part}`, controller.signal).then((answer) => {
+        if (!answer.ok) {
+          if (answer.reason === "aborted") return;
+          setState((current) => ({ status: "unavailable", value: current.status === "ready" ? current.value : current.status === "loading" || current.status === "unavailable" ? current.value : null, reason: answer.reason }));
+          return;
+        }
+        const body = answer.value;
+        if (body.none) setState({ status: "none", code: body.none.code, reason: body.none.reason });
+        else setState({ status: "ready", value: body });
+      });
+    };
+    read();
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") read();
+    }, TOKEN_PART_REFRESH_MS[part]);
+    return () => {
+      controller.abort();
+      window.clearInterval(timer);
+    };
+  }, [mint, part, active, attempt, setState]);
+  return useMemo(() => ({ ...state, retry }), [state, retry]);
+}

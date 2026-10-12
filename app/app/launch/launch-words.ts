@@ -284,6 +284,9 @@ export const LAUNCH_WORDS = {
   labelHint_sniper: bi("Bought in the first 2 minutes", "Купив у перші 2 хв"),
   labelHint_bundle: bi("Bought in the creation's block, or the creator's wallet paid for the buy", "Купив у блоці створення, або покупку оплатив гаманець творця"),
   holdersCount: bi("Holders: {n}", "Холдерів: {n}"),
+  /* The token page: how a holding moved, from the holder's own trades here. */
+  holderChange: bi("{v} in 24h", "{v} за добу"),
+  holdersChangeHint: bi("Under each share: the holder's own buys minus sells here over the last 24 hours, among the trades read; transfers are not counted.", "Під часткою — власні купівлі мінус продажі холдера тут за останні 24 години серед прочитаних угод; перекази не враховано."),
   groupSnipers: bi("Snipers · {n}", "Снайпери · {n}"),
   groupSnipersName: bi("Snipers", "Снайпери"),
   groupBundle: bi("Bundle · {n}", "Бандл · {n}"),

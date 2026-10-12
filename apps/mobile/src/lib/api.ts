@@ -946,10 +946,18 @@ export function createSwapOrder(
 export type SwapSettlement = Readonly<{
   state: string
   signature: string
-  observation: Readonly<{ actualInputRaw: string; actualOutputRaw: string }> | null
+  observation: Readonly<{
+    actualInputRaw: string
+    actualOutputRaw: string
+    /** The network's fee the chain shows for the transaction, in lamports. */
+    baseFeeLamports?: string
+    priorityFeeLamports?: string
+    /** What Ryntra's fee actually took on the chain; null when nothing was read. */
+    serviceFeeCollectedRaw?: string | null
+  }> | null
   facts: Readonly<{
     reconciliation: Readonly<{ state: string; minimumMet?: boolean; deviations?: readonly string[] }>
-    fees?: Readonly<{ serviceFee?: SwapServiceFee | null }>
+    fees?: Readonly<{ serviceFee?: SwapServiceFee | null; baseLamports?: string; priorityLamports?: string }>
   }> | null
   receipt: unknown
   recovery?: string
@@ -1033,7 +1041,8 @@ export type HoldingsResponse = Readonly<{
     tokenRead?: HoldingsCoverage
     observedAt: string
     /** Whether the venue's catalogue answered for the prices; `ABSENT` when it did not. */
-    catalog?: Readonly<{ status: 'PRESENT'; missing?: readonly string[] }> | Readonly<{ status: 'ABSENT'; reason?: string }>
+    catalog?:
+      Readonly<{ status: 'PRESENT'; missing?: readonly string[] }> | Readonly<{ status: 'ABSENT'; reason?: string }>
   }>
 }>
 
@@ -1068,8 +1077,12 @@ export type ActionFee = Readonly<{
 }>
 
 export type ActionOrigin = Readonly<{
-  surface: 'SPOT' | (string & {})
+  /** 1.34.0: `LAUNCH` — a buy or a sale of a Ryntra launch on its curve or in its graduated pool. */
+  surface: 'SPOT' | 'LAUNCH' | (string & {})
   side: 'BUY' | 'SELL'
+  /** 1.34.0, `LAUNCH` only: the launched token and where the trade ran. */
+  token?: string
+  venue?: 'curve' | 'pool'
   plan?: Readonly<{ planId: string; version: number; reviewId?: string }> | null
   /** 1.12.0: the autoinvest reminder a purchase was made under — how History knows a rule's purchase. */
   rule?: RuleBinding | null

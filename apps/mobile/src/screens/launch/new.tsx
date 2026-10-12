@@ -40,6 +40,7 @@ import {
   SUPPLY_RAW,
 } from '@/features/launch/launch-model'
 import { choosePicture, takePicture } from '@/features/launch/picture'
+import { presetsAlike, usd } from '@/features/launch/preset-view'
 import { useLaunchCreate, type LaunchCreate } from '@/features/launch/use-create'
 import { useLaunchOpen, useLaunchPresets } from '@/features/launch/use-launch'
 import { useNow } from '@/hooks/use-now'
@@ -48,6 +49,7 @@ import type { LaunchPreset, LaunchPresetsResponse } from '@/lib/api/v1/types'
 import { useLocale, useSharedCopy, type Locale } from '@/lib/i18n'
 
 import { LaunchSuccess } from './launch-success'
+import { PresetRulesCard } from './market-parts'
 import { ExplorerLink, LaunchTabs, PausedNote, Row, TokenPicture } from './parts'
 
 /**
@@ -143,6 +145,13 @@ export function LaunchNewScreen() {
         <LinksSection create={create} word={word} />
         <PresetSection create={create} word={word} locale={locale} presets={presets.data.presets} />
         <BuySection create={create} word={word} locale={locale} locks={presets.data.locks} />
+        <PresetRulesCard
+          preset={create.preset}
+          lock={create.lock}
+          network={presets.data.network}
+          word={word}
+          locale={locale}
+        />
         <ReviewSection create={create} word={word} locale={locale} />
       </Screen>
       <FailureDock create={create} word={word} />
@@ -403,9 +412,27 @@ function PresetSection({
   const [details, setDetails] = useState(false)
   const preset = create.preset!
   const locked = create.busy || create.paused
+  // What every preset says alike is said once, above them; a preset that differs carries it on its own card.
+  const alike = presetsAlike(presets)
+  const way = (entry: LaunchPreset) =>
+    word('presetWay', { start: usd(entry.startMarketCapUsd, locale), end: usd(entry.graduationMarketCapUsd, locale) })
   return (
     <Card className="gap-3">
       <SectionTitle title={word('sectionPreset')} />
+      {alike.way || alike.lpForever ? (
+        <View className="gap-0.5">
+          {alike.way ? (
+            <Txt variant="ui" tone="muted">
+              {way(presets[0]!)}
+            </Txt>
+          ) : null}
+          {alike.lpForever ? (
+            <Txt variant="ui" tone="muted">
+              {word('presetLpForever')}
+            </Txt>
+          ) : null}
+        </View>
+      ) : null}
       <View accessibilityRole="radiogroup" className="gap-2">
         {presets.map((entry) => {
           const selected = entry.id === preset.id
@@ -426,6 +453,11 @@ function PresetSection({
                   color={selected ? 'brand' : 'fgMuted'}
                 />
               </View>
+              {alike.way ? null : (
+                <Txt variant="ui" tone="muted">
+                  {way(entry)}
+                </Txt>
+              )}
               <Txt variant="ui" tone="muted">
                 {word('presetSniper', {
                   start: formatBps(entry.sniperFee.startBps, locale),
@@ -439,6 +471,11 @@ function PresetSection({
               <Txt variant="ui" tone="muted">
                 {word('presetCap', { pct: formatBps(entry.firstBuyCapBps, locale) })}
               </Txt>
+              {entry.lpLockedForeverPct === 100 && !alike.lpForever ? (
+                <Txt variant="ui" tone="muted">
+                  {word('presetLpForever')}
+                </Txt>
+              ) : null}
               {entry.pair.symbol !== 'USDC' ? (
                 <Txt variant="ui" tone="muted">
                   {word('presetPair', { symbol: entry.pair.symbol })}
@@ -466,17 +503,12 @@ function PresetSection({
       >
         <View className="px-4 pb-2">
           <Row
-            label={word('presetCurve')}
-            value={`$${formatNumber(preset.startMarketCapUsd, locale)} → $${formatNumber(preset.graduationMarketCapUsd, locale)}`}
-          />
-          <Row
             label={word('presetGraduation')}
             value={word('presetGraduationValue', {
               pct: formatPercent(preset.graduationFee.pct, locale, 0),
               creator: formatPercent(preset.graduationFee.creatorPct, locale, 0),
             })}
           />
-          <Row label={word('presetLp')} value={word('presetLpValue')} mono={false} />
           <Row label={word('presetToken')} value={word('presetTokenValue')} mono={false} />
         </View>
       </Sheet>

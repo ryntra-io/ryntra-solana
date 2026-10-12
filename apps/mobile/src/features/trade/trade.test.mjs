@@ -636,6 +636,14 @@ test('prepare: the venue’s «too many requests» is asked again twice with a p
   assert.equal(orderRetryDelay(new ApiError('ORDER_RATE_LIMITED', 'x', 429), 2), null)
   assert.equal(orderRetryDelay(new ApiError('RATE_LIMITED', 'x', 429), 0), null)
   assert.equal(orderRetryDelay(new ApiError('ORDER_NO_ROUTE', 'x', 422), 0), null)
+  // The venue's refusal of a moment is asked again once; its own failure twice; then it is said.
+  assert.equal(orderRetryDelay(new ApiError('ORDER_REFUSED', 'x', 502), 0), 1_500)
+  assert.equal(orderRetryDelay(new ApiError('ORDER_HTTP_ERROR', 'x', 502), 1), 3_000)
+  assert.equal(orderRetryDelay(new ApiError('ORDER_REFUSED', 'x', 502), 1), null)
+  assert.equal(orderRetryDelay(new ApiError('ORDER_HTTP_ERROR', 'x', 502), 2), null)
+  // A wallet short of funds, or a check that refused the bytes, is never asked again.
+  assert.equal(orderRetryDelay(new ApiError('ORDER_BUILD_FAILED', 'x', 409), 0), null)
+  assert.equal(orderRetryDelay(new ApiError('SWAP_PRE_SIGN_REFUSED', 'x', 409), 0), null)
   assert.equal(orderRetryDelay(new Error('offline'), 0), null)
 })
 

@@ -1,17 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import type { SolanaWalletAction } from "@/lib/solana/action-ledger";
 import { isSpotOrigin } from "@/lib/solana/action-origin";
 import { explorerTxUrl } from "@/lib/solana/explorer";
 import { WRAPPED_SOL_MINT } from "@/lib/solana/send-kinds";
 import type { SpotMarket } from "@/lib/spot/markets";
+import type { TokenFacts } from "@/lib/spot/token-page";
 
 import { useSolanaConnection } from "../connection.tsx";
 import { useSolanaI18n } from "../i18n/provider.tsx";
 import { formatAmount, formatUsdPrice, rawToNumber } from "./spot-format.ts";
+import { TOKEN_TAB_LABELS, TokenTabBody, tokenTabsOf, type TokenTab } from "./token-tabs.tsx";
 import type { FillsState, HoldingsState, SpotHolding } from "./use-spot-data.ts";
 
 import styles from "./spot.module.css";
@@ -32,22 +34,27 @@ function movementText(movement: SolanaWalletAction["out"], locale: string): stri
  * live figure. Neither is a second Portfolio — that page has the whole picture
  * and is one link away.
  *
- * The tabs are one list (`tabs` below): the wallet's own two now. The token
- * page's market tabs — «Холдери», «Угоди» (who bought, how much, who sells,
- * the capitalisation at the trade), «Ліквідність», «Ризик», «Соцмережі» — are
- * the token page's own work and join this list as entries with their own
- * bodies when their data is live; none is drawn before it has something to
- * show.
+ * The tabs are one list (`tabs` below): the token page's market tabs first — for a stock «Актив», then
+ * «Угоди» (who bought, how much, who sells, the capitalisation at the trade),
+ * «Холдери», «Ліквідність», «Ризик» and, where the creator lists any,
+ * «Соцмережі» — readable without a wallet; then the wallet's own two. A tab a
+ * token has nothing for is not drawn.
  */
-export type TradingStateTab = "holding" | "fills";
+export type TradingStateTab = "holding" | "fills" | TokenTab;
 export function TradingState({
   market,
+  facts = null,
+  native = false,
   holdings,
   fills,
   pro,
   onRefresh,
 }: {
   market: SpotMarket | null;
+  /** The token page's facts from Jupiter (`useTokenPart(…, "overview")`), when read. */
+  facts?: TokenFacts | null;
+  /** SOL: no creator and no holders worth listing. */
+  native?: boolean;
   holdings: HoldingsState;
   fills: FillsState;
   pro: boolean;
@@ -55,8 +62,15 @@ export function TradingState({
 }) {
   const { text, locale } = useSolanaI18n();
   const { connection } = useSolanaConnection();
-  const [tab, setTab] = useState<TradingStateTab>("holding");
+  const [tab, setTab] = useState<TradingStateTab>("trades");
   const mint = market?.mint ?? null;
+  const owner = connection?.address ?? null;
+  const marketTabs = useMemo(() => tokenTabsOf(market, facts, native), [market, facts, native]);
+  /* A tab the next token does not have falls back to its first: a stock's «Актив», else «Угоди». */
+  useEffect(() => {
+    if (tab === "holding" || tab === "fills") return;
+    if (marketTabs.length > 0 && !marketTabs.includes(tab)) setTab(marketTabs[0] as TradingStateTab);
+  }, [marketTabs, tab]);
 
   const holding = useMemo<SpotHolding | null>(() => {
     if (!mint || !holdings.value) return null;
@@ -85,31 +99,50 @@ export function TradingState({
     return fills.value.filter((action) => action.out?.mint === mint || action.in?.mint === mint).slice(0, 10);
   }, [fills.value, mint]);
 
-  const active = pro ? tab : "holding";
+  const active: TradingStateTab = pro ? tab : "holding";
+  const marketTab = active !== "holding" && active !== "fills" && market && marketTabs.includes(active) ? active : null;
   const tabs: readonly Readonly<{ id: TradingStateTab; label: string }>[] = [
+    ...marketTabs.map((id) => ({ id, label: text(TOKEN_TAB_LABELS[id]) })),
     { id: "holding", label: text("Holding") },
-    { id: "fills", label: `${text("Recent fills")}${rows.length > 0 ? ` · ${rows.length}` : ""}` },
+    { id: "fills", label: `${marketTabs.length > 0 ? text("My trades") : text("Recent fills")}${rows.length > 0 ? ` · ${rows.length}` : ""}` },
   ];
 
   return (
-    <section className={`${styles.panel} ${styles.state}`} aria-label={text("Trading state")}>
+    <section className={`${styles.panel} ${styles.state}`} aria-label={text("Trading state")} data-token-state>
       {pro ? (
-        <div className={styles.stateTabs} data-dense role="tablist">
+        <div
+          className={styles.stateTabs}
+          data-dense
+          role="tablist"
+          data-token-tabs
+          onKeyDown={(event) => {
+            if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+            const index = tabs.findIndex((entry) => entry.id === tab);
+            const next = tabs[(index + (event.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length];
+            if (!next) return;
+            event.preventDefault();
+            setTab(next.id);
+            event.currentTarget.querySelector<HTMLButtonElement>(`[data-state-tab="${next.id}"]`)?.focus();
+          }}
+        >
           {tabs.map((entry) => (
-            <button key={entry.id} type="button" role="tab" className={styles.stateTab} aria-selected={tab === entry.id} onClick={() => setTab(entry.id)} data-state-tab={entry.id}>
+            <button key={entry.id} type="button" role="tab" id={`state-tab-${entry.id}`} aria-controls="state-panel" tabIndex={tab === entry.id ? 0 : -1} className={styles.stateTab} aria-selected={tab === entry.id} onClick={() => setTab(entry.id)} data-state-tab={entry.id}>
               {entry.label}
             </button>
           ))}
         </div>
       ) : null}
-      <div className={styles.stateBody}>
-        {connection && (holdings.status === "unavailable" || holdings.partial || fills.status === "unavailable") ? (
+      <div className={styles.stateBody} id="state-panel" role={pro ? "tabpanel" : undefined} aria-labelledby={pro ? `state-tab-${active}` : undefined}>
+        {marketTab && market ? (
+          <TokenTabBody key={`${market.mint}:${marketTab}`} tab={marketTab} market={market} facts={facts} owner={owner} />
+        ) : null}
+        {marketTab ? null : connection && (holdings.status === "unavailable" || holdings.partial || fills.status === "unavailable") ? (
           <p className={styles.note}>
             {holdings.partial ? text("Some balances could not be read.") : holdings.status === "unavailable" ? text("Balances are unavailable right now.") : text("History is unavailable right now.")}
             {" "}<button className={styles.ghost} type="button" onClick={onRefresh}>{text("Read again")}</button>
           </p>
         ) : null}
-        {!connection ? (
+        {marketTab ? null : !connection ? (
           <div className={styles.empty}>
             <span>{text("Connect a wallet to see what you hold and what you have traded here.")}</span>
           </div>

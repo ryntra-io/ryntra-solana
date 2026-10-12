@@ -83,12 +83,13 @@ test('«Гроші» holds the web’s tabs Поповнити · Надісла
   assert.deepEqual(DOOR_DESTINATIONS.bridge, { kind: 'web', path: '/app/bridge' })
 })
 
-test('Portfolio’s doors beside the positions: Боти · Історія — plans and results left for «Боти»', () => {
+test('Portfolio’s doors beside the positions: Боти · Історія · Квитанції — plans and results left for «Боти»', () => {
   assert.deepEqual(
     PORTFOLIO_DOORS.map((door) => PLACES_COPY.uk.doors[door]),
-    ['Боти', 'Історія'],
+    ['Боти', 'Історія', 'Квитанції'],
   )
   assert.deepEqual(DOOR_DESTINATIONS.history, { kind: 'screen', path: '/history' })
+  assert.deepEqual(DOOR_DESTINATIONS.receipts, { kind: 'screen', path: '/receipts' })
   assert.equal(PLACES_COPY.uk.active(1), '1 активний')
   assert.equal(PLACES_COPY.uk.active(2), '2 активні')
   assert.equal(PLACES_COPY.uk.active(5), '5 активних')

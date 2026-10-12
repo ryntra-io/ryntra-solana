@@ -7,9 +7,11 @@ import { Sheet } from '@/components/sheet'
 import { Txt } from '@/components/txt'
 import type { HistoryCopy } from '@/features/history/copy'
 import { explorerUrl, historyTitle, type HistoryRow, type HistoryStatus } from '@/features/history/history-model'
+import { docFromHistory } from '@/features/receipts/receipt-doc'
 import type { Locale } from '@/lib/i18n'
 import { DASH, formatAmount, formatMoment, formatUsd, shortAddress } from '@/utils/format'
 import { openLink } from '@/lib/open-link'
+import { ShareReceiptButton } from '@/screens/receipts/share-receipt'
 
 export const STATUS_TONE: Readonly<Record<HistoryStatus, ChipTone>> = {
   done: 'success',
@@ -110,6 +112,7 @@ export function ReceiptSheet({ row, now, locale, copy, onClose }: ReceiptSheetPr
           </Txt>
         </Pressable>
       ) : null}
+      <ShareReceiptButton doc={docFromHistory(row, historyTitle(row, copy.words))} className="border-t border-line" />
       {facts.length === 0 && !proof ? (
         <Txt variant="ui" tone="faint" className="py-3">
           {DASH}

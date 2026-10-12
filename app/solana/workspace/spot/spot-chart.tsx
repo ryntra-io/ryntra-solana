@@ -4,10 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 
 import { ProChart } from "@/app/components/chart/ProChart";
 import { readResolvedTheme, watchResolvedTheme } from "@/app/app/theme";
+import type { ChartMarkerSpec } from "@/lib/chart/types";
 import { SPOT_TIMEFRAMES, TIMEFRAME_SOURCE, type SpotTimeframe, isSpotTimeframe } from "@/lib/spot/candles";
+import type { TokenMark } from "@/lib/spot/token-page";
 
 import { useSolanaI18n } from "../i18n/provider.tsx";
-import { formatUsdAxis } from "./spot-format.ts";
+import { formatPercent, formatUsdAxis } from "./spot-format.ts";
 import type { CandlesState, NoChartCode } from "./use-spot-data.ts";
 
 import styles from "./spot.module.css";
@@ -95,6 +97,8 @@ export function SpotChart({
   onTimeframe,
   pro,
   capFactor = null,
+  marks = [],
+  ownTrades = [],
 }: {
   symbol: string;
   candles: CandlesState;
@@ -103,6 +107,10 @@ export function SpotChart({
   pro: boolean;
   /** The supply the market cap is counted on (`capFactorOf`); null: no capitalisation to switch to. */
   capFactor?: number | null;
+  /** The market's own marks (`marksOf`): the largest trades, the creator's, the curve's exit, a fall in liquidity. */
+  marks?: readonly TokenMark[];
+  /** The person's own filled trades of this market, from the wallet's history. */
+  ownTrades?: readonly Readonly<{ t: number; side: "buy" | "sell" }>[];
 }) {
   const { text, locale } = useSolanaI18n();
   const [chosen, setSeries] = useSpotSeries();
@@ -121,6 +129,19 @@ export function SpotChart({
   /* Four significant figures in the header's own «$…B» shape: the axis steps read apart («$1.234B», «$1.241B»), narrow in both languages. */
   const capFormatter = useMemo(() => (value: number) => formatUsdAxis(value, locale), [locale]);
   const tfSeconds = TIMEFRAME_SOURCE[timeframe].seconds;
+  const markers = useMemo<ChartMarkerSpec[]>(() => {
+    const out: ChartMarkerSpec[] = [];
+    for (const mark of marks) {
+      if (mark.kind === "big-buy") out.push({ time: mark.t, position: "belowBar", shape: "arrowUp", color: "up", text: "" });
+      else if (mark.kind === "big-sell") out.push({ time: mark.t, position: "aboveBar", shape: "arrowDown", color: "down", text: "" });
+      else if (mark.kind === "creator-buy") out.push({ time: mark.t, position: "belowBar", shape: "arrowUp", color: "up", text: text("Creator") });
+      else if (mark.kind === "creator-sell") out.push({ time: mark.t, position: "aboveBar", shape: "arrowDown", color: "down", text: mark.pct === null ? text("Creator sold") : `${text("Creator sold")} ${mark.pct < 0.01 ? "<0.01" : mark.pct.toFixed(mark.pct < 1 ? 2 : 1)}%` });
+      else if (mark.kind === "dex") out.push({ time: mark.t, position: "aboveBar", shape: "circle", color: "ink", text: text("On DEX") });
+      else if (mark.kind === "liquidity-drop") out.push({ time: mark.t, position: "aboveBar", shape: "square", color: "down", text: `${text("Liquidity")} ${formatPercent(mark.pct, locale)}` });
+    }
+    for (const own of ownTrades) out.push({ time: own.t, position: own.side === "buy" ? "belowBar" : "aboveBar", shape: "circle", color: "ink", text: text("You") });
+    return out.sort((a, b) => a.time - b.time);
+  }, [marks, ownTrades, locale, text]);
   const note =
     candles.status === "unavailable" && rows.length > 0
       ? text("Chart source paused — showing the last read")
@@ -191,6 +212,7 @@ export function SpotChart({
         drawingScope={series === "cap" ? `spot:${symbol}:cap` : `spot:${symbol}`}
         note={head}
         priceFormatter={series === "cap" ? capFormatter : undefined}
+        markers={markers}
         chartClassName={styles.chartCanvas}
         features={pro ? { indicators: true, settings: true, drawings: true, fullscreen: true } : { indicators: false, settings: false, drawings: false, fullscreen: false }}
       />

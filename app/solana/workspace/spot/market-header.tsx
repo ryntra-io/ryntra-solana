@@ -2,10 +2,11 @@
 
 import { ArrowSquareOut, CaretDown, Copy, Globe, Info, Star, TelegramLogo, XLogo } from "@phosphor-icons/react";
 import Link from "next/link";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import type { SpotPool } from "@/lib/spot/candles";
 import { isUnsupportedMarket, marketAgeDays, type SpotMarket } from "@/lib/spot/markets";
+import { TOKEN_WINDOWS, type TokenFacts, type TokenWindow } from "@/lib/spot/token-page";
 
 import { useSolanaI18n } from "../i18n/provider.tsx";
 import { MarketIcon } from "./market-list.tsx";
@@ -45,6 +46,7 @@ export function MarketHeader({
   marketsOpen,
   pro,
   pool,
+  facts = null,
 }: {
   state: MarketState;
   /** What the list already knew, so the header never goes blank while the detail loads. */
@@ -56,15 +58,20 @@ export function MarketHeader({
   marketsOpen: boolean;
   pro: boolean;
   pool: SpotPool | null;
+  /** The token page's facts (Jupiter's four windows), when read. */
+  facts?: TokenFacts | null;
 }) {
   const { text, locale } = useSolanaI18n();
   const market = state.value;
+  const [window_, setWindow] = useHeaderWindow();
+  /* The window's volume and change: Jupiter's own four windows once read; before that the hour and the day the market already carries. */
+  const windowStats = facts?.windows[window_] ?? null;
+  const windowChange = windowStats?.priceChangePct ?? (window_ === "h1" ? (market?.change1hPct ?? null) : window_ === "h24" ? (market?.change24hPct ?? null) : null);
+  const windowVolume = windowStats?.volumeUsd ?? (window_ === "h1" ? (market?.stats.h1.volumeUsd ?? null) : window_ === "h24" ? (market?.volume24hUsd ?? null) : null);
   const symbol = market?.symbol ?? fallback?.symbol ?? "";
   const name = market?.name ?? fallback?.name ?? "";
   const icon = market?.icon ?? fallback?.icon ?? null;
   const mint = market?.mint ?? fallback?.mint ?? null;
-  const change = market?.change24hPct ?? null;
-  const tone = toneOf(change);
   const chip = market ? categoryChip(market, text) : null;
   const age = market ? marketAgeDays(market, Date.now()) : null;
 
@@ -86,7 +93,7 @@ export function MarketHeader({
               {market && !market.verified ? <span className={styles.chip} data-tone={market.audit.suspicious ? "risk" : "caution"}>{market.audit.suspicious ? text("Flagged") : text("Unverified")}</span> : null}
               {chip ? <span className={styles.chip}>{chip.label}</span> : null}
             </span>
-            <span className={styles.identityName}>{name}</span>
+            <span className={styles.identityName}>{name}{name ? <span className={styles.network}> · Solana</span> : null}</span>
           </span>
         </button>
         <div className={styles.headerActions}>
@@ -113,9 +120,16 @@ export function MarketHeader({
 
       <div className={styles.priceRow}>
         <span className={styles.price} aria-live="polite">{formatUsdPrice(market?.price ?? null, locale)}</span>
-        <span className={`${styles.change} ${tone === "up" ? styles.up : tone === "down" ? styles.down : styles.flat}`}>
-          {formatPercent(change, locale)}
-          {change !== null ? <span className={styles.flat}> · 24h</span> : null}
+        {/* The price's change over the window the switch beside it names: 5 minutes, an hour, six hours, a day. */}
+        <span className={`${styles.change} ${toneOf(windowChange) === "up" ? styles.up : toneOf(windowChange) === "down" ? styles.down : styles.flat}`} data-header-change>
+          {formatPercent(windowChange, locale)}
+        </span>
+        <span className={styles.windowSwitch} role="group" aria-label={text("Window")} data-dense data-header-window={window_}>
+          {TOKEN_WINDOWS.map((entry) => (
+            <button key={entry} type="button" aria-pressed={window_ === entry} className={window_ === entry ? "on" : ""} onClick={() => setWindow(entry)}>
+              {WINDOW_LABELS[entry][locale === "uk" ? "uk" : "en"]}
+            </button>
+          ))}
         </span>
         {state.status === "unavailable" ? <span className={styles.priceMeta}>{text("Price feed unavailable")}</span> : null}
         {state.status === "ready" && state.stale ? <span className={styles.priceMeta}>{text("Last known price")}</span> : null}
@@ -130,19 +144,15 @@ export function MarketHeader({
       {market ? (
         <dl className={styles.stats}>
           <div>
+            <dt>{text("Volume")} {WINDOW_LABELS[window_][locale === "uk" ? "uk" : "en"]}</dt>
+            <dd>{formatUsdCompact(windowVolume, locale)}</dd>
+          </div>
+          <div>
             <dt>{text("Liquidity")}</dt>
             <dd>{formatUsdCompact(market.liquidityUsd, locale)}</dd>
           </div>
-          <div>
-            <dt>{text("Volume 24h")}</dt>
-            <dd>{formatUsdCompact(market.volume24hUsd, locale)}</dd>
-          </div>
           {pro ? (
             <>
-              <div>
-                <dt>{text("1h")}</dt>
-                <dd data-tone={toneOf(market.change1hPct)}>{formatPercent(market.change1hPct, locale)}</dd>
-              </div>
               <div>
                 <dt>{text("Market cap")}</dt>
                 <dd>{formatUsdCompact(market.marketCapUsd, locale)}</dd>
@@ -151,7 +161,7 @@ export function MarketHeader({
                 <dt>{text("Holders")}</dt>
                 <dd>{formatCount(market.holders, locale)}</dd>
               </div>
-              {market.category === "meme" ? (
+              {market.category !== "stock" && market.mint !== WRAPPED_SOL_MINT ? (
                 <>
                   <div>
                     <dt>{text("Age")}</dt>
@@ -159,13 +169,13 @@ export function MarketHeader({
                   </div>
                   <div>
                     <dt>{text("Top holders")}</dt>
-                    <dd>{market.audit.topHoldersPct === null ? "—" : `${Math.round(market.audit.topHoldersPct)}%`}</dd>
+                    <dd>{market.audit.topHoldersPct === null ? "—" : `${new Intl.NumberFormat(locale === "uk" ? "uk-UA" : "en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(market.audit.topHoldersPct)}%`}</dd>
                   </div>
                 </>
               ) : null}
               {market.category === "stock" ? (
                 <div>
-                  <dt>{text("Trades")}</dt>
+                  <dt>{text("Trading")}</dt>
                   <dd>{text("On-chain, 24/7")}</dd>
                 </div>
               ) : null}
@@ -181,9 +191,50 @@ export function MarketHeader({
 
       {market && !isUnsupportedMarket(market) ? <TokenAboutLine market={market} /> : null}
 
-      {market ? <AssetDetails market={market} pool={pool} /> : null}
+      {market ? (
+        <div className={styles.detailsRow}>
+          <AssetDetails market={market} pool={pool} />
+          {/* The attribution the sources' terms ask for, beside the figures they give: the header's are Jupiter's, the chart's GeckoTerminal's. */}
+          <span className={styles.headerSources} data-header-sources>
+            <a href="https://jup.ag" target="_blank" rel="noreferrer noopener">Powered by Jupiter</a>
+            <span aria-hidden="true">·</span>
+            <span>{text("Chart")}:</span>
+            <a href="https://www.geckoterminal.com" target="_blank" rel="noreferrer noopener">Powered by GeckoTerminal</a>
+          </span>
+        </div>
+      ) : null}
     </section>
   );
+}
+
+const WINDOW_KEY = "ryntra.spot.window.v1";
+const WINDOW_LABELS: Readonly<Record<TokenWindow, Readonly<{ en: string; uk: string }>>> = {
+  m5: { en: "5m", uk: "5 хв" },
+  h1: { en: "1h", uk: "1 год" },
+  h6: { en: "6h", uk: "6 год" },
+  h24: { en: "24h", uk: "24 год" },
+};
+
+/** The header's window, kept in this browser: a trader who reads the hour keeps reading the hour. */
+function useHeaderWindow(): [TokenWindow, (next: TokenWindow) => void] {
+  const [value, setValue] = useState<TokenWindow>("h24");
+  useEffect(() => {
+    try {
+      const kept = window.localStorage.getItem(WINDOW_KEY);
+      if (kept === "m5" || kept === "h1" || kept === "h6" || kept === "h24") setValue(kept);
+    } catch {
+      /* The day is fine. */
+    }
+  }, []);
+  const set = (next: TokenWindow) => {
+    setValue(next);
+    try {
+      window.localStorage.setItem(WINDOW_KEY, next);
+    } catch {
+      /* Nothing to keep. */
+    }
+  };
+  return [value, set];
 }
 
 /**

@@ -22,6 +22,7 @@ import { jupiterBackgroundAllowed, noteJupiterResponse } from "../solana/jupiter
 import { resolveJupiterCatalogEndpoint, type JupiterTier } from "../solana/quotes.ts";
 import { normalizeSpotMarket, rankMarkets, rankSearch, type SpotMarket, type SpotMarketListRow, type SpotView } from "./markets.ts";
 import { rankScreenerCoins, type ScreenerRow } from "../markets/screener.ts";
+import { tokenFactsOf, type TokenFacts } from "./token-page.ts";
 
 const LITE_BASE = "https://lite-api.jup.ag/tokens/v2";
 const PRO_BASE = "https://api.jup.ag/tokens/v2";
@@ -99,6 +100,8 @@ async function getRows(
   path: string,
   ceiling: number,
   timeoutMs: number,
+  /** A detail read keeps the token page's facts of the same rows (`tokenFactsOf`), so the page asks Jupiter once. */
+  keepFacts = false,
 ): Promise<{ ok: true; rows: SpotMarket[] } | SpotSourceFailure> {
   const endpoint = resolveJupiterCatalogEndpoint();
   let response: Response;
@@ -141,6 +144,10 @@ async function getRows(
   for (const raw of body) {
     const market = normalizeSpotMarket(raw);
     if (market) rows.push(market);
+    if (market && keepFacts) {
+      const facts = tokenFactsOf(raw);
+      if (facts) tokenFacts.set(facts.mint, { value: facts, readAt: Date.now() });
+    }
   }
   return { ok: true, rows };
 }
@@ -318,6 +325,8 @@ export async function readSpotMarketsByMint(mints: readonly string[], timeoutMs 
 }
 
 const details = new Map<string, { value: SpotMarket; readAt: number }>();
+/* The token page's facts of the rows a detail read answered — the same read, kept beside the market. */
+const tokenFacts = new Map<string, { value: TokenFacts; readAt: number }>();
 
 /**
  * One market, fresh to fifteen seconds. `/search` by mint is what the provider
@@ -334,7 +343,7 @@ export async function readSpotMarket(mint: string): Promise<{ ok: true; market: 
   if (hit && now - hit.readAt < DETAIL_LOW_BUDGET_MS && !jupiterBackgroundAllowed(now)) {
     return { ok: true, market: hit.value, observedAt: new Date(hit.readAt).toISOString(), stale: true };
   }
-  const read = await getRows(`/search?query=${encodeURIComponent(mint)}`, LIST_CEILING_BYTES, 8_000);
+  const read = await getRows(`/search?query=${encodeURIComponent(mint)}`, LIST_CEILING_BYTES, 8_000, true);
   if (!read.ok) {
     if (hit && now - hit.readAt < STALE_GRACE_MS) return { ok: true, market: hit.value, observedAt: new Date(hit.readAt).toISOString(), stale: true };
     return read;
@@ -363,9 +372,22 @@ export async function lookupSpotIcon(mint: string): Promise<string | null> {
   return read.ok && read.market ? read.market.icon : null;
 }
 
+/**
+ * The token page's facts of one mint (`token-page.ts`): the market's own
+ * detail read, then the facts it kept. Null with the market when Jupiter does
+ * not list the mint; the market without facts only when the row carried none.
+ */
+export async function readSpotTokenFacts(mint: string): Promise<{ ok: true; market: SpotMarket | null; facts: TokenFacts | null; observedAt: string; stale: boolean } | SpotSourceFailure> {
+  const read = await readSpotMarket(mint);
+  if (!read.ok) return read;
+  if (!read.market) return { ok: true, market: null, facts: null, observedAt: read.observedAt, stale: false };
+  return { ok: true, market: read.market, facts: tokenFacts.get(mint)?.value ?? null, observedAt: read.observedAt, stale: read.stale };
+}
+
 /** Test seam: forget every cached read. */
 export function resetSpotMarketCaches(): void {
   caches.clear();
   inflight.clear();
   details.clear();
+  tokenFacts.clear();
 }

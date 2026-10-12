@@ -429,7 +429,17 @@ test('where the fees come from: graduation and the pool only once on the DEX; wh
   )
   assert.equal(shared[0].earnedRaw, 750_000n)
   assert.equal(shared[0].leftRaw, null)
+  // Not read: no rows — the card says «не прочитано» in one line, never a zero.
   assert.deepEqual(sourceRows(row({ earnings: null })), [])
+  // Its way to the DEX not read: nothing said of «once it reaches the DEX» — read earnings show what they read.
+  assert.deepEqual(
+    sourceRows(row({ migrated: null })).map((entry) => [entry.later, entry.earnedRaw]),
+    [
+      [false, 3_000_000n],
+      [false, 0n],
+      [false, 0n],
+    ],
+  )
 })
 
 test('a mark of locked liquidity is named by whose it is; facts of risk by their figures', () => {
@@ -537,7 +547,7 @@ test('a part that went into the shared vault is a part, not «on its way»; not 
     presetName('protected', [{ id: 'protected', name: { en: 'Protected', uk: 'Захищений' } }], 'en', word),
     'Protected',
   )
-  assert.equal(presetName('other', [], 'en', word), '—')
+  assert.equal(presetName('other', [], 'en', word), null)
   assert.equal(linkProblem('website', 'сайт.укр'), false)
   assert.equal(linkProblem('website', 'exa mple.com'), true)
 })

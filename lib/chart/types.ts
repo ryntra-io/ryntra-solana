@@ -19,6 +19,20 @@ export type LinePoint = { time: UTCTimestamp; value: number };
 export type HistogramPoint = { time: UTCTimestamp; value: number; color?: string };
 
 /** Declarative price line (entry/SL/TP overlays) applied by ProChart. */
+/**
+ * A mark on the main series at a moment (unix seconds): the chart puts it on
+ * the bar the moment falls in, and marks that land on one bar are one mark —
+ * the first one's face, the texts joined. `color` accepts the palette's
+ * semantic "up"/"down" and "ink" (the theme's text colour) besides a hex.
+ */
+export type ChartMarkerSpec = {
+  time: number;
+  position: "aboveBar" | "belowBar";
+  shape: "arrowUp" | "arrowDown" | "circle" | "square";
+  color: string;
+  text: string;
+};
+
 export type PriceLineSpec = {
   id: string;
   price: number;

@@ -131,6 +131,15 @@ export function formatUnits(raw: string, decimals: number, maxFraction: number, 
 }
 
 /** Raw units as an amount field holds them — no grouping, the language's own fraction mark («1234.5» · «1234,5»). */
+/** The quick shares of what the wallet can spend, as on a company's purchase: 25 · 50 · 75 · 100 %. */
+export const PAY_SHARES_PCT = [25, 50, 75, 100] as const
+
+/** A share of a raw spendable amount, rounded down — never more than the wallet can spend; null when not a whole number. */
+export function shareOfRaw(raw: string, pct: number): string | null {
+  if (!/^\d+$/.test(raw)) return null
+  return ((BigInt(raw) * BigInt(Math.round(pct))) / 100n).toString()
+}
+
 export function unitsForField(raw: string, decimals: number, locale: Locale): string {
   return formatUnits(raw, decimals, decimals, locale).split(UNIT_MARKS[locale].group).join('')
 }

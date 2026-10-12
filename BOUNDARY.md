@@ -9,10 +9,10 @@ moved counts as new. Generated at every update from the development history.
 
 | Since the tag | Files |
 |---|---|
-| New | 1,351 |
-| Changed | 824 |
-| Unchanged | 911 |
-| Lines added / removed | +349,428 / −20,494 |
+| New | 1,379 |
+| Changed | 825 |
+| Unchanged | 910 |
+| Lines added / removed | +361,342 / −20,533 |
 
 ## New since the tag
 
@@ -107,6 +107,7 @@ moved counts as new. Generated at every update from the development history.
 - `app/api/solana/swap/golden/fixtures.mjs`
 - `app/api/solana/swap/golden/transcripts.json`
 - `app/api/spot/about/route.ts`
+- `app/api/spot/token/route.ts`
 - `app/api/stats/registry/route.ts`
 - `app/api/stats/route.ts`
 - `app/api/stocks/asset/route.ts`
@@ -467,6 +468,7 @@ moved counts as new. Generated at every update from the development history.
 - `app/solana/workspace/spot/quote-asset-switch.tsx`
 - `app/solana/workspace/spot/recurring-ticket.test.mjs`
 - `app/solana/workspace/spot/stock-context.tsx`
+- `app/solana/workspace/spot/token-tabs.tsx`
 - `app/solana/workspace/trade/swap-assets.test.mjs`
 - `app/solana/workspace/trade/swap-assets.ts`
 - `app/stats/copy.ts`
@@ -520,6 +522,7 @@ moved counts as new. Generated at every update from the development history.
 - `apps/mobile/src/app/history.tsx`
 - `apps/mobile/src/app/launch/[mint].tsx`
 - `apps/mobile/src/app/launch/index.tsx`
+- `apps/mobile/src/app/launch/markets.tsx`
 - `apps/mobile/src/app/launch/mine.tsx`
 - `apps/mobile/src/app/money/index.tsx`
 - `apps/mobile/src/app/money/receive.tsx`
@@ -531,6 +534,7 @@ moved counts as new. Generated at every update from the development history.
 - `apps/mobile/src/app/plans/index.tsx`
 - `apps/mobile/src/app/plans/new.tsx`
 - `apps/mobile/src/app/plans/pick.tsx`
+- `apps/mobile/src/app/receipts.tsx`
 - `apps/mobile/src/app/results.tsx`
 - `apps/mobile/src/app/rewards.tsx`
 - `apps/mobile/src/app/ryn.tsx`
@@ -631,14 +635,21 @@ moved counts as new. Generated at every update from the development history.
 - `apps/mobile/src/features/launch/form.ts`
 - `apps/mobile/src/features/launch/hidden-model.ts`
 - `apps/mobile/src/features/launch/hidden.ts`
+- `apps/mobile/src/features/launch/journal-view.ts`
+- `apps/mobile/src/features/launch/journal.test.mjs`
 - `apps/mobile/src/features/launch/launch-api.ts`
 - `apps/mobile/src/features/launch/launch-flow.ts`
 - `apps/mobile/src/features/launch/launch-format.ts`
 - `apps/mobile/src/features/launch/launch-model.ts`
 - `apps/mobile/src/features/launch/launch.test.mjs`
+- `apps/mobile/src/features/launch/market-samples.ts`
+- `apps/mobile/src/features/launch/market-view.ts`
+- `apps/mobile/src/features/launch/markets.test.mjs`
 - `apps/mobile/src/features/launch/moderation.ts`
 - `apps/mobile/src/features/launch/picture-bytes.ts`
 - `apps/mobile/src/features/launch/picture.ts`
+- `apps/mobile/src/features/launch/preset-view.ts`
+- `apps/mobile/src/features/launch/preset.test.mjs`
 - `apps/mobile/src/features/launch/report.test.mjs`
 - `apps/mobile/src/features/launch/report.ts`
 - `apps/mobile/src/features/launch/use-create.ts`
@@ -676,6 +687,10 @@ moved counts as new. Generated at every update from the development history.
 - `apps/mobile/src/features/portfolio/copy.ts`
 - `apps/mobile/src/features/portfolio/portfolio-model.ts`
 - `apps/mobile/src/features/portfolio/use-portfolio.ts`
+- `apps/mobile/src/features/receipts/copy.ts`
+- `apps/mobile/src/features/receipts/receipt-doc.ts`
+- `apps/mobile/src/features/receipts/receipt-samples.ts`
+- `apps/mobile/src/features/receipts/receipts.test.mjs`
 - `apps/mobile/src/features/results/copy.ts`
 - `apps/mobile/src/features/results/results-model.test.mjs`
 - `apps/mobile/src/features/results/results-model.ts`
@@ -707,6 +722,7 @@ moved counts as new. Generated at every update from the development history.
 - `apps/mobile/src/features/trade/trade-cues.ts`
 - `apps/mobile/src/features/trade/trade-flow.ts`
 - `apps/mobile/src/features/trade/trade-model.ts`
+- `apps/mobile/src/features/trade/trade-shares.test.mjs`
 - `apps/mobile/src/features/trade/trade-store.test.mjs`
 - `apps/mobile/src/features/trade/trade-store.ts`
 - `apps/mobile/src/features/trade/trade-uk.test.mjs`
@@ -792,8 +808,11 @@ moved counts as new. Generated at every update from the development history.
 - `apps/mobile/src/screens/invest/sale-samples.tsx`
 - `apps/mobile/src/screens/invest/sell-sheet.tsx`
 - `apps/mobile/src/screens/invest/shelf-ui.tsx`
+- `apps/mobile/src/screens/launch/journal-parts.tsx`
 - `apps/mobile/src/screens/launch/launch-samples.tsx`
 - `apps/mobile/src/screens/launch/launch-success.tsx`
+- `apps/mobile/src/screens/launch/market-parts.tsx`
+- `apps/mobile/src/screens/launch/markets.tsx`
 - `apps/mobile/src/screens/launch/mine.tsx`
 - `apps/mobile/src/screens/launch/new.tsx`
 - `apps/mobile/src/screens/launch/parts.tsx`
@@ -822,6 +841,11 @@ moved counts as new. Generated at every update from the development history.
 - `apps/mobile/src/screens/portfolio/holding-row.tsx`
 - `apps/mobile/src/screens/portfolio/holding-sheet.tsx`
 - `apps/mobile/src/screens/portfolio/index.tsx`
+- `apps/mobile/src/screens/receipts/doc-sheet.tsx`
+- `apps/mobile/src/screens/receipts/index.tsx`
+- `apps/mobile/src/screens/receipts/receipt-picture.tsx`
+- `apps/mobile/src/screens/receipts/receipt-samples.tsx`
+- `apps/mobile/src/screens/receipts/share-receipt.tsx`
 - `apps/mobile/src/screens/results/index.tsx`
 - `apps/mobile/src/screens/results/result-sheet.tsx`
 - `apps/mobile/src/screens/rewards/index.tsx`
@@ -1237,6 +1261,9 @@ moved counts as new. Generated at every update from the development history.
 - `lib/spot/token-about.server.ts`
 - `lib/spot/token-about.test.mjs`
 - `lib/spot/token-about.ts`
+- `lib/spot/token-page.server.ts`
+- `lib/spot/token-page.test.mjs`
+- `lib/spot/token-page.ts`
 - `lib/spot/watchlist-client.test.mjs`
 - `lib/spot/watchlist-client.ts`
 - `lib/stocks/asset.server.ts`
@@ -1261,6 +1288,7 @@ moved counts as new. Generated at every update from the development history.
 - `lib/stocks/issuer-notices.ts`
 - `lib/stocks/issuer-pages.ts`
 - `lib/stocks/issuer-prestocks.server.ts`
+- `lib/stocks/issuer-terms.ts`
 - `lib/stocks/issuer-xstocks.server.ts`
 - `lib/stocks/lifecycle-events.ts`
 - `lib/stocks/popular.test.mjs`
@@ -1851,6 +1879,7 @@ moved counts as new. Generated at every update from the development history.
 - `lib/binance/instrument.ts`
 - `lib/binance/provenance.ts`
 - `lib/binance/tool-inventory.ts`
+- `lib/chart/types.ts`
 - `lib/compliance/gate.ts`
 - `lib/design-debt.test.mjs`
 - `lib/documented-routes.test.mjs`

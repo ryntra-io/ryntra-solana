@@ -225,16 +225,16 @@ export function noClaimKey(row: LaunchCabinetRow): LaunchWordKey {
   return 'claimNothing'
 }
 
-/** A preset's own name: the network's list first, then the product's words — never the raw id. */
+/** A preset's own name: the network's list first, then the product's words — never the raw id; null when unknown. */
 export function presetName(
   id: string,
   presets: readonly Readonly<{ id: string; name: Readonly<{ en: string; uk: string }> }>[] | undefined,
   locale: 'en' | 'uk',
   word: LaunchWord,
-): string {
+): string | null {
   const listed = presets?.find((entry) => entry.id === id)?.name[locale]
   if (listed) return listed
-  return id === 'classic' || id === 'protected' || id === 'community' ? word(`presetName_${id}`) : '—'
+  return id === 'classic' || id === 'protected' || id === 'community' ? word(`presetName_${id}`) : null
 }
 
 /** What can be claimed now across the cabinet, by pair currency — only from launches that were read. */
@@ -254,12 +254,19 @@ export type SourceRow = Readonly<{
   leftRaw: bigint | null
 }>
 
-/** Where a launch's fees came from — shared: the wallet's part of each, so the rows add up to what it earned. */
+const SOURCES = ['curve', 'graduation', 'lp'] as const
+
+/**
+ * Where a launch's fees came from — the curve, the move to the DEX, the
+ * locked pool — three rows once read (not read, the card says so in one
+ * line); shared: the wallet's part of each, so the rows add up to what it
+ * earned.
+ */
 export function sourceRows(row: LaunchCabinetRow): readonly SourceRow[] {
   const earnings = row.earnings
   if (!earnings) return []
   const shared = row.feeSharing !== null && row.feeSharing.state !== 'FAILED'
-  return (['curve', 'graduation', 'lp'] as const).map((source) => {
+  return SOURCES.map((source) => {
     const part = earnings.role[source]
     const earnedRaw = shared
       ? (BigInt(part.earnedRaw) * BigInt(earnings.mine.shareBps)) / 10_000n
@@ -267,7 +274,7 @@ export function sourceRows(row: LaunchCabinetRow): readonly SourceRow[] {
     const left = BigInt(part.unclaimedRaw)
     return {
       source,
-      later: source !== 'curve' && !row.migrated,
+      later: source !== 'curve' && row.migrated === false,
       earnedRaw,
       leftRaw: !shared && left > 0n && left !== earnedRaw ? left : null,
     }

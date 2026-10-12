@@ -28,3 +28,8 @@ export function toggleHidden(list: readonly string[], mint: string): readonly st
   if (!MINT.test(mint)) return list
   return [...list, mint].slice(-HIDDEN_LIMIT)
 }
+
+/** The picture a place draws for a token: none once the person hid it on this phone — on its page and on every list. */
+export function shownPicture(image: string | null, hidden: boolean): string | null {
+  return hidden ? null : image
+}

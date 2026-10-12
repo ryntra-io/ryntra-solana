@@ -28,7 +28,7 @@ import { isListedToken } from '@/features/autoinvest/floor'
 import { useRule, useRules, useRuleWrites } from '@/features/autoinvest/use-rules'
 import { ruleWhenLine, unbrokenParts } from '@/features/autoinvest/words'
 import { BUY_COPY } from '@/features/invest/buy-copy'
-import { dollarsText, exchangeState, issuerFeeOf, truthLine } from '@/features/invest/buy-model'
+import { dollarsText, exchangeState, issuerFeeOf, truthLine, unitsFromRaw } from '@/features/invest/buy-model'
 import { COMPANY_COPY } from '@/features/invest/company-copy'
 import { companyHead, truthTopicOf, type CompanyHead } from '@/features/invest/company-facts'
 import { companyPathView, otherPathToken } from '@/features/invest/company-path'
@@ -45,6 +45,8 @@ import {
 import { INVEST_COPY } from '@/features/invest/copy'
 import { SALE_COPY } from '@/features/invest/sale-copy'
 import { heldUnitsText, positionUsd } from '@/features/invest/sale-model'
+import { formatNumber } from '@/features/launch/launch-format'
+import { SOL_MINT } from '@/lib/api'
 import { DETAILS_COPY, isAssetCategory } from '@/features/invest/details-copy'
 import { coinName, companyDisplayName, premiumPhrase } from '@/features/invest/shelf'
 import type { BuyCompany } from '@/features/invest/use-buy'
@@ -66,7 +68,7 @@ import {
   type RuleOccurrence,
   type StockAsset,
 } from '@/lib/api'
-import { useCopy, useLocale } from '@/lib/i18n'
+import { useCopy, useLocale, type Locale } from '@/lib/i18n'
 import { isSupportedIssuer, issuerLabel } from '@/lib/stocks'
 import { AutoinvestSheet, type AutoinvestCompany, type AutoinvestMode } from '@/screens/autoinvest/autoinvest-sheet'
 import { BudgetSheet } from '@/screens/autoinvest/budget-sheet'
@@ -215,6 +217,8 @@ export function AssetScreen({
   const watchlist = useWatchlist()
   const [research, setResearch] = useState(false)
   const [details, setDetails] = useState(false)
+  // The spinner answers the person's pull only — never the price's own refresh every 20 seconds.
+  const [pulling, setPulling] = useState(false)
   const [buying, setBuying] = useState(openBuy || reminder !== null)
   // The sale open now, with the company as the page named it when «Продати» was pressed: the sheet stays while it is open.
   const [selling, setSelling] = useState<Readonly<{ name: string; icon: string | null; ticker: string }> | null>(null)
@@ -304,7 +308,11 @@ export function AssetScreen({
 
   /* ---- the IPO and conversion watch: the issuer's window on this token, the wallet's own read, the target ---- */
   const holdings = useHoldings(account.address)
-  const heldRow = holdings.data?.data.holdings.find((holding) => holding.mint === mint) ?? null
+  // SOL's own row is the native balance, as Trade reads it — never a wrapped-SOL account under its name.
+  const heldRow =
+    holdings.data?.data.holdings.find((holding) =>
+      mint === SOL_MINT ? holding.kind === 'NATIVE_SOL' : holding.mint === mint,
+    ) ?? null
   const holds = heldRow !== null && /^\d+$/.test(heldRow.amountRaw) && BigInt(heldRow.amountRaw) > 0n
   const pageName = detail ? displayName(detail, stock.data ?? null, nameOf(mint)) : null
   // A private token is PreStocks' alone: the market's own read says so before the issuer's answers.
@@ -775,15 +783,41 @@ export function AssetScreen({
     const heldUsd = positionUsd(heldRaw, heldRow?.decimals ?? null, heldMultiplier, heldPrice)
     // Where the issuer's window offers its own sale, the position is said and that sale is the one offered.
     const canSell = !retired && !halted && heldUsd !== null && !event
+    /* A coin's or a meme's position the same way (the operator, 2026-10-10: «акції мають зрівнятися з криптою, з мемами»):
+       what the wallet can move and its worth at the page's price, «Продати» opening Trade on a Sell of this token. */
+    const coinMultiplier = heldRow?.uiMultiplier ?? null
+    const coinAmount =
+      (!isStock || stockNotConfirmed) && !retired && heldRaw !== null && heldRow
+        ? unitsFromRaw(heldRaw.toString(), heldRow.decimals, coinMultiplier)
+        : null
+    const coinUnits =
+      coinAmount === null
+        ? null
+        : coinAmount > 0 && coinAmount < 0.000001
+          ? `< ${formatNumber(0.000001, locale, 6)} ${detail.symbol}`
+          : `${formatNumber(coinAmount, locale, 6)} ${detail.symbol}`
+    const coinUsd = coinUnits ? positionUsd(heldRaw, heldRow?.decimals ?? null, coinMultiplier, detail.price) : null
     const positionCard =
       isStock && stock.data && rep && !retired && heldUnits ? (
         <Animated.View layout={SETTLE}>
           <PositionCard
             label={saleWords.yourPosition}
-            value={heldUsd === null ? heldUnits : dollarsText(heldUsd, locale)}
+            value={heldUsd === null ? heldUnits : worthText(heldUsd, locale)}
             detail={heldUsd === null ? null : heldUnits}
             sellLabel={canSell ? saleWords.sell : null}
             onSell={() => setSelling(saleHint)}
+          />
+        </Animated.View>
+      ) : coinUnits ? (
+        <Animated.View layout={SETTLE}>
+          <PositionCard
+            label={saleWords.yourPosition}
+            value={coinUsd === null ? coinUnits : worthText(coinUsd, locale)}
+            detail={coinUsd === null ? null : coinUnits}
+            sellLabel={saleWords.sell}
+            onSell={() =>
+              router.push({ pathname: '/trade', params: { mint, symbol: detail.symbol, side: 'sell' } })
+            }
           />
         </Animated.View>
       ) : null
@@ -960,10 +994,12 @@ export function AssetScreen({
         keyboardShouldPersistTaps="handled"
         refreshControl={
           <RefreshControl
-            refreshing={market.isFetching && !market.isPending}
+            refreshing={pulling}
             onRefresh={() => {
-              void market.refetch()
-              if (isStock) void stock.refetch()
+              setPulling(true)
+              void Promise.allSettled([market.refetch(), ...(isStock ? [stock.refetch()] : [])]).finally(() =>
+                setPulling(false),
+              )
             }}
             tintColor={colors.brand}
             colors={[colors.brand]}
@@ -1031,4 +1067,9 @@ export function AssetScreen({
       ) : null}
     </View>
   )
+}
+
+/** A position's worth: under a cent is «< $0,01», never a «$0» for something held. */
+function worthText(usd: number, locale: Locale): string {
+  return usd > 0 && usd < 0.01 ? `< ${dollarsText(0.01, locale)}` : dollarsText(usd, locale)
 }

@@ -97,7 +97,10 @@ export function useTrade(
   const [prepared, setPrepared] = useState<Prepared | null>(null)
   const [invalidated, setInvalidated] = useState(false)
   // A refusal belongs to the quote it answered: it leaves the screen with that quote, never outliving it.
-  const [failure, setFailureState] = useState<(TradeFailure & { quoteId: string | null }) | null>(null)
+  // A Review's refusal belongs to the amount and pair it was asked for, whatever estimate refreshes under it.
+  const [failure, setFailureState] = useState<
+    (TradeFailure & { quoteId: string | null; reviewKey: string | null }) | null
+  >(null)
   const [lockedReview, setLockedReview] = useState<string | null>(null)
   const [settled, setSettled] = useState<Settled | null>(null)
   // The wallet has answered and the signature is remembered: the send is under way.
@@ -121,9 +124,10 @@ export function useTrade(
     }
   }
   const quoteIdRef = useRef<string | null>(null)
-  const setFailure = useCallback((next: TradeFailure | null) => {
-    setFailureState(next ? { ...next, quoteId: quoteIdRef.current } : null)
+  const setFailure = useCallback((next: TradeFailure | null, reviewKey: string | null = null) => {
+    setFailureState(next ? { ...next, quoteId: quoteIdRef.current, reviewKey } : null)
   }, [])
+  const currentReviewKey = pay && receive && typedRaw ? `${pay.mint}:${receive.mint}:${typedRaw}` : null
 
   /* ---- the estimate ---- */
 
@@ -170,9 +174,10 @@ export function useTrade(
 
   const wallet_ = useMemo(() => ({ signTransaction: wallet.signTransaction }), [wallet.signTransaction])
 
+  // The Review is asked for the amount on screen now, never the one the estimate trails by its debounce.
   const review = useCallback(async () => {
     const session = account.session
-    if (!session || !pay || !receive || !amountRaw) return
+    if (!session || !pay || !receive || !typedRaw) return
     const my = ++ticket.current
     setFailure(null)
     setLockedReview(null)
@@ -184,7 +189,7 @@ export function useTrade(
       mode,
       pay,
       receive,
-      amountRaw,
+      amountRaw: typedRaw,
       origin: tradeOrigin(mode, plan, rule),
       // A pause before the order is asked again ends it when the sheet closed or a new Review was asked for (M27).
       cancelled: () => ticket.current !== my,
@@ -195,7 +200,7 @@ export function useTrade(
         'prepare',
         `refused ${outcome.failure.code}${outcome.attempt ? ' (an attempt to recover)' : ''}${outcome.lockedReview ? ' (a Review to release)' : ''}`,
       )
-      setFailure(outcome.failure)
+      setFailure(outcome.failure, `${pay.mint}:${receive.mint}:${typedRaw}`)
       if (outcome.lockedReview) setLockedReview(outcome.lockedReview.requestId)
       setPhase(outcome.attempt ? 'recovery' : 'idle')
       return
@@ -209,7 +214,7 @@ export function useTrade(
     setInvalidated(false)
     setPhase('review')
     feel('review')
-  }, [account.session, amountRaw, mode, pay, plan, receive, rule, setFailure])
+  }, [account.session, typedRaw, mode, pay, plan, receive, rule, setFailure])
 
   const closeReview = useCallback(() => {
     ticket.current += 1
@@ -346,12 +351,15 @@ export function useTrade(
     // A refusal from a quote no longer on screen is not shown; the settled and recovery phases keep theirs.
     // A plan's refusal is the plan's verdict, not the quote's: it stays until the next Review, so a
     // violated rule is never blinked away by the quote that refreshes under it. So is a reminder's (RULE_…).
+    // A Review's own refusal stays while the same pair and amount stand — never blinked away by the estimate.
     failure:
       failure &&
-      (failure.quoteId === currentQuoteId ||
-        failure.code.startsWith('PLAN_') ||
+      (failure.code.startsWith('PLAN_') ||
         failure.code.startsWith('RULE_') ||
-        phase !== 'idle')
+        phase !== 'idle' ||
+        (failure.reviewKey !== null
+          ? failure.reviewKey === currentReviewKey
+          : failure.quoteId === currentQuoteId))
         ? failure
         : null,
     lockedReview,

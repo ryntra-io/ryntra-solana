@@ -55,3 +55,13 @@ test('the copies carry what 1.24.0 added — a `/build` order and the fee paid w
   assert.match(types, /"JUPITER_REFERRAL" \| "JUPITER_PLATFORM_FEE"/)
   assert.match(types, /ryntraFeeAccount\?: Readonly<\{ owner: string; account: string \}>;/)
 })
+
+test('the copies carry what 1.36.0 added — the markets launched on Ryntra, a market’s card and its health', () => {
+  const types = readFileSync(join(here, 'types.ts'), 'utf8').replace(/\r\n/g, '\n')
+  const client = readFileSync(join(here, 'client.ts'), 'utf8').replace(/\r\n/g, '\n')
+  assert.match(types, /export type LaunchMarketsResponse = Readonly<\{ network: LaunchNetworkId; markets: readonly LaunchMarketRow\[\]; complete: boolean; observedAt: string \}>;/)
+  assert.match(types, /state: "NOT_COUNTED" \| "IN_POOL" \| "COUNTED";/)
+  assert.match(types, /export type LaunchMarketEnforcement = "rule" \| "policy";/)
+  assert.match(types, /holders: Readonly<\{ count: number \| null; atLeast: boolean; minUsd: 1 \}>;/)
+  assert.match(client, /markets: \(\) => call<LaunchMarketsResponse>\("GET", "\/api\/v1\/launch\/markets"\)/)
+})

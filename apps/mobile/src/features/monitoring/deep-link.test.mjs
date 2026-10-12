@@ -302,6 +302,9 @@ test('a Launch link opens the phone’s own Launch: the form, «Мої лаун�
   assert.deepEqual(mapDeepLink('https://ryntra.io/app/launch/new'), { path: '/launch', kind: 'native' })
   assert.deepEqual(mapDeepLink('/app/launch'), { path: '/launch', kind: 'native' })
   assert.deepEqual(mapDeepLink('/app/launch/mine'), { path: '/launch/mine', kind: 'native' })
+  // «Лаунчі на Ryntra» — the web's page of every market launched on Ryntra, never read as a token's address.
+  assert.deepEqual(mapDeepLink('https://ryntra.io/app/launch/markets'), { path: '/launch/markets', kind: 'native' })
+  assert.deepEqual(mapDeepLink('/launch/markets'), { path: '/launch/markets', kind: 'native' })
   assert.deepEqual(mapDeepLink(`https://ryntra.io/app/launch/${mint}`), { path: `/launch/${mint}`, kind: 'native' })
   assert.deepEqual(mapDeepLink('/app/launch/not-a-mint!'), { path: '/launch', kind: 'native' })
   assert.deepEqual(mapDeepLink(`/launch/${mint}`), { path: `/launch/${mint}`, kind: 'native' })

@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'expo-router'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { Pressable, RefreshControl, View } from 'react-native'
 
 import { Button } from '@/components/button'
@@ -12,15 +12,13 @@ import { Sheet } from '@/components/sheet'
 import { StateView } from '@/components/state-view'
 import { Txt } from '@/components/txt'
 import { launchWords, type LaunchWord } from '@/features/launch/copy'
-import { claimApi, fetchLaunchMarket } from '@/features/launch/launch-api'
+import { claimApi } from '@/features/launch/launch-api'
 import { claimFees, type FlowStep, type LaunchFailure } from '@/features/launch/launch-flow'
 import {
   exactPair,
   explorerUrl,
   formatBps,
-  formatCountShort,
   formatDate,
-  formatMoneyShort,
   formatRaw,
   shortKey,
   shortPair,
@@ -31,7 +29,6 @@ import {
   claimFailureKey,
   claimFailureTitleKey,
   claimView,
-  earningsUnreadKey,
   isPaused,
   noClaimKey,
   presetName,
@@ -39,7 +36,17 @@ import {
   toClaimByPair,
   unclaimedOf,
 } from '@/features/launch/launch-model'
-import { useCreatorCabinet, useLaunchOpen, useLaunchPresets } from '@/features/launch/use-launch'
+import { holdersView, pairMoney, rowDepth, sinceText } from '@/features/launch/market-view'
+import {
+  useCreatorCabinet,
+  useLaunchMarketCard,
+  useLaunchMarkets,
+  useLaunchOpen,
+  useLaunchPresets,
+  usePageLive,
+} from '@/features/launch/use-launch'
+import { RECEIPTS_COPY } from '@/features/receipts/copy'
+import { docFromClaim, docFromClaimResult } from '@/features/receipts/receipt-doc'
 import { useAccount } from '@/features/session/use-account'
 import { useNow } from '@/hooks/use-now'
 import { useWallet } from '@/features/wallet/use-wallet'
@@ -48,20 +55,23 @@ import type {
   LaunchClaimReceipt,
   LaunchClaimSubmitResponse,
   LaunchCreatorCabinetResponse,
-  LaunchMarketResponse,
+  LaunchMarketRow,
   LaunchNetworkId,
 } from '@/lib/api/v1/types'
 import { feel } from '@/lib/haptics'
-import { useLocale, useSharedCopy, type Locale } from '@/lib/i18n'
+import { useCopy, useLocale, useSharedCopy, type Locale } from '@/lib/i18n'
+import { ShareReceiptButton } from '@/screens/receipts/share-receipt'
 
+import { holdersCell, StateChip, TechChip } from './market-parts'
 import { ExplorerLink, LaunchTabs, PausedNote, Row, Steps, TokenPicture } from './parts'
 
 /**
  * «Мої лаунчі» — the creator's cabinet, as on the web: what the wallet's
- * launches earned it (each currency apart), then each launch — its way to the
- * DEX, the day's volume and holders, what it earned and what can be claimed
- * now, one «Забрати» — and the claim receipts. Every figure is the chain's; a
- * figure not read is said as not read, never as zero.
+ * launches earned it (each currency apart), then each launch — its state and
+ * health as «Лаунчі на Ryntra» says them, its way to the DEX, what it earned
+ * from the curve, the move to the DEX and the locked pool, one «Забрати» —
+ * and the claim receipts. Every figure is the chain's; a figure not read is
+ * said as not read, never as zero.
  */
 export function LaunchMineScreen() {
   const router = useRouter()
@@ -116,7 +126,16 @@ export function LaunchMineScreen() {
         action={{ title: word('mineLaunch'), onPress: () => router.replace('/launch' as never) }}
       />
     )
-  else body = <Cabinet data={data} word={word} locale={locale} address={account.address} />
+  else
+    body = (
+      <Cabinet
+        data={data}
+        word={word}
+        locale={locale}
+        address={account.address}
+        marketsOpen={launchOpen.markets}
+      />
+    )
 
   return (
     <Screen
@@ -136,30 +155,34 @@ export function LaunchMineScreen() {
   )
 }
 
-/** The day's volume and the holders, from each token's own market — one token at a time, so a public node is not asked in a burst. */
-function useMarkets(tokens: readonly string[]) {
-  const [markets, setMarkets] = useState<Record<string, LaunchMarketResponse | 'unread'>>({})
-  const key = tokens.join(',')
-  useEffect(() => {
-    let live = true
-    void (async () => {
-      for (const token of key ? key.split(',') : []) {
-        if (!live) return
-        let answer: LaunchMarketResponse | 'unread'
-        try {
-          answer = await fetchLaunchMarket(token)
-        } catch {
-          answer = 'unread'
-        }
-        if (!live) return
-        setMarkets((current) => ({ ...current, [token]: answer }))
-      }
-    })()
-    return () => {
-      live = false
-    }
-  }, [key])
-  return markets
+/**
+ * A launch's row of «Лаунчі на Ryntra»: its state and health, still being
+ * read, not read now, not on the list yet (a launch newer than the list's
+ * read — its own card is read), or `none` where the server has no such read.
+ */
+export type MarketRead = LaunchMarketRow | 'reading' | 'unread' | 'missing' | 'none'
+
+/**
+ * Each launch's state and health from «Лаунчі на Ryntra» — one read for
+ * every card, as the list itself reads them, and read again while the page
+ * is in view; nothing asked where the server has no markets' reads.
+ */
+function useMarketRows(enabled: boolean): (token: string) => MarketRead {
+  const live = usePageLive()
+  const markets = useLaunchMarkets(enabled, live)
+  return (token) => {
+    if (!enabled) return 'none'
+    const row = markets.data?.markets.find((entry) => entry.token === token)
+    if (row) return row
+    return markets.data ? 'missing' : markets.isError ? 'unread' : 'reading'
+  }
+}
+
+/** A launch the list does not carry yet: its own market card, read once. */
+function useOwnMarket(token: string, market: MarketRead): MarketRead {
+  const card = useLaunchMarketCard(market === 'missing' ? token : null)
+  if (market !== 'missing') return market
+  return card.data ? card.data.market : card.isError ? 'unread' : 'reading'
 }
 
 export function Cabinet({
@@ -167,18 +190,20 @@ export function Cabinet({
   word,
   locale,
   address,
+  marketsOpen = true,
   markets: given,
 }: {
   data: LaunchCreatorCabinetResponse
   word: LaunchWord
   locale: Locale
   address: string
-  /** Each token's market as already read — the gallery's samples; read here otherwise. */
-  markets?: Readonly<Record<string, LaunchMarketResponse | 'unread'>>
+  /** Whether the server names the markets' reads (1.36.0); without them no state or health is drawn. */
+  marketsOpen?: boolean
+  /** Each token's market row as already read — the gallery's samples; read here otherwise. */
+  markets?: Readonly<Record<string, MarketRead>>
 }) {
-  const tokens = useMemo(() => (given ? [] : data.launches.map((row) => row.token)), [data.launches, given])
-  const read = useMarkets(tokens)
-  const markets = given ?? read
+  const read = useMarketRows(!given && marketsOpen)
+  const marketOf = (token: string): MarketRead => (given ? (given[token] ?? 'unread') : read(token))
   return (
     <>
       <Summary data={data} word={word} locale={locale} />
@@ -186,8 +211,9 @@ export function Cabinet({
         <LaunchCard
           key={row.token}
           row={row}
-          market={markets[row.token]}
+          market={marketOf(row.token)}
           network={data.network}
+          readAt={data.observedAt}
           word={word}
           locale={locale}
           address={address}
@@ -280,15 +306,18 @@ type ClaimPhase = 'idle' | FlowStep | 'done' | 'error'
 
 function LaunchCard({
   row,
-  market,
+  market: listed,
   network,
+  readAt,
   word,
   locale,
   address,
 }: {
   row: LaunchCabinetRow
-  market: LaunchMarketResponse | 'unread' | undefined
+  market: MarketRead
   network: LaunchNetworkId
+  /** When the chain was read for the cabinet — the time its earnings carry. */
+  readAt: string
   word: LaunchWord
   locale: Locale
   address: string
@@ -302,7 +331,6 @@ function LaunchCard({
   const [result, setResult] = useState<LaunchClaimSubmitResponse | null>(null)
   const [cost, setCost] = useState<string | null>(null)
   const [paused, setPaused] = useState(false)
-  const [sources, setSources] = useState(false)
   const running = useRef(false)
   const earnings = row.earnings
   const presetLabel = presetName(row.preset, presets.data?.presets, locale, word)
@@ -354,9 +382,12 @@ function LaunchCard({
     }
   }
 
-  const figure = (read: (data: LaunchMarketResponse) => string) =>
-    market === undefined ? word('mineMarketReading') : market === 'unread' ? word('mineNotRead') : read(market)
   const shared = row.feeSharing !== null && row.feeSharing.state !== 'FAILED'
+  const market = useOwnMarket(row.token, listed)
+  const now = useNow(15_000)
+  // «Забрати {amount}» says what waits; the rows then say only what each source earned.
+  // Just claimed: what was left before is not said again beside the claim's own result, until the cabinet reads anew.
+  const leftShown = !(canClaim(row, paused) && !busy) && phase !== 'done'
 
   return (
     <Card className="gap-3">
@@ -376,8 +407,10 @@ function LaunchCard({
         </View>
         <Icon name="chevron-forward" size={18} color="fgMuted" />
       </Pressable>
-      <View className="flex-row flex-wrap gap-1.5">
-        <Chip label={word('presetChip', { name: presetLabel })} caps={false} />
+      <View className="flex-row flex-wrap items-center gap-1.5">
+        {typeof market === 'object' && market.state ? <StateChip code={market.state.code} word={word} standalone /> : null}
+        {typeof market === 'object' && market.technicalValidation ? <TechChip word={word} standalone /> : null}
+        {presetLabel ? <Chip label={word('presetChip', { name: presetLabel })} caps={false} /> : null}
         {row.role === 'recipient' && earnings ? (
           <Chip label={word('mineRoleShare', { pct: formatBps(earnings.mine.shareBps, locale) })} caps={false} />
         ) : null}
@@ -403,44 +436,48 @@ function LaunchCard({
         ) : null}
       </View>
 
-      <View className="flex-row flex-wrap">
-        <Stat
-          label={word('mineEarned')}
-          value={earnings ? shortPair(earnings.mine.earnedRaw, row.pair, locale) : word(earningsUnreadKey(row))}
-          unread={!earnings}
-        />
-        <Stat
-          label={word('mineToClaim')}
-          value={earnings ? exactPair(earnings.mine.unclaimedRaw, row.pair, locale) : word(earningsUnreadKey(row))}
-          unread={!earnings}
-        />
-        <Stat
-          label={word('mineVolume')}
-          value={figure(
-            (data) =>
-              `${data.volume24h.complete ? '' : '≥ '}${formatMoneyShort(data.volume24h.pair, locale, data.pair.dollar, data.pair.symbol)}`,
-          )}
-          unread={market === undefined || market === 'unread'}
-        />
-        <Stat
-          label={word('mineHolders')}
-          value={figure((data) => `${data.holders.atLeast ? '≥ ' : ''}${formatCountShort(data.holders.count, locale)}`)}
-          unread={market === undefined || market === 'unread'}
-        />
-      </View>
+      {market === 'none' ? null : <MarketHealth market={market} word={word} locale={locale} />}
 
-      {earnings ? (
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => setSources(true)}
-          hitSlop={8}
-          className="min-h-11 justify-center self-start"
-        >
-          <Txt variant="ui" tone="brand">
-            {word('mineBreakdown')}
+      <View>
+        <View className="flex-row items-center justify-between gap-2 pb-1">
+          <Txt variant="labelSm" tone="faint" caps>
+            {word('mineBySource')}
           </Txt>
-        </Pressable>
-      ) : null}
+          {earnings ? (
+            <Txt variant="labelSm" tone="faint">
+              {sinceText(readAt, word, locale, now)}
+            </Txt>
+          ) : null}
+        </View>
+        {shared && earnings ? (
+          <Txt variant="ui" tone="muted" className="pb-1">
+            {word('mineBreakdownShare', { pct: formatBps(earnings.mine.shareBps, locale) })}
+          </Txt>
+        ) : null}
+        {/* Not read: one line says so and how to read again — never a zero, never three rows of the same word. */}
+        {!earnings ? (
+          <Txt variant="ui" tone="muted">
+            {word(noClaimKey(row))}
+          </Txt>
+        ) : null}
+        {sourceRows(row).map((entry) => (
+          <Row
+            key={entry.source}
+            label={word(`source_${entry.source}`)}
+            value={
+              entry.later
+                ? word('sourceAfterDex')
+                : `${shortPair(entry.earnedRaw, row.pair, locale)}${entry.leftRaw !== null && leftShown ? ` · ${word('sourceLeft', { amount: exactPair(entry.leftRaw, row.pair, locale) })}` : ''}`
+            }
+            tone={entry.later ? 'muted' : 'fg'}
+            mono={!entry.later}
+          />
+        ))}
+        {/* What waits to be claimed is said by «Забрати» itself; said here only where that button is not. */}
+        {earnings && unclaimed > 0n && leftShown ? (
+          <Row label={word('mineToClaim')} value={exactPair(unclaimed, row.pair, locale)} />
+        ) : null}
+      </View>
 
       {row.feeSharing ? <Sharing row={row} address={address} network={network} word={word} locale={locale} /> : null}
 
@@ -474,11 +511,11 @@ function LaunchCard({
           size="lg"
           onPress={() => void claim()}
         />
-      ) : (
+      ) : earnings ? (
         <Txt variant="ui" tone="muted">
           {word(noClaimKey(row))}
         </Txt>
-      )}
+      ) : null}
 
       {failure && phase !== 'done' ? (
         failure.code === 'WALLET_REFUSED' ? (
@@ -504,35 +541,65 @@ function LaunchCard({
           </View>
         )
       ) : null}
-
-      <Sheet visible={sources} title={row.name} subtitle={word('mineBreakdown')} onClose={() => setSources(false)}>
-        <View className="px-4 pb-2">
-          {shared && earnings ? (
-            <Txt variant="ui" tone="muted" className="pb-1">
-              {word('mineBreakdownShare', { pct: formatBps(earnings.mine.shareBps, locale) })}
-            </Txt>
-          ) : null}
-          {sourceRows(row).map((entry) => (
-            <Row
-              key={entry.source}
-              label={word(`source_${entry.source}`)}
-              value={
-                entry.later
-                  ? word('sourceAfterDex')
-                  : `${shortPair(entry.earnedRaw, row.pair, locale)}${entry.leftRaw !== null ? ` · ${word('sourceLeft', { amount: exactPair(entry.leftRaw, row.pair, locale) })}` : ''}`
-              }
-              tone={entry.later ? 'muted' : 'fg'}
-            />
-          ))}
-        </View>
-      </Sheet>
     </Card>
+  )
+}
+
+/**
+ * A market's health as «Лаунчі на Ryntra» says it: depth at −5 % and holders
+ * over $1, with when the chain was read; not read is said, never a zero. The
+ * state's chip stands above with the preset.
+ */
+function MarketHealth({ market, word, locale }: { market: MarketRead; word: LaunchWord; locale: Locale }) {
+  const now = useNow(15_000)
+  if (typeof market !== 'object' || !market.read)
+    return (
+      <View className="gap-0.5">
+        <Txt variant="labelSm" tone="faint" caps>
+          {word('healthTitle')}
+        </Txt>
+        <Txt variant="ui" tone="muted">
+          {market === 'reading' ? word('marketReading') : word('notRead')}
+        </Txt>
+      </View>
+    )
+  const depth = rowDepth(market)
+  const holders = holdersView(market.holders, market.holdersAtLeast)
+  return (
+    <View className="gap-1">
+      <View className="flex-row items-center justify-between gap-2">
+        <Txt variant="labelSm" tone="faint" caps>
+          {word('healthTitle')}
+        </Txt>
+        <Txt variant="labelSm" tone="faint">
+          {sinceText(market.observedAt, word, locale, now)}
+        </Txt>
+      </View>
+      <View className="flex-row">
+        <Stat
+          label={word('colDepth')}
+          value={
+            depth.kind === 'raw'
+              ? pairMoney(depth.raw, market.pair, locale)
+              : depth.kind === 'curveFull'
+                ? word('curveFull')
+                : word('notRead')
+          }
+          unread={depth.kind !== 'raw'}
+        />
+        <Stat
+          label={word('colHolders')}
+          value={holdersCell(holders, word, locale)}
+          unread={holders.kind !== 'count'}
+        />
+      </View>
+    </View>
   )
 }
 
 function Stat({ label, value, unread }: { label: string; value: string; unread?: boolean }) {
   return (
-    <View className="w-1/2 gap-0.5 py-1.5 pr-2">
+    <View className="w-1/2 gap-0.5 py-1 pr-2">
       <Txt variant="labelSm" tone="faint" caps>
         {label}
       </Txt>
@@ -610,6 +677,32 @@ export function ClaimResult({
   onClose: () => void
 }) {
   const view = claimView(result)
+  const receiptWords = useCopy(RECEIPTS_COPY)
+  // When the claim came back — the receipt's time where the chain's event has none yet.
+  const [answeredAt] = useState(() => new Date().toISOString())
+  const doc = docFromClaimResult(
+    {
+      token: row.token,
+      symbol: row.symbol,
+      pair: row.pair,
+      kind: view.kind,
+      receivedRaw: view.receivedRaw,
+      // All of it went into the shared vault: what the programs paid, whatever the state says.
+      intoVaultRaw:
+        view.intoVaultRaw ??
+        (view.receivedRaw === 0n
+          ? result.receipts.reduce(
+              (sum, receipt) =>
+                sum + BigInt(receipt.paid.curve) + BigInt(receipt.paid.graduation) + BigInt(receipt.paid.lp),
+              0n,
+            )
+          : null),
+      signature: view.signatures[0] ?? null,
+      title: receiptWords.claimed(row.symbol),
+      at: result.receipts[0]?.at ?? answeredAt,
+    },
+    locale,
+  )
   return (
     <View accessibilityLiveRegion="polite" className="gap-1.5 rounded-sm border border-line bg-elevated px-3 py-3">
       <View className="flex-row items-center gap-2">
@@ -642,6 +735,7 @@ export function ClaimResult({
           url={explorerUrl(network, 'tx', signature)}
         />
       ))}
+      <ShareReceiptButton variant="button" doc={doc} />
       <Button title={word('claimAgain')} variant="secondary" onPress={onClose} />
     </View>
   )
@@ -665,6 +759,7 @@ function Receipts({
   locale: Locale
 }) {
   const [opened, setOpened] = useState<LaunchClaimReceipt | null>(null)
+  const receiptWords = useCopy(RECEIPTS_COPY)
   return (
     <Card className="gap-2">
       <Txt variant="labelSm" tone="faint" caps>
@@ -736,6 +831,7 @@ function Receipts({
               label={`${word('viewTx')} ${shortKey(opened.signature)}`}
               url={explorerUrl(network, 'tx', opened.signature)}
             />
+            <ShareReceiptButton doc={docFromClaim(opened, receiptWords.claimed(opened.symbol), locale)} />
           </View>
         ) : null}
       </Sheet>

@@ -24,8 +24,11 @@ import { CONVERT_COPY } from '@/features/invest/convert-copy'
 import { SALE_COPY, type SaleCopy } from '@/features/invest/sale-copy'
 import { heldUnitsText, isCompanySale, type SaleCompany, type SalePct } from '@/features/invest/sale-model'
 import { useSale, useSaleCompany, type SaleController, type SaleHint } from '@/features/invest/use-sale'
+import { RECEIPTS_COPY } from '@/features/receipts/copy'
+import { docFromSwap, outcomeStatus } from '@/features/receipts/receipt-doc'
 import { useCopy } from '@/lib/i18n'
 import { TopUpSheet } from '@/screens/home/top-up-sheet'
+import { ShareReceiptSheet } from '@/screens/receipts/share-receipt'
 import { type, useTheme } from '@/theme'
 import { DASH } from '@/utils/format'
 import { openLink } from '@/lib/open-link'
@@ -560,6 +563,8 @@ function Receipt({
   onDone: () => void
   onHistory: () => void
 }) {
+  const receiptWords = useCopy(RECEIPTS_COPY)
+  const [sharing, setSharing] = useState(false)
   const { trade, locale } = sale
   const settled = trade.settled!
   const context = settled.context
@@ -617,7 +622,24 @@ function Receipt({
       ) : (
         <Button title={buyWords.tryAgain} size="lg" onPress={trade.reset} />
       )}
-      <QuietLinks links={links} />
+      <QuietLinks links={[...links, { label: receiptWords.share, onPress: () => setSharing(true) }]} />
+      {sharing ? (
+        <ShareReceiptSheet
+          doc={docFromSwap(
+            {
+              title: outcome.kind === 'filled' ? words.sold : face.headline,
+              status: outcomeStatus(outcome.kind),
+              settlement: settled.settlement,
+              context,
+              at: settled.at,
+              multipliers: { pay: sale.multiplier },
+            },
+            locale,
+          )}
+          visible
+          onClose={() => setSharing(false)}
+        />
+      ) : null}
     </View>
   )
 }

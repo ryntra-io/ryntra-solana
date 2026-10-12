@@ -4337,3 +4337,19 @@
     min-height: 44px;
   }
 }
+
+/* How a holding moved over the last day: under the share, quiet, its sign in its colour. */
+.holderChange {
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.holderChange[data-tone="up"] {
+  color: var(--ry-pnl-pos);
+}
+
+.holderChange[data-tone="down"] {
+  color: var(--ry-pnl-neg);
+}

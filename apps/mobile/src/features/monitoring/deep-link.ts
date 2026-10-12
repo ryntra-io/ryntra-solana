@@ -269,9 +269,10 @@ function agentPathOf(name: string, params: URLSearchParams, options: MapOptions)
     default:
       break
   }
-  // Ryntra Launch: the form, «Мої лаунчі» and a token's page — the share link a creator posts opens here.
+  // Ryntra Launch: the form, «Лаунчі на Ryntra», «Мої лаунчі» and a token's page — the share link a creator posts opens here.
   if (name === '/app/launch' || name === '/app/launch/new') return '/launch'
   if (name === '/app/launch/mine') return '/launch/mine'
+  if (name === '/app/launch/markets') return '/launch/markets'
   const launched = /^\/app\/launch\/([^/]+)$/.exec(name)
   if (launched) return MINT.test(launched[1] ?? '') ? `/launch/${launched[1]}` : '/launch'
   const asset = /^\/app\/assets\/([^/]+)$/.exec(name)

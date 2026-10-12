@@ -14,24 +14,29 @@ import { canCopy, copyText } from '@/lib/clipboard'
 import { cn } from '@/utils/cn'
 import { openLink } from '@/lib/open-link'
 
-/** Launch's two pages, one tap apart, at the top of each: «Запустити токен» · «Мої лаунчі». */
-export function LaunchTabs({ word, current }: { word: LaunchWord; current: 'new' | 'mine' }) {
+/** Launch's three pages, one tap apart, at the top of each — as the web's: «Запустити токен» · «Лаунчі на Ryntra» · «Мої лаунчі». */
+export function LaunchTabs({ word, current }: { word: LaunchWord; current: 'new' | 'markets' | 'mine' }) {
   const router = useRouter()
   return (
     <ChoiceChips
       role="tablist"
-      fill
+      scroll
+      size="sm"
+      tall
       choices={[
         { value: 'new', label: word('title') },
+        { value: 'markets', label: word('tabMarkets') },
         { value: 'mine', label: word('mineTitle') },
       ]}
       value={current}
       onChange={(next) => {
-        if (next !== current) router.replace((next === 'new' ? '/launch' : '/launch/mine') as never)
+        if (next !== current) router.replace(LAUNCH_TAB_PATH[next] as never)
       }}
     />
   )
 }
+
+const LAUNCH_TAB_PATH = { new: '/launch', markets: '/launch/markets', mine: '/launch/mine' } as const
 
 /**
  * Launch's operator stop, said where a person meets it — in the page's own
@@ -150,22 +155,27 @@ export function ShareLink({ word, link, symbol }: { word: LaunchWord; link: stri
             }}
           />
         ) : null}
-        <Button
-          title={word('shareOnX')}
-          variant="secondary"
-          className="flex-1"
-          onPress={() => openLink(post)}
-        />
+        <Button title={word('shareOnX')} variant="secondary" className="flex-1" onPress={() => openLink(post)} />
       </View>
     </View>
   )
 }
 
 /** A line that opens what it names on Solscan — a transaction or an account, said by its words. */
-export function ExplorerLink({ label, url }: { label: string; url: string }) {
+export function ExplorerLink({
+  label,
+  url,
+  accessibilityLabel,
+}: {
+  label: string
+  url: string
+  /** What a screen reader says where the label alone is an address: the row's name with it. */
+  accessibilityLabel?: string
+}) {
   return (
     <Pressable
       accessibilityRole="link"
+      accessibilityLabel={accessibilityLabel}
       onPress={() => openLink(url)}
       hitSlop={8}
       className="min-h-11 flex-row items-center gap-1 self-start"

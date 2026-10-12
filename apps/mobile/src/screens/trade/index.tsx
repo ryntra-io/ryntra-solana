@@ -34,9 +34,11 @@ import {
 import { TRADE_COPY } from '@/features/trade/copy'
 import {
   formatUnits,
+  PAY_SHARES_PCT,
   QUOTE_ASSETS,
   reviewView,
   settledView,
+  shareOfRaw,
   SOL_ASSET,
   ticketLegs,
   unitsForField,
@@ -55,8 +57,10 @@ import {
   type RuleBinding,
 } from '@/lib/api'
 import { PLANS_COPY } from '@/features/plans/copy'
+import { docFromSwap, type DocStatus } from '@/features/receipts/receipt-doc'
 import { useCopy, useLocale, useSharedCopy, type Locale } from '@/lib/i18n'
 import { RuleReminderNotice } from '@/screens/autoinvest/rule-reminder-notice'
+import { ShareReceiptButton } from '@/screens/receipts/share-receipt'
 import { useNow } from '@/hooks/use-now'
 import { StrategyBlock } from '@/screens/plans/strategy-block'
 import { type, useTheme } from '@/theme'
@@ -68,6 +72,14 @@ import { RecurringPanel } from './recurring-panel'
 import { RuleChip, RuleReviewRow } from './rule-parts'
 
 const MODE_KEYS: readonly TradeMode[] = ['buy', 'sell', 'swap']
+
+/** The settled card's state as the receipt's: a recovered fill is a fill. */
+const SETTLED_STATUS: Readonly<Record<'settled' | 'pending' | 'failed' | 'recovered', DocStatus>> = {
+  settled: 'done',
+  recovered: 'done',
+  pending: 'pending',
+  failed: 'failed',
+}
 
 type Picking = null | 'pay' | 'receive'
 
@@ -355,6 +367,20 @@ export function TradeScreen() {
   const legsReady = legs.pay !== null && legs.receive !== null
   const payLabel = legs.pay ? words.amountIn(legs.pay.symbol) : words.amount
 
+  // What the wallet can spend, in quarters: offered only once something can be spent, each rounded down.
+  const shares =
+    available && legs.pay && /^\d+$/.test(available.raw) && BigInt(available.raw) > 0n
+      ? // All of SOL is never offered: a swap pays its network fee and a new account's rent in it.
+        PAY_SHARES_PCT.filter((pct) => pct < 100 || legs.pay!.mint !== SOL_MINT).map((pct) => {
+          const raw = shareOfRaw(available.raw, pct) ?? '0'
+          return {
+            pct,
+            field: unitsForField(raw, available.decimals, locale),
+            text: `${formatUnits(raw, available.decimals, 6, locale)} ${legs.pay!.symbol}`,
+          }
+        }).filter((share) => /[1-9]/.test(share.field))
+      : []
+
   const insufficient =
     available !== null &&
     trade.typedRaw !== null &&
@@ -432,8 +458,16 @@ export function TradeScreen() {
       hint: ruleWords.tradeWithoutRule,
     }
   } else {
+    // «Перевірка» asks the server for its own fresh order: the estimate above need not be fresh, nor settled from the
+    // typing — the first press is the one that works (the operator, 2026-10-10). A blocked asset is still refused here.
     const ready =
-      legsReady && trade.quoteFresh && !trade.quoteBlocked && !insufficient && !needsSol && trade.typedRaw !== null
+      legsReady &&
+      !trade.quoteBlocked &&
+      // An estimate that refused for good — for this very amount, not the one before it.
+      !(trade.quoteFailure !== null && !trade.quoteFailure.retryable && trade.amountRaw === trade.typedRaw) &&
+      !insufficient &&
+      !needsSol &&
+      trade.typedRaw !== null
     action = {
       title: words.review,
       onPress: () => void trade.review(),
@@ -493,6 +527,22 @@ export function TradeScreen() {
                 <Txt variant="ui" tone="muted">
                   {settledCard.note}
                 </Txt>
+              ) : null}
+              {trade.settled ? (
+                <ShareReceiptButton
+                  variant="button"
+                  doc={docFromSwap(
+                    {
+                      title: settledCard.title,
+                      status: SETTLED_STATUS[settledCard.status],
+                      settlement: trade.settled.settlement,
+                      context: trade.settled.context,
+                      at: trade.settled.at,
+                      rule: settledCard !== settledPlain,
+                    },
+                    locale,
+                  )}
+                />
               ) : null}
               <Button title={words.tradeAgain} variant="secondary" onPress={again} />
             </View>
@@ -617,6 +667,27 @@ export function TradeScreen() {
                   <Txt variant="ui" tone="faint">
                     ≈ {formatUsdCompact(inUsd, locale)}
                   </Txt>
+                ) : null}
+                {/* 25 · 50 · 75 · 100 % of what the wallet can spend — never under a rule, whose sum is its own. */}
+                {shares.length > 0 && !ruleAsk ? (
+                  <View accessibilityLabel={words.shares}>
+                    <ChoiceChips
+                      choices={shares.map((share) => ({
+                        value: String(share.pct),
+                        label: `${share.pct}%`,
+                        accessibilityLabel: `${share.pct}% · ${share.text}`,
+                      }))}
+                      value={shares.find((share) => share.field === amountText)?.pct.toString() ?? ''}
+                      onChange={(value) => {
+                        const share = shares.find((entry) => String(entry.pct) === value)
+                        if (share) setAmountText(share.field)
+                      }}
+                      quiet
+                      fill
+                      size="sm"
+                      disabled={trade.phase !== 'idle' || Boolean(trade.lockedReview)}
+                    />
+                  </View>
                 ) : null}
               </Card>
 

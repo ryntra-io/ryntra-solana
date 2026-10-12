@@ -5,12 +5,12 @@ import React, {
 } from "react";
 import {
   AreaSeries, BarSeries, CandlestickSeries, LineSeries,
-  createChart, createTextWatermark,
+  createChart, createSeriesMarkers, createTextWatermark,
   CrosshairMode, LineStyle, PriceScaleMode,
-  type IChartApi, type IPriceLine, type ISeriesApi, type SeriesType,
+  type IChartApi, type IPriceLine, type ISeriesApi, type ISeriesMarkersPluginApi, type SeriesMarker, type SeriesType,
   type LogicalRange, type MouseEventParams, type Time, type UTCTimestamp,
 } from "lightweight-charts";
-import type { ChartTheme, NormalizedCandle, PriceLineSpec } from "@/lib/chart/types";
+import type { ChartMarkerSpec, ChartTheme, NormalizedCandle, PriceLineSpec } from "@/lib/chart/types";
 import { CANDLE_PALETTES, chartOptions } from "@/lib/chart/theme";
 import { loadChartSettings, saveChartSettings, type ChartSettings, type ChartType } from "@/lib/chart/settings";
 import { hasVolume as candlesHaveVolume } from "@/lib/chart/indicators/calc";
@@ -60,6 +60,8 @@ export type ProChartProps = {
   onTfChange(tf: string): void;
   /** PriceLineSpec.color also accepts semantic "up"/"down" — resolved via the active candle palette */
   priceLines?: PriceLineSpec[];
+  /** Marks on the main series — trades, events — each put on the bar its moment falls in. */
+  markers?: ChartMarkerSpec[];
   /** draggable, ticket-synced SL/TP/entry lines (derived state, never persisted) */
   riskLines?: RiskLineSpec[];
   onRiskLineDrag?(id: string, price: number): void;
@@ -177,7 +179,7 @@ function readRiskPalette(el: HTMLElement): ThemePalette {
 export const ProChart = forwardRef<ProChartHandle, ProChartProps>(function ProChart(props, ref) {
   const {
     candles, symbolLabel, tfSeconds, theme, accent, timeframes, tf, onTfChange,
-    priceLines, riskLines, onRiskLineDrag, onRiskLineCommit,
+    priceLines, markers, riskLines, onRiskLineDrag, onRiskLineCommit,
     storageNamespace, drawingScope, note, chartClassName, features, priceFormatter,
   } = props;
   const priceFormatterRef = useRef(priceFormatter);
@@ -217,6 +219,9 @@ export const ProChart = forwardRef<ProChartHandle, ProChartProps>(function ProCh
   instancesRef.current = instances;
   const priceLinesRef = useRef(priceLines);
   priceLinesRef.current = priceLines;
+  const markersRef = useRef(markers);
+  markersRef.current = markers;
+  const markersApiRef = useRef<ISeriesMarkersPluginApi<Time> | null>(null);
   const riskLinesRef = useRef(riskLines);
   riskLinesRef.current = riskLines;
   const onRiskLineDragRef = useRef(onRiskLineDrag);
@@ -258,6 +263,35 @@ export const ProChart = forwardRef<ProChartHandle, ProChartProps>(function ProCh
     }
   }, []);
 
+  /* The marks on the bars the chart holds now: each moment snapped to the newest bar that opened at or before it,
+     a moment before the first bar dropped, and marks on one bar joined into one. */
+  const applyMarkers = useCallback(() => {
+    const api = markersApiRef.current;
+    if (!api) return;
+    const pal = CANDLE_PALETTES[settingsRef.current.palette];
+    const times = candlesRef.current.map((c) => c.time);
+    const ink = rootRef.current ? getComputedStyle(rootRef.current).color || "#94a3b8" : "#94a3b8";
+    const byBar = new Map<number, SeriesMarker<Time>>();
+    for (const spec of markersRef.current ?? []) {
+      let low = 0, high = times.length - 1, bar: number | null = null;
+      while (low <= high) {
+        const mid = (low + high) >> 1;
+        if (times[mid] <= spec.time) { bar = times[mid]; low = mid + 1; } else high = mid - 1;
+      }
+      if (bar === null) continue;
+      const color = spec.color === "up" ? pal.up : spec.color === "down" ? pal.down : spec.color === "ink" ? ink : spec.color;
+      const key = bar * 2 + (spec.position === "aboveBar" ? 1 : 0);
+      const known = byBar.get(key);
+      if (known) {
+        const words = (known.text ?? "").split(" · ").filter(Boolean);
+        if (spec.text && !words.includes(spec.text)) byBar.set(key, { ...known, text: [...words, spec.text].join(" · ") });
+        continue;
+      }
+      byBar.set(key, { time: bar as UTCTimestamp, position: spec.position, shape: spec.shape, color, text: spec.text });
+    }
+    try { api.setMarkers([...byBar.values()].sort((a, b) => (a.time as number) - (b.time as number))); } catch { /* series swapped mid-update */ }
+  }, []);
+
   const applyWatermark = useCallback((chart: IChartApi, on: boolean, label: string) => {
     watermarkRef.current?.detach();
     watermarkRef.current = null;
@@ -290,6 +324,8 @@ export const ProChart = forwardRef<ProChartHandle, ProChartProps>(function ProCh
     seriesRef.current = series;
     engineRef.current = engine;
     applyPriceLines();
+    markersApiRef.current = createSeriesMarkers(series, []);
+    applyMarkers();
 
     // draggable risk-line layer — created BEFORE the drawing layer so its capture-phase
     // pointer handler runs first and can beat the drawing controller on a line hit.
@@ -343,6 +379,8 @@ export const ProChart = forwardRef<ProChartHandle, ProChartProps>(function ProCh
       watermarkRef.current?.detach();
       watermarkRef.current = null;
       priceLineObjsRef.current = [];
+      try { markersApiRef.current?.detach(); } catch { /* disposed with the chart */ }
+      markersApiRef.current = null;
       seriesRef.current = null;
       chartRef.current = null;
       chart.remove();
@@ -360,6 +398,7 @@ export const ProChart = forwardRef<ProChartHandle, ProChartProps>(function ProCh
     if (!s) return;
     s.setData(candles.map((c) => mapBar(c, settingsRef.current.chartType)));
     engineRef.current?.setCandles(candles);
+    applyMarkers();
     const key = `${symbolLabel}:${tf}`;
     // fit only once the NEW dataset for this key has actually arrived — on a market/TF switch this
     // effect first fires with the stale prop (identity unchanged), and fitting then would consume the key
@@ -369,7 +408,7 @@ export const ProChart = forwardRef<ProChartHandle, ProChartProps>(function ProCh
       chartRef.current?.timeScale().fitContent();
     }
     setLegendTick((t) => t + 1);
-  }, [candles, symbolLabel, tf]);
+  }, [candles, symbolLabel, tf, applyMarkers]);
 
   /* ---------- drawing layer follows scope / tf / palette ---------- */
   useEffect(() => { layerRef.current?.setScope(drawingScope); }, [drawingScope]);
@@ -382,6 +421,7 @@ export const ProChart = forwardRef<ProChartHandle, ProChartProps>(function ProCh
 
   /* ---------- price lines ---------- */
   useEffect(() => { applyPriceLines(); }, [priceLines, applyPriceLines]);
+  useEffect(() => { applyMarkers(); }, [markers, applyMarkers, settings.palette]);
 
   /* ---------- draggable risk lines (ticket-synced) ---------- */
   useEffect(() => { riskLineLayerRef.current?.setLines(riskLines ?? []); }, [riskLines]);
@@ -476,10 +516,11 @@ export const ProChart = forwardRef<ProChartHandle, ProChartProps>(function ProCh
       candlesRef.current = sorted;
       seriesRef.current?.setData(sorted.map((c) => mapBar(c, settingsRef.current.chartType)));
       engineRef.current?.setCandles(sorted);
+      applyMarkers();
     },
     fitContent() { chartRef.current?.timeScale().fitContent(); },
     getChart() { return chartRef.current; },
-  }), []);
+  }), [applyMarkers]);
 
   /* ---------- render ---------- */
   return (

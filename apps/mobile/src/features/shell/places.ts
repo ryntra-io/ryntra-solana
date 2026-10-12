@@ -46,7 +46,7 @@ export const MONEY_PAGES = ['topUp', 'send', 'receive', 'link', 'bridge'] as con
 export type MoneyPage = (typeof MONEY_PAGES)[number]
 
 /** Portfolio's doors beside the positions: Боти · Історія (plans and their results live in «Боти»). */
-export const PORTFOLIO_DOORS = ['bots', 'history'] as const
+export const PORTFOLIO_DOORS = ['bots', 'history', 'receipts'] as const
 export type PortfolioDoor = (typeof PORTFOLIO_DOORS)[number]
 
 /** Where each door of «Ще», «Гроші» and Portfolio leads. Between networks is the web's page; the rest are the phone's. */
@@ -63,6 +63,7 @@ export const DOOR_DESTINATIONS: Readonly<Record<MoreRow | MoneyPage | PortfolioD
   link: { kind: 'screen', path: '/money/receive?tab=link' },
   bridge: { kind: 'web', path: '/app/bridge' },
   history: { kind: 'screen', path: '/history' },
+  receipts: { kind: 'screen', path: '/receipts' },
 }
 
 /** Every door the places draw a tap deeper, with where it leads — what a test reads to prove the reach. */
@@ -105,7 +106,7 @@ export const PLACES_COPY: Copy<PlacesCopy> = {
       ryntra: { label: 'Ryntra', caption: 'AI assistant' },
       settings: { label: 'Settings', caption: null },
     },
-    doors: { bots: 'Bots', history: 'History' },
+    doors: { bots: 'Bots', history: 'History', receipts: 'Receipts' },
     bridge: 'Cross-chain',
     active: (count) => `${count} active`,
     onWeb: 'opens ryntra.io',
@@ -125,7 +126,7 @@ export const PLACES_COPY: Copy<PlacesCopy> = {
       ryntra: { label: 'Ryntra', caption: 'ШІ-помічник' },
       settings: { label: 'Налаштування', caption: null },
     },
-    doors: { bots: 'Боти', history: 'Історія' },
+    doors: { bots: 'Боти', history: 'Історія', receipts: 'Квитанції' },
     bridge: 'Між мережами',
     active: (count) => `${count} ${activeWord(count)}`,
     onWeb: 'відкриває ryntra.io',

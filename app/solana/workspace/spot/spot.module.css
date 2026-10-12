@@ -2625,3 +2625,510 @@
 .costs dd[data-tone="caution"] {
   color: var(--ry-caution);
 }
+
+/* ── The token page ─────────────────────────── */
+
+/* The network beside the name: quiet, the name's own colour. */
+.network {
+  color: var(--ry-muted);
+}
+
+/* The header's window: one switch in the price line for the change beside it and the volume below. */
+
+.windowSwitch {
+  align-self: center;
+}
+
+.windowSwitch,
+.tokenFilters {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-chip);
+}
+
+.windowSwitch button,
+.tokenFilters button {
+  min-height: 28px;
+  padding: 0 var(--ry-s2);
+  border: 0;
+  border-radius: var(--ry-r-chip);
+  background: transparent;
+  color: var(--ry-muted);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label);
+  cursor: pointer;
+}
+
+.windowSwitch button:hover,
+.tokenFilters button:hover {
+  color: var(--ry-text);
+  background: var(--ry-hover);
+}
+
+.windowSwitch button.on,
+.tokenFilters button.on {
+  color: var(--ry-text);
+  background: var(--ry-elevated);
+}
+
+.windowSwitch button:focus-visible,
+.tokenFilters button:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+}
+
+
+/* Many tabs on a narrow canvas scroll sideways inside their bar, never the page. */
+.stateTabs[data-token-tabs] {
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.stateTabs[data-token-tabs]::-webkit-scrollbar {
+  display: none;
+}
+
+.stateTabs[data-token-tabs] .stateTab {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.tokenTab {
+  display: grid;
+  gap: var(--ry-s2);
+  min-width: 0;
+}
+
+.tokenBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ry-s2) var(--ry-s3);
+}
+
+.tokenSummary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s1) var(--ry-s3);
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+}
+
+.tokenSummary b {
+  color: var(--ry-text);
+  font-weight: 500;
+}
+
+.tokenSummary[data-mono="true"],
+.tokenSummary [data-mono="true"] {
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* A table wider than its panel scrolls inside the panel; the page never scrolls sideways. */
+.tokenScroll {
+  overflow-x: auto;
+  min-width: 0;
+}
+
+.tokenTable th[data-num],
+.tokenTable td[data-num] {
+  text-align: end;
+}
+
+.tokenTable td {
+  vertical-align: middle;
+}
+
+.tokenTable td a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tokenWallet {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s1);
+}
+
+.tokenWallet a {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-data);
+}
+
+.tokenTag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 18px;
+  padding: 0 6px;
+  border-radius: var(--ry-r-pill, 999px);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: var(--ry-env-bg);
+  color: var(--ry-env-tx);
+}
+
+.tokenTag[data-tag="creator"] {
+  color: var(--ry-caution);
+}
+
+.tokenTag[data-tag="you"] {
+  color: var(--ry-iris-lift);
+}
+
+.tokenShare {
+  display: inline-grid;
+  grid-template-columns: 56px minmax(56px, auto);
+  align-items: center;
+  justify-items: end;
+  gap: var(--ry-s2);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-data);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The bar is on the list's own scale — the largest holder full — so small shares are not all dots. */
+.tokenShareTrack {
+  display: block;
+  inline-size: 56px;
+  block-size: 4px;
+  border-radius: var(--ry-r-pill, 999px);
+  background: var(--ry-hover);
+  overflow: hidden;
+}
+
+.tokenShareBar {
+  display: block;
+  block-size: 100%;
+  border-radius: var(--ry-r-pill, 999px);
+  background: var(--ry-iris);
+}
+
+.tokenTable td[data-side-cell="buy"] {
+  color: var(--ry-pnl-pos);
+}
+
+.tokenTable td[data-side-cell="sell"] {
+  color: var(--ry-pnl-neg);
+}
+
+.tokenDex {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+}
+
+/* Where the figures come from: the source's own words, the time of the read. */
+.tokenSource {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px var(--ry-s2);
+  margin: 0;
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+}
+
+.tokenSource b {
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.tokenSource a {
+  color: var(--ry-muted);
+  text-decoration: underline;
+  text-decoration-color: var(--ry-border);
+  text-underline-offset: 2px;
+}
+
+.tokenSource a:hover {
+  color: var(--ry-text);
+}
+
+.tokenLead {
+  margin: 0;
+  max-inline-size: 72ch;
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+}
+
+.tokenBone {
+  display: block;
+  inline-size: min(100%, 420px);
+  block-size: 12px;
+  border-radius: var(--ry-r-chip);
+  background: var(--ry-hover);
+}
+
+/* «Ризик»: one row per fact — what, the figure, why it might matter, who says so. */
+.riskFacts {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.riskFacts li {
+  display: grid;
+  grid-template-columns: 180px 120px minmax(0, 1fr) 96px;
+  align-items: baseline;
+  gap: 2px var(--ry-s3);
+  padding: var(--ry-s2) 0;
+  border-bottom: 1px solid var(--ry-border);
+}
+
+.riskFacts li:last-child {
+  border-bottom: 0;
+}
+
+.riskTitle {
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-text);
+}
+
+.riskValue {
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.riskValue[data-mono="true"] {
+  font-family: var(--ry-font-mono);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.riskFacts li[data-tone="notice"] .riskValue {
+  color: var(--ry-caution);
+}
+
+.riskFacts li[data-tone="notice"] .riskTitle::before {
+  content: "";
+  display: inline-block;
+  inline-size: 6px;
+  block-size: 6px;
+  margin-inline-end: var(--ry-s2);
+  border-radius: 50%;
+  background: var(--ry-caution);
+  vertical-align: middle;
+}
+
+.riskReason {
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+}
+
+.riskSource {
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+  white-space: nowrap;
+  text-align: end;
+}
+
+.riskDeeper {
+  padding-block-start: var(--ry-s2);
+}
+
+.socialList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
+  gap: var(--ry-s2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.socialList a {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  min-height: 40px;
+  padding: 0 var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  color: var(--ry-text);
+  text-decoration: none;
+  font-size: var(--ry-fs-dense);
+}
+
+.socialList a:hover {
+  background: var(--ry-hover);
+}
+
+.socialHost {
+  margin-inline-start: auto;
+  color: var(--ry-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* «Правда про актив»: the issuer's line first, then the facts as a short list. */
+.assetTruth {
+  margin: 0;
+  font-size: var(--ry-fs-body, 0.9375rem);
+  color: var(--ry-text);
+}
+
+.assetGrid {
+  display: grid;
+  gap: 0;
+  margin: 0;
+}
+
+.assetGrid > div {
+  display: grid;
+  grid-template-columns: minmax(150px, 220px) minmax(0, 1fr);
+  gap: var(--ry-s1) var(--ry-s3);
+  align-items: baseline;
+  padding-block: var(--ry-s2);
+  border-bottom: 1px solid var(--ry-border);
+}
+
+.assetGrid dt {
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ry-muted);
+}
+
+.assetGrid dd {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-text);
+}
+
+.assetNote {
+  color: var(--ry-muted);
+}
+
+.assetDoc {
+  color: var(--ry-iris-lift);
+  font-size: var(--ry-fs-label);
+  white-space: nowrap;
+}
+
+.placeList {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 2px var(--ry-s2);
+}
+
+.placeList > span:not(:last-of-type)::after {
+  content: "·";
+  margin-inline-start: var(--ry-s2);
+  color: var(--ry-muted);
+}
+
+/* On a narrow canvas the tables keep what a person reads first, and the facts stack. */
+@container spot (max-width: 759px) {
+  .tokenTable [data-optional] {
+    display: none;
+  }
+
+  .riskFacts li {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .riskReason,
+  .riskSource {
+    grid-column: 1 / -1;
+    text-align: start;
+  }
+
+  .assetGrid > div {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Under a finger the window, the filters and a trade's explorer link are a finger's size; under a mouse they stay dense. */
+@media (pointer: coarse) {
+  .windowSwitch button,
+  .tokenFilters button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .tokenTable td a[aria-label] {
+    min-width: 44px;
+    min-height: 44px;
+    justify-content: center;
+  }
+}
+
+/* The header's sources on the details' row, at its end; on a narrow canvas a line of their own. */
+.detailsRow {
+  position: relative;
+}
+
+.headerSources {
+  position: absolute;
+  inset-block-start: var(--ry-s1);
+  inset-inline-end: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s1);
+  min-height: 28px;
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+}
+
+.headerSources a {
+  color: var(--ry-muted);
+  text-decoration: underline;
+  text-decoration-color: var(--ry-border);
+  text-underline-offset: 2px;
+}
+
+.headerSources a:hover {
+  color: var(--ry-text);
+}
+
+
+/* A program's account is said quietly: it repeats down the list. */
+.tokenTag[data-tag="program"],
+.tokenTag[data-tag="pool"] {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+  background: transparent;
+  color: var(--ry-muted);
+  padding: 0;
+}
+
+@container spot (max-width: 759px) {
+  .tokenTable [data-narrow-hide] {
+    display: none;
+  }
+
+  .tokenTable td[data-num][data-side-cell="buy"]::before {
+    content: "+";
+  }
+
+  .tokenTable td[data-num][data-side-cell="sell"]::before {
+    content: "−";
+  }
+
+  /* The share keeps its figure and gives up its bar: the change beside it is what a phone must not lose. */
+  .tokenShare {
+    grid-template-columns: auto;
+  }
+
+  .tokenShareTrack {
+    display: none;
+  }
+
+  .headerSources {
+    position: static;
+    display: flex;
+    flex-wrap: wrap;
+    margin-block-start: var(--ry-s1);
+  }
+}

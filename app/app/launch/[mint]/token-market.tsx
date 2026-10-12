@@ -356,7 +356,7 @@ export function TokenMarket({
             <Trades market={market} wallet={wallet} locale={locale} word={word} now={nowSeconds} symbol={symbol} />
           </div>
           <div role="tabpanel" id="launch-panel-holders" aria-labelledby="launch-tab-holders" hidden={tab !== "holders"} className={styles.tabPanel}>
-            <Holders market={market} wallet={wallet} locale={locale} word={word} />
+            <Holders market={market} wallet={wallet} locale={locale} word={word} now={nowSeconds} />
           </div>
           <div role="tabpanel" id="launch-panel-risk" aria-labelledby="launch-tab-risk" hidden={tab !== "risk"} className={styles.tabPanel}>
             <Risk market={market} locale={locale} word={word} now={nowSeconds} />
@@ -626,8 +626,20 @@ function Trades({ market, wallet, locale, word, now, symbol }: { market: LaunchM
   );
 }
 
-function Holders({ market, wallet, locale, word }: { market: LaunchMarketResponse; wallet: string | null; locale: WorkspaceLocale; word: Word }) {
+function Holders({ market, wallet, locale, word, now }: { market: LaunchMarketResponse; wallet: string | null; locale: WorkspaceLocale; word: Word; now: number }) {
   const groups = market.holders.groups;
+  /* How each holding moved: the holder's own buys minus sells here over the last day, among the trades read. */
+  const changes = new Map<string, bigint>();
+  for (const trade of market.trades.rows) {
+    if (Math.floor(Date.parse(trade.at) / 1000) < now - 86_400) continue;
+    let tokens: bigint;
+    try {
+      tokens = BigInt(trade.tokensRaw);
+    } catch {
+      continue;
+    }
+    changes.set(trade.trader, (changes.get(trade.trader) ?? 0n) + (trade.side === "buy" ? tokens : -tokens));
+  }
   const people = market.holders.rows.filter((row) => !row.labels.some((label) => NOT_PEOPLE.has(label)));
   const vaults = market.holders.rows.filter((row) => row.labels.some((label) => NOT_PEOPLE.has(label)));
   return (
@@ -662,12 +674,12 @@ function Holders({ market, wallet, locale, word }: { market: LaunchMarketRespons
           <span className={styles.groupValue}>{formatBps(groups.top10Bps, locale)}</span>
         </li>
       </ul>
-      <p className={styles.hint}>{word("labelLegend")} {word("holdersPeople")}</p>
+      <p className={styles.hint}>{word("labelLegend")} {word("holdersPeople")}{changes.size > 0 ? ` ${word("holdersChangeHint")}` : ""}</p>
       <p className={styles.hint}>{word("holdersCount", { n: `${formatCountShort(market.holders.count, locale)}${market.holders.atLeast ? "+" : ""}` })}</p>
       {/* People ranked by what they hold; the curve, the pool and the lock apart — they are not holders anyone races. */}
       <ol className={styles.holderList}>
         {people.map((row, index) => (
-          <HolderRow key={row.owner} row={row} rank={index + 1} scale={people[0]?.shareBps ?? 0} market={market} wallet={wallet} locale={locale} word={word} />
+          <HolderRow key={row.owner} row={row} rank={index + 1} scale={people[0]?.shareBps ?? 0} market={market} wallet={wallet} locale={locale} word={word} change={changes.get(row.owner) ?? null} />
         ))}
       </ol>
       {vaults.length ? (
@@ -687,7 +699,7 @@ function Holders({ market, wallet, locale, word }: { market: LaunchMarketRespons
 const NOT_PEOPLE = new Set(["curve", "pool", "lock"]);
 
 /** A holder. The bar is on the people's own scale — the largest person full — so shares of a percent or two are not all dots. */
-function HolderRow({ row, rank, scale, market, wallet, locale, word }: { row: LaunchHolderRow; rank: number | null; scale: number; market: LaunchMarketResponse; wallet: string | null; locale: WorkspaceLocale; word: Word }) {
+function HolderRow({ row, rank, scale, market, wallet, locale, word, change = null }: { row: LaunchHolderRow; rank: number | null; scale: number; market: LaunchMarketResponse; wallet: string | null; locale: WorkspaceLocale; word: Word; change?: bigint | null }) {
   return (
     <li className={styles.holderRow} data-vault={rank === null ? "" : undefined}>
       <span className={styles.holderRank}>{rank ?? ""}</span>
@@ -702,6 +714,12 @@ function HolderRow({ row, rank, scale, market, wallet, locale, word }: { row: La
         {rank !== null ? (
           <span className={styles.shareBar} aria-hidden>
             <span style={{ width: `${scale > 0 ? Math.max((row.shareBps / scale) * 100, 2) : 0}%` }} />
+          </span>
+        ) : null}
+        {change !== null && change !== 0n ? (
+          <span className={styles.holderChange} data-tone={change > 0n ? "up" : "down"}>
+            {/* Compact — «+5,9 млн» — so the line fits the share's narrow column; the exact count is in the holder's trades. */}
+            {word("holderChange", { v: `${change > 0n ? "+" : "−"}${new Intl.NumberFormat(locale === "uk" ? "uk-UA" : "en-US", { notation: "compact", maximumFractionDigits: 1 }).format(Number(change > 0n ? change : -change) / 10 ** market.tokenDecimals)}` })}
           </span>
         ) : null}
       </span>

@@ -108,6 +108,10 @@ import {
   type PredictionsWatchlistRequest,
   type PredictionsWatchlistResponse,
   type ActivityRequest,
+  type LaunchJournalResponse,
+  type LaunchMarketCardResponse,
+  type LaunchMarketHealthResponse,
+  type LaunchMarketsResponse,
   type ActivityResponse,
   type MonitoringSurfaceResponse,
   type MonitoringWriteRequest,
@@ -375,6 +379,13 @@ export function createRyntraApiClient(options: RyntraApiClientOptions) {
       telegram: () => call<TelegramChannelResponse>("GET", "/api/v1/notifications/telegram", undefined, true),
       connectTelegram: (request: TelegramConnectRequest = {}) => call<TelegramConnectResponse>("POST", "/api/v1/notifications/telegram", request, true),
       disconnectTelegram: () => call<TelegramChannelResponse>("DELETE", "/api/v1/notifications/telegram", undefined, true),
+    },
+    /* 1.36.0 — the markets launched on Ryntra: the list, one market's card, its health by fixed definitions and its flight log; public, no bearer. Served where `capabilities.launch` is. */
+    launch: {
+      markets: () => call<LaunchMarketsResponse>("GET", "/api/v1/launch/markets"),
+      market: (mint: string) => call<LaunchMarketCardResponse>("GET", `/api/v1/launch/markets/${encodeURIComponent(mint)}`),
+      health: (mint: string) => call<LaunchMarketHealthResponse>("GET", `/api/v1/launch/${encodeURIComponent(mint)}/health`),
+      journal: (mint: string) => call<LaunchJournalResponse>("GET", `/api/v1/launch/${encodeURIComponent(mint)}/journal`),
     },
     /* 1.11.0 — the consumed routes (not v1 paths); a refusal is a `RyntraRouteError` with the route's own code. Public reads carry no bearer. */
     markets: {

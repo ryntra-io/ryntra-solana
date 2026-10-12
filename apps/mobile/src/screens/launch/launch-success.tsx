@@ -9,7 +9,10 @@ import type { LaunchWord } from '@/features/launch/copy'
 import type { CreateOutcome } from '@/features/launch/launch-flow'
 import { formatDate } from '@/features/launch/launch-format'
 import { launchedView } from '@/features/launch/launch-model'
+import { useLaunchPresets } from '@/features/launch/use-launch'
+import { docFromLaunch } from '@/features/receipts/receipt-doc'
 import type { Locale } from '@/lib/i18n'
+import { ShareReceiptButton } from '@/screens/receipts/share-receipt'
 
 import { ShareLink, TokenPicture } from './parts'
 
@@ -31,6 +34,9 @@ export function LaunchSuccess({
 }) {
   const router = useRouter()
   const view = launchedView(result.submit, result.token)
+  const presets = useLaunchPresets()
+  const token = result.token
+  const pair = token ? (presets.data?.presets.find((entry) => entry.id === token.preset)?.pair ?? null) : null
   return (
     <Card className="items-center gap-3 py-6" accessibilityLiveRegion="polite">
       <View>
@@ -78,6 +84,13 @@ export function LaunchSuccess({
         <View className="w-full pt-1">
           <ShareLink word={word} link={result.token.shareLink} symbol={result.symbol} />
         </View>
+      ) : null}
+      {/* A receipt once the network confirmed the launch; while it has not, there is nothing settled to share. */}
+      {token && !view.pending ? (
+        <ShareReceiptButton
+          variant="button"
+          doc={docFromLaunch(token, pair, word('successTitle', { symbol: result.symbol }), locale)}
+        />
       ) : null}
       <View className="w-full gap-2 pt-2">
         <Button

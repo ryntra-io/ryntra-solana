@@ -52,6 +52,8 @@ export type TradeCopy = Readonly<{
   youPay: string
   available: (amount: string) => string
   useAll: string
+  /** The quick shares' group, said to a screen reader. */
+  shares: string
   amountIn: (symbol: string) => string
   amount: string
   asset: string
@@ -142,6 +144,7 @@ export const TRADE_COPY: Copy<TradeCopy> = {
     youPay: 'You pay',
     available: (amount) => `Available ${amount} · MAX`,
     useAll: 'Use the whole balance',
+    shares: 'A share of what you can spend',
     amountIn: (symbol) => `Amount in ${symbol}`,
     amount: 'Amount',
     asset: 'Asset',
@@ -286,6 +289,7 @@ export const TRADE_COPY: Copy<TradeCopy> = {
     youPay: 'Ти платиш',
     available: (amount) => `Доступно ${amount} · МАКС`,
     useAll: 'Взяти весь доступний баланс',
+    shares: 'Частка того, що можна витратити',
     amountIn: (symbol) => `Сума в ${symbol}`,
     amount: 'Сума',
     asset: 'Актив',

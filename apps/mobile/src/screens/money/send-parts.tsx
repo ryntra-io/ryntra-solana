@@ -6,6 +6,7 @@ import { Chip, type ChipTone } from '@/components/chip'
 import { Icon } from '@/components/icon'
 import { ReviewBlock } from '@/components/review-block'
 import { Txt } from '@/components/txt'
+import { HISTORY_COPY } from '@/features/history/copy'
 import { MONEY_COPY } from '@/features/money/copy'
 import {
   addressGroups,
@@ -19,11 +20,13 @@ import {
 } from '@/features/money/money-model'
 import type { SendFailure } from '@/features/money/send-flow'
 import type { SendDone, SendPhase } from '@/features/money/use-send'
+import { docFromSend } from '@/features/receipts/receipt-doc'
 import { useNow } from '@/hooks/use-now'
 import type { TransferCheck } from '@/lib/api'
 import { useCopy, useLocale } from '@/lib/i18n'
 import { formatAt } from '@/utils/format'
 import { openLink } from '@/lib/open-link'
+import { ShareReceiptButton } from '@/screens/receipts/share-receipt'
 
 /**
  * «Перевірка» of a transfer: the server's rows, what to read before
@@ -140,6 +143,7 @@ const OUTCOME_TONE: Readonly<Record<SendDone['outcome'], ChipTone>> = {
 /** What happened: «Надіслано», «Не надіслано» or «Не підтверджено», the sum, to whom, when — and the transaction one tap away. */
 export function SendDoneCard({ done, onAgain }: { done: SendDone; onAgain: () => void }) {
   const words = useCopy(MONEY_COPY)
+  const historyWords = useCopy(HISTORY_COPY)
   const locale = useLocale()
   const now = useNow(30_000)
   const label = done.outcome === 'sent' ? words.sent : done.outcome === 'not-sent' ? words.notSent : words.notConfirmed
@@ -196,6 +200,13 @@ export function SendDoneCard({ done, onAgain }: { done: SendDone; onAgain: () =>
         />
       ) : null}
       {done.outcome === 'open' ? again : null}
+      <ShareReceiptButton
+        variant="button"
+        doc={docFromSend(
+          { ...done, title: done.outcome === 'sent' ? historyWords.words.sent(done.symbol) : `${label} · ${done.symbol}` },
+          locale,
+        )}
+      />
     </View>
   )
 }

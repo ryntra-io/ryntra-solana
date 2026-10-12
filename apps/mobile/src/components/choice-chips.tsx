@@ -28,6 +28,8 @@ export type ChoiceChipsProps<T extends string> = {
   quiet?: boolean
   /** Each chip takes an equal share of the row — a fixed set of sums or ranges. */
   fill?: boolean
+  /** Small chips that still take a full finger: each pill is drawn inside a 44-point press, the row as tall. */
+  tall?: boolean
   disabled?: boolean
   className?: string
 }
@@ -42,6 +44,7 @@ export function ChoiceChips<T extends string>({
   size = 'md',
   quiet = false,
   fill = false,
+  tall = false,
   disabled = false,
   className,
 }: ChoiceChipsProps<T>) {
@@ -71,6 +74,17 @@ export function ChoiceChips<T extends string>({
   const chips = choices.map((choice) => {
     const selected = choice.value === value
     const off = disabled || choice.disabled === true
+    const pill = cn(
+      'items-center justify-center rounded-pill border',
+      size === 'md' ? 'h-9 px-4' : 'h-8 px-3',
+      fill && 'flex-1',
+      selected
+        ? quiet
+          ? 'border-line-strong bg-hover'
+          : 'border-brand-chip-line bg-brand-chip'
+        : 'border-line bg-surface',
+      off && 'opacity-50',
+    )
     return (
       <Pressable
         key={choice.value}
@@ -88,25 +102,20 @@ export function ChoiceChips<T extends string>({
               }
             : undefined
         }
-        className={cn(
-          'items-center justify-center rounded-pill border',
-          size === 'md' ? 'h-9 px-4' : 'h-8 px-3',
-          fill && 'flex-1',
-          selected
-            ? quiet
-              ? 'border-line-strong bg-hover'
-              : 'border-brand-chip-line bg-brand-chip'
-            : 'border-line bg-surface active:bg-hover',
-          off && 'opacity-50',
-        )}
+        className={tall ? cn('h-11 justify-center', fill && 'flex-1') : cn(pill, !selected && 'active:bg-hover')}
       >
-        <Txt
-          variant={size === 'md' ? 'ui' : 'labelSm'}
-          tone={selected ? (quiet ? 'fg' : 'brand') : 'muted'}
-          tabular={quiet}
-        >
-          {choice.label}
-        </Txt>
+        {({ pressed }) => {
+          const label = (
+            <Txt
+              variant={size === 'md' ? 'ui' : 'labelSm'}
+              tone={selected ? (quiet ? 'fg' : 'brand') : 'muted'}
+              tabular={quiet}
+            >
+              {choice.label}
+            </Txt>
+          )
+          return tall ? <View className={cn(pill, !selected && pressed && 'bg-hover')}>{label}</View> : label
+        }}
       </Pressable>
     )
   })

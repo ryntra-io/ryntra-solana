@@ -26,7 +26,7 @@
  */
 
 export const API_MAJOR = 1 as const;
-export const API_CONTRACT_VERSION = "1.31.0" as const;
+export const API_CONTRACT_VERSION = "1.36.0" as const;
 export const API_HEADER = "X-Ryntra-API" as const;
 export const API_VERSION_HEADER = "X-Ryntra-API-Version" as const;
 export const NETWORK = "solana:mainnet" as const;
@@ -96,7 +96,10 @@ export type ApiErrorCode =
   | "LAUNCH_SLIPPAGE"
   /* 1.29.0 — the creator's cabinet */
   | "LAUNCH_SHARES_INVALID"
-  | "LAUNCH_NOTHING_TO_CLAIM";
+  | "LAUNCH_NOTHING_TO_CLAIM"
+  /* 1.33.0 — a holder's position in the pool */
+  | "LAUNCH_HOLDER_CLOSED"
+  | "LAUNCH_NOT_GRADUATED";
 
 /** 1.7.0: the stable ids a plan issue may carry beside its message. */
 export type PlanIssueCode =
@@ -239,6 +242,22 @@ export type Capabilities = Readonly<{
     creators?: "/api/v1/launch/creators/{address}";
     claimBuild?: "/api/v1/launch/{mint}/claim/build";
     claimSubmit?: "/api/v1/launch/{mint}/claim/submit";
+    /* 1.32.0 */
+    journal?: "/api/v1/launch/{mint}/journal";
+    /* 1.33.0 */
+    holder?: "/api/v1/launch/{mint}/holder/{address}";
+    holderQuote?: "/api/v1/launch/{mint}/holder/quote";
+    holderBuild?: "/api/v1/launch/{mint}/holder/build";
+    holderSubmit?: "/api/v1/launch/{mint}/holder/submit";
+    holderPermissionBuild?: "/api/v1/launch/{mint}/holder/permission/build";
+    holderPermissionSubmit?: "/api/v1/launch/{mint}/holder/permission/submit";
+    holders?: "/api/v1/launch/holders/{address}";
+    /* 1.34.0 — a trade's receipt */
+    tradeReceipt?: "/api/v1/launch/{mint}/trade/receipt";
+    /* 1.36.0 — the markets launched on Ryntra, one market's card, its health */
+    markets?: "/api/v1/launch/markets";
+    marketCard?: "/api/v1/launch/markets/{mint}";
+    health?: "/api/v1/launch/{mint}/health";
   }>;
   observedAt: string;
 }>;
@@ -1580,7 +1599,7 @@ export type RewardPendingReason = (typeof REWARD_PENDING_REASONS)[number];
 export const REWARD_CLAIM_STATES = ["CLAIMING", "SUBMITTED_UNKNOWN", "PAID", "FAILED"] as const;
 export type RewardClaimState = (typeof REWARD_CLAIM_STATES)[number];
 
-export const REFERRAL_REFUSALS = ["SELF_REFERRAL", "UNKNOWN_CODE", "ALREADY_REFERRED", "ALREADY_EARNING", "CYCLE"] as const;
+export const REFERRAL_REFUSALS = ["SELF_REFERRAL", "UNKNOWN_CODE", "ALREADY_REFERRED", "ALREADY_EARNING", "CYCLE", "ALREADY_CHANGED"] as const;
 export type ReferralRefusal = (typeof REFERRAL_REFUSALS)[number];
 
 export const MONITOR_STATUSES = ["watching", "needs_attention", "paused", "unavailable"] as const;
@@ -1783,11 +1802,16 @@ export type ActivityAction = Readonly<{
     note: string | null;
   }> | null;
   origin: Readonly<{
-    surface: "SPOT";
+    /** 1.34.0: `LAUNCH` — a buy or a sale of a Ryntra launch, with its token and venue. */
+    surface: "SPOT" | "LAUNCH";
     side: "BUY" | "SELL";
     plan?: Readonly<{ planId: string; version: number; reviewId: string }>;
     /** 1.12.0: the autoinvest reminder a purchase was made under. */
     rule?: RuleBinding;
+    /** 1.34.0, `LAUNCH` only: the launched token. */
+    token?: string;
+    /** 1.34.0, `LAUNCH` only: the bonding curve, or the DAMM v2 pool it graduated into. */
+    venue?: "curve" | "pool";
   }> | null;
   providerRef: string | null;
   statedUsd: number | null;
@@ -1902,15 +1926,23 @@ export type RewardsError = Readonly<{ error: "rate limited" }> | Readonly<{ erro
 
 export type RewardsReferralPreview = Readonly<{ code: string; inviterMasked: string; codeMasked: string }>;
 
+/** Whether the proven wallet can still take an inviter: before its first trade (`until` null), seven days after it, then not. */
+export type RewardsReferralBinding = Readonly<{ open: boolean; until: string | null }>;
+
 export type RewardsReferralState = Readonly<{
   ok: true;
   pending: RewardsReferralPreview | null;
   confirmed: Readonly<{ inviterMasked: string; codeMasked: string | null }> | null;
+  binding?: RewardsReferralBinding;
+  /** With an inviter: whether it can still be changed — once, inside the same window. */
+  change?: RewardsReferralBinding;
+  /** True on the read that bound the carried invitation on its own. */
+  bound?: true;
 }>;
 
 export type RewardsReferralGetResponse = Readonly<{ ok: true; found: true; preview: RewardsReferralPreview }> | Readonly<{ ok: true; found: false; preview: null }> | RewardsReferralState;
 
-export type RewardsReferralRequest = Readonly<{ action: "pending"; code: string }> | Readonly<{ action: "dismiss" }> | Readonly<{ action: "confirm"; code: string; address: string }>;
+export type RewardsReferralRequest = Readonly<{ action: "pending"; code: string }> | Readonly<{ action: "dismiss" }> | Readonly<{ action: "confirm"; code: string; address: string }> | Readonly<{ action: "change"; code: string; address: string }>;
 
 export type RewardsReferralError = Readonly<{ error: "rate limited" | "forbidden origin" | "bad request" }> | Readonly<{ ok: false; found: false; reason: "REFERRAL_CODE_NOT_FOUND" }> | Readonly<{ ok: false; reason: "PROOF_REQUIRED"; proof: false }> | Readonly<{ ok: false; reason: ReferralRefusal }>;
 
@@ -2024,7 +2056,7 @@ export type SwapOrderRequest = Readonly<{
 }>;
 
 export type SwapServiceFee = Readonly<{
-  mechanism: "JUPITER_REFERRAL" | "JUPITER_PLATFORM_FEE" | "RELAY_APP_FEE" | "MAYAN_REFERRER" | "NONE";
+  mechanism: "JUPITER_REFERRAL" | "JUPITER_PLATFORM_FEE" | "RELAY_APP_FEE" | "MAYAN_REFERRER" | "METEORA_LAUNCH" | "NONE";
   state: SwapServiceFeeState;
   basisPoints: number;
   requestedBasisPoints: number;
@@ -2033,7 +2065,7 @@ export type SwapServiceFee = Readonly<{
   decimals: number | null;
   amountRaw: string | null;
   usd: number | null;
-  accrual: "JUPITER_REFERRAL_TOKEN_ACCOUNT" | "FEE_WALLET_TOKEN_ACCOUNT" | "RELAY_APP_BALANCE_USDC" | "MAYAN_ONCHAIN_REFERRER" | "NONE";
+  accrual: "JUPITER_REFERRAL_TOKEN_ACCOUNT" | "FEE_WALLET_TOKEN_ACCOUNT" | "RELAY_APP_BALANCE_USDC" | "MAYAN_ONCHAIN_REFERRER" | "METEORA_PARTNER_VAULT" | "NONE";
   providerRetainedPercent: number | null;
   settlement: Readonly<{
     userPaidRaw: string | null;
@@ -4449,7 +4481,19 @@ export type LaunchTradeBuildResponse = Readonly<{ buildId: string; network: Laun
 
 /** `POST /api/v1/launch/{mint}/trade/submit` */
 export type LaunchTradeSubmitRequest = Readonly<{ buildId: string; wallet: string; signedWireBase64: string }>;
-export type LaunchTradeSubmitResponse = Readonly<{ signature: string; state: "CONFIRMED" | "PENDING"; filled: Readonly<{ tokensRaw: string; pairRaw: string }> | null }>;
+export type LaunchTradeSubmitResponse = Readonly<{
+  signature: string;
+  state: "CONFIRMED" | "PENDING";
+  filled: Readonly<{ tokensRaw: string; pairRaw: string }> | null;
+  /** 1.34.0: the trade's Outcome Receipt, once the chain answered in time; null otherwise. */
+  receiptHash?: string | null;
+  /** 1.34.0: the launch's page through the person's own referral code, for «Поділитися угодою». */
+  shareLink?: string | null;
+}>;
+
+/** 1.34.0 — `POST /api/v1/launch/{mint}/trade/receipt`: a trade's receipt, by the wallet that sent it and its signature. */
+export type LaunchTradeReceiptRequest = Readonly<{ wallet: string; signature: string }>;
+export type LaunchTradeReceiptResponse = Readonly<{ signature: string; state: "SENT" | "DONE" | "FAILED"; receipt: SwapReceipt | null }>;
 /* ------------------------------------------------------------ 1.29.0 — the creator's cabinet */
 
 /**
@@ -4538,4 +4582,315 @@ export type LaunchClaimSubmitResponse = Readonly<{
   receipts: readonly LaunchClaimReceipt[];
   pending: readonly string[];
   failed: readonly Readonly<{ signature: string; reason: string }>[];
+}>;
+
+/* ------------------------------------------------------------ 1.32.0 — the flight log */
+
+export type LaunchJournalKind = "LAUNCHED" | "CREATOR_LOCKED" | "FEES_SHARED" | "CREATOR_SOLD" | "GRADUATED" | "FLOOR_POOL" | "FLOOR_PLACED" | "FLOOR_WITHDRAWN" | "FLOOR_RAISED" | "FLOOR_ADDED";
+/** Who did it: the creator, Ryntra's executor, Meteora's keeper, another wallet. */
+export type LaunchJournalActor = "creator" | "ryntra" | "meteora" | "other";
+
+/** One entry of a launch's flight log — every one with the transaction anyone can open. */
+export type LaunchJournalEvent = Readonly<{
+  kind: LaunchJournalKind;
+  at: string | null;
+  signature: string;
+  actor: LaunchJournalActor;
+  pairRaw: string | null;
+  tokensRaw: string | null;
+  /** Ryntra's liquidity: the lowest and the highest step's price, pair currency per token. */
+  priceLow: number | null;
+  priceHigh: number | null;
+  /** A sale of the creator's: the share sold by then, basis points — of what they bought, or of the supply. */
+  soldBps: number | null;
+  soldOf: "bought" | "supply" | null;
+  /** 1.36.0: what governs the entry — `rule` (a program enforces it), `policy` (Ryntra's server runs it), null for what the log observes. */
+  enforcement?: "rule" | "policy" | null;
+}>;
+
+/** Ryntra's liquidity on a graduated launch as it stands: in steps below the price, from Ryntra's fees on this token. It holds no price. */
+export type LaunchFloorView = Readonly<{
+  pool: string;
+  position: string;
+  pairRaw: string;
+  tokensRaw: string;
+  priceLow: number;
+  priceHigh: number;
+  placedRaw: string;
+  observedAt: string;
+}>;
+
+/** `GET /api/v1/launch/{mint}/journal` — the newest first. `complete` false: something was not read (the creator's trades in part, or a graduation not known yet) — an entry not read is not «none». `floorUnread`: Ryntra's liquidity is there, its position not read now. */
+export type LaunchJournalResponse = Readonly<{
+  network: LaunchNetworkId;
+  token: string;
+  pair: LaunchPairView;
+  tokenDecimals: number;
+  executor: string | null;
+  events: readonly LaunchJournalEvent[];
+  /** 1.36.0: every entry the log holds — more than `events` when only the newest 200 are given. Absent before 1.36.0. */
+  total?: number;
+  complete: boolean;
+  floor: LaunchFloorView | null;
+  floorUnread: boolean;
+  observedAt: string;
+}>;
+
+/* ------------------------------------------------------------ a holder's position in the pool (1.33.0) */
+
+export type LaunchHolderInput = "pair" | "token";
+/** The permission as Ryntra's collector reads it: GRANTED is the only state it acts on. */
+export type LaunchHolderGrantState = "GRANTED" | "NONE" | "OTHER_DELEGATE" | "WIDER" | "TRANSFERABLE";
+export type LaunchPositionPermission =
+  | "AddLiquidity"
+  | "RemoveLiquidity"
+  | "RemoveLiquidityToOwner"
+  | "ClaimPositionFee"
+  | "ClaimPositionFeeToOwner"
+  | "ClaimReward"
+  | "ClaimRewardToOwner"
+  | "LockPosition";
+
+/** A claim Ryntra's collector made for the position's owner: what the owner's own accounts received. */
+export type LaunchHolderClaim = Readonly<{ signature: string; at: string | null; pairRaw: string; tokenRaw: string }>;
+
+/** A position entered through Ryntra, and how it stands on chain now; `now` null — not read now. */
+export type LaunchHolderPositionView = Readonly<{
+  token: string;
+  pool: string;
+  position: string;
+  nftMint: string;
+  pending: boolean;
+  enteredAt: string;
+  entrySignature: string;
+  input: LaunchHolderInput;
+  enteredRaw: string;
+  enteredPairRaw: string;
+  feeRaw: string;
+  now: Readonly<{
+    state: "OPEN" | "MOVED" | "CLOSED";
+    tokenRaw: string;
+    pairRaw: string;
+    valuePairRaw: string;
+    feesPairRaw: string;
+    unclaimedPairRaw: string;
+    unclaimedTokenRaw: string;
+    claimedPairRaw: string;
+    grant: LaunchHolderGrantState;
+  }> | null;
+  collectedPairRaw: string;
+  claims: readonly LaunchHolderClaim[];
+}>;
+
+/** `GET /api/v1/launch/{mint}/holder/{address}` — the token's pool for a holder; `open` false — draw nothing of the entry. */
+export type LaunchHolderResponse = Readonly<{
+  network: LaunchNetworkId;
+  token: string;
+  pool: string | null;
+  open: boolean;
+  collector: string | null;
+  grant: Readonly<{ bitmask: number; permissions: readonly LaunchPositionPermission[] }>;
+  fee: Readonly<{ bps: number; charged: boolean }>;
+  compoundingBps: number | null;
+  pair: LaunchPairView;
+  tokenDecimals: number;
+  price: number | null;
+  positions: readonly LaunchHolderPositionView[];
+  observedAt: string;
+}>;
+
+export type LaunchHolderQuoteRequest = Readonly<{ wallet: string; input: LaunchHolderInput; amountRaw: string; slippageBps: number }>;
+export type LaunchHolderQuoteView = Readonly<{
+  input: LaunchHolderInput;
+  amountRaw: string;
+  feeRaw: string;
+  feeBps: number;
+  depositRaw: string;
+  swappedRaw: string;
+  positionTokenRaw: string;
+  positionPairRaw: string;
+  valuePairRaw: string;
+  positionValuePairRaw: string;
+  shareBps: number;
+  priceImpactBps: number;
+  grant: boolean;
+}>;
+export type LaunchHolderQuoteResponse = Readonly<{ quote: LaunchHolderQuoteView; price: number; observedAt: string }>;
+export type LaunchHolderBuildRequest = LaunchHolderQuoteRequest;
+export type LaunchHolderBuildResponse = Readonly<{ buildId: string; network: LaunchNetworkId; unsignedWireBase64: string; position: string; quote: LaunchHolderQuoteView; expiresAt: string }>;
+export type LaunchHolderSubmitRequest = Readonly<{ buildId: string; wallet: string; signedWireBase64: string }>;
+export type LaunchHolderSubmitResponse = Readonly<{ signature: string; state: "CONFIRMED" | "PENDING"; position: string }>;
+export type LaunchHolderPermissionBuildRequest = Readonly<{ wallet: string; position: string; action: "grant" | "revoke" }>;
+export type LaunchHolderPermissionBuildResponse = Readonly<{ buildId: string; network: LaunchNetworkId; unsignedWireBase64: string; action: "grant" | "revoke"; expiresAt: string }>;
+export type LaunchHolderPermissionSubmitRequest = LaunchHolderSubmitRequest;
+export type LaunchHolderPermissionSubmitResponse = Readonly<{ signature: string; state: "CONFIRMED" | "PENDING"; action: "grant" | "revoke" }>;
+
+/** The data of a holder's earnings card: what went in, what it is worth now, the fees, each currency apart, with its period. */
+export type HolderEarningsCard = Readonly<{
+  source: "ryntra.launch.holder-position-card@1";
+  kind: "holder-position";
+  wallet: string;
+  network: string;
+  period: Readonly<{ from: string; to: string }>;
+  positions: number;
+  unread: number;
+  amounts: ReadonlyArray<Readonly<{ pairMint: string; symbol: string; decimals: number; dollar: boolean; enteredRaw: string; valueRaw: string; feesRaw: string; collectedRaw: string }>>;
+  receipts: readonly string[];
+}>;
+
+/** `GET /api/v1/launch/holders/{address}` — «Мої позиції» across launches, and the card's data. */
+export type LaunchHolderPositionsResponse = Readonly<{
+  network: LaunchNetworkId;
+  wallet: string;
+  open: boolean;
+  collector: string | null;
+  positions: ReadonlyArray<LaunchHolderPositionView & Readonly<{ name: string | null; symbol: string | null; pair: LaunchPairView | null; tokenDecimals: number | null }>>;
+  card: HolderEarningsCard;
+  observedAt: string;
+}>;
+
+/* ------------------------------------------------------------ the markets launched on Ryntra and their health (1.36.0) */
+
+/**
+ * A market's state in its cycle: ten states and two of failure. `GRADUATION_READY` — the curve full, waiting for its
+ * move; `MIGRATING` — only while the executor's own migration is in flight; `PAUSED_RISK` — Ryntra's acts on the market
+ * stopped. `MATURE` is not assigned by this version.
+ */
+export type LaunchMarketCycleState =
+  | "CREATED"
+  | "PRICE_DISCOVERY"
+  | "GRADUATION_READY"
+  | "MIGRATING"
+  | "CORE_MARKET_LIVE"
+  | "ENDOWMENT_FUNDED"
+  | "LADDER_ACTIVE"
+  | "MAINTAINING"
+  | "PAUSED_RISK"
+  | "MATURE"
+  | "MIGRATION_FAILED"
+  | "ENDOWMENT_EXHAUSTED";
+
+/** Who keeps a rule of the market: a program enforces a `rule`; Ryntra's server runs a `policy`. */
+export type LaunchMarketEnforcement = "rule" | "policy";
+export type LaunchMarketKeeper = "token-2022" | "meteora-dbc" | "meteora-damm-v2" | "met-lock" | "dynamic-fee-sharing" | "ryntra";
+export type LaunchMarketRuleCode =
+  | "MINT_REVOKED"
+  | "NO_FREEZE"
+  | "METADATA_FIXED"
+  | "NO_TRANSFER_HOOK"
+  | "CONFIG_FIXED"
+  | "CURVE_HOLDS_FUNDS"
+  | "GRADUATION_AT_THRESHOLD"
+  | "LP_LOCKED_FOREVER"
+  | "CREATOR_LOCK"
+  | "CREATOR_FEES_SHARED"
+  | "CREATOR_FIRST_BUY_CAP"
+  | "GRADUATION_BY_RYNTRA"
+  | "FEE_FUNDED_LADDER"
+  | "CREATOR_SALE_MARK"
+  | "CONCENTRATION_MARK";
+
+export type LaunchMarketStateView = Readonly<{ code: LaunchMarketCycleState; since: string | null }>;
+
+/** The market's budget. `NOT_COUNTED`: earned and reserve null — never zero; `ladder` says whether Ryntra's steps stand and were read. */
+export type LaunchMarketBudget = Readonly<{
+  state: "NOT_COUNTED" | "IN_POOL" | "COUNTED";
+  earnedRaw: string | null;
+  reserveRaw: string | null;
+  ladder: "NONE" | "PLACED" | "UNREAD";
+  deployed: Readonly<{ pairRaw: string; tokensRaw: string }> | null;
+}>;
+
+/** Executable depth at one drop (200, 500 or 1 000 basis points): the pair currency paid out until then, raw — `"0"` while the curve is full; null when not read. */
+export type LaunchMarketDepth = Readonly<{ dropBps: 200 | 500 | 1000; pairRaw: string | null; ladderRaw: string | null }>;
+
+export type LaunchMarketRule = Readonly<{
+  code: LaunchMarketRuleCode;
+  enforcement: LaunchMarketEnforcement;
+  by: LaunchMarketKeeper;
+  source: Readonly<{ kind: "tx" | "account"; id: string }> | null;
+  values: Readonly<Record<string, number | string>>;
+}>;
+
+export type LaunchMarketLock = Readonly<{ escrow: string; cliffAt: string | null; endsAt: string | null }>;
+
+/** One market of «Лаунчі на Ryntra». `read: false` — the record's facts only, every figure null; `creatorLock` as the record holds it. */
+export type LaunchMarketRow = Readonly<{
+  token: string;
+  name: string;
+  symbol: string;
+  image: string | null;
+  preset: LaunchPresetId;
+  launchedAt: string;
+  creator: string;
+  technicalValidation: boolean;
+  pair: LaunchPairView;
+  read: boolean;
+  state: LaunchMarketStateView | null;
+  venue: LaunchTradeVenue | null;
+  progress: Readonly<{ bps: number; migrated: boolean }> | null;
+  poolLiquidity: LaunchMoney | null;
+  budget: LaunchMarketBudget;
+  depth5Raw: string | null;
+  daysSinceDex: number | null;
+  traded24h: boolean | null;
+  holders: number | null;
+  holdersAtLeast: boolean;
+  creatorLock: LaunchMarketLock | null;
+  creatorSold: boolean | null;
+  observedAt: string;
+}>;
+
+/** `GET /api/v1/launch/markets` — with a trade in the last day first, then by state and the newest. */
+export type LaunchMarketsResponse = Readonly<{ network: LaunchNetworkId; markets: readonly LaunchMarketRow[]; complete: boolean; observedAt: string }>;
+
+/** `GET /api/v1/launch/markets/{mint}` — the row and the addresses the market lives at. */
+export type LaunchMarketCardResponse = Readonly<{
+  network: LaunchNetworkId;
+  market: LaunchMarketRow;
+  addresses: Readonly<{
+    config: string;
+    curve: string;
+    pairMint: string;
+    pool: string | null;
+    lockedPositions: readonly Readonly<{ position: string; owner: string }>[];
+    creatorLock: string | null;
+    feeVault: string | null;
+    ladder: Readonly<{ pool: string; position: string | null }> | null;
+    executor: string | null;
+  }>;
+  observedAt: string;
+}>;
+
+/** `GET /api/v1/launch/{mint}/health` — by fixed definitions; a figure not read is null, never zero. */
+export type LaunchMarketHealthResponse = Readonly<{
+  network: LaunchNetworkId;
+  token: string;
+  pair: LaunchPairView;
+  tokenDecimals: number;
+  /** The price now, the pair currency per token. */
+  price: LaunchMoney;
+  state: LaunchMarketStateView;
+  technicalValidation: boolean;
+  venue: LaunchTradeVenue;
+  depth: readonly LaunchMarketDepth[];
+  budget: LaunchMarketBudget;
+  /** Ryntra's steps as they stand; `pairFrom`/`pairTo` — the prices of the steps holding the pair currency, null when none does. */
+  ladder: Readonly<{ pool: string; pairRaw: string; tokensRaw: string; pairFrom: number | null; pairTo: number | null }> | null;
+  survival: Readonly<{ graduatedAt: string | null; daysSinceDex: number | null; priceVsDexBps: number | null; traded24h: boolean | null; lastTradeAt: string | null }>;
+  holders: Readonly<{ count: number | null; atLeast: boolean; minUsd: 1 }>;
+  creator: Readonly<{ address: string; lock: LaunchMarketLock | null; sold: boolean | null; soldBps: number | null; soldOf: "bought" | "supply" | null }>;
+  /** `atLeast`: from the mint's largest accounts — a floor. */
+  concentration: Readonly<{ top10Bps: number | null; atLeast: boolean; marked: boolean | null; markBps: 6000 }>;
+  engine: Readonly<{
+    executor: string | null;
+    /** Whether the executor acts on this network now: its key on the server, Launch open, a pass of its own in the last 15 minutes. */
+    acts: boolean;
+    lastAction: Readonly<{ kind: LaunchJournalKind; at: string | null; signature: string }> | null;
+    pause: Readonly<{ code: "STOPPED" | "RISK_LIMIT"; at: string | null }> | null;
+  }>;
+  rules: readonly LaunchMarketRule[];
+  /** False when the token's receipt was not read: its own rules and the pool's locked positions are missing from `rules`. */
+  rulesComplete: boolean;
+  observedAt: string;
 }>;
